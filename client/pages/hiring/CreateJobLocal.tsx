@@ -65,10 +65,13 @@ export default function CreateJobLocal() {
     title: "",
     description: "",
     department: "",
-    location: "office",
-    employmentType: "full-time",
+    location: "",
+    employmentType: "Full-time",
     salaryMin: "",
     salaryMax: "",
+    contractType: "Permanent",
+    contractDuration: "",
+    probationPeriod: "",
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
