@@ -106,23 +106,8 @@ export default function CreateJobLocal() {
       newErrors.title = "Job title is required";
     }
 
-    if (!formData.departmentId) {
-      newErrors.departmentId = "Department is required";
-    }
-
-    if (!formData.hiringManagerId) {
-      newErrors.hiringManagerId = "Hiring manager is required";
-    }
-
-    if (
-      formData.approverMode === "department" &&
-      !formData.approverDepartmentId
-    ) {
-      newErrors.approverDepartmentId = "Approver department is required";
-    }
-
-    if (!formData.approverId) {
-      newErrors.approverId = "Approver is required";
+    if (!formData.department) {
+      newErrors.department = "Department is required";
     }
 
     setErrors(newErrors);
