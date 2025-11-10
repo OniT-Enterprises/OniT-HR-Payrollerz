@@ -119,12 +119,11 @@ export const LocalDataStatus: React.FC = () => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <Alert>
-          <Info className="h-4 w-4" />
-          <AlertDescription>
-            <strong>Local Development Mode:</strong> All data is stored in your
-            browser's localStorage. Data persists between sessions but is
-            specific to this browser.
+        <Alert className="border-blue-200 bg-blue-50">
+          <Zap className="h-4 w-4 text-blue-600" />
+          <AlertDescription className="text-blue-900">
+            <strong>SQLite Database Active:</strong> All data is stored in <code className="bg-blue-100 px-1 rounded">payroll.db</code> file.
+            Fast local development, easy migration to Firestore when ready!
           </AlertDescription>
         </Alert>
 
