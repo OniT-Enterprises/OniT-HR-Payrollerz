@@ -278,23 +278,45 @@ export default function CreateJobLocal() {
                   </div>
 
                   <div>
-                    <Label htmlFor="location">Work Location</Label>
+                    <Label htmlFor="department">Department *</Label>
                     <Select
-                      value={formData.location}
+                      value={formData.department}
                       onValueChange={(value) =>
-                        handleInputChange("location", value)
+                        handleInputChange("department", value)
                       }
                     >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select location" />
+                      <SelectTrigger
+                        className={
+                          errors.department ? "border-destructive" : ""
+                        }
+                      >
+                        <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="office">Office</SelectItem>
-                        <SelectItem value="remote">Remote</SelectItem>
-                        <SelectItem value="hybrid">Hybrid</SelectItem>
-                        <SelectItem value="on-site">On-site</SelectItem>
+                        {departments.map((dept) => (
+                          <SelectItem key={dept.id} value={dept.id}>
+                            {dept.name}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
+                    {errors.department && (
+                      <p className="text-sm text-destructive mt-1">
+                        {errors.department}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <Label htmlFor="location">Work Location</Label>
+                    <Input
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) =>
+                        handleInputChange("location", e.target.value)
+                      }
+                      placeholder="e.g., San Francisco, CA"
+                    />
                   </div>
 
                   <div>
@@ -309,10 +331,10 @@ export default function CreateJobLocal() {
                         <SelectValue placeholder="Select type" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="full-time">Full-time</SelectItem>
-                        <SelectItem value="part-time">Part-time</SelectItem>
-                        <SelectItem value="contract">Contract</SelectItem>
-                        <SelectItem value="intern">Intern</SelectItem>
+                        <SelectItem value="Full-time">Full-time</SelectItem>
+                        <SelectItem value="Part-time">Part-time</SelectItem>
+                        <SelectItem value="Contract">Contract</SelectItem>
+                        <SelectItem value="Intern">Intern</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
