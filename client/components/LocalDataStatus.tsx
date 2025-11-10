@@ -107,16 +107,15 @@ export const LocalDataStatus: React.FC = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Database className="h-5 w-5" />
-            <CardTitle>Local Data Status</CardTitle>
+            <CardTitle>Database Status</CardTitle>
           </div>
           <Badge variant="outline" className="text-green-600">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Active
+            SQLite Connected
           </Badge>
         </div>
         <CardDescription>
-          Your HR data is stored locally in your browser. No external database
-          required!
+          Your HR data is stored in SQLite. Local development database ready for Firestore migration!
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
