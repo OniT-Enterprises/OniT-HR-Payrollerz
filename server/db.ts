@@ -69,6 +69,9 @@ export function initializeDatabase() {
       salaryMin REAL,
       salaryMax REAL,
       employmentType TEXT,
+      contractType TEXT DEFAULT 'Permanent',
+      contractDuration TEXT,
+      probationPeriod TEXT,
       status TEXT DEFAULT 'open',
       postedDate TEXT NOT NULL,
       closingDate TEXT,
@@ -78,6 +81,23 @@ export function initializeDatabase() {
       FOREIGN KEY (department) REFERENCES departments(id)
     )
   `);
+
+  // Add new columns if they don't exist (migration for existing database)
+  try {
+    db.exec(`ALTER TABLE jobs ADD COLUMN contractType TEXT DEFAULT 'Permanent'`);
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    db.exec(`ALTER TABLE jobs ADD COLUMN contractDuration TEXT`);
+  } catch (e) {
+    // Column already exists
+  }
+  try {
+    db.exec(`ALTER TABLE jobs ADD COLUMN probationPeriod TEXT`);
+  } catch (e) {
+    // Column already exists
+  }
 
   // Candidates collection
   db.exec(`
