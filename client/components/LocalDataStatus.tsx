@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,17 +12,16 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   getStats,
   exportData,
-  clearAllData,
-  initializeData,
-} from "@/lib/localDataService";
+} from "@/lib/sqliteApiService";
 import {
   Database,
   Download,
-  Trash2,
   RefreshCw,
   CheckCircle,
   Info,
+  Zap,
 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
 export const LocalDataStatus: React.FC = () => {
   const [stats, setStats] = useState(getStats());
