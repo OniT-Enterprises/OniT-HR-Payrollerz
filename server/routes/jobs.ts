@@ -69,7 +69,7 @@ jobsRouter.post("/", (req: Request, res: Response) => {
  */
 jobsRouter.put("/:id", (req: Request, res: Response) => {
   try {
-    const { title, description, department, location, salaryMin, salaryMax, employmentType, status, closingDate } = req.body;
+    const { title, description, department, location, salaryMin, salaryMax, employmentType, contractType, contractDuration, probationPeriod, status, closingDate } = req.body;
     const now = new Date().toISOString();
 
     const stmt = db.prepare(`
@@ -81,13 +81,16 @@ jobsRouter.put("/:id", (req: Request, res: Response) => {
         salaryMin = COALESCE(?, salaryMin),
         salaryMax = COALESCE(?, salaryMax),
         employmentType = COALESCE(?, employmentType),
+        contractType = COALESCE(?, contractType),
+        contractDuration = COALESCE(?, contractDuration),
+        probationPeriod = COALESCE(?, probationPeriod),
         status = COALESCE(?, status),
         closingDate = COALESCE(?, closingDate),
         updatedAt = ?
       WHERE id = ?
     `);
 
-    stmt.run(title, description, department, location, salaryMin, salaryMax, employmentType, status, closingDate, now, req.params.id);
+    stmt.run(title, description, department, location, salaryMin, salaryMax, employmentType, contractType, contractDuration, probationPeriod, status, closingDate, now, req.params.id);
 
     res.json({ message: "Job updated successfully" });
   } catch (error) {
