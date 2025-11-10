@@ -50,6 +50,9 @@ export interface Job {
   salaryMin?: number;
   salaryMax?: number;
   employmentType?: string;
+  contractType?: string;
+  contractDuration?: string;
+  probationPeriod?: string;
   status: string;
   postedDate: string;
   closingDate?: string;
