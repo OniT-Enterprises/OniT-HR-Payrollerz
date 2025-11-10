@@ -451,12 +451,12 @@ export default function CreateJobLocal() {
                 {isSubmitting ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Creating...
+                    Posting...
                   </>
                 ) : (
                   <>
                     <Save className="h-4 w-4 mr-2" />
-                    Create Job
+                    Post Advert
                   </>
                 )}
               </Button>
