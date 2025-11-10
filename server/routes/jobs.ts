@@ -40,7 +40,7 @@ jobsRouter.get("/:id", (req: Request, res: Response) => {
  */
 jobsRouter.post("/", (req: Request, res: Response) => {
   try {
-    const { title, description, department, location, salaryMin, salaryMax, employmentType, status, closingDate, createdBy } = req.body;
+    const { title, description, department, location, salaryMin, salaryMax, employmentType, contractType, contractDuration, probationPeriod, status, closingDate, createdBy } = req.body;
 
     const id = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
     const now = new Date().toISOString();
@@ -48,13 +48,13 @@ jobsRouter.post("/", (req: Request, res: Response) => {
     const stmt = db.prepare(`
       INSERT INTO jobs (
         id, title, description, department, location, salaryMin, salaryMax,
-        employmentType, status, postedDate, closingDate, createdBy, createdAt, updatedAt
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        employmentType, contractType, contractDuration, probationPeriod, status, postedDate, closingDate, createdBy, createdAt, updatedAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     stmt.run(
       id, title, description, department, location, salaryMin, salaryMax,
-      employmentType, status || "open", now, closingDate || null, createdBy || null, now, now
+      employmentType, contractType || "Permanent", contractDuration || null, probationPeriod || null, status || "open", now, closingDate || null, createdBy || null, now, now
     );
 
     res.status(201).json({ id, message: "Job created successfully" });
