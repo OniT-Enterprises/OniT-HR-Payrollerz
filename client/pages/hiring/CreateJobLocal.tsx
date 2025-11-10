@@ -41,13 +41,9 @@ import {
 interface CreateJobFormData {
   title: string;
   description: string;
-  departmentId: string;
-  hiringManagerId: string;
-  approverMode: "department" | "name";
-  approverDepartmentId: string;
-  approverId: string;
+  department: string;
   location: string;
-  employmentType: "full-time" | "part-time" | "contract" | "intern";
+  employmentType: string;
   salaryMin: string;
   salaryMax: string;
 }
@@ -57,9 +53,10 @@ export default function CreateJobLocal() {
   const { toast } = useToast();
   const localUser = getCurrentUser();
 
-  // Get local data
-  const departments = getDepartments();
-  const allEmployees = getEmployees({ status: "active" });
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const [formData, setFormData] = useState<CreateJobFormData>({
     title: "",
