@@ -129,34 +129,23 @@ export default function CreateJobLocal() {
     setIsSubmitting(true);
 
     try {
-      // Create job data
-      const jobData: Omit<LocalJob, "id" | "createdAt" | "updatedAt"> = {
+      // Create job data matching API schema
+      const jobData = {
         title: formData.title,
         description: formData.description,
-        departmentId: formData.departmentId,
-        hiringManagerId: formData.hiringManagerId,
-        approverMode: formData.approverMode,
-        approverDepartmentId: formData.approverDepartmentId || undefined,
-        approverId: formData.approverId,
-        status: "draft",
+        department: formData.department,
         location: formData.location,
         employmentType: formData.employmentType,
-        salaryRange:
-          formData.salaryMin && formData.salaryMax
-            ? {
-                min: parseInt(formData.salaryMin),
-                max: parseInt(formData.salaryMax),
-                currency: "USD",
-              }
-            : undefined,
+        status: "open",
+        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
+        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
       };
 
-      // Save job locally
-      const newJob = createJob(jobData);
+      const result = await createJob(jobData);
 
       toast({
         title: "Job Created Successfully! 🎉",
-        description: `"${newJob.title}" has been created and saved locally`,
+        description: `"${formData.title}" has been created in the database`,
       });
 
       navigate("/hiring");
@@ -164,7 +153,8 @@ export default function CreateJobLocal() {
       console.error("Failed to create job:", error);
       toast({
         title: "Creation Failed",
-        description: "Failed to create job posting. Please try again.",
+        description:
+          error instanceof Error ? error.message : "Failed to create job posting. Please try again.",
         variant: "destructive",
       });
     } finally {
