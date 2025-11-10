@@ -374,6 +374,52 @@ export default function CreateJobLocal() {
                     />
                   </div>
 
+                  <div>
+                    <Label htmlFor="contractType">Contract Type</Label>
+                    <Select
+                      value={formData.contractType}
+                      onValueChange={(value) =>
+                        handleInputChange("contractType", value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select contract type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Permanent">Permanent</SelectItem>
+                        <SelectItem value="Fixed-Term">Fixed-Term</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {formData.contractType === "Fixed-Term" && (
+                    <div>
+                      <Label htmlFor="contractDuration">Contract Duration</Label>
+                      <Input
+                        id="contractDuration"
+                        value={formData.contractDuration}
+                        onChange={(e) =>
+                          handleInputChange("contractDuration", e.target.value)
+                        }
+                        placeholder="e.g., 6 months, 1 year"
+                      />
+                    </div>
+                  )}
+
+                  <div>
+                    <Label htmlFor="probationPeriod">
+                      Probation Period (Article 14 of Labour Code)
+                    </Label>
+                    <Input
+                      id="probationPeriod"
+                      value={formData.probationPeriod}
+                      onChange={(e) =>
+                        handleInputChange("probationPeriod", e.target.value)
+                      }
+                      placeholder="e.g., 3 months, 90 days"
+                    />
+                  </div>
+
                   <div className="md:col-span-2">
                     <Label htmlFor="description">Job Description</Label>
                     <Textarea
