@@ -236,10 +236,10 @@ export default function CreateJobLocal() {
               <div>
                 <h1 className="text-3xl font-bold flex items-center gap-2">
                   <Building2 className="h-8 w-8 text-green-600" />
-                  Create New Job
+                  Job Advert
                 </h1>
                 <p className="text-muted-foreground">
-                  Define a new position and hiring requirements
+                  Post a new job position with contract and probation details
                 </p>
               </div>
             </div>
