@@ -178,10 +178,11 @@ export const LocalDataStatus: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={refreshStats}
+            disabled={isLoading}
             className="flex items-center gap-2"
           >
-            <RefreshCw className="h-4 w-4" />
-            Refresh
+            <RefreshCw className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`} />
+            {isLoading ? "Loading..." : "Refresh"}
           </Button>
 
           <Button
@@ -202,16 +203,6 @@ export const LocalDataStatus: React.FC = () => {
           >
             <Info className="h-4 w-4" />
             {showDetails ? "Hide" : "Show"} Details
-          </Button>
-
-          <Button
-            variant="destructive"
-            size="sm"
-            onClick={handleClearData}
-            className="flex items-center gap-2"
-          >
-            <Trash2 className="h-4 w-4" />
-            Reset Data
           </Button>
         </div>
 
