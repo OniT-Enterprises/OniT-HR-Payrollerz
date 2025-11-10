@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,8 +26,9 @@ import {
   getDepartments,
   getEmployees,
   createJob,
-  LocalJob,
-} from "@/lib/localDataService";
+  Department,
+  Employee,
+} from "@/lib/sqliteApiService";
 import {
   Building2,
   Users,
