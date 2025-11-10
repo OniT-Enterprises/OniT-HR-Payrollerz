@@ -46,6 +46,9 @@ interface CreateJobFormData {
   employmentType: string;
   salaryMin: string;
   salaryMax: string;
+  contractType: string;
+  contractDuration: string;
+  probationPeriod: string;
 }
 
 export default function CreateJobLocal() {
