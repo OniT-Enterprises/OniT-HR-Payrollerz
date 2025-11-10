@@ -221,16 +221,15 @@ export const LocalDataStatus: React.FC = () => {
             <h4 className="font-medium mb-2">Technical Details:</h4>
             <ul className="text-sm space-y-1 text-gray-600">
               <li>
-                • Data stored in browser localStorage (
-                {(JSON.stringify(exportData()).length / 1024).toFixed(1)} KB)
+                • Database file: <code className="bg-white px-1 rounded text-blue-600 font-mono">payroll.db</code>
               </li>
-              <li>• Automatic data initialization on first load</li>
-              <li>• No external dependencies or API calls</li>
-              <li>• Data persists between browser sessions</li>
-              <li>• Export/import functionality available</li>
+              <li>• Data size: {(dataSize / 1024).toFixed(2)} KB</li>
+              <li>• Server: Express.js with TypeScript</li>
+              <li>• ORM: better-sqlite3 (synchronous, fast)</li>
+              <li>• API endpoints: <code className="bg-white px-1 rounded text-blue-600 font-mono">/api/employees, /api/departments, /api/jobs, /api/candidates</code></li>
+              <li>• Firestore-compatible schema for easy migration</li>
               <li>
-                • Sample data includes {stats.departments} departments and{" "}
-                {stats.employees} employees
+                • Current data: {stats.departments} departments, {stats.employees} employees, {stats.jobs} jobs, {stats.candidates} candidates
               </li>
             </ul>
           </div>
