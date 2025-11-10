@@ -61,11 +61,7 @@ export default function CreateJobLocal() {
   const [formData, setFormData] = useState<CreateJobFormData>({
     title: "",
     description: "",
-    departmentId: "",
-    hiringManagerId: "",
-    approverMode: "department",
-    approverDepartmentId: "",
-    approverId: "",
+    department: "",
     location: "office",
     employmentType: "full-time",
     salaryMin: "",
@@ -75,18 +71,33 @@ export default function CreateJobLocal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter employees by selected department for hiring manager selection
-  const eligibleManagers = allEmployees.filter(
-    (emp) => emp.departmentId === formData.departmentId,
-  );
+  // Fetch data on mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [depts, emps] = await Promise.all([
+          getDepartments(),
+          getEmployees(),
+        ]);
+        setDepartments(depts);
+        setEmployees(emps.filter((e) => e.status === "active"));
+        setError(null);
+      } catch (err) {
+        console.error("Failed to fetch data:", err);
+        setError("Failed to load departments and employees");
+        toast({
+          title: "Error",
+          description: "Failed to load form data. Please try again.",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  // Filter employees for approver selection based on mode
-  const eligibleApprovers =
-    formData.approverMode === "department"
-      ? allEmployees.filter(
-          (emp) => emp.departmentId === formData.approverDepartmentId,
-        )
-      : allEmployees;
+    fetchData();
+  }, [toast]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
