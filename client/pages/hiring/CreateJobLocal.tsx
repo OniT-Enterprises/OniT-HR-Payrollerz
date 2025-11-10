@@ -163,25 +163,10 @@ export default function CreateJobLocal() {
   };
 
   const handleInputChange = (field: keyof CreateJobFormData, value: string) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
-
-      // Clear related fields when department changes
-      if (field === "departmentId") {
-        updated.hiringManagerId = "";
-      }
-
-      if (field === "approverDepartmentId") {
-        updated.approverId = "";
-      }
-
-      if (field === "approverMode") {
-        updated.approverDepartmentId = "";
-        updated.approverId = "";
-      }
-
-      return updated;
-    });
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
 
     // Clear error for this field
     if (errors[field]) {
@@ -189,12 +174,38 @@ export default function CreateJobLocal() {
     }
   };
 
-  const selectedDepartment = departments.find(
-    (d) => d.id === formData.departmentId,
-  );
-  const selectedManager = allEmployees.find(
-    (e) => e.id === formData.hiringManagerId,
-  );
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md w-full">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-center space-x-2">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+              <span>Loading form data...</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <HotDogStyleNavigation />
+        <div className="p-6 max-w-4xl mx-auto">
+          <Card className="border-destructive">
+            <CardContent className="pt-6">
+              <p className="text-destructive">{error}</p>
+              <Button onClick={() => navigate("/hiring")} className="mt-4">
+                Back to Hiring
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
