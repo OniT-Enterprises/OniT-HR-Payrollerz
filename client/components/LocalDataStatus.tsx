@@ -23,39 +23,81 @@ import {
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
+interface StatsData {
+  employees: number;
+  activeEmployees: number;
+  departments: number;
+  jobs: number;
+  openJobs: number;
+  candidates: number;
+}
+
 export const LocalDataStatus: React.FC = () => {
-  const [stats, setStats] = useState(getStats());
+  const { toast } = useToast();
+  const [stats, setStats] = useState<StatsData>({
+    employees: 0,
+    activeEmployees: 0,
+    departments: 0,
+    jobs: 0,
+    openJobs: 0,
+    candidates: 0,
+  });
   const [showDetails, setShowDetails] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [dataSize, setDataSize] = useState(0);
 
-  const refreshStats = () => {
-    setStats(getStats());
+  useEffect(() => {
+    refreshStats();
+  }, []);
+
+  const refreshStats = async () => {
+    try {
+      setIsLoading(true);
+      const newStats = await getStats();
+      setStats(newStats);
+
+      // Calculate approximate data size
+      const data = await exportData();
+      const size = JSON.stringify(data).length;
+      setDataSize(size);
+    } catch (error) {
+      console.error("Error refreshing stats:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load statistics",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleExportData = () => {
-    const data = exportData();
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `hr-data-${new Date().toISOString().split("T")[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
+  const handleExportData = async () => {
+    try {
+      const data = await exportData();
+      const blob = new Blob([JSON.stringify(data, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `hr-data-${new Date().toISOString().split("T")[0]}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
 
-  const handleClearData = () => {
-    if (
-      confirm(
-        "Are you sure you want to clear all local data? This cannot be undone.",
-      )
-    ) {
-      clearAllData();
-      // Re-initialize with sample data
-      initializeData();
-      refreshStats();
+      toast({
+        title: "Export Successful",
+        description: "Your data has been exported successfully",
+      });
+    } catch (error) {
+      console.error("Error exporting data:", error);
+      toast({
+        title: "Export Failed",
+        description: "Failed to export data",
+        variant: "destructive",
+      });
     }
   };
 
