@@ -362,12 +362,12 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Local Data Management */}
+        {/* Firebase Emulator Status */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Local Data Management</CardTitle>
+            <CardTitle>Firebase Emulator</CardTitle>
             <CardDescription>
-              Manage your local HR data storage and view system status
+              Local development environment for Firestore and Authentication
             </CardDescription>
           </CardHeader>
           <CardContent>
