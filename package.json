@@ -20,7 +20,11 @@
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "migrate:tenant": "ts-node scripts/migrate-root-to-tenants.ts",
-    "emul:rules": "firebase emulators:exec --only firestore 'vitest run -c tests/vitest.config.ts'"
+    "emul:rules": "firebase emulators:exec --only firestore 'vitest run -c tests/vitest.config.ts'",
+    "emulators": "firebase emulators:start --only firestore,auth --import=./firebaseemulator_payroll/ --export-on-exit",
+    "emulators:ui": "firebase emulators:start --import=./firebaseemulator_payroll/ --export-on-exit",
+    "reset:emulator": "node scripts/resetEmulator.js",
+    "seed:dev": "node scripts/seedDatabase.js"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
