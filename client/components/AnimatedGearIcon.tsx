@@ -1,7 +1,6 @@
 import React from "react";
 import { Cog } from "lucide-react";
 import { cn } from "@/lib/utils";
-import "./styles/animated-gear.css";
 
 interface AnimatedGearIconProps {
   className?: string;
@@ -20,7 +19,7 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
   const radius = size * 0.55;
   const gearSize = size * 0.3;
 
-  // Extract color from Tailwind className (e.g., "bg-green-600" -> "rgb(22, 163, 74)")
+  // Map Tailwind colors to RGB for inline styles
   const colorMap: { [key: string]: string } = {
     "bg-green-600": "rgb(22, 163, 74)",
     "bg-red-600": "rgb(220, 38, 38)",
@@ -31,7 +30,7 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
 
   return (
     <div
-      className={cn("relative inline-flex items-center justify-center animated-gear-container", className)}
+      className={cn("relative inline-flex items-center justify-center", className)}
       style={{ width: `${size}px`, height: `${size}px` }}
     >
       {/* Center avatar circle */}
@@ -48,7 +47,7 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
         {initials}
       </div>
 
-      {/* Orbiting gears container */}
+      {/* Orbiting gears container with rotation animation */}
       <div
         className="absolute animate-spin-slow"
         style={{
@@ -57,7 +56,7 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
           pointerEvents: "none",
         }}
       >
-        {/* Create gears positioned around the circle */}
+        {/* Create 8 gears positioned around the circle */}
         {Array.from({ length: gearCount }).map((_, i) => {
           const angle = (i * 360) / gearCount;
           const radian = (angle * Math.PI) / 180;
@@ -67,13 +66,11 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
           return (
             <div
               key={i}
-              className="absolute opacity-70 transition-opacity hover:opacity-100"
+              className="absolute opacity-70"
               style={{
-                left: `${size / 2}px`,
-                top: `${size / 2}px`,
-                transform: `translate(${x}px, ${y}px) translate(-50%, -50%)`,
-                width: `${gearSize}px`,
-                height: `${gearSize}px`,
+                left: `${size / 2 + x}px`,
+                top: `${size / 2 + y}px`,
+                transform: "translate(-50%, -50%)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -83,7 +80,6 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
                 size={gearSize}
                 className="text-gray-400"
                 strokeWidth={1.5}
-                style={{ animation: "spin 8s linear infinite reverse" }}
               />
             </div>
           );
