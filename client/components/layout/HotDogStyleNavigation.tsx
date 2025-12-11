@@ -3,6 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/localAuth";
 import { useFirebase } from "@/contexts/FirebaseContext";
+import { useAppMode } from "@/hooks/useAppMode";
 import { AnimatedGearIcon } from "@/components/AnimatedGearIcon";
 import {
   UserPlus,
