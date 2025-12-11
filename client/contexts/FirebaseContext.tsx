@@ -110,7 +110,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   };
 
   useEffect(() => {
-    console.log('🔧 FirebaseProvider initializing with full Firebase connectivity');
+    console.log('🚀 FirebaseProvider initializing with Firebase Emulator');
 
     const handleOnline = () => {
       setIsOnline(true);
