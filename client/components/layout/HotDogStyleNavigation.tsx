@@ -3,15 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { getCurrentUser } from "@/lib/localAuth";
 import { useFirebase } from "@/contexts/FirebaseContext";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { AnimatedGearIcon } from "@/components/AnimatedGearIcon";
 import {
   UserPlus,
   Users,
