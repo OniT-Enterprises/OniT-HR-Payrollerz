@@ -24,6 +24,7 @@ import {
   CreditCard,
   DollarSign,
   PieChart,
+  Settings,
 } from "lucide-react";
 
 const modules = [
