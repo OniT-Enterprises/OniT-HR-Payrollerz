@@ -7,24 +7,18 @@ import {
   enableNetwork,
   disableNetwork,
 } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth, connectAuthEmulator, signInAnonymously } from "firebase/auth";
 import { getStorage } from "firebase/storage";
-
-// Import development authentication helper - DISABLED for local development
-// import "./devAuth";
 
 // Import emergency fetch fix to completely resolve "Failed to fetch" errors
 import "./emergencyFetchFix";
-
-// COMPLETELY DISABLE Firebase isolation to prevent fetch blocking
-// import "./firebaseIsolation"; // DISABLED - was causing fetch errors
 
 // Global Firebase status
 let firebaseInitialized = false;
 let firebaseError: string | null = null;
 let networkEnabled = false;
 let connectivityCheckInProgress = false;
-let firebaseBlocked = false; // Flag to completely block Firebase operations
+let firebaseBlocked = false;
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -44,32 +38,52 @@ let auth: any = null;
 let storage: any = null;
 let analytics: any = null;
 
-// Simple check for Firebase initialization
-const shouldInitializeFirebase = () => {
-  // DISABLE Firebase for local development mode
-  console.log("🔧 Firebase initialization disabled for local development");
-  return false;
+const shouldUseEmulator = () => {
+  // Use emulator in development
+  const isDev = import.meta.env.DEV || process.env.NODE_ENV === "development";
+  return isDev;
 };
 
 try {
-  if (!shouldInitializeFirebase()) {
-    throw new Error("Firebase initialization skipped due to network issues");
-  }
-
   app = initializeApp(firebaseConfig);
 
-  // Initialize Firebase services with error handling
+  // Initialize Firestore with emulator connection
   try {
     db = getFirestore(app);
+    if (shouldUseEmulator()) {
+      try {
+        connectFirestoreEmulator(db, "127.0.0.1", 8081);
+        console.log("✅ Connected to Firestore Emulator on port 8081");
+      } catch (error: any) {
+        // Already connected or other error
+        if (!error.message?.includes("already called")) {
+          console.warn("⚠️ Firestore Emulator connection issue:", error.message);
+        }
+      }
+    }
     firebaseInitialized = true;
-    console.log("✅ Firebase Firestore initialized successfully");
+    console.log("✅ Firestore initialized successfully");
   } catch (error) {
     console.error("❌ Failed to initialize Firestore:", error);
     firebaseError = "Failed to initialize Firestore";
   }
 
+  // Initialize Auth with emulator connection
   try {
     auth = getAuth(app);
+    if (shouldUseEmulator()) {
+      try {
+        connectAuthEmulator(auth, "http://127.0.0.1:9100", {
+          disableWarnings: true,
+        });
+        console.log("✅ Connected to Auth Emulator on port 9100");
+      } catch (error: any) {
+        // Already connected or other error
+        if (!error.message?.includes("already called")) {
+          console.warn("⚠️ Auth Emulator connection issue:", error.message);
+        }
+      }
+    }
   } catch (error) {
     console.error("❌ Failed to initialize Auth:", error);
   }
