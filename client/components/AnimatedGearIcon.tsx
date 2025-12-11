@@ -15,61 +15,66 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
   initials = "U",
   backgroundColor = "bg-gray-600",
 }) => {
-  const gearSize = size * 0.3;
+  const gearCount = 8;
   const radius = size * 0.55;
-
-  // Create 8 gears around the circumference
-  const gears = Array.from({ length: 8 }).map((_, i) => {
-    const angle = (i * 360) / 8;
-    const radian = (angle * Math.PI) / 180;
-    const x = Math.cos(radian) * radius;
-    const y = Math.sin(radian) * radius;
-    const rotation = angle;
-
-    return (
-      <g key={i} transform={`translate(${x}, ${y}) rotate(${rotation})`}>
-        <Cog
-          size={gearSize}
-          className="text-gray-400 opacity-70 animate-spin-slow"
-          strokeWidth={1.5}
-        />
-      </g>
-    );
-  });
+  const bgColor = backgroundColor.replace("bg-", "");
 
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox={`${-size / 2} ${-size / 2} ${size} ${size}`}
-      className={cn("", className)}
-      style={{ filter: "drop-shadow(0 2px 4px rgba(0,0,0,0.1))" }}
+    <div
+      className={cn("relative inline-flex items-center justify-center", className)}
+      style={{ width: `${size}px`, height: `${size}px` }}
     >
-      {/* Center circle (avatar) */}
-      <circle
-        cx="0"
-        cy="0"
-        r={size / 2.5}
-        className={backgroundColor}
-        fill="currentColor"
-      />
-
-      {/* Avatar text */}
-      <text
-        x="0"
-        y="0"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        className="text-white text-sm font-bold"
-        fill="white"
-        fontSize={size * 0.3}
+      {/* Center avatar circle */}
+      <div
+        className={`absolute inset-0 rounded-full ${backgroundColor} flex items-center justify-center text-white font-bold`}
+        style={{
+          width: `${size / 2.2}px`,
+          height: `${size / 2.2}px`,
+          fontSize: `${size * 0.25}px`,
+        }}
       >
         {initials}
-      </text>
+      </div>
 
       {/* Orbiting gears */}
-      {gears}
-    </svg>
+      {Array.from({ length: gearCount }).map((_, i) => {
+        const angle = (i * 360) / gearCount;
+        const radian = (angle * Math.PI) / 180;
+        const x = Math.cos(radian) * radius;
+        const y = Math.sin(radian) * radius;
+
+        return (
+          <div
+            key={i}
+            className="absolute animate-spin-slow"
+            style={{
+              left: "50%",
+              top: "50%",
+              transform: `translate(-50%, -50%)`,
+              width: `${size}px`,
+              height: `${size}px`,
+              pointerEvents: "none",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                left: `${radius + size / 2}px`,
+                top: `${size / 2}px`,
+                transform: `translate(-50%, -50%) rotate(${angle}deg)`,
+                opacity: 0.7,
+              }}
+            >
+              <Cog
+                size={size * 0.3}
+                className="text-gray-400"
+                strokeWidth={1.5}
+              />
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 };
 
