@@ -21,10 +21,11 @@ export const AnimatedGearIcon: React.FC<AnimatedGearIconProps> = ({
 
   // Map Tailwind colors to RGB for inline styles
   const colorMap: { [key: string]: string } = {
-    "bg-green-600": "rgb(22, 163, 74)",
-    "bg-red-600": "rgb(220, 38, 38)",
-    "bg-blue-600": "rgb(37, 99, 235)",
-    "bg-gray-600": "rgb(75, 85, 99)",
+    "bg-yellow-600": "rgb(202, 138, 4)",    // Development Mode
+    "bg-blue-600": "rgb(37, 99, 235)",      // Emulator Mode
+    "bg-green-600": "rgb(22, 163, 74)",     // Production Mode
+    "bg-red-600": "rgb(220, 38, 38)",       // Offline/Error
+    "bg-gray-600": "rgb(75, 85, 99)",       // Default
   };
   const bgColorRgb = colorMap[backgroundColor] || "rgb(75, 85, 99)";
 
