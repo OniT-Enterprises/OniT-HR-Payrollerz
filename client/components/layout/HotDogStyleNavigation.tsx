@@ -133,7 +133,7 @@ export default function HotDogStyleNavigation() {
   const location = useLocation();
   const user = getCurrentUser();
   const currentPath = location.pathname;
-  const { isConnected } = useFirebase();
+  const appMode = useAppMode();
 
   // Find the currently active module
   const currentMainModule = modules.find(
