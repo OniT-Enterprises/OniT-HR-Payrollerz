@@ -228,7 +228,7 @@ export default function HotDogStyleNavigation() {
           <Button
             variant="ghost"
             className="relative p-0 hover:bg-gray-700 transition-colors rounded-full"
-            title={user ? `${user.name} - Click for settings` : "Settings"}
+            title={user ? `${user.name} - ${appMode.label} - Click for settings` : "Settings"}
             onClick={() => handleNavigate("/settings")}
             style={{ width: "50px", height: "50px" }}
           >
@@ -244,7 +244,7 @@ export default function HotDogStyleNavigation() {
                         .toUpperCase()
                     : "U"
                 }
-                backgroundColor={isConnected ? "bg-green-600" : "bg-red-600"}
+                backgroundColor={appMode.bgClass}
               />
             </div>
           </Button>
