@@ -363,6 +363,11 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Development Mode Selector */}
+        <div className="mb-8">
+          <ModeSelector />
+        </div>
+
         {/* Firebase Emulator Status */}
         <Card className="mb-8">
           <CardHeader>
