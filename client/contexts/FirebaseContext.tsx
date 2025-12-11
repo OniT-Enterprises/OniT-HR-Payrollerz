@@ -45,13 +45,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
   const checkConnection = async () => {
     try {
-      // TEMPORARILY DISABLE Firebase for local development mode
-      console.log("🔧 Using local development mode - skipping Firebase connection");
-      setIsConnected(false);
-      setIsUsingMockData(true);
-      setError(null);
-      return;
-
       // Check network first
       if (!navigator.onLine) {
         console.warn("🌐 No network connection detected");
@@ -69,7 +62,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         return;
       }
 
-      // Use the safe connection manager
+      // Test connection to Firebase emulator
       let connected = false;
       try {
         connected = await testFirebaseConnection();
@@ -97,11 +90,9 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setIsConnected(connected);
       setIsUsingMockData(!connected);
 
-      if (!connected) {
-        // Error message is already set above based on the specific error type
-      } else {
+      if (connected) {
         setError(null);
-        console.log("✅ Firebase connection established");
+        console.log("✅ Firebase Emulator connection established");
       }
     } catch (err: any) {
       console.error("❌ Critical error in checkConnection:", err);
