@@ -225,104 +225,30 @@ export default function HotDogStyleNavigation() {
 
         {/* Right side - User info and settings */}
         <div className="flex items-center gap-3">
-          {/* User Avatar with Gear Hint */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative p-0 h-10 w-10 rounded-full hover:bg-gray-700 group"
-                title={user ? `${user.name} - Click for settings` : "User menu"}
-              >
-                {/* Gear wheel hint - visible on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300">
-                  <Cog className="h-10 w-10 text-gray-400 animate-spin-slow" />
-                </div>
-
-                {/* User Avatar */}
-                <Avatar className="h-8 w-8 relative z-10">
-                  <AvatarFallback
-                    className={`${isConnected ? "bg-green-600" : "bg-red-600"} text-white text-sm font-medium`}
-                  >
-                    {user
-                      ? user.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                      : "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-72 bg-gray-900 border-gray-700"
-              align="end"
-              sideOffset={5}
-            >
-              {user && (
-                <>
-                  <DropdownMenuItem className="text-gray-300 flex-col items-start pointer-events-none">
-                    <div className="flex items-center gap-2 w-full">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className={`h-8 w-8 ${isConnected ? "bg-green-600" : "bg-red-600"} rounded-full flex items-center justify-center`}
-                        >
-                          <span className="text-white text-sm font-medium">
-                            {user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs ml-auto">
-                        {user.role}
-                      </Badge>
-                    </div>
-                  </DropdownMenuItem>
-
-                  {/* Database Connection Status */}
-                  <div className="px-2 py-2">
-                    <div
-                      className={`${isConnected ? "bg-green-600" : "bg-red-600"} rounded-md px-3 py-2 flex items-center justify-center`}
-                    >
-                      <span className="text-white text-xs font-medium">
-                        {isConnected
-                          ? "Connected to Database"
-                          : "Not Connected to Database"}
-                      </span>
-                    </div>
-                  </div>
-
-                  <DropdownMenuSeparator className="bg-gray-700" />
-                </>
-              )}
-              <DropdownMenuItem
-                className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                onClick={() => handleNavigate("/settings")}
-              >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings & Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem
-                className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
-                onClick={() => {
-                  // Handle sign out
-                  const { signOutLocal } = require("@/lib/localAuth");
-                  signOutLocal();
-                  window.location.reload();
-                }}
-              >
-                <Activity className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Animated Gear Icon - Click to navigate to Settings */}
+          <Button
+            variant="ghost"
+            className="relative p-0 hover:bg-gray-700 transition-colors rounded-full"
+            title={user ? `${user.name} - Click for settings` : "Settings"}
+            onClick={() => handleNavigate("/settings")}
+            style={{ width: "50px", height: "50px" }}
+          >
+            <div className="flex items-center justify-center w-full h-full">
+              <AnimatedGearIcon
+                size={40}
+                initials={
+                  user
+                    ? user.name
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .toUpperCase()
+                    : "U"
+                }
+                backgroundColor={isConnected ? "bg-green-600" : "bg-red-600"}
+              />
+            </div>
+          </Button>
         </div>
       </div>
     </nav>
