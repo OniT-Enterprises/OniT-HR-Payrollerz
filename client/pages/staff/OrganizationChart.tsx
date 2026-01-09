@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -412,7 +412,7 @@ export default function OrganizationChart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
+        <HotDogStyleNavigation />
         <div className="p-6">
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
@@ -425,7 +425,7 @@ export default function OrganizationChart() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-8">
         {/* Header with Title and Controls */}

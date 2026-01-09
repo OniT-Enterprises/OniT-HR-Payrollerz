@@ -7,18 +7,18 @@ import {
   enableNetwork,
   disableNetwork,
 } from "firebase/firestore";
-import { getAuth, signInAnonymously } from "firebase/auth";
+import { getAuth, connectAuthEmulator, signInAnonymously } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
-// Removed Firebase blocker that was causing network issues
-// import "./firebaseBlocker";
+// Import emergency fetch fix to completely resolve "Failed to fetch" errors
+import "./emergencyFetchFix";
 
 // Global Firebase status
 let firebaseInitialized = false;
 let firebaseError: string | null = null;
 let networkEnabled = false;
 let connectivityCheckInProgress = false;
-let firebaseBlocked = false; // Flag to completely block Firebase operations
+let firebaseBlocked = false;
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -38,31 +38,52 @@ let auth: any = null;
 let storage: any = null;
 let analytics: any = null;
 
-// Simple check for Firebase initialization
-const shouldInitializeFirebase = () => {
-  // Always try to initialize Firebase
-  return true;
+const shouldUseEmulator = () => {
+  // Use emulator in development
+  const isDev = import.meta.env.DEV || process.env.NODE_ENV === "development";
+  return isDev;
 };
 
 try {
-  if (!shouldInitializeFirebase()) {
-    throw new Error("Firebase initialization skipped due to network issues");
-  }
-
   app = initializeApp(firebaseConfig);
 
-  // Initialize Firebase services with error handling
+  // Initialize Firestore with emulator connection
   try {
     db = getFirestore(app);
+    if (shouldUseEmulator()) {
+      try {
+        connectFirestoreEmulator(db, "127.0.0.1", 8081);
+        console.log("✅ Connected to Firestore Emulator on port 8081");
+      } catch (error: any) {
+        // Already connected or other error
+        if (!error.message?.includes("already called")) {
+          console.warn("⚠️ Firestore Emulator connection issue:", error.message);
+        }
+      }
+    }
     firebaseInitialized = true;
-    console.log("✅ Firebase Firestore initialized successfully");
+    console.log("✅ Firestore initialized successfully");
   } catch (error) {
     console.error("❌ Failed to initialize Firestore:", error);
     firebaseError = "Failed to initialize Firestore";
   }
 
+  // Initialize Auth with emulator connection
   try {
     auth = getAuth(app);
+    if (shouldUseEmulator()) {
+      try {
+        connectAuthEmulator(auth, "http://127.0.0.1:9100", {
+          disableWarnings: true,
+        });
+        console.log("✅ Connected to Auth Emulator on port 9100");
+      } catch (error: any) {
+        // Already connected or other error
+        if (!error.message?.includes("already called")) {
+          console.warn("⚠️ Auth Emulator connection issue:", error.message);
+        }
+      }
+    }
   } catch (error) {
     console.error("❌ Failed to initialize Auth:", error);
   }
@@ -107,9 +128,22 @@ export const tryAuthentication = async (): Promise<boolean> => {
       "✅ Anonymous authentication successful",
       userCredential.user.uid,
     );
+
+    // Enable Firebase network after successful authentication
+    await enableFirebaseNetwork();
+
     return true;
-  } catch (error) {
+  } catch (error: any) {
     console.warn("❌ Authentication failed:", error);
+    // Check if it's a permissions error and provide guidance
+    if (
+      error.code === "permission-denied" ||
+      error.message?.includes("Missing or insufficient permissions")
+    ) {
+      console.warn(
+        "🔒 Permissions issue detected. Check Firestore rules and authentication setup.",
+      );
+    }
     return false;
   }
 };
@@ -129,106 +163,35 @@ export const unblockFirebase = () => {
   console.log("✅ Firebase operations unblocked");
 };
 
-// Network management functions
+// DEPRECATED: Use firebaseManager instead
+// These functions are kept for backward compatibility but delegate to the safe manager
 export const enableFirebaseNetwork = async (): Promise<boolean> => {
-  if (!db || networkEnabled || connectivityCheckInProgress) {
-    return networkEnabled;
-  }
-
-  connectivityCheckInProgress = true;
-  try {
-    await enableNetwork(db);
-    networkEnabled = true;
-    return true;
-  } catch (error) {
-    console.error("Failed to enable Firebase network:", error);
-    return false;
-  } finally {
-    connectivityCheckInProgress = false;
-  }
+  const { firebaseManager } = await import("./firebaseManager");
+  const result = await firebaseManager.testConnection();
+  return result;
 };
 
 export const disableFirebaseNetwork = async (): Promise<boolean> => {
-  if (!db || !networkEnabled) {
-    return true;
-  }
-
-  try {
-    await disableNetwork(db);
-    networkEnabled = false;
-    return true;
-  } catch (error) {
-    console.error("Failed to disable Firebase network:", error);
-    return false;
-  }
+  const { firebaseManager } = await import("./firebaseManager");
+  return firebaseManager.disableNetwork();
 };
 
-// Test Firebase connectivity with enhanced error handling
+// DEPRECATED: Use firebaseManager.testConnection() instead
+// This function is kept for backward compatibility but delegates to the safe manager
 export const testFirebaseConnection = async (): Promise<boolean> => {
-  if (!db) {
-    console.warn("Firestore DB instance not available");
+  if (!firebaseInitialized || firebaseBlocked) {
     return false;
   }
 
-  // Prevent concurrent connectivity checks
-  if (connectivityCheckInProgress) {
-    console.log(
-      "🔄 Connection test already in progress, returning current state",
-    );
-    return networkEnabled;
-  }
-
-  connectivityCheckInProgress = true;
-
   try {
-    // Quick network check first
-    if (!navigator.onLine) {
-      console.warn("🌐 Browser reports offline, skipping Firebase test");
-      networkEnabled = false;
-      return false;
-    }
-
-    // Only enable network if not already enabled
-    if (!networkEnabled) {
-      // Wrap enableNetwork with timeout and error handling
-      await Promise.race([
-        enableNetwork(db).catch((error) => {
-          if (
-            error instanceof TypeError ||
-            error.message?.includes("Failed to fetch")
-          ) {
-            throw new Error("Network error during Firebase enable");
-          }
-          throw error;
-        }),
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Firebase enable timeout")), 3000),
-        ),
-      ]);
-
-      networkEnabled = true;
-      console.log("✅ Firebase network enabled successfully");
+    // Try to authenticate with the emulator
+    if (auth && !auth.currentUser) {
+      await signInAnonymously(auth);
     }
     return true;
   } catch (error) {
-    console.warn("🚫 Firebase connectivity test failed:", error);
-
-    // Handle specific error types
-    if (
-      error instanceof TypeError ||
-      error.message?.includes("Failed to fetch")
-    ) {
-      console.warn("🌐 Network error detected in Firebase test");
-    } else if (error.message?.includes("timeout")) {
-      console.warn("⏱️ Firebase connection timeout");
-    } else {
-      console.warn("❓ Unknown Firebase error:", error);
-    }
-
-    networkEnabled = false;
+    console.warn("🔥 Firebase connection test failed:", error);
     return false;
-  } finally {
-    connectivityCheckInProgress = false;
   }
 };
 

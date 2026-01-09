@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import React, { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -9,64 +9,56 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import MainNavigation from "@/components/layout/MainNavigation";
-import { employeeService } from "@/services/employeeService";
-import FirebaseTestComponent from "@/components/FirebaseTestComponent";
-import React, { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import { SimpleLogin } from "@/components/SimpleLogin";
 import {
   Users,
   DollarSign,
   Clock,
   TrendingUp,
   Calendar,
-  FileText,
-  CheckCircle,
-  MoreHorizontal,
   Download,
   Plus,
+  ArrowUpRight,
+  ArrowDownRight,
+  Minus,
 } from "lucide-react";
 
 export default function Dashboard() {
-  const [totalEmployees, setTotalEmployees] = useState(0);
-
-  useEffect(() => {
-    loadEmployeeCount();
-  }, []);
-
-  const loadEmployeeCount = async () => {
-    try {
-      const employees = await employeeService.getAllEmployees();
-      setTotalEmployees(employees.length);
-    } catch (error) {
-      console.error("Error loading employee count:", error);
-    }
-  };
+  // Local state for dashboard data
+  const [dashboardData, setDashboardData] = useState({
+    totalEmployees: 42,
+    monthlyPayroll: 1247800,
+    hoursThisWeek: 9856,
+    openPositions: 18,
+  });
 
   const stats = [
     {
       title: "Total Employees",
-      value: totalEmployees.toString(),
-      change: "Live data",
+      value: dashboardData.totalEmployees.toString(),
+      change: "+3",
       changeType: "positive" as const,
       icon: <Users className="h-5 w-5" />,
     },
     {
       title: "Monthly Payroll",
-      value: "$1,247,800",
+      value: `$${dashboardData.monthlyPayroll.toLocaleString()}`,
       change: "+8.2%",
       changeType: "positive" as const,
       icon: <DollarSign className="h-5 w-5" />,
     },
     {
       title: "Hours This Week",
-      value: "9,856",
+      value: dashboardData.hoursThisWeek.toLocaleString(),
       change: "-2.1%",
       changeType: "negative" as const,
       icon: <Clock className="h-5 w-5" />,
     },
     {
       title: "Open Positions",
-      value: "18",
+      value: dashboardData.openPositions.toString(),
       change: "+5",
       changeType: "neutral" as const,
       icon: <TrendingUp className="h-5 w-5" />,
@@ -77,86 +69,81 @@ export default function Dashboard() {
     {
       period: "November 2024",
       amount: "$1,247,800",
-      status: "Completed",
-      date: "Nov 30, 2024",
+      status: "completed",
+      employees: 42,
     },
     {
       period: "October 2024",
-      amount: "$1,198,450",
-      status: "Completed",
-      date: "Oct 31, 2024",
+      amount: "$1,198,250",
+      status: "completed",
+      employees: 41,
     },
     {
       period: "September 2024",
-      amount: "$1,156,200",
-      status: "Completed",
-      date: "Sep 30, 2024",
+      amount: "$1,156,900",
+      status: "completed",
+      employees: 39,
     },
   ];
 
   const upcomingTasks = [
-    { task: "Process December Payroll", due: "Dec 31, 2024", priority: "high" },
-    { task: "Year-end Tax Reports", due: "Jan 15, 2025", priority: "high" },
+    {
+      task: "Process December Payroll",
+      dueDate: "Dec 31, 2024",
+      priority: "high",
+    },
+    {
+      task: "Year-end Tax Reports",
+      dueDate: "Jan 15, 2025",
+      priority: "high",
+    },
     {
       task: "Benefits Enrollment Review",
-      due: "Dec 15, 2024",
+      dueDate: "Dec 15, 2024",
       priority: "medium",
     },
     {
-      task: "Performance Review Cycle",
-      due: "Dec 20, 2024",
+      task: "Q4 Performance Reviews",
+      dueDate: "Dec 20, 2024",
       priority: "medium",
     },
   ];
 
-  const recentActivity = [
+  const recentHires = [
     {
-      user: "Sarah Chen",
-      action: "completed payroll review",
-      time: "2 hours ago",
-      avatar: "SC",
+      name: "Sarah Johnson",
+      position: "Software Engineer",
+      department: "Engineering",
+      startDate: "Dec 2, 2024",
+      avatar: "/api/placeholder/32/32",
     },
     {
-      user: "Mike Rodriguez",
-      action: "updated employee benefits",
-      time: "4 hours ago",
-      avatar: "MR",
+      name: "Michael Chen",
+      position: "Product Manager",
+      department: "Product",
+      startDate: "Nov 28, 2024",
+      avatar: "/api/placeholder/32/32",
     },
     {
-      user: "Emma Thompson",
-      action: "submitted time-off request",
-      time: "6 hours ago",
-      avatar: "ET",
-    },
-    {
-      user: "System",
-      action: "automated backup completed",
-      time: "8 hours ago",
-      avatar: "SY",
+      name: "Emily Rodriguez",
+      position: "UX Designer",
+      department: "Design",
+      startDate: "Nov 25, 2024",
+      avatar: "/api/placeholder/32/32",
     },
   ];
-
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "high":
-        return "destructive";
-      case "medium":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-6">
-        {/* Temporary Firebase Test Component for Debugging */}
-        <FirebaseTestComponent />
+        {/* Simple Login Component */}
+        <SimpleLogin />
+
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">Main Dashboard!?</h1>
+            <h1 className="text-3xl font-bold">HR Dashboard</h1>
             <p className="text-muted-foreground">
               Welcome back! Here's what's happening with your HR operations.
             </p>
@@ -185,33 +172,44 @@ export default function Dashboard() {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{stat.value}</div>
-                <p
-                  className={`text-xs flex items-center gap-1 ${
-                    stat.changeType === "positive"
-                      ? "text-green-600"
-                      : stat.changeType === "negative"
-                        ? "text-red-600"
-                        : "text-muted-foreground"
-                  }`}
-                >
-                  {stat.change}
-                  <span className="text-muted-foreground">from last month</span>
-                </p>
+                <div className="flex items-center text-xs text-muted-foreground">
+                  {stat.changeType === "positive" && (
+                    <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
+                  )}
+                  {stat.changeType === "negative" && (
+                    <ArrowDownRight className="h-3 w-3 text-red-500 mr-1" />
+                  )}
+                  {stat.changeType === "neutral" && (
+                    <Minus className="h-3 w-3 text-gray-500 mr-1" />
+                  )}
+                  <span
+                    className={
+                      stat.changeType === "positive"
+                        ? "text-green-500"
+                        : stat.changeType === "negative"
+                          ? "text-red-500"
+                          : "text-gray-500"
+                    }
+                  >
+                    {stat.change}
+                  </span>
+                  <span className="ml-1">from last month</span>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Payroll Progress */}
-          <Card className="lg:col-span-2">
+          <Card>
             <CardHeader>
               <CardTitle>December Payroll Progress</CardTitle>
               <CardDescription>
                 Track the current payroll processing status
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="space-y-4">
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
                   <span>Employee Data Review</span>
@@ -235,51 +233,67 @@ export default function Dashboard() {
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between text-sm">
-                  <span>Tax Calculations</span>
-                  <span>45%</span>
+                  <span>Final Processing</span>
+                  <span>0%</span>
                 </div>
-                <Progress value={45} className="h-2" />
-              </div>
-              <div className="pt-4">
-                <Button className="w-full">Continue Payroll Processing</Button>
+                <Progress value={0} className="h-2" />
               </div>
             </CardContent>
           </Card>
 
           {/* Upcoming Tasks */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0">
-              <CardTitle>Upcoming Tasks</CardTitle>
-              <Button variant="ghost" size="icon">
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {upcomingTasks.map((task, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="flex-1">
-                    <p className="text-sm font-medium">{task.task}</p>
-                    <p className="text-xs text-muted-foreground">{task.due}</p>
-                  </div>
-                  <Badge variant={getPriorityColor(task.priority)}>
-                    {task.priority}
-                  </Badge>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Upcoming Tasks</CardTitle>
+                  <CardDescription>
+                    Important HR tasks and deadlines
+                  </CardDescription>
                 </div>
-              ))}
-              <Button variant="outline" className="w-full mt-4">
-                View All Tasks
-              </Button>
+                <Button variant="ghost" size="sm">
+                  View All
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {upcomingTasks.map((task, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between"
+                  >
+                    <div className="space-y-1">
+                      <p className="text-sm font-medium">{task.task}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {task.dueDate}
+                      </p>
+                    </div>
+                    <Badge
+                      variant={
+                        task.priority === "high"
+                          ? "destructive"
+                          : task.priority === "medium"
+                            ? "default"
+                            : "secondary"
+                      }
+                    >
+                      {task.priority}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Payrolls */}
           <Card>
             <CardHeader>
               <CardTitle>Recent Payrolls</CardTitle>
               <CardDescription>
-                Latest payroll processing history
+                Last 3 months of payroll processing
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -289,60 +303,59 @@ export default function Dashboard() {
                     key={index}
                     className="flex items-center justify-between"
                   >
-                    <div>
+                    <div className="space-y-1">
                       <p className="text-sm font-medium">{payroll.period}</p>
                       <p className="text-xs text-muted-foreground">
-                        {payroll.date}
+                        {payroll.employees} employees
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-medium">{payroll.amount}</p>
-                      <div className="flex items-center gap-1">
-                        <CheckCircle className="h-3 w-3 text-green-600" />
-                        <span className="text-xs text-green-600">
-                          {payroll.status}
-                        </span>
-                      </div>
+                      <Badge variant="outline" className="text-xs">
+                        {payroll.status}
+                      </Badge>
                     </div>
                   </div>
                 ))}
               </div>
-              <Button variant="outline" className="w-full mt-4">
-                View Payroll History
-              </Button>
             </CardContent>
           </Card>
 
-          {/* Recent Activity */}
+          {/* Recent Hires */}
           <Card>
             <CardHeader>
-              <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>Latest actions and updates</CardDescription>
+              <CardTitle>Recent Hires</CardTitle>
+              <CardDescription>
+                New team members who joined recently
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentActivity.map((activity, index) => (
-                  <div key={index} className="flex items-start gap-3">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback className="text-xs">
-                        {activity.avatar}
+                {recentHires.map((hire, index) => (
+                  <div key={index} className="flex items-center space-x-4">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src={hire.avatar} alt={hire.name} />
+                      <AvatarFallback>
+                        {hire.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
                       </AvatarFallback>
                     </Avatar>
-                    <div className="flex-1">
-                      <p className="text-sm">
-                        <span className="font-medium">{activity.user}</span>{" "}
-                        {activity.action}
-                      </p>
+                    <div className="space-y-1 flex-1">
+                      <p className="text-sm font-medium">{hire.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {activity.time}
+                        {hire.position} • {hire.department}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-xs text-muted-foreground">
+                        {hire.startDate}
                       </p>
                     </div>
                   </div>
                 ))}
               </div>
-              <Button variant="outline" className="w-full mt-4">
-                View All Activity
-              </Button>
             </CardContent>
           </Card>
         </div>

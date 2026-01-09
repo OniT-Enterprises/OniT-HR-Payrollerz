@@ -14,7 +14,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import {
   UserPlus,
   FileText,
@@ -159,7 +159,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">

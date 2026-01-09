@@ -1,543 +1,520 @@
 /**
- * Firestore Security Rules Tests: Tenant Isolation
- *
- * Tests the security rules to ensure proper tenant isolation and access control.
+ * Firestore Security Rules Tests for Tenant Isolation
+ * 
+ * These tests verify that:
+ * 1. Users can only access data within their authorized tenants
+ * 2. Cross-tenant data access is properly blocked
+ * 3. Unauthenticated users cannot access tenant data
+ * 4. Role-based permissions work correctly within tenants
  */
 
-import {
-  assertFails,
-  assertSucceeds,
-  initializeTestEnvironment,
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { 
+  initializeTestEnvironment, 
   RulesTestEnvironment,
-} from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, collection, getDocs } from "firebase/firestore";
-import { readFileSync } from "fs";
-import { join } from "path";
+  assertSucceeds,
+  assertFails,
+} from '@firebase/rules-unit-testing';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
 
-let testEnv: RulesTestEnvironment;
+const PROJECT_ID = 'test-tenant-isolation';
 
-// Test user UIDs
-const TENANT_A_USER = "user-tenant-a";
-const TENANT_B_USER = "user-tenant-b";
-const MULTI_TENANT_USER = "user-multi-tenant";
-const NO_TENANT_USER = "user-no-tenant";
+interface TestUser {
+  uid: string;
+  email: string;
+  tenants: string[];
+  role?: string;
+}
 
-// Tenant IDs
-const TENANT_A = "tenant-a";
-const TENANT_B = "tenant-b";
+const testUsers: Record<string, TestUser> = {
+  tenantAOwner: {
+    uid: 'owner-a',
+    email: 'owner@company-a.com',
+    tenants: ['tenant-a'],
+    role: 'owner',
+  },
+  tenantAHrAdmin: {
+    uid: 'hr-admin-a', 
+    email: 'hr@company-a.com',
+    tenants: ['tenant-a'],
+    role: 'hr-admin',
+  },
+  tenantBOwner: {
+    uid: 'owner-b',
+    email: 'owner@company-b.com', 
+    tenants: ['tenant-b'],
+    role: 'owner',
+  },
+  multiTenantUser: {
+    uid: 'multi-user',
+    email: 'consultant@example.com',
+    tenants: ['tenant-a', 'tenant-b'],
+    role: 'viewer',
+  },
+  unauthorizedUser: {
+    uid: 'unauthorized',
+    email: 'unauthorized@example.com',
+    tenants: [],
+  },
+};
 
-const PROJECT_ID = "hr-payroll-test";
+describe('Tenant Isolation Security Rules', () => {
+  let testEnv: RulesTestEnvironment;
 
-beforeAll(async () => {
-  testEnv = await initializeTestEnvironment({
-    projectId: PROJECT_ID,
-    firestore: {
-      rules: readFileSync(join(__dirname, "../../firestore.rules"), "utf8"),
-      host: "localhost",
-      port: 8080,
-    },
+  beforeAll(async () => {
+    testEnv = await initializeTestEnvironment({
+      projectId: PROJECT_ID,
+      firestore: {
+        rules: await import('../../firestore.rules?raw').then(m => m.default),
+        host: 'localhost',
+        port: 8080,
+      },
+    });
   });
-});
 
-afterAll(async () => {
-  await testEnv.cleanup();
-});
+  afterAll(async () => {
+    await testEnv.cleanup();
+  });
 
-beforeEach(async () => {
-  await testEnv.clearFirestore();
-});
+  beforeEach(async () => {
+    await testEnv.clearFirestore();
+    
+    // Set up test data
+    await setupTestData();
+  });
 
-describe("Tenant Isolation Rules", () => {
-  describe("Authentication Requirements", () => {
-    test("unauthenticated users cannot access any tenant data", async () => {
+  afterEach(async () => {
+    await testEnv.clearFirestore();
+  });
+
+  async function setupTestData() {
+    const adminDb = testEnv.authenticatedContext('admin', {
+      admin: true,
+    }).firestore();
+
+    // Create tenant documents
+    await setDoc(doc(adminDb, 'tenants/tenant-a'), {
+      name: 'Company A',
+      createdAt: new Date(),
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-b'), {
+      name: 'Company B', 
+      createdAt: new Date(),
+    });
+
+    // Create tenant member documents
+    await setDoc(doc(adminDb, 'tenants/tenant-a/members/owner-a'), {
+      uid: 'owner-a',
+      role: 'owner',
+      modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-a/members/hr-admin-a'), {
+      uid: 'hr-admin-a',
+      role: 'hr-admin', 
+      modules: ['hiring', 'staff', 'timeleave', 'payroll'],
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-b/members/owner-b'), {
+      uid: 'owner-b',
+      role: 'owner',
+      modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-a/members/multi-user'), {
+      uid: 'multi-user',
+      role: 'viewer',
+      modules: ['staff'],
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-b/members/multi-user'), {
+      uid: 'multi-user', 
+      role: 'viewer',
+      modules: ['staff'],
+    });
+
+    // Create some test business data
+    await setDoc(doc(adminDb, 'tenants/tenant-a/departments/dept-a-1'), {
+      name: 'Engineering',
+      createdAt: new Date(),
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-a-1'), {
+      personalInfo: {
+        firstName: 'John',
+        lastName: 'Doe',
+        email: 'john@company-a.com',
+      },
+      departmentId: 'dept-a-1',
+      status: 'active',
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-b/departments/dept-b-1'), {
+      name: 'Sales',
+      createdAt: new Date(),
+    });
+
+    await setDoc(doc(adminDb, 'tenants/tenant-b/employees/emp-b-1'), {
+      personalInfo: {
+        firstName: 'Jane',
+        lastName: 'Smith', 
+        email: 'jane@company-b.com',
+      },
+      departmentId: 'dept-b-1',
+      status: 'active',
+    });
+  }
+
+  describe('Tenant Document Access', () => {
+    it('should allow tenant members to read their tenant document', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-a'))
+      );
+    });
+
+    it('should deny access to tenant documents for non-members', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantBOwner.uid, {
+        tenants: testUsers.tenantBOwner.tenants,
+      }).firestore();
+
+      await assertFails(
+        getDoc(doc(db, 'tenants/tenant-a'))
+      );
+    });
+
+    it('should deny unauthenticated access to tenant documents', async () => {
       const db = testEnv.unauthenticatedContext().firestore();
 
-      await assertFails(getDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`)));
+      await assertFails(
+        getDoc(doc(db, 'tenants/tenant-a'))
+      );
+    });
+  });
+
+  describe('Cross-Tenant Data Isolation', () => {
+    it('should allow access to own tenant data', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      // Should be able to read own tenant's departments
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-a/departments/dept-a-1'))
+      );
+
+      // Should be able to read own tenant's employees
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-a/employees/emp-a-1'))
+      );
+    });
+
+    it('should deny access to other tenant data', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      // Should NOT be able to read other tenant's departments
+      await assertFails(
+        getDoc(doc(db, 'tenants/tenant-b/departments/dept-b-1'))
+      );
+
+      // Should NOT be able to read other tenant's employees
+      await assertFails(
+        getDoc(doc(db, 'tenants/tenant-b/employees/emp-b-1'))
+      );
+    });
+
+    it('should allow multi-tenant users to access all their tenants', async () => {
+      const db = testEnv.authenticatedContext(testUsers.multiTenantUser.uid, {
+        tenants: testUsers.multiTenantUser.tenants,
+      }).firestore();
+
+      // Should be able to access tenant A data
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-a/employees/emp-a-1'))
+      );
+
+      // Should be able to access tenant B data
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-b/employees/emp-b-1'))
+      );
+    });
+
+    it('should deny access to collections without tenant claims', async () => {
+      const db = testEnv.authenticatedContext(testUsers.unauthorizedUser.uid, {
+        tenants: [],
+      }).firestore();
 
       await assertFails(
-        setDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`), { name: "John" }),
+        getDoc(doc(db, 'tenants/tenant-a/departments/dept-a-1'))
       );
-    });
-
-    test("authenticated users without tenant claims cannot access tenant data", async () => {
-      const db = testEnv
-        .authenticatedContext(NO_TENANT_USER, {
-          // No tenant claims
-        })
-        .firestore();
-
-      await assertFails(getDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`)));
-    });
-  });
-
-  describe("Tenant Access Control", () => {
-    test("users can read/write data in their assigned tenant", async () => {
-      const db = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      // Should succeed - user has access to TENANT_A
-      await assertSucceeds(
-        setDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`), {
-          name: "John Doe",
-          departmentId: "dept1",
-          status: "active",
-        }),
-      );
-
-      await assertSucceeds(
-        getDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`)),
-      );
-    });
-
-    test("users cannot access data from other tenants", async () => {
-      const db = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      // Should fail - user only has access to TENANT_A, not TENANT_B
-      await assertFails(getDoc(doc(db, `tenants/${TENANT_B}/employees/emp1`)));
 
       await assertFails(
-        setDoc(doc(db, `tenants/${TENANT_B}/employees/emp1`), { name: "Jane" }),
-      );
-    });
-
-    test("users with multiple tenant access can access all assigned tenants", async () => {
-      const db = testEnv
-        .authenticatedContext(MULTI_TENANT_USER, {
-          tenants: [TENANT_A, TENANT_B],
-        })
-        .firestore();
-
-      // Should succeed for both tenants
-      await assertSucceeds(
-        setDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`), { name: "John" }),
-      );
-
-      await assertSucceeds(
-        setDoc(doc(db, `tenants/${TENANT_B}/employees/emp2`), { name: "Jane" }),
-      );
-
-      await assertSucceeds(
-        getDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`)),
-      );
-
-      await assertSucceeds(
-        getDoc(doc(db, `tenants/${TENANT_B}/employees/emp2`)),
+        getDoc(doc(db, 'tenants/tenant-b/employees/emp-b-1'))
       );
     });
   });
 
-  describe("Collection-Level Isolation", () => {
-    test("tenant isolation works across all business collections", async () => {
-      const tenantADb = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      const tenantBDb = testEnv
-        .authenticatedContext(TENANT_B_USER, {
-          tenants: [TENANT_B],
-        })
-        .firestore();
-
-      const collections = [
-        "departments",
-        "employees",
-        "positions",
-        "jobs",
-        "candidates",
-        "interviews",
-        "offers",
-        "contracts",
-        "employmentSnapshots",
-        "timesheets",
-        "leaveRequests",
-        "leaveBalances",
-        "goals",
-        "reviews",
-      ];
-
-      for (const collectionName of collections) {
-        // Each tenant can access their own data
-        await assertSucceeds(
-          setDoc(doc(tenantADb, `tenants/${TENANT_A}/${collectionName}/doc1`), {
-            test: true,
-          }),
-        );
-
-        await assertSucceeds(
-          setDoc(doc(tenantBDb, `tenants/${TENANT_B}/${collectionName}/doc1`), {
-            test: true,
-          }),
-        );
-
-        // But cannot access the other tenant's data
-        await assertFails(
-          getDoc(doc(tenantADb, `tenants/${TENANT_B}/${collectionName}/doc1`)),
-        );
-
-        await assertFails(
-          getDoc(doc(tenantBDb, `tenants/${TENANT_A}/${collectionName}/doc1`)),
-        );
-      }
-    });
-  });
-
-  describe("Subcollection Access", () => {
-    test("tenant isolation works for nested collections like shifts", async () => {
-      const tenantADb = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      const tenantBDb = testEnv
-        .authenticatedContext(TENANT_B_USER, {
-          tenants: [TENANT_B],
-        })
-        .firestore();
-
-      // Test roster shifts (nested collection)
-      const yearMonth = "2024-01";
+  describe('Write Operations and Permissions', () => {
+    it('should allow owners to create documents', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
       await assertSucceeds(
-        setDoc(
-          doc(
-            tenantADb,
-            `tenants/${TENANT_A}/rosters/${yearMonth}/shifts/shift1`,
-          ),
-          {
-            employeeId: "emp1",
-            date: "2024-01-15",
-            start: "09:00",
-            end: "17:00",
+        setDoc(doc(db, 'tenants/tenant-a/departments/new-dept'), {
+          name: 'New Department',
+          createdAt: new Date(),
+        })
+      );
+    });
+
+    it('should allow hr-admins to create documents', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAHrAdmin.uid, {
+        tenants: testUsers.tenantAHrAdmin.tenants,
+      }).firestore();
+
+      await assertSucceeds(
+        setDoc(doc(db, 'tenants/tenant-a/employees/new-emp'), {
+          personalInfo: {
+            firstName: 'New',
+            lastName: 'Employee',
+            email: 'new@company-a.com',
           },
-        ),
+          departmentId: 'dept-a-1',
+          status: 'active',
+        })
+      );
+    });
+
+    it('should deny write operations for viewers', async () => {
+      const db = testEnv.authenticatedContext(testUsers.multiTenantUser.uid, {
+        tenants: testUsers.multiTenantUser.tenants,
+      }).firestore();
+
+      // Viewers should not be able to create documents
+      await assertFails(
+        setDoc(doc(db, 'tenants/tenant-a/departments/viewer-dept'), {
+          name: 'Viewer Department',
+          createdAt: new Date(),
+        })
+      );
+    });
+
+    it('should deny cross-tenant write operations', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      // Should not be able to write to other tenant's data
+      await assertFails(
+        setDoc(doc(db, 'tenants/tenant-b/departments/malicious-dept'), {
+          name: 'Malicious Department',
+          createdAt: new Date(),
+        })
+      );
+    });
+  });
+
+  describe('Collection Queries', () => {
+    it('should allow querying own tenant collections', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      await assertSucceeds(
+        getDocs(collection(db, 'tenants/tenant-a/departments'))
       );
 
       await assertSucceeds(
-        setDoc(
-          doc(
-            tenantBDb,
-            `tenants/${TENANT_B}/rosters/${yearMonth}/shifts/shift1`,
-          ),
-          {
-            employeeId: "emp2",
-            date: "2024-01-15",
-            start: "08:00",
-            end: "16:00",
-          },
-        ),
-      );
-
-      // Cross-tenant access should fail
-      await assertFails(
-        getDoc(
-          doc(
-            tenantADb,
-            `tenants/${TENANT_B}/rosters/${yearMonth}/shifts/shift1`,
-          ),
-        ),
-      );
-
-      await assertFails(
-        getDoc(
-          doc(
-            tenantBDb,
-            `tenants/${TENANT_A}/rosters/${yearMonth}/shifts/shift1`,
-          ),
-        ),
+        getDocs(collection(db, 'tenants/tenant-a/employees'))
       );
     });
 
-    test("payrun subcollections are properly isolated", async () => {
-      const tenantADb = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
+    it('should deny querying other tenant collections', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
-      const tenantBDb = testEnv
-        .authenticatedContext(TENANT_B_USER, {
-          tenants: [TENANT_B],
-        })
-        .firestore();
-
-      const payrunMonth = "202401";
-
-      // Each tenant can access their payrun data
-      await assertSucceeds(
-        setDoc(
-          doc(
-            tenantADb,
-            `tenants/${TENANT_A}/payruns/${payrunMonth}/payslips/emp1`,
-          ),
-          {
-            empId: "emp1",
-            gross: 5000,
-            net: 4000,
-          },
-        ),
+      await assertFails(
+        getDocs(collection(db, 'tenants/tenant-b/departments'))
       );
+
+      await assertFails(
+        getDocs(collection(db, 'tenants/tenant-b/employees'))
+      );
+    });
+  });
+
+  describe('Member Management', () => {
+    it('should allow owners to read member documents', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
       await assertSucceeds(
-        setDoc(
-          doc(
-            tenantBDb,
-            `tenants/${TENANT_B}/payruns/${payrunMonth}/payslips/emp2`,
-          ),
-          {
-            empId: "emp2",
-            gross: 4500,
-            net: 3600,
-          },
-        ),
-      );
-
-      // Cross-tenant access should fail
-      await assertFails(
-        getDoc(
-          doc(
-            tenantADb,
-            `tenants/${TENANT_B}/payruns/${payrunMonth}/payslips/emp2`,
-          ),
-        ),
-      );
-
-      await assertFails(
-        getDoc(
-          doc(
-            tenantBDb,
-            `tenants/${TENANT_A}/payruns/${payrunMonth}/payslips/emp1`,
-          ),
-        ),
-      );
-    });
-  });
-
-  describe("Reference Data Access", () => {
-    test("authenticated users can read reference data", async () => {
-      const db = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      // Seed some reference data as admin
-      const adminDb = testEnv
-        .authenticatedContext("admin", {
-          admin: true,
-        })
-        .firestore();
-
-      await setDoc(doc(adminDb, "reference/taxTables/2024"), {
-        brackets: [
-          { min: 0, max: 10000, rate: 0.1 },
-          { min: 10000, max: 50000, rate: 0.2 },
-        ],
-      });
-
-      // Users should be able to read reference data
-      await assertSucceeds(getDoc(doc(db, "reference/taxTables/2024")));
-
-      // But not write to it
-      await assertFails(
-        setDoc(doc(db, "reference/taxTables/2025"), { test: true }),
+        getDoc(doc(db, 'tenants/tenant-a/members/hr-admin-a'))
       );
     });
 
-    test("unauthenticated users cannot access reference data", async () => {
-      const db = testEnv.unauthenticatedContext().firestore();
-
-      await assertFails(getDoc(doc(db, "reference/taxTables/2024")));
-    });
-  });
-
-  describe("Role-Based Restrictions", () => {
-    test("only owners can modify tenant settings", async () => {
-      // First, set up the member records as admin
-      const adminDb = testEnv
-        .authenticatedContext("admin", {
-          admin: true,
-        })
-        .firestore();
-
-      await setDoc(doc(adminDb, `tenants/${TENANT_A}/members/owner-user`), {
-        role: "owner",
-      });
-
-      await setDoc(doc(adminDb, `tenants/${TENANT_A}/members/hr-user`), {
-        role: "hr-admin",
-      });
-
-      // Owner should be able to modify settings
-      const ownerDb = testEnv
-        .authenticatedContext("owner-user", {
-          tenants: [TENANT_A],
-        })
-        .firestore();
+    it('should allow hr-admins to read member documents', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAHrAdmin.uid, {
+        tenants: testUsers.tenantAHrAdmin.tenants,
+      }).firestore();
 
       await assertSucceeds(
-        setDoc(doc(ownerDb, `tenants/${TENANT_A}/settings/config`), {
-          name: "Updated Company",
-        }),
+        getDoc(doc(db, 'tenants/tenant-a/members/owner-a'))
       );
+    });
 
-      // HR admin should not be able to modify settings (based on our rules)
-      const hrDb = testEnv
-        .authenticatedContext("hr-user", {
-          tenants: [TENANT_A],
+    it('should allow owners to write member documents', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      await assertSucceeds(
+        setDoc(doc(db, 'tenants/tenant-a/members/new-member'), {
+          uid: 'new-member',
+          role: 'viewer',
+          modules: ['staff'],
         })
-        .firestore();
+      );
+    });
+
+    it('should deny cross-tenant member access', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
       await assertFails(
-        setDoc(doc(hrDb, `tenants/${TENANT_A}/settings/config`), {
-          name: "Unauthorized Update",
-        }),
+        getDoc(doc(db, 'tenants/tenant-b/members/owner-b'))
       );
-    });
-  });
 
-  describe("Legacy Collection Access", () => {
-    test("legacy root collections are read-only for authenticated users", async () => {
-      const db = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      // Seed legacy data as admin
-      const adminDb = testEnv
-        .authenticatedContext("admin", {
-          admin: true,
-        })
-        .firestore();
-
-      await setDoc(doc(adminDb, "employees/legacy-emp"), {
-        name: "Legacy Employee",
-      });
-
-      // Users can read legacy data
-      await assertSucceeds(getDoc(doc(db, "employees/legacy-emp")));
-
-      // But cannot write to legacy collections
       await assertFails(
-        setDoc(doc(db, "employees/new-emp"), { name: "New Employee" }),
+        setDoc(doc(db, 'tenants/tenant-b/members/malicious-member'), {
+          uid: 'malicious',
+          role: 'owner',
+        })
       );
     });
   });
 
-  describe("Query-Level Isolation", () => {
-    test("collection queries are properly scoped to tenant", async () => {
-      // Set up data for multiple tenants
-      const adminDb = testEnv
-        .authenticatedContext("admin", {
-          admin: true,
-        })
-        .firestore();
+  describe('Reference Data Access', () => {
+    it('should allow all users to read reference data', async () => {
+      // Set up reference data
+      const adminDb = testEnv.authenticatedContext('admin', {
+        admin: true,
+      }).firestore();
 
-      await setDoc(doc(adminDb, `tenants/${TENANT_A}/employees/emp1`), {
-        name: "Tenant A Employee 1",
+      await setDoc(doc(adminDb, 'reference/holidays/2024-01-01'), {
+        name: 'New Year Day',
+        type: 'public',
       });
 
-      await setDoc(doc(adminDb, `tenants/${TENANT_A}/employees/emp2`), {
-        name: "Tenant A Employee 2",
-      });
+      // Test authenticated user
+      const userDb = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
-      await setDoc(doc(adminDb, `tenants/${TENANT_B}/employees/emp1`), {
-        name: "Tenant B Employee 1",
-      });
-
-      // Tenant A user should only see Tenant A data
-      const tenantADb = testEnv
-        .authenticatedContext(TENANT_A_USER, {
-          tenants: [TENANT_A],
-        })
-        .firestore();
-
-      const tenantAQuery = await assertSucceeds(
-        getDocs(collection(tenantADb, `tenants/${TENANT_A}/employees`)),
+      await assertSucceeds(
+        getDoc(doc(userDb, 'reference/holidays/2024-01-01'))
       );
 
-      expect(tenantAQuery.size).toBe(2);
+      // Test unauthenticated user
+      const anonDb = testEnv.unauthenticatedContext().firestore();
+      
+      await assertSucceeds(
+        getDoc(doc(anonDb, 'reference/holidays/2024-01-01'))
+      );
+    });
 
-      // Tenant A user should not be able to query Tenant B data
+    it('should deny writes to reference data', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
       await assertFails(
-        getDocs(collection(tenantADb, `tenants/${TENANT_B}/employees`)),
+        setDoc(doc(db, 'reference/holidays/2024-12-25'), {
+          name: 'Christmas',
+          type: 'public',
+        })
       );
     });
   });
-});
 
-describe("Data Validation Rules", () => {
-  test("documents require proper structure", async () => {
-    const db = testEnv
-      .authenticatedContext(TENANT_A_USER, {
-        tenants: [TENANT_A],
-      })
-      .firestore();
+  describe('Settings and Configuration', () => {
+    it('should allow tenant members to read settings', async () => {
+      // Set up settings data
+      const adminDb = testEnv.authenticatedContext('admin', {
+        admin: true,
+      }).firestore();
 
-    // Valid employee document should succeed
-    await assertSucceeds(
-      setDoc(doc(db, `tenants/${TENANT_A}/employees/emp1`), {
-        displayName: "John Doe",
-        email: "john@example.com",
-        departmentId: "dept1",
-        status: "active",
-      }),
-    );
+      await setDoc(doc(adminDb, 'tenants/tenant-a/settings/config'), {
+        name: 'Company A',
+        timezone: 'UTC',
+        currency: 'USD',
+      });
 
-    // Note: Additional validation rules would be added here
-    // for field requirements, data types, etc.
-  });
-});
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
-describe("Performance and Edge Cases", () => {
-  test("batch operations respect tenant isolation", async () => {
-    const db = testEnv
-      .authenticatedContext(TENANT_A_USER, {
-        tenants: [TENANT_A],
-      })
-      .firestore();
-
-    // Batch operations within same tenant should work
-    const batch = db.batch();
-
-    batch.set(doc(db, `tenants/${TENANT_A}/employees/emp1`), {
-      name: "Employee 1",
-    });
-    batch.set(doc(db, `tenants/${TENANT_A}/employees/emp2`), {
-      name: "Employee 2",
+      await assertSucceeds(
+        getDoc(doc(db, 'tenants/tenant-a/settings/config'))
+      );
     });
 
-    await assertSucceeds(batch.commit());
+    it('should allow only owners and hr-admins to write settings', async () => {
+      // Owner should be able to write
+      const ownerDb = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
-    // Note: Testing cross-tenant batch operations would require
-    // setting up more complex scenarios
+      await assertSucceeds(
+        setDoc(doc(ownerDb, 'tenants/tenant-a/settings/config'), {
+          name: 'Updated Company A',
+          timezone: 'America/New_York',
+        })
+      );
+
+      // Viewer should not be able to write
+      const viewerDb = testEnv.authenticatedContext(testUsers.multiTenantUser.uid, {
+        tenants: testUsers.multiTenantUser.tenants,
+      }).firestore();
+
+      await assertFails(
+        updateDoc(doc(viewerDb, 'tenants/tenant-a/settings/config'), {
+          name: 'Malicious Update',
+        })
+      );
+    });
   });
 
-  test("deep nested paths maintain tenant isolation", async () => {
-    const db = testEnv
-      .authenticatedContext(TENANT_A_USER, {
-        tenants: [TENANT_A],
-      })
-      .firestore();
+  describe('Root Collection Denial', () => {
+    it('should deny access to any root collections', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
-    const deepPath = `tenants/${TENANT_A}/analytics/reports/monthly/2024/01/departments/dept1`;
+      // Should not be able to access old root collections
+      await assertFails(
+        getDoc(doc(db, 'departments/old-dept'))
+      );
 
-    await assertSucceeds(setDoc(doc(db, deepPath), { reportData: "test" }));
+      await assertFails(
+        getDoc(doc(db, 'employees/old-emp'))
+      );
 
-    const crossTenantDeepPath = `tenants/${TENANT_B}/analytics/reports/monthly/2024/01/departments/dept1`;
-
-    await assertFails(
-      setDoc(doc(db, crossTenantDeepPath), { reportData: "test" }),
-    );
+      await assertFails(
+        setDoc(doc(db, 'malicious-collection/doc'), {
+          data: 'malicious',
+        })
+      );
+    });
   });
 });

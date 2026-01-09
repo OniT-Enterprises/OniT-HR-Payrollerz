@@ -1,379 +1,268 @@
 /**
- * TypeScript types for multi-tenant HR & Payroll system
+ * TypeScript types for multi-tenant structure and RBAC
  */
 
-// ============================================================================
-// TENANT & RBAC TYPES
-// ============================================================================
-
-export type UserRole = "owner" | "hr-admin" | "manager" | "viewer";
-
-export type ModuleName =
-  | "hiring"
-  | "staff"
-  | "timeleave"
-  | "performance"
-  | "payroll"
-  | "reports";
-
-export interface TenantMember {
-  id: string;
-  role: UserRole;
-  modules?: ModuleName[]; // Optional module allowlist (defaults to role-based access)
-  createdAt: Date;
-  updatedAt: Date;
-}
-
+// Core tenant types
 export interface TenantConfig {
+  id: string;
   name: string;
+  slug?: string;
   branding?: {
-    logo?: string;
+    logoUrl?: string;
     primaryColor?: string;
     secondaryColor?: string;
   };
   features?: {
-    timesheetApproval?: boolean;
-    overtimeCalculation?: boolean;
-    leaveAccrual?: boolean;
-    performanceReviews?: boolean;
+    hiring?: boolean;
+    timeleave?: boolean;
+    performance?: boolean;
+    payroll?: boolean;
+    reports?: boolean;
   };
   payrollPolicy?: {
-    payPeriod: "weekly" | "biweekly" | "monthly";
-    overtimeThreshold: number; // hours per week
-    overtimeMultiplier: number; // e.g., 1.5
-    timezone: string;
+    overtimeThreshold?: number; // hours per week
+    overtimeRate?: number; // multiplier (e.g., 1.5)
+    payrollCycle?: 'weekly' | 'biweekly' | 'monthly';
   };
-  createdAt: Date;
-  updatedAt: Date;
+  settings?: {
+    timezone?: string;
+    currency?: string;
+    dateFormat?: string;
+  };
+  createdAt?: any;
+  updatedAt?: any;
 }
 
-export interface TenantContext {
-  tenantId: string;
+// RBAC types
+export type TenantRole = 'owner' | 'hr-admin' | 'manager' | 'viewer';
+
+export type ModulePermission = 
+  | 'hiring' 
+  | 'staff' 
+  | 'timeleave' 
+  | 'performance' 
+  | 'payroll' 
+  | 'reports';
+
+export interface TenantMember {
+  uid: string;
+  role: TenantRole;
+  modules?: ModulePermission[];
+  email?: string;
+  displayName?: string;
+  joinedAt?: any;
+  lastActiveAt?: any;
+  permissions?: {
+    [key: string]: boolean;
+  };
+}
+
+// Custom claims structure for Firebase Auth
+export interface CustomClaims {
+  tenants: string[];
+  role?: TenantRole;
+  [key: string]: any;
+}
+
+// Session context types
+export interface TenantSession {
+  tid: string;
+  role: TenantRole;
+  modules: ModulePermission[];
   config: TenantConfig;
   member: TenantMember;
-  permissions: {
-    canRead: (module: ModuleName) => boolean;
-    canWrite: (module: ModuleName) => boolean;
-    canManageDepartment: (departmentId: string) => boolean;
-    canManageEmployee: (employeeId: string) => boolean;
-  };
 }
 
-// ============================================================================
-// CORE ENTITY TYPES
-// ============================================================================
-
+// Department types
 export interface Department {
-  id: string;
+  id?: string;
   name: string;
-  managerId?: string; // Employee ID of department manager
-  createdAt: Date;
-  updatedAt: Date;
+  description?: string;
+  managerId?: string;
+  parentDepartmentId?: string;
+  budget?: number;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
+// Employee types
 export interface Employee {
-  id: string;
-  displayName: string;
-  email?: string;
+  id?: string;
+  personalInfo: {
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    phoneApp: string;
+    appEligible: boolean;
+    address: string;
+    dateOfBirth: string;
+    socialSecurityNumber: string;
+    emergencyContactName: string;
+    emergencyContactPhone: string;
+  };
+  jobDetails: {
+    employeeId: string;
+    department: string;
+    position: string;
+    hireDate: string;
+    employmentType: string;
+    workLocation: string;
+    manager: string;
+  };
+  compensation: {
+    monthlySalary: number;
+    annualLeaveDays: number;
+    benefitsPackage: string;
+  };
+  documents: {
+    employeeIdCard: { number: string; expiryDate: string; required: boolean };
+    socialSecurityNumber: { number: string; expiryDate: string; required: boolean };
+    electoralCard: { number: string; expiryDate: string; required: boolean };
+    idCard: { number: string; expiryDate: string; required: boolean };
+    passport: { number: string; expiryDate: string; required: boolean };
+    workContract: { fileUrl: string; uploadDate: string };
+    nationality: string;
+    workingVisaResidency: { number: string; expiryDate: string; fileUrl: string };
+  };
+  status: 'active' | 'inactive' | 'terminated';
+  createdAt?: any;
+  updatedAt?: any;
+  // Tenant-specific fields
   departmentId: string;
   managerId?: string;
-  status: "active" | "inactive" | "terminated";
-  createdAt: Date;
-  updatedAt: Date;
 }
 
+// Position types
 export interface Position {
-  id: string;
+  id?: string;
   title: string;
   grade?: string;
   baseMonthlyUSD: number;
   leaveDaysPerYear: number;
   departmentId?: string;
-  createdAt: Date;
-  updatedAt: Date;
+  description?: string;
+  requirements?: string[];
+  responsibilities?: string[];
+  createdAt?: any;
+  updatedAt?: any;
 }
 
-// ============================================================================
-// HIRING MODULE TYPES
-// ============================================================================
-
-export type JobStatus = "draft" | "open" | "closed";
-export type JobApproverMode = "department" | "specific";
-
+// Job posting types
 export interface Job {
-  id: string;
-  title: string;
-  description?: string;
-  departmentId: string;
-  hiringManagerId: string; // Must belong to the department
-  approverMode: JobApproverMode;
-  approverDepartmentId?: string; // Required if approverMode === 'department'
-  approverId?: string; // Required if approverMode === 'specific'
-  status: JobStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type CandidateStage =
-  | "applied"
-  | "screening"
-  | "interview"
-  | "offer"
-  | "hired"
-  | "rejected";
-
-export interface Candidate {
-  id: string;
-  jobId: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  stage: CandidateStage;
-  notes?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Interview {
-  id: string;
-  candidateId: string;
-  when: Date;
-  panel: string[]; // Array of employee IDs
-  notes?: string;
-  outcome?: "pass" | "fail" | "pending";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type OfferStatus = "draft" | "sent" | "accepted" | "declined";
-
-export interface Offer {
-  id: string;
-  candidateId: string;
-  positionId: string;
-  terms: {
-    startDate: Date;
-    baseMonthlyUSD: number;
-    weeklyHours: number;
-    overtimeRate?: number;
-  };
-  status: OfferStatus;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Contract {
-  id: string;
-  employeeId: string;
-  positionId: string;
-  startDate: Date;
-  endDate?: Date;
-  weeklyHours: number;
-  overtimeRate: number;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface EmploymentSnapshot {
-  id: string; // Format: {employeeId}_{asOf_YYYYMMDD}
-  employeeId: string;
-  position: Position;
-  contract: Contract;
-  asOf: Date; // Effective date of this snapshot
-  createdAt: Date; // When this snapshot was created (immutable)
-}
-
-// ============================================================================
-// TIME & LEAVE MODULE TYPES
-// ============================================================================
-
-export interface Shift {
-  id: string;
-  employeeId: string;
-  date: string; // Format: YYYY-MM-DD
-  start: string; // Format: HH:MM
-  end: string; // Format: HH:MM
-  role?: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Timesheet {
-  id: string; // Format: {empId}_{weekIso}
-  empId: string;
-  weekIso: string; // ISO week format: YYYY-Www
-  regularHours: number;
-  overtimeHours: number;
-  paidLeaveHours: number;
-  unpaidLeaveHours: number;
-  sundays: number; // Number of Sundays worked (for special rates)
-  computedAt: Date;
-}
-
-export type LeaveType =
-  | "vacation"
-  | "sick"
-  | "personal"
-  | "maternity"
-  | "paternity"
-  | "unpaid";
-export type LeaveStatus = "pending" | "approved" | "rejected";
-
-export interface LeaveRequest {
-  id: string;
-  empId: string;
-  type: LeaveType;
-  from: Date;
-  to: Date;
-  hours?: number; // Total hours requested
-  reason?: string;
-  status: LeaveStatus;
-  approvedBy?: string;
-  approvedAt?: Date;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface LeaveBalance {
-  id: string; // Format: {empId}_{year}
-  empId: string;
-  year: number;
-  openingDays: number;
-  movements: LeaveMovement[];
-  computedBalance: number;
-  updatedAt: Date;
-}
-
-export interface LeaveMovement {
-  type: "accrual" | "usage" | "adjustment";
-  days: number; // Positive for accrual/adjustment up, negative for usage/adjustment down
-  reason: string;
-  at: Date;
-}
-
-// ============================================================================
-// PERFORMANCE MODULE TYPES
-// ============================================================================
-
-export interface Goal {
-  id: string;
-  empId: string;
-  title: string;
-  description?: string;
-  targetDate: Date;
-  status: "draft" | "active" | "completed" | "cancelled";
-  progress: number; // 0-100
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface Review {
-  id: string;
-  empId: string;
-  reviewerId: string;
-  period: string; // e.g., "2024-Q1"
-  overallRating: number; // 1-5
-  goals: string[]; // Goal IDs
-  feedback?: string;
-  status: "draft" | "submitted" | "approved";
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface PromotionSignal {
-  id: string; // Format: {year}_{quarter}_{empId}
-  empId: string;
-  score: number; // 0-100
-  recommended: "promote" | "bonus" | "none";
-  explain: string;
-  createdAt: Date;
-}
-
-// ============================================================================
-// PAYROLL MODULE TYPES
-// ============================================================================
-
-export interface PayrunInput {
-  id: string; // Format: {yyyymm}_{empId}
-  empId: string;
-  month: string; // Format: YYYY-MM
-  snapshot: EmploymentSnapshot;
-  timesheetTotals: {
-    regularHours: number;
-    overtimeHours: number;
-    paidLeaveHours: number;
-    unpaidLeaveHours: number;
-  };
-  computedAt: Date;
-}
-
-export interface Payslip {
-  id: string; // Format: {yyyymm}_{empId}
-  empId: string;
-  month: string; // Format: YYYY-MM
-  gross: {
-    regular: number;
-    overtime: number;
-    paidLeave: number;
-    total: number;
-  };
-  deductions: {
-    tax: number;
-    socialSecurity: number;
-    medicare: number;
-    other: number;
-    total: number;
-  };
-  net: number;
-  locked: boolean; // Payslips become immutable when locked
-  createdAt: Date;
-  lockedAt?: Date;
-}
-
-// ============================================================================
-// FIREBASE AUTH CUSTOM CLAIMS
-// ============================================================================
-
-export interface CustomClaims {
-  tenants: string[]; // Array of tenant IDs the user has access to
-  role?: UserRole; // Optional global role
-}
-
-// ============================================================================
-// API REQUEST/RESPONSE TYPES
-// ============================================================================
-
-export interface CreateJobRequest {
+  id?: string;
   title: string;
   description?: string;
   departmentId: string;
   hiringManagerId: string;
-  approverMode: JobApproverMode;
+  approverMode: 'department' | 'name';
   approverDepartmentId?: string;
-  approverId?: string;
-}
-
-export interface CreateOfferRequest {
-  candidateId: string;
-  positionId: string;
-  terms: {
-    startDate: string; // ISO date string
-    baseMonthlyUSD: number;
-    weeklyHours: number;
-    overtimeRate?: number;
+  approverId: string;
+  status: 'draft' | 'open' | 'closed';
+  positionId?: string;
+  requirements?: string[];
+  benefits?: string[];
+  salaryRange?: {
+    min: number;
+    max: number;
+    currency: string;
   };
+  location?: string;
+  employmentType?: 'full-time' | 'part-time' | 'contract' | 'intern';
+  postedDate?: any;
+  closingDate?: any;
+  createdAt?: any;
+  updatedAt?: any;
 }
 
-export interface CreateShiftRequest {
+// Candidate types
+export interface Candidate {
+  id?: string;
+  jobId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  stage: 'applied' | 'screening' | 'interview' | 'offer' | 'hired' | 'rejected';
+  resume?: {
+    fileUrl: string;
+    fileName: string;
+    uploadDate: any;
+  };
+  notes?: string;
+  appliedDate?: any;
+  lastUpdated?: any;
+  createdAt?: any;
+  updatedAt?: any;
+}
+
+// Contract types
+export interface Contract {
+  id?: string;
   employeeId: string;
-  date: string; // YYYY-MM-DD
-  start: string; // HH:MM
-  end: string; // HH:MM
-  role?: string;
+  positionId: string;
+  startDate: string;
+  endDate?: string;
+  weeklyHours: number;
+  overtimeRate: number;
+  status: 'active' | 'expired' | 'terminated';
+  createdAt?: any;
+  updatedAt?: any;
 }
 
-export interface ApproveLeaveRequest {
-  requestId: string;
-  approved: boolean;
-  note?: string;
+// Filter and query options
+export interface ListEmployeesOptions {
+  departmentId?: string;
+  status?: Employee['status'];
+  managerId?: string;
+  limit?: number;
+  offset?: number;
 }
+
+export interface ListJobsOptions {
+  departmentId?: string;
+  status?: Job['status'];
+  hiringManagerId?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface ListShiftsOptions {
+  employeeId?: string;
+  dateRange?: {
+    start: string; // YYYY-MM-DD
+    end: string;   // YYYY-MM-DD
+  };
+  limit?: number;
+  offset?: number;
+}
+
+// Default RBAC matrix
+export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, ModulePermission[]> = {
+  owner: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+  'hr-admin': ['hiring', 'staff', 'timeleave', 'payroll', 'performance', 'reports'],
+  manager: ['staff', 'timeleave', 'performance'], // Limited to own team
+  viewer: [], // Read-only access, defined by explicit modules
+};
+
+// Permission check helpers
+export const hasModulePermission = (
+  role: TenantRole,
+  modules: ModulePermission[] | undefined,
+  requiredModule: ModulePermission
+): boolean => {
+  // Owner and hr-admin have access to all modules
+  if (role === 'owner' || role === 'hr-admin') {
+    return true;
+  }
+  
+  // Check explicit module permissions
+  return modules?.includes(requiredModule) ?? false;
+};
+
+export const canWrite = (role: TenantRole): boolean => {
+  return role === 'owner' || role === 'hr-admin';
+};
+
+export const canManage = (role: TenantRole): boolean => {
+  return role === 'owner' || role === 'hr-admin';
+};

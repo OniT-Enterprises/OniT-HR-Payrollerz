@@ -8,8 +8,8 @@ import React, {
 import {
   isFirebaseReady,
   getFirebaseError,
-  testFirebaseConnection,
 } from "@/lib/firebase";
+import { testFirebaseConnection, getFirebaseStatus } from "@/lib/firebaseManager";
 
 interface FirebaseContextType {
   isOnline: boolean;
@@ -62,42 +62,39 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         return;
       }
 
-      // Wrap Firebase connection test with additional error handling
+      // Test connection to Firebase emulator
       let connected = false;
       try {
-        connected = await Promise.race([
-          testFirebaseConnection(),
-          new Promise<boolean>((_, reject) =>
-            setTimeout(() => reject(new Error("Connection timeout")), 5000),
-          ),
-        ]);
-      } catch (connectionError) {
+        connected = await testFirebaseConnection();
+      } catch (connectionError: any) {
         console.warn("🔥 Firebase connection test failed:", connectionError);
 
-        // Check for specific TypeError cases
-        if (
+        // Handle specific Firebase internal errors gracefully
+        if (connectionError.message?.includes('INTERNAL ASSERTION FAILED')) {
+          console.warn("🚨 Firebase internal error detected - using fallback mode");
+          setError("Firebase experiencing internal issues - using demo data");
+        } else if (
           connectionError instanceof TypeError ||
           connectionError.message?.includes("Failed to fetch") ||
           connectionError.message?.includes("fetch")
         ) {
           console.warn("🌐 Network fetch error detected, using offline mode");
-          connected = false;
+          setError("Network error - using demo data");
         } else {
           console.warn("🚫 Other connection error:", connectionError);
-          connected = false;
+          setError("Connection failed - using demo data");
         }
+        connected = false;
       }
 
       setIsConnected(connected);
       setIsUsingMockData(!connected);
 
-      if (!connected) {
-        setError("Using demo data - Firebase connection unavailable");
-      } else {
+      if (connected) {
         setError(null);
-        console.log("✅ Firebase connection established");
+        console.log("✅ Firebase Emulator connection established");
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error("❌ Critical error in checkConnection:", err);
 
       // Ensure we always set safe fallback state
@@ -113,10 +110,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   };
 
   useEffect(() => {
-    // Check initial connection
-    checkConnection();
+    console.log('🚀 FirebaseProvider initializing with Firebase Emulator');
 
-    // Listen for online/offline events
     const handleOnline = () => {
       setIsOnline(true);
       checkConnection();
@@ -125,18 +120,19 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     const handleOffline = () => {
       setIsOnline(false);
       setIsConnected(false);
+      setIsUsingMockData(true);
+      setError('Device is offline');
     };
+
+    // Initial connection check
+    checkConnection();
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);
 
-    // Periodic connection check
-    const interval = setInterval(checkConnection, 120000); // Check every 2 minutes (reduced to prevent assertion errors)
-
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
-      clearInterval(interval);
     };
   }, []);
 

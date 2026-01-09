@@ -1,11 +1,12 @@
 # OniT HR Payroll System
 
-A comprehensive, modern HR and Payroll management system built with React, TypeScript, and Firebase. Designed for companies to efficiently manage employees, departments, payroll, and organizational data..
+A comprehensive, modern HR and Payroll management system built with React, TypeScript, Express.js, and SQLite. Designed for companies to efficiently manage employees, departments, payroll, hiring, and organizational data. Features a local-first development approach with easy migration to Google Firestore for cloud deployment.
 
 ![OniT HR Payroll](https://img.shields.io/badge/OniT-HR%20Payroll-blue)
 ![React](https://img.shields.io/badge/React-18.x-blue)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
-![Firebase](https://img.shields.io/badge/Firebase-10.x-orange)
+![Express](https://img.shields.io/badge/Express.js-4.x-green)
+![SQLite](https://img.shields.io/badge/SQLite-3.x-lightblue)
 ![Vite](https://img.shields.io/badge/Vite-5.x-purple)
 
 ## 🚀 Features
@@ -34,29 +35,46 @@ A comprehensive, modern HR and Payroll management system built with React, TypeS
 
 ### 👤 Hiring & Offboarding
 
-- **Candidate Management** - Track applications and candidates
+- **Job Adverts Management** - Create and manage job openings with:
+  - Contract Type (Permanent / Fixed-Term)
+  - Contract Duration (for fixed-term positions)
+  - Probation Period (Article 14 of the Labour Code)
+  - Candidate status tracking
+- **Candidate Management** - Track applications and candidates through the hiring pipeline
 - **Offboarding Process** - Structured employee departure workflow
 - **Exit Interviews** - Built-in exit interview management
 - **Status Tracking** - Monitor onboarding/offboarding progress
 
 ### 🔧 System Features
 
-- **Firebase Integration** - Real-time database and authentication
+- **Local-First Development** - SQLite database for rapid development and testing
+- **RESTful API** - Express.js backend with well-structured API routes
 - **Responsive Design** - Works on desktop, tablet, and mobile
-- **Data Export** - CSV export capabilities
+- **Data Export** - CSV export capabilities with local data persistence
 - **Search & Filtering** - Advanced search across all modules
 - **Dark/Light Theme** - Customizable interface themes
+- **Cloud Migration Ready** - Easy export to Google Firestore for production deployment
 
 ## 🛠️ Technology Stack
 
-- **Frontend**: React 18, TypeScript, Vite
+### Frontend
+- **Framework**: React 18, TypeScript, Vite
 - **Styling**: Tailwind CSS, Radix UI, Lucide Icons
-- **Backend**: Firebase (Firestore, Auth, Storage)
 - **State Management**: React Context, Custom Hooks
 - **Forms**: React Hook Form, Zod Validation
 - **Routing**: React Router v6
 - **Charts**: Recharts
 - **File Processing**: Papa Parse (CSV)
+
+### Backend (Local Development)
+- **Server**: Express.js (Node.js)
+- **Database**: SQLite 3
+- **API Routes**: RESTful API for employees, departments, jobs, candidates, etc.
+
+### Cloud (Production)
+- **Database**: Google Firestore
+- **Authentication**: Firebase Authentication
+- **Storage**: Firebase Cloud Storage
 
 ## 📋 Prerequisites
 
@@ -64,7 +82,6 @@ Before you begin, ensure you have the following installed:
 
 - **Node.js** (version 18.x or higher)
 - **npm** or **yarn** package manager
-- **Firebase CLI** (for deployment)
 - **Git** (for version control)
 
 ## 🚀 Installation & Setup
@@ -84,55 +101,28 @@ npm install
 yarn install
 ```
 
-### 3. Firebase Configuration
+### 3. Local Development Setup (SQLite + Express)
 
-1. Create a Firebase project at [Firebase Console](https://console.firebase.google.com)
-2. Enable Firestore Database, Authentication, and Storage
-3. Copy your Firebase config and create `client/lib/firebase.ts`:
+The application uses SQLite for local development with an Express.js backend.
 
-```typescript
-import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+**No additional configuration is required** for local development. The SQLite database (`payroll.db`) is automatically initialized on first run.
 
-const firebaseConfig = {
-  apiKey: "your-api-key",
-  authDomain: "your-auth-domain",
-  projectId: "your-project-id",
-  storageBucket: "your-storage-bucket",
-  messagingSenderId: "your-messaging-sender-id",
-  appId: "your-app-id",
-};
+### 4. Environment Variables (Optional)
 
-const app = initializeApp(firebaseConfig);
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
-```
-
-### 4. Environment Variables
-
-Create a `.env.local` file in the root directory:
+Create a `.env.local` file in the root directory for any custom configuration:
 
 ```env
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-auth-domain
-VITE_FIREBASE_PROJECT_ID=your-project-id
-VITE_FIREBASE_STORAGE_BUCKET=your-storage-bucket
-VITE_FIREBASE_MESSAGING_SENDER_ID=your-messaging-sender-id
-VITE_FIREBASE_APP_ID=your-app-id
+# Development environment variables (optional)
+# The application runs with SQLite locally by default
 ```
 
 ### 5. Run the Development Server
 
 ```bash
 npm run dev
-# or
-yarn dev
 ```
 
-The application will be available at `http://localhost:8080`
+The application will be available at `http://localhost:5173` with the Express.js API backend running on `http://localhost:3000`.
 
 ## 📁 Project Structure
 
@@ -147,14 +137,32 @@ OniT-HR-Payroll/
 │   │   ├── staff/         # Employee management
 │   │   ├── hiring/        # Recruitment & offboarding
 │   │   ├── dashboards/    # Analytics dashboards
+│   │   ├── payroll/       # Payroll management
+│   │   ├── time-leave/    # Time & Leave tracking
 │   │   └── reports/       # Reporting modules
-│   ├── services/          # Firebase services
+│   ├── services/          # API service clients
+│   │   ├── localDataService.ts  # SQLite data operations
+│   │   ├── employeeService.ts
+│   │   ├── departmentService.ts
+│   │   └── ...
 │   ├── lib/               # Utility libraries
 │   ├── hooks/             # Custom React hooks
-│   └── contexts/          # React contexts
-├── public/                # Static assets
-├── firebase.json          # Firebase configuration
-└── package.json          # Dependencies and scripts
+│   ├── contexts/          # React contexts
+│   └── types/             # TypeScript type definitions
+├── server/                # Express.js backend
+│   ├── routes/            # API routes
+│   │   ├── employees.ts
+│   │   ├── departments.ts
+│   │   ├── jobs.ts
+│   │   ├── candidates.ts
+│   │   └── ...
+│   ├── db.ts             # SQLite database initialization
+│   └── index.ts          # Express server entry point
+├── shared/               # Shared utilities and types
+├── public/               # Static assets
+├── payroll.db            # SQLite database file
+├── package.json          # Dependencies and scripts
+└── vite.config.ts        # Vite configuration
 ```
 
 ## 🔐 Authentication
@@ -170,7 +178,7 @@ For production, configure Firebase Authentication with your preferred providers.
 
 ### Employee Management (`/staff`)
 
-- **All Employees** - Complete employee directory
+- **All Employees** - Complete employee directory with search and filtering
 - **Add Employee** - New employee onboarding form
 - **Departments** - Department management and analytics
 - **Organization Chart** - Visual company structure
@@ -179,47 +187,62 @@ For production, configure Firebase Authentication with your preferred providers.
 
 - **Staff Dashboard** - Employee overview and statistics
 - **Time & Leave** - Time tracking and leave management
+- **Hiring Dashboard** - Recruitment pipeline overview
 
 ### Hiring (`/hiring`)
 
-- **Candidate Selection** - Recruitment pipeline
-- **Offboarding** - Employee departure management
+- **Create Job Advert** - Post new job openings with contract details (type, duration, probation period)
+- **Candidate Selection** - Manage candidates in the recruitment pipeline
+- **Interviews** - Track interview scheduling and results
+- **Onboarding** - Manage new hire onboarding process
+- **Offboarding** - Employee departure management with exit interviews
+
+### Payroll (`/payroll`)
+
+- **Run Payroll** - Process monthly payroll calculations
+- **Bank Transfers** - Manage salary payment transfers
+- **Deductions & Advances** - Handle employee deductions and advances
+- **Benefits Enrollment** - Employee benefit management
+- **Payroll History** - View historical payroll records
+- **Tax Reports** - Generate tax documentation
 
 ### Reports (`/reports`)
 
 - **Payroll Reports** - Comprehensive payroll analytics
+- **Attendance Reports** - Attendance tracking and analysis
+- **Employee Reports** - Individual employee data exports
+- **Custom Reports** - Generate custom business reports
 
-## 🚀 Deployment
+## 🚀 Development Workflow
 
-### Firebase Hosting
+### Local Development (SQLite)
 
-1. Install Firebase CLI:
+1. Run `npm run dev` to start both the Vite frontend and Express backend
+2. Data is stored in `payroll.db` (SQLite)
+3. API calls are made to the local Express server (`http://localhost:3000`)
+4. Use the CSV export feature to backup data locally
 
-```bash
-npm install -g firebase-tools
-```
+### Migrating to Firestore (Production)
 
-2. Login and initialize:
+When ready to deploy to production with Google Firestore:
 
-```bash
-firebase login
-firebase init hosting
-```
+1. Set up Firebase project at [Firebase Console](https://console.firebase.google.com)
+2. Enable Firestore Database, Authentication, and Storage
+3. Export data from SQLite to JSON/CSV format
+4. Import data into Firestore using Firebase Admin SDK or custom migration scripts
+5. Update the `client/lib/firebase.ts` with your Firebase config
+6. Deploy to Firebase Hosting or Vercel/Netlify
 
-3. Build and deploy:
+For detailed migration instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
 
-```bash
-npm run build
-firebase deploy
-```
+## 📊 Database Schema (SQLite)
 
-### Other Platforms
-
-The application can be deployed to any static hosting service:
-
-- **Vercel**: Connect your GitHub repository
-- **Netlify**: Deploy from Git or drag & drop
-- **AWS S3**: Static website hosting
+The SQLite database includes tables for:
+- **employees** - Employee information and compensation
+- **departments** - Department data and hierarchy
+- **jobs** - Job advert postings with contract details
+- **candidates** - Recruitment pipeline data
+- **payroll** - Payroll records and calculations
 
 ## 🤝 Contributing
 
@@ -238,28 +261,61 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For support and questions:
 
 - Create an issue in this repository
-- Contact: [Your Contact Information]
-- Documentation: [Your Documentation URL]
+- Review existing documentation in the repository
+- Check [AGENTS.md](AGENTS.md) for development guidelines
 
 ## 🔄 Recent Updates
 
-- ✅ Complete Firebase integration
+- ✅ SQLite + Express.js backend for local development
+- ✅ Job Advert management with contract type, duration, and probation period fields
+- ✅ RESTful API for all core modules (employees, departments, jobs, candidates)
 - ✅ Bulk CSV import with column mapping
 - ✅ Department management with visual customization
 - ✅ Comprehensive offboarding workflow
-- ✅ Monthly salary display throughout application
 - ✅ Profile completeness tracking
-- ✅ Real-time data synchronization
+- ✅ Real-time data synchronization (local)
+- ✅ Cloud migration path to Firestore
 
 ## 🎯 Roadmap
 
-- [ ] Advanced reporting and analytics
-- [ ] Mobile application
-- [ ] API integration capabilities
-- [ ] Advanced role-based permissions
-- [ ] Payroll processing automation
-- [ ] Performance review module
+- [ ] Full Firestore integration for production
+- [ ] Mobile application (React Native)
+- [ ] Advanced reporting and predictive analytics
+- [ ] Machine learning-based candidate matching
+- [ ] Automated payroll processing
+- [ ] Advanced role-based permissions (RBAC)
+- [ ] API integrations (HR systems, accounting software)
+- [ ] Performance review module enhancements
+
+## 📚 Additional Documentation
+
+- [AGENTS.md](AGENTS.md) - Development guidelines and coding standards
+- [DEPLOYMENT.md](DEPLOYMENT.md) - Deployment and production setup
+- [ENVIRONMENT.md](ENVIRONMENT.md) - Environment variables and configuration
+- [CONTRIBUTING.md](CONTRIBUTING.md) - Contribution guidelines
 
 ---
 
 **OniT Enterprises** - Building the future of HR technology
+
+## Quick Start Example
+
+```bash
+# 1. Clone and install
+git clone https://github.com/OniT-Enterprises/OniT-HR-Payroll-2.git
+cd OniT-HR-Payroll-2
+npm install
+
+# 2. Start development
+npm run dev
+
+# 3. Open browser to http://localhost:5173
+# Login with demo@onit.com / demo123
+
+# 4. Create your first job advert
+# Navigate to Hiring → Create Job Advert
+# Fill in contract details and post
+
+# 5. Export data anytime
+# Use the Export feature to backup your data locally
+```

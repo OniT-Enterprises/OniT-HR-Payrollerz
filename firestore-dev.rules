@@ -2,32 +2,23 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TEMPORARY DEVELOPMENT RULES - REMOVE IN PRODUCTION!
-    // These rules allow read/write access for development purposes
-    
-    // Allow read/write to employees and departments for development
-    match /employees/{empId} {
-      allow read, write: if true; // DEVELOPMENT ONLY!
-    }
-    
-    match /departments/{deptId} {
-      allow read, write: if true; // DEVELOPMENT ONLY!
-    }
-    
-    // Keep the secure tenant-based rules for production data
-    match /tenants/{tid}/{document=**} {
-      allow read, write: if request.auth != null && tid in request.auth.token.tenants;
-    }
-    
-    // Reference data 
-    match /reference/{document=**} {
-      allow read: if request.auth != null;
-      allow write: if false;
-    }
-    
-    // Deny everything else
+    // DEVELOPMENT RULES - VERY PERMISSIVE
+    // These rules allow authenticated users to read/write any document
+    // Use ONLY for development and testing!
+
+    // Allow all operations for authenticated users
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
+    }
+
+    // Also allow for anonymous/development users
+    match /{document=**} {
+      allow read, write: if request.auth != null && request.auth.token.firebase.sign_in_provider == 'anonymous';
+    }
+
+    // Emergency fallback for development (VERY PERMISSIVE - REMOVE IN PRODUCTION)
+    match /{document=**} {
+      allow read, write: if true;
     }
   }
 }

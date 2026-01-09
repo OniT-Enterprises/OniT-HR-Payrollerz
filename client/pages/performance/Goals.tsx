@@ -37,7 +37,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import {
   Target,
   Users,
@@ -842,7 +842,7 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">

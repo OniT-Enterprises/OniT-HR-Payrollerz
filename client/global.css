@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Ensure content doesn't hide behind sticky navigation */
+  .content-with-sticky-nav {
+    padding-top: 80px; /* Adjust based on navigation height */
+  }
+}
+
 @layer base {
   /**
    * Tailwind CSS theme
@@ -86,6 +101,20 @@
     --sidebar-border: 215 20% 18%;
     --sidebar-ring: 214 75% 55%;
   }
+}
+
+/* Custom animations */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
 }
 
 @layer base {

@@ -7,5 +7,6 @@ initializeApp();
 export * from "./hiring";
 export * from "./timeleave";
 export * from "./payroll";
+export * from "./tenant";
 
 // You can add more function modules here as they're created

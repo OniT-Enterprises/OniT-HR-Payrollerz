@@ -1,244 +1,197 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useTenant } from "@/contexts/TenantContext";
-import { Building2, Users, Settings, RefreshCw } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useTenant } from '@/contexts/TenantContext';
+import { Building, ChevronDown, Check, Loader2, AlertCircle } from 'lucide-react';
+import { TenantRole } from '@/types/tenant';
+
+const roleColors: Record<TenantRole, string> = {
+  owner: 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300',
+  'hr-admin': 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300',
+  manager: 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300',
+  viewer: 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300',
+};
+
+const roleLabels: Record<TenantRole, string> = {
+  owner: 'Owner',
+  'hr-admin': 'HR Admin',
+  manager: 'Manager',
+  viewer: 'Viewer',
+};
 
 interface TenantSwitcherProps {
   className?: string;
-  showDetails?: boolean;
 }
 
-export function TenantSwitcher({
-  className,
-  showDetails = false,
-}: TenantSwitcherProps) {
-  const {
-    currentTenant,
-    availableTenants,
-    loading,
-    error,
-    switchTenant,
-    refreshTenant,
+export function TenantSwitcher({ className }: TenantSwitcherProps) {
+  const { 
+    session, 
+    availableTenants, 
+    switchTenant, 
+    loading: sessionLoading,
+    error: sessionError 
   } = useTenant();
-  const { toast } = useToast();
+  
   const [switching, setSwitching] = useState(false);
+  const [switchError, setSwitchError] = useState<string | null>(null);
 
   const handleTenantSwitch = async (tenantId: string) => {
-    if (tenantId === currentTenant?.tenantId) return;
+    if (tenantId === session?.tid) return; // Already on this tenant
 
-    setSwitching(true);
     try {
+      setSwitching(true);
+      setSwitchError(null);
       await switchTenant(tenantId);
-      toast({
-        title: "Tenant switched",
-        description: `Now viewing tenant: ${tenantId}`,
-      });
-    } catch (err) {
-      toast({
-        title: "Switch failed",
-        description:
-          err instanceof Error ? err.message : "Failed to switch tenant",
-        variant: "destructive",
-      });
+    } catch (error: any) {
+      console.error('Tenant switch failed:', error);
+      setSwitchError(error.message || 'Failed to switch tenant');
     } finally {
       setSwitching(false);
     }
   };
 
-  const handleRefresh = async () => {
-    try {
-      await refreshTenant();
-      toast({
-        title: "Tenant refreshed",
-        description: "Tenant data has been updated",
-      });
-    } catch (err) {
-      toast({
-        title: "Refresh failed",
-        description:
-          err instanceof Error ? err.message : "Failed to refresh tenant",
-        variant: "destructive",
-      });
-    }
-  };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "owner":
-        return "default";
-      case "hr-admin":
-        return "secondary";
-      case "manager":
-        return "outline";
-      case "viewer":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
-
-  if (loading) {
+  // Show loading state during initial session load
+  if (sessionLoading) {
     return (
-      <Card className={className}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <RefreshCw className="h-4 w-4 animate-spin" />
-            <span className="text-sm text-muted-foreground">
-              Loading tenant...
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      </div>
     );
   }
 
-  if (error) {
+  // Show error state if session failed to load
+  if (sessionError && !session) {
     return (
-      <Card className={className}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Building2 className="h-4 w-4 text-destructive" />
-              <span className="text-sm text-destructive">Tenant Error</span>
-            </div>
-            <Button size="sm" variant="outline" onClick={handleRefresh}>
-              <RefreshCw className="h-3 w-3" />
-            </Button>
-          </div>
-          {showDetails && (
-            <p className="text-xs text-muted-foreground mt-2">{error}</p>
-          )}
-        </CardContent>
-      </Card>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <AlertCircle className="h-4 w-4 text-destructive" />
+        <span className="text-sm text-destructive">No access</span>
+      </div>
     );
   }
 
-  if (!currentTenant) {
+  // Show minimal state if no session available
+  if (!session) {
     return (
-      <Card className={className}>
-        <CardContent className="p-4">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">
-              No tenant selected
-            </span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className={`flex items-center gap-2 ${className}`}>
+        <Building className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm text-muted-foreground">No tenant</span>
+      </div>
     );
   }
 
+  // Main tenant switcher UI
   return (
-    <Card className={className}>
-      {showDetails && (
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center gap-2">
-            <Building2 className="h-4 w-4" />
-            Tenant Workspace
-          </CardTitle>
-        </CardHeader>
-      )}
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Tenant Selector */}
-          <div className="flex items-center gap-2">
-            <Select
-              value={currentTenant.tenantId}
-              onValueChange={handleTenantSwitch}
-              disabled={switching || availableTenants.length <= 1}
-            >
-              <SelectTrigger className="h-8 text-sm">
-                <SelectValue placeholder="Select tenant" />
-              </SelectTrigger>
-              <SelectContent>
-                {availableTenants.map((tenantId) => (
-                  <SelectItem key={tenantId} value={tenantId}>
-                    <div className="flex items-center gap-2">
-                      <Building2 className="h-3 w-3" />
-                      {tenantId}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleRefresh}
-              disabled={switching}
-            >
-              <RefreshCw
-                className={`h-3 w-3 ${switching ? "animate-spin" : ""}`}
-              />
-            </Button>
-          </div>
-
-          {/* Current Tenant Info */}
-          {showDetails && (
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Tenant:</span>
-                <span className="font-medium">
-                  {currentTenant.config.name || currentTenant.tenantId}
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-muted-foreground">Role:</span>
-                <Badge
-                  variant={getRoleBadgeVariant(currentTenant.member.role)}
-                  className="text-xs"
-                >
-                  {currentTenant.member.role}
-                </Badge>
-              </div>
-
-              {currentTenant.member.modules && (
-                <div className="flex items-start justify-between">
-                  <span className="text-muted-foreground">Modules:</span>
-                  <div className="flex flex-wrap gap-1 max-w-32">
-                    {currentTenant.member.modules.map((module) => (
-                      <Badge key={module} variant="outline" className="text-xs">
-                        {module}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Quick Access Info */}
-          {!showDetails && (
-            <div className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1">
-                <Users className="h-3 w-3" />
-                <span className="text-muted-foreground">
-                  {currentTenant.config.name || currentTenant.tenantId}
-                </span>
-              </div>
-              <Badge
-                variant={getRoleBadgeVariant(currentTenant.member.role)}
-                className="text-xs"
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button
+          variant="outline"
+          className={`flex items-center gap-2 h-10 px-3 ${className}`}
+          disabled={switching}
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-6 w-6 flex-shrink-0">
+              {session.config.branding?.logoUrl ? (
+                <AvatarImage 
+                  src={session.config.branding.logoUrl} 
+                  alt={session.config.name}
+                />
+              ) : null}
+              <AvatarFallback className="text-xs">
+                {session.config.name.substring(0, 2).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            
+            <div className="flex flex-col items-start min-w-0">
+              <span className="text-sm font-medium truncate max-w-32">
+                {session.config.name}
+              </span>
+              <Badge 
+                variant="secondary" 
+                className={`text-xs px-1 py-0 h-4 ${roleColors[session.role]}`}
               >
-                {currentTenant.member.role}
+                {roleLabels[session.role]}
               </Badge>
             </div>
+          </div>
+          
+          {switching ? (
+            <Loader2 className="h-4 w-4 animate-spin flex-shrink-0" />
+          ) : (
+            <ChevronDown className="h-4 w-4 flex-shrink-0" />
           )}
-        </div>
-      </CardContent>
-    </Card>
+        </Button>
+      </DropdownMenuTrigger>
+      
+      <DropdownMenuContent align="start" className="w-64">
+        <DropdownMenuLabel>Switch Organization</DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        
+        {availableTenants.length === 0 ? (
+          <DropdownMenuItem disabled>
+            <AlertCircle className="h-4 w-4 mr-2" />
+            No organizations available
+          </DropdownMenuItem>
+        ) : (
+          availableTenants.map((tenant) => (
+            <DropdownMenuItem
+              key={tenant.id}
+              onClick={() => handleTenantSwitch(tenant.id)}
+              className="flex items-center gap-2 p-3"
+              disabled={switching}
+            >
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <Avatar className="h-6 w-6 flex-shrink-0">
+                  <AvatarFallback className="text-xs">
+                    {tenant.name.substring(0, 2).toUpperCase()}
+                  </AvatarFallback>
+                </Avatar>
+                
+                <div className="flex flex-col items-start min-w-0 flex-1">
+                  <span className="text-sm font-medium truncate">
+                    {tenant.name}
+                  </span>
+                  <Badge 
+                    variant="secondary" 
+                    className={`text-xs px-1 py-0 h-4 ${roleColors[tenant.role]}`}
+                  >
+                    {roleLabels[tenant.role]}
+                  </Badge>
+                </div>
+                
+                {tenant.id === session.tid && (
+                  <Check className="h-4 w-4 text-primary flex-shrink-0" />
+                )}
+              </div>
+            </DropdownMenuItem>
+          ))
+        )}
+        
+        {switchError && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem disabled className="text-destructive">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              {switchError}
+            </DropdownMenuItem>
+          </>
+        )}
+        
+        <DropdownMenuSeparator />
+        <DropdownMenuItem disabled className="text-xs text-muted-foreground">
+          Tenant ID: {session.tid}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
 

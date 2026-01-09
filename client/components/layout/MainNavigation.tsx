@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { TenantSwitcher } from "@/components/TenantSwitcher";
+import { getCurrentUser, isAuthenticated } from "@/lib/localAuth";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,6 +10,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
 import {
   Building,
   Settings,
@@ -40,6 +41,7 @@ export default function MainNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const user = getCurrentUser();
 
   const navigationItems = [
     {
@@ -79,7 +81,7 @@ export default function MainNavigation() {
       id: "staff",
       label: "Staff",
       icon: <Users className="h-5 w-5" />,
-      color: "text-purple-400",
+      color: "text-blue-400",
       items: [
         {
           label: "All Employees",
@@ -98,16 +100,16 @@ export default function MainNavigation() {
         },
         {
           label: "Organization Chart",
-          icon: <BarChart3 className="h-4 w-4" />,
+          icon: <Building2 className="h-4 w-4" />,
           path: "/staff/org-chart",
         },
       ],
     },
     {
-      id: "time-leave",
+      id: "timeleave",
       label: "Time & Leave",
       icon: <Clock className="h-5 w-5" />,
-      color: "text-blue-400",
+      color: "text-purple-400",
       items: [
         {
           label: "Time Tracking",
@@ -120,8 +122,8 @@ export default function MainNavigation() {
           path: "/time-leave/attendance",
         },
         {
-          label: "Leave Requests & Approvals",
-          icon: <FileText className="h-4 w-4" />,
+          label: "Leave Requests",
+          icon: <Heart className="h-4 w-4" />,
           path: "/time-leave/requests",
         },
         {
@@ -138,14 +140,14 @@ export default function MainNavigation() {
       color: "text-orange-400",
       items: [
         {
-          label: "Reviews",
-          icon: <FileText className="h-4 w-4" />,
-          path: "/performance/reviews",
-        },
-        {
           label: "Goals & OKRs",
           icon: <Target className="h-4 w-4" />,
           path: "/performance/goals",
+        },
+        {
+          label: "Reviews",
+          icon: <Award className="h-4 w-4" />,
+          path: "/performance/reviews",
         },
         {
           label: "Training & Certifications",
@@ -163,7 +165,7 @@ export default function MainNavigation() {
       id: "payroll",
       label: "Payroll",
       icon: <Calculator className="h-5 w-5" />,
-      color: "text-emerald-400",
+      color: "text-yellow-400",
       items: [
         {
           label: "Run Payroll",
@@ -176,14 +178,14 @@ export default function MainNavigation() {
           path: "/payroll/history",
         },
         {
-          label: "Tax Reports",
-          icon: <PieChart className="h-4 w-4" />,
-          path: "/payroll/taxes",
+          label: "Bank Transfers",
+          icon: <CreditCard className="h-4 w-4" />,
+          path: "/payroll/transfers",
         },
         {
-          label: "Bank Transfers",
-          icon: <DollarSign className="h-4 w-4" />,
-          path: "/payroll/transfers",
+          label: "Tax Reports",
+          icon: <FileText className="h-4 w-4" />,
+          path: "/payroll/taxes",
         },
         {
           label: "Benefits Enrollment",
@@ -191,8 +193,8 @@ export default function MainNavigation() {
           path: "/payroll/benefits",
         },
         {
-          label: "Deductions/Advances",
-          icon: <CreditCard className="h-4 w-4" />,
+          label: "Deductions & Advances",
+          icon: <DollarSign className="h-4 w-4" />,
           path: "/payroll/deductions",
         },
       ],
@@ -200,159 +202,156 @@ export default function MainNavigation() {
     {
       id: "reports",
       label: "Reports",
-      icon: <FileText className="h-5 w-5" />,
+      icon: <BarChart3 className="h-5 w-5" />,
       color: "text-pink-400",
       items: [
-        {
-          label: "Payroll Reports",
-          icon: <Calculator className="h-4 w-4" />,
-          path: "/reports/payroll",
-        },
         {
           label: "Employee Reports",
           icon: <Users className="h-4 w-4" />,
           path: "/reports/employees",
         },
         {
+          label: "Payroll Reports",
+          icon: <Calculator className="h-4 w-4" />,
+          path: "/reports/payroll",
+        },
+        {
           label: "Attendance Reports",
-          icon: <Clock className="h-4 w-4" />,
+          icon: <Calendar className="h-4 w-4" />,
           path: "/reports/attendance",
         },
         {
           label: "Custom Reports",
-          icon: <BarChart3 className="h-4 w-4" />,
+          icon: <PieChart className="h-4 w-4" />,
           path: "/reports/custom",
         },
       ],
     },
   ];
 
-  const handleDropdownClick = (itemId: string) => {
-    // Navigate to module dashboard
-    navigate(`/${itemId}`);
-    setActiveDropdown(itemId);
+  const isActiveRoute = (path: string) => {
+    return location.pathname === path;
   };
 
-  const handleNavigation = (path: string) => {
+  const isActiveSection = (sectionId: string) => {
+    const section = navigationItems.find((item) => item.id === sectionId);
+    if (!section) return false;
+
+    return section.items.some((item) => isActiveRoute(item.path));
+  };
+
+  const handleDropdownClick = (dropdownId: string) => {
+    setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
+  };
+
+  const handleNavigate = (path: string) => {
     navigate(path);
-    // Don't close dropdown when navigating to submenu items
+    setActiveDropdown(null);
   };
-
-  const isActiveModule = (moduleId: string) => {
-    return location.pathname.startsWith(`/${moduleId}`);
-  };
-
-  const isMainDashboard = () => {
-    return location.pathname === "/" || location.pathname === "/dashboard";
-  };
-
-  // Determine which module should show submenu based on current path
-  const getCurrentModule = () => {
-    const path = location.pathname;
-    if (path.startsWith("/hiring")) return "hiring";
-    if (path.startsWith("/staff")) return "staff";
-    if (path.startsWith("/time-leave")) return "time-leave";
-    if (path.startsWith("/performance")) return "performance";
-    if (path.startsWith("/payroll")) return "payroll";
-    if (path.startsWith("/reports")) return "reports";
-    return null;
-  };
-
-  // Set active dropdown based on current path
-  React.useEffect(() => {
-    const currentModule = getCurrentModule();
-    if (currentModule && !isMainDashboard()) {
-      setActiveDropdown(currentModule);
-    } else {
-      setActiveDropdown(null);
-    }
-  }, [location.pathname]);
 
   return (
-    <div className="sticky top-0 z-50">
-      <nav className="bg-gray-900 border-b border-gray-800 h-14 flex items-center justify-between px-4">
-        {/* Logo */}
+    <nav className="bg-gray-900 border-b border-gray-700 px-4 sm:px-6 lg:px-8 sticky top-0 z-50">
+      <div className="flex justify-between h-16">
+        {/* Logo and Main Navigation */}
         <div className="flex items-center">
-          <Button
-            variant="ghost"
-            className="flex items-center gap-2 hover:bg-gray-800 text-white p-2"
-            onClick={() => navigate("/")}
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded bg-primary">
-              <Building className="h-5 w-5 text-primary-foreground" />
-            </div>
-            <span className="text-lg font-semibold">Payroll</span>
-          </Button>
-        </div>
+          <div className="flex-shrink-0 flex items-center">
+            <img
+              src="https://cdn.builder.io/api/v1/image/assets%2F460f188acad442d387e4846176efeb72%2F1cd62202d1d04226be6dc6ced94436eb?format=webp&width=800"
+              alt="ONIT Logo"
+              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={() => navigate("/")}
+            />
+          </div>
 
-        {/* Main Navigation */}
-        <div className="flex-1 flex items-center justify-center px-8">
-          <div className="flex items-center gap-6 w-full max-w-6xl">
-            {navigationItems.map((item) => {
-              const isActive =
-                isActiveModule(item.id) || activeDropdown === item.id;
-
-              // Define exact colors to match the image
-              const getModuleColors = (moduleId: string) => {
-                switch (moduleId) {
-                  case "hiring":
-                    return { border: "#4ade80", bg: "#22c55e" }; // Green
-                  case "staff":
-                    return { border: "#8b5cf6", bg: "#7c3aed" }; // Purple
-                  case "time-leave":
-                    return { border: "#3b82f6", bg: "#2563eb" }; // Blue
-                  case "performance":
-                    return { border: "#f97316", bg: "#ea580c" }; // Orange
-                  case "payroll":
-                    return { border: "#10b981", bg: "#059669" }; // Emerald
-                  case "reports":
-                    return { border: "#ec4899", bg: "#db2777" }; // Pink
-                  default:
-                    return { border: "#6b7280", bg: "#4b5563" };
-                }
+          {/* Main Navigation Items */}
+          <div className="hidden md:ml-6 md:flex md:flex-1">
+            {navigationItems.map((section) => {
+              // Map colors to border classes
+              const borderColorMap = {
+                "text-green-400": "border-green-400",
+                "text-blue-400": "border-blue-400",
+                "text-purple-400": "border-purple-400",
+                "text-orange-400": "border-orange-400",
+                "text-yellow-400": "border-yellow-400",
+                "text-pink-400": "border-pink-400",
               };
 
-              const colors = getModuleColors(item.id);
+              const borderClass =
+                borderColorMap[section.color as keyof typeof borderColorMap] ||
+                "border-gray-400";
 
               return (
-                <Button
-                  key={item.id}
-                  variant="ghost"
-                  className={`flex items-center gap-2 px-4 py-2 h-10 border rounded-md transition-all ${
-                    isActive
-                      ? "text-white"
-                      : "text-gray-300 hover:text-white border-gray-600 hover:border-gray-500"
-                  }`}
-                  style={{
-                    borderColor: isActive ? colors.border : "#6b7280",
-                    backgroundColor: isActive
-                      ? "rgba(55, 65, 81, 0.5)"
-                      : "transparent",
-                  }}
-                  onClick={() => handleDropdownClick(item.id)}
+                <DropdownMenu
+                  key={section.id}
+                  open={activeDropdown === section.id}
+                  onOpenChange={(open) =>
+                    setActiveDropdown(open ? section.id : null)
+                  }
                 >
-                  <span className={item.color}>{item.icon}</span>
-                  <span className="text-sm font-medium">{item.label}</span>
-                  <ChevronDown
-                    className={`h-3 w-3 transition-transform ${activeDropdown === item.id ? "rotate-180" : ""}`}
-                  />
-                </Button>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className={`text-white hover:bg-gray-700 flex items-center gap-2 border-2 ${borderClass} rounded-lg px-6 py-2 flex-1 justify-center ${
+                        isActiveSection(section.id) ? "bg-gray-700" : ""
+                      }`}
+                      onClick={() => handleDropdownClick(section.id)}
+                    >
+                      <span className={section.color}>{section.icon}</span>
+                      {section.label}
+                      <ChevronDown className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    className="w-56 bg-gray-900 border-gray-700"
+                    align="start"
+                    sideOffset={5}
+                  >
+                    {section.items.map((item, index) => (
+                      <DropdownMenuItem
+                        key={index}
+                        className={`text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
+                          isActiveRoute(item.path)
+                            ? "bg-gray-700 text-white"
+                            : ""
+                        }`}
+                        onClick={() => handleNavigate(item.path)}
+                      >
+                        <span className="mr-2">{item.icon}</span>
+                        {item.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
               );
             })}
           </div>
         </div>
 
-        {/* Right Side - Tenant Switcher & User Menu */}
+        {/* Right side - User info and settings */}
         <div className="flex items-center gap-3">
-          {/* Tenant Switcher */}
-          <TenantSwitcher className="w-64" />
-          {/* User Avatar */}
+          {/* User Avatar with Gear Hint */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="p-0 h-8 w-8 rounded-full">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                    JD
+              <Button
+                variant="ghost"
+                className="relative p-0 h-10 w-10 rounded-full hover:bg-gray-700 group"
+                title={user ? `${user.name} - Click for settings` : "User menu"}
+              >
+                {/* Gear wheel hint - visible on hover */}
+                <div className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300">
+                  <Cog className="h-10 w-10 text-gray-400 animate-spin-slow" />
+                </div>
+
+                {/* User Avatar */}
+                <Avatar className="h-8 w-8 relative z-10">
+                  <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
+                    {user
+                      ? user.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")
+                          .toUpperCase()
+                      : "U"}
                   </AvatarFallback>
                 </Avatar>
               </Button>
@@ -362,128 +361,69 @@ export default function MainNavigation() {
               align="end"
               sideOffset={5}
             >
+              {user && (
+                <>
+                  <DropdownMenuItem className="text-gray-300 flex-col items-start pointer-events-none">
+                    <div className="flex items-center gap-2 w-full">
+                      <div className="flex items-center gap-2">
+                        <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
+                          <span className="text-white text-sm font-medium">
+                            {user.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")
+                              .toUpperCase()}
+                          </span>
+                        </div>
+                        <div>
+                          <div className="font-medium">{user.name}</div>
+                          <div className="text-xs text-gray-500">
+                            {user.email}
+                          </div>
+                        </div>
+                      </div>
+                      <Badge variant="outline" className="text-xs ml-auto">
+                        {user.role}
+                      </Badge>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-1">
+                      {user.company}
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator className="bg-gray-700" />
+                </>
+              )}
               <DropdownMenuItem
-                className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
-                onClick={() => handleNavigation("/setup/company")}
+                className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                onClick={() => handleNavigate("/settings")}
               >
-                <Building2 className="h-4 w-4 text-blue-400" />
-                <span>Company Details</span>
+                <Settings className="mr-2 h-4 w-4" />
+                Settings
               </DropdownMenuItem>
               <DropdownMenuItem
-                className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
-                onClick={() => handleNavigation("/setup/departments")}
+                className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
+                onClick={() => handleNavigate("/profile")}
               >
-                <Building className="h-4 w-4 text-blue-400" />
-                <span>Departments</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
-                onClick={() => handleNavigation("/setup/payments")}
-              >
-                <DollarSign className="h-4 w-4 text-blue-400" />
-                <span>Payment Structure</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
-                onClick={() => handleNavigation("/setup/users")}
-              >
-                <UserCog className="h-4 w-4 text-blue-400" />
-                <span>User Management</span>
+                <UserCog className="mr-2 h-4 w-4" />
+                Profile
               </DropdownMenuItem>
               <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
-                <Users className="h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
               <DropdownMenuItem
-                className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer"
-                onClick={() => navigate("/settings")}
+                className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
+                onClick={() => {
+                  // Handle sign out
+                  const { signOutLocal } = require("@/lib/localAuth");
+                  signOutLocal();
+                  window.location.reload();
+                }}
               >
-                <Settings className="h-4 w-4" />
-                <span>Account Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem className="flex items-center gap-3 px-3 py-2 text-gray-300 hover:bg-gray-800 hover:text-white cursor-pointer">
-                <Activity className="h-4 w-4" />
-                <span>Sign Out</span>
+                <Activity className="mr-2 h-4 w-4" />
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-
-          {/* Settings */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 text-gray-400 hover:text-white hover:bg-gray-800"
-            onClick={() => navigate("/settings")}
-          >
-            <Settings className="h-5 w-5" />
-          </Button>
         </div>
-      </nav>
-
-      {/* Sub-menu area below main navigation */}
-      {activeDropdown && !isMainDashboard() && (
-        <div className="sticky top-16 z-40 bg-gray-800 border-b border-gray-700 py-2">
-          <div className="px-8">
-            <div className="flex items-center justify-center gap-4 max-w-6xl mx-auto">
-              {navigationItems
-                .find((item) => item.id === activeDropdown)
-                ?.items.map((subItem, index) => {
-                  const moduleColor = navigationItems.find(
-                    (item) => item.id === activeDropdown,
-                  )?.color;
-                  const isActiveSubItem = location.pathname === subItem.path;
-
-                  // Get the proper module color for highlighting
-                  const getHighlightColor = (moduleId: string) => {
-                    switch (moduleId) {
-                      case "hiring":
-                        return "#22c55e";
-                      case "staff":
-                        return "#7c3aed";
-                      case "time-leave":
-                        return "#2563eb";
-                      case "performance":
-                        return "#ea580c";
-                      case "payroll":
-                        return "#059669";
-                      case "reports":
-                        return "#db2777";
-                      default:
-                        return "#4b5563";
-                    }
-                  };
-
-                  return (
-                    <Button
-                      key={index}
-                      variant="ghost"
-                      className={`flex items-center gap-3 px-3 py-2 h-8 rounded-md transition-all border ${
-                        isActiveSubItem
-                          ? "text-white border-transparent"
-                          : "text-gray-300 hover:text-white hover:bg-gray-700 border-gray-600"
-                      }`}
-                      style={{
-                        backgroundColor: isActiveSubItem
-                          ? getHighlightColor(activeDropdown)
-                          : "transparent",
-                      }}
-                      onClick={() => handleNavigation(subItem.path)}
-                    >
-                      <span className={`${moduleColor} text-sm`}>
-                        {subItem.icon}
-                      </span>
-                      <span className="text-xs font-medium whitespace-nowrap">
-                        {subItem.label}
-                      </span>
-                    </Button>
-                  );
-                })}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+      </div>
+    </nav>
   );
 }

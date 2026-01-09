@@ -1,11 +1,11 @@
 import React from "react";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import { CreditCard } from "lucide-react";
 
 export default function DeductionsAdvances() {
   return (
     <div className="min-h-screen bg-gray-50">
-      <MainNavigation />
+      <HotDogStyleNavigation />
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">

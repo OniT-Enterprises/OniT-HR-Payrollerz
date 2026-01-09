@@ -36,7 +36,12 @@ export interface Candidate {
 }
 
 class CandidateService {
-  private collection = db ? collection(db, "candidates") : null;
+  private get collection() {
+    if (!db) {
+      throw new Error("Firebase not initialized - using local data mode");
+    }
+    return collection(db, "candidates");
+  }
 
   // Mock data for when Firebase is not available
   private mockCandidates: Candidate[] = [

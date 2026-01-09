@@ -20,15 +20,21 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import { TenantSwitcher } from "@/components/TenantSwitcher";
 import {
   useDepartments,
   useEmployees,
   useCreateJob,
 } from "@/hooks/useTenantData";
-import { useRequiredTenant } from "@/contexts/TenantContext";
-import { CreateJobRequest, JobApproverMode } from "@/types/tenant";
+import { useTenant } from "@/contexts/TenantContext";
+import { Job } from "@/types/tenant";
+
+type CreateJobRequest = Omit<
+  Job,
+  "id" | "postedDate" | "closingDate" | "createdAt" | "updatedAt"
+>;
+import { getCurrentUser } from "@/lib/localAuth";
 import {
   Building2,
   Users,
@@ -42,12 +48,66 @@ import {
 export default function CreateJobTenant() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const tenant = useRequiredTenant();
+  const tenantContext = useTenant();
+  const localUser = getCurrentUser();
 
   const { data: departments = [], isLoading: loadingDepartments } =
     useDepartments();
   const { data: employees = [], isLoading: loadingEmployees } = useEmployees();
   const createJobMutation = useCreateJob();
+
+  // Fallback data for local development
+  const fallbackDepartments = [
+    { id: "dept_1", name: "Human Resources" },
+    { id: "dept_2", name: "Engineering" },
+    { id: "dept_3", name: "Sales" },
+    { id: "dept_4", name: "Marketing" },
+    { id: "dept_5", name: "Finance" },
+  ];
+
+  const fallbackEmployees = [
+    {
+      id: "emp_1",
+      displayName: "John Smith",
+      departmentId: "dept_1",
+      status: "active",
+    },
+    {
+      id: "emp_2",
+      displayName: "Sarah Johnson",
+      departmentId: "dept_2",
+      status: "active",
+    },
+    {
+      id: "emp_3",
+      displayName: "Mike Davis",
+      departmentId: "dept_3",
+      status: "active",
+    },
+    {
+      id: "emp_4",
+      displayName: "Lisa Wilson",
+      departmentId: "dept_1",
+      status: "active",
+    },
+    {
+      id: "emp_5",
+      displayName: "Tom Brown",
+      departmentId: "dept_4",
+      status: "active",
+    },
+  ];
+
+  // Use tenant data if available, otherwise use fallback data
+  const activeDepartments =
+    departments.length > 0 ? departments : fallbackDepartments;
+  const activeEmployees = employees.length > 0 ? employees : fallbackEmployees;
+
+  // Support both tenant and local user contexts
+  const hasAccess = tenantContext?.session || localUser;
+  const canWrite = tenantContext?.session?.member
+    ? tenantContext.session.member.role !== "viewer"
+    : localUser?.role === "admin" || localUser?.role === "hr";
 
   const [formData, setFormData] = useState<CreateJobRequest>({
     title: "",
@@ -62,13 +122,15 @@ export default function CreateJobTenant() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   // Filter employees by selected department for hiring manager selection
-  const eligibleManagers = employees.filter(
+  const eligibleManagers = activeEmployees.filter(
     (emp) =>
       emp.departmentId === formData.departmentId && emp.status === "active",
   );
 
   // Filter employees for specific approver selection
-  const eligibleApprovers = employees.filter((emp) => emp.status === "active");
+  const eligibleApprovers = activeEmployees.filter(
+    (emp) => emp.status === "active",
+  );
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -92,7 +154,7 @@ export default function CreateJobTenant() {
       newErrors.approverDepartmentId = "Approver department is required";
     }
 
-    if (formData.approverMode === "specific" && !formData.approverId) {
+    if (formData.approverMode === "name" && !formData.approverId) {
       newErrors.approverId = "Specific approver is required";
     }
 
@@ -113,14 +175,22 @@ export default function CreateJobTenant() {
     }
 
     try {
-      const jobId = await createJobMutation.mutateAsync(formData);
+      // Try to use tenant system, fallback to local development mode
+      if (tenantContext?.session && createJobMutation) {
+        const jobId = await createJobMutation.mutateAsync(formData);
+      } else {
+        // Local development mode - simulate job creation
+        console.log("📝 Creating job in local development mode:", formData);
+        // Simulate API delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
 
       toast({
         title: "Job Created",
         description: `Job "${formData.title}" has been created successfully`,
       });
 
-      navigate(`/hiring/jobs/${jobId}`);
+      navigate("/hiring");
     } catch (error) {
       toast({
         title: "Creation Failed",
@@ -152,16 +222,16 @@ export default function CreateJobTenant() {
     }
   };
 
-  const selectedDepartment = departments.find(
+  const selectedDepartment = activeDepartments.find(
     (d) => d.id === formData.departmentId,
   );
-  const selectedManager = employees.find(
+  const selectedManager = activeEmployees.find(
     (e) => e.id === formData.hiringManagerId,
   );
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
@@ -187,25 +257,39 @@ export default function CreateJobTenant() {
               </div>
             </div>
 
-            <TenantSwitcher showDetails />
+            {tenantContext?.session && <TenantSwitcher showDetails />}
           </div>
 
-          {/* Tenant Info */}
+          {/* User/Tenant Info */}
           <Card className="mb-6">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Badge variant="secondary">
-                    {tenant.config.name || tenant.tenantId}
+                    {tenantContext?.session?.config.name ||
+                      localUser?.company ||
+                      "Your Company"}
                   </Badge>
                   <span className="text-sm text-muted-foreground">
-                    Creating job as {tenant.member.role}
+                    Creating job as{" "}
+                    {tenantContext?.session?.member.role ||
+                      localUser?.role ||
+                      "user"}
                   </span>
                 </div>
-                {!tenant.permissions.canWrite("hiring") && (
-                  <div className="flex items-center gap-2 text-amber-600">
-                    <AlertCircle className="h-4 w-4" />
-                    <span className="text-sm">Limited hiring permissions</span>
+                {tenantContext?.session &&
+                  !tenantContext.session.member.role && (
+                    <div className="flex items-center gap-2 text-amber-600">
+                      <AlertCircle className="h-4 w-4" />
+                      <span className="text-sm">
+                        Limited hiring permissions
+                      </span>
+                    </div>
+                  )}
+                {!tenantContext?.session && localUser && (
+                  <div className="flex items-center gap-2 text-green-600">
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="text-sm">Local development mode</span>
                   </div>
                 )}
               </div>
@@ -289,12 +373,12 @@ export default function CreateJobTenant() {
                         <SelectValue placeholder="Select department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingDepartments ? (
+                        {loadingDepartments && departments.length === 0 ? (
                           <SelectItem value="loading" disabled>
                             Loading departments...
                           </SelectItem>
                         ) : (
-                          departments.map((dept) => (
+                          activeDepartments.map((dept) => (
                             <SelectItem key={dept.id} value={dept.id}>
                               {dept.name}
                             </SelectItem>
@@ -332,7 +416,7 @@ export default function CreateJobTenant() {
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {loadingEmployees ? (
+                        {loadingEmployees && employees.length === 0 ? (
                           <SelectItem value="loading" disabled>
                             Loading employees...
                           </SelectItem>
@@ -407,13 +491,9 @@ export default function CreateJobTenant() {
                     <Button
                       type="button"
                       variant={
-                        formData.approverMode === "specific"
-                          ? "default"
-                          : "outline"
+                        formData.approverMode === "name" ? "default" : "outline"
                       }
-                      onClick={() =>
-                        handleInputChange("approverMode", "specific")
-                      }
+                      onClick={() => handleInputChange("approverMode", "name")}
                       className="h-auto p-4 flex flex-col items-start gap-2"
                     >
                       <div className="flex items-center gap-2">
@@ -448,7 +528,7 @@ export default function CreateJobTenant() {
                         <SelectValue placeholder="Select approver department" />
                       </SelectTrigger>
                       <SelectContent>
-                        {departments.map((dept) => (
+                        {activeDepartments.map((dept) => (
                           <SelectItem key={dept.id} value={dept.id}>
                             {dept.name}
                           </SelectItem>
@@ -463,7 +543,7 @@ export default function CreateJobTenant() {
                   </div>
                 )}
 
-                {formData.approverMode === "specific" && (
+                {formData.approverMode === "name" && (
                   <div>
                     <Label htmlFor="approver">Specific Approver *</Label>
                     <Select
@@ -486,7 +566,7 @@ export default function CreateJobTenant() {
                               <span>{emp.displayName}</span>
                               <Badge variant="outline" className="text-xs">
                                 {
-                                  departments.find(
+                                  activeDepartments.find(
                                     (d) => d.id === emp.departmentId,
                                   )?.name
                                 }
@@ -518,11 +598,12 @@ export default function CreateJobTenant() {
               <Button
                 type="submit"
                 disabled={
-                  createJobMutation.isPending ||
-                  !tenant.permissions.canWrite("hiring")
+                  (tenantContext?.session && createJobMutation?.isPending) ||
+                  !canWrite ||
+                  !hasAccess
                 }
               >
-                {createJobMutation.isPending ? (
+                {tenantContext?.session && createJobMutation?.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
                     Creating...

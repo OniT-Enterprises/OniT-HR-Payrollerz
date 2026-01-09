@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { authService, UserProfile } from "@/services/authService";
 
 interface AuthContextType {
@@ -36,13 +37,63 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = authService.onAuthStateChanged((user) => {
-      setUser(user);
-      setUserProfile(user ? authService.getUserProfile() : null);
-      setLoading(false);
-    });
+    console.log("🔧 AuthProvider initializing with Firebase authentication");
 
-    return unsubscribe;
+    // Try to set up Firebase auth state listener safely
+    try {
+      if (!auth) {
+        console.log("🔧 Firebase auth disabled, using fallback mode");
+        setUser(null);
+        setUserProfile(null);
+        setLoading(false);
+        return () => {};
+      }
+
+      const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+        try {
+          setLoading(true);
+          setUser(firebaseUser);
+
+          if (firebaseUser) {
+            console.log(
+              "✅ User authenticated:",
+              firebaseUser.email || firebaseUser.uid,
+            );
+            // Load user profile if available
+            try {
+              const profile = await authService.getUserProfile(firebaseUser.uid);
+              setUserProfile(profile);
+            } catch (error) {
+              console.warn("Could not load user profile:", error);
+              setUserProfile(null);
+            }
+          } else {
+            console.log("❌ User not authenticated");
+            setUserProfile(null);
+          }
+        } catch (error) {
+          console.error("Auth state change error:", error);
+        } finally {
+          setLoading(false);
+        }
+      });
+
+      return () => {
+        console.log("🧹 Cleaning up auth listener");
+        unsubscribe();
+      };
+    } catch (error) {
+      console.warn("🚨 Firebase auth listener setup failed, using fallback:", error);
+      
+      // Fallback: Set default state without Firebase listener
+      setUser(null);
+      setUserProfile(null);
+      setLoading(false);
+      
+      return () => {
+        // No cleanup needed for fallback
+      };
+    }
   }, []);
 
   const signIn = async (email: string, password: string) => {

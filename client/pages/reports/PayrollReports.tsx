@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import MainNavigation from "@/components/layout/MainNavigation";
+import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
 import { employeeService } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -74,7 +74,7 @@ export default function PayrollReports() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
+        <HotDogStyleNavigation />
         <div className="p-6">
           <div className="flex items-center justify-center p-8">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -87,7 +87,7 @@ export default function PayrollReports() {
 
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
+      <HotDogStyleNavigation />
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6">
