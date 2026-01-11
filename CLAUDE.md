@@ -11,7 +11,7 @@ OniT HR/Payroll System - A React/TypeScript application for managing HR operatio
 - **UI**: Tailwind CSS, shadcn/ui components, Radix UI primitives
 - **State**: React Context (Auth, Firebase, Tenant) + TanStack React Query
 - **Backend**: Express.js + SQLite (local), Firebase (Firestore/Auth with emulator support)
-- **Deployment**: Firebase Hosting via GitHub Actions
+- **Deployment**: Firebase Hosting + Hetzner VPS via GitHub Actions
 
 ## Firebase Configuration
 
@@ -114,8 +114,31 @@ Under `/tenants/{tenantId}/`:
 - `payruns` (with nested `payslips`)
 - `goals`, `reviews`, `trainings`, `discipline`
 
+## Hetzner VPS Deployment
+
+### Production URL
+- **payroll.naroman.tl**: Served from Hetzner VPS at 65.109.173.122
+
+### SSH Access
+Claude has SSH access to the Hetzner server:
+```bash
+# SSH config alias
+ssh hetzner
+
+# Manual deploy (if needed)
+npm run build
+rsync -avz --delete dist/spa/ hetzner:/var/www/payroll.naroman.tl/dist/spa/
+ssh hetzner "sudo chown -R www-data:www-data /var/www/payroll.naroman.tl/ && sudo systemctl reload nginx"
+```
+
+### Nginx Configuration
+- Root: `/var/www/payroll.naroman.tl/dist/spa/`
+- SPA fallback enabled for client-side routing
+- SSL via Let's Encrypt (naroman.tl wildcard)
+
 ## GitHub Secrets Required
 ```
+# Firebase
 VITE_FIREBASE_API_KEY
 VITE_FIREBASE_AUTH_DOMAIN
 VITE_FIREBASE_PROJECT_ID
@@ -123,6 +146,11 @@ VITE_FIREBASE_STORAGE_BUCKET
 VITE_FIREBASE_MESSAGING_SENDER_ID
 VITE_FIREBASE_APP_ID
 FIREBASE_SERVICE_ACCOUNT
+
+# Hetzner VPS (for payroll.naroman.tl)
+HETZNER_HOST          # 65.109.173.122
+HETZNER_USER          # SSH username
+HETZNER_SSH_KEY       # Private SSH key (add to ~/.ssh/id_rsa on your machine)
 ```
 
 ## Key Directories
@@ -209,7 +237,9 @@ npm run reset:emulator   # Reset emulator data
 
 ## Git Workflow
 - Main branch: `main`
-- Auto-deploys to Firebase Hosting on push to main
+- Auto-deploys on push to main:
+  - Firebase Hosting (onit-hr-payroll)
+  - Hetzner VPS (payroll.naroman.tl)
 - Always test locally before pushing
 
 ## Recent Cleanup (January 2026)
