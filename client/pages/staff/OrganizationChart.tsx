@@ -20,6 +20,7 @@ import {
 import DepartmentManager from "@/components/DepartmentManager";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   DragDropContext,
   Droppable,
@@ -472,6 +473,7 @@ export default function OrganizationChart() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.orgChart} />
       <MainNavigation />
 
       <div className="p-8">

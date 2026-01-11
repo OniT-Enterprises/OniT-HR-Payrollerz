@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
   Calculator,
@@ -161,6 +162,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white overflow-hidden">
+      <SEO {...seoConfig.landing} />
       {/* Noise texture overlay */}
       <div className="fixed inset-0 opacity-[0.015] pointer-events-none z-50"
         style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E\")" }}

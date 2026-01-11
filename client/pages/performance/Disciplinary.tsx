@@ -69,6 +69,7 @@ import {
   CheckCircle,
   ExternalLink,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function Disciplinary() {
   const { toast } = useToast();
@@ -456,6 +457,7 @@ export default function Disciplinary() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...seoConfig.disciplinary} />
       <MainNavigation />
 
       <div className="p-6">

@@ -52,6 +52,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { TaxReport, PayrollRun } from "@/types/payroll";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const REPORT_TYPES = [
   { value: "quarterly_941", label: "Form 941 (Quarterly)", description: "Federal quarterly tax return" },

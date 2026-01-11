@@ -25,6 +25,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
   Search,
@@ -277,6 +278,7 @@ export default function CandidateSelection() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.candidates} />
       <MainNavigation />
 
       {/* Hero Section */}

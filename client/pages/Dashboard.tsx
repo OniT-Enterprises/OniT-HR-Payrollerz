@@ -45,6 +45,7 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { sectionThemes } from "@/lib/sectionTheme";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const theme = sectionThemes.dashboard;
 
@@ -174,6 +175,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">

@@ -73,6 +73,7 @@ import {
   GitBranch,
   Activity,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 // Types for Performance & Goals Management
 interface OKR {
@@ -843,6 +844,7 @@ export default function Goals() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...seoConfig.goals} />
       <MainNavigation />
 
       <div className="p-6">

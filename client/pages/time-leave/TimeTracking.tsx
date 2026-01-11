@@ -66,6 +66,7 @@ import {
   Camera,
   Phone,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 // Types for security company operations
 interface SecuritySite {
@@ -819,6 +820,7 @@ export default function TimeTracking() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...seoConfig.timeTracking} />
       <MainNavigation />
 
       <div className="p-6">

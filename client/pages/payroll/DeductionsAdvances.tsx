@@ -63,6 +63,7 @@ import { employeeService, Employee } from "@/services/employeeService";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency, DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const DEDUCTION_TYPES: { value: DeductionType; label: string }[] = [
   { value: "garnishment", label: "Wage Garnishment" },

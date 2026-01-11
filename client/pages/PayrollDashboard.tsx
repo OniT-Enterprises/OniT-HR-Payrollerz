@@ -26,6 +26,7 @@ import {
   CheckCircle,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const theme = sectionThemes.payroll;
 

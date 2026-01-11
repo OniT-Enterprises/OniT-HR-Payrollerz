@@ -48,6 +48,7 @@ import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import CSVColumnMapper from "@/components/CSVColumnMapper";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   UserPlus,
   User,
@@ -484,6 +485,7 @@ export default function AddEmployee() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.addEmployee} />
       <MainNavigation />
 
       <div className="p-6 max-w-4xl mx-auto">

@@ -23,6 +23,7 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   getDepartments,
   createJob,
@@ -255,6 +256,7 @@ export default function CreateJobLocal() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.jobs} />
       <MainNavigation />
 
       <div className="p-6 lg:p-8">

@@ -11,6 +11,7 @@ import { doc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -159,6 +160,7 @@ export default function Signup() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
+      <SEO {...seoConfig.signup} />
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex justify-center mb-8">

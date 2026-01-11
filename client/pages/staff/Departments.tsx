@@ -29,6 +29,7 @@ import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   Building,
   Users,
@@ -287,6 +288,7 @@ export default function Departments() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.departments} />
       <MainNavigation />
 
       {/* Hero Section */}

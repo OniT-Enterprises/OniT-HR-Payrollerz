@@ -76,6 +76,7 @@ import {
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
+import { SEO, seoConfig } from "@/components/SEO";
 
 interface EmployeePayrollData {
   employee: Employee;

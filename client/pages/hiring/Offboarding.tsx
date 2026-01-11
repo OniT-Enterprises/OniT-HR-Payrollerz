@@ -36,6 +36,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   UserMinus,
   Calendar,
@@ -537,6 +538,7 @@ export default function Offboarding() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.offboarding} />
       <MainNavigation />
 
       {/* Hero Section */}

@@ -42,6 +42,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
   Plus,
@@ -69,6 +70,7 @@ import {
   UserCheck,
   Calendar as CalendarIcon,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 // Types for enhanced shift scheduling
 interface Employee {
@@ -141,6 +143,7 @@ interface ShiftTemplate {
 
 export default function ShiftScheduling() {
   const { toast } = useToast();
+  const { t, locale } = useI18n();
   const [activeTab, setActiveTab] = useState("schedule");
   const [selectedWeek, setSelectedWeek] = useState(getWeekString(new Date()));
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -175,6 +178,74 @@ export default function ShiftScheduling() {
     name: "",
     department: "",
   });
+
+  const dateLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
+
+  const departmentLabels: Record<string, string> = {
+    Operations: t("timeLeave.shiftScheduling.data.departments.operations"),
+    "Customer Service": t("timeLeave.shiftScheduling.data.departments.customerService"),
+    Sales: t("timeLeave.shiftScheduling.data.departments.sales"),
+  };
+
+  const positionLabels: Record<string, string> = {
+    "Operations Manager": t("timeLeave.shiftScheduling.data.positions.operationsManager"),
+    "Team Lead": t("timeLeave.shiftScheduling.data.positions.teamLead"),
+    Specialist: t("timeLeave.shiftScheduling.data.positions.specialist"),
+    "Customer Service Manager":
+      t("timeLeave.shiftScheduling.data.positions.customerServiceManager"),
+    "Senior Representative": t("timeLeave.shiftScheduling.data.positions.seniorRepresentative"),
+    Representative: t("timeLeave.shiftScheduling.data.positions.representative"),
+    "Sales Manager": t("timeLeave.shiftScheduling.data.positions.salesManager"),
+    "Senior Sales Rep": t("timeLeave.shiftScheduling.data.positions.seniorSalesRep"),
+    "Sales Associate": t("timeLeave.shiftScheduling.data.positions.salesAssociate"),
+  };
+
+  const skillLabels: Record<string, string> = {
+    Leadership: t("timeLeave.shiftScheduling.data.skills.leadership"),
+    Operations: t("timeLeave.shiftScheduling.data.skills.operations"),
+    Communication: t("timeLeave.shiftScheduling.data.skills.communication"),
+    "Technical Skills": t("timeLeave.shiftScheduling.data.skills.technicalSkills"),
+    "Customer Service": t("timeLeave.shiftScheduling.data.skills.customerService"),
+    Sales: t("timeLeave.shiftScheduling.data.skills.sales"),
+    "Project Management": t("timeLeave.shiftScheduling.data.skills.projectManagement"),
+    Negotiation: t("timeLeave.shiftScheduling.data.skills.negotiation"),
+    "Problem Solving": t("timeLeave.shiftScheduling.data.skills.problemSolving"),
+    Analysis: t("timeLeave.shiftScheduling.data.skills.analysis"),
+    "Customer Relations": t("timeLeave.shiftScheduling.data.skills.customerRelations"),
+  };
+
+  const locationLabels: Record<string, string> = {
+    "Main Office - Floor 1": t("timeLeave.shiftScheduling.data.locations.mainOfficeFloor1"),
+    "Main Office - Floor 2": t("timeLeave.shiftScheduling.data.locations.mainOfficeFloor2"),
+    "Customer Service Center": t("timeLeave.shiftScheduling.data.locations.customerServiceCenter"),
+    "Warehouse A": t("timeLeave.shiftScheduling.data.locations.warehouseA"),
+    "Warehouse B": t("timeLeave.shiftScheduling.data.locations.warehouseB"),
+    "Remote Work": t("timeLeave.shiftScheduling.data.locations.remoteWork"),
+    "Client Site A": t("timeLeave.shiftScheduling.data.locations.clientSiteA"),
+    "Client Site B": t("timeLeave.shiftScheduling.data.locations.clientSiteB"),
+  };
+
+  const noteLabels: Record<string, string> = {
+    "Team meeting at 10 AM": t("timeLeave.shiftScheduling.data.notes.teamMeeting"),
+    "Training new representatives": t("timeLeave.shiftScheduling.data.notes.trainingNewReps"),
+    "Client presentation at 2 PM": t("timeLeave.shiftScheduling.data.notes.clientPresentation"),
+    "Inventory check": t("timeLeave.shiftScheduling.data.notes.inventoryCheck"),
+    "Client meeting": t("timeLeave.shiftScheduling.data.notes.clientMeeting"),
+    "Evening shift coverage": t("timeLeave.shiftScheduling.data.notes.eveningShift"),
+    "Data analysis project": t("timeLeave.shiftScheduling.data.notes.dataAnalysis"),
+  };
+
+  const templateLabels: Record<string, string> = {
+    "Standard Operations Week": t("timeLeave.shiftScheduling.data.templates.standardOperationsWeek"),
+  };
+
+  const getDepartmentLabel = (department: string) =>
+    departmentLabels[department] || department;
+  const getPositionLabel = (position: string) => positionLabels[position] || position;
+  const getSkillLabel = (skill: string) => skillLabels[skill] || skill;
+  const getLocationLabel = (location: string) => locationLabels[location] || location;
+  const getNoteLabel = (note: string) => noteLabels[note] || note;
+  const getTemplateLabel = (name: string) => templateLabels[name] || name;
 
   // Helper function to get week string
   function getWeekString(date: Date) {
@@ -652,8 +723,8 @@ export default function ShiftScheduling() {
       !formData.location
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: t("timeLeave.shiftScheduling.toast.validationTitle"),
+        description: t("timeLeave.shiftScheduling.toast.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -670,16 +741,16 @@ export default function ShiftScheduling() {
       });
 
       toast({
-        title: "Success",
-        description: "Shift created successfully.",
+        title: t("timeLeave.shiftScheduling.toast.successTitle"),
+        description: t("timeLeave.shiftScheduling.toast.createSuccessDesc"),
       });
 
       resetForm();
       setShowCreateDialog(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to create shift. Please try again.",
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
         variant: "destructive",
       });
     }
@@ -712,8 +783,8 @@ export default function ShiftScheduling() {
       });
 
       toast({
-        title: "Success",
-        description: "Shift updated successfully.",
+        title: t("timeLeave.shiftScheduling.toast.successTitle"),
+        description: t("timeLeave.shiftScheduling.toast.updateSuccessDesc"),
       });
 
       resetForm();
@@ -721,8 +792,8 @@ export default function ShiftScheduling() {
       setSelectedShift(null);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to update shift. Please try again.",
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.updateErrorDesc"),
         variant: "destructive",
       });
     }
@@ -733,13 +804,13 @@ export default function ShiftScheduling() {
       console.log("Deleting shift:", shiftId);
 
       toast({
-        title: "Success",
-        description: "Shift deleted successfully.",
+        title: t("timeLeave.shiftScheduling.toast.successTitle"),
+        description: t("timeLeave.shiftScheduling.toast.deleteSuccessDesc"),
       });
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to delete shift. Please try again.",
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.deleteErrorDesc"),
         variant: "destructive",
       });
     }
@@ -755,8 +826,10 @@ export default function ShiftScheduling() {
       selectedLocation,
     );
     toast({
-      title: "Schedule Loaded",
-      description: `Loaded shifts for week of ${selectedWeek}`,
+      title: t("timeLeave.shiftScheduling.toast.scheduleLoadedTitle"),
+      description: t("timeLeave.shiftScheduling.toast.scheduleLoadedDesc", {
+        week: selectedWeek,
+      }),
     });
   };
 
@@ -772,8 +845,10 @@ export default function ShiftScheduling() {
     );
 
     toast({
-      title: "Schedule Published",
-      description: `Published ${draftShifts.length} shifts for the week.`,
+      title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
+      description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", {
+        count: draftShifts.length,
+      }),
     });
   };
 
@@ -782,8 +857,8 @@ export default function ShiftScheduling() {
     console.log("Exporting PDF for week:", selectedWeek);
 
     toast({
-      title: "Export Started",
-      description: "PDF roster will be downloaded shortly.",
+      title: t("timeLeave.shiftScheduling.toast.exportTitle"),
+      description: t("timeLeave.shiftScheduling.toast.exportDesc"),
     });
   };
 
@@ -792,16 +867,20 @@ export default function ShiftScheduling() {
     console.log("Copying week shifts:", weekShifts.length);
 
     toast({
-      title: "Week Copied",
-      description: `${weekShifts.length} shifts copied to clipboard. Select a target week to paste.`,
+      title: t("timeLeave.shiftScheduling.toast.copyTitle"),
+      description: t("timeLeave.shiftScheduling.toast.copyDesc", {
+        count: weekShifts.length,
+      }),
     });
   };
 
   const handleApplyTemplate = (template: ShiftTemplate) => {
     console.log("Applying template:", template.name);
     toast({
-      title: "Template Applied",
-      description: `Applied "${template.name}" template to current week.`,
+      title: t("timeLeave.shiftScheduling.toast.templateTitle"),
+      description: t("timeLeave.shiftScheduling.toast.templateDesc", {
+        name: getTemplateLabel(template.name),
+      }),
     });
     setShowTemplateDialog(false);
   };
@@ -839,7 +918,7 @@ export default function ShiftScheduling() {
     const weekStart = new Date(selectedWeek);
     const targetDate = new Date(weekStart);
     targetDate.setDate(weekStart.getDate() + dayOffset);
-    return targetDate.toLocaleDateString("en-US", {
+    return targetDate.toLocaleDateString(dateLocale, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -849,13 +928,29 @@ export default function ShiftScheduling() {
   const getStatusBadge = (status: Shift["status"]) => {
     switch (status) {
       case "draft":
-        return <Badge className="bg-gray-100 text-gray-800">Draft</Badge>;
+        return (
+          <Badge className="bg-gray-100 text-gray-800">
+            {t("timeLeave.shiftScheduling.status.draft")}
+          </Badge>
+        );
       case "published":
-        return <Badge className="bg-blue-100 text-blue-800">Published</Badge>;
+        return (
+          <Badge className="bg-blue-100 text-blue-800">
+            {t("timeLeave.shiftScheduling.status.published")}
+          </Badge>
+        );
       case "confirmed":
-        return <Badge className="bg-green-100 text-green-800">Confirmed</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            {t("timeLeave.shiftScheduling.status.confirmed")}
+          </Badge>
+        );
       case "cancelled":
-        return <Badge className="bg-red-100 text-red-800">Cancelled</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            {t("timeLeave.shiftScheduling.status.cancelled")}
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -909,7 +1004,7 @@ export default function ShiftScheduling() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Total Shifts
+                  {t("timeLeave.shiftScheduling.summary.totalShifts")}
                 </p>
                 <p className="text-2xl font-bold">{stats.totalShifts}</p>
               </div>
@@ -921,8 +1016,14 @@ export default function ShiftScheduling() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Total Hours</p>
-                <p className="text-2xl font-bold">{stats.totalHours}h</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {t("timeLeave.shiftScheduling.summary.totalHours")}
+                </p>
+                <p className="text-2xl font-bold">
+                  {t("timeLeave.shiftScheduling.summary.totalHoursValue", {
+                    hours: stats.totalHours,
+                  })}
+                </p>
               </div>
               <BarChart3 className="h-8 w-8 text-green-600" />
             </div>
@@ -933,7 +1034,7 @@ export default function ShiftScheduling() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">
-                  Staff Scheduled
+                  {t("timeLeave.shiftScheduling.summary.staffScheduled")}
                 </p>
                 <p className="text-2xl font-bold">{stats.staffCount}</p>
               </div>
@@ -945,7 +1046,9 @@ export default function ShiftScheduling() {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Published</p>
+                <p className="text-sm font-medium text-gray-600">
+                  {t("timeLeave.shiftScheduling.summary.published")}
+                </p>
                 <p className="text-2xl font-bold text-green-600">
                   {stats.publishedCount}
                 </p>
@@ -963,28 +1066,30 @@ export default function ShiftScheduling() {
           disabled={stats.draftCount === 0}
         >
           <Send className="h-4 w-4 mr-2" />
-          Publish Schedule ({stats.draftCount} drafts)
+          {t("timeLeave.shiftScheduling.actions.publishSchedule", {
+            count: stats.draftCount,
+          })}
         </Button>
         <Button variant="outline" onClick={handleExportPDF}>
           <Download className="h-4 w-4 mr-2" />
-          Export PDF
+          {t("timeLeave.shiftScheduling.actions.exportPdf")}
         </Button>
         <Button variant="outline" onClick={handleCopyWeek}>
           <Copy className="h-4 w-4 mr-2" />
-          Copy Week
+          {t("timeLeave.shiftScheduling.actions.copyWeek")}
         </Button>
         <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
           <DialogTrigger asChild>
             <Button variant="outline">
               <FileText className="h-4 w-4 mr-2" />
-              Apply Template
+              {t("timeLeave.shiftScheduling.actions.applyTemplate")}
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Apply Shift Template</DialogTitle>
+              <DialogTitle>{t("timeLeave.shiftScheduling.template.title")}</DialogTitle>
               <DialogDescription>
-                Choose a template to apply to the current week
+                {t("timeLeave.shiftScheduling.template.description")}
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
@@ -999,15 +1104,21 @@ export default function ShiftScheduling() {
                   >
                     <div className="flex items-center justify-between">
                       <div>
-                        <h4 className="font-medium">{template.name}</h4>
+                        <h4 className="font-medium">
+                          {getTemplateLabel(template.name)}
+                        </h4>
                         <p className="text-sm text-gray-600">
-                          {template.department}
+                          {getDepartmentLabel(template.department)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {template.shifts.length} shifts
+                          {t("timeLeave.shiftScheduling.template.shiftCount", {
+                            count: template.shifts.length,
+                          })}
                         </p>
                       </div>
-                      <Button size="sm">Apply</Button>
+                      <Button size="sm">
+                        {t("timeLeave.shiftScheduling.actions.apply")}
+                      </Button>
                     </div>
                   </CardContent>
                 </Card>
@@ -1024,10 +1135,13 @@ export default function ShiftScheduling() {
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                Weekly Schedule
+                {t("timeLeave.shiftScheduling.calendar.title")}
               </CardTitle>
               <CardDescription>
-                Week of {getDayName(0)} - {getDayName(6)}
+                {t("timeLeave.shiftScheduling.calendar.weekOf", {
+                  start: getDayName(0),
+                  end: getDayName(6),
+                })}
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -1036,14 +1150,14 @@ export default function ShiftScheduling() {
                 size="sm"
                 onClick={() => setViewMode("week")}
               >
-                Week
+                {t("timeLeave.shiftScheduling.calendar.weekView")}
               </Button>
               <Button
                 variant={viewMode === "day" ? "default" : "outline"}
                 size="sm"
                 onClick={() => setViewMode("day")}
               >
-                Day
+                {t("timeLeave.shiftScheduling.calendar.dayView")}
               </Button>
             </div>
           </div>
@@ -1064,7 +1178,10 @@ export default function ShiftScheduling() {
                   <div className="font-medium text-sm mb-3 text-center border-b pb-2">
                     <div>{getDayName(dayOffset)}</div>
                     <div className="text-xs text-gray-500 mt-1">
-                      {dayShifts.length} shifts • {dayHours}h
+                      {t("timeLeave.shiftScheduling.calendar.daySummary", {
+                        count: dayShifts.length,
+                        hours: dayHours,
+                      })}
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -1082,20 +1199,20 @@ export default function ShiftScheduling() {
                           {shift.employeeName}
                         </div>
                         <div className="text-gray-600 truncate">
-                          {shift.position}
+                          {getPositionLabel(shift.position)}
                         </div>
                         <div className="text-gray-500">
                           {shift.startTime} - {shift.endTime}
                         </div>
                         <div className="flex items-center justify-between mt-1">
                           <Badge variant="outline" className="text-xs">
-                            {shift.location.split(" - ")[0]}
+                            {getLocationLabel(shift.location).split(" - ")[0]}
                           </Badge>
                           {getStatusBadge(shift.status)}
                         </div>
                         {shift.notes && (
                           <div className="text-xs text-gray-600 mt-1 truncate">
-                            📝 {shift.notes}
+                            📝 {getNoteLabel(shift.notes)}
                           </div>
                         )}
                       </div>
@@ -1116,10 +1233,10 @@ export default function ShiftScheduling() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
-            Employee Availability & Hours
+            {t("timeLeave.shiftScheduling.employees.title")}
           </CardTitle>
           <CardDescription>
-            View employee schedules and weekly hour tracking
+            {t("timeLeave.shiftScheduling.employees.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -1146,7 +1263,7 @@ export default function ShiftScheduling() {
                             <div>
                               <h4 className="font-medium">{employee.name}</h4>
                               <p className="text-sm text-gray-600">
-                                {employee.position}
+                                {getPositionLabel(employee.position)}
                               </p>
                             </div>
                             <Badge
@@ -1158,40 +1275,59 @@ export default function ShiftScheduling() {
                                 ),
                               }}
                             >
-                              {employee.department}
+                              {getDepartmentLabel(employee.department)}
                             </Badge>
                           </div>
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                             <div>
-                              <span className="text-gray-500">Email:</span>
+                              <span className="text-gray-500">
+                                {t("timeLeave.shiftScheduling.employees.email")}
+                              </span>
                               <p className="font-medium">{employee.email}</p>
                             </div>
                             <div>
-                              <span className="text-gray-500">Phone:</span>
+                              <span className="text-gray-500">
+                                {t("timeLeave.shiftScheduling.employees.phone")}
+                              </span>
                               <p className="font-medium">{employee.phone}</p>
                             </div>
                             <div>
                               <span className="text-gray-500">
-                                Hourly Rate:
+                                {t("timeLeave.shiftScheduling.employees.hourlyRate")}
                               </span>
                               <p className="font-medium">
-                                ${employee.hourlyRate}/hr
+                                {t("timeLeave.shiftScheduling.employees.hourlyRateValue", {
+                                  rate: employee.hourlyRate,
+                                })}
                               </p>
                             </div>
                             <div>
-                              <span className="text-gray-500">Skills:</span>
+                              <span className="text-gray-500">
+                                {t("timeLeave.shiftScheduling.employees.skills")}
+                              </span>
                               <p className="font-medium">
-                                {employee.skills.slice(0, 2).join(", ")}
+                                {employee.skills
+                                  .slice(0, 2)
+                                  .map((skill) => getSkillLabel(skill))
+                                  .join(", ")}
                               </p>
                             </div>
                           </div>
                         </div>
                         <div className="text-right space-y-2">
                           <div>
-                            <p className="text-sm text-gray-500">This Week</p>
-                            <p className="text-2xl font-bold">{weeklyHours}h</p>
+                            <p className="text-sm text-gray-500">
+                              {t("timeLeave.shiftScheduling.employees.thisWeek")}
+                            </p>
+                            <p className="text-2xl font-bold">
+                              {t("timeLeave.shiftScheduling.employees.hoursValue", {
+                                hours: weeklyHours,
+                              })}
+                            </p>
                             <p className="text-xs text-gray-500">
-                              of {employee.maxHoursPerWeek}h max
+                              {t("timeLeave.shiftScheduling.employees.maxHours", {
+                                max: employee.maxHoursPerWeek,
+                              })}
                             </p>
                           </div>
                           <div className="w-24">
@@ -1230,7 +1366,9 @@ export default function ShiftScheduling() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Department Coverage</CardTitle>
+            <CardTitle className="text-lg">
+              {t("timeLeave.shiftScheduling.analytics.departmentCoverage")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -1249,9 +1387,15 @@ export default function ShiftScheduling() {
                         className="w-3 h-3 rounded"
                         style={{ backgroundColor: dept.color }}
                       />
-                      <span className="font-medium">{dept.name}</span>
+                      <span className="font-medium">
+                        {getDepartmentLabel(dept.name)}
+                      </span>
                     </div>
-                    <Badge variant="outline">{coverage} shifts</Badge>
+                    <Badge variant="outline">
+                      {t("timeLeave.shiftScheduling.analytics.shiftCount", {
+                        count: coverage,
+                      })}
+                    </Badge>
                   </div>
                 );
               })}
@@ -1261,12 +1405,16 @@ export default function ShiftScheduling() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Labor Costs</CardTitle>
+            <CardTitle className="text-lg">
+              {t("timeLeave.shiftScheduling.analytics.laborCosts")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Weekly Total:</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.weeklyTotal")}
+                </span>
                 <span className="font-bold text-lg">
                   $
                   {getWeekShifts()
@@ -1280,7 +1428,9 @@ export default function ShiftScheduling() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Avg per Hour:</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.avgPerHour")}
+                </span>
                 <span className="font-medium">
                   $
                   {Math.round(
@@ -1294,8 +1444,14 @@ export default function ShiftScheduling() {
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Total Hours:</span>
-                <span className="font-medium">{stats.totalHours}h</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.totalHours")}
+                </span>
+                <span className="font-medium">
+                  {t("timeLeave.shiftScheduling.analytics.totalHoursValue", {
+                    hours: stats.totalHours,
+                  })}
+                </span>
               </div>
             </div>
           </CardContent>
@@ -1303,34 +1459,42 @@ export default function ShiftScheduling() {
 
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Schedule Health</CardTitle>
+            <CardTitle className="text-lg">
+              {t("timeLeave.shiftScheduling.analytics.scheduleHealth")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span className="text-gray-600">Published Rate:</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.publishedRate")}
+                </span>
                 <span className="font-medium text-green-600">
                   {Math.round((stats.publishedCount / stats.totalShifts) * 100)}
                   %
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Confirmed Rate:</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.confirmedRate")}
+                </span>
                 <span className="font-medium text-blue-600">
                   {Math.round((stats.confirmedCount / stats.totalShifts) * 100)}
                   %
                 </span>
               </div>
               <div className="flex justify-between">
-                <span className="text-gray-600">Coverage Score:</span>
+                <span className="text-gray-600">
+                  {t("timeLeave.shiftScheduling.analytics.coverageScore")}
+                </span>
                 <span className="font-medium">
                   {departments.every(
                     (dept) =>
                       getWeekShifts().filter((s) => s.department === dept.name)
                         .length >= dept.minStaffing,
                   )
-                    ? "✅ Good"
-                    : "⚠️ Needs Attention"}
+                    ? t("timeLeave.shiftScheduling.analytics.coverageGood")
+                    : t("timeLeave.shiftScheduling.analytics.coverageAttention")}
                 </span>
               </div>
             </div>
@@ -1340,7 +1504,9 @@ export default function ShiftScheduling() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Staffing Recommendations</CardTitle>
+          <CardTitle>
+            {t("timeLeave.shiftScheduling.recommendations.title")}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-3">
@@ -1360,12 +1526,20 @@ export default function ShiftScheduling() {
                       <AlertTriangle className="h-5 w-5 text-yellow-600 mt-0.5" />
                       <div>
                         <p className="font-medium text-yellow-800">
-                          {dept.name} Under-Staffed
+                          {t(
+                            "timeLeave.shiftScheduling.recommendations.underStaffedTitle",
+                            {
+                              department: getDepartmentLabel(dept.name),
+                            },
+                          )}
                         </p>
                         <p className="text-sm text-yellow-600">
-                          Consider adding{" "}
-                          {dept.minStaffing * 5 - deptShifts.length} more shifts
-                          this week to meet minimum staffing requirements.
+                          {t(
+                            "timeLeave.shiftScheduling.recommendations.underStaffedDesc",
+                            {
+                              count: dept.minStaffing * 5 - deptShifts.length,
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1389,12 +1563,20 @@ export default function ShiftScheduling() {
                       <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
                       <div>
                         <p className="font-medium text-red-800">
-                          {employee.name} Over Maximum Hours
+                          {t(
+                            "timeLeave.shiftScheduling.recommendations.overworkedTitle",
+                            { name: employee.name },
+                          )}
                         </p>
                         <p className="text-sm text-red-600">
-                          Scheduled for {weeklyHours}h, exceeds maximum of{" "}
-                          {employee.maxHoursPerWeek}h by{" "}
-                          {weeklyHours - employee.maxHoursPerWeek}h.
+                          {t(
+                            "timeLeave.shiftScheduling.recommendations.overworkedDesc",
+                            {
+                              hours: weeklyHours,
+                              max: employee.maxHoursPerWeek,
+                              excess: weeklyHours - employee.maxHoursPerWeek,
+                            },
+                          )}
                         </p>
                       </div>
                     </div>
@@ -1487,6 +1669,7 @@ export default function ShiftScheduling() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...seoConfig.schedules} />
       <MainNavigation />
 
       <div className="p-6">
@@ -1494,10 +1677,10 @@ export default function ShiftScheduling() {
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Shift Scheduling
+              {t("timeLeave.shiftScheduling.title")}
             </h1>
             <p className="text-gray-600">
-              Manage employee shifts, schedules, and workforce planning
+              {t("timeLeave.shiftScheduling.subtitle")}
             </p>
           </div>
 
@@ -1506,13 +1689,15 @@ export default function ShiftScheduling() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5" />
-                Schedule Controls
+                {t("timeLeave.shiftScheduling.controls.title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                 <div>
-                  <Label htmlFor="week">Week Starting</Label>
+                  <Label htmlFor="week">
+                    {t("timeLeave.shiftScheduling.controls.weekStarting")}
+                  </Label>
                   <Input
                     id="week"
                     type="date"
@@ -1521,38 +1706,54 @@ export default function ShiftScheduling() {
                   />
                 </div>
                 <div>
-                  <Label htmlFor="department">Department</Label>
+                  <Label htmlFor="department">
+                    {t("timeLeave.shiftScheduling.controls.department")}
+                  </Label>
                   <Select
                     value={selectedDepartment}
                     onValueChange={setSelectedDepartment}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All departments" />
+                      <SelectValue
+                        placeholder={t(
+                          "timeLeave.shiftScheduling.controls.allDepartments",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
+                      <SelectItem value="all">
+                        {t("timeLeave.shiftScheduling.controls.allDepartments")}
+                      </SelectItem>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
+                          {getDepartmentLabel(dept.name)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="location">Location</Label>
+                  <Label htmlFor="location">
+                    {t("timeLeave.shiftScheduling.controls.location")}
+                  </Label>
                   <Select
                     value={selectedLocation}
                     onValueChange={setSelectedLocation}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All locations" />
+                      <SelectValue
+                        placeholder={t(
+                          "timeLeave.shiftScheduling.controls.allLocations",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All locations</SelectItem>
+                      <SelectItem value="all">
+                        {t("timeLeave.shiftScheduling.controls.allLocations")}
+                      </SelectItem>
                       {locations.map((location) => (
                         <SelectItem key={location} value={location}>
-                          {location}
+                          {getLocationLabel(location)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1561,7 +1762,7 @@ export default function ShiftScheduling() {
                 <div>
                   <Button onClick={handleLoad} className="w-full">
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    Load
+                    {t("timeLeave.shiftScheduling.controls.load")}
                   </Button>
                 </div>
                 <div>
@@ -1572,19 +1773,23 @@ export default function ShiftScheduling() {
                     <DialogTrigger asChild>
                       <Button className="w-full">
                         <Plus className="h-4 w-4 mr-2" />
-                        Create Shift
+                        {t("timeLeave.shiftScheduling.controls.createShift")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Create Shift</DialogTitle>
+                        <DialogTitle>
+                          {t("timeLeave.shiftScheduling.create.title")}
+                        </DialogTitle>
                         <DialogDescription>
-                          Add a new shift to the schedule
+                          {t("timeLeave.shiftScheduling.create.description")}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                          <Label htmlFor="employee">Employee *</Label>
+                          <Label htmlFor="employee">
+                            {t("timeLeave.shiftScheduling.create.employee")}
+                          </Label>
                           <Select
                             value={formData.employee}
                             onValueChange={(value) =>
@@ -1592,7 +1797,11 @@ export default function ShiftScheduling() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select employee" />
+                              <SelectValue
+                                placeholder={t(
+                                  "timeLeave.shiftScheduling.create.employeePlaceholder",
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {employees.map((employee) => (
@@ -1600,14 +1809,17 @@ export default function ShiftScheduling() {
                                   key={employee.id}
                                   value={employee.id}
                                 >
-                                  {employee.name} - {employee.position}
+                                  {employee.name} -{" "}
+                                  {getPositionLabel(employee.position)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="department">Department *</Label>
+                          <Label htmlFor="department">
+                            {t("timeLeave.shiftScheduling.create.department")}
+                          </Label>
                           <Select
                             value={formData.department}
                             onValueChange={(value) =>
@@ -1615,19 +1827,25 @@ export default function ShiftScheduling() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select department" />
+                              <SelectValue
+                                placeholder={t(
+                                  "timeLeave.shiftScheduling.create.departmentPlaceholder",
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {departments.map((dept) => (
                                 <SelectItem key={dept.id} value={dept.name}>
-                                  {dept.name}
+                                  {getDepartmentLabel(dept.name)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="position">Position *</Label>
+                          <Label htmlFor="position">
+                            {t("timeLeave.shiftScheduling.create.position")}
+                          </Label>
                           <Select
                             value={formData.position}
                             onValueChange={(value) =>
@@ -1635,7 +1853,11 @@ export default function ShiftScheduling() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select position" />
+                              <SelectValue
+                                placeholder={t(
+                                  "timeLeave.shiftScheduling.create.positionPlaceholder",
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {formData.department &&
@@ -1646,14 +1868,16 @@ export default function ShiftScheduling() {
                                       key={position.id}
                                       value={position.title}
                                     >
-                                      {position.title}
+                                      {getPositionLabel(position.title)}
                                     </SelectItem>
                                   ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="shift-date">Date *</Label>
+                          <Label htmlFor="shift-date">
+                            {t("timeLeave.shiftScheduling.create.date")}
+                          </Label>
                           <Input
                             id="shift-date"
                             type="date"
@@ -1666,7 +1890,9 @@ export default function ShiftScheduling() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                           <div>
-                            <Label htmlFor="shift-start">Start Time *</Label>
+                            <Label htmlFor="shift-start">
+                              {t("timeLeave.shiftScheduling.create.startTime")}
+                            </Label>
                             <Input
                               id="shift-start"
                               type="time"
@@ -1678,7 +1904,9 @@ export default function ShiftScheduling() {
                             />
                           </div>
                           <div>
-                            <Label htmlFor="shift-end">End Time *</Label>
+                            <Label htmlFor="shift-end">
+                              {t("timeLeave.shiftScheduling.create.endTime")}
+                            </Label>
                             <Input
                               id="shift-end"
                               type="time"
@@ -1692,16 +1920,18 @@ export default function ShiftScheduling() {
                         </div>
                         {formData.startTime && formData.endTime && (
                           <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            Total Hours:{" "}
-                            {calculateHours(
-                              formData.startTime,
-                              formData.endTime,
-                            )}
-                            h
+                            {t("timeLeave.shiftScheduling.create.totalHours", {
+                              hours: calculateHours(
+                                formData.startTime,
+                                formData.endTime,
+                              ),
+                            })}
                           </div>
                         )}
                         <div>
-                          <Label htmlFor="location">Location *</Label>
+                          <Label htmlFor="location">
+                            {t("timeLeave.shiftScheduling.create.location")}
+                          </Label>
                           <Select
                             value={formData.location}
                             onValueChange={(value) =>
@@ -1709,26 +1939,34 @@ export default function ShiftScheduling() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select location" />
+                              <SelectValue
+                                placeholder={t(
+                                  "timeLeave.shiftScheduling.create.locationPlaceholder",
+                                )}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {locations.map((location) => (
                                 <SelectItem key={location} value={location}>
-                                  {location}
+                                  {getLocationLabel(location)}
                                 </SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="notes">Notes</Label>
+                          <Label htmlFor="notes">
+                            {t("timeLeave.shiftScheduling.create.notes")}
+                          </Label>
                           <Textarea
                             id="notes"
                             value={formData.notes}
                             onChange={(e) =>
                               handleInputChange("notes", e.target.value)
                             }
-                            placeholder="Optional notes for this shift..."
+                            placeholder={t(
+                              "timeLeave.shiftScheduling.create.notesPlaceholder",
+                            )}
                             rows={2}
                           />
                         </div>
@@ -1742,10 +1980,10 @@ export default function ShiftScheduling() {
                             }}
                             className="flex-1"
                           >
-                            Cancel
+                            {t("timeLeave.shiftScheduling.actions.cancel")}
                           </Button>
                           <Button type="submit" className="flex-1">
-                            Create Shift
+                            {t("timeLeave.shiftScheduling.actions.createShift")}
                           </Button>
                         </div>
                       </form>
@@ -1755,7 +1993,7 @@ export default function ShiftScheduling() {
                 <div>
                   <Button variant="outline" className="w-full">
                     <Settings className="h-4 w-4 mr-2" />
-                    Settings
+                    {t("timeLeave.shiftScheduling.controls.settings")}
                   </Button>
                 </div>
               </div>
@@ -1764,9 +2002,15 @@ export default function ShiftScheduling() {
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="schedule">Schedule</TabsTrigger>
-              <TabsTrigger value="employees">Employees</TabsTrigger>
-              <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="schedule">
+                {t("timeLeave.shiftScheduling.tabs.schedule")}
+              </TabsTrigger>
+              <TabsTrigger value="employees">
+                {t("timeLeave.shiftScheduling.tabs.employees")}
+              </TabsTrigger>
+              <TabsTrigger value="analytics">
+                {t("timeLeave.shiftScheduling.tabs.analytics")}
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="schedule" className="mt-6">
@@ -1786,14 +2030,18 @@ export default function ShiftScheduling() {
           <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
             <DialogContent className="max-w-md">
               <DialogHeader>
-                <DialogTitle>Edit Shift</DialogTitle>
+                <DialogTitle>
+                  {t("timeLeave.shiftScheduling.edit.title")}
+                </DialogTitle>
                 <DialogDescription>
-                  Modify shift details or delete the shift
+                  {t("timeLeave.shiftScheduling.edit.description")}
                 </DialogDescription>
               </DialogHeader>
               <form onSubmit={handleUpdateShift} className="space-y-4">
                 <div>
-                  <Label htmlFor="edit-employee">Employee *</Label>
+                  <Label htmlFor="edit-employee">
+                    {t("timeLeave.shiftScheduling.edit.employee")}
+                  </Label>
                   <Select
                     value={formData.employee}
                     onValueChange={(value) =>
@@ -1801,31 +2049,41 @@ export default function ShiftScheduling() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select employee" />
+                      <SelectValue
+                        placeholder={t(
+                          "timeLeave.shiftScheduling.edit.employeePlaceholder",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {employees.map((employee) => (
                         <SelectItem key={employee.id} value={employee.id}>
-                          {employee.name} - {employee.position}
+                          {employee.name} - {getPositionLabel(employee.position)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit-position">Position *</Label>
+                  <Label htmlFor="edit-position">
+                    {t("timeLeave.shiftScheduling.edit.position")}
+                  </Label>
                   <Input
                     id="edit-position"
                     value={formData.position}
                     onChange={(e) =>
                       handleInputChange("position", e.target.value)
                     }
-                    placeholder="Enter position"
+                    placeholder={t(
+                      "timeLeave.shiftScheduling.edit.positionPlaceholder",
+                    )}
                     required
                   />
                 </div>
                 <div>
-                  <Label htmlFor="edit-date">Date *</Label>
+                  <Label htmlFor="edit-date">
+                    {t("timeLeave.shiftScheduling.edit.date")}
+                  </Label>
                   <Input
                     id="edit-date"
                     type="date"
@@ -1836,7 +2094,9 @@ export default function ShiftScheduling() {
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div>
-                    <Label htmlFor="edit-start">Start Time *</Label>
+                    <Label htmlFor="edit-start">
+                      {t("timeLeave.shiftScheduling.edit.startTime")}
+                    </Label>
                     <Input
                       id="edit-start"
                       type="time"
@@ -1848,7 +2108,9 @@ export default function ShiftScheduling() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="edit-end">End Time *</Label>
+                    <Label htmlFor="edit-end">
+                      {t("timeLeave.shiftScheduling.edit.endTime")}
+                    </Label>
                     <Input
                       id="edit-end"
                       type="time"
@@ -1861,7 +2123,9 @@ export default function ShiftScheduling() {
                   </div>
                 </div>
                 <div>
-                  <Label htmlFor="edit-location">Location *</Label>
+                  <Label htmlFor="edit-location">
+                    {t("timeLeave.shiftScheduling.edit.location")}
+                  </Label>
                   <Select
                     value={formData.location}
                     onValueChange={(value) =>
@@ -1869,24 +2133,32 @@ export default function ShiftScheduling() {
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
+                      <SelectValue
+                        placeholder={t(
+                          "timeLeave.shiftScheduling.edit.locationPlaceholder",
+                        )}
+                      />
                     </SelectTrigger>
                     <SelectContent>
                       {locations.map((location) => (
                         <SelectItem key={location} value={location}>
-                          {location}
+                          {getLocationLabel(location)}
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="edit-notes">Notes</Label>
+                  <Label htmlFor="edit-notes">
+                    {t("timeLeave.shiftScheduling.edit.notes")}
+                  </Label>
                   <Textarea
                     id="edit-notes"
                     value={formData.notes}
                     onChange={(e) => handleInputChange("notes", e.target.value)}
-                    placeholder="Optional notes..."
+                    placeholder={t(
+                      "timeLeave.shiftScheduling.edit.notesPlaceholder",
+                    )}
                     rows={2}
                   />
                 </div>
@@ -1899,19 +2171,22 @@ export default function ShiftScheduling() {
                         className="flex-1"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
+                        {t("timeLeave.shiftScheduling.actions.delete")}
                       </Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                       <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Shift</AlertDialogTitle>
+                        <AlertDialogTitle>
+                          {t("timeLeave.shiftScheduling.delete.title")}
+                        </AlertDialogTitle>
                         <AlertDialogDescription>
-                          Are you sure you want to delete this shift? This
-                          action cannot be undone.
+                          {t("timeLeave.shiftScheduling.delete.description")}
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogCancel>
+                          {t("timeLeave.shiftScheduling.actions.cancel")}
+                        </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
                             if (selectedShift) {
@@ -1923,7 +2198,7 @@ export default function ShiftScheduling() {
                           }}
                           className="bg-red-600 hover:bg-red-700"
                         >
-                          Delete
+                          {t("timeLeave.shiftScheduling.delete.confirm")}
                         </AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
@@ -1938,11 +2213,11 @@ export default function ShiftScheduling() {
                     }}
                     className="flex-1"
                   >
-                    Cancel
+                    {t("timeLeave.shiftScheduling.actions.cancel")}
                   </Button>
                   <Button type="submit" className="flex-1">
                     <Save className="h-4 w-4 mr-2" />
-                    Update
+                    {t("timeLeave.shiftScheduling.actions.update")}
                   </Button>
                 </div>
               </form>

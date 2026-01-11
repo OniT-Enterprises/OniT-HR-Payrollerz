@@ -56,6 +56,7 @@ import {
   Calendar,
   ExternalLink,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function TrainingCertifications() {
   const { toast } = useToast();
@@ -313,6 +314,7 @@ export default function TrainingCertifications() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <SEO {...seoConfig.training} />
       <MainNavigation />
 
       <div className="p-6">

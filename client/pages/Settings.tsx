@@ -29,6 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   TenantSettings,
   CompanyDetails,
@@ -407,6 +408,7 @@ export default function Settings() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.settings} />
       <MainNavigation />
 
       <div className="p-6 max-w-6xl mx-auto">

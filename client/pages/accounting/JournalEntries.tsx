@@ -176,12 +176,20 @@ export default function JournalEntries() {
   };
 
   // Source badge
-  const getSourceBadge = (source: JournalEntry["source"]) => {
+  const getSourceBadge = (source: JournalEntry["source"] | undefined) => {
+    if (!source) {
+      return <Badge className="bg-gray-100 text-gray-800">Manual</Badge>;
+    }
     const colors: Record<string, string> = {
       manual: "bg-gray-100 text-gray-800",
       payroll: "bg-blue-100 text-blue-800",
       invoice: "bg-purple-100 text-purple-800",
       adjustment: "bg-orange-100 text-orange-800",
+      opening: "bg-green-100 text-green-800",
+      expense: "bg-red-100 text-red-800",
+      revenue: "bg-emerald-100 text-emerald-800",
+      receipt: "bg-cyan-100 text-cyan-800",
+      payment: "bg-amber-100 text-amber-800",
     };
 
     return (

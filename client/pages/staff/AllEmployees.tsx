@@ -25,6 +25,7 @@ import EmployeeProfileView from "@/components/EmployeeProfileView";
 import ContactInfoPopover from "@/components/ContactInfoPopover";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   getProfileCompleteness,
   getIncompleteEmployees,
@@ -605,6 +606,7 @@ export default function AllEmployees() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.employees} />
       <MainNavigation />
 
       {/* Hero Section */}

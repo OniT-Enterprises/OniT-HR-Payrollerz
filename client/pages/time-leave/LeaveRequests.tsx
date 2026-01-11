@@ -89,6 +89,7 @@ import {
   TL_LEAVE_TYPES,
   calculateWorkingDays,
 } from "@/services/leaveService";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function LeaveRequests() {
   const { toast } = useToast();
@@ -539,6 +540,7 @@ export default function LeaveRequests() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.leave} />
       <MainNavigation />
 
       <div className="p-6">

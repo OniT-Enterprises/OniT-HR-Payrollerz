@@ -55,6 +55,7 @@ import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BankTransfer, PayrollRun } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function BankTransfers() {
   const { toast } = useToast();

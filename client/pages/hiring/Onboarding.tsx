@@ -16,6 +16,7 @@ import { Progress } from "@/components/ui/progress";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
+import { SEO, seoConfig } from "@/components/SEO";
 import {
   UserPlus,
   FileText,
@@ -204,6 +205,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.onboarding} />
       <MainNavigation />
 
       {/* Hero Section */}

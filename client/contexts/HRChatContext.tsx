@@ -77,7 +77,14 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Load API key from tenant settings or localStorage
   useEffect(() => {
     const loadApiKey = async () => {
-      // Try localStorage first (for quick access)
+      // Try environment variable first (for development)
+      const envKey = import.meta.env.VITE_OPENAI_API_KEY;
+      if (envKey) {
+        setState(prev => ({ ...prev, apiKey: envKey }));
+        return;
+      }
+
+      // Try localStorage (for user-entered keys)
       const localKey = localStorage.getItem('openai_api_key');
       if (localKey) {
         setState(prev => ({ ...prev, apiKey: localKey }));
@@ -186,7 +193,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
   const setApiKey = useCallback((key: string) => {
     localStorage.setItem('openai_api_key', key);
     setState(prev => ({ ...prev, apiKey: key }));
-    toast.success('API key saved');
+    toast.success('API key saved', { duration: 1500 });
   }, []);
 
   const sendMessage = useCallback(async (content: string) => {
@@ -223,7 +230,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
           messages: [...prev.messages, assistantMessage],
           isLoading: false,
         }));
-        toast.success(`Navigated to ${navRoute}`);
+        toast.success(`Navigated to ${navRoute}`, { duration: 1500 });
         return;
       }
 
@@ -246,7 +253,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
       // Handle navigation action from AI response
       if (response.action?.navigateTo) {
         navigate(response.action.navigateTo);
-        toast.success(`Navigated to ${response.action.navigateTo}`);
+        toast.success(`Navigated to ${response.action.navigateTo}`, { duration: 1500 });
       }
 
       setState(prev => ({
@@ -284,7 +291,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
       ...prev,
       pendingAction: null,
     }));
-    toast.info('Action cancelled');
+    toast.info('Action cancelled', { duration: 1500 });
   }, []);
 
   const clearMessages = useCallback(() => {

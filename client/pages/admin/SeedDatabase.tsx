@@ -693,7 +693,7 @@ export default function SeedDatabase() {
         date: new Date(currentYear, 0, 1),
         reference: `OB-${currentYear}-001`,
         description: `Opening Balances for ${currentYear}`,
-        type: "opening",
+        source: "opening",
         lines: [
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 500000, credit: 0 },
           { accountCode: "1220", accountName: "BNU Payroll Account", debit: 100000, credit: 0 },
@@ -708,7 +708,7 @@ export default function SeedDatabase() {
         date: thisMonth,
         reference: `PAY-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`,
         description: `Payroll for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
-        type: "payroll",
+        source: "payroll",
         lines: [
           { accountCode: "5110", accountName: "Wages & Salaries", debit: 293000, credit: 0 },
           { accountCode: "5200", accountName: "INSS Employer Expense", debit: 17580, credit: 0 },
@@ -723,7 +723,7 @@ export default function SeedDatabase() {
         date: thisMonth,
         reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Monthly Office Rent - Dili Head Office",
-        type: "expense",
+        source: "expense",
         lines: [
           { accountCode: "5300", accountName: "Rent Expense", debit: 8500, credit: 0 },
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 0, credit: 8500 },
@@ -734,7 +734,7 @@ export default function SeedDatabase() {
         date: thisMonth,
         reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-002`,
         description: "EDTL Electricity Bill",
-        type: "expense",
+        source: "expense",
         lines: [
           { accountCode: "5410", accountName: "Electricity (EDTL)", debit: 2400, credit: 0 },
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 0, credit: 2400 },
@@ -745,7 +745,7 @@ export default function SeedDatabase() {
         date: thisMonth,
         reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-003`,
         description: "Telkomcel Internet Service",
-        type: "expense",
+        source: "expense",
         lines: [
           { accountCode: "5430", accountName: "Internet & Phone", debit: 850, credit: 0 },
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 0, credit: 850 },
@@ -756,7 +756,7 @@ export default function SeedDatabase() {
         date: thisMonth,
         reference: `REV-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Consulting Services - December 2025",
-        type: "revenue",
+        source: "revenue",
         lines: [
           { accountCode: "1300", accountName: "Accounts Receivable", debit: 75000, credit: 0 },
           { accountCode: "4100", accountName: "Service Revenue", debit: 0, credit: 75000 },
@@ -767,7 +767,7 @@ export default function SeedDatabase() {
         date: new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 15),
         reference: `REC-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Payment received from Client - INV-2025-042",
-        type: "receipt",
+        source: "receipt",
         lines: [
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 45000, credit: 0 },
           { accountCode: "1300", accountName: "Accounts Receivable", debit: 0, credit: 45000 },
@@ -778,7 +778,7 @@ export default function SeedDatabase() {
         date: new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 25),
         reference: `PMT-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: `Salary payment for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
-        type: "payment",
+        source: "payment",
         lines: [
           { accountCode: "2200", accountName: "Salaries Payable", debit: 264540, credit: 0 },
           { accountCode: "1220", accountName: "BNU Payroll Account", debit: 0, credit: 264540 },

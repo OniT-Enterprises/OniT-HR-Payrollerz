@@ -58,6 +58,7 @@ import { employeeService, Employee } from "@/services/employeeService";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency, BENEFIT_LIMITS } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const BENEFIT_TYPES = [
   { value: "health", label: "Health Insurance", icon: Stethoscope },

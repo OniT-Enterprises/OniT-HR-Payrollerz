@@ -23,6 +23,7 @@ import {
   Filter,
   Download,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function Reviews() {
   const [employees, setEmployees] = useState([]);
@@ -103,6 +104,7 @@ export default function Reviews() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.reviews} />
       <MainNavigation />
 
       <div className="p-6">

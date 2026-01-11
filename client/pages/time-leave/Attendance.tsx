@@ -71,6 +71,7 @@ import {
   AttendanceStatus,
 } from "@/services/attendanceService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function Attendance() {
   const { toast } = useToast();
@@ -488,6 +489,7 @@ export default function Attendance() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.attendance} />
       <MainNavigation />
 
       <div className="p-6">

@@ -70,6 +70,7 @@ import {
 } from "@/lib/payroll/constants";
 import { downloadPayslip } from "@/components/payroll/PayslipPDF";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
