@@ -2,11 +2,33 @@
  * TypeScript types for multi-tenant structure and RBAC
  */
 
+// Tenant status for SaaS management
+export type TenantStatus = 'active' | 'suspended' | 'pending' | 'cancelled';
+
+// Subscription plans
+export type TenantPlan = 'free' | 'starter' | 'professional' | 'enterprise';
+
 // Core tenant types
 export interface TenantConfig {
   id: string;
   name: string;
   slug?: string;
+
+  // SaaS management fields
+  status: TenantStatus;
+  plan: TenantPlan;
+
+  // Billing information
+  billingEmail?: string;
+  stripeCustomerId?: string;
+
+  // Plan limits
+  limits?: {
+    maxEmployees: number;
+    maxUsers: number;
+    storageGB: number;
+  };
+
   branding?: {
     logoUrl?: string;
     primaryColor?: string;
@@ -29,9 +51,25 @@ export interface TenantConfig {
     currency?: string;
     dateFormat?: string;
   };
+
+  // Audit fields
   createdAt?: any;
   updatedAt?: any;
+  createdBy?: string; // uid of creator (superadmin or self-service)
+
+  // Suspension tracking
+  suspendedAt?: any;
+  suspendedBy?: string;
+  suspendedReason?: string;
 }
+
+// Default plan limits
+export const PLAN_LIMITS: Record<TenantPlan, TenantConfig['limits']> = {
+  free: { maxEmployees: 5, maxUsers: 2, storageGB: 1 },
+  starter: { maxEmployees: 25, maxUsers: 5, storageGB: 5 },
+  professional: { maxEmployees: 100, maxUsers: 20, storageGB: 25 },
+  enterprise: { maxEmployees: 999999, maxUsers: 999999, storageGB: 100 },
+};
 
 // RBAC types
 export type TenantRole = 'owner' | 'hr-admin' | 'manager' | 'viewer';

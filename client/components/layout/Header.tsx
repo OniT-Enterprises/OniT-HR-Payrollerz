@@ -86,13 +86,13 @@ const Header: React.FC = () => {
     },
     {
       id: 'reports',
-      label: t('nav.financialReports'),
+      label: t('nav.reports'),
       icon: <BarChart3 className="h-6 w-6" />,
       sub: [
-        { id: 'employee-reports', label: t('nav.allEmployees'), icon: <Users className="h-5 w-5" />, path: '/reports/employees' },
-        { id: 'payroll-reports', label: t('nav.payroll'), icon: <Calculator className="h-5 w-5" />, path: '/reports/payroll' },
+        { id: 'employee-reports', label: t('nav.employeeReports'), icon: <Users className="h-5 w-5" />, path: '/reports/employees' },
+        { id: 'payroll-reports', label: t('nav.payrollReports'), icon: <Calculator className="h-5 w-5" />, path: '/reports/payroll' },
         { id: 'attendance-reports', label: t('nav.attendance'), icon: <Calendar className="h-5 w-5" />, path: '/reports/attendance' },
-        { id: 'custom-reports', label: t('nav.financialReports'), icon: <PieChart className="h-5 w-5" />, path: '/reports/custom' }
+        { id: 'custom-reports', label: t('nav.customReports'), icon: <PieChart className="h-5 w-5" />, path: '/reports/custom' }
       ]
     }
   ];

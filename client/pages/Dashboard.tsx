@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { departmentService } from "@/services/departmentService";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Users,
   DollarSign,
@@ -119,6 +120,7 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departmentCount, setDepartmentCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -160,7 +162,7 @@ export default function Dashboard() {
 
   const departmentStats = employees.reduce(
     (acc, emp) => {
-      const dept = emp.jobDetails?.department || "Unknown";
+      const dept = emp.jobDetails?.department || t("dashboard.unknownDepartment");
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     },
@@ -179,12 +181,12 @@ export default function Dashboard() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-            <p className="text-muted-foreground">Welcome back. Here's your HR overview.</p>
+            <h1 className="text-2xl font-bold text-foreground">{t("dashboard.title")}</h1>
+            <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
           </div>
           <Button onClick={() => navigate("/people/add")} className="bg-primary hover:bg-primary/90">
             <Plus className="h-4 w-4 mr-2" />
-            Add Employee
+            {t("dashboard.addEmployee")}
           </Button>
         </div>
 
@@ -194,12 +196,12 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Total Employees</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.totalEmployees")}</span>
                 <Users className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="text-3xl font-bold text-foreground">{activeEmployees.length}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                {employees.length - activeEmployees.length} inactive
+                {t("dashboard.inactiveCount", { count: employees.length - activeEmployees.length })}
               </p>
             </CardContent>
           </Card>
@@ -208,11 +210,11 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Monthly Payroll</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.monthlyPayroll")}</span>
                 <DollarSign className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="text-3xl font-bold text-foreground">${totalPayroll.toLocaleString()}</div>
-              <p className="text-sm text-muted-foreground mt-1">Total compensation</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("dashboard.totalCompensation")}</p>
             </CardContent>
           </Card>
 
@@ -220,12 +222,12 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Departments</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.departments")}</span>
                 <Building className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="text-3xl font-bold text-foreground">{departmentCount}</div>
               <p className="text-sm text-muted-foreground mt-1">
-                {Object.keys(departmentStats).length} with staff
+                {t("dashboard.withStaff", { count: Object.keys(departmentStats).length })}
               </p>
             </CardContent>
           </Card>
@@ -234,7 +236,7 @@ export default function Dashboard() {
           <Card>
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">Avg. Salary</span>
+                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.avgSalary")}</span>
                 <TrendingUp className="h-5 w-5 text-muted-foreground" />
               </div>
               <div className="text-3xl font-bold text-foreground">
@@ -242,7 +244,7 @@ export default function Dashboard() {
                   ? Math.round(totalPayroll / activeEmployees.length).toLocaleString()
                   : "0"}
               </div>
-              <p className="text-sm text-muted-foreground mt-1">Per employee</p>
+              <p className="text-sm text-muted-foreground mt-1">{t("dashboard.perEmployee")}</p>
             </CardContent>
           </Card>
         </div>
@@ -252,7 +254,7 @@ export default function Dashboard() {
           {/* Department Breakdown */}
           <Card className="lg:col-span-2">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Department Breakdown</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t("dashboard.departmentBreakdown")}</CardTitle>
             </CardHeader>
             <CardContent>
               {Object.keys(departmentStats).length > 0 ? (
@@ -284,13 +286,13 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8">
                   <Building className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No department data yet</p>
+                  <p className="text-muted-foreground">{t("dashboard.noDepartmentData")}</p>
                   <Button
                     variant="link"
                     className="text-primary mt-1"
                     onClick={() => navigate("/admin/seed")}
                   >
-                    Seed database
+                    {t("dashboard.seedData")}
                   </Button>
                 </div>
               )}
@@ -300,7 +302,7 @@ export default function Dashboard() {
           {/* Quick Actions */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t("dashboard.quickActions")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <button
@@ -311,8 +313,8 @@ export default function Dashboard() {
                   <Plus className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Add Employee</p>
-                  <p className="text-xs text-muted-foreground">Create new record</p>
+                  <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.createRecord")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -325,8 +327,8 @@ export default function Dashboard() {
                   <DollarSign className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Run Payroll</p>
-                  <p className="text-xs text-muted-foreground">Process payments</p>
+                  <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.processPayments")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -339,8 +341,8 @@ export default function Dashboard() {
                   <Clock className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Time Tracking</p>
-                  <p className="text-xs text-muted-foreground">View attendance</p>
+                  <p className="text-sm font-medium">{t("dashboard.timeTracking")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.viewAttendance")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -353,8 +355,8 @@ export default function Dashboard() {
                   <FileText className="h-4 w-4 text-primary" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium">Reports</p>
-                  <p className="text-xs text-muted-foreground">Generate reports</p>
+                  <p className="text-sm font-medium">{t("dashboard.reports")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.generateReports")}</p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </button>
@@ -367,14 +369,14 @@ export default function Dashboard() {
           {/* Recent Hires */}
           <Card>
             <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">Recent Hires</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t("dashboard.recentHires")}</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 className="text-primary hover:text-primary"
                 onClick={() => navigate("/people/employees")}
               >
-                View all
+                {t("dashboard.viewAll")}
               </Button>
             </CardHeader>
             <CardContent>
@@ -410,13 +412,13 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8">
                   <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">No employees yet</p>
+                  <p className="text-muted-foreground">{t("dashboard.noEmployees")}</p>
                   <Button
                     variant="link"
                     className="text-primary mt-1"
                     onClick={() => navigate("/admin/seed")}
                   >
-                    Seed database
+                    {t("dashboard.seedData")}
                   </Button>
                 </div>
               )}
@@ -426,15 +428,15 @@ export default function Dashboard() {
           {/* Salary Distribution */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">Salary Ranges</CardTitle>
+              <CardTitle className="text-lg font-semibold">{t("dashboard.salaryRanges")}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {[
-                  { label: "$0 - $10k", min: 0, max: 10000, color: "bg-emerald-500" },
-                  { label: "$10k - $15k", min: 10000, max: 15000, color: "bg-cyan-500" },
-                  { label: "$15k - $25k", min: 15000, max: 25000, color: "bg-primary" },
-                  { label: "$25k+", min: 25000, max: Infinity, color: "bg-amber-500" },
+                  { label: t("dashboard.salaryRange0"), min: 0, max: 10000, color: "bg-emerald-500" },
+                  { label: t("dashboard.salaryRange1"), min: 10000, max: 15000, color: "bg-cyan-500" },
+                  { label: t("dashboard.salaryRange2"), min: 15000, max: 25000, color: "bg-primary" },
+                  { label: t("dashboard.salaryRange3"), min: 25000, max: Infinity, color: "bg-amber-500" },
                 ].map((range) => {
                   const count = activeEmployees.filter((emp) => {
                     const salary = emp.compensation?.monthlySalary || 0;

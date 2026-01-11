@@ -27,6 +27,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   TenantSettings,
   CompanyDetails,
@@ -110,12 +111,13 @@ interface SetupProgressProps {
 }
 
 function SetupProgress({ progress }: SetupProgressProps) {
+  const { t } = useI18n();
   const steps = [
-    { key: "companyDetails", label: "Company Details" },
-    { key: "companyStructure", label: "Structure" },
-    { key: "paymentStructure", label: "Payment" },
-    { key: "timeOffPolicies", label: "Time Off" },
-    { key: "payrollConfig", label: "Payroll" },
+    { key: "companyDetails", label: t("settings.tabs.company") },
+    { key: "companyStructure", label: t("settings.tabs.structure") },
+    { key: "paymentStructure", label: t("settings.tabs.payment") },
+    { key: "timeOffPolicies", label: t("settings.tabs.timeOff") },
+    { key: "payrollConfig", label: t("settings.tabs.payroll") },
   ];
 
   const completed = Object.values(progress).filter(Boolean).length;
@@ -125,9 +127,9 @@ function SetupProgress({ progress }: SetupProgressProps) {
     <Card className="mb-6">
       <CardContent className="py-4">
         <div className="flex items-center justify-between mb-3">
-          <span className="text-sm font-medium">Setup Progress</span>
+          <span className="text-sm font-medium">{t("settings.setupProgress")}</span>
           <Badge variant={completed === total ? "default" : "secondary"}>
-            {completed}/{total} Complete
+            {t("settings.progressComplete", { completed, total })}
           </Badge>
         </div>
         <div className="flex gap-2">
@@ -157,6 +159,7 @@ export default function Settings() {
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -225,8 +228,8 @@ export default function Settings() {
     } catch (error) {
       console.error("Error loading settings:", error);
       toast({
-        title: "Error",
-        description: "Failed to load settings",
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -240,10 +243,17 @@ export default function Settings() {
     setSaving(true);
     try {
       await settingsService.updateCompanyDetails(tenantId, companyDetails);
-      toast({ title: "Saved", description: "Company details updated" });
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: t("settings.notifications.companySaved"),
+      });
       loadSettings();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -254,10 +264,17 @@ export default function Settings() {
     setSaving(true);
     try {
       await settingsService.updateCompanyStructure(tenantId, companyStructure);
-      toast({ title: "Saved", description: "Company structure updated" });
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: t("settings.notifications.structureSaved"),
+      });
       loadSettings();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -268,10 +285,17 @@ export default function Settings() {
     setSaving(true);
     try {
       await settingsService.updatePaymentStructure(tenantId, paymentStructure);
-      toast({ title: "Saved", description: "Payment structure updated" });
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: t("settings.notifications.paymentSaved"),
+      });
       loadSettings();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -282,10 +306,17 @@ export default function Settings() {
     setSaving(true);
     try {
       await settingsService.updateTimeOffPolicies(tenantId, timeOffPolicies);
-      toast({ title: "Saved", description: "Time-off policies updated" });
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: t("settings.notifications.timeOffSaved"),
+      });
       loadSettings();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -296,10 +327,17 @@ export default function Settings() {
     setSaving(true);
     try {
       await settingsService.updatePayrollConfig(tenantId, payrollConfig);
-      toast({ title: "Saved", description: "Payroll configuration updated" });
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: t("settings.notifications.payrollSaved"),
+      });
       loadSettings();
     } catch (error) {
-      toast({ title: "Error", description: "Failed to save", variant: "destructive" });
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: t("settings.notifications.saveFailed"),
+        variant: "destructive",
+      });
     } finally {
       setSaving(false);
     }
@@ -377,10 +415,8 @@ export default function Settings() {
             <SettingsIcon className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">Company Settings</h1>
-            <p className="text-muted-foreground">
-              Configure your company, payroll, and HR policies
-            </p>
+            <h1 className="text-2xl font-bold">{t("settings.headerTitle")}</h1>
+            <p className="text-muted-foreground">{t("settings.headerSubtitle")}</p>
           </div>
         </div>
 
@@ -394,23 +430,23 @@ export default function Settings() {
           <TabsList className="grid w-full grid-cols-5 mb-6">
             <TabsTrigger value="company" className="gap-2">
               <Building className="h-4 w-4" />
-              <span className="hidden sm:inline">Company</span>
+              <span className="hidden sm:inline">{t("settings.tabs.company")}</span>
             </TabsTrigger>
             <TabsTrigger value="structure" className="gap-2">
               <Building2 className="h-4 w-4" />
-              <span className="hidden sm:inline">Structure</span>
+              <span className="hidden sm:inline">{t("settings.tabs.structure")}</span>
             </TabsTrigger>
             <TabsTrigger value="payment" className="gap-2">
               <CreditCard className="h-4 w-4" />
-              <span className="hidden sm:inline">Payment</span>
+              <span className="hidden sm:inline">{t("settings.tabs.payment")}</span>
             </TabsTrigger>
             <TabsTrigger value="timeoff" className="gap-2">
               <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">Time Off</span>
+              <span className="hidden sm:inline">{t("settings.tabs.timeOff")}</span>
             </TabsTrigger>
             <TabsTrigger value="payroll" className="gap-2">
               <Calculator className="h-4 w-4" />
-              <span className="hidden sm:inline">Payroll</span>
+              <span className="hidden sm:inline">{t("settings.tabs.payroll")}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -420,39 +456,39 @@ export default function Settings() {
           <TabsContent value="company">
             <Card>
               <CardHeader>
-                <CardTitle>Company Details</CardTitle>
+                <CardTitle>{t("settings.company.title")}</CardTitle>
                 <CardDescription>
-                  Basic information about your company for legal and tax purposes
+                  {t("settings.company.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="legalName">Legal Company Name *</Label>
+                    <Label htmlFor="legalName">{t("settings.company.legalName")}</Label>
                     <Input
                       id="legalName"
                       value={companyDetails.legalName}
                       onChange={(e) =>
                         setCompanyDetails({ ...companyDetails, legalName: e.target.value })
                       }
-                      placeholder="e.g., OniT Security, Lda"
+                      placeholder={t("settings.company.legalNamePlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tradingName">Trading Name (if different)</Label>
+                    <Label htmlFor="tradingName">{t("settings.company.tradingName")}</Label>
                     <Input
                       id="tradingName"
                       value={companyDetails.tradingName || ""}
                       onChange={(e) =>
                         setCompanyDetails({ ...companyDetails, tradingName: e.target.value })
                       }
-                      placeholder="e.g., OniT Guard Services"
+                      placeholder={t("settings.company.tradingNamePlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="businessType">Business Type *</Label>
+                    <Label htmlFor="businessType">{t("settings.company.businessType")}</Label>
                     <Select
                       value={companyDetails.businessType}
                       onValueChange={(value: BusinessType) =>
@@ -463,26 +499,26 @@ export default function Settings() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="SA">Sociedade Anônima (S.A.)</SelectItem>
-                        <SelectItem value="Lda">Sociedade por Quotas (Lda)</SelectItem>
-                        <SelectItem value="Unipessoal">Unipessoal</SelectItem>
-                        <SelectItem value="ENIN">ENIN</SelectItem>
-                        <SelectItem value="NGO">NGO / Non-Profit</SelectItem>
-                        <SelectItem value="Government">Government</SelectItem>
-                        <SelectItem value="Other">Other</SelectItem>
+                        <SelectItem value="SA">{t("settings.company.businessTypes.sa")}</SelectItem>
+                        <SelectItem value="Lda">{t("settings.company.businessTypes.lda")}</SelectItem>
+                        <SelectItem value="Unipessoal">{t("settings.company.businessTypes.unipessoal")}</SelectItem>
+                        <SelectItem value="ENIN">{t("settings.company.businessTypes.enin")}</SelectItem>
+                        <SelectItem value="NGO">{t("settings.company.businessTypes.ngo")}</SelectItem>
+                        <SelectItem value="Government">{t("settings.company.businessTypes.government")}</SelectItem>
+                        <SelectItem value="Other">{t("settings.company.businessTypes.other")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="tinNumber">TIN Number *</Label>
+                    <Label htmlFor="tinNumber">{t("settings.company.tinNumber")}</Label>
                     <Input
                       id="tinNumber"
                       value={companyDetails.tinNumber}
                       onChange={(e) =>
                         setCompanyDetails({ ...companyDetails, tinNumber: e.target.value })
                       }
-                      placeholder="Tax Identification Number"
+                      placeholder={t("settings.company.tinPlaceholder")}
                     />
                   </div>
                 </div>
@@ -490,9 +526,9 @@ export default function Settings() {
                 <Separator />
 
                 <div className="space-y-4">
-                  <h3 className="font-medium">Address</h3>
+                  <h3 className="font-medium">{t("settings.company.addressTitle")}</h3>
                   <div className="space-y-2">
-                    <Label htmlFor="address">Registered Address *</Label>
+                    <Label htmlFor="address">{t("settings.company.registeredAddress")}</Label>
                     <Textarea
                       id="address"
                       value={companyDetails.registeredAddress}
@@ -502,26 +538,26 @@ export default function Settings() {
                           registeredAddress: e.target.value,
                         })
                       }
-                      placeholder="Street address, building name, etc."
+                      placeholder={t("settings.company.registeredAddressPlaceholder")}
                       rows={2}
                     />
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="city">City *</Label>
+                      <Label htmlFor="city">{t("settings.company.city")}</Label>
                       <Input
                         id="city"
                         value={companyDetails.city}
                         onChange={(e) =>
                           setCompanyDetails({ ...companyDetails, city: e.target.value })
                         }
-                        placeholder="e.g., Dili"
+                        placeholder={t("settings.company.cityPlaceholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="country">Country</Label>
+                      <Label htmlFor="country">{t("settings.company.country")}</Label>
                       <Input
                         id="country"
                         value={companyDetails.country}
@@ -535,19 +571,19 @@ export default function Settings() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label htmlFor="phone">Phone</Label>
+                    <Label htmlFor="phone">{t("settings.company.phone")}</Label>
                     <Input
                       id="phone"
                       value={companyDetails.phone || ""}
                       onChange={(e) =>
                         setCompanyDetails({ ...companyDetails, phone: e.target.value })
                       }
-                      placeholder="+670 XXX XXXX"
+                      placeholder={t("settings.company.phonePlaceholder")}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">{t("settings.company.email")}</Label>
                     <Input
                       id="email"
                       type="email"
@@ -555,7 +591,7 @@ export default function Settings() {
                       onChange={(e) =>
                         setCompanyDetails({ ...companyDetails, email: e.target.value })
                       }
-                      placeholder="info@company.com"
+                      placeholder={t("settings.company.emailPlaceholder")}
                     />
                   </div>
                 </div>
@@ -567,7 +603,7 @@ export default function Settings() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Company Details
+                    {t("settings.company.save")}
                   </Button>
                 </div>
               </CardContent>
@@ -580,15 +616,15 @@ export default function Settings() {
           <TabsContent value="structure">
             <Card>
               <CardHeader>
-                <CardTitle>Company Structure</CardTitle>
+                <CardTitle>{t("settings.structure.title")}</CardTitle>
                 <CardDescription>
-                  Define your business sector, locations, and departments
+                  {t("settings.structure.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Business Sector */}
                 <div className="space-y-2">
-                  <Label>Business Sector *</Label>
+                  <Label>{t("settings.structure.businessSector")}</Label>
                   <Select
                     value={companyStructure.businessSector}
                     onValueChange={(value: BusinessSector) => loadSectorDepartments(value)}
@@ -597,24 +633,24 @@ export default function Settings() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="security">Security Services</SelectItem>
-                      <SelectItem value="hotel">Hotel & Hospitality</SelectItem>
-                      <SelectItem value="restaurant">Restaurant</SelectItem>
-                      <SelectItem value="trading">Trading</SelectItem>
-                      <SelectItem value="manufacturing">Manufacturing</SelectItem>
-                      <SelectItem value="construction">Construction</SelectItem>
-                      <SelectItem value="retail">Retail</SelectItem>
-                      <SelectItem value="healthcare">Healthcare</SelectItem>
-                      <SelectItem value="education">Education</SelectItem>
-                      <SelectItem value="finance">Finance</SelectItem>
-                      <SelectItem value="technology">Technology</SelectItem>
-                      <SelectItem value="ngo">NGO</SelectItem>
-                      <SelectItem value="government">Government</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="security">{t("settings.structure.sectors.security")}</SelectItem>
+                      <SelectItem value="hotel">{t("settings.structure.sectors.hotel")}</SelectItem>
+                      <SelectItem value="restaurant">{t("settings.structure.sectors.restaurant")}</SelectItem>
+                      <SelectItem value="trading">{t("settings.structure.sectors.trading")}</SelectItem>
+                      <SelectItem value="manufacturing">{t("settings.structure.sectors.manufacturing")}</SelectItem>
+                      <SelectItem value="construction">{t("settings.structure.sectors.construction")}</SelectItem>
+                      <SelectItem value="retail">{t("settings.structure.sectors.retail")}</SelectItem>
+                      <SelectItem value="healthcare">{t("settings.structure.sectors.healthcare")}</SelectItem>
+                      <SelectItem value="education">{t("settings.structure.sectors.education")}</SelectItem>
+                      <SelectItem value="finance">{t("settings.structure.sectors.finance")}</SelectItem>
+                      <SelectItem value="technology">{t("settings.structure.sectors.technology")}</SelectItem>
+                      <SelectItem value="ngo">{t("settings.structure.sectors.ngo")}</SelectItem>
+                      <SelectItem value="government">{t("settings.structure.sectors.government")}</SelectItem>
+                      <SelectItem value="other">{t("settings.structure.sectors.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                   <p className="text-sm text-muted-foreground">
-                    Selecting a sector will suggest common departments
+                    {t("settings.structure.sectorHint")}
                   </p>
                 </div>
 
@@ -624,23 +660,23 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">Work Locations</h3>
+                      <h3 className="font-medium">{t("settings.structure.workLocations")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Add all your office and work locations
+                        {t("settings.structure.workLocationsHint")}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={addWorkLocation}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Location
+                      {t("settings.structure.addLocation")}
                     </Button>
                   </div>
 
                   {companyStructure.workLocations.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed rounded-lg">
                       <MapPin className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No locations added yet</p>
+                      <p className="text-muted-foreground">{t("settings.structure.noLocations")}</p>
                       <Button variant="link" onClick={addWorkLocation}>
-                        Add your first location
+                        {t("settings.structure.addFirstLocation")}
                       </Button>
                     </div>
                   ) : (
@@ -652,7 +688,7 @@ export default function Settings() {
                         >
                           <div className="flex-1 grid grid-cols-1 md:grid-cols-3 gap-4">
                             <Input
-                              placeholder="Location name"
+                              placeholder={t("settings.structure.locationName")}
                               value={location.name}
                               onChange={(e) => {
                                 const updated = [...companyStructure.workLocations];
@@ -664,7 +700,7 @@ export default function Settings() {
                               }}
                             />
                             <Input
-                              placeholder="Address"
+                              placeholder={t("settings.structure.address")}
                               value={location.address}
                               onChange={(e) => {
                                 const updated = [...companyStructure.workLocations];
@@ -676,7 +712,7 @@ export default function Settings() {
                               }}
                             />
                             <Input
-                              placeholder="City"
+                              placeholder={t("settings.company.cityPlaceholder")}
                               value={location.city}
                               onChange={(e) => {
                                 const updated = [...companyStructure.workLocations];
@@ -690,7 +726,7 @@ export default function Settings() {
                           </div>
                           <div className="flex items-center gap-2">
                             {location.isHeadquarters && (
-                              <Badge variant="secondary">HQ</Badge>
+                              <Badge variant="secondary">{t("settings.structure.hq")}</Badge>
                             )}
                             <Button
                               variant="ghost"
@@ -719,23 +755,23 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">Departments</h3>
+                      <h3 className="font-medium">{t("settings.structure.departments")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Define your organizational departments
+                        {t("settings.structure.departmentsHint")}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={addDepartment}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Department
+                      {t("settings.structure.addDepartment")}
                     </Button>
                   </div>
 
                   {companyStructure.departments.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed rounded-lg">
                       <Briefcase className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No departments defined</p>
+                      <p className="text-muted-foreground">{t("settings.structure.noDepartments")}</p>
                       <p className="text-sm text-muted-foreground">
-                        Select a business sector above to auto-populate
+                        {t("settings.structure.autoPopulateHint")}
                       </p>
                     </div>
                   ) : (
@@ -746,7 +782,7 @@ export default function Settings() {
                           className="flex items-center gap-2 p-3 border rounded-lg"
                         >
                           <Input
-                            placeholder="Department name"
+                            placeholder={t("settings.structure.departmentName")}
                             value={dept.name}
                             onChange={(e) => {
                               const updated = [...companyStructure.departments];
@@ -785,7 +821,7 @@ export default function Settings() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Structure
+                    {t("settings.structure.save")}
                   </Button>
                 </div>
               </CardContent>
@@ -798,21 +834,21 @@ export default function Settings() {
           <TabsContent value="payment">
             <Card>
               <CardHeader>
-                <CardTitle>Payment Structure</CardTitle>
+                <CardTitle>{t("settings.payment.title")}</CardTitle>
                 <CardDescription>
-                  Configure payment methods, bank accounts, and payroll periods
+                  {t("settings.payment.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* Payment Methods */}
                 <div className="space-y-4">
-                  <h3 className="font-medium">Payment Methods</h3>
+                  <h3 className="font-medium">{t("settings.payment.methods")}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                     {[
-                      { value: "bank_transfer", label: "Bank Transfer" },
-                      { value: "cash", label: "Cash" },
-                      { value: "cheque", label: "Cheque" },
-                      { value: "other", label: "Other" },
+                      { value: "bank_transfer", label: t("settings.payment.methodLabels.bankTransfer") },
+                      { value: "cash", label: t("settings.payment.methodLabels.cash") },
+                      { value: "cheque", label: t("settings.payment.methodLabels.cheque") },
+                      { value: "other", label: t("settings.payment.methodLabels.other") },
                     ].map((method) => (
                       <div
                         key={method.value}
@@ -855,21 +891,21 @@ export default function Settings() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h3 className="font-medium">Bank Accounts</h3>
+                      <h3 className="font-medium">{t("settings.payment.bankAccounts")}</h3>
                       <p className="text-sm text-muted-foreground">
-                        Add accounts for payroll, tax, and social security payments
+                        {t("settings.payment.bankAccountsHint")}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" onClick={addBankAccount}>
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Account
+                      {t("settings.payment.addAccount")}
                     </Button>
                   </div>
 
                   {paymentStructure.bankAccounts.length === 0 ? (
                     <div className="text-center py-8 border-2 border-dashed rounded-lg">
                       <CreditCard className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
-                      <p className="text-muted-foreground">No bank accounts configured</p>
+                      <p className="text-muted-foreground">{t("settings.payment.noAccounts")}</p>
                     </div>
                   ) : (
                     <div className="space-y-4">
@@ -891,10 +927,10 @@ export default function Settings() {
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="payroll">Payroll</SelectItem>
-                                <SelectItem value="tax">Tax Payments</SelectItem>
-                                <SelectItem value="social_security">Social Security</SelectItem>
-                                <SelectItem value="general">General</SelectItem>
+                                <SelectItem value="payroll">{t("settings.payment.accountPurpose.payroll")}</SelectItem>
+                                <SelectItem value="tax">{t("settings.payment.accountPurpose.tax")}</SelectItem>
+                                <SelectItem value="social_security">{t("settings.payment.accountPurpose.socialSecurity")}</SelectItem>
+                                <SelectItem value="general">{t("settings.payment.accountPurpose.general")}</SelectItem>
                               </SelectContent>
                             </Select>
                             <Button
@@ -914,7 +950,7 @@ export default function Settings() {
                           </div>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <Input
-                              placeholder="Bank Name"
+                              placeholder={t("settings.payment.bankName")}
                               value={account.bankName}
                               onChange={(e) => {
                                 const updated = [...paymentStructure.bankAccounts];
@@ -926,7 +962,7 @@ export default function Settings() {
                               }}
                             />
                             <Input
-                              placeholder="Account Name"
+                              placeholder={t("settings.payment.accountName")}
                               value={account.accountName}
                               onChange={(e) => {
                                 const updated = [...paymentStructure.bankAccounts];
@@ -938,7 +974,7 @@ export default function Settings() {
                               }}
                             />
                             <Input
-                              placeholder="Account Number"
+                              placeholder={t("settings.payment.accountNumber")}
                               value={account.accountNumber}
                               onChange={(e) => {
                                 const updated = [...paymentStructure.bankAccounts];
@@ -950,7 +986,7 @@ export default function Settings() {
                               }}
                             />
                             <Input
-                              placeholder="Branch Code (optional)"
+                              placeholder={t("settings.payment.branchCode")}
                               value={account.branchCode || ""}
                               onChange={(e) => {
                                 const updated = [...paymentStructure.bankAccounts];
@@ -972,14 +1008,14 @@ export default function Settings() {
 
                 {/* Payroll Frequency */}
                 <div className="space-y-4">
-                  <h3 className="font-medium">Payroll Frequency</h3>
+                  <h3 className="font-medium">{t("settings.payment.payrollFrequency")}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                     {[
-                      { value: "hourly", label: "Hourly" },
-                      { value: "daily", label: "Daily" },
-                      { value: "weekly", label: "Weekly" },
-                      { value: "bi_weekly", label: "Bi-Weekly" },
-                      { value: "monthly", label: "Monthly" },
+                      { value: "hourly", label: t("settings.payment.frequencyLabels.hourly") },
+                      { value: "daily", label: t("settings.payment.frequencyLabels.daily") },
+                      { value: "weekly", label: t("settings.payment.frequencyLabels.weekly") },
+                      { value: "bi_weekly", label: t("settings.payment.frequencyLabels.biWeekly") },
+                      { value: "monthly", label: t("settings.payment.frequencyLabels.monthly") },
                     ].map((freq) => (
                       <div
                         key={freq.value}
@@ -1026,7 +1062,7 @@ export default function Settings() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Payment Structure
+                    {t("settings.payment.save")}
                   </Button>
                 </div>
               </CardContent>
@@ -1039,9 +1075,9 @@ export default function Settings() {
           <TabsContent value="timeoff">
             <Card>
               <CardHeader>
-                <CardTitle>Time Off Policies</CardTitle>
+                <CardTitle>{t("settings.timeOff.title")}</CardTitle>
                 <CardDescription>
-                  Configure leave entitlements based on Timor-Leste labor law
+                  {t("settings.timeOff.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1050,11 +1086,10 @@ export default function Settings() {
                     <AlertCircle className="h-5 w-5 text-blue-600 dark:text-blue-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-sm font-medium text-blue-800 dark:text-blue-200">
-                        Timor-Leste Labor Code (Law 4/2012)
+                        {t("settings.timeOff.laborCodeTitle")}
                       </p>
                       <p className="text-sm text-blue-700 dark:text-blue-300">
-                        Default values are set according to TL labor law. Adjust only if your
-                        company offers better benefits.
+                        {t("settings.timeOff.laborCodeHint")}
                       </p>
                     </div>
                   </div>
@@ -1062,7 +1097,7 @@ export default function Settings() {
 
                 {/* Probation Period */}
                 <div className="space-y-2">
-                  <Label>Probation Period Before Leave Eligibility</Label>
+                  <Label>{t("settings.timeOff.probationLabel")}</Label>
                   <div className="flex items-center gap-4">
                     <Input
                       type="number"
@@ -1077,7 +1112,7 @@ export default function Settings() {
                       }
                       className="w-24"
                     />
-                    <span className="text-muted-foreground">months</span>
+                    <span className="text-muted-foreground">{t("settings.timeOff.months")}</span>
                   </div>
                 </div>
 
@@ -1085,22 +1120,22 @@ export default function Settings() {
 
                 {/* Leave Types */}
                 <div className="space-y-4">
-                  <h3 className="font-medium">Leave Entitlements</h3>
+                  <h3 className="font-medium">{t("settings.timeOff.entitlements")}</h3>
 
                   {/* Annual Leave */}
                   <div className="p-4 border rounded-lg space-y-4">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Calendar className="h-5 w-5 text-primary" />
-                        <span className="font-medium">Annual Leave</span>
+                        <span className="font-medium">{t("settings.timeOff.annualLeave")}</span>
                       </div>
                       <Badge variant="secondary">
-                        {timeOffPolicies.annualLeave.daysPerYear} days
+                        {timeOffPolicies.annualLeave.daysPerYear} {t("settings.timeOff.days")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label>Days per Year</Label>
+                        <Label>{t("settings.timeOff.daysPerYear")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -1117,7 +1152,7 @@ export default function Settings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Carry Over Days</Label>
+                        <Label>{t("settings.timeOff.carryOverDays")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -1146,7 +1181,7 @@ export default function Settings() {
                             })
                           }
                         />
-                        <Label>Allow carry over</Label>
+                        <Label>{t("settings.timeOff.allowCarryOver")}</Label>
                       </div>
                     </div>
                   </div>
@@ -1156,15 +1191,15 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Clock className="h-5 w-5 text-orange-500" />
-                        <span className="font-medium">Sick Leave</span>
+                        <span className="font-medium">{t("settings.timeOff.sickLeave")}</span>
                       </div>
                       <Badge variant="secondary">
-                        {timeOffPolicies.sickLeave.daysPerYear} days
+                        {timeOffPolicies.sickLeave.daysPerYear} {t("settings.timeOff.days")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label>Days per Year</Label>
+                        <Label>{t("settings.timeOff.daysPerYear")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -1181,7 +1216,7 @@ export default function Settings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Paid Percentage</Label>
+                        <Label>{t("settings.timeOff.paidPercentage")}</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
@@ -1214,7 +1249,7 @@ export default function Settings() {
                             })
                           }
                         />
-                        <Label>Requires medical certificate</Label>
+                        <Label>{t("settings.timeOff.requiresMedicalCert")}</Label>
                       </div>
                     </div>
                   </div>
@@ -1224,15 +1259,15 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Users className="h-5 w-5 text-pink-500" />
-                        <span className="font-medium">Maternity Leave</span>
+                        <span className="font-medium">{t("settings.timeOff.maternityLeave")}</span>
                       </div>
                       <Badge variant="secondary">
-                        {Math.round(timeOffPolicies.maternityLeave.daysPerYear / 7)} weeks
+                        {Math.round(timeOffPolicies.maternityLeave.daysPerYear / 7)} {t("settings.timeOff.weeks")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Days (12 weeks = 84 days)</Label>
+                        <Label>{t("settings.timeOff.maternityDaysHint")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -1249,7 +1284,7 @@ export default function Settings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Paid Percentage</Label>
+                        <Label>{t("settings.timeOff.paidPercentage")}</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
@@ -1277,15 +1312,15 @@ export default function Settings() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Users className="h-5 w-5 text-blue-500" />
-                        <span className="font-medium">Paternity Leave</span>
+                        <span className="font-medium">{t("settings.timeOff.paternityLeave")}</span>
                       </div>
                       <Badge variant="secondary">
-                        {timeOffPolicies.paternityLeave.daysPerYear} days
+                        {timeOffPolicies.paternityLeave.daysPerYear} {t("settings.timeOff.days")}
                       </Badge>
                     </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div className="space-y-2">
-                        <Label>Days</Label>
+                        <Label>{t("settings.timeOff.days")}</Label>
                         <Input
                           type="number"
                           min={0}
@@ -1302,7 +1337,7 @@ export default function Settings() {
                         />
                       </div>
                       <div className="space-y-2">
-                        <Label>Paid Percentage</Label>
+                        <Label>{t("settings.timeOff.paidPercentage")}</Label>
                         <div className="flex items-center gap-2">
                           <Input
                             type="number"
@@ -1333,7 +1368,7 @@ export default function Settings() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Time Off Policies
+                    {t("settings.timeOff.save")}
                   </Button>
                 </div>
               </CardContent>
@@ -1346,9 +1381,9 @@ export default function Settings() {
           <TabsContent value="payroll">
             <Card>
               <CardHeader>
-                <CardTitle>Payroll Configuration</CardTitle>
+                <CardTitle>{t("settings.payroll.title")}</CardTitle>
                 <CardDescription>
-                  Tax, social security, and overtime settings for Timor-Leste
+                  {t("settings.payroll.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
@@ -1356,11 +1391,11 @@ export default function Settings() {
                 <div className="space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <DollarSign className="h-5 w-5" />
-                    Wage Income Tax (WIT)
+                    {t("settings.payroll.wit")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
-                      <Label>Resident Tax Threshold</Label>
+                      <Label>{t("settings.payroll.residentThreshold")}</Label>
                       <div className="flex items-center gap-2">
                         <span className="text-muted-foreground">$</span>
                         <Input
@@ -1379,11 +1414,13 @@ export default function Settings() {
                         />
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        First ${payrollConfig.tax.residentThreshold} is tax-free for residents
+                        {t("settings.payroll.residentThresholdHint", {
+                          amount: payrollConfig.tax.residentThreshold,
+                        })}
                       </p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Resident Rate</Label>
+                      <Label>{t("settings.payroll.residentRate")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1404,7 +1441,7 @@ export default function Settings() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Non-Resident Rate</Label>
+                      <Label>{t("settings.payroll.nonResidentRate")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1423,7 +1460,7 @@ export default function Settings() {
                         />
                         <Percent className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <p className="text-xs text-muted-foreground">Flat rate, no threshold</p>
+                      <p className="text-xs text-muted-foreground">{t("settings.payroll.flatRateHint")}</p>
                     </div>
                   </div>
                 </div>
@@ -1434,11 +1471,11 @@ export default function Settings() {
                 <div className="space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <Users className="h-5 w-5" />
-                    Social Security (INSS)
+                    {t("settings.payroll.socialSecurity")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Employee Contribution</Label>
+                      <Label>{t("settings.payroll.employeeContribution")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1459,7 +1496,7 @@ export default function Settings() {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <Label>Employer Contribution</Label>
+                      <Label>{t("settings.payroll.employerContribution")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1494,7 +1531,7 @@ export default function Settings() {
                           })
                         }
                       />
-                      <Label>Exclude food allowance from SS</Label>
+                      <Label>{t("settings.payroll.excludeFoodAllowance")}</Label>
                     </div>
                     <div className="flex items-center gap-2">
                       <Switch
@@ -1509,7 +1546,7 @@ export default function Settings() {
                           })
                         }
                       />
-                      <Label>Exclude per diem from SS</Label>
+                      <Label>{t("settings.payroll.excludePerDiem")}</Label>
                     </div>
                   </div>
                 </div>
@@ -1520,11 +1557,11 @@ export default function Settings() {
                 <div className="space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <Clock className="h-5 w-5" />
-                    Working Hours & Overtime
+                    {t("settings.payroll.overtime")}
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div className="space-y-2">
-                      <Label>Max Hours/Week</Label>
+                      <Label>{t("settings.payroll.maxHoursWeek")}</Label>
                       <Input
                         type="number"
                         min={0}
@@ -1538,7 +1575,7 @@ export default function Settings() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>First 2 hrs OT Rate</Label>
+                      <Label>{t("settings.payroll.first2HoursRate")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1557,10 +1594,10 @@ export default function Settings() {
                         />
                         <span className="text-muted-foreground">×</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">1.5× = +50%</p>
+                      <p className="text-xs text-muted-foreground">{t("settings.payroll.first2HoursHint")}</p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Beyond 2 hrs OT Rate</Label>
+                      <Label>{t("settings.payroll.beyond2HoursRate")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1579,10 +1616,10 @@ export default function Settings() {
                         />
                         <span className="text-muted-foreground">×</span>
                       </div>
-                      <p className="text-xs text-muted-foreground">2× = +100%</p>
+                      <p className="text-xs text-muted-foreground">{t("settings.payroll.beyond2HoursHint")}</p>
                     </div>
                     <div className="space-y-2">
-                      <Label>Sunday/Holiday Rate</Label>
+                      <Label>{t("settings.payroll.sundayHolidayRate")}</Label>
                       <div className="flex items-center gap-2">
                         <Input
                           type="number"
@@ -1611,7 +1648,7 @@ export default function Settings() {
                 <div className="space-y-4">
                   <h3 className="font-medium flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Subsídio Anual (13th Month)
+                    {t("settings.payroll.thirteenthMonth")}
                   </h3>
                   <div className="flex items-center gap-4">
                     <Switch
@@ -1626,12 +1663,12 @@ export default function Settings() {
                         })
                       }
                     />
-                    <Label>Enable 13th month payment</Label>
+                    <Label>{t("settings.payroll.enable13th")}</Label>
                   </div>
                   {payrollConfig.subsidioAnual.enabled && (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div className="space-y-2">
-                        <Label>Payment Deadline</Label>
+                        <Label>{t("settings.payroll.paymentDeadline")}</Label>
                         <Input
                           value={payrollConfig.subsidioAnual.payByDate}
                           onChange={(e) =>
@@ -1643,10 +1680,10 @@ export default function Settings() {
                               },
                             })
                           }
-                          placeholder="MM-DD"
+                          placeholder={t("settings.payroll.paymentDeadlinePlaceholder")}
                         />
                         <p className="text-xs text-muted-foreground">
-                          Format: MM-DD (e.g., 12-20 for December 20)
+                          {t("settings.payroll.paymentDeadlineHint")}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 pt-6">
@@ -1662,7 +1699,7 @@ export default function Settings() {
                             })
                           }
                         />
-                        <Label>Pro-rata for employees with less than 12 months</Label>
+                        <Label>{t("settings.payroll.prorataHint")}</Label>
                       </div>
                     </div>
                   )}
@@ -1675,7 +1712,7 @@ export default function Settings() {
                     ) : (
                       <Save className="mr-2 h-4 w-4" />
                     )}
-                    Save Payroll Configuration
+                    {t("settings.payroll.save")}
                   </Button>
                 </div>
               </CardContent>

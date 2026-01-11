@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { Eye, EyeOff, LogIn, Mail, Lock } from "lucide-react";
 
 export default function Login() {
@@ -13,6 +14,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const { t } = useI18n();
 
   const { signIn } = useAuth();
   const navigate = useNavigate();
@@ -26,7 +28,7 @@ export default function Login() {
       await signIn(email, password);
       navigate("/");
     } catch (error: any) {
-      setError(error.message || "Failed to sign in");
+      setError(error.message || t("auth.errors.signInFailed"));
     } finally {
       setLoading(false);
     }
@@ -41,9 +43,9 @@ export default function Login() {
               <LogIn className="h-8 w-8 text-white" />
             </div>
           </div>
-          <CardTitle className="text-2xl font-bold">PayrollHR Login</CardTitle>
+          <CardTitle className="text-2xl font-bold">{t("auth.loginTitle")}</CardTitle>
           <p className="text-muted-foreground">
-            Sign in to access your dashboard
+            {t("auth.loginSubtitle")}
           </p>
         </CardHeader>
         <CardContent>
@@ -56,14 +58,14 @@ export default function Login() {
 
             <div className="space-y-2">
               <label htmlFor="email" className="text-sm font-medium">
-                Email
+                {t("auth.email")}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="email"
                   type="email"
-                  placeholder="Enter your email"
+                  placeholder={t("auth.emailPlaceholder")}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="pl-10"
@@ -74,14 +76,14 @@ export default function Login() {
 
             <div className="space-y-2">
               <label htmlFor="password" className="text-sm font-medium">
-                Password
+                {t("auth.password")}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder={t("auth.passwordPlaceholder")}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="pl-10 pr-10"
@@ -102,7 +104,7 @@ export default function Login() {
             </div>
 
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? t("auth.signingIn") : t("auth.signIn")}
             </Button>
 
             <div className="text-center">
@@ -110,32 +112,30 @@ export default function Login() {
                 to="/auth/forgot-password"
                 className="text-sm text-blue-600 hover:underline"
               >
-                Forgot password?
+                {t("auth.forgotPassword")}
               </Link>
             </div>
 
             <div className="text-center">
               <span className="text-sm text-muted-foreground">
-                Don't have an account?{" "}
+                {t("auth.noAccount")}{" "}
               </span>
               <Link
                 to="/auth/register"
                 className="text-sm text-blue-600 hover:underline"
               >
-                Sign up
+                {t("auth.signUp")}
               </Link>
             </div>
           </form>
 
           {/* Demo Credentials */}
           <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-            <h4 className="text-sm font-medium text-blue-800 mb-2">
-              Demo Credentials:
-            </h4>
+            <h4 className="text-sm font-medium text-blue-800 mb-2">{t("auth.demoCredentials")}</h4>
             <p className="text-xs text-blue-600">
-              Email: demo@payrollhr.com
+              {t("auth.demoEmail", { email: "demo@payrollhr.com" })}
               <br />
-              Password: demo123
+              {t("auth.demoPassword", { password: "demo123" })}
             </p>
           </div>
         </CardContent>

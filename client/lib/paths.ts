@@ -7,6 +7,14 @@ export const paths = {
   // Root level paths
   tenants: () => 'tenants',
   reference: () => 'reference',
+
+  // User profiles (global, not tenant-scoped)
+  users: () => 'users',
+  user: (uid: string) => `users/${uid}`,
+
+  // Admin audit log (superadmin actions)
+  adminAuditLog: () => 'adminAuditLog',
+  adminAuditEntry: (entryId: string) => `adminAuditLog/${entryId}`,
   
   // Tenant-scoped paths
   tenant: (tid: string) => `tenants/${tid}`,

@@ -1,12 +1,16 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
-import { User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { authService, UserProfile } from "@/services/authService";
+import React, { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { User, getIdTokenResult } from "firebase/auth";
+import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { authService } from "@/services/authService";
+import { UserProfile, createUserProfile } from "@/types/user";
+import { paths } from "@/lib/paths";
 
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  isSuperAdmin: boolean;
   signIn: (email: string, password: string) => Promise<User | null>;
   signUp: (
     email: string,
@@ -15,6 +19,7 @@ interface AuthContextType {
   ) => Promise<User | null>;
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  refreshUserProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -35,16 +40,86 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isSuperAdmin, setIsSuperAdmin] = useState(false);
+
+  // Fetch or create user profile from Firestore
+  const fetchUserProfile = useCallback(async (firebaseUser: User): Promise<UserProfile | null> => {
+    if (!db) return null;
+
+    try {
+      const userDocRef = doc(db, paths.user(firebaseUser.uid));
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists()) {
+        const profile = { ...userDocSnap.data(), uid: firebaseUser.uid } as UserProfile;
+
+        // Update last login
+        await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+
+        return profile;
+      } else {
+        // Create new user profile
+        const newProfile = createUserProfile(
+          firebaseUser.uid,
+          firebaseUser.email || '',
+          firebaseUser.displayName || undefined
+        );
+
+        await setDoc(userDocRef, {
+          ...newProfile,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+          lastLoginAt: serverTimestamp(),
+        });
+
+        return {
+          ...newProfile,
+          createdAt: new Date() as any,
+          updatedAt: new Date() as any,
+        } as UserProfile;
+      }
+    } catch (error) {
+      console.warn("Could not fetch/create user profile:", error);
+      return null;
+    }
+  }, []);
+
+  // Check if user is superadmin (from custom claims or profile)
+  const checkSuperAdmin = useCallback(async (firebaseUser: User, profile: UserProfile | null): Promise<boolean> => {
+    // First check custom claims (fast path, set by Cloud Functions)
+    try {
+      const tokenResult = await getIdTokenResult(firebaseUser, true);
+      if (tokenResult.claims.superadmin === true) {
+        return true;
+      }
+    } catch (error) {
+      console.warn("Could not get ID token claims:", error);
+    }
+
+    // Fall back to Firestore profile
+    return profile?.isSuperAdmin === true;
+  }, []);
+
+  // Refresh user profile manually
+  const refreshUserProfile = useCallback(async () => {
+    if (!user) return;
+
+    const profile = await fetchUserProfile(user);
+    setUserProfile(profile);
+
+    const isAdmin = await checkSuperAdmin(user, profile);
+    setIsSuperAdmin(isAdmin);
+  }, [user, fetchUserProfile, checkSuperAdmin]);
 
   useEffect(() => {
-    console.log("🔧 AuthProvider initializing with Firebase authentication");
+    console.log("AuthProvider initializing with Firebase authentication");
 
-    // Try to set up Firebase auth state listener safely
     try {
       if (!auth) {
-        console.log("🔧 Firebase auth disabled, using fallback mode");
+        console.log("Firebase auth disabled, using fallback mode");
         setUser(null);
         setUserProfile(null);
+        setIsSuperAdmin(false);
         setLoading(false);
         return () => {};
       }
@@ -56,45 +131,50 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
           if (firebaseUser) {
             console.log(
-              "✅ User authenticated:",
+              "User authenticated:",
               firebaseUser.email || firebaseUser.uid,
             );
-            // Load user profile if available
-            try {
-              const profile = authService.getUserProfile();
-              setUserProfile(profile);
-            } catch (error) {
-              console.warn("Could not load user profile:", error);
-              setUserProfile(null);
+
+            // Load user profile from Firestore
+            const profile = await fetchUserProfile(firebaseUser);
+            setUserProfile(profile);
+
+            // Check superadmin status
+            const isAdmin = await checkSuperAdmin(firebaseUser, profile);
+            setIsSuperAdmin(isAdmin);
+
+            if (isAdmin) {
+              console.log("User is a superadmin");
             }
           } else {
-            console.log("❌ User not authenticated");
+            console.log("User not authenticated");
             setUserProfile(null);
+            setIsSuperAdmin(false);
           }
         } catch (error) {
           console.error("Auth state change error:", error);
+          setUserProfile(null);
+          setIsSuperAdmin(false);
         } finally {
           setLoading(false);
         }
       });
 
       return () => {
-        console.log("🧹 Cleaning up auth listener");
+        console.log("Cleaning up auth listener");
         unsubscribe();
       };
     } catch (error) {
-      console.warn("🚨 Firebase auth listener setup failed, using fallback:", error);
-      
-      // Fallback: Set default state without Firebase listener
+      console.warn("Firebase auth listener setup failed, using fallback:", error);
+
       setUser(null);
       setUserProfile(null);
+      setIsSuperAdmin(false);
       setLoading(false);
-      
-      return () => {
-        // No cleanup needed for fallback
-      };
+
+      return () => {};
     }
-  }, []);
+  }, [fetchUserProfile, checkSuperAdmin]);
 
   const signIn = async (email: string, password: string) => {
     try {
@@ -138,10 +218,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     userProfile,
     loading,
+    isSuperAdmin,
     signIn,
     signUp,
     signOut,
     resetPassword,
+    refreshUserProfile,
   };
 
   return (
