@@ -23,88 +23,88 @@ import {
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const theme = sectionThemes.accounting;
 
-// Accounting module links
-const ACCOUNTING_LINKS = [
-  {
-    id: "chart-of-accounts",
-    title: "Chart of Accounts",
-    description: "Manage account structure and categories",
-    icon: BookOpen,
-    color: "bg-blue-500",
-    path: "/accounting/chart-of-accounts",
-    primary: true,
-  },
-  {
-    id: "journal-entries",
-    title: "Journal Entries",
-    description: "Record and review transactions",
-    icon: FileSpreadsheet,
-    color: "bg-emerald-500",
-    path: "/accounting/journal-entries",
-  },
-  {
-    id: "general-ledger",
-    title: "General Ledger",
-    description: "Complete transaction history by account",
-    icon: Landmark,
-    color: "bg-violet-500",
-    path: "/accounting/general-ledger",
-  },
-  {
-    id: "trial-balance",
-    title: "Trial Balance",
-    description: "Verify debits equal credits",
-    icon: Scale,
-    color: "bg-amber-500",
-    path: "/accounting/trial-balance",
-  },
-  {
-    id: "reports",
-    title: "Financial Reports",
-    description: "Income statement, balance sheet",
-    icon: BarChart3,
-    color: "bg-pink-500",
-    path: "/accounting/reports",
-  },
-];
-
-// Quick stats (would come from accounting service in real app)
-const QUICK_STATS = [
-  {
-    label: "Total Assets",
-    value: "$245,000",
-    icon: DollarSign,
-    color: "text-blue-500",
-    bgColor: "bg-blue-100 dark:bg-blue-900/30",
-  },
-  {
-    label: "Total Liabilities",
-    value: "$82,500",
-    icon: ArrowUpDown,
-    color: "text-red-500",
-    bgColor: "bg-red-100 dark:bg-red-900/30",
-  },
-  {
-    label: "Net Income (MTD)",
-    value: "$18,450",
-    icon: TrendingUp,
-    color: "text-emerald-500",
-    bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
-  },
-  {
-    label: "Pending Entries",
-    value: "3",
-    icon: FileSpreadsheet,
-    color: "text-amber-500",
-    bgColor: "bg-amber-100 dark:bg-amber-900/30",
-  },
-];
-
 export default function AccountingDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const accountingLinks = [
+    {
+      id: "chart-of-accounts",
+      title: t("accounting.dashboard.links.chart.title"),
+      description: t("accounting.dashboard.links.chart.description"),
+      icon: BookOpen,
+      color: "bg-blue-500",
+      path: "/accounting/chart-of-accounts",
+      primary: true,
+    },
+    {
+      id: "journal-entries",
+      title: t("accounting.dashboard.links.journal.title"),
+      description: t("accounting.dashboard.links.journal.description"),
+      icon: FileSpreadsheet,
+      color: "bg-emerald-500",
+      path: "/accounting/journal-entries",
+    },
+    {
+      id: "general-ledger",
+      title: t("accounting.dashboard.links.ledger.title"),
+      description: t("accounting.dashboard.links.ledger.description"),
+      icon: Landmark,
+      color: "bg-violet-500",
+      path: "/accounting/general-ledger",
+    },
+    {
+      id: "trial-balance",
+      title: t("accounting.dashboard.links.trial.title"),
+      description: t("accounting.dashboard.links.trial.description"),
+      icon: Scale,
+      color: "bg-amber-500",
+      path: "/accounting/trial-balance",
+    },
+    {
+      id: "reports",
+      title: t("accounting.dashboard.links.reports.title"),
+      description: t("accounting.dashboard.links.reports.description"),
+      icon: BarChart3,
+      color: "bg-pink-500",
+      path: "/accounting/reports",
+    },
+  ];
+
+  const quickStats = [
+    {
+      label: t("accounting.dashboard.stats.assets"),
+      value: "$245,000",
+      icon: DollarSign,
+      color: "text-blue-500",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+    },
+    {
+      label: t("accounting.dashboard.stats.liabilities"),
+      value: "$82,500",
+      icon: ArrowUpDown,
+      color: "text-red-500",
+      bgColor: "bg-red-100 dark:bg-red-900/30",
+    },
+    {
+      label: t("accounting.dashboard.stats.netIncome"),
+      value: "$18,450",
+      icon: TrendingUp,
+      color: "text-emerald-500",
+      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+    },
+    {
+      label: t("accounting.dashboard.stats.pendingEntries"),
+      value: "3",
+      icon: FileSpreadsheet,
+      color: "text-amber-500",
+      bgColor: "bg-amber-100 dark:bg-amber-900/30",
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -122,22 +122,24 @@ export default function AccountingDashboard() {
                 <Landmark className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Accounting</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {t("accounting.dashboard.title")}
+                </h1>
                 <p className="text-muted-foreground">
-                  Manage your books, ledgers, and financial reports
+                  {t("accounting.dashboard.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate("/accounting/journal-entries")} className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
               <FileSpreadsheet className="h-4 w-4 mr-2" />
-              New Entry
+              {t("accounting.dashboard.actions.newEntry")}
             </Button>
           </div>
         </div>
 
         {/* Quick Stats */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
-          {QUICK_STATS.map((stat) => {
+          {quickStats.map((stat) => {
             const StatIcon = stat.icon;
             return (
               <Card key={stat.label} className={theme.borderLeft}>
@@ -159,7 +161,7 @@ export default function AccountingDashboard() {
 
         {/* Accounting Links */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {ACCOUNTING_LINKS.map((link) => {
+          {accountingLinks.map((link) => {
             const LinkIcon = link.icon;
             return (
               <Card
@@ -191,22 +193,34 @@ export default function AccountingDashboard() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <Calculator className="h-5 w-5" />
-              Double-Entry Accounting
+              {t("accounting.dashboard.doubleEntry.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3 text-sm">
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Assets = Liabilities + Equity</p>
-                <p className="text-muted-foreground">The fundamental accounting equation</p>
+                <p className="font-medium mb-1">
+                  {t("accounting.dashboard.doubleEntry.assetsTitle")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("accounting.dashboard.doubleEntry.assetsDesc")}
+                </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Debits & Credits</p>
-                <p className="text-muted-foreground">Every transaction affects at least 2 accounts</p>
+                <p className="font-medium mb-1">
+                  {t("accounting.dashboard.doubleEntry.debitsTitle")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("accounting.dashboard.doubleEntry.debitsDesc")}
+                </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Trial Balance</p>
-                <p className="text-muted-foreground">Total debits must equal total credits</p>
+                <p className="font-medium mb-1">
+                  {t("accounting.dashboard.doubleEntry.trialTitle")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("accounting.dashboard.doubleEntry.trialDesc")}
+                </p>
               </div>
             </div>
           </CardContent>

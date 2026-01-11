@@ -580,39 +580,43 @@ export default function RunPayroll() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-background">
       <SEO {...seoConfig.runPayroll} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Calculator className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
-                    Prosesa Saláriu
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    Process payroll for {employees.length} active employees
-                  </p>
-                </div>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+                <Calculator className="h-8 w-8 text-white" />
               </div>
-              <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
-                  <Save className="h-4 w-4 mr-2" />
-                  Rai Rascunhu
-                </Button>
-                <Button onClick={() => setShowApproveDialog(true)}>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Aprova & Prosesa
-                </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Run Payroll
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Process payroll for {employees.length} active employees
+                </p>
               </div>
             </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
+                <Save className="h-4 w-4 mr-2" />
+                Save Draft
+              </Button>
+              <Button onClick={() => setShowApproveDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Approve & Process
+              </Button>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* TL Tax Info Banner */}
           <Card className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
@@ -635,9 +639,12 @@ export default function RunPayroll() {
           </Card>
 
           {/* Period Settings */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
-              <CardTitle>Konfigurasaun Períodu Pagamentu</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Calculator className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Pay Period Configuration
+              </CardTitle>
               <CardDescription>
                 Configure the payroll period and pay date
               </CardDescription>
@@ -705,73 +712,84 @@ export default function RunPayroll() {
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Total Gross
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-2xl font-bold">
                       {formatCurrencyTL(totals.grossPay)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Total Deductions
                     </p>
                     <p className="text-2xl font-bold text-red-600">
                       {formatCurrencyTL(totals.totalDeductions)}
                     </p>
                   </div>
-                  <FileText className="h-8 w-8 text-red-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Total Net Pay
                     </p>
                     <p className="text-2xl font-bold text-emerald-600">
                       {formatCurrencyTL(totals.netPay)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Employees
                     </p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <p className="text-2xl font-bold">
                       {employees.length}
                     </p>
                   </div>
-                  <Users className="h-8 w-8 text-blue-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Tax Summary - TL Version */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
-              <CardTitle>Sumáriu Impostu no INSS</CardTitle>
-              <CardDescription>Tax and Social Security Summary</CardDescription>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Tax & INSS Summary
+              </CardTitle>
+              <CardDescription>Income tax and social security contributions</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -824,11 +842,14 @@ export default function RunPayroll() {
           </Card>
 
           {/* Employee Payroll Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Saláriu Empregadu Sira</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Employee Payroll
+                  </CardTitle>
                   <CardDescription>
                     Adjust hours and additional pay for each employee
                   </CardDescription>
@@ -1003,7 +1024,7 @@ export default function RunPayroll() {
                                 </div>
                                 <div>
                                   <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                    Impostu Rendimentu
+                                    Income Tax
                                   </p>
                                   <p className="font-medium text-red-600">
                                     -{formatCurrencyTL(data.calculation.incomeTax)}
@@ -1067,13 +1088,12 @@ export default function RunPayroll() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
       {/* Save Draft Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rai Rascunhu Saláriu</DialogTitle>
+            <DialogTitle>Save Payroll Draft</DialogTitle>
             <DialogDescription>
               Save the current payroll as a draft. You can edit and process it later.
             </DialogDescription>
@@ -1115,7 +1135,7 @@ export default function RunPayroll() {
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Rai Rascunhu
+                  Save Draft
                 </>
               )}
             </Button>
@@ -1127,7 +1147,7 @@ export default function RunPayroll() {
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Aprova & Prosesa Saláriu</DialogTitle>
+            <DialogTitle>Approve & Process Payroll</DialogTitle>
             <DialogDescription>
               This will finalize the payroll and prepare it for payment. This
               action cannot be undone.
@@ -1166,7 +1186,7 @@ export default function RunPayroll() {
               }}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              Aprova Saláriu
+              Approve Payroll
             </Button>
           </DialogFooter>
         </DialogContent>

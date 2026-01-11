@@ -999,24 +999,26 @@ export default function ShiftScheduling() {
     <div className="space-y-6">
       {/* Schedule Summary & Actions */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {t("timeLeave.shiftScheduling.summary.totalShifts")}
                 </p>
                 <p className="text-2xl font-bold">{stats.totalShifts}</p>
               </div>
-              <Clock className="h-8 w-8 text-blue-600" />
+              <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
+                <Clock className="h-6 w-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {t("timeLeave.shiftScheduling.summary.totalHours")}
                 </p>
                 <p className="text-2xl font-bold">
@@ -1025,35 +1027,39 @@ export default function ShiftScheduling() {
                   })}
                 </p>
               </div>
-              <BarChart3 className="h-8 w-8 text-green-600" />
+              <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                <BarChart3 className="h-6 w-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {t("timeLeave.shiftScheduling.summary.staffScheduled")}
                 </p>
                 <p className="text-2xl font-bold">{stats.staffCount}</p>
               </div>
-              <Users className="h-8 w-8 text-purple-600" />
+              <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
+                <Users className="h-6 w-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">
+                <p className="text-sm text-muted-foreground">
                   {t("timeLeave.shiftScheduling.summary.published")}
                 </p>
-                <p className="text-2xl font-bold text-green-600">
-                  {stats.publishedCount}
-                </p>
+                <p className="text-2xl font-bold">{stats.publishedCount}</p>
               </div>
-              <CheckCircle className="h-8 w-8 text-green-600" />
+              <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
+                <CheckCircle className="h-6 w-6 text-white" />
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1129,12 +1135,12 @@ export default function ShiftScheduling() {
       </div>
 
       {/* Calendar Grid */}
-      <Card>
+      <Card className="border-border/50">
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
+                <Calendar className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                 {t("timeLeave.shiftScheduling.calendar.title")}
               </CardTitle>
               <CardDescription>
@@ -1229,10 +1235,10 @@ export default function ShiftScheduling() {
 
   const renderEmployeesView = () => (
     <div className="space-y-6">
-      <Card>
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
+            <Users className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
             {t("timeLeave.shiftScheduling.employees.title")}
           </CardTitle>
           <CardDescription>
@@ -1364,7 +1370,7 @@ export default function ShiftScheduling() {
   const renderAnalyticsView = () => (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-lg">
               {t("timeLeave.shiftScheduling.analytics.departmentCoverage")}
@@ -1403,7 +1409,7 @@ export default function ShiftScheduling() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-lg">
               {t("timeLeave.shiftScheduling.analytics.laborCosts")}
@@ -1457,7 +1463,7 @@ export default function ShiftScheduling() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
             <CardTitle className="text-lg">
               {t("timeLeave.shiftScheduling.analytics.scheduleHealth")}
@@ -1502,7 +1508,7 @@ export default function ShiftScheduling() {
         </Card>
       </div>
 
-      <Card>
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle>
             {t("timeLeave.shiftScheduling.recommendations.title")}
@@ -1593,7 +1599,7 @@ export default function ShiftScheduling() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
         <AutoBreadcrumb className="mb-6" />
@@ -1673,23 +1679,19 @@ export default function ShiftScheduling() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-cyan-500 to-teal-500">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4 text-white/80" />
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
               <Calendar className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-white">
+              <h1 className="text-3xl font-bold text-foreground">
                 {t("timeLeave.shiftScheduling.title")}
               </h1>
-              <p className="text-cyan-100">
+              <p className="text-muted-foreground mt-1">
                 {t("timeLeave.shiftScheduling.subtitle")}
               </p>
             </div>

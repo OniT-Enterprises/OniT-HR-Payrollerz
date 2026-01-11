@@ -544,31 +544,27 @@ export default function LeaveRequests() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-cyan-500 to-teal-500">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
-
-        <div className="relative max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4 text-white/80" />
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
                 <Calendar className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight text-white">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("timeLeave.leaveRequests.title")}
                 </h1>
-                <p className="text-cyan-100">
+                <p className="text-muted-foreground mt-1">
                   {t("timeLeave.leaveRequests.subtitle")}
                 </p>
               </div>
             </div>
             <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
               <DialogTrigger asChild>
-                <Button className="bg-white text-cyan-600 hover:bg-cyan-50">
+                <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600">
                   <Plus className="h-4 w-4 mr-2" />
                   {t("timeLeave.leaveRequests.actions.newRequest")}
                 </Button>

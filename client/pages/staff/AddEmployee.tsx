@@ -489,13 +489,9 @@ export default function AddEmployee() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
-        <div className="absolute inset-0 bg-grid-white/10" />
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl" />
-
-        <div className="relative max-w-4xl mx-auto px-6 py-12">
-          <AutoBreadcrumb className="mb-4 text-white/80" />
+      <div className="border-b bg-card">
+        <div className="max-w-4xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -503,20 +499,19 @@ export default function AddEmployee() {
                 variant="ghost"
                 size="icon"
                 onClick={() => navigate("/people/employees")}
-                className="text-white hover:bg-white/10"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
-              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
                 <UserPlus className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">
+                <h1 className="text-3xl font-bold text-foreground">
                   {isEditMode
                     ? t("addEmployee.header.editTitle")
                     : t("addEmployee.header.addTitle")}
                 </h1>
-                <p className="text-blue-100 mt-1">
+                <p className="text-muted-foreground mt-1">
                   {isEditMode
                     ? t("addEmployee.header.editSubtitle")
                     : t("addEmployee.header.addSubtitle")}
@@ -530,14 +525,13 @@ export default function AddEmployee() {
                 variant="outline"
                 size="sm"
                 onClick={downloadTemplate}
-                className="border-white/30 text-white hover:bg-white/10"
               >
                 <FileDown className="h-4 w-4 mr-1" />
                 {t("addEmployee.buttons.template")}
               </Button>
               <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-white text-blue-600 hover:bg-blue-50">
+                  <Button size="sm" className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
                     <FileUp className="h-4 w-4 mr-1" />
                     {t("addEmployee.buttons.import")}
                   </Button>

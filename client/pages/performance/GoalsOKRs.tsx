@@ -295,7 +295,7 @@ export default function GoalsOKRs() {
   const filteredOKRs = getFilteredOKRs();
 
   const renderOKRCard = (okr: any) => (
-    <Card key={okr.id} className="mb-4">
+    <Card key={okr.id} className="mb-4 border-border/50">
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
@@ -355,27 +355,35 @@ export default function GoalsOKRs() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Goals & OKRs
-            </h1>
-            <p className="text-gray-600">
-              Track objectives and key results for personal and team goals
-            </p>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+              <Target className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Goals & OKRs</h1>
+              <p className="text-muted-foreground mt-1">
+                Track objectives and key results for personal and team goals
+              </p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Quarter Picker */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50 -mt-8 shadow-lg">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
+                  <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                   Goal Period
                 </CardTitle>
                 <Dialog
@@ -584,7 +592,6 @@ export default function GoalsOKRs() {
             </TabsContent>
           </Tabs>
         </div>
-      </div>
     </div>
   );
 }

@@ -161,9 +161,8 @@ export const sendHRChatMessage = async (
         "Authorization": `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-5-mini",
+        model: "gpt-5.2-chat-latest",
         messages: openAIMessages,
-        temperature: 0.7,
         max_completion_tokens: 1000,
         response_format: { type: "json_object" },
       }),
@@ -181,10 +180,20 @@ export const sendHRChatMessage = async (
     }
 
     const data = await response.json();
+
+    // Debug: log the response structure
+    console.log('OpenAI response:', JSON.stringify(data, null, 2));
+
+    // Check for API errors in response
+    if (data?.error) {
+      throw new Error(data.error.message || "OpenAI API error");
+    }
+
     const assistantMessage = data?.choices?.[0]?.message?.content;
 
     if (!assistantMessage) {
-      throw new Error("No response content from OpenAI");
+      console.error('Unexpected response structure:', data);
+      throw new Error(`No response content from OpenAI. Response: ${JSON.stringify(data).slice(0, 200)}`);
     }
 
     try {

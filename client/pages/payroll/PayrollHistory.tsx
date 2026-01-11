@@ -335,77 +335,87 @@ export default function PayrollHistory() {
       <SEO {...seoConfig.payrollHistory} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <FileText className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">
-                    Payroll History
-                  </h1>
-                  <p className="text-muted-foreground">
-                    View and manage past payroll runs
-                  </p>
-                </div>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+                <FileText className="h-8 w-8 text-white" />
               </div>
-              <Button onClick={() => navigate("/payroll/run")}>
-                Run New Payroll
-              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Payroll History
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  View and manage past payroll runs
+                </p>
+              </div>
             </div>
+            <Button onClick={() => navigate("/payroll/run")} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+              Run New Payroll
+            </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       YTD Total Paid
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(stats.totalPaid)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Payroll Runs (YTD)
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {stats.totalRuns}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-blue-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Average Per Run
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(stats.averagePer)}
                     </p>
                   </div>
-                  <Users className="h-8 w-8 text-purple-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
@@ -423,21 +433,23 @@ export default function PayrollHistory() {
                       </p>
                     </div>
                   </div>
-                  {stats.trend >= 0 ? (
-                    <TrendingUp className="h-8 w-8 text-emerald-500" />
-                  ) : (
-                    <TrendingDown className="h-8 w-8 text-red-500" />
-                  )}
+                  <div className={`p-2.5 bg-gradient-to-br ${stats.trend >= 0 ? "from-emerald-500 to-teal-500" : "from-red-500 to-rose-500"} rounded-xl`}>
+                    {stats.trend >= 0 ? (
+                      <TrendingUp className="h-6 w-6 text-white" />
+                    ) : (
+                      <TrendingDown className="h-6 w-6 text-white" />
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Filters */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+                <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Filters
               </CardTitle>
             </CardHeader>
@@ -492,9 +504,12 @@ export default function PayrollHistory() {
           </Card>
 
           {/* Payroll Runs Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle>Payroll Runs</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Payroll Runs
+              </CardTitle>
               <CardDescription>
                 Showing {filteredRuns.length} payroll runs
               </CardDescription>
@@ -580,7 +595,6 @@ export default function PayrollHistory() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>

@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Users,
   UserCheck,
@@ -138,6 +139,7 @@ export default function StaffDashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadEmployees();
@@ -151,8 +153,8 @@ export default function StaffDashboard() {
     } catch (error) {
       console.error("Error loading employees:", error);
       toast({
-        title: "Error",
-        description: "Failed to load employee data",
+        title: t("dashboards.staff.toast.errorTitle"),
+        description: t("dashboards.staff.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -166,7 +168,7 @@ export default function StaffDashboard() {
 
   const departmentStats = employees.reduce(
     (acc, emp) => {
-      const dept = emp.jobDetails?.department || "Unknown";
+      const dept = emp.jobDetails?.department || t("dashboards.staff.labels.unknown");
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     },
@@ -184,27 +186,32 @@ export default function StaffDashboard() {
 
   const stats = [
     {
-      title: "Total Employees",
+      title: t("dashboards.staff.stats.totalEmployees"),
       value: totalEmployees,
-      subtitle: "In database",
+      subtitle: t("dashboards.staff.stats.inDatabase"),
       icon: Users,
     },
     {
-      title: "Active Employees",
+      title: t("dashboards.staff.stats.activeEmployees"),
       value: activeEmployees,
-      subtitle: `${activeRate}% active rate`,
+      subtitle: t("dashboards.staff.stats.activeRate", { rate: activeRate }),
       icon: UserCheck,
     },
     {
-      title: "Departments",
+      title: t("dashboards.staff.stats.departments"),
       value: totalDepartments,
-      subtitle: "Active departments",
+      subtitle: t("dashboards.staff.stats.activeDepartments"),
       icon: Building,
     },
     {
-      title: "Inactive",
+      title: t("dashboards.staff.stats.inactive"),
       value: inactiveEmployees,
-      subtitle: `${totalEmployees > 0 ? ((inactiveEmployees / totalEmployees) * 100).toFixed(1) : "0"}% of workforce`,
+      subtitle: t("dashboards.staff.stats.inactiveRate", {
+        rate:
+          totalEmployees > 0
+            ? ((inactiveEmployees / totalEmployees) * 100).toFixed(1)
+            : "0",
+      }),
       icon: UserX,
     },
   ];
@@ -223,19 +230,21 @@ export default function StaffDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Staff Dashboard</h1>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {t("dashboards.staff.title")}
+                </h1>
                 <p className="text-muted-foreground mt-1">
-                  Overview of employees and organization
+                  {t("dashboards.staff.subtitle")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" className="gap-2" onClick={() => navigate("/people/employees")}>
                   <Users className="h-4 w-4" />
-                  View All
+                  {t("dashboards.staff.actions.viewAll")}
                 </Button>
                 <Button onClick={() => navigate("/people/add")} className="gap-2">
                   <Plus className="h-4 w-4" />
-                  Add Employee
+                  {t("dashboards.staff.actions.addEmployee")}
                 </Button>
               </div>
             </div>
@@ -272,7 +281,9 @@ export default function StaffDashboard() {
                   <div>
                     <CardTitle className="text-lg font-semibold">Departments</CardTitle>
                     <CardDescription>
-                      Employee distribution ({totalEmployees} total)
+                      {t("dashboards.staff.departments.distribution", {
+                        total: totalEmployees,
+                      })}
                     </CardDescription>
                   </div>
                   <Button
@@ -281,7 +292,7 @@ export default function StaffDashboard() {
                     className="text-muted-foreground gap-1"
                     onClick={() => navigate("/people/departments")}
                   >
-                    View All
+                    {t("dashboards.staff.actions.viewAll")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -290,19 +301,23 @@ export default function StaffDashboard() {
                 {totalEmployees === 0 ? (
                   <div className="text-center py-8">
                     <Users className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No employees in database</p>
+                    <p className="text-muted-foreground">
+                      {t("dashboards.staff.departments.emptyEmployees")}
+                    </p>
                     <Button
                       variant="link"
                       className="mt-2"
                       onClick={() => navigate("/admin/seed")}
                     >
-                      Seed database
+                      {t("dashboards.staff.departments.seedDatabase")}
                     </Button>
                   </div>
                 ) : topDepartments.length === 0 ? (
                   <div className="text-center py-8">
                     <Building className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
-                    <p className="text-muted-foreground">No department data</p>
+                    <p className="text-muted-foreground">
+                      {t("dashboards.staff.departments.emptyDepartments")}
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -315,7 +330,12 @@ export default function StaffDashboard() {
                         <div key={department} className="space-y-2">
                           <div className="flex items-center justify-between text-sm">
                             <span className="font-medium truncate max-w-[200px]">{department}</span>
-                            <span className="text-muted-foreground">{count} ({percentage}%)</span>
+                            <span className="text-muted-foreground">
+                              {t("dashboards.staff.departments.count", {
+                                count,
+                                percent: percentage,
+                              })}
+                            </span>
                           </div>
                           <div className="h-2 bg-muted rounded-full overflow-hidden">
                             <div
@@ -336,10 +356,16 @@ export default function StaffDashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Status Overview</CardTitle>
-                    <CardDescription>Employee status breakdown</CardDescription>
+                    <CardTitle className="text-lg font-semibold">
+                      {t("dashboards.staff.status.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dashboards.staff.status.description")}
+                    </CardDescription>
                   </div>
-                  <Badge variant="secondary">Live</Badge>
+                  <Badge variant="secondary">
+                    {t("dashboards.staff.status.live")}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -349,8 +375,12 @@ export default function StaffDashboard() {
                       <UserCheck className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">Active Employees</p>
-                      <p className="text-xs text-muted-foreground">Currently employed</p>
+                      <p className="text-sm font-medium">
+                        {t("dashboards.staff.status.activeTitle")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboards.staff.status.activeDescription")}
+                      </p>
                     </div>
                     <span className="text-2xl font-bold">{activeEmployees}</span>
                   </div>
@@ -360,8 +390,12 @@ export default function StaffDashboard() {
                       <UserX className="h-4 w-4 text-orange-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">Inactive Employees</p>
-                      <p className="text-xs text-muted-foreground">Terminated or on leave</p>
+                      <p className="text-sm font-medium">
+                        {t("dashboards.staff.status.inactiveTitle")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboards.staff.status.inactiveDescription")}
+                      </p>
                     </div>
                     <span className="text-2xl font-bold">{inactiveEmployees}</span>
                   </div>
@@ -371,8 +405,12 @@ export default function StaffDashboard() {
                       <Building className="h-4 w-4 text-blue-500" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">Departments</p>
-                      <p className="text-xs text-muted-foreground">Active work units</p>
+                      <p className="text-sm font-medium">
+                        {t("dashboards.staff.status.departmentsTitle")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboards.staff.status.departmentsDescription")}
+                      </p>
                     </div>
                     <span className="text-2xl font-bold">{totalDepartments}</span>
                   </div>
@@ -383,13 +421,31 @@ export default function StaffDashboard() {
 
           {/* Quick Actions */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {t("dashboards.staff.quickActions.title")}
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "All Employees", icon: Users, path: "/people/employees" },
-                { label: "Add Employee", icon: UserPlus, path: "/people/add" },
-                { label: "Departments", icon: Building, path: "/people/departments" },
-                { label: "Org Chart", icon: Building2, path: "/people/org-chart" },
+                {
+                  label: t("dashboards.staff.quickActions.allEmployees"),
+                  icon: Users,
+                  path: "/people/employees",
+                },
+                {
+                  label: t("dashboards.staff.quickActions.addEmployee"),
+                  icon: UserPlus,
+                  path: "/people/add",
+                },
+                {
+                  label: t("dashboards.staff.quickActions.departments"),
+                  icon: Building,
+                  path: "/people/departments",
+                },
+                {
+                  label: t("dashboards.staff.quickActions.orgChart"),
+                  icon: Building2,
+                  path: "/people/org-chart",
+                },
               ].map((action, index) => (
                 <button
                   key={index}

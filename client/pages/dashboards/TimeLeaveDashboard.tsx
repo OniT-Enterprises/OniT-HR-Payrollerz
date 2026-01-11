@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Clock,
   Calendar,
@@ -116,6 +117,7 @@ export default function TimeLeaveDashboard() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadEmployees();
@@ -129,8 +131,8 @@ export default function TimeLeaveDashboard() {
     } catch (error) {
       console.error("Error loading employees:", error);
       toast({
-        title: "Error",
-        description: "Failed to load employee data",
+        title: t("dashboards.timeLeave.toast.errorTitle"),
+        description: t("dashboards.timeLeave.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -143,27 +145,27 @@ export default function TimeLeaveDashboard() {
 
   const stats = [
     {
-      title: "Total Employees",
+      title: t("dashboards.timeLeave.stats.totalEmployees"),
       value: totalEmployees,
-      subtitle: "In database",
+      subtitle: t("dashboards.timeLeave.stats.inDatabase"),
       icon: Users,
     },
     {
-      title: "Active Employees",
+      title: t("dashboards.timeLeave.stats.activeEmployees"),
       value: activeEmployees,
-      subtitle: "Available for tracking",
+      subtitle: t("dashboards.timeLeave.stats.availableTracking"),
       icon: UserCheck,
     },
     {
-      title: "Time Entries",
+      title: t("dashboards.timeLeave.stats.timeEntries"),
       value: 0,
-      subtitle: "No data yet",
+      subtitle: t("dashboards.timeLeave.stats.noData"),
       icon: Clock,
     },
     {
-      title: "Leave Requests",
+      title: t("dashboards.timeLeave.stats.leaveRequests"),
       value: 0,
-      subtitle: "No requests yet",
+      subtitle: t("dashboards.timeLeave.stats.noRequests"),
       icon: Calendar,
     },
   ];
@@ -171,20 +173,20 @@ export default function TimeLeaveDashboard() {
   const setupSteps = [
     {
       step: 1,
-      title: "Add Employees",
-      description: "Import or add employees to your database",
+      title: t("dashboards.timeLeave.setup.addEmployees.title"),
+      description: t("dashboards.timeLeave.setup.addEmployees.description"),
       complete: totalEmployees > 0,
     },
     {
       step: 2,
-      title: "Configure Time Tracking",
-      description: "Set up time tracking policies and rules",
+      title: t("dashboards.timeLeave.setup.configureTime.title"),
+      description: t("dashboards.timeLeave.setup.configureTime.description"),
       complete: false,
     },
     {
       step: 3,
-      title: "Setup Leave Policies",
-      description: "Define leave types and approval workflows",
+      title: t("dashboards.timeLeave.setup.setupLeave.title"),
+      description: t("dashboards.timeLeave.setup.setupLeave.description"),
       complete: false,
     },
   ];
@@ -203,19 +205,21 @@ export default function TimeLeaveDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Time & Leave</h1>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {t("dashboards.timeLeave.title")}
+                </h1>
                 <p className="text-muted-foreground mt-1">
-                  Attendance, time tracking, and leave management
+                  {t("dashboards.timeLeave.subtitle")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" className="gap-2" onClick={() => navigate("/people/time-tracking")}>
                   <Clock className="h-4 w-4" />
-                  Track Time
+                  {t("dashboards.timeLeave.actions.trackTime")}
                 </Button>
                 <Button onClick={() => navigate("/people/leave")} className="gap-2">
                   <Plus className="h-4 w-4" />
-                  New Request
+                  {t("dashboards.timeLeave.actions.newRequest")}
                 </Button>
               </div>
             </div>
@@ -250,10 +254,16 @@ export default function TimeLeaveDashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Status</CardTitle>
-                    <CardDescription>Real-time employee data</CardDescription>
+                    <CardTitle className="text-lg font-semibold">
+                      {t("dashboards.timeLeave.status.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dashboards.timeLeave.status.description")}
+                    </CardDescription>
                   </div>
-                  <Badge variant="secondary">Live</Badge>
+                  <Badge variant="secondary">
+                    {t("dashboards.timeLeave.status.live")}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -263,11 +273,15 @@ export default function TimeLeaveDashboard() {
                       <Clock className="h-4 w-4 text-primary" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium">Database Connected</p>
-                      <p className="text-xs text-muted-foreground">Connected to Firebase</p>
+                      <p className="text-sm font-medium">
+                        {t("dashboards.timeLeave.status.databaseConnected")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("dashboards.timeLeave.status.firebaseConnected")}
+                      </p>
                     </div>
                     <Badge variant="secondary" className="bg-primary/10 text-primary">
-                      Live
+                      {t("dashboards.timeLeave.status.live")}
                     </Badge>
                   </div>
 
@@ -277,8 +291,14 @@ export default function TimeLeaveDashboard() {
                         <Users className="h-4 w-4 text-primary" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">Employees Available</p>
-                        <p className="text-xs text-muted-foreground">{activeEmployees} active employees</p>
+                        <p className="text-sm font-medium">
+                          {t("dashboards.timeLeave.status.employeesAvailable")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("dashboards.timeLeave.status.activeEmployees", {
+                            count: activeEmployees,
+                          })}
+                        </p>
                       </div>
                       <span className="text-xl font-bold">{activeEmployees}</span>
                     </div>
@@ -288,10 +308,16 @@ export default function TimeLeaveDashboard() {
                         <Users className="h-4 w-4 text-muted-foreground" />
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium">No Employee Data</p>
-                        <p className="text-xs text-muted-foreground">Add employees to enable tracking</p>
+                        <p className="text-sm font-medium">
+                          {t("dashboards.timeLeave.status.noEmployees")}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {t("dashboards.timeLeave.status.noEmployeesDesc")}
+                        </p>
                       </div>
-                      <Badge variant="secondary">Empty</Badge>
+                      <Badge variant="secondary">
+                        {t("dashboards.timeLeave.status.empty")}
+                      </Badge>
                     </div>
                   )}
                 </div>
@@ -303,8 +329,12 @@ export default function TimeLeaveDashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Getting Started</CardTitle>
-                    <CardDescription>Setup time & leave tracking</CardDescription>
+                    <CardTitle className="text-lg font-semibold">
+                      {t("dashboards.timeLeave.gettingStarted.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dashboards.timeLeave.gettingStarted.description")}
+                    </CardDescription>
                   </div>
                   <Badge variant="secondary">
                     {setupSteps.filter(s => s.complete).length}/{setupSteps.length}
@@ -334,7 +364,9 @@ export default function TimeLeaveDashboard() {
                         <p className="text-xs text-muted-foreground">{step.description}</p>
                       </div>
                       <Badge variant="secondary" className={step.complete ? "bg-primary/10 text-primary" : ""}>
-                        {step.complete ? "Done" : "Pending"}
+                        {step.complete
+                          ? t("dashboards.timeLeave.gettingStarted.done")
+                          : t("dashboards.timeLeave.gettingStarted.pending")}
                       </Badge>
                     </div>
                   ))}
@@ -345,13 +377,31 @@ export default function TimeLeaveDashboard() {
 
           {/* Quick Actions */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {t("dashboards.timeLeave.quickActions.title")}
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { label: "Time Tracking", icon: Clock, path: "/people/time-tracking" },
-                { label: "Attendance", icon: Calendar, path: "/people/attendance" },
-                { label: "Leave Requests", icon: CalendarDays, path: "/people/leave" },
-                { label: "Scheduling", icon: CalendarDays, path: "/people/schedules" },
+                {
+                  label: t("dashboards.timeLeave.quickActions.timeTracking"),
+                  icon: Clock,
+                  path: "/people/time-tracking",
+                },
+                {
+                  label: t("dashboards.timeLeave.quickActions.attendance"),
+                  icon: Calendar,
+                  path: "/people/attendance",
+                },
+                {
+                  label: t("dashboards.timeLeave.quickActions.leaveRequests"),
+                  icon: CalendarDays,
+                  path: "/people/leave",
+                },
+                {
+                  label: t("dashboards.timeLeave.quickActions.scheduling"),
+                  icon: CalendarDays,
+                  path: "/people/schedules",
+                },
               ].map((action, index) => (
                 <button
                   key={index}

@@ -704,6 +704,7 @@ export const translations = {
     },
     orgChart: {
       title: "Organizational Chart",
+      subtitle: "Visualize your company structure and reporting lines",
       reorganize: "Reorganize",
       exitReorganize: "Exit Reorganize",
       manage: "Manage",
@@ -1938,6 +1939,617 @@ export const translations = {
         },
       },
     },
+    reports: {
+      dashboard: {
+        title: "Reports",
+        subtitle: "Generate and export reports for all HR data",
+        actions: {
+          exportAll: "Export All",
+        },
+        stats: {
+          available: "Available Reports",
+          scheduled: "Scheduled Reports",
+          custom: "Custom Reports",
+        },
+        categories: {
+          employee: {
+            title: "Employee Reports",
+            description: "Headcount, turnover, demographics",
+            examples: {
+              headcount: "Headcount by Department",
+              newHires: "New Hires Report",
+              turnover: "Turnover Analysis",
+            },
+          },
+          payroll: {
+            title: "Payroll Reports",
+            description: "Salary, taxes, deductions",
+            examples: {
+              summary: "Payroll Summary",
+              tax: "Tax Liability",
+              ytd: "YTD Earnings",
+            },
+          },
+          attendance: {
+            title: "Attendance Reports",
+            description: "Time tracking, absences, overtime",
+            examples: {
+              summary: "Attendance Summary",
+              overtime: "Overtime Report",
+              late: "Late Arrivals",
+            },
+          },
+          department: {
+            title: "Department Reports",
+            description: "Cost centers, budgets, headcount",
+            examples: {
+              costs: "Department Costs",
+              budget: "Budget vs Actual",
+              org: "Org Structure",
+            },
+          },
+          custom: {
+            title: "Custom Reports",
+            description: "Build your own reports",
+            examples: {
+              builder: "Report Builder",
+              saved: "Saved Reports",
+              scheduled: "Scheduled Reports",
+            },
+          },
+        },
+      },
+      attendance: {
+        title: "Attendance Reports",
+        subtitle: "Track and analyze attendance patterns",
+        monthly: {
+          title: "Monthly Attendance",
+          description: "Monthly attendance summary",
+          body: "Detailed monthly attendance report with check-in/out times and totals.",
+        },
+        leave: {
+          title: "Leave Analysis",
+          description: "Leave patterns and utilization",
+          body: "Analyze leave requests, patterns, and balance utilization across teams.",
+        },
+        overtime: {
+          title: "Overtime Report",
+          description: "Overtime hours tracking",
+          body: "Track overtime hours, patterns, and costs by employee and department.",
+        },
+        actions: {
+          generate: "Generate Report",
+        },
+      },
+      setup: {
+        title: "Setup Reports",
+        subtitle: "System configuration and setup analytics",
+        systemConfig: {
+          title: "System Configuration",
+          description: "Current system settings and configuration",
+          body: "Overview of system settings, user permissions, and configuration status.",
+        },
+        permissions: {
+          title: "User Permissions",
+          description: "User roles and access rights",
+          body: "Audit user roles, permissions, and access levels across the system.",
+        },
+        integration: {
+          title: "Data Integration",
+          description: "External system integrations status",
+          body: "Monitor data flows, API connections, and integration health.",
+        },
+        activity: {
+          title: "System Activity",
+          description: "Usage patterns and activity logs",
+          body: "Analyze system usage, login patterns, and feature adoption rates.",
+        },
+        compliance: {
+          title: "Compliance Report",
+          description: "Regulatory compliance status",
+          body: "Track compliance with regulations, data policies, and security standards.",
+        },
+        backup: {
+          title: "Backup & Recovery",
+          description: "Data backup and recovery status",
+          body: "Monitor backup schedules, recovery points, and data integrity checks.",
+        },
+        actions: {
+          generate: "Generate Report",
+        },
+      },
+      custom: {
+        title: "Custom Reports",
+        subtitle: "Build and customize your own reports",
+        builder: {
+          title: "Report Builder",
+          description: "Create custom reports with filters",
+          body: "Build custom reports with specific fields, filters, and formatting options.",
+        },
+        saved: {
+          title: "Saved Reports",
+          description: "Access your saved custom reports",
+          body: "View and regenerate previously saved custom report templates.",
+        },
+        analytics: {
+          title: "Analytics Dashboard",
+          description: "Interactive data visualization",
+          body: "Create interactive dashboards with charts, graphs, and key metrics.",
+        },
+        actions: {
+          build: "Build Report",
+          viewSaved: "View Saved",
+          createDashboard: "Create Dashboard",
+        },
+      },
+      employee: {
+        title: "Employee Reports",
+        subtitle: "Generate and analyze employee-related reports",
+        directory: {
+          title: "Employee Directory",
+          description: "Complete employee information list",
+          body: "Comprehensive directory with contact information, departments, and roles.",
+        },
+        performance: {
+          title: "Performance Summary",
+          description: "Employee performance metrics",
+          body: "Performance review scores, goals achievement, and development progress.",
+        },
+        training: {
+          title: "Training Records",
+          description: "Employee training and certifications",
+          body: "Track completed training, certifications, and upcoming requirements.",
+        },
+        actions: {
+          generate: "Generate Report",
+        },
+      },
+      department: {
+        title: "Department Reports",
+        subtitle: "Generate department-level analytics and reports",
+        overview: {
+          title: "Department Overview",
+          description: "Complete department structure and headcount",
+          body: "Overview of all departments, employee counts, and organizational structure.",
+        },
+        performance: {
+          title: "Department Performance",
+          description: "Performance metrics by department",
+          body: "Compare department performance, goals achievement, and productivity metrics.",
+        },
+        budget: {
+          title: "Budget Analysis",
+          description: "Department budget and cost analysis",
+          body: "Track department budgets, salary costs, and resource allocation.",
+        },
+        staffing: {
+          title: "Staffing Report",
+          description: "Department staffing levels",
+          body: "Analyze staffing levels, turnover rates, and recruitment needs by department.",
+        },
+        growth: {
+          title: "Department Growth",
+          description: "Historical growth analysis",
+          body: "Track department growth trends, hiring patterns, and expansion metrics.",
+        },
+        cross: {
+          title: "Cross-Department Analysis",
+          description: "Inter-department collaboration",
+          body: "Analyze collaboration patterns and resource sharing between departments.",
+        },
+        actions: {
+          generate: "Generate Report",
+        },
+      },
+      payroll: {
+        title: "Payroll Reports",
+        subtitle: "Comprehensive payroll analytics and reporting",
+        empty: {
+          title: "No Payroll Data",
+          description: "Add employees with salary information to generate payroll reports",
+          action: "Add Employees First",
+        },
+        stats: {
+          totalEmployees: "Total Employees",
+          inPayroll: "In payroll system",
+          totalMonthly: "Total Monthly Payroll",
+          basedOnSalaries: "Based on current salaries",
+          averageMonthly: "Average Monthly Salary",
+          perEmployee: "Per employee",
+          monthlyPayroll: "Monthly Payroll",
+          estimated: "Estimated",
+        },
+        actions: {
+          filter: "Filter Reports",
+          export: "Export Reports",
+          viewDetailed: "View Detailed Report",
+          viewDepartment: "View Department Breakdown",
+          viewBenefits: "View Benefits Report",
+        },
+        salarySummary: {
+          title: "Salary Summary",
+          description: "Overview of employee compensation",
+          highest: "Highest Salary:",
+          lowest: "Lowest Salary:",
+          median: "Median Salary:",
+        },
+        departmentCosts: {
+          title: "Department Costs",
+          description: "Payroll breakdown by department",
+          departments: "departments",
+          analyzed: "analyzed for costs",
+        },
+        benefits: {
+          title: "Benefits Analysis",
+          description: "Employee benefits and packages",
+          basic: "Basic",
+          standard: "Standard",
+          premium: "Premium",
+          executive: "Executive",
+        },
+        table: {
+          title: "Employee Payroll Data",
+          description: "Current salary information for all employees",
+          employee: "Employee",
+          department: "Department",
+          position: "Position",
+          monthlySalary: "Monthly Salary",
+          benefits: "Benefits",
+          status: "Status",
+          viewAll: "View All {{count}} Employees",
+        },
+        status: {
+          active: "Active",
+          inactive: "Inactive",
+        },
+        toast: {
+          errorTitle: "Error",
+          loadFailed: "Failed to load employee data",
+        },
+      },
+    },
+    people: {
+      dashboard: {
+        title: "People",
+        subtitle: "Manage your team, hiring, time off, and performance",
+        actions: {
+          addEmployee: "Add Employee",
+        },
+        stats: {
+          activeEmployees: "Active Employees",
+          departments: "Departments",
+          pendingLeave: "Pending Leave",
+          needsReview: "Needs Review",
+          onLeaveToday: "On Leave Today",
+        },
+        sections: {
+          staff: {
+            title: "Staff Management",
+            description: "Employees, departments, org chart",
+            links: {
+              allEmployees: "All Employees",
+              addEmployee: "Add Employee",
+              departments: "Departments",
+              orgChart: "Org Chart",
+            },
+          },
+          hiring: {
+            title: "Hiring & Recruitment",
+            description: "Jobs, candidates, onboarding",
+            links: {
+              jobPostings: "Job Postings",
+              candidates: "Candidates",
+              interviews: "Interviews",
+              onboarding: "Onboarding",
+            },
+          },
+          time: {
+            title: "Time & Leave",
+            description: "Attendance, leave, schedules",
+            links: {
+              timeTracking: "Time Tracking",
+              attendance: "Attendance",
+              leaveRequests: "Leave Requests",
+              shiftSchedules: "Shift Schedules",
+            },
+          },
+          performance: {
+            title: "Performance",
+            description: "Goals, reviews, training",
+            links: {
+              goalsOkrs: "Goals & OKRs",
+              reviews: "Reviews",
+              training: "Training",
+              disciplinary: "Disciplinary",
+            },
+          },
+        },
+      },
+    },
+    dashboards: {
+      staff: {
+        title: "Staff Dashboard",
+        subtitle: "Overview of employees and organization",
+        actions: {
+          viewAll: "View All",
+          addEmployee: "Add Employee",
+        },
+        stats: {
+          totalEmployees: "Total Employees",
+          inDatabase: "In database",
+          activeEmployees: "Active Employees",
+          activeRate: "{{rate}}% active rate",
+          departments: "Departments",
+          activeDepartments: "Active departments",
+          inactive: "Inactive",
+          inactiveRate: "{{rate}}% of workforce",
+        },
+        labels: {
+          unknown: "Unknown",
+        },
+        departments: {
+          distribution: "Employee distribution ({{total}} total)",
+          emptyEmployees: "No employees in database",
+          seedDatabase: "Seed database",
+          emptyDepartments: "No department data",
+          count: "{{count}} ({{percent}}%)",
+        },
+        status: {
+          title: "Status Overview",
+          description: "Employee status breakdown",
+          live: "Live",
+          activeTitle: "Active Employees",
+          activeDescription: "Currently employed",
+          inactiveTitle: "Inactive Employees",
+          inactiveDescription: "Terminated or on leave",
+          departmentsTitle: "Departments",
+          departmentsDescription: "Active work units",
+        },
+        quickActions: {
+          title: "Quick Actions",
+          allEmployees: "All Employees",
+          addEmployee: "Add Employee",
+          departments: "Departments",
+          orgChart: "Org Chart",
+        },
+        toast: {
+          errorTitle: "Error",
+          loadFailed: "Failed to load employee data",
+        },
+      },
+      timeLeave: {
+        title: "Time & Leave",
+        subtitle: "Attendance, time tracking, and leave management",
+        actions: {
+          trackTime: "Track Time",
+          newRequest: "New Request",
+        },
+        stats: {
+          totalEmployees: "Total Employees",
+          inDatabase: "In database",
+          activeEmployees: "Active Employees",
+          availableTracking: "Available for tracking",
+          timeEntries: "Time Entries",
+          noData: "No data yet",
+          leaveRequests: "Leave Requests",
+          noRequests: "No requests yet",
+        },
+        status: {
+          title: "Status",
+          description: "Real-time employee data",
+          live: "Live",
+          databaseConnected: "Database Connected",
+          firebaseConnected: "Connected to Firebase",
+          employeesAvailable: "Employees Available",
+          activeEmployees: "{{count}} active employees",
+          noEmployees: "No Employee Data",
+          noEmployeesDesc: "Add employees to enable tracking",
+          empty: "Empty",
+        },
+        setup: {
+          addEmployees: {
+            title: "Add Employees",
+            description: "Import or add employees to your database",
+          },
+          configureTime: {
+            title: "Configure Time Tracking",
+            description: "Set up time tracking policies and rules",
+          },
+          setupLeave: {
+            title: "Setup Leave Policies",
+            description: "Define leave types and approval workflows",
+          },
+        },
+        gettingStarted: {
+          title: "Getting Started",
+          description: "Setup time & leave tracking",
+          done: "Done",
+          pending: "Pending",
+        },
+        quickActions: {
+          title: "Quick Actions",
+          timeTracking: "Time Tracking",
+          attendance: "Attendance",
+          leaveRequests: "Leave Requests",
+          scheduling: "Scheduling",
+        },
+        toast: {
+          errorTitle: "Error",
+          loadFailed: "Failed to load employee data",
+        },
+      },
+      hiring: {
+        title: "Hiring Dashboard",
+        subtitle: "Overview of recruitment and hiring activities",
+        actions: {
+          viewApplications: "View Applications",
+          postJob: "Post New Job",
+          viewAll: "View All",
+        },
+        stats: {
+          openPositions: "Open Positions",
+          openPositionsSub: "+3 this month",
+          totalApplications: "Total Applications",
+          totalApplicationsSub: "+18 this week",
+          interviewsScheduled: "Interviews Scheduled",
+          interviewsScheduledSub: "Next 7 days",
+          pendingOffers: "Pending Offers",
+          pendingOffersSub: "Awaiting response",
+        },
+        recent: {
+          title: "Recent Activity",
+          description: "Latest updates in hiring",
+        },
+        activity: {
+          hired: {
+            title: "Sarah Johnson hired",
+            subtitle: "Senior Software Engineer position filled",
+          },
+          interviews: {
+            title: "3 interviews scheduled",
+            subtitle: "Product Manager candidates",
+          },
+          newJob: {
+            title: "New job posted",
+            subtitle: "Marketing Specialist - Remote",
+          },
+          surge: {
+            title: "Application surge",
+            subtitle: "UX Designer position - 45 new applications",
+          },
+          status: {
+            completed: "Completed",
+            scheduled: "Scheduled",
+            active: "Active",
+            trending: "Trending",
+          },
+        },
+        pipeline: {
+          title: "Hiring Pipeline",
+          description: "Candidates by stage",
+          total: "{{count}} total",
+          applications: "Applications Received",
+          phone: "Phone Screening",
+          technical: "Technical Interview",
+          final: "Final Interview",
+        },
+        quickActions: {
+          title: "Quick Actions",
+          createJob: "Create Job",
+          candidates: "Candidates",
+          interviews: "Interviews",
+          onboarding: "Onboarding",
+          offboarding: "Offboarding",
+        },
+      },
+    },
+    payroll: {
+      dashboard: {
+        title: "Payroll",
+        subtitle: "Process payroll, manage payments, and generate reports",
+        actions: {
+          runPayroll: "Run Payroll",
+        },
+        stats: {
+          employees: "Employees",
+          monthlyPayroll: "Monthly Payroll",
+          nextPayDate: "Next Pay Date",
+          daysAway: "{{count}} days away",
+          lastPayroll: "Last Payroll",
+        },
+        links: {
+          primary: "Primary",
+          runPayroll: {
+            label: "Run Payroll",
+            description: "Process payroll for current period",
+          },
+          history: {
+            label: "Payroll History",
+            description: "View past payroll runs",
+          },
+          transfers: {
+            label: "Bank Transfers",
+            description: "Manage salary payments",
+          },
+          taxes: {
+            label: "Tax Reports",
+            description: "WIT and INSS reports",
+          },
+          benefits: {
+            label: "Benefits",
+            description: "Employee benefits enrollment",
+          },
+          deductions: {
+            label: "Deductions",
+            description: "Loans and advances",
+          },
+        },
+        compliance: {
+          title: "Timor-Leste Compliance",
+          incomeTax: {
+            title: "Income Tax (WIT)",
+            description: "10% on income above $500/month",
+            due: "Due: 15th of following month",
+          },
+          socialSecurity: {
+            title: "Social Security (INSS)",
+            description: "Employee: 4% | Employer: 6%",
+            due: "Due: 10th of following month",
+          },
+          minimumWage: {
+            title: "Minimum Wage",
+            description: "$115 USD per month",
+            note: "44 hours/week standard",
+          },
+        },
+      },
+    },
+    accounting: {
+      dashboard: {
+        title: "Accounting",
+        subtitle: "Manage your books, ledgers, and financial reports",
+        actions: {
+          newEntry: "New Entry",
+        },
+        stats: {
+          assets: "Total Assets",
+          liabilities: "Total Liabilities",
+          netIncome: "Net Income (MTD)",
+          pendingEntries: "Pending Entries",
+        },
+        links: {
+          chart: {
+            title: "Chart of Accounts",
+            description: "Manage account structure and categories",
+          },
+          journal: {
+            title: "Journal Entries",
+            description: "Record and review transactions",
+          },
+          ledger: {
+            title: "General Ledger",
+            description: "Complete transaction history by account",
+          },
+          trial: {
+            title: "Trial Balance",
+            description: "Verify debits equal credits",
+          },
+          reports: {
+            title: "Financial Reports",
+            description: "Income statement, balance sheet",
+          },
+        },
+        doubleEntry: {
+          title: "Double-Entry Accounting",
+          assetsTitle: "Assets = Liabilities + Equity",
+          assetsDesc: "The fundamental accounting equation",
+          debitsTitle: "Debits & Credits",
+          debitsDesc: "Every transaction affects at least 2 accounts",
+          trialTitle: "Trial Balance",
+          trialDesc: "Total debits must equal total credits",
+        },
+      },
+    },
     locale: {
       en: "English",
       pt: "Portuguese (PT)",
@@ -2649,6 +3261,7 @@ export const translations = {
     },
     orgChart: {
       title: "Organograma",
+      subtitle: "Visualize a estrutura da empresa e linhas de reporte",
       reorganize: "Reorganizar",
       exitReorganize: "Sair da reorganizacao",
       manage: "Gerir",
@@ -3881,6 +4494,275 @@ export const translations = {
         },
       },
     },
+    reports: {
+      dashboard: {
+        title: "Relatorios",
+        subtitle: "Gerar e exportar relatorios para todos os dados de RH",
+        actions: {
+          exportAll: "Exportar tudo",
+        },
+        stats: {
+          available: "Relatorios disponiveis",
+          scheduled: "Relatorios agendados",
+          custom: "Relatorios personalizados",
+        },
+        categories: {
+          employee: {
+            title: "Relatorios de colaboradores",
+            description: "Total, rotatividade, demografia",
+            examples: {
+              headcount: "Total por departamento",
+              newHires: "Relatorio de novas contratacoes",
+              turnover: "Analise de rotatividade",
+            },
+          },
+          payroll: {
+            title: "Relatorios de folha",
+            description: "Salarios, impostos, deducoes",
+            examples: {
+              summary: "Resumo de folha",
+              tax: "Responsabilidade fiscal",
+              ytd: "Ganhos acumulados",
+            },
+          },
+          attendance: {
+            title: "Relatorios de presenca",
+            description: "Controlo de tempo, ausencias, horas extra",
+            examples: {
+              summary: "Resumo de presenca",
+              overtime: "Relatorio de horas extra",
+              late: "Chegadas atrasadas",
+            },
+          },
+          department: {
+            title: "Relatorios de departamentos",
+            description: "Centros de custo, orcamentos, total",
+            examples: {
+              costs: "Custos por departamento",
+              budget: "Orcamento vs real",
+              org: "Estrutura organizacional",
+            },
+          },
+          custom: {
+            title: "Relatorios personalizados",
+            description: "Crie os seus relatorios",
+            examples: {
+              builder: "Construtor de relatorios",
+              saved: "Relatorios guardados",
+              scheduled: "Relatorios agendados",
+            },
+          },
+        },
+      },
+      attendance: {
+        title: "Relatorios de presenca",
+        subtitle: "Acompanhar e analisar padroes de presenca",
+        monthly: {
+          title: "Presenca mensal",
+          description: "Resumo mensal de presenca",
+          body: "Relatorio mensal detalhado com entradas/saidas e totais.",
+        },
+        leave: {
+          title: "Analise de licencas",
+          description: "Padroes e utilizacao de licencas",
+          body: "Analise pedidos de licenca, padroes e utilizacao de saldo.",
+        },
+        overtime: {
+          title: "Relatorio de horas extra",
+          description: "Acompanhamento de horas extra",
+          body: "Acompanhe horas extra, padroes e custos por colaborador.",
+        },
+        actions: {
+          generate: "Gerar relatorio",
+        },
+      },
+      setup: {
+        title: "Relatorios de configuracao",
+        subtitle: "Configuracao do sistema e analise de setup",
+        systemConfig: {
+          title: "Configuracao do sistema",
+          description: "Definicoes e configuracao atuais",
+          body: "Resumo de definicoes, permissoes e estado de configuracao.",
+        },
+        permissions: {
+          title: "Permissoes de utilizador",
+          description: "Funcoes e acessos",
+          body: "Audite funcoes, permissoes e niveis de acesso.",
+        },
+        integration: {
+          title: "Integracao de dados",
+          description: "Estado de integracoes externas",
+          body: "Monitorize fluxos de dados, APIs e saude de integracao.",
+        },
+        activity: {
+          title: "Atividade do sistema",
+          description: "Padroes de uso e logs",
+          body: "Analise uso do sistema, acessos e adocao de recursos.",
+        },
+        compliance: {
+          title: "Relatorio de conformidade",
+          description: "Estado de conformidade regulatoria",
+          body: "Acompanhe conformidade com regulamentos e politicas.",
+        },
+        backup: {
+          title: "Backup e recuperacao",
+          description: "Estado de backup e recuperacao",
+          body: "Monitorize backups, pontos de recuperacao e integridade.",
+        },
+        actions: {
+          generate: "Gerar relatorio",
+        },
+      },
+      custom: {
+        title: "Relatorios personalizados",
+        subtitle: "Crie e personalize os seus relatorios",
+        builder: {
+          title: "Construtor de relatorios",
+          description: "Crie relatorios com filtros",
+          body: "Crie relatorios com campos, filtros e formatos especificos.",
+        },
+        saved: {
+          title: "Relatorios guardados",
+          description: "Aceda aos seus relatorios guardados",
+          body: "Veja e regenere modelos guardados.",
+        },
+        analytics: {
+          title: "Dashboard analitica",
+          description: "Visualizacao interativa",
+          body: "Crie dashboards com graficos e metricas.",
+        },
+        actions: {
+          build: "Criar relatorio",
+          viewSaved: "Ver guardados",
+          createDashboard: "Criar dashboard",
+        },
+      },
+      employee: {
+        title: "Relatorios de colaboradores",
+        subtitle: "Gerar e analisar relatorios de colaboradores",
+        directory: {
+          title: "Diretorio de colaboradores",
+          description: "Lista completa de colaboradores",
+          body: "Diretorio com contactos, departamentos e funcoes.",
+        },
+        performance: {
+          title: "Resumo de desempenho",
+          description: "Metricas de desempenho",
+          body: "Pontuacoes, metas e progresso de desenvolvimento.",
+        },
+        training: {
+          title: "Registos de formacao",
+          description: "Formacao e certificacoes",
+          body: "Acompanhe formacoes concluidas e requisitos futuros.",
+        },
+        actions: {
+          generate: "Gerar relatorio",
+        },
+      },
+      department: {
+        title: "Relatorios de departamentos",
+        subtitle: "Gerar analise e relatorios por departamento",
+        overview: {
+          title: "Resumo do departamento",
+          description: "Estrutura e total de colaboradores",
+          body: "Resumo de departamentos, total de colaboradores e estrutura.",
+        },
+        performance: {
+          title: "Desempenho do departamento",
+          description: "Metricas por departamento",
+          body: "Compare desempenho, metas e produtividade.",
+        },
+        budget: {
+          title: "Analise de orcamento",
+          description: "Orcamento e custos",
+          body: "Acompanhe orcamentos, custos salariais e alocacao.",
+        },
+        staffing: {
+          title: "Relatorio de equipa",
+          description: "Nivel de pessoal",
+          body: "Analise niveis, rotatividade e necessidades.",
+        },
+        growth: {
+          title: "Crescimento do departamento",
+          description: "Analise historica de crescimento",
+          body: "Acompanhe crescimento, contratacoes e expansao.",
+        },
+        cross: {
+          title: "Analise entre departamentos",
+          description: "Colaboracao entre departamentos",
+          body: "Analise colaboracao e partilha de recursos.",
+        },
+        actions: {
+          generate: "Gerar relatorio",
+        },
+      },
+      payroll: {
+        title: "Relatorios de folha",
+        subtitle: "Analise e relatorios completos de folha",
+        empty: {
+          title: "Sem dados de folha",
+          description: "Adicione colaboradores com salarios para gerar relatorios",
+          action: "Adicionar colaboradores",
+        },
+        stats: {
+          totalEmployees: "Total de colaboradores",
+          inPayroll: "No sistema de folha",
+          totalMonthly: "Total mensal da folha",
+          basedOnSalaries: "Baseado nos salarios atuais",
+          averageMonthly: "Salario medio mensal",
+          perEmployee: "Por colaborador",
+          monthlyPayroll: "Folha mensal",
+          estimated: "Estimado",
+        },
+        actions: {
+          filter: "Filtrar relatorios",
+          export: "Exportar relatorios",
+          viewDetailed: "Ver relatorio detalhado",
+          viewDepartment: "Ver por departamento",
+          viewBenefits: "Ver relatorio de beneficios",
+        },
+        salarySummary: {
+          title: "Resumo salarial",
+          description: "Resumo de compensacao",
+          highest: "Maior salario:",
+          lowest: "Menor salario:",
+          median: "Salario medio:",
+        },
+        departmentCosts: {
+          title: "Custos por departamento",
+          description: "Folha por departamento",
+          departments: "departamentos",
+          analyzed: "analisados por custo",
+        },
+        benefits: {
+          title: "Analise de beneficios",
+          description: "Beneficios e pacotes",
+          basic: "Basico",
+          standard: "Padrao",
+          premium: "Premium",
+          executive: "Executivo",
+        },
+        table: {
+          title: "Dados de folha",
+          description: "Informacao salarial atual de todos os colaboradores",
+          employee: "Colaborador",
+          department: "Departamento",
+          position: "Funcao",
+          monthlySalary: "Salario mensal",
+          benefits: "Beneficios",
+          status: "Estado",
+          viewAll: "Ver todos {{count}} colaboradores",
+        },
+        status: {
+          active: "Ativo",
+          inactive: "Inativo",
+        },
+        toast: {
+          errorTitle: "Erro",
+          loadFailed: "Falha ao carregar dados de colaboradores",
+        },
+      },
+    },
     locale: {
       en: "Ingles",
       pt: "Portugues (PT)",
@@ -4590,6 +5472,7 @@ export const translations = {
     },
     orgChart: {
       title: "Organograma",
+      subtitle: "Haree estrutura kompanhia no linha reportajen",
       reorganize: "Reorganiza",
       exitReorganize: "Sai reorganiza",
       manage: "Gere",
@@ -5816,6 +6699,275 @@ export const translations = {
           templates: {
             standardOperationsWeek: "Semana Padraun Operasaun",
           },
+        },
+      },
+    },
+    reports: {
+      dashboard: {
+        title: "Relatoriu",
+        subtitle: "Kria no exporta relatoriu ba dadus HR hotu",
+        actions: {
+          exportAll: "Exporta hotu",
+        },
+        stats: {
+          available: "Relatoriu disponivel",
+          scheduled: "Relatoriu agendadu",
+          custom: "Relatoriu personalizadu",
+        },
+        categories: {
+          employee: {
+            title: "Relatoriu Empregadu",
+            description: "Total, rotasaun, demografia",
+            examples: {
+              headcount: "Total tuir departamentu",
+              newHires: "Relatoriu kontratasaun foun",
+              turnover: "Analize rotasaun",
+            },
+          },
+          payroll: {
+            title: "Relatoriu Folha",
+            description: "Salariu, impostu, dedusaun",
+            examples: {
+              summary: "Resumo folha",
+              tax: "Obrigasaun impostu",
+              ytd: "Ganhus acumuladu",
+            },
+          },
+          attendance: {
+            title: "Relatoriu Presensa",
+            description: "Kontrola tempu, ausensia, oras extra",
+            examples: {
+              summary: "Resumo presensa",
+              overtime: "Relatoriu oras extra",
+              late: "Chegada atrasadu",
+            },
+          },
+          department: {
+            title: "Relatoriu Departamentu",
+            description: "Kustu, orcamentu, total",
+            examples: {
+              costs: "Kustu departamentu",
+              budget: "Orcamentu vs real",
+              org: "Estrutura organizasaun",
+            },
+          },
+          custom: {
+            title: "Relatoriu personalizadu",
+            description: "Kria relatoriu rasik",
+            examples: {
+              builder: "Konstrutor relatoriu",
+              saved: "Relatoriu rai",
+              scheduled: "Relatoriu agendadu",
+            },
+          },
+        },
+      },
+      attendance: {
+        title: "Relatoriu Presensa",
+        subtitle: "Hare no analiza padraun presensa",
+        monthly: {
+          title: "Presensa mensal",
+          description: "Resumo presensa mensal",
+          body: "Relatoriu mensal detalhadu ho tama/sai no total.",
+        },
+        leave: {
+          title: "Analize lisensa",
+          description: "Padraun no utilizasaun lisensa",
+          body: "Analiza pedido lisensa, padraun no utilizasaun saldo.",
+        },
+        overtime: {
+          title: "Relatoriu oras extra",
+          description: "Acompanhamentu oras extra",
+          body: "Hare oras extra, padraun no kustu tuir empregadu.",
+        },
+        actions: {
+          generate: "Kria relatoriu",
+        },
+      },
+      setup: {
+        title: "Relatoriu Konfigurasaun",
+        subtitle: "Konfigurasaun sistema no analize setup",
+        systemConfig: {
+          title: "Konfigurasaun sistema",
+          description: "Definisaun no konfigurasaun agora",
+          body: "Resumo definisaun, permissoes no estadu konfigurasaun.",
+        },
+        permissions: {
+          title: "Permisaun uzuariu",
+          description: "Funsaun no akses",
+          body: "Audita funsaun, permissoes no nivel akses.",
+        },
+        integration: {
+          title: "Integrasaun dadus",
+          description: "Estadu integrasaun externa",
+          body: "Monitoriza fluxo dadus, API no saude integrasaun.",
+        },
+        activity: {
+          title: "Atividade sistema",
+          description: "Padraun uza no log",
+          body: "Analiza uza sistema, login no adosaun.",
+        },
+        compliance: {
+          title: "Relatoriu konformidade",
+          description: "Estadu konformidade",
+          body: "Hare konformidade ho regulamentu no politika.",
+        },
+        backup: {
+          title: "Backup no rekover",
+          description: "Estadu backup no rekover",
+          body: "Monitoriza backup, pontu rekover no integridade.",
+        },
+        actions: {
+          generate: "Kria relatoriu",
+        },
+      },
+      custom: {
+        title: "Relatoriu personalizadu",
+        subtitle: "Kria no personaliza relatoriu rasik",
+        builder: {
+          title: "Konstrutor relatoriu",
+          description: "Kria relatoriu ho filtru",
+          body: "Kria relatoriu ho kampu, filtru no formatu espesifiku.",
+        },
+        saved: {
+          title: "Relatoriu rai",
+          description: "Aksesu relatoriu rai",
+          body: "Hare no halo fali template relatoriu rai.",
+        },
+        analytics: {
+          title: "Dashboard analitika",
+          description: "Vizualizasaun interativu",
+          body: "Kria dashboard ho grafiku no metrika.",
+        },
+        actions: {
+          build: "Kria relatoriu",
+          viewSaved: "Hare rai",
+          createDashboard: "Kria dashboard",
+        },
+      },
+      employee: {
+        title: "Relatoriu Empregadu",
+        subtitle: "Kria no analiza relatoriu kona-ba empregadu",
+        directory: {
+          title: "Diretorio empregadu",
+          description: "Lista kompletu empregadu",
+          body: "Diretorio ho kontaktu, departamentu no funsaun.",
+        },
+        performance: {
+          title: "Resumo desempenho",
+          description: "Metrika desempenho",
+          body: "Pontuasaun avaliacao, metas no progresu.",
+        },
+        training: {
+          title: "Registu formasaun",
+          description: "Formasaun no sertifikasaun",
+          body: "Hare formasaun remata no requisitu futuru.",
+        },
+        actions: {
+          generate: "Kria relatoriu",
+        },
+      },
+      department: {
+        title: "Relatoriu Departamentu",
+        subtitle: "Kria analize no relatoriu ba departamentu",
+        overview: {
+          title: "Resumo departamentu",
+          description: "Estrutura no total empregadu",
+          body: "Resumo departamentu, total empregadu no estrutura.",
+        },
+        performance: {
+          title: "Desempenho departamentu",
+          description: "Metrika tuir departamentu",
+          body: "Kompara desempenho, metas no produtividade.",
+        },
+        budget: {
+          title: "Analize orcamentu",
+          description: "Orcamentu no kustu",
+          body: "Hare orcamentu, kustu salariu no alokasaun.",
+        },
+        staffing: {
+          title: "Relatoriu pessoal",
+          description: "Nivel pessoal departamentu",
+          body: "Analiza nivel pessoal, rotasaun no necessidade.",
+        },
+        growth: {
+          title: "Krescimentu departamentu",
+          description: "Analize kresimentu istoria",
+          body: "Hare kresimentu, kontratasaun no expansaun.",
+        },
+        cross: {
+          title: "Analize entre departamentu",
+          description: "Kolaborasaun entre departamentu",
+          body: "Analiza kolaborasaun no partilha rekursu.",
+        },
+        actions: {
+          generate: "Kria relatoriu",
+        },
+      },
+      payroll: {
+        title: "Relatoriu Folha",
+        subtitle: "Analize no relatoriu kompletu ba folha",
+        empty: {
+          title: "Laiha dadus folha",
+          description: "Aumenta empregadu ho informasaun salariu atu gera relatoriu",
+          action: "Aumenta empregadu",
+        },
+        stats: {
+          totalEmployees: "Total empregadu",
+          inPayroll: "Iha sistema folha",
+          totalMonthly: "Total mensal folha",
+          basedOnSalaries: "Baseia ba salariu agora",
+          averageMonthly: "Media salariu mensal",
+          perEmployee: "Tuir empregadu",
+          monthlyPayroll: "Folha mensal",
+          estimated: "Estimadu",
+        },
+        actions: {
+          filter: "Filtra relatoriu",
+          export: "Exporta relatoriu",
+          viewDetailed: "Hare relatoriu detalhadu",
+          viewDepartment: "Hare tuir departamentu",
+          viewBenefits: "Hare relatoriu benefisiu",
+        },
+        salarySummary: {
+          title: "Resumo salariu",
+          description: "Resumo kompensasaun",
+          highest: "Salariu aas:",
+          lowest: "Salariu kraik:",
+          median: "Salariu median:",
+        },
+        departmentCosts: {
+          title: "Kustu departamentu",
+          description: "Folha tuir departamentu",
+          departments: "departamentu",
+          analyzed: "analiza ba kustu",
+        },
+        benefits: {
+          title: "Analize benefisiu",
+          description: "Benefisiu no pakote",
+          basic: "Basiku",
+          standard: "Padraun",
+          premium: "Premium",
+          executive: "Ezecutivu",
+        },
+        table: {
+          title: "Dadus folha empregadu",
+          description: "Informasaun salariu agora ba empregadu hotu",
+          employee: "Empregadu",
+          department: "Departamentu",
+          position: "Funsaun",
+          monthlySalary: "Salariu mensal",
+          benefits: "Benefisiu",
+          status: "Status",
+          viewAll: "Hare hotu {{count}} empregadu",
+        },
+        status: {
+          active: "Ativu",
+          inactive: "Inativu",
+        },
+        toast: {
+          errorTitle: "Erru",
+          loadFailed: "Falha karrega dadus empregadu",
         },
       },
     },

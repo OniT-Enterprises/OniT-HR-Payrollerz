@@ -430,79 +430,97 @@ export default function BankTransfers() {
       <SEO {...seoConfig.bankTransfers} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              Bank Transfers
-            </h1>
-            <p className="text-muted-foreground">
-              Manage payroll bank transfers and transaction history
-            </p>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+              <Send className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Bank Transfers
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                Manage payroll bank transfers and transaction history
+              </p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       This Month
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(stats.thisMonthTotal)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Pending Transfers
                     </p>
-                    <p className="text-2xl font-bold text-foreground">{stats.pendingCount}</p>
+                    <p className="text-2xl font-bold">{stats.pendingCount}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-amber-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Completed
                     </p>
-                    <p className="text-2xl font-bold text-foreground">{stats.completedCount}</p>
+                    <p className="text-2xl font-bold">{stats.completedCount}</p>
                   </div>
-                  <CheckCircle className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
+                    <CheckCircle className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Failed</p>
-                    <p className="text-2xl font-bold text-foreground">{stats.failedCount}</p>
+                    <p className="text-2xl font-bold">{stats.failedCount}</p>
                   </div>
-                  <XCircle className="h-8 w-8 text-red-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
+                    <XCircle className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Filters */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+                <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Filters
               </CardTitle>
             </CardHeader>
@@ -550,12 +568,12 @@ export default function BankTransfers() {
           </Card>
 
           {/* Transfers Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5" />
+                    <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
                     Transfer History
                   </CardTitle>
                   <CardDescription>
@@ -749,7 +767,6 @@ export default function BankTransfers() {
             </CardContent>
           </Card>
         </div>
-      </div>
     </div>
   );
 }

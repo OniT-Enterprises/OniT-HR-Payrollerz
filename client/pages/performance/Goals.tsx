@@ -663,10 +663,12 @@ export default function Goals() {
     <div className="space-y-6">
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active OKRs</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg">
+              <Target className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -677,10 +679,12 @@ export default function Goals() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-            <CheckSquare className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
+              <CheckSquare className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -691,12 +695,14 @@ export default function Goals() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Team Performance
             </CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
+              <Users className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -707,12 +713,14 @@ export default function Goals() {
             </p>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
               Project Progress
             </CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
+            <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg">
+              <BarChart3 className="h-4 w-4 text-white" />
+            </div>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -725,9 +733,12 @@ export default function Goals() {
 
       {/* Quick Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
-            <CardTitle>Recent OKRs</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              Recent OKRs
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -754,9 +765,12 @@ export default function Goals() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50">
           <CardHeader>
-            <CardTitle>Team Performance</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              Team Performance
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -797,10 +811,10 @@ export default function Goals() {
       </div>
 
       {/* Notifications & Alerts */}
-      <Card>
+      <Card className="border-border/50">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bell className="h-5 w-5" />
+            <Bell className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             Performance Alerts
           </CardTitle>
         </CardHeader>
@@ -843,22 +857,27 @@ export default function Goals() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <SEO {...seoConfig.goals} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6 flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                Performance & Goals Management
-              </h1>
-              <p className="text-gray-600">
-                Strategic planning with OKRs, team collaboration, and
-                performance tracking
-              </p>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+                <Target className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Performance & Goals Management
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Strategic planning with OKRs, team collaboration, and performance tracking
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Select
@@ -878,13 +897,17 @@ export default function Goals() {
               </Select>
               <Button
                 onClick={() => openDialog("okr")}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 New OKR
               </Button>
             </div>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-6">
@@ -901,12 +924,12 @@ export default function Goals() {
             </TabsContent>
 
             <TabsContent value="okrs" className="mt-6">
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Target className="h-5 w-5" />
+                        <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         Objectives & Key Results ({selectedQuarter})
                       </CardTitle>
                       <CardDescription>
@@ -924,7 +947,7 @@ export default function Goals() {
                     {okrs.map((okr) => (
                       <Card
                         key={okr.id}
-                        className="border-l-4 border-l-blue-500"
+                        className="border-l-4 border-l-orange-500 border-border/50"
                       >
                         <CardContent className="pt-6">
                           <div className="space-y-4">
@@ -1030,12 +1053,12 @@ export default function Goals() {
             </TabsContent>
 
             <TabsContent value="goals" className="mt-6">
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <CheckSquare className="h-5 w-5" />
+                        <CheckSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         Strategic Goals
                       </CardTitle>
                       <CardDescription>
@@ -1052,7 +1075,7 @@ export default function Goals() {
                 <CardContent>
                   <div className="space-y-4">
                     {goals.map((goal) => (
-                      <Card key={goal.id}>
+                      <Card key={goal.id} className="border-border/50">
                         <CardContent className="pt-6">
                           <div className="flex items-start justify-between">
                             <div className="space-y-2 flex-1">
@@ -1144,12 +1167,12 @@ export default function Goals() {
 
             <TabsContent value="teams" className="mt-6">
               <div className="space-y-6">
-                <Card>
+                <Card className="border-border/50">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          <Users className="h-5 w-5" />
+                          <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                           Performance Teams
                         </CardTitle>
                         <CardDescription>
@@ -1170,7 +1193,7 @@ export default function Goals() {
                           (e) => e.id === team.leader,
                         );
                         return (
-                          <Card key={team.id}>
+                          <Card key={team.id} className="border-border/50">
                             <CardContent className="pt-6">
                               <div className="space-y-3">
                                 <div className="flex items-center justify-between">
@@ -1239,12 +1262,12 @@ export default function Goals() {
             </TabsContent>
 
             <TabsContent value="projects" className="mt-6">
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Layers className="h-5 w-5" />
+                        <Layers className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                         Strategic Projects
                       </CardTitle>
                       <CardDescription>
@@ -1264,7 +1287,7 @@ export default function Goals() {
                       const goal = goals.find((g) => g.id === project.goalId);
                       const okr = okrs.find((o) => o.id === project.okrId);
                       return (
-                        <Card key={project.id}>
+                        <Card key={project.id} className="border-border/50">
                           <CardContent className="pt-6">
                             <div className="flex items-start justify-between">
                               <div className="space-y-2 flex-1">
@@ -1341,10 +1364,10 @@ export default function Goals() {
 
             <TabsContent value="analytics" className="mt-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
+                <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
+                      <TrendingUp className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                       Performance Trends
                     </CardTitle>
                   </CardHeader>
@@ -1387,9 +1410,12 @@ export default function Goals() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border/50">
                   <CardHeader>
-                    <CardTitle>Department Performance</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      Department Performance
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
@@ -1432,9 +1458,12 @@ export default function Goals() {
                   </CardContent>
                 </Card>
 
-                <Card className="lg:col-span-2">
+                <Card className="lg:col-span-2 border-border/50">
                   <CardHeader>
-                    <CardTitle>Key Insights & Recommendations</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Activity className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      Key Insights & Recommendations
+                    </CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1687,7 +1716,6 @@ export default function Goals() {
             </DialogContent>
           </Dialog>
         </div>
-      </div>
     </div>
   );
 }

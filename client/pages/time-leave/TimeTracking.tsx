@@ -765,7 +765,7 @@ export default function TimeTracking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
         <AutoBreadcrumb className="mb-6" />
@@ -819,74 +819,108 @@ export default function TimeTracking() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <SEO {...seoConfig.timeTracking} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div />
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
+              <Clock className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {t("timeLeave.timeTracking.title")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("timeLeave.timeTracking.subtitle")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="daily" className="mt-6">
               <div className="flex flex-col space-y-6">
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {t("timeLeave.timeTracking.stats.guardsOnDuty")}
-                      </CardTitle>
-                      <Shield className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">127</div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("timeLeave.timeTracking.stats.currentlyActive")}
-                      </p>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 -mt-14">
+                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.guardsOnDuty")}
+                          </p>
+                          <p className="text-2xl font-bold">127</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.currentlyActive")}
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
+                          <Shield className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {t("timeLeave.timeTracking.stats.sitesCovered")}
-                      </CardTitle>
-                      <MapPin className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">45</div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("timeLeave.timeTracking.stats.activeLocations")}
-                      </p>
+                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.sitesCovered")}
+                          </p>
+                          <p className="text-2xl font-bold">45</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.activeLocations")}
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
+                          <MapPin className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {t("timeLeave.timeTracking.stats.pendingApprovals")}
-                      </CardTitle>
-                      <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">23</div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("timeLeave.timeTracking.stats.awaitingReview")}
-                      </p>
+                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.pendingApprovals")}
+                          </p>
+                          <p className="text-2xl font-bold">23</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.awaitingReview")}
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
+                          <Clock className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                      <CardTitle className="text-sm font-medium">
-                        {t("timeLeave.timeTracking.stats.totalHours")}
-                      </CardTitle>
-                      <Timer className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                      <div className="text-2xl font-bold">956</div>
-                      <p className="text-xs text-muted-foreground">
-                        {t("timeLeave.timeTracking.stats.thisWeek")}
-                      </p>
+                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.totalHours")}
+                          </p>
+                          <p className="text-2xl font-bold">956</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("timeLeave.timeTracking.stats.thisWeek")}
+                          </p>
+                        </div>
+                        <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                          <Timer className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -908,9 +942,10 @@ export default function TimeTracking() {
                 </TabsList>
 
                 {/* Recent Entries Card */}
-                <Card className="mt-6">
+                <Card className="mt-6 border-border/50">
                   <CardHeader>
-                    <CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                       {t("timeLeave.timeTracking.recent.title")}
                     </CardTitle>
                     <CardDescription>
@@ -977,10 +1012,10 @@ export default function TimeTracking() {
 
             <TabsContent value="entries" className="mt-6">
               {/* Filters */}
-              <Card className="mb-6">
+              <Card className="mb-6 border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <Filter className="h-5 w-5" />
+                    <Filter className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                     {t("timeLeave.timeTracking.filters.title")}
                   </CardTitle>
                 </CardHeader>
@@ -1094,12 +1129,12 @@ export default function TimeTracking() {
               </Card>
 
               {/* Time Entries Table */}
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
                   <div className="flex items-center justify-between">
                     <div>
                       <CardTitle className="flex items-center gap-2">
-                        <Clock className="h-5 w-5" />
+                        <Clock className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                         {t("timeLeave.timeTracking.entries.title")}
                       </CardTitle>
                       <CardDescription>
@@ -1579,10 +1614,10 @@ export default function TimeTracking() {
 
             <TabsContent value="reports" className="mt-6">
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
+                <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5" />
+                      <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                       {t("timeLeave.timeTracking.reports.exportTitle")}
                     </CardTitle>
                     <CardDescription>
@@ -1640,7 +1675,7 @@ export default function TimeTracking() {
                   </CardContent>
                 </Card>
 
-                <Card>
+                <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle>
                       {t("timeLeave.timeTracking.reports.coverageTitle")}

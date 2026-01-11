@@ -23,59 +23,81 @@ import {
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const theme = sectionThemes.reports;
 
-const REPORT_CATEGORIES = [
-  {
-    id: "employee",
-    title: "Employee Reports",
-    description: "Headcount, turnover, demographics",
-    icon: Users,
-    color: "bg-blue-500",
-    path: "/reports/employees",
-    examples: ["Headcount by Department", "New Hires Report", "Turnover Analysis"],
-  },
-  {
-    id: "payroll",
-    title: "Payroll Reports",
-    description: "Salary, taxes, deductions",
-    icon: DollarSign,
-    color: "bg-emerald-500",
-    path: "/reports/payroll",
-    examples: ["Payroll Summary", "Tax Liability", "YTD Earnings"],
-  },
-  {
-    id: "attendance",
-    title: "Attendance Reports",
-    description: "Time tracking, absences, overtime",
-    icon: CalendarDays,
-    color: "bg-amber-500",
-    path: "/reports/attendance",
-    examples: ["Attendance Summary", "Overtime Report", "Late Arrivals"],
-  },
-  {
-    id: "department",
-    title: "Department Reports",
-    description: "Cost centers, budgets, headcount",
-    icon: Building,
-    color: "bg-violet-500",
-    path: "/reports/departments",
-    examples: ["Department Costs", "Budget vs Actual", "Org Structure"],
-  },
-  {
-    id: "custom",
-    title: "Custom Reports",
-    description: "Build your own reports",
-    icon: FileSpreadsheet,
-    color: "bg-pink-500",
-    path: "/reports/custom",
-    examples: ["Report Builder", "Saved Reports", "Scheduled Reports"],
-  },
-];
-
 export default function ReportsDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
+
+  const reportCategories = [
+    {
+      id: "employee",
+      title: t("reports.dashboard.categories.employee.title"),
+      description: t("reports.dashboard.categories.employee.description"),
+      icon: Users,
+      color: "bg-blue-500",
+      path: "/reports/employees",
+      examples: [
+        t("reports.dashboard.categories.employee.examples.headcount"),
+        t("reports.dashboard.categories.employee.examples.newHires"),
+        t("reports.dashboard.categories.employee.examples.turnover"),
+      ],
+    },
+    {
+      id: "payroll",
+      title: t("reports.dashboard.categories.payroll.title"),
+      description: t("reports.dashboard.categories.payroll.description"),
+      icon: DollarSign,
+      color: "bg-emerald-500",
+      path: "/reports/payroll",
+      examples: [
+        t("reports.dashboard.categories.payroll.examples.summary"),
+        t("reports.dashboard.categories.payroll.examples.tax"),
+        t("reports.dashboard.categories.payroll.examples.ytd"),
+      ],
+    },
+    {
+      id: "attendance",
+      title: t("reports.dashboard.categories.attendance.title"),
+      description: t("reports.dashboard.categories.attendance.description"),
+      icon: CalendarDays,
+      color: "bg-amber-500",
+      path: "/reports/attendance",
+      examples: [
+        t("reports.dashboard.categories.attendance.examples.summary"),
+        t("reports.dashboard.categories.attendance.examples.overtime"),
+        t("reports.dashboard.categories.attendance.examples.late"),
+      ],
+    },
+    {
+      id: "department",
+      title: t("reports.dashboard.categories.department.title"),
+      description: t("reports.dashboard.categories.department.description"),
+      icon: Building,
+      color: "bg-violet-500",
+      path: "/reports/departments",
+      examples: [
+        t("reports.dashboard.categories.department.examples.costs"),
+        t("reports.dashboard.categories.department.examples.budget"),
+        t("reports.dashboard.categories.department.examples.org"),
+      ],
+    },
+    {
+      id: "custom",
+      title: t("reports.dashboard.categories.custom.title"),
+      description: t("reports.dashboard.categories.custom.description"),
+      icon: FileSpreadsheet,
+      color: "bg-pink-500",
+      path: "/reports/custom",
+      examples: [
+        t("reports.dashboard.categories.custom.examples.builder"),
+        t("reports.dashboard.categories.custom.examples.saved"),
+        t("reports.dashboard.categories.custom.examples.scheduled"),
+      ],
+    },
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -93,15 +115,17 @@ export default function ReportsDashboard() {
                 <BarChart3 className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Reports</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {t("reports.dashboard.title")}
+                </h1>
                 <p className="text-muted-foreground">
-                  Generate and export reports for all HR data
+                  {t("reports.dashboard.subtitle")}
                 </p>
               </div>
             </div>
             <Button variant="outline" className={`${theme.border} hover:${theme.bg}`}>
               <Download className="h-4 w-4 mr-2" />
-              Export All
+              {t("reports.dashboard.actions.exportAll")}
             </Button>
           </div>
         </div>
@@ -116,7 +140,9 @@ export default function ReportsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">12</p>
-                  <p className="text-sm text-muted-foreground">Available Reports</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("reports.dashboard.stats.available")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -130,7 +156,9 @@ export default function ReportsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">3</p>
-                  <p className="text-sm text-muted-foreground">Scheduled Reports</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("reports.dashboard.stats.scheduled")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -144,7 +172,9 @@ export default function ReportsDashboard() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold">5</p>
-                  <p className="text-sm text-muted-foreground">Custom Reports</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("reports.dashboard.stats.custom")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -153,7 +183,7 @@ export default function ReportsDashboard() {
 
         {/* Report Categories */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {REPORT_CATEGORIES.map((category) => {
+          {reportCategories.map((category) => {
             const CategoryIcon = category.icon;
             return (
               <Card

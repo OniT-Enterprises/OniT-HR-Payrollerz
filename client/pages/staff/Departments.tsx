@@ -292,32 +292,27 @@ export default function Departments() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
-        {/* Decorative orb */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
-
-        <div className="relative max-w-7xl mx-auto px-6 py-12">
-          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 animate-fade-up">
-              <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
                 <Building className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">{t("departments.title")}</h1>
-                <p className="text-blue-100 mt-1">
+                <h1 className="text-3xl font-bold text-foreground">{t("departments.title")}</h1>
+                <p className="text-muted-foreground mt-1">
                   {t("departments.subtitle")}
                 </p>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-2 animate-fade-up stagger-1">
+            <div className="flex gap-2">
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={() => {
                   setManagerMode("add");
                   setShowDepartmentManager(true);
@@ -327,7 +322,7 @@ export default function Departments() {
                 {t("departments.addDepartment")}
               </Button>
               <Button
-                className="bg-white text-blue-600 hover:bg-white/90"
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
                 onClick={() => {
                   setManagerMode("edit");
                   setShowDepartmentManager(true);
@@ -338,7 +333,6 @@ export default function Departments() {
               </Button>
               <Button
                 variant="outline"
-                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
                 onClick={() => navigate("/people/org-chart")}
               >
                 <Users className="mr-2 h-4 w-4" />

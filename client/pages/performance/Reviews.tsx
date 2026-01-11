@@ -107,22 +107,32 @@ export default function Reviews() {
       <SEO {...seoConfig.reviews} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="flex items-center gap-3 mb-6">
-          <Star className="h-8 w-8 text-purple-600" />
-          <div>
-            <h1 className="text-3xl font-bold">Performance Reviews</h1>
-            <p className="text-muted-foreground">
-              Manage and track employee performance evaluations
-            </p>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+              <Star className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Performance Reviews</h1>
+              <p className="text-muted-foreground mt-1">
+                Manage and track employee performance evaluations
+              </p>
+            </div>
           </div>
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
         {employees.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">
-            <Star className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center">
+              <Star className="h-10 w-10 text-white" />
+            </div>
             <h3 className="text-lg font-semibold mb-2">No Performance Data</h3>
             <p className="text-muted-foreground mb-6">
               Add employees to your database to start performance reviews
@@ -135,8 +145,8 @@ export default function Reviews() {
         ) : (
           <div className="space-y-6">
             {/* Statistics */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -148,11 +158,13 @@ export default function Reviews() {
                         Available to review
                       </p>
                     </div>
-                    <Users className="h-8 w-8 text-blue-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -166,11 +178,13 @@ export default function Reviews() {
                         Ready for reviews
                       </p>
                     </div>
-                    <User className="h-8 w-8 text-green-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                      <User className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -178,13 +192,15 @@ export default function Reviews() {
                         Reviews Completed
                       </p>
                       <p className="text-2xl font-bold">0</p>
-                      <p className="text-xs text-gray-600">No reviews yet</p>
+                      <p className="text-xs text-muted-foreground">No reviews yet</p>
                     </div>
-                    <Star className="h-8 w-8 text-orange-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
+                      <Star className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -196,7 +212,9 @@ export default function Reviews() {
                       </p>
                       <p className="text-xs text-purple-600">Need review</p>
                     </div>
-                    <AlertCircle className="h-8 w-8 text-purple-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                      <AlertCircle className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -221,9 +239,12 @@ export default function Reviews() {
             </div>
 
             {/* Review System Setup */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>Performance Review System</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Star className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  Performance Review System
+                </CardTitle>
                 <CardDescription>
                   Ready to start performance reviews for your {employees.length}{" "}
                   employees
@@ -298,9 +319,12 @@ export default function Reviews() {
             </Card>
 
             {/* Employee List for Reviews */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>Employees Ready for Review</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  Employees Ready for Review
+                </CardTitle>
                 <CardDescription>
                   {activeEmployees.length} active employees available for
                   performance review

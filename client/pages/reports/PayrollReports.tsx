@@ -13,6 +13,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   FileText,
   DollarSign,
@@ -20,7 +21,6 @@ import {
   Download,
   Filter,
   Database,
-  AlertCircle,
   User,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -29,6 +29,7 @@ export default function PayrollReports() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t, locale } = useI18n();
 
   useEffect(() => {
     loadEmployees();
@@ -42,8 +43,8 @@ export default function PayrollReports() {
     } catch (error) {
       console.error("Error loading employees:", error);
       toast({
-        title: "Error",
-        description: "Failed to load employee data",
+        title: t("reports.payroll.toast.errorTitle"),
+        description: t("reports.payroll.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -63,15 +64,40 @@ export default function PayrollReports() {
     employees.length > 0
       ? Math.round(totalMonthlySalary / employees.length)
       : 0;
-  const activeEmployees = employees.filter((emp) => emp.status === "active");
-
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat("en-US", {
+    const formatLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
+    return new Intl.NumberFormat(formatLocale, {
       style: "currency",
       currency: "USD",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     }).format(amount);
+  };
+
+  const getStatusLabel = (status) => {
+    if (status === "active") {
+      return t("reports.payroll.status.active");
+    }
+    if (status === "inactive") {
+      return t("reports.payroll.status.inactive");
+    }
+    return status;
+  };
+
+  const getBenefitsLabel = (benefits) => {
+    const normalized = typeof benefits === "string" ? benefits.toLowerCase() : benefits;
+    switch (normalized) {
+      case "basic":
+        return t("reports.payroll.benefits.basic");
+      case "standard":
+        return t("reports.payroll.benefits.standard");
+      case "premium":
+        return t("reports.payroll.benefits.premium");
+      case "executive":
+        return t("reports.payroll.benefits.executive");
+      default:
+        return benefits;
+    }
   };
 
   if (loading) {
@@ -127,96 +153,121 @@ export default function PayrollReports() {
       <SEO {...seoConfig.payrollReports} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="flex items-center gap-3 mb-6">
-          <FileText className="h-8 w-8 text-blue-600" />
-          <div>
-            <h1 className="text-3xl font-bold">Payroll Reports</h1>
-            <p className="text-muted-foreground">
-              Comprehensive payroll analytics and reporting
-            </p>
+      {/* Hero Section */}
+      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
+              <FileText className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {t("reports.payroll.title")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("reports.payroll.subtitle")}
+              </p>
+            </div>
           </div>
         </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-6 py-6">
         {employees.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">
             <FileText className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">No Payroll Data</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {t("reports.payroll.empty.title")}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              Add employees with salary information to generate payroll reports
+              {t("reports.payroll.empty.description")}
             </p>
             <Button onClick={() => (window.location.href = "/staff/add")}>
               <User className="mr-2 h-4 w-4" />
-              Add Employees First
+              {t("reports.payroll.empty.action")}
             </Button>
           </div>
         ) : (
           <div className="space-y-6">
             {/* Statistics */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Total Employees
+                        {t("reports.payroll.stats.totalEmployees")}
                       </p>
                       <p className="text-2xl font-bold">{employees.length}</p>
-                      <p className="text-xs text-blue-600">In payroll system</p>
+                      <p className="text-xs text-blue-600">
+                        {t("reports.payroll.stats.inPayroll")}
+                      </p>
                     </div>
-                    <Users className="h-8 w-8 text-blue-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                      <Users className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Total Monthly Payroll
+                        {t("reports.payroll.stats.totalMonthly")}
                       </p>
                       <p className="text-2xl font-bold">
                         {formatCurrency(totalMonthlySalary)}
                       </p>
                       <p className="text-xs text-green-600">
-                        Based on current salaries
+                        {t("reports.payroll.stats.basedOnSalaries")}
                       </p>
                     </div>
-                    <DollarSign className="h-8 w-8 text-green-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                      <DollarSign className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Average Monthly Salary
+                        {t("reports.payroll.stats.averageMonthly")}
                       </p>
                       <p className="text-2xl font-bold">
                         {formatCurrency(averageMonthlySalary)}
                       </p>
-                      <p className="text-xs text-purple-600">Per employee</p>
+                      <p className="text-xs text-purple-600">
+                        {t("reports.payroll.stats.perEmployee")}
+                      </p>
                     </div>
-                    <User className="h-8 w-8 text-purple-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                      <User className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Monthly Payroll
+                        {t("reports.payroll.stats.monthlyPayroll")}
                       </p>
                       <p className="text-2xl font-bold">
                         {formatCurrency(Math.round(totalMonthlySalary))}
                       </p>
-                      <p className="text-xs text-orange-600">Estimated</p>
+                      <p className="text-xs text-orange-600">
+                        {t("reports.payroll.stats.estimated")}
+                      </p>
                     </div>
-                    <FileText className="h-8 w-8 text-orange-500" />
+                    <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
+                      <FileText className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -227,28 +278,33 @@ export default function PayrollReports() {
               <div className="flex gap-2">
                 <Button variant="outline">
                   <Filter className="mr-2 h-4 w-4" />
-                  Filter Reports
+                  {t("reports.payroll.actions.filter")}
                 </Button>
               </div>
               <Button>
                 <Download className="mr-2 h-4 w-4" />
-                Export Reports
+                {t("reports.payroll.actions.export")}
               </Button>
             </div>
 
             {/* Report Categories */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Salary Summary</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <DollarSign className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                    {t("reports.payroll.salarySummary.title")}
+                  </CardTitle>
                   <CardDescription>
-                    Overview of employee compensation
+                    {t("reports.payroll.salarySummary.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div className="flex justify-between">
-                      <span className="text-sm">Highest Salary:</span>
+                      <span className="text-sm">
+                        {t("reports.payroll.salarySummary.highest")}
+                      </span>
                       <span className="font-medium">
                         {formatCurrency(
                           Math.max(
@@ -265,7 +321,9 @@ export default function PayrollReports() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Lowest Salary:</span>
+                      <span className="text-sm">
+                        {t("reports.payroll.salarySummary.lowest")}
+                      </span>
                       <span className="font-medium">
                         {formatCurrency(
                           Math.min(
@@ -292,23 +350,28 @@ export default function PayrollReports() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-sm">Median Salary:</span>
+                      <span className="text-sm">
+                        {t("reports.payroll.salarySummary.median")}
+                      </span>
                       <span className="font-medium">
                         {formatCurrency(averageMonthlySalary)}
                       </span>
                     </div>
                     <Button variant="outline" size="sm" className="w-full">
-                      View Detailed Report
+                      {t("reports.payroll.actions.viewDetailed")}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Department Costs</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Database className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                    {t("reports.payroll.departmentCosts.title")}
+                  </CardTitle>
                   <CardDescription>
-                    Payroll breakdown by department
+                    {t("reports.payroll.departmentCosts.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -321,24 +384,27 @@ export default function PayrollReports() {
                             employees.map((emp) => emp.jobDetails.department),
                           ).size
                         }{" "}
-                        departments
+                        {t("reports.payroll.departmentCosts.departments")}
                       </p>
                       <p className="text-xs text-gray-500">
-                        analyzed for costs
+                        {t("reports.payroll.departmentCosts.analyzed")}
                       </p>
                     </div>
                     <Button variant="outline" size="sm" className="w-full">
-                      View Department Breakdown
+                      {t("reports.payroll.actions.viewDepartment")}
                     </Button>
                   </div>
                 </CardContent>
               </Card>
 
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Benefits Analysis</CardTitle>
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Users className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                    {t("reports.payroll.benefits.title")}
+                  </CardTitle>
                   <CardDescription>
-                    Employee benefits and packages
+                    {t("reports.payroll.benefits.description")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -355,7 +421,7 @@ export default function PayrollReports() {
                           key={benefit}
                           className="flex justify-between text-sm"
                         >
-                          <span>{benefit}:</span>
+                          <span>{getBenefitsLabel(benefit)}:</span>
                           <Badge variant="outline">
                             {
                               employees.filter(
@@ -368,7 +434,7 @@ export default function PayrollReports() {
                       ))}
                     </div>
                     <Button variant="outline" size="sm" className="w-full">
-                      View Benefits Report
+                      {t("reports.payroll.actions.viewBenefits")}
                     </Button>
                   </div>
                 </CardContent>
@@ -376,11 +442,14 @@ export default function PayrollReports() {
             </div>
 
             {/* Employee Payroll List */}
-            <Card>
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle>Employee Payroll Data</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.payroll.table.title")}
+                </CardTitle>
                 <CardDescription>
-                  Current salary information for all employees
+                  {t("reports.payroll.table.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -388,18 +457,24 @@ export default function PayrollReports() {
                   <table className="w-full">
                     <thead>
                       <tr className="border-b">
-                        <th className="text-left p-3 font-medium">Employee</th>
                         <th className="text-left p-3 font-medium">
-                          Department
+                          {t("reports.payroll.table.employee")}
                         </th>
-                        <th className="text-left p-3 font-medium">Position</th>
+                        <th className="text-left p-3 font-medium">
+                          {t("reports.payroll.table.department")}
+                        </th>
+                        <th className="text-left p-3 font-medium">
+                          {t("reports.payroll.table.position")}
+                        </th>
                         <th className="text-right p-3 font-medium">
-                          Monthly Salary
+                          {t("reports.payroll.table.monthlySalary")}
                         </th>
                         <th className="text-center p-3 font-medium">
-                          Benefits
+                          {t("reports.payroll.table.benefits")}
                         </th>
-                        <th className="text-center p-3 font-medium">Status</th>
+                        <th className="text-center p-3 font-medium">
+                          {t("reports.payroll.table.status")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -452,7 +527,9 @@ export default function PayrollReports() {
                             </td>
                             <td className="p-3 text-center">
                               <Badge variant="outline">
-                                {employee.compensation.benefitsPackage}
+                                {getBenefitsLabel(
+                                  employee.compensation.benefitsPackage,
+                                )}
                               </Badge>
                             </td>
                             <td className="p-3 text-center">
@@ -463,7 +540,7 @@ export default function PayrollReports() {
                                     : "bg-gray-100 text-gray-800"
                                 }
                               >
-                                {employee.status}
+                                {getStatusLabel(employee.status)}
                               </Badge>
                             </td>
                           </tr>
@@ -473,7 +550,9 @@ export default function PayrollReports() {
                   {employees.length > 10 && (
                     <div className="text-center py-4">
                       <Button variant="outline" size="sm">
-                        View All {employees.length} Employees
+                        {t("reports.payroll.table.viewAll", {
+                          count: employees.length,
+                        })}
                       </Button>
                     </div>
                   )}
@@ -482,7 +561,7 @@ export default function PayrollReports() {
             </Card>
           </div>
         )}
-      </div>
+        </div>
     </div>
   );
 }

@@ -313,27 +313,35 @@ export default function TrainingCertifications() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <SEO {...seoConfig.training} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              Training & Certifications
-            </h1>
-            <p className="text-gray-600">
-              Manage employee training programs and certifications
-            </p>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+              <Award className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Training & Certifications</h1>
+              <p className="text-muted-foreground mt-1">
+                Manage employee training programs and certifications
+              </p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Filters */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50 -mt-8 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+                <Filter className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                 Filters
               </CardTitle>
             </CardHeader>
@@ -387,12 +395,12 @@ export default function TrainingCertifications() {
           </Card>
 
           {/* Training Records Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5" />
+                    <Award className="h-5 w-5 text-orange-600 dark:text-orange-400" />
                     Training Records
                   </CardTitle>
                   <CardDescription>
@@ -663,7 +671,6 @@ export default function TrainingCertifications() {
             </CardContent>
           </Card>
         </div>
-      </div>
     </div>
   );
 }

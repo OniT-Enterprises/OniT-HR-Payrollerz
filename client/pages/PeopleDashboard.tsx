@@ -33,67 +33,13 @@ import {
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const theme = sectionThemes.people;
 
-// Section cards configuration
-const SECTIONS = [
-  {
-    id: "staff",
-    title: "Staff Management",
-    description: "Employees, departments, org chart",
-    icon: Users,
-    color: "bg-blue-500",
-    links: [
-      { label: "All Employees", path: "/people/employees", icon: Users },
-      { label: "Add Employee", path: "/people/add", icon: UserPlus },
-      { label: "Departments", path: "/people/departments", icon: Building },
-      { label: "Org Chart", path: "/people/org-chart", icon: Building2 },
-    ],
-  },
-  {
-    id: "hiring",
-    title: "Hiring & Recruitment",
-    description: "Jobs, candidates, onboarding",
-    icon: Briefcase,
-    color: "bg-violet-500",
-    links: [
-      { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
-      { label: "Candidates", path: "/people/candidates", icon: UserCheck },
-      { label: "Interviews", path: "/people/interviews", icon: Calendar },
-      { label: "Onboarding", path: "/people/onboarding", icon: UserPlus },
-    ],
-  },
-  {
-    id: "time",
-    title: "Time & Leave",
-    description: "Attendance, leave, schedules",
-    icon: Clock,
-    color: "bg-emerald-500",
-    links: [
-      { label: "Time Tracking", path: "/people/time-tracking", icon: Clock },
-      { label: "Attendance", path: "/people/attendance", icon: CalendarDays },
-      { label: "Leave Requests", path: "/people/leave", icon: Heart },
-      { label: "Shift Schedules", path: "/people/schedules", icon: Calendar },
-    ],
-  },
-  {
-    id: "performance",
-    title: "Performance",
-    description: "Goals, reviews, training",
-    icon: Target,
-    color: "bg-amber-500",
-    links: [
-      { label: "Goals & OKRs", path: "/people/goals", icon: Target },
-      { label: "Reviews", path: "/people/reviews", icon: Award },
-      { label: "Training", path: "/people/training", icon: GraduationCap },
-      { label: "Disciplinary", path: "/people/disciplinary", icon: Shield },
-    ],
-  },
-];
-
 export default function PeopleDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -128,6 +74,125 @@ export default function PeopleDashboard() {
       setLoading(false);
     }
   };
+
+  const sections = [
+    {
+      id: "staff",
+      title: t("people.dashboard.sections.staff.title"),
+      description: t("people.dashboard.sections.staff.description"),
+      icon: Users,
+      color: "bg-blue-500",
+      links: [
+        {
+          label: t("people.dashboard.sections.staff.links.allEmployees"),
+          path: "/people/employees",
+          icon: Users,
+        },
+        {
+          label: t("people.dashboard.sections.staff.links.addEmployee"),
+          path: "/people/add",
+          icon: UserPlus,
+        },
+        {
+          label: t("people.dashboard.sections.staff.links.departments"),
+          path: "/people/departments",
+          icon: Building,
+        },
+        {
+          label: t("people.dashboard.sections.staff.links.orgChart"),
+          path: "/people/org-chart",
+          icon: Building2,
+        },
+      ],
+    },
+    {
+      id: "hiring",
+      title: t("people.dashboard.sections.hiring.title"),
+      description: t("people.dashboard.sections.hiring.description"),
+      icon: Briefcase,
+      color: "bg-violet-500",
+      links: [
+        {
+          label: t("people.dashboard.sections.hiring.links.jobPostings"),
+          path: "/people/jobs",
+          icon: Briefcase,
+        },
+        {
+          label: t("people.dashboard.sections.hiring.links.candidates"),
+          path: "/people/candidates",
+          icon: UserCheck,
+        },
+        {
+          label: t("people.dashboard.sections.hiring.links.interviews"),
+          path: "/people/interviews",
+          icon: Calendar,
+        },
+        {
+          label: t("people.dashboard.sections.hiring.links.onboarding"),
+          path: "/people/onboarding",
+          icon: UserPlus,
+        },
+      ],
+    },
+    {
+      id: "time",
+      title: t("people.dashboard.sections.time.title"),
+      description: t("people.dashboard.sections.time.description"),
+      icon: Clock,
+      color: "bg-emerald-500",
+      links: [
+        {
+          label: t("people.dashboard.sections.time.links.timeTracking"),
+          path: "/people/time-tracking",
+          icon: Clock,
+        },
+        {
+          label: t("people.dashboard.sections.time.links.attendance"),
+          path: "/people/attendance",
+          icon: CalendarDays,
+        },
+        {
+          label: t("people.dashboard.sections.time.links.leaveRequests"),
+          path: "/people/leave",
+          icon: Heart,
+        },
+        {
+          label: t("people.dashboard.sections.time.links.shiftSchedules"),
+          path: "/people/schedules",
+          icon: Calendar,
+        },
+      ],
+    },
+    {
+      id: "performance",
+      title: t("people.dashboard.sections.performance.title"),
+      description: t("people.dashboard.sections.performance.description"),
+      icon: Target,
+      color: "bg-amber-500",
+      links: [
+        {
+          label: t("people.dashboard.sections.performance.links.goalsOkrs"),
+          path: "/people/goals",
+          icon: Target,
+        },
+        {
+          label: t("people.dashboard.sections.performance.links.reviews"),
+          path: "/people/reviews",
+          icon: Award,
+        },
+        {
+          label: t("people.dashboard.sections.performance.links.training"),
+          path: "/people/training",
+          icon: GraduationCap,
+        },
+        {
+          label: t("people.dashboard.sections.performance.links.disciplinary"),
+          path: "/people/disciplinary",
+          icon: Shield,
+        },
+      ],
+    },
+  ];
 
   if (loading) {
     return (
@@ -168,15 +233,17 @@ export default function PeopleDashboard() {
                 <Users className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">People</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {t("people.dashboard.title")}
+                </h1>
                 <p className="text-muted-foreground">
-                  Manage your team, hiring, time off, and performance
+                  {t("people.dashboard.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate("/people/add")} size="lg" className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
               <UserPlus className="h-5 w-5 mr-2" />
-              Add Employee
+              {t("people.dashboard.actions.addEmployee")}
             </Button>
           </div>
         </div>
@@ -188,7 +255,9 @@ export default function PeopleDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.activeEmployees}</p>
-                  <p className="text-sm text-muted-foreground">Active Employees</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("people.dashboard.stats.activeEmployees")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <Users className={`h-6 w-6 ${theme.text}`} />
@@ -202,7 +271,9 @@ export default function PeopleDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.departments}</p>
-                  <p className="text-sm text-muted-foreground">Departments</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("people.dashboard.stats.departments")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <Building className={`h-6 w-6 ${theme.text}`} />
@@ -216,14 +287,18 @@ export default function PeopleDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.pendingLeave}</p>
-                  <p className="text-sm text-muted-foreground">Pending Leave</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("people.dashboard.stats.pendingLeave")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <Heart className={`h-6 w-6 ${theme.text}`} />
                 </div>
               </div>
               {stats.pendingLeave > 0 && (
-                <Badge className={`mt-2 ${theme.bg} ${theme.text}`}>Needs Review</Badge>
+                <Badge className={`mt-2 ${theme.bg} ${theme.text}`}>
+                  {t("people.dashboard.stats.needsReview")}
+                </Badge>
               )}
             </CardContent>
           </Card>
@@ -233,7 +308,9 @@ export default function PeopleDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.onLeaveToday}</p>
-                  <p className="text-sm text-muted-foreground">On Leave Today</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("people.dashboard.stats.onLeaveToday")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <CalendarDays className={`h-6 w-6 ${theme.text}`} />
@@ -245,7 +322,7 @@ export default function PeopleDashboard() {
 
         {/* Section Cards */}
         <div className="grid gap-6 md:grid-cols-2">
-          {SECTIONS.map((section) => {
+          {sections.map((section) => {
             const SectionIcon = section.icon;
             return (
               <Card key={section.id} className="overflow-hidden">

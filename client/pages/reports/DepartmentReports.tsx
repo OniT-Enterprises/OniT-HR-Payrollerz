@@ -17,144 +17,166 @@ import {
   DollarSign,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DepartmentReports() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.departmentReports} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Building className="h-8 w-8 text-pink-400" />
-              <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Department Reports
-                </h1>
-                <p className="text-gray-600">
-                  Generate department-level analytics and reports
-                </p>
-              </div>
+      {/* Hero Section */}
+      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
+              <Building className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                {t("reports.department.title")}
+              </h1>
+              <p className="text-muted-foreground mt-1">
+                {t("reports.department.subtitle")}
+              </p>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div className="max-w-7xl mx-auto px-6 py-6">
           {/* Available Reports */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardHeader>
-                <CardTitle>Department Overview</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.overview.title")}
+                </CardTitle>
                 <CardDescription>
-                  Complete department structure and headcount
+                  {t("reports.department.overview.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Overview of all departments, employee counts, and
-                  organizational structure.
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.overview.body")}
                 </p>
                 <Button className="w-full">
                   <Download className="h-4 w-4 mr-2" />
-                  Generate Report
+                  {t("reports.department.actions.generate")}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardHeader>
-                <CardTitle>Department Performance</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.performance.title")}
+                </CardTitle>
                 <CardDescription>
-                  Performance metrics by department
+                  {t("reports.department.performance.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Compare department performance, goals achievement, and
-                  productivity metrics.
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.performance.body")}
                 </p>
                 <Button className="w-full">
                   <TrendingUp className="h-4 w-4 mr-2" />
-                  Generate Report
+                  {t("reports.department.actions.generate")}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardHeader>
-                <CardTitle>Budget Analysis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.budget.title")}
+                </CardTitle>
                 <CardDescription>
-                  Department budget and cost analysis
+                  {t("reports.department.budget.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Track department budgets, salary costs, and resource
-                  allocation.
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.budget.body")}
                 </p>
                 <Button className="w-full">
                   <DollarSign className="h-4 w-4 mr-2" />
-                  Generate Report
+                  {t("reports.department.actions.generate")}
                 </Button>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardHeader>
-                <CardTitle>Staffing Report</CardTitle>
-                <CardDescription>Department staffing levels</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Analyze staffing levels, turnover rates, and recruitment needs
-                  by department.
-                </p>
-                <Button className="w-full">
-                  <Users className="h-4 w-4 mr-2" />
-                  Generate Report
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Department Growth</CardTitle>
-                <CardDescription>Historical growth analysis</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Track department growth trends, hiring patterns, and expansion
-                  metrics.
-                </p>
-                <Button className="w-full">
-                  <Download className="h-4 w-4 mr-2" />
-                  Generate Report
-                </Button>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Cross-Department Analysis</CardTitle>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.staffing.title")}
+                </CardTitle>
                 <CardDescription>
-                  Inter-department collaboration
+                  {t("reports.department.staffing.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-600 mb-4">
-                  Analyze collaboration patterns and resource sharing between
-                  departments.
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.staffing.body")}
+                </p>
+                <Button className="w-full">
+                  <Users className="h-4 w-4 mr-2" />
+                  {t("reports.department.actions.generate")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.growth.title")}
+                </CardTitle>
+                <CardDescription>
+                  {t("reports.department.growth.description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.growth.body")}
                 </p>
                 <Button className="w-full">
                   <Download className="h-4 w-4 mr-2" />
-                  Generate Report
+                  {t("reports.department.actions.generate")}
+                </Button>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5 text-violet-600 dark:text-violet-400" />
+                  {t("reports.department.cross.title")}
+                </CardTitle>
+                <CardDescription>
+                  {t("reports.department.cross.description")}
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {t("reports.department.cross.body")}
+                </p>
+                <Button className="w-full">
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("reports.department.actions.generate")}
                 </Button>
               </CardContent>
             </Card>
           </div>
         </div>
-      </div>
     </div>
   );
 }

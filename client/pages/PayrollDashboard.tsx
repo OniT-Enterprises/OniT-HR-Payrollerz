@@ -27,58 +27,13 @@ import {
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const theme = sectionThemes.payroll;
 
-// Payroll links
-const PAYROLL_LINKS = [
-  {
-    label: "Run Payroll",
-    description: "Process payroll for current period",
-    path: "/payroll/run",
-    icon: Calculator,
-    color: "bg-emerald-500",
-    primary: true,
-  },
-  {
-    label: "Payroll History",
-    description: "View past payroll runs",
-    path: "/payroll/history",
-    icon: FileText,
-    color: "bg-blue-500",
-  },
-  {
-    label: "Bank Transfers",
-    description: "Manage salary payments",
-    path: "/payroll/transfers",
-    icon: Banknote,
-    color: "bg-violet-500",
-  },
-  {
-    label: "Tax Reports",
-    description: "WIT and INSS reports",
-    path: "/payroll/taxes",
-    icon: FileSpreadsheet,
-    color: "bg-amber-500",
-  },
-  {
-    label: "Benefits",
-    description: "Employee benefits enrollment",
-    path: "/payroll/benefits",
-    icon: Heart,
-    color: "bg-pink-500",
-  },
-  {
-    label: "Deductions",
-    description: "Loans and advances",
-    path: "/payroll/deductions",
-    icon: DollarSign,
-    color: "bg-red-500",
-  },
-];
-
 export default function PayrollDashboard() {
   const navigate = useNavigate();
+  const { t, locale } = useI18n();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     totalEmployees: 0,
@@ -93,6 +48,7 @@ export default function PayrollDashboard() {
 
   const loadStats = async () => {
     try {
+      const dateLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
       const employees = await employeeService.getAllEmployees();
       const activeEmployees = employees.filter((e) => e.status === "active");
       const totalPayroll = activeEmployees.reduce(
@@ -110,8 +66,12 @@ export default function PayrollDashboard() {
       setStats({
         totalEmployees: activeEmployees.length,
         monthlyPayroll: totalPayroll,
-        nextPayDate: nextPay.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-        lastPayrollDate: "Dec 25, 2025", // Would come from payroll history
+        nextPayDate: nextPay.toLocaleDateString(dateLocale, { month: "short", day: "numeric" }),
+        lastPayrollDate: new Date(2025, 11, 25).toLocaleDateString(dateLocale, {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        }), // Would come from payroll history
       });
     } catch (error) {
       console.error("Error loading stats:", error);
@@ -119,6 +79,52 @@ export default function PayrollDashboard() {
       setLoading(false);
     }
   };
+
+  const payrollLinks = [
+    {
+      label: t("payroll.dashboard.links.runPayroll.label"),
+      description: t("payroll.dashboard.links.runPayroll.description"),
+      path: "/payroll/run",
+      icon: Calculator,
+      color: "bg-emerald-500",
+      primary: true,
+    },
+    {
+      label: t("payroll.dashboard.links.history.label"),
+      description: t("payroll.dashboard.links.history.description"),
+      path: "/payroll/history",
+      icon: FileText,
+      color: "bg-blue-500",
+    },
+    {
+      label: t("payroll.dashboard.links.transfers.label"),
+      description: t("payroll.dashboard.links.transfers.description"),
+      path: "/payroll/transfers",
+      icon: Banknote,
+      color: "bg-violet-500",
+    },
+    {
+      label: t("payroll.dashboard.links.taxes.label"),
+      description: t("payroll.dashboard.links.taxes.description"),
+      path: "/payroll/taxes",
+      icon: FileSpreadsheet,
+      color: "bg-amber-500",
+    },
+    {
+      label: t("payroll.dashboard.links.benefits.label"),
+      description: t("payroll.dashboard.links.benefits.description"),
+      path: "/payroll/benefits",
+      icon: Heart,
+      color: "bg-pink-500",
+    },
+    {
+      label: t("payroll.dashboard.links.deductions.label"),
+      description: t("payroll.dashboard.links.deductions.description"),
+      path: "/payroll/deductions",
+      icon: DollarSign,
+      color: "bg-red-500",
+    },
+  ];
 
   // Calculate days until next payroll
   const getDaysUntilPayday = () => {
@@ -172,15 +178,17 @@ export default function PayrollDashboard() {
                 <Calculator className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">Payroll</h1>
+                <h1 className="text-3xl font-bold tracking-tight">
+                  {t("payroll.dashboard.title")}
+                </h1>
                 <p className="text-muted-foreground">
-                  Process payroll, manage payments, and generate reports
+                  {t("payroll.dashboard.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate("/payroll/run")} size="lg" className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
               <Calculator className="h-5 w-5 mr-2" />
-              Run Payroll
+              {t("payroll.dashboard.actions.runPayroll")}
             </Button>
           </div>
         </div>
@@ -192,7 +200,9 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.totalEmployees}</p>
-                  <p className="text-sm text-muted-foreground">Employees</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("payroll.dashboard.stats.employees")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <Users className={`h-6 w-6 ${theme.text}`} />
@@ -206,7 +216,9 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold">{formatCurrencyTL(stats.monthlyPayroll)}</p>
-                  <p className="text-sm text-muted-foreground">Monthly Payroll</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("payroll.dashboard.stats.monthlyPayroll")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <DollarSign className={`h-6 w-6 ${theme.text}`} />
@@ -220,7 +232,9 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-3xl font-bold">{stats.nextPayDate}</p>
-                  <p className="text-sm text-muted-foreground">Next Pay Date</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("payroll.dashboard.stats.nextPayDate")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <Calendar className={`h-6 w-6 ${theme.text}`} />
@@ -228,7 +242,9 @@ export default function PayrollDashboard() {
               </div>
               {daysUntilPayday <= 7 && (
                 <Badge className={`mt-2 ${theme.bg} ${theme.text}`}>
-                  {daysUntilPayday} days away
+                  {t("payroll.dashboard.stats.daysAway", {
+                    count: daysUntilPayday,
+                  })}
                 </Badge>
               )}
             </CardContent>
@@ -239,7 +255,9 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-lg font-bold">{stats.lastPayrollDate}</p>
-                  <p className="text-sm text-muted-foreground">Last Payroll</p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("payroll.dashboard.stats.lastPayroll")}
+                  </p>
                 </div>
                 <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
                   <CheckCircle className={`h-6 w-6 ${theme.text}`} />
@@ -251,7 +269,7 @@ export default function PayrollDashboard() {
 
         {/* Payroll Links */}
         <div className="grid gap-4 md:grid-cols-3">
-          {PAYROLL_LINKS.map((link) => {
+          {payrollLinks.map((link) => {
             const LinkIcon = link.icon;
             return (
               <Card
@@ -271,7 +289,7 @@ export default function PayrollDashboard() {
                         {link.label}
                         {link.primary && (
                           <Badge variant="secondary" className="text-xs">
-                            Primary
+                            {t("payroll.dashboard.links.primary")}
                           </Badge>
                         )}
                       </h3>
@@ -290,25 +308,43 @@ export default function PayrollDashboard() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5" />
-              Timor-Leste Compliance
+              {t("payroll.dashboard.compliance.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3 text-sm">
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Income Tax (WIT)</p>
-                <p className="text-muted-foreground">10% on income above $500/month</p>
-                <p className="text-xs text-muted-foreground mt-1">Due: 15th of following month</p>
+                <p className="font-medium mb-1">
+                  {t("payroll.dashboard.compliance.incomeTax.title")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("payroll.dashboard.compliance.incomeTax.description")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("payroll.dashboard.compliance.incomeTax.due")}
+                </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Social Security (INSS)</p>
-                <p className="text-muted-foreground">Employee: 4% | Employer: 6%</p>
-                <p className="text-xs text-muted-foreground mt-1">Due: 10th of following month</p>
+                <p className="font-medium mb-1">
+                  {t("payroll.dashboard.compliance.socialSecurity.title")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("payroll.dashboard.compliance.socialSecurity.description")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("payroll.dashboard.compliance.socialSecurity.due")}
+                </p>
               </div>
               <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">Minimum Wage</p>
-                <p className="text-muted-foreground">$115 USD per month</p>
-                <p className="text-xs text-muted-foreground mt-1">44 hours/week standard</p>
+                <p className="font-medium mb-1">
+                  {t("payroll.dashboard.compliance.minimumWage.title")}
+                </p>
+                <p className="text-muted-foreground">
+                  {t("payroll.dashboard.compliance.minimumWage.description")}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("payroll.dashboard.compliance.minimumWage.note")}
+                </p>
               </div>
             </div>
           </CardContent>

@@ -23,6 +23,7 @@ import {
   Plus,
   ChevronRight,
 } from "lucide-react";
+import { useI18n } from "@/i18n/I18nProvider";
 
 function HiringDashboardSkeleton() {
   return (
@@ -114,30 +115,31 @@ function HiringDashboardSkeleton() {
 
 export default function HiringDashboard() {
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   const stats = [
     {
-      title: "Open Positions",
+      title: t("dashboards.hiring.stats.openPositions"),
       value: "12",
-      subtitle: "+3 this month",
+      subtitle: t("dashboards.hiring.stats.openPositionsSub"),
       icon: Building,
     },
     {
-      title: "Total Applications",
+      title: t("dashboards.hiring.stats.totalApplications"),
       value: "247",
-      subtitle: "+18 this week",
+      subtitle: t("dashboards.hiring.stats.totalApplicationsSub"),
       icon: FileText,
     },
     {
-      title: "Interviews Scheduled",
+      title: t("dashboards.hiring.stats.interviewsScheduled"),
       value: "8",
-      subtitle: "Next 7 days",
+      subtitle: t("dashboards.hiring.stats.interviewsScheduledSub"),
       icon: Calendar,
     },
     {
-      title: "Pending Offers",
+      title: t("dashboards.hiring.stats.pendingOffers"),
       value: "5",
-      subtitle: "Awaiting response",
+      subtitle: t("dashboards.hiring.stats.pendingOffersSub"),
       icon: Clock,
     },
   ];
@@ -145,39 +147,55 @@ export default function HiringDashboard() {
   const recentActivity = [
     {
       icon: CheckCircle,
-      title: "Sarah Johnson hired",
-      subtitle: "Senior Software Engineer position filled",
-      status: "Completed",
+      title: t("dashboards.hiring.activity.hired.title"),
+      subtitle: t("dashboards.hiring.activity.hired.subtitle"),
+      status: t("dashboards.hiring.activity.status.completed"),
       statusColor: "bg-primary/10 text-primary",
     },
     {
       icon: Calendar,
-      title: "3 interviews scheduled",
-      subtitle: "Product Manager candidates",
-      status: "Scheduled",
+      title: t("dashboards.hiring.activity.interviews.title"),
+      subtitle: t("dashboards.hiring.activity.interviews.subtitle"),
+      status: t("dashboards.hiring.activity.status.scheduled"),
       statusColor: "bg-blue-500/10 text-blue-600 dark:text-blue-400",
     },
     {
       icon: Users,
-      title: "New job posted",
-      subtitle: "Marketing Specialist - Remote",
-      status: "Active",
+      title: t("dashboards.hiring.activity.newJob.title"),
+      subtitle: t("dashboards.hiring.activity.newJob.subtitle"),
+      status: t("dashboards.hiring.activity.status.active"),
       statusColor: "bg-orange-500/10 text-orange-600 dark:text-orange-400",
     },
     {
       icon: FileText,
-      title: "Application surge",
-      subtitle: "UX Designer position - 45 new applications",
-      status: "Trending",
+      title: t("dashboards.hiring.activity.surge.title"),
+      subtitle: t("dashboards.hiring.activity.surge.subtitle"),
+      status: t("dashboards.hiring.activity.status.trending"),
       statusColor: "bg-violet-500/10 text-violet-600 dark:text-violet-400",
     },
   ];
 
   const pipelineStages = [
-    { stage: "Applications Received", count: 47, color: "bg-muted-foreground" },
-    { stage: "Phone Screening", count: 12, color: "bg-blue-500" },
-    { stage: "Technical Interview", count: 8, color: "bg-orange-500" },
-    { stage: "Final Interview", count: 5, color: "bg-primary" },
+    {
+      stage: t("dashboards.hiring.pipeline.applications"),
+      count: 47,
+      color: "bg-muted-foreground",
+    },
+    {
+      stage: t("dashboards.hiring.pipeline.phone"),
+      count: 12,
+      color: "bg-blue-500",
+    },
+    {
+      stage: t("dashboards.hiring.pipeline.technical"),
+      count: 8,
+      color: "bg-orange-500",
+    },
+    {
+      stage: t("dashboards.hiring.pipeline.final"),
+      count: 5,
+      color: "bg-primary",
+    },
   ];
 
   return (
@@ -190,22 +208,24 @@ export default function HiringDashboard() {
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Hiring Dashboard</h1>
+                <h1 className="text-2xl font-bold text-foreground">
+                  {t("dashboards.hiring.title")}
+                </h1>
                 <p className="text-muted-foreground mt-1">
-                  Overview of recruitment and hiring activities
+                  {t("dashboards.hiring.subtitle")}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <Button variant="outline" className="gap-2">
                   <FileText className="h-4 w-4" />
-                  View Applications
+                  {t("dashboards.hiring.actions.viewApplications")}
                 </Button>
                 <Button
                   onClick={() => navigate("/people/jobs")}
                   className="gap-2"
                 >
                   <Plus className="h-4 w-4" />
-                  Post New Job
+                  {t("dashboards.hiring.actions.postJob")}
                 </Button>
               </div>
             </div>
@@ -240,11 +260,15 @@ export default function HiringDashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-                    <CardDescription>Latest updates in hiring</CardDescription>
+                    <CardTitle className="text-lg font-semibold">
+                      {t("dashboards.hiring.recent.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dashboards.hiring.recent.description")}
+                    </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" className="text-muted-foreground gap-1">
-                    View All
+                    {t("dashboards.hiring.actions.viewAll")}
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -279,10 +303,16 @@ export default function HiringDashboard() {
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-lg font-semibold">Hiring Pipeline</CardTitle>
-                    <CardDescription>Candidates by stage</CardDescription>
+                    <CardTitle className="text-lg font-semibold">
+                      {t("dashboards.hiring.pipeline.title")}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("dashboards.hiring.pipeline.description")}
+                    </CardDescription>
                   </div>
-                  <Badge variant="secondary">72 total</Badge>
+                  <Badge variant="secondary">
+                    {t("dashboards.hiring.pipeline.total", { count: 72 })}
+                  </Badge>
                 </div>
               </CardHeader>
               <CardContent>
@@ -311,14 +341,36 @@ export default function HiringDashboard() {
 
           {/* Quick Actions */}
           <div>
-            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <h2 className="text-lg font-semibold mb-4">
+              {t("dashboards.hiring.quickActions.title")}
+            </h2>
             <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
               {[
-                { label: "Create Job", icon: Briefcase, path: "/people/jobs" },
-                { label: "Candidates", icon: Users, path: "/people/candidates" },
-                { label: "Interviews", icon: Calendar, path: "/people/interviews" },
-                { label: "Onboarding", icon: UserPlus, path: "/people/onboarding" },
-                { label: "Offboarding", icon: Users, path: "/people/offboarding" },
+                {
+                  label: t("dashboards.hiring.quickActions.createJob"),
+                  icon: Briefcase,
+                  path: "/people/jobs",
+                },
+                {
+                  label: t("dashboards.hiring.quickActions.candidates"),
+                  icon: Users,
+                  path: "/people/candidates",
+                },
+                {
+                  label: t("dashboards.hiring.quickActions.interviews"),
+                  icon: Calendar,
+                  path: "/people/interviews",
+                },
+                {
+                  label: t("dashboards.hiring.quickActions.onboarding"),
+                  icon: UserPlus,
+                  path: "/people/onboarding",
+                },
+                {
+                  label: t("dashboards.hiring.quickActions.offboarding"),
+                  icon: Users,
+                  path: "/people/offboarding",
+                },
               ].map((action, index) => (
                 <button
                   key={index}

@@ -297,91 +297,103 @@ export default function TaxReports() {
       <SEO {...seoConfig.taxes} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <PieChart className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">Tax Reports</h1>
-                  <p className="text-muted-foreground">Generate and manage tax reports</p>
-                </div>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+                <PieChart className="h-8 w-8 text-white" />
               </div>
-              <Button onClick={() => setShowGenerateDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Generate Report
-              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Tax Reports</h1>
+                <p className="text-muted-foreground mt-1">Generate and manage tax reports</p>
+              </div>
             </div>
+            <Button onClick={() => setShowGenerateDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Generate Report
+            </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* YTD Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">YTD Wages</p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(ytdTotals.wages)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       YTD Federal Tax
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(ytdTotals.federalTax)}
                     </p>
                   </div>
-                  <FileText className="h-8 w-8 text-blue-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                    <FileText className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       YTD Social Security
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(ytdTotals.socialSecurity)}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-purple-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">YTD Medicare</p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(ytdTotals.medicare)}
                     </p>
                   </div>
-                  <Calendar className="h-8 w-8 text-red-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
+                    <Calendar className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Upcoming Deadlines */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                <AlertTriangle className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Upcoming Deadlines
               </CardTitle>
             </CardHeader>
@@ -407,9 +419,12 @@ export default function TaxReports() {
           </Card>
 
           {/* Tax Reports Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle>Generated Reports</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <PieChart className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Generated Reports
+              </CardTitle>
               <CardDescription>
                 View and manage your tax reports
               </CardDescription>
@@ -470,7 +485,6 @@ export default function TaxReports() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
       {/* Generate Report Dialog */}
       <Dialog open={showGenerateDialog} onOpenChange={setShowGenerateDialog}>

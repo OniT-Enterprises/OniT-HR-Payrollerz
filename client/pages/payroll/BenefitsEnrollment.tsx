@@ -379,98 +379,113 @@ export default function BenefitsEnrollment() {
       <SEO {...seoConfig.benefits} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Heart className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <h1 className="text-3xl font-bold text-foreground">
-                    Benefits Enrollment
-                  </h1>
-                  <p className="text-muted-foreground">
-                    Manage employee benefits enrollment
-                  </p>
-                </div>
+      {/* Hero Section */}
+      <div className="border-b bg-card">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+                <Heart className="h-8 w-8 text-white" />
               </div>
-              <Button onClick={() => setShowAddDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" />
-                Add Enrollment
-              </Button>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Benefits Enrollment
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Manage employee benefits enrollment
+                </p>
+              </div>
             </div>
+            <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Enrollment
+            </Button>
           </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-6">
 
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Active Enrollments
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {stats.totalEnrollments}
                     </p>
                   </div>
-                  <Heart className="h-8 w-8 text-emerald-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <Heart className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Enrolled Employees
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {stats.enrolledEmployees}
                     </p>
                   </div>
-                  <Users className="h-8 w-8 text-blue-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Employee Cost/mo
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(stats.totalEmployeeCost)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-purple-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
                       Employer Cost/mo
                     </p>
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold">
                       {formatCurrency(stats.totalEmployerCost)}
                     </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-red-500" />
+                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
+                    <DollarSign className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
           {/* Benefit Type Cards */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardHeader>
-              <CardTitle>Benefit Types</CardTitle>
+              <CardTitle className="flex items-center gap-2">
+                <Heart className="h-5 w-5 text-green-600 dark:text-green-400" />
+                Benefit Types
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
@@ -503,11 +518,14 @@ export default function BenefitsEnrollment() {
           </Card>
 
           {/* Enrollments Table */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle>Enrollments</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Enrollments
+                  </CardTitle>
                   <CardDescription>
                     {filteredEnrollments.length} enrollments
                   </CardDescription>
@@ -590,7 +608,6 @@ export default function BenefitsEnrollment() {
             </CardContent>
           </Card>
         </div>
-      </div>
 
       {/* Add Enrollment Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>

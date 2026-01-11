@@ -542,24 +542,20 @@ export default function Offboarding() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
-        {/* Decorative orb */}
-        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
-        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
-
-        <div className="relative max-w-6xl mx-auto px-6 py-12">
-          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+      <div className="border-b bg-card">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4 animate-fade-up">
-              <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
                 <UserMinus className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("hiring.offboarding.title")}
                 </h1>
-                <p className="text-emerald-100 mt-1">
+                <p className="text-muted-foreground mt-1">
                   {t("hiring.offboarding.subtitle")}
                 </p>
               </div>
@@ -568,7 +564,7 @@ export default function Offboarding() {
             {activeEmployees.length > 0 && (
               <Dialog open={showDialog} onOpenChange={setShowDialog}>
                 <DialogTrigger asChild>
-                  <Button className="bg-white/10 border border-white/20 text-white hover:bg-white/20 shadow-lg animate-fade-up stagger-1">
+                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg">
                     <UserMinus className="mr-2 h-4 w-4" />
                     {t("hiring.offboarding.actions.start")}
                   </Button>
