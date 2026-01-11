@@ -1,5 +1,6 @@
 import "./global.css";
 import React from "react";
+import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -128,10 +129,11 @@ function HomeRoute() {
 const queryClient = new QueryClient();
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <I18nProvider>
-      <ThemeProvider>
-        <TooltipProvider>
+  <HelmetProvider>
+    <QueryClientProvider client={queryClient}>
+      <I18nProvider>
+        <ThemeProvider>
+          <TooltipProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -295,10 +297,11 @@ const App = () => (
               </FirebaseProvider>
             </ErrorBoundary>
           </BrowserRouter>
-        </TooltipProvider>
-      </ThemeProvider>
-    </I18nProvider>
-  </QueryClientProvider>
+          </TooltipProvider>
+        </ThemeProvider>
+      </I18nProvider>
+    </QueryClientProvider>
+  </HelmetProvider>
 );
 
 export default App;

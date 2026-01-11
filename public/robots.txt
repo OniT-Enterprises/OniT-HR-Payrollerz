@@ -1,8 +1,19 @@
+# OniT HR & Payroll - Robots.txt
+# https://onit-hr-payroll.web.app
+
 User-agent: Googlebot
 Allow: /
+Disallow: /admin/
+Disallow: /auth/login
+Disallow: /dashboard
+Disallow: /settings
 
 User-agent: Bingbot
 Allow: /
+Disallow: /admin/
+Disallow: /auth/login
+Disallow: /dashboard
+Disallow: /settings
 
 User-agent: Twitterbot
 Allow: /
@@ -10,5 +21,18 @@ Allow: /
 User-agent: facebookexternalhit
 Allow: /
 
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /auth/login
+Disallow: /dashboard
+Disallow: /settings
+
+# Sitemap
+Sitemap: https://onit-hr-payroll.web.app/sitemap.xml

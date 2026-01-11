@@ -662,11 +662,11 @@ export default function SeedDatabase() {
   const seedAccounting = async () => {
     let success = 0, failed = 0;
 
-    // Seed Chart of Accounts
+    // Seed Chart of Accounts (root level - not tenant-scoped)
     addLog("Creating Chart of Accounts...");
     for (const account of CHART_OF_ACCOUNTS) {
       try {
-        const docRef = doc(collection(db!, getCollectionPath("accounts")));
+        const docRef = doc(collection(db!, "accounts"));
         await setDoc(docRef, {
           id: docRef.id,
           ...account,
@@ -789,7 +789,7 @@ export default function SeedDatabase() {
     addLog("Creating Journal Entries...");
     for (const entry of journalEntries) {
       try {
-        const docRef = doc(collection(db!, getCollectionPath("journalEntries")));
+        const docRef = doc(collection(db!, "journalEntries"));
         const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit, 0);
         const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit, 0);
 
@@ -817,16 +817,15 @@ export default function SeedDatabase() {
       }
     }
 
-    // Create fiscal periods
+    // Create fiscal periods (root level - not tenant-scoped)
     addLog("Creating Fiscal Periods...");
-    const currentYear = new Date().getFullYear();
     for (let month = 0; month < 12; month++) {
       try {
         const startDate = new Date(currentYear, month, 1);
         const endDate = new Date(currentYear, month + 1, 0);
         const periodKey = `${currentYear}-${String(month + 1).padStart(2, '0')}`;
 
-        const docRef = doc(db!, getCollectionPath("fiscalPeriods"), periodKey);
+        const docRef = doc(db!, "fiscalPeriods", periodKey);
         await setDoc(docRef, {
           id: periodKey,
           year: currentYear,
