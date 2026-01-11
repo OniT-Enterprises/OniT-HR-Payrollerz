@@ -607,8 +607,31 @@ export default function AllEmployees() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center gap-4 animate-fade-up">
+            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+              <Users className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">{t("employees.title")}</h1>
+              <p className="text-blue-100 mt-1">
+                {t("employees.subtitle")}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Connection Status */}
         {(connectionError || !isOnline) && (
           <Alert className="mb-6" variant="destructive">
@@ -633,8 +656,8 @@ export default function AllEmployees() {
         )}
 
         {/* Statistics */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-          <Card>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-fade-up">
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -643,11 +666,13 @@ export default function AllEmployees() {
                   </p>
                   <p className="text-2xl font-bold">{employees.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -658,11 +683,13 @@ export default function AllEmployees() {
                     {employees.filter((emp) => emp.status === "active").length}
                   </p>
                 </div>
-                <Building className="h-8 w-8 text-green-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
+                  <Building className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>

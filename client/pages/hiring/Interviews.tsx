@@ -145,13 +145,13 @@ export default function Interviews() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Scheduled":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
       case "Pending Schedule":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20";
       case "Completed":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -172,26 +172,41 @@ export default function Interviews() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="flex items-center gap-3 mb-8">
-          <Calendar className="h-8 w-8 text-green-400" />
-          <div>
-            <h1 className="text-3xl font-bold">
-              {t("hiring.interviews.title")}
-            </h1>
-            <p className="text-muted-foreground">
-              {t("hiring.interviews.subtitle")}
-            </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center gap-4 animate-fade-up">
+            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+              <Calendar className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                {t("hiring.interviews.title")}
+              </h1>
+              <p className="text-emerald-100 mt-1">
+                {t("hiring.interviews.subtitle")}
+              </p>
+            </div>
           </div>
         </div>
+      </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="grid lg:grid-cols-3 gap-6 animate-fade-up">
           {/* Interview Jury Selection */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                  <Users className="h-5 w-5 text-emerald-600" />
+                </div>
                 {t("hiring.interviews.jury.title")}
               </CardTitle>
               <CardDescription>
@@ -211,10 +226,10 @@ export default function Interviews() {
                 {staff.map((member) => (
                   <div
                     key={member.id}
-                    className={`p-3 border rounded-lg cursor-pointer transition-colors ${
+                    className={`p-3 border rounded-lg cursor-pointer transition-all duration-200 ${
                       selectedJury.includes(member.id.toString())
-                        ? "bg-green-50 border-green-200"
-                        : "hover:bg-gray-50"
+                        ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/20 dark:border-emerald-800"
+                        : "border-border/50 hover:bg-muted/30"
                     }`}
                     onClick={() => handleJurySelection(member.id.toString())}
                   >
@@ -229,7 +244,7 @@ export default function Interviews() {
                         </p>
                       </div>
                       {selectedJury.includes(member.id.toString()) && (
-                        <CheckCircle className="h-5 w-5 text-green-600" />
+                        <CheckCircle className="h-5 w-5 text-emerald-600" />
                       )}
                     </div>
                   </div>
@@ -249,7 +264,7 @@ export default function Interviews() {
                   return (
                     <div
                       key={juryId}
-                      className="flex items-center justify-between p-2 bg-green-50 rounded"
+                      className="flex items-center justify-between p-2 bg-emerald-50 dark:bg-emerald-950/20 rounded-lg border border-emerald-200 dark:border-emerald-800"
                     >
                       <span className="text-sm font-medium">{member.name}</span>
                       <div className="flex items-center gap-1">
@@ -277,10 +292,12 @@ export default function Interviews() {
           </Card>
 
           {/* Available Dates */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                  <Clock className="h-5 w-5 text-emerald-600" />
+                </div>
                 {t("hiring.interviews.availability.title")}
               </CardTitle>
               <CardDescription>
@@ -302,7 +319,7 @@ export default function Interviews() {
                 <Input id="endDate" type="date" />
               </div>
 
-              <Button className="w-full">
+              <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
                 {t("hiring.interviews.availability.check")}
               </Button>
 
@@ -330,10 +347,12 @@ export default function Interviews() {
           </Card>
 
           {/* Interview Settings */}
-          <Card>
+          <Card className="border-border/50">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
+              <CardTitle className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                  <FileText className="h-5 w-5 text-emerald-600" />
+                </div>
                 {t("hiring.interviews.settings.title")}
               </CardTitle>
               <CardDescription>
@@ -410,9 +429,14 @@ export default function Interviews() {
         </div>
 
         {/* Shortlisted Candidates */}
-        <Card className="mt-6">
+        <Card className="mt-6 border-border/50 animate-fade-up stagger-1">
           <CardHeader>
-            <CardTitle>{t("hiring.interviews.candidates.title")}</CardTitle>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                <UserCheck className="h-5 w-5 text-emerald-600" />
+              </div>
+              {t("hiring.interviews.candidates.title")}
+            </CardTitle>
             <CardDescription>
               {t("hiring.interviews.candidates.description")}
             </CardDescription>

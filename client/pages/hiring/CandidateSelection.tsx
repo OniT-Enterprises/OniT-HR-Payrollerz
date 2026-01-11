@@ -226,15 +226,15 @@ export default function CandidateSelection() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Shortlisted":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
       case "Under Review":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20";
       case "New":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20";
       case "Rejected":
-        return "bg-red-100 text-red-800";
+        return "bg-red-500/10 text-red-700 dark:text-red-400 border border-red-500/20";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
     }
   };
 
@@ -269,33 +269,44 @@ export default function CandidateSelection() {
   };
 
   const getScoreColor = (score: number | null) => {
-    if (score === null) return "text-gray-400";
-    if (score >= 8.5) return "text-green-600";
-    if (score >= 7.5) return "text-yellow-600";
-    return "text-red-600";
+    if (score === null) return "text-muted-foreground";
+    if (score >= 8.5) return "text-emerald-600 dark:text-emerald-400";
+    if (score >= 7.5) return "text-amber-600 dark:text-amber-400";
+    return "text-red-600 dark:text-red-400";
   };
 
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Users className="h-8 w-8 text-green-400" />
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center gap-4 animate-fade-up">
+            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+              <Users className="h-8 w-8 text-white" />
+            </div>
             <div>
-              <h1 className="text-3xl font-bold">{t("hiring.candidates.title")}</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold text-white">{t("hiring.candidates.title")}</h1>
+              <p className="text-emerald-100 mt-1">
                 {t("hiring.candidates.subtitle")}
               </p>
             </div>
           </div>
         </div>
+      </div>
 
-        {/* Statistics moved under title */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Statistics */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up">
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -304,11 +315,13 @@ export default function CandidateSelection() {
                   </p>
                   <p className="text-2xl font-bold">{candidates.length}</p>
                 </div>
-                <Users className="h-8 w-8 text-blue-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -322,11 +335,13 @@ export default function CandidateSelection() {
                     }
                   </p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
+                  <CheckCircle className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -340,11 +355,13 @@ export default function CandidateSelection() {
                     }
                   </p>
                 </div>
-                <Clock className="h-8 w-8 text-yellow-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg">
+                  <Clock className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -355,7 +372,9 @@ export default function CandidateSelection() {
                     {candidates.filter((c) => c.status === "New").length}
                   </p>
                 </div>
-                <Star className="h-8 w-8 text-blue-500" />
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg">
+                  <Star className="h-5 w-5 text-white" />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -421,15 +440,15 @@ export default function CandidateSelection() {
                       <div
                         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                           uploadedFiles.cv
-                            ? "border-green-300 bg-green-50"
-                            : "border-gray-300"
+                            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"
+                            : "border-border"
                         }`}
                       >
                         <File
                           className={`h-8 w-8 mx-auto mb-2 ${
                             uploadedFiles.cv
-                              ? "text-green-600"
-                              : "text-gray-400"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-muted-foreground"
                           }`}
                         />
                         <input
@@ -440,12 +459,12 @@ export default function CandidateSelection() {
                           id="cv-upload"
                         />
                         <label htmlFor="cv-upload" className="cursor-pointer">
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {uploadedFiles.cv
                               ? uploadedFiles.cv.name
                               : t("hiring.candidates.import.clickUploadCv")}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-muted-foreground">
                             {t("hiring.candidates.import.fileTypes")}
                           </p>
                         </label>
@@ -458,15 +477,15 @@ export default function CandidateSelection() {
                       <div
                         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                           uploadedFiles.coverLetter
-                            ? "border-green-300 bg-green-50"
-                            : "border-gray-300"
+                            ? "border-emerald-300 bg-emerald-50 dark:border-emerald-700 dark:bg-emerald-950/30"
+                            : "border-border"
                         }`}
                       >
                         <Mail
                           className={`h-8 w-8 mx-auto mb-2 ${
                             uploadedFiles.coverLetter
-                              ? "text-green-600"
-                              : "text-gray-400"
+                              ? "text-emerald-600 dark:text-emerald-400"
+                              : "text-muted-foreground"
                           }`}
                         />
                         <input
@@ -477,12 +496,12 @@ export default function CandidateSelection() {
                           id="cl-upload"
                         />
                         <label htmlFor="cl-upload" className="cursor-pointer">
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             {uploadedFiles.coverLetter
                               ? uploadedFiles.coverLetter.name
                               : t("hiring.candidates.import.clickUploadCover")}
                           </p>
-                          <p className="text-xs text-gray-400">
+                          <p className="text-xs text-muted-foreground">
                             {t("hiring.candidates.import.fileTypes")}
                           </p>
                         </label>
@@ -491,14 +510,14 @@ export default function CandidateSelection() {
                   </div>
 
                   {isProcessing && (
-                    <div className="border rounded-lg p-4 bg-blue-50">
+                    <div className="border border-blue-200 dark:border-blue-800 rounded-xl p-4 bg-blue-50 dark:bg-blue-950/30">
                       <div className="flex items-center gap-3">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
                         <div>
-                          <h4 className="font-medium text-blue-800">
+                          <h4 className="font-medium text-blue-800 dark:text-blue-300">
                             {t("hiring.candidates.import.processingTitle")}
                           </h4>
-                          <p className="text-sm text-blue-600">
+                          <p className="text-sm text-blue-600 dark:text-blue-400">
                             {t("hiring.candidates.import.processingDesc")}
                           </p>
                         </div>
@@ -507,25 +526,25 @@ export default function CandidateSelection() {
                   )}
 
                   {!isProcessing && importedData.name && (
-                    <div className="border rounded-lg p-4 bg-green-50">
-                      <h4 className="font-medium mb-3 text-green-800">
+                    <div className="border border-emerald-200 dark:border-emerald-800 rounded-xl p-4 bg-emerald-50 dark:bg-emerald-950/30">
+                      <h4 className="font-medium mb-3 text-emerald-800 dark:text-emerald-300">
                         {t("hiring.candidates.import.extractedTitle")}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-muted-foreground">
                             {t("hiring.candidates.import.fields.name")}
                           </label>
                           <p className="font-medium">{importedData.name}</p>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-muted-foreground">
                             {t("hiring.candidates.import.fields.email")}
                           </label>
                           <p className="font-medium">{importedData.email}</p>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600">
+                          <label className="text-xs text-muted-foreground">
                             {t("hiring.candidates.import.fields.phone")}
                           </label>
                           <p className="font-medium">{importedData.phone}</p>
@@ -571,9 +590,14 @@ export default function CandidateSelection() {
         </div>
 
         {/* Candidates List */}
-        <Card>
-          <CardHeader className="ml-2.5">
-            <CardTitle>{t("hiring.candidates.list.title")}</CardTitle>
+        <Card className="border-border/50 animate-fade-up stagger-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                <Users className="h-5 w-5 text-emerald-600" />
+              </div>
+              {t("hiring.candidates.list.title")}
+            </CardTitle>
             <CardDescription>
               {t("hiring.candidates.list.description")}
             </CardDescription>
@@ -612,7 +636,7 @@ export default function CandidateSelection() {
                         {t("hiring.candidates.table.candidate")}
                       </th>
                       <th className="text-center p-3 font-medium">
-                        <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
+                        <button className="flex flex-col items-center gap-1 hover:bg-muted/30 p-1 rounded">
                           <span className="text-xs leading-tight">
                             {t("hiring.candidates.table.cv")}
                           </span>
@@ -623,7 +647,7 @@ export default function CandidateSelection() {
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
-                        <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
+                        <button className="flex flex-col items-center gap-1 hover:bg-muted/30 p-1 rounded">
                           <span className="text-xs leading-tight">
                             {t("hiring.candidates.table.cover")}
                           </span>
@@ -634,7 +658,7 @@ export default function CandidateSelection() {
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
-                        <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
+                        <button className="flex flex-col items-center gap-1 hover:bg-muted/30 p-1 rounded">
                           <span className="text-xs leading-tight ml-2.5">
                             {t("hiring.candidates.table.technical")}
                           </span>
@@ -645,7 +669,7 @@ export default function CandidateSelection() {
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
-                        <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded ml-3.5">
+                        <button className="flex flex-col items-center gap-1 hover:bg-muted/30 p-1 rounded ml-3.5">
                           <span className="text-xs leading-tight">
                             {t("hiring.candidates.table.interview")}
                           </span>
@@ -656,7 +680,7 @@ export default function CandidateSelection() {
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
-                        <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
+                        <button className="flex flex-col items-center gap-1 hover:bg-muted/30 p-1 rounded">
                           <span className="text-sm font-semibold leading-tight ml-2.5">
                             {t("hiring.candidates.table.total")}
                           </span>
@@ -752,7 +776,7 @@ export default function CandidateSelection() {
                               {candidate.interviewScore}/10
                             </span>
                           ) : (
-                            <span className="text-gray-400 font-semibold">
+                            <span className="text-muted-foreground font-semibold">
                               {t("hiring.candidates.na")}
                             </span>
                           )}
@@ -815,7 +839,7 @@ export default function CandidateSelection() {
                                         {t("hiring.candidates.documents.cvDesc")}
                                       </DialogDescription>
                                     </DialogHeader>
-                                    <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-gray-50">
+                                    <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-muted/30">
                                       <div className="text-center text-muted-foreground">
                                         <File className="h-16 w-16 mx-auto mb-4" />
                                         <p>
@@ -858,7 +882,7 @@ export default function CandidateSelection() {
                                         )}
                                       </DialogDescription>
                                     </DialogHeader>
-                                    <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-gray-50">
+                                    <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-muted/30">
                                       <div className="text-center text-muted-foreground">
                                         <Mail className="h-16 w-16 mx-auto mb-4" />
                                         <p>

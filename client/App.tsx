@@ -9,6 +9,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { HRChatProvider } from "@/contexts/HRChatContext";
+import HRChatWidget from "@/components/chat/HRChatWidget";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Login from "@/pages/auth/Login";
@@ -137,6 +139,7 @@ const App = () => (
               <FirebaseProvider>
                 <AuthProvider>
                   <TenantProvider>
+                    <HRChatProvider>
                     <Routes>
                       {/* Auth & Core */}
                       <Route path="/auth/login" element={<Login />} />
@@ -285,6 +288,8 @@ const App = () => (
                       {/* Catch-all */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    <HRChatWidget />
+                    </HRChatProvider>
                   </TenantProvider>
                 </AuthProvider>
               </FirebaseProvider>

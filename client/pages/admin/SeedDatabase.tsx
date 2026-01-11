@@ -796,7 +796,10 @@ export default function SeedDatabase() {
         await setDoc(docRef, {
           id: docRef.id,
           ...entry,
-          date: Timestamp.fromDate(entry.date),
+          date: entry.date.toISOString().split('T')[0],
+          fiscalYear: entry.date.getFullYear(),
+          fiscalPeriod: entry.date.getMonth() + 1,
+          entryNumber: entry.reference,
           totalDebit,
           totalCredit,
           isBalanced: totalDebit === totalCredit,

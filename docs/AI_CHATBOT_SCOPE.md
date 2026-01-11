@@ -467,11 +467,207 @@ Need help with offboarding documentation?
 
 ---
 
+## Adapted from Hotel Chatbot
+
+We have a working chatbot implementation in the hotel project that we can adapt:
+
+**Source Files:**
+- `/Users/tonyfranklin/Sites/hotel2026/hotel-old/src/services/chatbotService.ts`
+- `/Users/tonyfranklin/Sites/hotel2026/hotel-old/src/contexts/ChatContext.tsx`
+- `/Users/tonyfranklin/Sites/hotel2026/hotel-old/src/components/chat/ChatWidget.tsx`
+
+**Key Patterns to Reuse:**
+1. Direct OpenAI API calls (no SDK needed)
+2. JSON response format for structured actions
+3. Floating widget UI with minimize/expand
+4. Confirmation flow before executing actions
+5. Auto-navigation after successful actions
+6. Context-aware prompts (tenant, user, current page)
+
+---
+
+## HR/Payroll System Prompt
+
+```typescript
+const getSystemPrompt = (context: HRChatContext) => `You are an HR/Payroll assistant for ${context.tenantName} in Timor-Leste. You help staff with employment law, tax calculations, payroll, and system navigation.
+
+CURRENT CONTEXT:
+- Company: ${context.tenantName} (ID: ${context.tenantId})
+- User: ${context.userEmail} (Role: ${context.userRole})
+- Current Page: ${context.currentPage}
+
+=== TIMOR-LESTE TAX RULES ===
+WITHHOLDING INCOME TAX (WIT - Impostu Retidu):
+- Residents: 10% on income exceeding $500/month
+- Non-residents: 10% on ALL income (no threshold)
+- Per diem and travel allowances are NOT taxable
+
+SOCIAL SECURITY (INSS):
+- Employee: 4% of gross salary
+- Employer: 6% of gross salary
+- Minimum wage: $115 USD/month
+
+13TH MONTH SALARY (Subsídiu Anual):
+- One full month's salary by December 20th
+- Pro-rata for employees with <12 months
+
+OVERTIME RATES:
+- Standard overtime (>44 hrs/week): 150%
+- Night shift (10pm-6am): 125%
+- Public holiday: 200%
+- Rest day/Sunday: 200%
+
+LEAVE ENTITLEMENTS:
+- Annual: 12 days (after 3 yrs: 15, after 6 yrs: 18, after 9 yrs: 22)
+- Sick: 12 days/year (first 6 at 100%, next 6 at 50%)
+- Maternity: 90 days at 100%
+
+SEVERANCE: 30 days salary per year of service
+
+=== YOUR CAPABILITIES ===
+1. CALCULATE TAX - "How much tax on $1,200 salary?"
+2. CALCULATE INSS - "What's the INSS for my team?"
+3. CALCULATE NET PAY - "Net pay for $800 gross?"
+4. CALCULATE OVERTIME - "Overtime for 10 hours on a holiday?"
+5. CALCULATE LEAVE - "How many days for 5 years service?"
+6. CALCULATE 13TH MONTH - "13th month for someone hired in July?"
+7. CALCULATE SEVERANCE - "Severance for 3 years at $700/month?"
+8. EXPLAIN LAW - "Is per diem taxable?"
+9. NAVIGATE - "Take me to run payroll"
+10. FIELD HELP - "What's the SEFOPE number?"
+
+=== NAVIGATION ROUTES ===
+- Add employee: /people/add
+- All employees: /people/employees
+- Departments: /people/departments
+- Run payroll: /payroll/run
+- Payroll history: /payroll/history
+- Tax reports: /payroll/taxes
+- Leave requests: /people/leave
+- Attendance: /people/attendance
+- Time tracking: /people/time-tracking
+- Performance reviews: /people/reviews
+- Reports: /reports
+
+RESPONSE FORMAT:
+Always respond with valid JSON:
+{
+  "message": "Your helpful response with calculations if needed",
+  "action": {
+    "type": "calculation|navigation|query|clarification",
+    "action": "calculate|navigate|explain",
+    "data": { ...relevant data... },
+    "navigateTo": "/path/to/page"
+  }
+}
+
+RULES:
+1. Always cite the relevant law (e.g., "Under Law 8/2008...")
+2. Show step-by-step calculations
+3. Use both English and Tetun terms where helpful
+4. Offer to navigate to relevant pages
+5. If unsure, suggest contacting DNRE, INSS, or SEFOPE
+`;
+```
+
+---
+
+## Files to Create (Adapted from Hotel)
+
+### 1. `client/services/hrChatService.ts`
+```typescript
+// Adapted from hotel chatbotService.ts
+export interface HRChatAction {
+  type: 'calculation' | 'navigation' | 'query' | 'clarification' | 'employee' | 'payroll';
+  action: 'calculate' | 'navigate' | 'explain' | 'create' | 'update';
+  data: Record<string, any>;
+  navigateTo?: string;
+}
+
+export interface HRChatContext {
+  tenantId: string;
+  tenantName: string;
+  userId: string;
+  userEmail: string;
+  userRole: string;
+  currentPage: string;
+}
+```
+
+### 2. `client/contexts/HRChatContext.tsx`
+- Adapt ChatContext.tsx for HR/Payroll actions
+- Replace hotel services with employee/payroll services
+- Update navigation map for HR routes
+
+### 3. `client/components/chat/HRChatWidget.tsx`
+- Reuse ChatWidget.tsx UI
+- Update branding (colors, title)
+- Add HR-specific quick actions
+
+### 4. `client/lib/chatbot/tl-knowledge.ts`
+```typescript
+export const TL_TAX_RULES = {
+  wit: {
+    residentThreshold: 500,
+    rate: 0.10,
+    nonResidentThreshold: 0,
+  },
+  inss: {
+    employeeRate: 0.04,
+    employerRate: 0.06,
+  },
+  minimumWage: 115,
+  // ... more rules
+};
+
+export const TL_LABOR_LAW = {
+  annualLeave: {
+    base: 12,
+    after3Years: 15,
+    after6Years: 18,
+    after9Years: 22,
+  },
+  sickLeave: {
+    maxDays: 12,
+    fullPayDays: 6,
+    halfPayDays: 6,
+  },
+  // ... more rules
+};
+```
+
+---
+
+## Quick Start Implementation
+
+```bash
+# 1. Create the service file
+touch client/services/hrChatService.ts
+
+# 2. Create the context
+touch client/contexts/HRChatContext.tsx
+
+# 3. Create the widget
+mkdir -p client/components/chat
+touch client/components/chat/HRChatWidget.tsx
+
+# 4. Create knowledge base
+mkdir -p client/lib/chatbot
+touch client/lib/chatbot/tl-knowledge.ts
+touch client/lib/chatbot/system-prompt.ts
+
+# 5. Add to App.tsx (wrap with provider, add widget)
+```
+
+---
+
 ## Next Steps
 
-1. **Choose AI Provider**: OpenAI GPT-4o-mini (recommended) or Claude
-2. **Design UI**: Finalize chat widget design
-3. **Build Knowledge Base**: Compile all TL rules into JSON
-4. **Implement MVP**: Basic chat with tax knowledge
-5. **Test with Users**: Get feedback on accuracy and usefulness
-6. **Iterate**: Add more features based on usage patterns
+1. **Copy & Adapt**: Port the 3 hotel chatbot files to HR/Payroll
+2. **Update System Prompt**: Replace hotel context with TL rules
+3. **Update Actions**: Replace booking/task actions with tax/payroll calculations
+4. **Update Navigation**: Map to HR/Payroll routes
+5. **Add API Key Storage**: Store OpenAI key in tenant settings
+6. **Test**: Verify tax calculations match existing `calculations-tl.ts`
+
+**Estimated Effort**: 2-3 days to adapt from hotel codebase

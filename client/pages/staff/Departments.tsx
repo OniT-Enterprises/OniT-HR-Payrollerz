@@ -289,73 +289,88 @@ export default function Departments() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        {/* Department Management Buttons */}
-        <div className="flex justify-end items-center mb-4">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setManagerMode("add");
-                setShowDepartmentManager(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t("departments.addDepartment")}
-            </Button>
-            <Button
-              onClick={() => {
-                setManagerMode("edit");
-                setShowDepartmentManager(true);
-              }}
-            >
-              <Edit className="mr-2 h-4 w-4" />
-              {t("departments.editDepartments")}
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => navigate("/people/org-chart")}
-            >
-              <Users className="mr-2 h-4 w-4" />
-              {t("departments.organizationChart")}
-            </Button>
-          </div>
-        </div>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
 
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Building className="h-8 w-8 text-purple-600" />
-            <div>
-              <h1 className="text-3xl font-bold">{t("departments.title")}</h1>
-              <p className="text-muted-foreground">
-                {t("departments.subtitle")}
-              </p>
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 animate-fade-up">
+              <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+                <Building className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">{t("departments.title")}</h1>
+                <p className="text-blue-100 mt-1">
+                  {t("departments.subtitle")}
+                </p>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 animate-fade-up stagger-1">
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                onClick={() => {
+                  setManagerMode("add");
+                  setShowDepartmentManager(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t("departments.addDepartment")}
+              </Button>
+              <Button
+                className="bg-white text-blue-600 hover:bg-white/90"
+                onClick={() => {
+                  setManagerMode("edit");
+                  setShowDepartmentManager(true);
+                }}
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                {t("departments.editDepartments")}
+              </Button>
+              <Button
+                variant="outline"
+                className="bg-white/10 border-white/20 text-white hover:bg-white/20"
+                onClick={() => navigate("/people/org-chart")}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                {t("departments.organizationChart")}
+              </Button>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-sm">
-            <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span className="text-muted-foreground">
-              {t("departments.firebaseConnected")}
-            </span>
-          </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {employees.length === 0 ? (
           /* Empty State */
-          <div className="text-center py-16">
-            <Database className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">
-              {t("departments.emptyTitle")}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {t("departments.emptyDesc")}
-            </p>
-            <Button onClick={() => (window.location.href = "/staff/add")}>
-              <User className="mr-2 h-4 w-4" />
-              {t("departments.addFirstEmployee")}
-            </Button>
-          </div>
+          <Card className="border-border/50 animate-fade-up">
+            <CardContent className="text-center py-16">
+              <div className="p-4 rounded-full bg-muted inline-flex mb-4">
+                <Database className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {t("departments.emptyTitle")}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {t("departments.emptyDesc")}
+              </p>
+              <Button
+                onClick={() => (window.location.href = "/staff/add")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+              >
+                <User className="mr-2 h-4 w-4" />
+                {t("departments.addFirstEmployee")}
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-6">
             {/* Statistics */}
