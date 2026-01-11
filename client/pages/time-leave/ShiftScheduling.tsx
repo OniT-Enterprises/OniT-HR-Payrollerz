@@ -1668,27 +1668,43 @@ export default function ShiftScheduling() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <SEO {...seoConfig.schedules} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
-              {t("timeLeave.shiftScheduling.title")}
-            </h1>
-            <p className="text-gray-600">
-              {t("timeLeave.shiftScheduling.subtitle")}
-            </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-cyan-500 to-teal-500">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4 text-white/80" />
+
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+              <Calendar className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight text-white">
+                {t("timeLeave.shiftScheduling.title")}
+              </h1>
+              <p className="text-cyan-100">
+                {t("timeLeave.shiftScheduling.subtitle")}
+              </p>
+            </div>
           </div>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto">
 
           {/* Controls */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50 -mt-8 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5" />
+                <Filter className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                 {t("timeLeave.shiftScheduling.controls.title")}
               </CardTitle>
             </CardHeader>
@@ -2068,17 +2084,30 @@ export default function ShiftScheduling() {
                   <Label htmlFor="edit-position">
                     {t("timeLeave.shiftScheduling.edit.position")}
                   </Label>
-                  <Input
-                    id="edit-position"
+                  <Select
                     value={formData.position}
-                    onChange={(e) =>
-                      handleInputChange("position", e.target.value)
+                    onValueChange={(value) =>
+                      handleInputChange("position", value)
                     }
-                    placeholder={t(
-                      "timeLeave.shiftScheduling.edit.positionPlaceholder",
-                    )}
-                    required
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t(
+                          "timeLeave.shiftScheduling.edit.positionPlaceholder",
+                        )}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {formData.department &&
+                        departments
+                          .find((d) => d.name === formData.department)
+                          ?.positions.map((position) => (
+                            <SelectItem key={position.id} value={position.title}>
+                              {getPositionLabel(position.title)}
+                            </SelectItem>
+                          ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <Label htmlFor="edit-date">

@@ -376,6 +376,7 @@ export default function BenefitsEnrollment() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.benefits} />
       <MainNavigation />
 
       <div className="p-6">

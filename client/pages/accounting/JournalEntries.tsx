@@ -54,6 +54,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { accountingService } from "@/services/accountingService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting";
+import { SEO, seoConfig } from "@/components/SEO";
 
 interface EntryLineForm {
   accountId: string;
@@ -423,6 +424,7 @@ export default function JournalEntries() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.journalEntries} />
       <MainNavigation />
 
       <div className="p-6">

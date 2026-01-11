@@ -793,12 +793,16 @@ export default function SeedDatabase() {
         const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit, 0);
         const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit, 0);
 
+        const entryDate = entry.date.toISOString().split('T')[0];
+        const fiscalYear = entry.date.getFullYear();
+        const fiscalPeriod = entry.date.getMonth() + 1;
+
         await setDoc(docRef, {
           id: docRef.id,
           ...entry,
-          date: entry.date.toISOString().split('T')[0],
-          fiscalYear: entry.date.getFullYear(),
-          fiscalPeriod: entry.date.getMonth() + 1,
+          date: entryDate,
+          fiscalYear,
+          fiscalPeriod,
           entryNumber: entry.reference,
           totalDebit,
           totalCredit,
@@ -809,8 +813,30 @@ export default function SeedDatabase() {
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
+
+        // Create general ledger entries for each line
+        for (const line of entry.lines) {
+          const glRef = doc(collection(db!, "generalLedger"));
+          await setDoc(glRef, {
+            id: glRef.id,
+            accountId: line.accountCode, // Using code as ID for now
+            accountCode: line.accountCode,
+            accountName: line.accountName,
+            journalEntryId: docRef.id,
+            entryNumber: entry.reference,
+            entryDate,
+            description: entry.description,
+            debit: line.debit,
+            credit: line.credit,
+            balance: 0,
+            fiscalYear,
+            fiscalPeriod,
+            createdAt: serverTimestamp(),
+          });
+        }
+
         success++;
-        addLog(`✓ Journal Entry: ${entry.reference}`);
+        addLog(`✓ Journal Entry: ${entry.reference} (${entry.lines.length} GL entries)`);
       } catch (err) {
         failed++;
         addLog(`✗ Journal Entry ${entry.reference}: ${err}`);

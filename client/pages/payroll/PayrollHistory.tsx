@@ -332,6 +332,7 @@ export default function PayrollHistory() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.payrollHistory} />
       <MainNavigation />
 
       <div className="p-6">

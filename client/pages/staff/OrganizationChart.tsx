@@ -476,167 +476,196 @@ export default function OrganizationChart() {
       <SEO {...seoConfig.orgChart} />
       <MainNavigation />
 
-      <div className="p-8">
-        <AutoBreadcrumb className="mb-6" />
-        {/* Header with Title and Controls */}
-        <div className="flex flex-col gap-6 mb-8">
-          {/* Title and Controls */}
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col relative mt-5">
-              <div className="flex gap-5 max-md:flex-col max-md:items-stretch max-md:gap-0">
-                <div className="flex flex-col leading-normal w-[33%] ml-0 max-md:w-full max-md:ml-0">
-                  <h1 className="text-4xl font-bold text-foreground">
-                    {t("orgChart.title")}
-                  </h1>
-                </div>
-                <div className="flex flex-col leading-normal w-[67%] ml-auto max-md:w-full max-md:ml-0">
-                  {/* Controls - Horizontal inline */}
-                  <div className="flex items-center gap-4 ml-auto">
-                    <Button
-                      variant={dragMode ? "default" : "outline"}
-                      onClick={() => setDragMode(!dragMode)}
-                    >
-                      <Move className="mr-2 h-4 w-4" />
-                      {dragMode
-                        ? t("orgChart.exitReorganize")
-                        : t("orgChart.reorganize")}
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setManagerMode("add");
-                        setShowDepartmentManager(true);
-                      }}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      {t("departments.addDepartment")}
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        setManagerMode("edit");
-                        setShowDepartmentManager(true);
-                      }}
-                    >
-                      <Edit className="mr-2 h-4 w-4" />
-                      {t("orgChart.manage")}
-                    </Button>
-                  </div>
-                </div>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-4 text-white/80" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  {t("orgChart.title")}
+                </h1>
+                <p className="text-blue-100 mt-1">
+                  {t("orgChart.subtitle") || "Visualize your company structure"}
+                </p>
               </div>
             </div>
-          </div>
 
-          {/* Statistics Dashboard */}
-          {employees.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("orgChart.stats.executives")}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {executives.length}
-                      </p>
-                    </div>
-                    <Crown className="h-8 w-8 text-purple-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("orgChart.stats.managers")}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {
-                          employees.filter(
-                            (emp) =>
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("manager") ||
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("director") ||
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("head"),
-                          ).length
-                        }
-                      </p>
-                    </div>
-                    <UserCheck className="h-8 w-8 text-emerald-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("orgChart.stats.seniorStaff")}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {
-                          employees.filter(
-                            (emp) =>
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("senior") ||
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("lead") ||
-                              emp.jobDetails.position
-                                .toLowerCase()
-                                .includes("principal"),
-                          ).length
-                        }
-                      </p>
-                    </div>
-                    <GraduationCap className="h-8 w-8 text-blue-500" />
-                  </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("orgChart.stats.totalEmployees")}
-                      </p>
-                      <p className="text-2xl font-bold text-foreground">
-                        {employees.length}
-                      </p>
-                    </div>
-                    <Users className="h-8 w-8 text-orange-500" />
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="flex items-center gap-3">
+              <Button
+                variant={dragMode ? "secondary" : "outline"}
+                onClick={() => setDragMode(!dragMode)}
+                className={dragMode
+                  ? "bg-white text-blue-600 hover:bg-blue-50"
+                  : "border-white/30 text-white hover:bg-white/10"}
+              >
+                <Move className="mr-2 h-4 w-4" />
+                {dragMode
+                  ? t("orgChart.exitReorganize")
+                  : t("orgChart.reorganize")}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setManagerMode("add");
+                  setShowDepartmentManager(true);
+                }}
+                className="border-white/30 text-white hover:bg-white/10"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                {t("departments.addDepartment")}
+              </Button>
+              <Button
+                onClick={() => {
+                  setManagerMode("edit");
+                  setShowDepartmentManager(true);
+                }}
+                className="bg-white text-blue-600 hover:bg-blue-50"
+              >
+                <Edit className="mr-2 h-4 w-4" />
+                {t("orgChart.manage")}
+              </Button>
             </div>
-          )}
+          </div>
         </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Statistics Dashboard */}
+        {employees.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 -mt-8">
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("orgChart.stats.executives")}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {executives.length}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                    <Crown className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("orgChart.stats.managers")}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {
+                        employees.filter(
+                          (emp) =>
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("manager") ||
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("director") ||
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("head"),
+                        ).length
+                      }
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
+                    <UserCheck className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("orgChart.stats.seniorStaff")}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {
+                        employees.filter(
+                          (emp) =>
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("senior") ||
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("lead") ||
+                            emp.jobDetails.position
+                              .toLowerCase()
+                              .includes("principal"),
+                        ).length
+                      }
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-blue-500 rounded-xl">
+                    <GraduationCap className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      {t("orgChart.stats.totalEmployees")}
+                    </p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {employees.length}
+                    </p>
+                  </div>
+                  <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-xl">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {employees.length === 0 ? (
-          <div className="text-center py-16">
-            <Database className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
-            <h3 className="text-lg font-semibold mb-2 text-foreground">
-              {t("orgChart.emptyTitle")}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {t("orgChart.emptyDesc")}
-            </p>
-            <Button onClick={() => (window.location.href = "/staff/add")}>
-              <User className="mr-2 h-4 w-4" />
-              {t("orgChart.addFirstEmployee")}
-            </Button>
-          </div>
+          <Card className="border-border/50">
+            <CardContent className="text-center py-16">
+              <div className="p-4 bg-blue-500/10 rounded-full w-fit mx-auto mb-4">
+                <Database className="h-12 w-12 text-blue-500" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2 text-foreground">
+                {t("orgChart.emptyTitle")}
+              </h3>
+              <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                {t("orgChart.emptyDesc")}
+              </p>
+              <Button
+                onClick={() => (window.location.href = "/staff/add")}
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+              >
+                <User className="mr-2 h-4 w-4" />
+                {t("orgChart.addFirstEmployee")}
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-8">
             {/* Apple-Style Organization Chart */}
-            <div className="bg-card rounded-lg shadow-sm border border-border p-12 mx-auto overflow-x-auto min-w-max">
+            <Card className="border-border/50 shadow-lg overflow-x-auto">
+              <CardContent className="p-12 min-w-max">
               <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex flex-col items-center space-y-8">
                   {/* 1. Executive Chain (Vertical) */}
@@ -857,7 +886,8 @@ export default function OrganizationChart() {
                   )}
                 </div>
               </DragDropContext>
-            </div>
+              </CardContent>
+            </Card>
           </div>
         )}
 
@@ -871,3 +901,4 @@ export default function OrganizationChart() {
     </div>
   );
 }
+

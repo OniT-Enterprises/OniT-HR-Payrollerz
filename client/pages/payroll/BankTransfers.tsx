@@ -427,6 +427,7 @@ export default function BankTransfers() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.bankTransfers} />
       <MainNavigation />
 
       <div className="p-6">

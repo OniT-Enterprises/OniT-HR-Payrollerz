@@ -488,59 +488,80 @@ export default function AddEmployee() {
       <SEO {...seoConfig.addEmployee} />
       <MainNavigation />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-500">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-400/20 rounded-full blur-3xl" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/people/employees")}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <UserPlus className="h-8 w-8 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">
-                {isEditMode
-                  ? t("addEmployee.header.editTitle")
-                  : t("addEmployee.header.addTitle")}
-              </h1>
-              <p className="text-muted-foreground text-sm">
-                {isEditMode
-                  ? t("addEmployee.header.editSubtitle")
-                  : t("addEmployee.header.addSubtitle")}
-              </p>
+        <div className="relative max-w-4xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-4 text-white/80" />
+
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate("/people/employees")}
+                className="text-white hover:bg-white/10"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <UserPlus className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  {isEditMode
+                    ? t("addEmployee.header.editTitle")
+                    : t("addEmployee.header.addTitle")}
+                </h1>
+                <p className="text-blue-100 mt-1">
+                  {isEditMode
+                    ? t("addEmployee.header.editSubtitle")
+                    : t("addEmployee.header.addSubtitle")}
+                </p>
+              </div>
+            </div>
+
+            {/* CSV Import */}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={downloadTemplate}
+                className="border-white/30 text-white hover:bg-white/10"
+              >
+                <FileDown className="h-4 w-4 mr-1" />
+                {t("addEmployee.buttons.template")}
+              </Button>
+              <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="bg-white text-blue-600 hover:bg-blue-50">
+                    <FileUp className="h-4 w-4 mr-1" />
+                    {t("addEmployee.buttons.import")}
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{t("addEmployee.import.title")}</DialogTitle>
+                    <DialogDescription>{t("addEmployee.import.description")}</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <Input type="file" accept=".csv" onChange={handleFileImport} />
+                    <Button variant="outline" onClick={downloadTemplate} className="w-full">
+                      <FileDown className="h-4 w-4 mr-2" />
+                      {t("addEmployee.buttons.downloadTemplateFirst")}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
           </div>
-
-          {/* CSV Import */}
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={downloadTemplate}>
-              <FileDown className="h-4 w-4 mr-1" />
-              {t("addEmployee.buttons.template")}
-            </Button>
-            <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <FileUp className="h-4 w-4 mr-1" />
-                  {t("addEmployee.buttons.import")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>{t("addEmployee.import.title")}</DialogTitle>
-                  <DialogDescription>{t("addEmployee.import.description")}</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4">
-                  <Input type="file" accept=".csv" onChange={handleFileImport} />
-                  <Button variant="outline" onClick={downloadTemplate} className="w-full">
-                    <FileDown className="h-4 w-4 mr-2" />
-                    {t("addEmployee.buttons.downloadTemplateFirst")}
-                  </Button>
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-6 py-8 -mt-6">
 
         {/* Column Mapper Dialog */}
         <Dialog open={showColumnMapper} onOpenChange={setShowColumnMapper}>
@@ -647,7 +668,7 @@ export default function AddEmployee() {
                     <input
                       type="checkbox"
                       id="appEligible"
-                      className="rounded"
+                      className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
                       checked={formData.appEligible}
                       onChange={e => handleInputChange("appEligible", e.target.checked)}
                     />
@@ -860,7 +881,7 @@ export default function AddEmployee() {
                   <input
                     type="checkbox"
                     id="isResident"
-                    className="rounded"
+                    className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
                     checked={formData.isResident}
                     onChange={e => handleInputChange("isResident", e.target.checked)}
                   />
@@ -1023,7 +1044,7 @@ export default function AddEmployee() {
             </div>
           </StepContent>
         </StepWizard>
-      </div>
+        </div>
     </div>
   );
 }

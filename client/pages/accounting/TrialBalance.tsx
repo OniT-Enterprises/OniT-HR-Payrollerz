@@ -41,6 +41,7 @@ import {
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEO, seoConfig } from "@/components/SEO";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -256,6 +257,7 @@ export default function TrialBalance() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.trialBalance} />
       <MainNavigation />
       <div className="p-6 max-w-7xl mx-auto space-y-6">
       <AutoBreadcrumb className="mb-2" />

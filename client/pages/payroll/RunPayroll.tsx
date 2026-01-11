@@ -581,6 +581,7 @@ export default function RunPayroll() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <SEO {...seoConfig.runPayroll} />
       <MainNavigation />
 
       <div className="p-6">

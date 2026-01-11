@@ -158,6 +158,7 @@ export default function PayrollDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.payroll} />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">

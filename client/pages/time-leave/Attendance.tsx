@@ -492,23 +492,33 @@ export default function Attendance() {
       <SEO {...seoConfig.attendance} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-cyan-500 to-teal-500">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-4 text-white/80" />
+
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                {t("timeLeave.attendance.title")}
-              </h1>
-              <p className="text-muted-foreground">
-                {t("timeLeave.attendance.subtitle")}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Clock className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  {t("timeLeave.attendance.title")}
+                </h1>
+                <p className="text-cyan-100 mt-1">
+                  {t("timeLeave.attendance.subtitle")}
+                </p>
+              </div>
             </div>
             <div className="flex gap-2">
               <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                 <DialogTrigger asChild>
-                  <Button variant="outline">
+                  <Button variant="outline" className="border-white/30 text-white hover:bg-white/10">
                     <Upload className="h-4 w-4 mr-2" />
                     {t("timeLeave.attendance.actions.import")}
                   </Button>
@@ -558,7 +568,7 @@ export default function Attendance() {
 
               <Dialog open={showMarkDialog} onOpenChange={setShowMarkDialog}>
                 <DialogTrigger asChild>
-                  <Button>
+                  <Button className="bg-white text-cyan-600 hover:bg-cyan-50">
                     <Plus className="h-4 w-4 mr-2" />
                     {t("timeLeave.attendance.actions.mark")}
                   </Button>
@@ -653,65 +663,84 @@ export default function Attendance() {
               </Dialog>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 -mt-8">
+          <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.total")}
-                  </span>
+                  </p>
+                  <p className="text-2xl font-bold">{stats.totalEmployees}</p>
                 </div>
-                <div className="text-2xl font-bold">{stats.totalEmployees}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-muted-foreground">
+                <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.present")}
-                  </span>
+                  </p>
+                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</p>
                 </div>
-                <div className="text-2xl font-bold text-green-600">{stats.present}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm text-muted-foreground">
+                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl">
+                  <CheckCircle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.late")}
-                  </span>
+                  </p>
+                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.late}</p>
                 </div>
-                <div className="text-2xl font-bold text-yellow-600">{stats.late}</div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-muted-foreground">
+                <div className="p-2.5 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl">
+                  <AlertTriangle className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.rate")}
-                  </span>
+                  </p>
+                  <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                    {stats.attendanceRate.toFixed(1)}%
+                  </p>
                 </div>
-                <div className="text-2xl font-bold text-blue-600">
-                  {stats.attendanceRate.toFixed(1)}%
+                <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
-          {/* Filters */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Filter className="h-5 w-5" />
-                {t("timeLeave.attendance.filters.title")}
-              </CardTitle>
-            </CardHeader>
+        {/* Filters */}
+        <Card className="border-border/50 mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Filter className="h-5 w-5" />
+              {t("timeLeave.attendance.filters.title")}
+            </CardTitle>
+          </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
@@ -772,23 +801,27 @@ export default function Attendance() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-end">
-                  <Button variant="outline" onClick={handleExportCSV} className="w-full">
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("timeLeave.attendance.actions.export")}
-                  </Button>
-                </div>
+              <div className="flex items-end">
+                <Button
+                  variant="outline"
+                  onClick={handleExportCSV}
+                  className="w-full"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("timeLeave.attendance.actions.export")}
+                </Button>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Attendance Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Clock className="h-5 w-5" />
-                {t("timeLeave.attendance.table.title")}
-              </CardTitle>
+        {/* Attendance Table */}
+        <Card className="border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              {t("timeLeave.attendance.table.title")}
+            </CardTitle>
               <CardDescription>
                 {t("timeLeave.attendance.table.summary", {
                   count: filteredRecords.length,
@@ -797,15 +830,17 @@ export default function Attendance() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {filteredRecords.length === 0 ? (
-                <div className="text-center py-12 text-muted-foreground">
-                  <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>{t("timeLeave.attendance.empty.title")}</p>
-                  <p className="text-sm">
-                    {t("timeLeave.attendance.empty.description")}
-                  </p>
+            {filteredRecords.length === 0 ? (
+              <div className="text-center py-12">
+                <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
+                  <Clock className="h-12 w-12 text-cyan-500" />
                 </div>
-              ) : (
+                <p className="font-medium text-foreground">{t("timeLeave.attendance.empty.title")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("timeLeave.attendance.empty.description")}
+                </p>
+              </div>
+            ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -864,10 +899,9 @@ export default function Attendance() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

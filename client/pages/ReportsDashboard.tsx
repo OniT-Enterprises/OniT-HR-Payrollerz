@@ -22,6 +22,7 @@ import {
   PieChart,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
+import { SEO, seoConfig } from "@/components/SEO";
 
 const theme = sectionThemes.reports;
 
@@ -78,6 +79,7 @@ export default function ReportsDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.reports} />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">

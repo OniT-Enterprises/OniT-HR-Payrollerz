@@ -16,10 +16,12 @@ import {
   TrendingUp,
   DollarSign,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function DepartmentReports() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.departmentReports} />
       <MainNavigation />
 
       <div className="p-6">

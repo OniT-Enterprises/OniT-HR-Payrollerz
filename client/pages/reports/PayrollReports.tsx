@@ -23,6 +23,7 @@ import {
   AlertCircle,
   User,
 } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function PayrollReports() {
   const [employees, setEmployees] = useState([]);
@@ -123,6 +124,7 @@ export default function PayrollReports() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.payrollReports} />
       <MainNavigation />
 
       <div className="p-6">

@@ -397,6 +397,7 @@ export default function DeductionsAdvances() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.deductions} />
       <MainNavigation />
 
       <div className="p-6">

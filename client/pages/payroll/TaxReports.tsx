@@ -294,6 +294,7 @@ export default function TaxReports() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.taxes} />
       <MainNavigation />
 
       <div className="p-6">

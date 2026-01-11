@@ -46,6 +46,7 @@ import {
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function GeneralLedger() {
   // State
@@ -86,18 +87,24 @@ export default function GeneralLedger() {
     loadAccounts();
   }, []);
 
+  // Get selected account details
+  const selectedAccount = useMemo(() => {
+    return accounts.find((a) => a.id === selectedAccountId);
+  }, [accounts, selectedAccountId]);
+
   // Load ledger entries when account or date range changes
   useEffect(() => {
     const loadLedgerEntries = async () => {
-      if (!selectedAccountId) {
+      if (!selectedAccount?.code) {
         setLedgerEntries([]);
         return;
       }
 
       setLoadingEntries(true);
       try {
+        // Query by account code since that's what we store in GL entries
         const entries = await accountingService.generalLedger.getEntriesByAccount(
-          selectedAccountId,
+          selectedAccount.code,
           { startDate, endDate }
         );
         setLedgerEntries(entries);
@@ -109,12 +116,7 @@ export default function GeneralLedger() {
     };
 
     loadLedgerEntries();
-  }, [selectedAccountId, startDate, endDate]);
-
-  // Get selected account details
-  const selectedAccount = useMemo(() => {
-    return accounts.find((a) => a.id === selectedAccountId);
-  }, [accounts, selectedAccountId]);
+  }, [selectedAccount?.code, startDate, endDate]);
 
   // Filter entries by search term
   const filteredEntries = useMemo(() => {
@@ -247,6 +249,7 @@ export default function GeneralLedger() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.generalLedger} />
       <MainNavigation />
       <div className="p-6 max-w-7xl mx-auto space-y-6">
       <AutoBreadcrumb className="mb-2" />

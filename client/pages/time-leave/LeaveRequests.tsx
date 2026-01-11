@@ -543,22 +543,32 @@ export default function LeaveRequests() {
       <SEO {...seoConfig.leave} />
       <MainNavigation />
 
-      <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-        <div className="max-w-7xl mx-auto space-y-6">
-          {/* Header */}
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-cyan-600 via-cyan-500 to-teal-500">
+        <div className="absolute inset-0 bg-grid-white/10" />
+        <div className="absolute top-0 right-0 w-96 h-96 bg-teal-400/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-cyan-400/20 rounded-full blur-3xl" />
+
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4 text-white/80" />
+
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">
-                {t("timeLeave.leaveRequests.title")}
-              </h1>
-              <p className="text-muted-foreground">
-                {t("timeLeave.leaveRequests.subtitle")}
-              </p>
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-white/20 backdrop-blur-sm rounded-xl">
+                <Calendar className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-white">
+                  {t("timeLeave.leaveRequests.title")}
+                </h1>
+                <p className="text-cyan-100">
+                  {t("timeLeave.leaveRequests.subtitle")}
+                </p>
+              </div>
             </div>
             <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
               <DialogTrigger asChild>
-                <Button>
+                <Button className="bg-white text-cyan-600 hover:bg-cyan-50">
                   <Plus className="h-4 w-4 mr-2" />
                   {t("timeLeave.leaveRequests.actions.newRequest")}
                 </Button>
@@ -801,66 +811,70 @@ export default function LeaveRequests() {
               </DialogContent>
             </Dialog>
           </div>
+        </div>
+      </div>
 
+      <div className="p-6">
+        <div className="max-w-7xl mx-auto space-y-6">
           {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <Card>
+          <div className="grid gap-4 md:grid-cols-4 -mt-8">
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-yellow-600">
-                      {stats.pending}
-                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t("timeLeave.leaveRequests.stats.pending")}
                     </p>
+                    <p className="text-2xl font-bold">{stats.pending}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-yellow-600 opacity-50" />
+                  <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
+                    <Clock className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-green-600">
-                      {stats.approved}
-                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t("timeLeave.leaveRequests.stats.approved")}
                     </p>
+                    <p className="text-2xl font-bold">{stats.approved}</p>
                   </div>
-                  <CalendarCheck className="h-8 w-8 text-green-600 opacity-50" />
+                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                    <CalendarCheck className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-blue-600">
-                      {stats.onLeaveToday}
-                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t("timeLeave.leaveRequests.stats.onLeaveToday")}
                     </p>
+                    <p className="text-2xl font-bold">{stats.onLeaveToday}</p>
                   </div>
-                  <Users className="h-8 w-8 text-blue-600 opacity-50" />
+                  <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
+                    <Users className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
               <CardContent className="pt-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-3xl font-bold text-red-600">
-                      {stats.rejected}
-                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t("timeLeave.leaveRequests.stats.rejected")}
                     </p>
+                    <p className="text-2xl font-bold">{stats.rejected}</p>
                   </div>
-                  <CalendarX className="h-8 w-8 text-red-600 opacity-50" />
+                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
+                    <CalendarX className="h-6 w-6 text-white" />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -892,10 +906,10 @@ export default function LeaveRequests() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5" />
+                    <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                     {t("timeLeave.leaveRequests.table.title")}
                   </CardTitle>
                   <CardDescription>
@@ -906,9 +920,11 @@ export default function LeaveRequests() {
                 </CardHeader>
                 <CardContent>
                   {filteredRequests.length === 0 ? (
-                    <div className="text-center py-12 text-muted-foreground">
-                      <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>{t("timeLeave.leaveRequests.table.empty")}</p>
+                    <div className="text-center py-12">
+                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl mb-4">
+                        <Calendar className="h-8 w-8 text-white" />
+                      </div>
+                      <p className="text-muted-foreground">{t("timeLeave.leaveRequests.table.empty")}</p>
                     </div>
                   ) : (
                     <Table>

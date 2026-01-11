@@ -164,7 +164,7 @@ export const sendHRChatMessage = async (
         model: "gpt-5-mini",
         messages: openAIMessages,
         temperature: 0.7,
-        max_tokens: 1000,
+        max_completion_tokens: 1000,
         response_format: { type: "json_object" },
       }),
     });

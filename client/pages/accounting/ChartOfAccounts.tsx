@@ -59,6 +59,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { accountingService } from "@/services/accountingService";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function ChartOfAccounts() {
   const { toast } = useToast();
@@ -411,6 +412,7 @@ export default function ChartOfAccounts() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
 
       <div className="p-6">

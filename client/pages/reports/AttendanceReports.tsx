@@ -10,10 +10,12 @@ import { Button } from "@/components/ui/button";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Clock, Download, FileText, TrendingUp } from "lucide-react";
+import { SEO, seoConfig } from "@/components/SEO";
 
 export default function AttendanceReports() {
   return (
     <div className="min-h-screen bg-background">
+      <SEO {...seoConfig.attendanceReports} />
       <MainNavigation />
 
       <div className="p-6">
