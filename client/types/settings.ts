@@ -337,6 +337,9 @@ export interface TenantSettings {
   // HR Admins are stored separately but linked
   hrAdminIds: string[];
 
+  // AI Assistant configuration
+  openaiApiKey?: string;
+
   // Setup wizard progress
   setupComplete: boolean;
   setupProgress: {

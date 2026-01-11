@@ -11,7 +11,7 @@ import {
   generateMessageId,
   detectNavigationIntent,
 } from '../services/hrChatService';
-import { collection, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
+import { collection, doc, getDoc, setDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { toast } from 'sonner';
 
@@ -365,11 +365,28 @@ Just ask me anything about your HR data or Timor-Leste employment law!`,
     }));
   }, []);
 
-  const setApiKey = useCallback((key: string) => {
-    localStorage.setItem('openai_api_key', key);
-    setState(prev => ({ ...prev, apiKey: key }));
-    toast.success('API key saved', { duration: 1500 });
-  }, []);
+  const setApiKey = useCallback(async (key: string) => {
+    // Save to Firestore for tenant-wide access
+    if (session?.tid && db) {
+      try {
+        const settingsRef = doc(db, 'tenants', session.tid, 'settings', 'chatbot');
+        await setDoc(settingsRef, { openaiApiKey: key }, { merge: true });
+        setState(prev => ({ ...prev, apiKey: key }));
+        toast.success('API key saved for all users', { duration: 2000 });
+      } catch (error) {
+        console.error('Failed to save API key:', error);
+        // Fallback to localStorage
+        localStorage.setItem('openai_api_key', key);
+        setState(prev => ({ ...prev, apiKey: key }));
+        toast.success('API key saved locally', { duration: 1500 });
+      }
+    } else {
+      // No tenant, save to localStorage
+      localStorage.setItem('openai_api_key', key);
+      setState(prev => ({ ...prev, apiKey: key }));
+      toast.success('API key saved', { duration: 1500 });
+    }
+  }, [session?.tid]);
 
   const refreshTenantData = useCallback(async () => {
     const data = await loadTenantData();
