@@ -49,8 +49,13 @@ export const useHRChatContext = () => {
 export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { currentUser } = useAuth();
-  const { currentTenant, userRole } = useTenant();
+  const { user } = useAuth();
+  const { session, availableTenants } = useTenant();
+
+  // Get tenant name from availableTenants or session config
+  const tenantName = session?.config?.name ||
+    availableTenants.find(t => t.id === session?.tid)?.name ||
+    'Company';
 
   const [state, setState] = useState<HRChatState>({
     isOpen: false,
@@ -60,11 +65,11 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     pendingAction: null,
     apiKey: null,
     context: {
-      tenantId: currentTenant?.id || '',
-      tenantName: currentTenant?.name || 'Company',
-      userId: currentUser?.uid || '',
-      userEmail: currentUser?.email || '',
-      userRole: userRole || 'viewer',
+      tenantId: session?.tid || '',
+      tenantName: tenantName,
+      userId: user?.uid || '',
+      userEmail: user?.email || '',
+      userRole: session?.role || 'viewer',
       currentPage: location.pathname,
     },
   });
@@ -80,9 +85,9 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       // Try tenant settings in Firestore
-      if (currentTenant?.id && db) {
+      if (session?.tid && db) {
         try {
-          const settingsRef = doc(db, 'tenants', currentTenant.id, 'settings', 'chatbot');
+          const settingsRef = doc(db, 'tenants', session.tid, 'settings', 'chatbot');
           const settingsDoc = await getDoc(settingsRef);
           if (settingsDoc.exists()) {
             const key = settingsDoc.data()?.openaiApiKey;
@@ -97,7 +102,7 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
 
     loadApiKey();
-  }, [currentTenant?.id]);
+  }, [session?.tid]);
 
   // Update context when user/tenant changes
   useEffect(() => {
@@ -105,15 +110,15 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       ...prev,
       context: {
         ...prev.context,
-        tenantId: currentTenant?.id || '',
-        tenantName: currentTenant?.name || 'Company',
-        userId: currentUser?.uid || '',
-        userEmail: currentUser?.email || '',
-        userRole: userRole || 'viewer',
+        tenantId: session?.tid || '',
+        tenantName: tenantName,
+        userId: user?.uid || '',
+        userEmail: user?.email || '',
+        userRole: session?.role || 'viewer',
         currentPage: location.pathname,
       },
     }));
-  }, [currentTenant, currentUser, location.pathname, userRole]);
+  }, [session, user, location.pathname, tenantName]);
 
   // Add welcome message on first open
   useEffect(() => {

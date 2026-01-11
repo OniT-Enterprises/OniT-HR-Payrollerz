@@ -584,8 +584,8 @@ export default function SeedDatabase() {
 
     // Create payroll run for last month
     try {
-      const lastMonth = new Date();
-      lastMonth.setMonth(lastMonth.getMonth() - 1);
+      const thisMonth = new Date();
+      thisMonth.setMonth(thisMonth.getMonth() - 1);
       const payrunRef = doc(collection(db!, getCollectionPath("payruns")));
 
       let totalGross = 0;
@@ -608,8 +608,8 @@ export default function SeedDatabase() {
 
       await setDoc(payrunRef, {
         id: payrunRef.id,
-        period: `${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`,
-        periodLabel: lastMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        period: `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`,
+        periodLabel: thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
         status: "completed",
         employeeCount: EMPLOYEES.length,
         totalGross,
@@ -683,16 +683,16 @@ export default function SeedDatabase() {
     addLog(`✓ Chart of Accounts: ${success} accounts created`);
 
     // Create sample journal entries
-    const lastMonth = new Date();
-    lastMonth.setMonth(lastMonth.getMonth() - 1);
-    lastMonth.setDate(1);
+    const currentYear = new Date().getFullYear();
+    const currentMonth = new Date().getMonth();
+    const thisMonth = new Date(currentYear, currentMonth, 1);
 
     const journalEntries = [
       // Opening balance entry
       {
-        date: new Date(2025, 0, 1),
-        reference: "OB-2025-001",
-        description: "Opening Balances for 2025",
+        date: new Date(currentYear, 0, 1),
+        reference: `OB-${currentYear}-001`,
+        description: `Opening Balances for ${currentYear}`,
         type: "opening",
         lines: [
           { accountCode: "1210", accountName: "BNU Operating Account", debit: 500000, credit: 0 },
@@ -705,9 +705,9 @@ export default function SeedDatabase() {
       },
       // Payroll expense entry
       {
-        date: lastMonth,
-        reference: `PAY-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}`,
-        description: `Payroll for ${lastMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+        date: thisMonth,
+        reference: `PAY-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`,
+        description: `Payroll for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
         type: "payroll",
         lines: [
           { accountCode: "5110", accountName: "Wages & Salaries", debit: 293000, credit: 0 },
@@ -720,8 +720,8 @@ export default function SeedDatabase() {
       },
       // Rent expense
       {
-        date: lastMonth,
-        reference: `EXP-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-001`,
+        date: thisMonth,
+        reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Monthly Office Rent - Dili Head Office",
         type: "expense",
         lines: [
@@ -731,8 +731,8 @@ export default function SeedDatabase() {
       },
       // Utilities
       {
-        date: lastMonth,
-        reference: `EXP-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-002`,
+        date: thisMonth,
+        reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-002`,
         description: "EDTL Electricity Bill",
         type: "expense",
         lines: [
@@ -742,8 +742,8 @@ export default function SeedDatabase() {
       },
       // Internet
       {
-        date: lastMonth,
-        reference: `EXP-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-003`,
+        date: thisMonth,
+        reference: `EXP-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-003`,
         description: "Telkomcel Internet Service",
         type: "expense",
         lines: [
@@ -753,8 +753,8 @@ export default function SeedDatabase() {
       },
       // Service revenue
       {
-        date: lastMonth,
-        reference: `REV-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-001`,
+        date: thisMonth,
+        reference: `REV-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Consulting Services - December 2025",
         type: "revenue",
         lines: [
@@ -764,8 +764,8 @@ export default function SeedDatabase() {
       },
       // Payment from client
       {
-        date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 15),
-        reference: `REC-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-001`,
+        date: new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 15),
+        reference: `REC-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
         description: "Payment received from Client - INV-2025-042",
         type: "receipt",
         lines: [
@@ -775,9 +775,9 @@ export default function SeedDatabase() {
       },
       // Payroll disbursement
       {
-        date: new Date(lastMonth.getFullYear(), lastMonth.getMonth(), 25),
-        reference: `PMT-${lastMonth.getFullYear()}-${String(lastMonth.getMonth() + 1).padStart(2, '0')}-001`,
-        description: `Salary payment for ${lastMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+        date: new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 25),
+        reference: `PMT-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
+        description: `Salary payment for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
         type: "payment",
         lines: [
           { accountCode: "2200", accountName: "Salaries Payable", debit: 264540, credit: 0 },

@@ -138,8 +138,8 @@ export default function LeaveRequests() {
       } catch (error) {
         console.error("Error loading data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load leave data. Please try again.",
+          title: t("timeLeave.leaveRequests.toast.errorTitle"),
+          description: t("timeLeave.leaveRequests.toast.loadFailed"),
           variant: "destructive",
         });
       } finally {
@@ -234,10 +234,12 @@ export default function LeaveRequests() {
       await leaveService.createLeaveRequest({
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-        department: employee.jobDetails?.department || "Unassigned",
+        department:
+          employee.jobDetails?.department ||
+          t("timeLeave.leaveRequests.dialog.unassigned"),
         departmentId: dept?.id || "",
         leaveType: formData.leaveType as LeaveType,
-        leaveTypeLabel: leaveType?.name || formData.leaveType,
+        leaveTypeLabel: getLeaveTypeLabel(formData.leaveType as LeaveType),
         startDate: formData.startDate,
         endDate: formData.endDate,
         duration: calculatedDuration,
