@@ -39,7 +39,7 @@ jobs:
           channelId: live
 
       - name: Deploy to Hetzner (payroll.naroman.tl)
-        uses: easingthemes/ssh-deploy@v5
+        uses: easingthemes/ssh-deploy@main
         with:
           SSH_PRIVATE_KEY: ${{ secrets.HETZNER_SSH_KEY }}
           REMOTE_HOST: ${{ secrets.HETZNER_HOST }}

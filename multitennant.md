@@ -1,4 +1,16 @@
- Here is Claude's plan:
+ 
+  If the webhook shows a red X, click on it to see the error. If it shows nothing, the webhook may not be set up correctly.
+
+  The settings should be:
+  - URL: https://payroll.naroman.tl/webhook/deploy
+  - Content type: application/json
+  - Secret: payroll-webhook-secret-2024
+  - Events: Just the push event
+
+
+
+
+Here is Claude's plan:
 ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌
  Multi-Tenancy SaaS Implementation Plan
 
