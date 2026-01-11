@@ -33,7 +33,6 @@ import {
   Briefcase,
   Save,
   ArrowLeft,
-  Sparkles,
   MapPin,
   DollarSign,
   Clock,
@@ -259,53 +258,30 @@ export default function CreateJobLocal() {
       <SEO {...seoConfig.jobs} />
       <MainNavigation />
 
-      <div className="p-6 lg:p-8">
-        <AutoBreadcrumb className="mb-6" />
-
-        <div className="max-w-4xl mx-auto">
-          {/* Hero Section */}
-          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8 animate-fade-up">
-            {/* Background gradient */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5" />
-
-            {/* Floating orb decoration */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-            <div className="relative p-8">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
-                <div className="flex items-start gap-4">
-                  {/* Gradient icon */}
-                  <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-                    <Briefcase className="h-6 w-6 text-white" />
-                  </div>
-
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Sparkles className="h-4 w-4 text-amber-500" />
-                      <span>{t("nav.hiring")}</span>
-                    </div>
-                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                      {t("hiring.createJob.title")}
-                    </h1>
-                    <p className="text-muted-foreground">
-                      {t("hiring.createJob.subtitle")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Back button */}
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/hiring")}
-                  className="gap-2 shadow-sm shrink-0"
-                >
-                  <ArrowLeft className="h-4 w-4" />
-                  {t("hiring.createJob.back")}
-                </Button>
+      {/* Hero Section */}
+      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
+                <Briefcase className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  {t("hiring.createJob.title")}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {t("hiring.createJob.subtitle")}
+                </p>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
+      <div className="p-6 lg:p-8">
+        <div className="max-w-4xl mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Details Card */}
             <Card className="border-border/50 animate-fade-up stagger-1">

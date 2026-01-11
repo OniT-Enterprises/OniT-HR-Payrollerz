@@ -86,7 +86,6 @@ export default function PayrollDashboard() {
       description: t("payroll.dashboard.links.runPayroll.description"),
       path: "/payroll/run",
       icon: Calculator,
-      color: "bg-emerald-500",
       primary: true,
     },
     {
@@ -94,35 +93,30 @@ export default function PayrollDashboard() {
       description: t("payroll.dashboard.links.history.description"),
       path: "/payroll/history",
       icon: FileText,
-      color: "bg-blue-500",
     },
     {
       label: t("payroll.dashboard.links.transfers.label"),
       description: t("payroll.dashboard.links.transfers.description"),
       path: "/payroll/transfers",
       icon: Banknote,
-      color: "bg-violet-500",
     },
     {
       label: t("payroll.dashboard.links.taxes.label"),
       description: t("payroll.dashboard.links.taxes.description"),
       path: "/payroll/taxes",
       icon: FileSpreadsheet,
-      color: "bg-amber-500",
     },
     {
       label: t("payroll.dashboard.links.benefits.label"),
       description: t("payroll.dashboard.links.benefits.description"),
       path: "/payroll/benefits",
       icon: Heart,
-      color: "bg-pink-500",
     },
     {
       label: t("payroll.dashboard.links.deductions.label"),
       description: t("payroll.dashboard.links.deductions.description"),
       path: "/payroll/deductions",
       icon: DollarSign,
-      color: "bg-red-500",
     },
   ];
 
@@ -167,33 +161,35 @@ export default function PayrollDashboard() {
       <SEO {...seoConfig.payroll} />
       <MainNavigation />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header with Section Accent */}
-        <div className={`-mx-6 px-6 py-6 mb-8 ${theme.bgSubtle} border-b ${theme.border}`}>
+      {/* Hero Section */}
+      <div className="border-b bg-green-50 dark:bg-green-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${theme.gradient} flex items-center justify-center shadow-lg`}>
-                <Calculator className="h-6 w-6 text-white" />
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
+                <Calculator className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("payroll.dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mt-1">
                   {t("payroll.dashboard.subtitle")}
                 </p>
               </div>
             </div>
-            <Button onClick={() => navigate("/payroll/run")} size="lg" className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
+            <Button onClick={() => navigate("/payroll/run")} size="lg" className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600">
               <Calculator className="h-5 w-5 mr-2" />
               {t("payroll.dashboard.actions.runPayroll")}
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Quick Stats */}
+      <div className="p-6 max-w-7xl mx-auto">
+
+        {/* Quick Stats - Semantic Colors */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
           <Card className={theme.borderLeft}>
             <CardContent className="pt-6">
@@ -204,8 +200,8 @@ export default function PayrollDashboard() {
                     {t("payroll.dashboard.stats.employees")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <Users className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -220,8 +216,8 @@ export default function PayrollDashboard() {
                     {t("payroll.dashboard.stats.monthlyPayroll")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <DollarSign className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-green-600" />
                 </div>
               </div>
             </CardContent>
@@ -236,12 +232,12 @@ export default function PayrollDashboard() {
                     {t("payroll.dashboard.stats.nextPayDate")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <Calendar className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
               {daysUntilPayday <= 7 && (
-                <Badge className={`mt-2 ${theme.bg} ${theme.text}`}>
+                <Badge className="mt-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                   {t("payroll.dashboard.stats.daysAway", {
                     count: daysUntilPayday,
                   })}
@@ -259,30 +255,30 @@ export default function PayrollDashboard() {
                     {t("payroll.dashboard.stats.lastPayroll")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <CheckCircle className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <CheckCircle className="h-6 w-6 text-emerald-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Payroll Links */}
+        {/* Payroll Links - Neutral Icons */}
         <div className="grid gap-4 md:grid-cols-3">
           {payrollLinks.map((link) => {
             const LinkIcon = link.icon;
             return (
               <Card
                 key={link.path}
-                className={`cursor-pointer hover:shadow-md transition-all ${
-                  link.primary ? "ring-2 ring-primary/20" : ""
+                className={`cursor-pointer hover:shadow-md transition-all border-l-4 border-l-green-500/50 hover:border-l-green-500 ${
+                  link.primary ? "ring-2 ring-green-500/20" : ""
                 }`}
                 onClick={() => navigate(link.path)}
               >
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    <div className={`h-12 w-12 rounded-lg ${link.color} flex items-center justify-center flex-shrink-0`}>
-                      <LinkIcon className="h-6 w-6 text-white" />
+                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <LinkIcon className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold flex items-center gap-2">

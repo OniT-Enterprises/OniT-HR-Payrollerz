@@ -102,69 +102,65 @@ Preference is persisted in localStorage.
 }
 ```
 
-### Module Gradient Colors
+### Module Theme Colors
 
-Each module has a signature gradient used for hero sections, buttons, and icons:
+Each module has a signature color palette used consistently across hero sections, buttons, borders, and icons:
 
-| Module | Gradient | Usage |
-|--------|----------|-------|
-| **Main/Dashboard** | `from-primary to-violet-500` | Primary actions |
-| **Hiring** | `from-emerald-500 to-teal-500` | Green/teal theme |
-| **Staff** | `from-blue-500 to-indigo-500` | Blue theme |
-| **Time & Leave** | `from-cyan-500 to-teal-500` | Cyan theme |
-| **Performance** | `from-orange-500 to-amber-500` | Orange theme |
-| **Payroll** | `from-green-500 to-emerald-500` | Green theme |
-| **Reports** | `from-violet-500 to-purple-500` | Purple theme |
+| Module | Tinted BG | Gradient | Border Accent |
+|--------|-----------|----------|---------------|
+| **People/Staff** | `bg-blue-50 dark:bg-blue-950/30` | `from-blue-500 to-indigo-500` | `border-l-blue-500` |
+| **Hiring** | `bg-emerald-50 dark:bg-emerald-950/30` | `from-emerald-500 to-teal-500` | `border-l-emerald-500` |
+| **Time & Leave** | `bg-cyan-50 dark:bg-cyan-950/30` | `from-cyan-500 to-teal-500` | `border-l-cyan-500` |
+| **Performance** | `bg-orange-50 dark:bg-orange-950/30` | `from-orange-500 to-amber-500` | `border-l-orange-500` |
+| **Payroll** | `bg-green-50 dark:bg-green-950/30` | `from-green-500 to-emerald-500` | `border-l-green-500` |
+| **Accounting** | `bg-orange-50 dark:bg-orange-950/30` | `from-orange-500 to-amber-500` | `border-l-orange-500` |
+| **Reports** | `bg-violet-50 dark:bg-violet-950/30` | `from-violet-500 to-purple-500` | `border-l-violet-500` |
 
 ---
 
 ## Page Layout
 
-### Hero Section Pattern
+### Hero Section Pattern (Clean Style)
 
-Every dashboard page has a hero section with gradient background:
+Every page has a hero section with a **tinted background** that extends under the nav through the breadcrumbs. Uses the module's theme color.
 
 ```tsx
 {/* Hero Section */}
-<div className="relative overflow-hidden border-b border-border/50">
-  {/* Background gradient */}
-  <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-violet-500/5" />
-
-  {/* Floating orb decoration */}
-  <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-br from-primary/10 to-violet-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-
-  <div className="relative px-6 py-8 lg:px-8">
-    <div className="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-6">
-      {/* Title area */}
-      <div className="flex items-start gap-4 animate-fade-up">
-        <div className="p-3 rounded-xl bg-gradient-to-br from-primary to-violet-500 shadow-lg shadow-primary/25">
-          <Icon className="h-6 w-6 text-white" />
+<div className="border-b bg-orange-50 dark:bg-orange-950/30">
+  <div className="max-w-7xl mx-auto px-6 py-8">
+    <AutoBreadcrumb className="mb-4" />
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-4">
+        {/* Gradient icon badge */}
+        <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+          <PageIcon className="h-8 w-8 text-white" />
         </div>
-        <div className="space-y-1">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-amber-500" />
-            <span>Section Label</span>
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight">Page Title</h1>
-          <p className="text-muted-foreground">Page description here</p>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground">Page Title</h1>
+          <p className="text-muted-foreground mt-1">Page description</p>
         </div>
       </div>
-
-      {/* Action buttons */}
-      <div className="flex items-center gap-3 animate-fade-up stagger-2">
-        <Button variant="outline" className="gap-2 shadow-sm">
-          <Icon className="h-4 w-4" />
-          Secondary Action
-        </Button>
-        <Button className="gap-2 bg-gradient-to-r from-primary to-violet-500 hover:from-primary/90 hover:to-violet-500/90 text-white shadow-lg shadow-primary/25">
-          <Plus className="h-4 w-4" />
-          Primary Action
-        </Button>
-      </div>
+      {/* Primary action button - uses module gradient */}
+      <Button className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+        <Plus className="h-4 w-4 mr-2" />
+        Primary Action
+      </Button>
     </div>
   </div>
 </div>
+
+{/* Main Content */}
+<div className="p-6 max-w-7xl mx-auto">
+  {/* Page content here */}
+</div>
 ```
+
+**Key Points:**
+- Tinted background uses module color (e.g., `bg-orange-50 dark:bg-orange-950/30`)
+- Breadcrumbs are **inside** the tinted area
+- Icon badge uses gradient with matching shadow
+- Title uses `text-foreground` (not white) for readability
+- Action button uses module gradient
 
 ---
 
@@ -201,6 +197,86 @@ Every dashboard page has a hero section with gradient background:
   </CardContent>
 </Card>
 ```
+
+---
+
+## Module Dashboard Pattern
+
+Module dashboards (e.g., `/accounting`, `/payroll`) have a specific visual hierarchy:
+
+### 1. Stat Cards - Use Semantic Colors
+
+Stat cards display key metrics. Use **semantic colors** that communicate meaning at a glance:
+
+```tsx
+const quickStats = [
+  {
+    label: "Total Assets",
+    value: "$245,000",
+    icon: DollarSign,
+    iconColor: "text-blue-600",      // Blue = stable/positive
+    iconBg: "bg-blue-100 dark:bg-blue-900/30",
+  },
+  {
+    label: "Total Liabilities",
+    value: "$82,500",
+    icon: ArrowUpDown,
+    iconColor: "text-red-600",       // Red = debt/outflow
+    iconBg: "bg-red-100 dark:bg-red-900/30",
+  },
+  {
+    label: "Net Income",
+    value: "$18,450",
+    icon: TrendingUp,
+    iconColor: "text-green-600",     // Green = profit/growth
+    iconBg: "bg-green-100 dark:bg-green-900/30",
+  },
+  {
+    label: "Pending Items",
+    value: "3",
+    icon: Clock,
+    iconColor: "text-amber-600",     // Amber = needs attention
+    iconBg: "bg-amber-100 dark:bg-amber-900/30",
+  },
+];
+```
+
+**Semantic Color Meanings:**
+- **Blue** - Assets, stable values, informational
+- **Green** - Profit, growth, positive outcomes
+- **Red** - Liabilities, debt, negative values
+- **Amber** - Pending, warnings, needs attention
+
+### 2. Link Cards - Use Neutral Icons
+
+Navigation link cards should be **visually secondary** to stat cards. Use neutral/muted icon styling with the module's border accent:
+
+```tsx
+<Card
+  className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-orange-500/50 hover:border-l-orange-500"
+  onClick={() => navigate(link.path)}
+>
+  <CardContent className="pt-6">
+    <div className="flex items-start gap-4">
+      {/* Neutral icon - doesn't compete with stats */}
+      <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+        <LinkIcon className="h-6 w-6 text-muted-foreground" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold">{link.title}</h3>
+        <p className="text-sm text-muted-foreground">{link.description}</p>
+      </div>
+      <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+    </div>
+  </CardContent>
+</Card>
+```
+
+**Why This Works:**
+1. **Visual hierarchy** - Stats pop, links are secondary
+2. **Semantic meaning** - Colors in stats communicate data meaning
+3. **Section identity** - Orange border accent ties cards to module theme
+4. **Avoids rainbow chaos** - Not every icon needs a unique bright color
 
 ---
 

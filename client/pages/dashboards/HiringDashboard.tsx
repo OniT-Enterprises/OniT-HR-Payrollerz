@@ -202,32 +202,35 @@ export default function HiringDashboard() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      {/* Clean Header */}
-      <div className="border-b border-border bg-card">
-        <div className="px-6 py-6 lg:px-8">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      {/* Hero Section */}
+      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
+                <Briefcase className="h-8 w-8 text-white" />
+              </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("dashboards.hiring.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
                   {t("dashboards.hiring.subtitle")}
                 </p>
               </div>
-              <div className="flex items-center gap-3">
-                <Button variant="outline" className="gap-2">
-                  <FileText className="h-4 w-4" />
-                  {t("dashboards.hiring.actions.viewApplications")}
-                </Button>
-                <Button
-                  onClick={() => navigate("/people/jobs")}
-                  className="gap-2"
-                >
-                  <Plus className="h-4 w-4" />
-                  {t("dashboards.hiring.actions.postJob")}
-                </Button>
-              </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button variant="outline" className="gap-2">
+                <FileText className="h-4 w-4" />
+                {t("dashboards.hiring.actions.viewApplications")}
+              </Button>
+              <Button
+                onClick={() => navigate("/people/jobs")}
+                className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+              >
+                <Plus className="h-4 w-4" />
+                {t("dashboards.hiring.actions.postJob")}
+              </Button>
             </div>
           </div>
         </div>

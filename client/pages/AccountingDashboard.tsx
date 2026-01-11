@@ -37,7 +37,6 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.links.chart.title"),
       description: t("accounting.dashboard.links.chart.description"),
       icon: BookOpen,
-      color: "bg-blue-500",
       path: "/accounting/chart-of-accounts",
       primary: true,
     },
@@ -46,7 +45,6 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.links.journal.title"),
       description: t("accounting.dashboard.links.journal.description"),
       icon: FileSpreadsheet,
-      color: "bg-emerald-500",
       path: "/accounting/journal-entries",
     },
     {
@@ -54,7 +52,6 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.links.ledger.title"),
       description: t("accounting.dashboard.links.ledger.description"),
       icon: Landmark,
-      color: "bg-violet-500",
       path: "/accounting/general-ledger",
     },
     {
@@ -62,7 +59,6 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.links.trial.title"),
       description: t("accounting.dashboard.links.trial.description"),
       icon: Scale,
-      color: "bg-amber-500",
       path: "/accounting/trial-balance",
     },
     {
@@ -70,7 +66,6 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.links.reports.title"),
       description: t("accounting.dashboard.links.reports.description"),
       icon: BarChart3,
-      color: "bg-pink-500",
       path: "/accounting/reports",
     },
   ];
@@ -80,29 +75,29 @@ export default function AccountingDashboard() {
       label: t("accounting.dashboard.stats.assets"),
       value: "$245,000",
       icon: DollarSign,
-      color: "text-blue-500",
-      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      iconColor: "text-blue-600",
+      iconBg: "bg-blue-100 dark:bg-blue-900/30",
     },
     {
       label: t("accounting.dashboard.stats.liabilities"),
       value: "$82,500",
       icon: ArrowUpDown,
-      color: "text-red-500",
-      bgColor: "bg-red-100 dark:bg-red-900/30",
+      iconColor: "text-red-600",
+      iconBg: "bg-red-100 dark:bg-red-900/30",
     },
     {
       label: t("accounting.dashboard.stats.netIncome"),
       value: "$18,450",
       icon: TrendingUp,
-      color: "text-emerald-500",
-      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+      iconColor: "text-green-600",
+      iconBg: "bg-green-100 dark:bg-green-900/30",
     },
     {
       label: t("accounting.dashboard.stats.pendingEntries"),
       value: "3",
       icon: FileSpreadsheet,
-      color: "text-amber-500",
-      bgColor: "bg-amber-100 dark:bg-amber-900/30",
+      iconColor: "text-amber-600",
+      iconBg: "bg-amber-100 dark:bg-amber-900/30",
     },
   ];
 
@@ -111,31 +106,33 @@ export default function AccountingDashboard() {
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header with Section Accent */}
-        <div className={`-mx-6 px-6 py-6 mb-8 ${theme.bgSubtle} border-b ${theme.border}`}>
+      {/* Hero Section */}
+      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${theme.gradient} flex items-center justify-center shadow-lg`}>
-                <Landmark className="h-6 w-6 text-white" />
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+                <Landmark className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("accounting.dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mt-1">
                   {t("accounting.dashboard.subtitle")}
                 </p>
               </div>
             </div>
-            <Button onClick={() => navigate("/accounting/journal-entries")} className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
+            <Button onClick={() => navigate("/accounting/journal-entries")} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
               <FileSpreadsheet className="h-4 w-4 mr-2" />
               {t("accounting.dashboard.actions.newEntry")}
             </Button>
           </div>
         </div>
+      </div>
+
+      <div className="p-6 max-w-7xl mx-auto">
 
         {/* Quick Stats */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
@@ -149,8 +146,8 @@ export default function AccountingDashboard() {
                       <p className="text-2xl font-bold">{stat.value}</p>
                       <p className="text-sm text-muted-foreground">{stat.label}</p>
                     </div>
-                    <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                      <StatIcon className={`h-6 w-6 ${theme.text}`} />
+                    <div className={`h-12 w-12 rounded-full ${stat.iconBg} flex items-center justify-center`}>
+                      <StatIcon className={`h-6 w-6 ${stat.iconColor}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -166,15 +163,15 @@ export default function AccountingDashboard() {
             return (
               <Card
                 key={link.id}
-                className={`cursor-pointer hover:shadow-md transition-all ${
-                  link.primary ? "ring-2 ring-primary/20" : ""
+                className={`cursor-pointer hover:shadow-md transition-all border-l-4 border-l-orange-500/50 hover:border-l-orange-500 ${
+                  link.primary ? "ring-2 ring-orange-500/20" : ""
                 }`}
                 onClick={() => navigate(link.path)}
               >
                 <CardContent className="pt-6">
                   <div className="flex items-start gap-4">
-                    <div className={`h-12 w-12 rounded-lg ${link.color} flex items-center justify-center flex-shrink-0`}>
-                      <LinkIcon className="h-6 w-6 text-white" />
+                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <LinkIcon className="h-6 w-6 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold">{link.title}</h3>

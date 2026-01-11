@@ -227,7 +227,7 @@ export default function Dashboard() {
           {/* Payroll Due */}
           <Card
             className={`cursor-pointer transition-all hover:shadow-md ${
-              daysUntilPayday <= 7 ? "border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20" : ""
+              daysUntilPayday <= 7 ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : ""
             }`}
             onClick={() => navigate("/payroll/run")}
           >
@@ -235,14 +235,14 @@ export default function Dashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <Calculator className="h-5 w-5 text-blue-500" />
+                    <Calculator className="h-5 w-5 text-green-500" />
                     <span className="font-semibold">Payroll</span>
                   </div>
                   <p className="text-3xl font-bold">{daysUntilPayday} days</p>
                   <p className="text-sm text-muted-foreground">until next pay date</p>
                 </div>
                 {daysUntilPayday <= 7 && (
-                  <Button size="sm">
+                  <Button size="sm" className="bg-green-500 hover:bg-green-600">
                     Run Payroll
                     <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
@@ -257,7 +257,7 @@ export default function Dashboard() {
               <div className="flex items-start justify-between">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <CalendarDays className="h-5 w-5 text-violet-500" />
+                    <CalendarDays className="h-5 w-5 text-cyan-500" />
                     <span className="font-semibold">On Leave Today</span>
                   </div>
                   <p className="text-3xl font-bold">{onLeaveToday}</p>
@@ -337,8 +337,8 @@ export default function Dashboard() {
                   <p className="text-3xl font-bold">{departmentCount}</p>
                   <p className="text-sm text-muted-foreground">Departments</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                  <Building className="h-6 w-6 text-violet-500" />
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-blue-500" />
                 </div>
               </div>
             </CardContent>
@@ -464,10 +464,10 @@ export default function Dashboard() {
 
                 <Button
                   variant="outline"
-                  className="h-auto py-4 flex-col items-start border-l-4 border-l-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                  className="h-auto py-4 flex-col items-start border-l-4 border-l-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/30"
                   onClick={() => navigate("/reports")}
                 >
-                  <FileText className="h-6 w-6 mb-2 text-purple-500" />
+                  <FileText className="h-6 w-6 mb-2 text-violet-500" />
                   <span className="font-semibold">Reports</span>
                   <span className="text-xs text-muted-foreground">Analytics & exports</span>
                 </Button>

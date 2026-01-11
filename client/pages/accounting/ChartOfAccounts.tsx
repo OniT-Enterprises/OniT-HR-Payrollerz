@@ -415,23 +415,24 @@ export default function ChartOfAccounts() {
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <AutoBreadcrumb className="mb-6" />
-          {/* Header */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <BookOpen className="h-8 w-8 text-emerald-500" />
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">
-                    Chart of Accounts
-                  </h1>
-                  <p className="text-gray-600">
-                    Plano de Contas - Manage your accounting structure
-                  </p>
-                </div>
+      {/* Hero Section */}
+      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+                <BookOpen className="h-8 w-8 text-white" />
               </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">
+                  Chart of Accounts
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  Plano de Contas - Manage your accounting structure
+                </p>
+              </div>
+            </div>
               <div className="flex gap-2">
                 {accounts.length === 0 && (
                   <Button
@@ -454,7 +455,7 @@ export default function ChartOfAccounts() {
                 )}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingAccount(null); resetForm(); }}>
+                    <Button onClick={() => { setEditingAccount(null); resetForm(); }} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
                       <Plus className="h-4 w-4 mr-2" />
                       Add Account
                     </Button>
@@ -589,10 +590,12 @@ export default function ChartOfAccounts() {
                   </DialogContent>
                 </Dialog>
               </div>
-            </div>
           </div>
+        </div>
+      </div>
 
-          {/* Summary Cards */}
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Summary Cards */}
           <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
@@ -718,7 +721,6 @@ export default function ChartOfAccounts() {
               )}
             </CardContent>
           </Card>
-        </div>
       </div>
     </div>
   );

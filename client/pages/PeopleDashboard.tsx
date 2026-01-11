@@ -222,33 +222,35 @@ export default function PeopleDashboard() {
       <SEO {...seoConfig.people} />
       <MainNavigation />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header with Section Accent */}
-        <div className={`-mx-6 px-6 py-6 mb-8 ${theme.bgSubtle} border-b ${theme.border}`}>
+      {/* Hero Section */}
+      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${theme.gradient} flex items-center justify-center shadow-lg`}>
-                <Users className="h-6 w-6 text-white" />
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
+                <Users className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold tracking-tight">
+                <h1 className="text-3xl font-bold text-foreground">
                   {t("people.dashboard.title")}
                 </h1>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground mt-1">
                   {t("people.dashboard.subtitle")}
                 </p>
               </div>
             </div>
-            <Button onClick={() => navigate("/people/add")} size="lg" className={`bg-gradient-to-r ${theme.gradient} hover:opacity-90`}>
+            <Button onClick={() => navigate("/people/add")} size="lg" className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600">
               <UserPlus className="h-5 w-5 mr-2" />
               {t("people.dashboard.actions.addEmployee")}
             </Button>
           </div>
         </div>
+      </div>
 
-        {/* Quick Stats */}
+      <div className="p-6 max-w-7xl mx-auto">
+
+        {/* Quick Stats - Semantic Colors */}
         <div className="grid gap-4 md:grid-cols-4 mb-8">
           <Card className={`cursor-pointer hover:shadow-md transition-shadow ${theme.borderLeft}`} onClick={() => navigate("/people/employees")}>
             <CardContent className="pt-6">
@@ -259,8 +261,8 @@ export default function PeopleDashboard() {
                     {t("people.dashboard.stats.activeEmployees")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <Users className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -275,8 +277,8 @@ export default function PeopleDashboard() {
                     {t("people.dashboard.stats.departments")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <Building className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-indigo-600" />
                 </div>
               </div>
             </CardContent>
@@ -291,12 +293,12 @@ export default function PeopleDashboard() {
                     {t("people.dashboard.stats.pendingLeave")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <Heart className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <Heart className="h-6 w-6 text-amber-600" />
                 </div>
               </div>
               {stats.pendingLeave > 0 && (
-                <Badge className={`mt-2 ${theme.bg} ${theme.text}`}>
+                <Badge className="mt-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
                   {t("people.dashboard.stats.needsReview")}
                 </Badge>
               )}
@@ -312,24 +314,24 @@ export default function PeopleDashboard() {
                     {t("people.dashboard.stats.onLeaveToday")}
                   </p>
                 </div>
-                <div className={`h-12 w-12 rounded-full ${theme.bg} flex items-center justify-center`}>
-                  <CalendarDays className={`h-6 w-6 ${theme.text}`} />
+                <div className="h-12 w-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                  <CalendarDays className="h-6 w-6 text-cyan-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Section Cards */}
+        {/* Section Cards - Neutral Icons */}
         <div className="grid gap-6 md:grid-cols-2">
           {sections.map((section) => {
             const SectionIcon = section.icon;
             return (
-              <Card key={section.id} className="overflow-hidden">
+              <Card key={section.id} className="overflow-hidden border-l-4 border-l-blue-500/50">
                 <CardHeader className="pb-3">
                   <div className="flex items-center gap-3">
-                    <div className={`h-10 w-10 rounded-lg ${section.color} flex items-center justify-center`}>
-                      <SectionIcon className="h-5 w-5 text-white" />
+                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                      <SectionIcon className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div>
                       <CardTitle className="text-lg">{section.title}</CardTitle>

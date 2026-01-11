@@ -259,27 +259,38 @@ export default function TrialBalance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.trialBalance} />
       <MainNavigation />
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
-      <AutoBreadcrumb className="mb-2" />
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Trial Balance</h1>
-          <p className="text-muted-foreground">
-            Verify that debits equal credits across all accounts
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handlePrint} disabled={filteredRows.length === 0}>
-            <Printer className="mr-2 h-4 w-4" />
-            Print
-          </Button>
-          <Button onClick={exportToCSV} disabled={filteredRows.length === 0}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
+
+      {/* Hero Section */}
+      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+                <Scale className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Trial Balance</h1>
+                <p className="text-muted-foreground mt-1">
+                  Verify that debits equal credits across all accounts
+                </p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handlePrint} disabled={filteredRows.length === 0}>
+                <Printer className="mr-2 h-4 w-4" />
+                Print
+              </Button>
+              <Button onClick={exportToCSV} disabled={filteredRows.length === 0}>
+                <Download className="mr-2 h-4 w-4" />
+                Export CSV
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
+
+      <div className="p-6 max-w-7xl mx-auto space-y-6">
 
       {/* Generate Controls */}
       <Card>

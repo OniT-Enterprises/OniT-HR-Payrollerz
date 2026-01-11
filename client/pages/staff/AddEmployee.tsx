@@ -55,7 +55,6 @@ import {
   Briefcase,
   DollarSign,
   FileText,
-  ArrowLeft,
   FileDown,
   FileUp,
   Info,
@@ -474,7 +473,7 @@ export default function AddEmployee() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-5xl mx-auto">
           <Skeleton className="h-8 w-64 mb-6" />
           <Skeleton className="h-20 w-full mb-6" />
           <Skeleton className="h-96 w-full" />
@@ -489,19 +488,12 @@ export default function AddEmployee() {
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="border-b bg-card">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
+        <div className="max-w-5xl mx-auto px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
 
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/people/employees")}
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
               <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
                 <UserPlus className="h-8 w-8 text-white" />
               </div>
@@ -519,20 +511,19 @@ export default function AddEmployee() {
               </div>
             </div>
 
-            {/* CSV Import */}
+            {/* Actions */}
             <div className="flex gap-2">
               <Button
                 variant="outline"
-                size="sm"
                 onClick={downloadTemplate}
               >
-                <FileDown className="h-4 w-4 mr-1" />
+                <FileDown className="h-4 w-4 mr-2" />
                 {t("addEmployee.buttons.template")}
               </Button>
               <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
-                    <FileUp className="h-4 w-4 mr-1" />
+                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
+                    <FileUp className="h-4 w-4 mr-2" />
                     {t("addEmployee.buttons.import")}
                   </Button>
                 </DialogTrigger>
@@ -555,7 +546,7 @@ export default function AddEmployee() {
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8 -mt-6">
+      <div className="max-w-5xl mx-auto px-6 py-8 -mt-6">
 
         {/* Column Mapper Dialog */}
         <Dialog open={showColumnMapper} onOpenChange={setShowColumnMapper}>

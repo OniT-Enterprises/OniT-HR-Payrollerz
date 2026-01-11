@@ -6,11 +6,12 @@ import {
   HRChatMessage,
   HRChatAction,
   HRChatContext as HRChatContextType,
+  TenantData,
   sendHRChatMessage,
   generateMessageId,
   detectNavigationIntent,
 } from '../services/hrChatService';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, where, orderBy, limit } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import { toast } from 'sonner';
 
@@ -22,6 +23,7 @@ interface HRChatState {
   pendingAction: HRChatAction | null;
   context: HRChatContextType;
   apiKey: string | null;
+  tenantData: TenantData | null;
 }
 
 interface HRChatContextValue extends HRChatState {
@@ -34,6 +36,7 @@ interface HRChatContextValue extends HRChatState {
   cancelAction: () => void;
   clearMessages: () => void;
   setApiKey: (key: string) => void;
+  refreshTenantData: () => Promise<void>;
 }
 
 const HRChatContextProvider = createContext<HRChatContextValue | null>(null);
@@ -44,6 +47,17 @@ export const useHRChatContext = () => {
     throw new Error('useHRChatContext must be used within a HRChatProvider');
   }
   return context;
+};
+
+// Helper to format dates safely
+const formatDate = (date: unknown): string => {
+  if (!date) return '';
+  if (typeof date === 'string') return date;
+  if (date && typeof date === 'object' && 'toDate' in date) {
+    return (date as { toDate: () => Date }).toDate().toISOString().split('T')[0];
+  }
+  if (date instanceof Date) return date.toISOString().split('T')[0];
+  return '';
 };
 
 export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -64,6 +78,7 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     isLoading: false,
     pendingAction: null,
     apiKey: null,
+    tenantData: null,
     context: {
       tenantId: session?.tid || '',
       tenantName: tenantName,
@@ -73,6 +88,144 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       currentPage: location.pathname,
     },
   });
+
+  // Load all tenant data from Firestore
+  const loadTenantData = useCallback(async (): Promise<TenantData | null> => {
+    if (!session?.tid || !db) return null;
+
+    try {
+      const tenantId = session.tid;
+      const tenantRef = collection(db, 'tenants', tenantId, 'employees');
+
+      // Load employees
+      const employeesSnap = await getDocs(tenantRef);
+      const employees = employeesSnap.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          name: `${data.personalInfo?.firstName || ''} ${data.personalInfo?.lastName || ''}`.trim() || 'Unknown',
+          email: data.personalInfo?.email || data.email || '',
+          position: data.jobDetails?.position || data.position || 'N/A',
+          department: data.jobDetails?.department || data.department || 'N/A',
+          status: data.status || 'active',
+          salary: data.compensation?.monthlySalary || data.salary || 0,
+          hireDate: formatDate(data.jobDetails?.hireDate || data.hireDate),
+        };
+      });
+
+      // Load departments
+      const deptRef = collection(db, 'tenants', tenantId, 'departments');
+      const deptSnap = await getDocs(deptRef);
+      const departments = deptSnap.docs.map(doc => {
+        const data = doc.data();
+        const deptEmployees = employees.filter(e => e.department === data.name);
+        return {
+          id: doc.id,
+          name: data.name || 'Unknown',
+          managerId: data.managerId,
+          employeeCount: deptEmployees.length,
+        };
+      });
+
+      // Load pending leave requests
+      const leaveRef = collection(db, 'tenants', tenantId, 'leaveRequests');
+      const pendingLeaveQuery = query(leaveRef, where('status', '==', 'pending'), limit(20));
+      const leaveSnap = await getDocs(pendingLeaveQuery);
+      const pendingLeaveRequests = leaveSnap.docs.map(doc => {
+        const data = doc.data();
+        const employee = employees.find(e => e.id === data.employeeId);
+        return {
+          id: doc.id,
+          employeeName: employee?.name || data.employeeName || 'Unknown',
+          type: data.type || data.leaveType || 'Leave',
+          startDate: formatDate(data.startDate),
+          endDate: formatDate(data.endDate),
+          status: data.status || 'pending',
+        };
+      });
+
+      // Load recent payroll runs
+      const payrunRef = collection(db, 'tenants', tenantId, 'payruns');
+      const payrunQuery = query(payrunRef, orderBy('createdAt', 'desc'), limit(5));
+      let recentPayruns: TenantData['recentPayruns'] = [];
+      try {
+        const payrunSnap = await getDocs(payrunQuery);
+        recentPayruns = payrunSnap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            period: data.period || data.name || 'Unknown Period',
+            status: data.status || 'unknown',
+            totalAmount: data.totalAmount || data.totalGross || 0,
+            employeeCount: data.employeeCount || data.payslips?.length || 0,
+          };
+        });
+      } catch {
+        // Payroll collection might not exist yet
+      }
+
+      // Load open jobs
+      const jobsRef = collection(db, 'tenants', tenantId, 'jobs');
+      const openJobsQuery = query(jobsRef, where('status', '==', 'open'), limit(10));
+      let openJobs: TenantData['openJobs'] = [];
+      try {
+        const jobsSnap = await getDocs(openJobsQuery);
+        openJobs = jobsSnap.docs.map(doc => {
+          const data = doc.data();
+          return {
+            id: doc.id,
+            title: data.title || 'Untitled Position',
+            department: data.department || 'N/A',
+            applicants: data.applicantCount || 0,
+          };
+        });
+      } catch {
+        // Jobs collection might not exist yet
+      }
+
+      // Calculate stats
+      const activeEmployees = employees.filter(e => e.status === 'active');
+      const monthlyPayroll = activeEmployees.reduce((sum, e) => sum + (e.salary || 0), 0);
+
+      // Check who's on leave today
+      const today = new Date().toISOString().split('T')[0];
+      const allLeaveRef = collection(db, 'tenants', tenantId, 'leaveRequests');
+      const approvedLeaveQuery = query(allLeaveRef, where('status', '==', 'approved'));
+      let onLeaveToday = 0;
+      try {
+        const approvedSnap = await getDocs(approvedLeaveQuery);
+        approvedSnap.docs.forEach(doc => {
+          const data = doc.data();
+          const start = formatDate(data.startDate);
+          const end = formatDate(data.endDate);
+          if (start <= today && end >= today) {
+            onLeaveToday++;
+          }
+        });
+      } catch {
+        // Leave might not exist
+      }
+
+      return {
+        employees,
+        departments,
+        pendingLeaveRequests,
+        recentPayruns,
+        openJobs,
+        stats: {
+          totalEmployees: employees.length,
+          activeEmployees: activeEmployees.length,
+          totalDepartments: departments.length,
+          pendingLeaveCount: pendingLeaveRequests.length,
+          onLeaveToday,
+          monthlyPayroll,
+        },
+      };
+    } catch (error) {
+      console.error('Failed to load tenant data for chat:', error);
+      return null;
+    }
+  }, [session?.tid]);
 
   // Load API key from tenant settings or localStorage
   useEffect(() => {
@@ -111,6 +264,17 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     loadApiKey();
   }, [session?.tid]);
 
+  // Load tenant data when chat opens or tenant changes
+  useEffect(() => {
+    if (state.isOpen && session?.tid) {
+      loadTenantData().then(data => {
+        if (data) {
+          setState(prev => ({ ...prev, tenantData: data }));
+        }
+      });
+    }
+  }, [state.isOpen, session?.tid, loadTenantData]);
+
   // Update context when user/tenant changes
   useEffect(() => {
     setState(prev => ({
@@ -130,15 +294,26 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   // Add welcome message on first open
   useEffect(() => {
     if (state.isOpen && state.messages.length === 0) {
+      const stats = state.tenantData?.stats;
+      const statsInfo = stats
+        ? `\n\nI can see you have **${stats.activeEmployees} active employees** across **${stats.totalDepartments} departments**${stats.pendingLeaveCount > 0 ? `, with **${stats.pendingLeaveCount} pending leave requests**` : ''}.`
+        : '';
+
       const welcomeMessage: HRChatMessage = {
         id: generateMessageId(),
         role: 'assistant',
-        content: `Bondia! I'm your HR/Payroll assistant for ${state.context.tenantName || 'your company'}. I can help you with:
+        content: `Bondia! I'm your HR/Payroll assistant for **${state.context.tenantName || 'your company'}**. I have full access to your company data and can help with:${statsInfo}
+
+**Data & Analytics**
+- "How many employees do we have?"
+- "Who's on leave today?"
+- "Show me pending leave requests"
+- "What's our total payroll cost?"
 
 **Tax & Payroll Calculations**
-- "How much tax on a $1,200 salary?"
-- "Calculate net pay for $800 gross"
-- "What's the INSS contribution?"
+- "Calculate tax on a $1,200 salary"
+- "What's the net pay for $800 gross?"
+- "Calculate INSS contribution"
 
 **Timor-Leste Labor Law**
 - "Is per diem taxable?"
@@ -148,9 +323,9 @@ export const HRChatProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 **Navigation**
 - "Take me to run payroll"
 - "Go to employee list"
-- "Open tax reports"
+- "Open leave requests"
 
-Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
+Just ask me anything about your HR data or Timor-Leste employment law!`,
         timestamp: new Date(),
       };
       setState(prev => ({
@@ -158,7 +333,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
         messages: [welcomeMessage],
       }));
     }
-  }, [state.isOpen, state.messages.length, state.context.tenantName]);
+  }, [state.isOpen, state.messages.length, state.context.tenantName, state.tenantData]);
 
   const toggleChat = useCallback(() => {
     setState(prev => ({
@@ -195,6 +370,13 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
     setState(prev => ({ ...prev, apiKey: key }));
     toast.success('API key saved', { duration: 1500 });
   }, []);
+
+  const refreshTenantData = useCallback(async () => {
+    const data = await loadTenantData();
+    if (data) {
+      setState(prev => ({ ...prev, tenantData: data }));
+    }
+  }, [loadTenantData]);
 
   const sendMessage = useCallback(async (content: string) => {
     if (!content.trim()) return;
@@ -234,12 +416,16 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
         return;
       }
 
-      // Send to OpenAI
+      // Refresh tenant data before sending message for most up-to-date info
+      const freshData = await loadTenantData();
+
+      // Send to OpenAI with tenant data
       const response = await sendHRChatMessage(
         content,
         state.context,
         state.messages,
-        state.apiKey
+        state.apiKey,
+        freshData || state.tenantData || undefined
       );
 
       const assistantMessage: HRChatMessage = {
@@ -261,6 +447,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
         messages: [...prev.messages, assistantMessage],
         isLoading: false,
         pendingAction: response.action?.type === 'clarification' ? response.action : null,
+        tenantData: freshData || prev.tenantData,
       }));
     } catch (error: unknown) {
       console.error('HR Chat error:', error);
@@ -279,7 +466,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
         isLoading: false,
       }));
     }
-  }, [state.context, state.messages, state.apiKey, navigate]);
+  }, [state.context, state.messages, state.apiKey, state.tenantData, navigate, loadTenantData]);
 
   const confirmAction = useCallback(async () => {
     if (!state.pendingAction) return;
@@ -313,6 +500,7 @@ Just ask me anything about HR, payroll, or Timor-Leste employment law!`,
     cancelAction,
     clearMessages,
     setApiKey,
+    refreshTenantData,
   };
 
   return (
