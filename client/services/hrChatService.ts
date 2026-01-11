@@ -385,7 +385,7 @@ export const sendHRChatMessage = async (
   try {
     if (!apiKey) {
       return {
-        message: "AI assistant is not configured. Please add your OpenAI API key in Settings → AI Assistant.",
+        message: "AI assistant is not configured. Click the ⚙️ gear icon above to add your OpenAI API key.",
       };
     }
 
