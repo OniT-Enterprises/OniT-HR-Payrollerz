@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { candidateService, type Candidate } from "@/services/candidateService";
-import DataSourceIndicator from "@/components/DataSourceIndicator";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -22,7 +21,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Search,
@@ -259,7 +259,7 @@ export default function CandidateSelection() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="flex items-center justify-between mb-6">
@@ -272,7 +272,6 @@ export default function CandidateSelection() {
               </p>
             </div>
           </div>
-          <DataSourceIndicator />
         </div>
 
         {/* Statistics moved under title */}
@@ -538,9 +537,28 @@ export default function CandidateSelection() {
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="flex items-center justify-center p-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                <span className="ml-3">Loading candidates...</span>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32 mb-2" />
+                      <Skeleton className="h-3 w-48 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-4 w-10" />
+                    <Skeleton className="h-5 w-12" />
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-8 w-16" />
+                    <div className="flex flex-col gap-1">
+                      <Skeleton className="h-8 w-20" />
+                      <Skeleton className="h-8 w-20" />
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="overflow-x-auto">

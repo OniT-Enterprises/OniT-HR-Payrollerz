@@ -1,360 +1,467 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
-import { SimpleLogin } from "@/components/SimpleLogin";
+import { Skeleton } from "@/components/ui/skeleton";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { employeeService, type Employee } from "@/services/employeeService";
+import { departmentService } from "@/services/departmentService";
 import {
   Users,
   DollarSign,
-  Clock,
+  Building,
   TrendingUp,
-  Calendar,
-  Download,
   Plus,
-  ArrowUpRight,
-  ArrowDownRight,
-  Minus,
+  ChevronRight,
+  Clock,
+  FileText,
 } from "lucide-react";
 
-export default function Dashboard() {
-  // Local state for dashboard data
-  const [dashboardData, setDashboardData] = useState({
-    totalEmployees: 42,
-    monthlyPayroll: 1247800,
-    hoursThisWeek: 9856,
-    openPositions: 18,
-  });
-
-  const stats = [
-    {
-      title: "Total Employees",
-      value: dashboardData.totalEmployees.toString(),
-      change: "+3",
-      changeType: "positive" as const,
-      icon: <Users className="h-5 w-5" />,
-    },
-    {
-      title: "Monthly Payroll",
-      value: `$${dashboardData.monthlyPayroll.toLocaleString()}`,
-      change: "+8.2%",
-      changeType: "positive" as const,
-      icon: <DollarSign className="h-5 w-5" />,
-    },
-    {
-      title: "Hours This Week",
-      value: dashboardData.hoursThisWeek.toLocaleString(),
-      change: "-2.1%",
-      changeType: "negative" as const,
-      icon: <Clock className="h-5 w-5" />,
-    },
-    {
-      title: "Open Positions",
-      value: dashboardData.openPositions.toString(),
-      change: "+5",
-      changeType: "neutral" as const,
-      icon: <TrendingUp className="h-5 w-5" />,
-    },
-  ];
-
-  const recentPayrolls = [
-    {
-      period: "November 2024",
-      amount: "$1,247,800",
-      status: "completed",
-      employees: 42,
-    },
-    {
-      period: "October 2024",
-      amount: "$1,198,250",
-      status: "completed",
-      employees: 41,
-    },
-    {
-      period: "September 2024",
-      amount: "$1,156,900",
-      status: "completed",
-      employees: 39,
-    },
-  ];
-
-  const upcomingTasks = [
-    {
-      task: "Process December Payroll",
-      dueDate: "Dec 31, 2024",
-      priority: "high",
-    },
-    {
-      task: "Year-end Tax Reports",
-      dueDate: "Jan 15, 2025",
-      priority: "high",
-    },
-    {
-      task: "Benefits Enrollment Review",
-      dueDate: "Dec 15, 2024",
-      priority: "medium",
-    },
-    {
-      task: "Q4 Performance Reviews",
-      dueDate: "Dec 20, 2024",
-      priority: "medium",
-    },
-  ];
-
-  const recentHires = [
-    {
-      name: "Sarah Johnson",
-      position: "Software Engineer",
-      department: "Engineering",
-      startDate: "Dec 2, 2024",
-      avatar: "/api/placeholder/32/32",
-    },
-    {
-      name: "Michael Chen",
-      position: "Product Manager",
-      department: "Product",
-      startDate: "Nov 28, 2024",
-      avatar: "/api/placeholder/32/32",
-    },
-    {
-      name: "Emily Rodriguez",
-      position: "UX Designer",
-      department: "Design",
-      startDate: "Nov 25, 2024",
-      avatar: "/api/placeholder/32/32",
-    },
-  ];
-
+function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
-
-      <div className="p-6">
-        {/* Simple Login Component */}
-        <SimpleLogin />
-
+      <MainNavigation />
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Header Skeleton */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold">HR Dashboard</h1>
-            <p className="text-muted-foreground">
-              Welcome back! Here's what's happening with your HR operations.
-            </p>
+            <Skeleton className="h-8 w-40 mb-2" />
+            <Skeleton className="h-5 w-64" />
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export
-            </Button>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Employee
-            </Button>
-          </div>
+          <Skeleton className="h-10 w-36" />
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {stats.map((stat, index) => (
-            <Card key={index}>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">
-                  {stat.title}
-                </CardTitle>
-                <div className="text-muted-foreground">{stat.icon}</div>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <div className="flex items-center text-xs text-muted-foreground">
-                  {stat.changeType === "positive" && (
-                    <ArrowUpRight className="h-3 w-3 text-green-500 mr-1" />
-                  )}
-                  {stat.changeType === "negative" && (
-                    <ArrowDownRight className="h-3 w-3 text-red-500 mr-1" />
-                  )}
-                  {stat.changeType === "neutral" && (
-                    <Minus className="h-3 w-3 text-gray-500 mr-1" />
-                  )}
-                  <span
-                    className={
-                      stat.changeType === "positive"
-                        ? "text-green-500"
-                        : stat.changeType === "negative"
-                          ? "text-red-500"
-                          : "text-gray-500"
-                    }
-                  >
-                    {stat.change}
-                  </span>
-                  <span className="ml-1">from last month</span>
+        {/* Stats Skeleton */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-5">
+                <div className="flex items-center justify-between mb-3">
+                  <Skeleton className="h-4 w-28" />
+                  <Skeleton className="h-5 w-5 rounded" />
                 </div>
+                <Skeleton className="h-9 w-20 mb-2" />
+                <Skeleton className="h-4 w-24" />
               </CardContent>
             </Card>
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Payroll Progress */}
-          <Card>
-            <CardHeader>
-              <CardTitle>December Payroll Progress</CardTitle>
-              <CardDescription>
-                Track the current payroll processing status
-              </CardDescription>
+        {/* Main Content Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-3">
+              <Skeleton className="h-6 w-48" />
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Employee Data Review</span>
-                  <span>100%</span>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i}>
+                  <div className="flex justify-between mb-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                  <Skeleton className="h-2 w-full rounded-full" />
                 </div>
-                <Progress value={100} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Time & Attendance</span>
-                  <span>95%</span>
-                </div>
-                <Progress value={95} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Deductions & Benefits</span>
-                  <span>80%</span>
-                </div>
-                <Progress value={80} className="h-2" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Final Processing</span>
-                  <span>0%</span>
-                </div>
-                <Progress value={0} className="h-2" />
-              </div>
+              ))}
             </CardContent>
           </Card>
 
-          {/* Upcoming Tasks */}
           <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>Upcoming Tasks</CardTitle>
-                  <CardDescription>
-                    Important HR tasks and deadlines
-                  </CardDescription>
-                </div>
-                <Button variant="ghost" size="sm">
-                  View All
-                </Button>
-              </div>
+            <CardHeader className="pb-3">
+              <Skeleton className="h-6 w-32" />
             </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {upcomingTasks.map((task, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{task.task}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {task.dueDate}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        task.priority === "high"
-                          ? "destructive"
-                          : task.priority === "medium"
-                            ? "default"
-                            : "secondary"
-                      }
-                    >
-                      {task.priority}
-                    </Badge>
+            <CardContent className="space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3">
+                  <Skeleton className="h-9 w-9 rounded-lg" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-3 w-20" />
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Recent Payrolls */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Recent Payrolls</CardTitle>
-              <CardDescription>
-                Last 3 months of payroll processing
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentPayrolls.map((payroll, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="space-y-1">
-                      <p className="text-sm font-medium">{payroll.period}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {payroll.employees} employees
-                      </p>
+        {/* Bottom Row Skeleton */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+          {[1, 2].map((i) => (
+            <Card key={i}>
+              <CardHeader className="pb-3">
+                <Skeleton className="h-6 w-32" />
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[1, 2, 3, 4, 5].map((j) => (
+                  <div key={j} className="flex items-center gap-3 p-2">
+                    <Skeleton className="h-9 w-9 rounded-full" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-24" />
                     </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{payroll.amount}</p>
-                      <Badge variant="outline" className="text-xs">
-                        {payroll.status}
-                      </Badge>
-                    </div>
+                    <Skeleton className="h-3 w-16" />
                   </div>
                 ))}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [departmentCount, setDepartmentCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [employeesData, departmentsData] = await Promise.all([
+        employeeService.getAllEmployees(),
+        departmentService.getAllDepartments(),
+      ]);
+      setEmployees(employeesData);
+      setDepartmentCount(departmentsData.length);
+    } catch (error) {
+      console.error("Error loading dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const activeEmployees = employees.filter((e) => e.status === "active");
+  const totalPayroll = activeEmployees.reduce(
+    (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
+    0
+  );
+
+  const recentHires = [...employees]
+    .filter((e) => e.jobDetails?.hireDate)
+    .sort((a, b) => {
+      const dateA = new Date(a.jobDetails.hireDate);
+      const dateB = new Date(b.jobDetails.hireDate);
+      return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 5);
+
+  const departmentStats = employees.reduce(
+    (acc, emp) => {
+      const dept = emp.jobDetails?.department || "Unknown";
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>
+  );
+
+  if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+
+      <div className="p-6 max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back. Here's your HR overview.</p>
+          </div>
+          <Button onClick={() => navigate("/people/add")} className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Employee
+          </Button>
+        </div>
+
+        {/* Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Total Employees */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-muted-foreground">Total Employees</span>
+                <Users className="h-5 w-5 text-muted-foreground" />
               </div>
+              <div className="text-3xl font-bold text-foreground">{activeEmployees.length}</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {employees.length - activeEmployees.length} inactive
+              </p>
             </CardContent>
           </Card>
 
+          {/* Monthly Payroll */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-muted-foreground">Monthly Payroll</span>
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold text-foreground">${totalPayroll.toLocaleString()}</div>
+              <p className="text-sm text-muted-foreground mt-1">Total compensation</p>
+            </CardContent>
+          </Card>
+
+          {/* Departments */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-muted-foreground">Departments</span>
+                <Building className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold text-foreground">{departmentCount}</div>
+              <p className="text-sm text-muted-foreground mt-1">
+                {Object.keys(departmentStats).length} with staff
+              </p>
+            </CardContent>
+          </Card>
+
+          {/* Average Salary */}
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-sm font-medium text-muted-foreground">Avg. Salary</span>
+                <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div className="text-3xl font-bold text-foreground">
+                ${activeEmployees.length > 0
+                  ? Math.round(totalPayroll / activeEmployees.length).toLocaleString()
+                  : "0"}
+              </div>
+              <p className="text-sm text-muted-foreground mt-1">Per employee</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Department Breakdown */}
+          <Card className="lg:col-span-2">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">Department Breakdown</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {Object.keys(departmentStats).length > 0 ? (
+                <div className="space-y-4">
+                  {Object.entries(departmentStats)
+                    .sort((a, b) => b[1] - a[1])
+                    .slice(0, 5)
+                    .map(([dept, count]) => {
+                      const percentage = Math.round((count / employees.length) * 100);
+                      return (
+                        <div key={dept}>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-medium">{dept}</span>
+                            <div className="text-right">
+                              <span className="text-sm font-bold">{count}</span>
+                              <span className="text-sm text-muted-foreground ml-2">({percentage}%)</span>
+                            </div>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Building className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No department data yet</p>
+                  <Button
+                    variant="link"
+                    className="text-primary mt-1"
+                    onClick={() => navigate("/admin/seed")}
+                  >
+                    Seed database
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <button
+                onClick={() => navigate("/people/add")}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Plus className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Add Employee</p>
+                  <p className="text-xs text-muted-foreground">Create new record</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button
+                onClick={() => navigate("/payroll/run")}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <DollarSign className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Run Payroll</p>
+                  <p className="text-xs text-muted-foreground">Process payments</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button
+                onClick={() => navigate("/people/time-tracking")}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Time Tracking</p>
+                  <p className="text-xs text-muted-foreground">View attendance</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+
+              <button
+                onClick={() => navigate("/reports/employees")}
+                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
+              >
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <FileText className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Reports</p>
+                  <p className="text-xs text-muted-foreground">Generate reports</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </button>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Bottom Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
           {/* Recent Hires */}
           <Card>
-            <CardHeader>
-              <CardTitle>Recent Hires</CardTitle>
-              <CardDescription>
-                New team members who joined recently
-              </CardDescription>
+            <CardHeader className="pb-3 flex flex-row items-center justify-between">
+              <CardTitle className="text-lg font-semibold">Recent Hires</CardTitle>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-primary hover:text-primary"
+                onClick={() => navigate("/people/employees")}
+              >
+                View all
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {recentHires.length > 0 ? (
+                <div className="space-y-3">
+                  {recentHires.map((employee) => (
+                    <div
+                      key={employee.id}
+                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      <Avatar className="h-9 w-9">
+                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                          {employee.personalInfo.firstName[0]}
+                          {employee.personalInfo.lastName[0]}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">
+                          {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {employee.jobDetails.position}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-xs text-muted-foreground">
+                          {new Date(employee.jobDetails.hireDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-muted-foreground">No employees yet</p>
+                  <Button
+                    variant="link"
+                    className="text-primary mt-1"
+                    onClick={() => navigate("/admin/seed")}
+                  >
+                    Seed database
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Salary Distribution */}
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg font-semibold">Salary Ranges</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {recentHires.map((hire, index) => (
-                  <div key={index} className="flex items-center space-x-4">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={hire.avatar} alt={hire.name} />
-                      <AvatarFallback>
-                        {hire.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="space-y-1 flex-1">
-                      <p className="text-sm font-medium">{hire.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {hire.position} • {hire.department}
-                      </p>
+                {[
+                  { label: "$0 - $10k", min: 0, max: 10000, color: "bg-emerald-500" },
+                  { label: "$10k - $15k", min: 10000, max: 15000, color: "bg-cyan-500" },
+                  { label: "$15k - $25k", min: 15000, max: 25000, color: "bg-primary" },
+                  { label: "$25k+", min: 25000, max: Infinity, color: "bg-amber-500" },
+                ].map((range) => {
+                  const count = activeEmployees.filter((emp) => {
+                    const salary = emp.compensation?.monthlySalary || 0;
+                    return salary >= range.min && salary < range.max;
+                  }).length;
+                  const percentage = activeEmployees.length > 0
+                    ? Math.round((count / activeEmployees.length) * 100)
+                    : 0;
+
+                  return (
+                    <div key={range.label}>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-medium">{range.label}</span>
+                        <div className="text-right">
+                          <span className="text-sm font-bold">{count}</span>
+                          <span className="text-sm text-muted-foreground ml-2">({percentage}%)</span>
+                        </div>
+                      </div>
+                      <div className="h-2 bg-muted rounded-full overflow-hidden">
+                        <div
+                          className={`h-full ${range.color} rounded-full`}
+                          style={{ width: `${percentage}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-xs text-muted-foreground">
-                        {hire.startDate}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

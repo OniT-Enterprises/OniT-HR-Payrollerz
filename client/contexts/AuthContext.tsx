@@ -61,7 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
             );
             // Load user profile if available
             try {
-              const profile = await authService.getUserProfile(firebaseUser.uid);
+              const profile = authService.getUserProfile();
               setUserProfile(profile);
             } catch (error) {
               console.warn("Could not load user profile:", error);

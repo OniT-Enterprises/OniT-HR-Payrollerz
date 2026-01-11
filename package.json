@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@react-pdf/renderer": "^4.3.2",
     "better-sqlite3": "^12.4.1",
     "express": "^4.18.2",
     "firebase": "^11.10.0",

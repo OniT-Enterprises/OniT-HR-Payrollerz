@@ -1,8 +1,8 @@
-import { type Employee } from "@/services/employeeService";
+import type { Employee } from "@/services/employeeService";
 
-export interface ProfileCompleteness {
-  isComplete: boolean;
+export interface ProfileCompletenessResult {
   completionPercentage: number;
+  isComplete: boolean;
   missingFields: string[];
   requiredDocuments: {
     field: string;
@@ -11,104 +11,107 @@ export interface ProfileCompleteness {
   }[];
 }
 
-export function getProfileCompleteness(
-  employee: Employee,
-): ProfileCompleteness {
+export function getProfileCompleteness(employee: Employee): ProfileCompletenessResult {
   const missingFields: string[] = [];
-  const requiredDocuments = [];
+  let completed = 0;
+  let total = 0;
 
-  // Required personal information
-  if (!employee.personalInfo.firstName) missingFields.push("First Name");
-  if (!employee.personalInfo.lastName) missingFields.push("Last Name");
-  if (!employee.personalInfo.email) missingFields.push("Email");
-  if (!employee.personalInfo.phone) missingFields.push("Phone Number");
-
-  // Required job information
-  if (!employee.jobDetails.department) missingFields.push("Department");
-  if (!employee.jobDetails.position) missingFields.push("Position");
-  if (!employee.jobDetails.hireDate) missingFields.push("Hire Date");
-  if (!employee.jobDetails.employeeId) missingFields.push("Employee ID");
-
-  // Required compensation
-  if (
-    !employee.compensation.annualSalary ||
-    employee.compensation.annualSalary === 0
-  ) {
-    missingFields.push("Annual Salary");
-  }
-
-  // Document requirements (these might be configurable per company)
-  const documentRequirements = [
-    {
-      field: "Social Security Number",
-      value: employee.documents.socialSecurityNumber.number,
-      required: true, // This would come from company settings
-    },
-    {
-      field: "ID Card",
-      value: employee.documents.idCard.number,
-      required: true,
-    },
-    {
-      field: "Electoral Card",
-      value: employee.documents.electoralCard.number,
-      required: false, // Example: not required for all employees
-    },
-    {
-      field: "Passport",
-      value: employee.documents.passport.number,
-      required: false,
-    },
+  // Check personal info
+  const personalFields = [
+    { key: 'firstName', label: 'First Name' },
+    { key: 'lastName', label: 'Last Name' },
+    { key: 'email', label: 'Email' },
+    { key: 'phone', label: 'Phone' },
+    { key: 'address', label: 'Address' },
+    { key: 'dateOfBirth', label: 'Date of Birth' },
   ];
 
-  // Check required documents
-  documentRequirements.forEach((doc) => {
-    requiredDocuments.push({
-      field: doc.field,
-      missing: !doc.value && doc.required,
-      required: doc.required,
-    });
-
-    if (!doc.value && doc.required) {
-      missingFields.push(doc.field);
+  personalFields.forEach(({ key, label }) => {
+    total++;
+    if (employee.personalInfo?.[key as keyof typeof employee.personalInfo]) {
+      completed++;
+    } else {
+      missingFields.push(label);
     }
   });
 
-  // Emergency contact (recommended but not required)
-  if (!employee.personalInfo.emergencyContactName) {
-    missingFields.push("Emergency Contact Name");
+  // Check job details
+  const jobFields = [
+    { key: 'employeeId', label: 'Employee ID' },
+    { key: 'department', label: 'Department' },
+    { key: 'position', label: 'Position' },
+    { key: 'hireDate', label: 'Hire Date' },
+  ];
+
+  jobFields.forEach(({ key, label }) => {
+    total++;
+    if (employee.jobDetails?.[key as keyof typeof employee.jobDetails]) {
+      completed++;
+    } else {
+      missingFields.push(label);
+    }
+  });
+
+  // Check compensation
+  total++;
+  if (employee.compensation?.monthlySalary) {
+    completed++;
+  } else {
+    missingFields.push('Monthly Salary');
   }
 
-  // Calculate completion percentage
-  const totalRequiredFields = 12; // Based on the fields we're checking
-  const completedFields = totalRequiredFields - missingFields.length;
-  const completionPercentage = Math.round(
-    (completedFields / totalRequiredFields) * 100,
-  );
+  // Check required documents
+  const requiredDocuments = [
+    {
+      field: 'ID Card',
+      missing: !employee.documents?.idCard?.number,
+      required: employee.documents?.idCard?.required ?? true,
+    },
+    {
+      field: 'Social Security',
+      missing: !employee.documents?.socialSecurityNumber?.number,
+      required: employee.documents?.socialSecurityNumber?.required ?? true,
+    },
+    {
+      field: 'Employee ID Card',
+      missing: !employee.documents?.employeeIdCard?.number,
+      required: employee.documents?.employeeIdCard?.required ?? true,
+    },
+    {
+      field: 'Passport',
+      missing: !employee.documents?.passport?.number,
+      required: employee.documents?.passport?.required ?? false,
+    },
+    {
+      field: 'Electoral Card',
+      missing: !employee.documents?.electoralCard?.number,
+      required: employee.documents?.electoralCard?.required ?? false,
+    },
+  ];
+
+  const completionPercentage = total > 0 ? Math.round((completed / total) * 100) : 0;
 
   return {
-    isComplete: missingFields.length === 0,
     completionPercentage,
+    isComplete: completionPercentage >= 100,
     missingFields,
     requiredDocuments,
   };
 }
 
 export function getIncompleteEmployees(employees: Employee[]): Employee[] {
-  return employees.filter((employee) => {
-    const completeness = getProfileCompleteness(employee);
-    return !completeness.isComplete;
-  });
+  return employees.filter(emp => getProfileCompleteness(emp).completionPercentage < 100);
 }
 
-export function getCompletionStatusColor(completionPercentage: number): string {
-  if (completionPercentage >= 90) return "text-green-600";
-  if (completionPercentage >= 70) return "text-yellow-600";
+export function getCompletionStatusIcon(completeness: number): string {
+  if (completeness >= 100) return "check-circle";
+  if (completeness >= 75) return "alert-circle";
+  return "x-circle";
+}
+
+export function getCompletionStatusColor(completeness: number): string {
+  if (completeness >= 100) return "text-green-600";
+  if (completeness >= 75) return "text-yellow-600";
+  if (completeness >= 50) return "text-orange-600";
   return "text-red-600";
-}
-
-export function getCompletionStatusIcon(
-  completionPercentage: number,
-): "complete" | "incomplete" {
-  return completionPercentage >= 90 ? "complete" : "incomplete";
 }

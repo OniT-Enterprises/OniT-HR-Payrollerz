@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { debounceResize } from "@/lib/resizeObserverFix";
 import {
   Card,
   CardContent,
@@ -9,14 +8,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
   type Department,
 } from "@/services/departmentService";
-import { offlineFirstService } from "@/services/offlineFirstService";
 import DepartmentManager from "@/components/DepartmentManager";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -80,25 +79,21 @@ export default function OrganizationChart() {
       let employeesData: Employee[] = [];
       let departmentsData: Department[] = [];
 
-      // Use ultra-safe offline-first service to completely avoid Firebase network errors
+      // Load from Firebase services
       try {
-        console.log("🛡️ Using offline-first service for ultimate safety");
+        console.log("📊 Loading organization data from Firebase...");
 
-        employeesData = await offlineFirstService.getEmployees();
-        console.log("✅ Employees loaded safely:", employeesData.length);
+        employeesData = await employeeService.getAllEmployees();
+        console.log("✅ Employees loaded:", employeesData.length);
 
-        departmentsData = await offlineFirstService.getDepartments();
-        console.log("✅ Departments loaded safely:", departmentsData.length);
+        departmentsData = await departmentService.getAllDepartments();
+        console.log("✅ Departments loaded:", departmentsData.length);
         console.log(
           "📋 Department names:",
           departmentsData.map((d) => d.name),
         );
       } catch (error) {
-        // Even the offline-first service failed - use minimal fallbacks
-        console.warn(
-          "⚠️ Even offline-first service failed, using minimal data:",
-          error,
-        );
+        console.warn("⚠️ Failed to load data from Firebase:", error);
         employeesData = [];
         departmentsData = [];
       }
@@ -205,13 +200,6 @@ export default function OrganizationChart() {
     }
   };
 
-  // Debounced version to prevent excessive re-renders
-  const debouncedBuildChart = useCallback(
-    debounceResize(() => {
-      // This will be set by the actual build function
-    }, 150),
-    []
-  );
 
   const buildAppleOrgChart = useCallback(
     (employeesData: Employee[], departmentsData: Department[]) => {
@@ -412,11 +400,69 @@ export default function OrganizationChart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
-        <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading organization chart...</span>
+        <MainNavigation />
+        <div className="p-8">
+          {/* Header skeleton */}
+          <div className="flex items-center justify-between mb-8">
+            <Skeleton className="h-10 w-64" />
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-32" />
+              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-24" />
+            </div>
+          </div>
+
+          {/* Statistics skeleton */}
+          <div className="bg-blue-500 rounded-lg p-6 mb-8">
+            <div className="flex gap-5">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="bg-white flex-1">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-2">
+                        <Skeleton className="h-4 w-20" />
+                        <Skeleton className="h-8 w-12" />
+                      </div>
+                      <Skeleton className="h-8 w-8 rounded-full" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Org chart skeleton */}
+          <div className="bg-white rounded-lg shadow-sm border p-12">
+            <div className="flex flex-col items-center space-y-8">
+              {/* Executive chain skeleton */}
+              <div className="flex flex-col items-center space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex flex-col items-center">
+                    <Skeleton className="w-56 h-32 rounded-lg" />
+                    {i < 3 && <Skeleton className="w-0.5 h-6 mt-2" />}
+                  </div>
+                ))}
+              </div>
+
+              {/* Connector line */}
+              <Skeleton className="w-0.5 h-8" />
+
+              {/* Department heads skeleton */}
+              <div className="flex space-x-12">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex flex-col items-center space-y-4">
+                    <Skeleton className="w-0.5 h-6" />
+                    <Skeleton className="w-48 h-28 rounded-lg" />
+                    <Skeleton className="w-0.5 h-4" />
+                    <div className="grid grid-cols-2 gap-3">
+                      {[1, 2, 3, 4].map((j) => (
+                        <Skeleton key={j} className="w-36 h-24 rounded-lg" />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -424,8 +470,8 @@ export default function OrganizationChart() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
 
       <div className="p-8">
         {/* Header with Title and Controls */}

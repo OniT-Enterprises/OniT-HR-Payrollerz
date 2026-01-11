@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -7,20 +8,112 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
-import { employeeService } from "@/services/employeeService";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import {
   Clock,
   Calendar,
   Users,
   UserCheck,
-  Database,
-  AlertCircle,
+  Plus,
+  CheckCircle,
+  CalendarDays,
 } from "lucide-react";
 
+function TimeLeaveDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+
+      {/* Header Skeleton */}
+      <div className="border-b border-border bg-card">
+        <div className="px-6 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <Skeleton className="h-8 w-36 mb-2" />
+                <Skeleton className="h-5 w-72" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-28" />
+                <Skeleton className="h-10 w-32" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-5 w-5 rounded" />
+                  </div>
+                  <Skeleton className="h-9 w-16 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Content Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {[1, 2].map((i) => (
+              <Card key={i}>
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-6 w-28 mb-2" />
+                      <Skeleton className="h-4 w-44" />
+                    </div>
+                    <Skeleton className="h-6 w-12 rounded-full" />
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
+                      <Skeleton className="h-8 w-8 rounded-lg" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-36 mb-1" />
+                        <Skeleton className="h-3 w-44" />
+                      </div>
+                      <Skeleton className="h-6 w-16 rounded-full" />
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Quick Actions Skeleton */}
+          <div>
+            <Skeleton className="h-6 w-32 mb-4" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border">
+                  <Skeleton className="h-5 w-5" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function TimeLeaveDashboard() {
-  const [employees, setEmployees] = useState([]);
+  const navigate = useNavigate();
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
@@ -46,225 +139,230 @@ export default function TimeLeaveDashboard() {
   };
 
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(
-    (emp) => emp.status === "active",
-  ).length;
+  const activeEmployees = employees.filter((emp) => emp.status === "active").length;
+
+  const stats = [
+    {
+      title: "Total Employees",
+      value: totalEmployees,
+      subtitle: "In database",
+      icon: Users,
+    },
+    {
+      title: "Active Employees",
+      value: activeEmployees,
+      subtitle: "Available for tracking",
+      icon: UserCheck,
+    },
+    {
+      title: "Time Entries",
+      value: 0,
+      subtitle: "No data yet",
+      icon: Clock,
+    },
+    {
+      title: "Leave Requests",
+      value: 0,
+      subtitle: "No requests yet",
+      icon: Calendar,
+    },
+  ];
+
+  const setupSteps = [
+    {
+      step: 1,
+      title: "Add Employees",
+      description: "Import or add employees to your database",
+      complete: totalEmployees > 0,
+    },
+    {
+      step: 2,
+      title: "Configure Time Tracking",
+      description: "Set up time tracking policies and rules",
+      complete: false,
+    },
+    {
+      step: 3,
+      title: "Setup Leave Policies",
+      description: "Define leave types and approval workflows",
+      complete: false,
+    },
+  ];
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <HotDogStyleNavigation />
-        <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <span className="ml-3">Loading time & leave data...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <TimeLeaveDashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Clock className="h-8 w-8 text-blue-400" />
+      {/* Clean Header */}
+      <div className="border-b border-border bg-card">
+        <div className="px-6 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Time & Leave Dashboard
-                </h1>
-                <p className="text-gray-600">
-                  Overview of attendance, time tracking, and leave management
+                <h1 className="text-2xl font-bold text-foreground">Time & Leave</h1>
+                <p className="text-muted-foreground mt-1">
+                  Attendance, time tracking, and leave management
                 </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" className="gap-2" onClick={() => navigate("/people/time-tracking")}>
+                  <Clock className="h-4 w-4" />
+                  Track Time
+                </Button>
+                <Button onClick={() => navigate("/people/leave")} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  New Request
+                </Button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Total Employees
-                    </p>
-                    <p className="text-2xl font-bold">{totalEmployees}</p>
-                    <p className="text-xs text-blue-600">In database</p>
+      <div className="p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <Card key={index}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </span>
+                    <stat.icon className="h-5 w-5 text-muted-foreground" />
                   </div>
-                  <Users className="h-8 w-8 text-blue-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Active Employees
-                    </p>
-                    <p className="text-2xl font-bold">{activeEmployees}</p>
-                    <p className="text-xs text-green-600">
-                      Available for tracking
-                    </p>
-                  </div>
-                  <UserCheck className="h-8 w-8 text-green-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Time Entries
-                    </p>
-                    <p className="text-2xl font-bold">0</p>
-                    <p className="text-xs text-gray-600">No data yet</p>
-                  </div>
-                  <Clock className="h-8 w-8 text-orange-500" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Leave Requests
-                    </p>
-                    <p className="text-2xl font-bold">0</p>
-                    <p className="text-xs text-gray-600">No requests yet</p>
-                  </div>
-                  <Calendar className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+                  <p className="text-sm text-muted-foreground mt-1">{stat.subtitle}</p>
+                </CardContent>
+              </Card>
+            ))}
           </div>
 
-          {/* Status Cards */}
+          {/* Main Content Grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Status */}
             <Card>
-              <CardHeader>
-                <CardTitle>Database Status</CardTitle>
-                <CardDescription>
-                  Real-time employee data for time tracking
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Status</CardTitle>
+                    <CardDescription>Real-time employee data</CardDescription>
+                  </div>
+                  <Badge variant="secondary">Live</Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <Database className="h-5 w-5 text-blue-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Live Data Connection
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Connected to Firebase database
-                      </p>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-primary/5">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <Clock className="h-4 w-4 text-primary" />
                     </div>
-                    <Badge className="bg-blue-100 text-blue-800">Live</Badge>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Database Connected</p>
+                      <p className="text-xs text-muted-foreground">Connected to Firebase</p>
+                    </div>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">
+                      Live
+                    </Badge>
                   </div>
 
                   {totalEmployees > 0 ? (
-                    <>
-                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <Users className="h-5 w-5 text-green-600" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            Employees Available
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {activeEmployees} active employees ready for time
-                            tracking
-                          </p>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          {activeEmployees}
-                        </Badge>
+                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                      <div className="p-2 rounded-lg bg-primary/10">
+                        <Users className="h-4 w-4 text-primary" />
                       </div>
-                    </>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">Employees Available</p>
+                        <p className="text-xs text-muted-foreground">{activeEmployees} active employees</p>
+                      </div>
+                      <span className="text-xl font-bold">{activeEmployees}</span>
+                    </div>
                   ) : (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <AlertCircle className="h-5 w-5 text-gray-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">No Employee Data</p>
-                        <p className="text-xs text-gray-600">
-                          Add employees to enable time & leave tracking
-                        </p>
+                    <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <Users className="h-4 w-4 text-muted-foreground" />
                       </div>
-                      <Badge className="bg-gray-100 text-gray-800">Empty</Badge>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">No Employee Data</p>
+                        <p className="text-xs text-muted-foreground">Add employees to enable tracking</p>
+                      </div>
+                      <Badge variant="secondary">Empty</Badge>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
+            {/* Getting Started */}
             <Card>
-              <CardHeader>
-                <CardTitle>Getting Started</CardTitle>
-                <CardDescription>
-                  Set up time & leave tracking for your organization
-                </CardDescription>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg font-semibold">Getting Started</CardTitle>
+                    <CardDescription>Setup time & leave tracking</CardDescription>
+                  </div>
+                  <Badge variant="secondary">
+                    {setupSteps.filter(s => s.complete).length}/{setupSteps.length}
+                  </Badge>
+                </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Step 1: Add Employees
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Import or add employees to your database
-                      </p>
-                    </div>
-                    <Badge
-                      className={
-                        totalEmployees > 0
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-800"
-                      }
+                <div className="space-y-3">
+                  {setupSteps.map((step, index) => (
+                    <div
+                      key={index}
+                      className={`flex items-center gap-4 p-3 rounded-lg transition-colors ${
+                        step.complete ? "bg-primary/5" : "bg-muted/50"
+                      }`}
                     >
-                      {totalEmployees > 0 ? "Complete" : "Pending"}
-                    </Badge>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Clock className="h-5 w-5 text-gray-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Step 2: Configure Time Tracking
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Set up time tracking policies and rules
-                      </p>
+                      <div className={`p-2 rounded-lg ${step.complete ? "bg-primary/10" : "bg-muted"}`}>
+                        {step.complete ? (
+                          <CheckCircle className="h-4 w-4 text-primary" />
+                        ) : (
+                          <span className="h-4 w-4 flex items-center justify-center text-xs font-bold text-muted-foreground">
+                            {step.step}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{step.title}</p>
+                        <p className="text-xs text-muted-foreground">{step.description}</p>
+                      </div>
+                      <Badge variant="secondary" className={step.complete ? "bg-primary/10 text-primary" : ""}>
+                        {step.complete ? "Done" : "Pending"}
+                      </Badge>
                     </div>
-                    <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
-                  </div>
-
-                  <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                    <Calendar className="h-5 w-5 text-gray-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Step 3: Setup Leave Policies
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Define leave types and approval workflows
-                      </p>
-                    </div>
-                    <Badge className="bg-gray-100 text-gray-800">Pending</Badge>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: "Time Tracking", icon: Clock, path: "/people/time-tracking" },
+                { label: "Attendance", icon: Calendar, path: "/people/attendance" },
+                { label: "Leave Requests", icon: CalendarDays, path: "/people/leave" },
+                { label: "Scheduling", icon: CalendarDays, path: "/people/schedules" },
+              ].map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => navigate(action.path)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-card hover:bg-muted transition-colors"
+                >
+                  <action.icon className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

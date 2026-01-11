@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -26,6 +26,7 @@ import {
 import DepartmentManager from "@/components/DepartmentManager";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Building,
   Users,
@@ -38,13 +39,6 @@ import {
   Crown,
   Eye,
 } from "lucide-react";
-import {
-  isFirebaseReady,
-  isFirebaseBlocked,
-  unblockFirebase,
-  testFirebaseConnection as testFirebaseConn,
-} from "@/lib/firebase";
-import { simpleFirebaseTest } from "@/lib/simpleFirebaseTest";
 
 export default function Departments() {
   const navigate = useNavigate();
@@ -219,74 +213,67 @@ export default function Departments() {
     setShowEmployeeProfile(true);
   };
 
-  const testFirebaseConnection = async () => {
-    try {
-      console.log("🔥 Running simple Firebase connectivity test...");
-
-      // Unblock Firebase if it's blocked
-      if (isFirebaseBlocked()) {
-        unblockFirebase();
-        toast({
-          title: "Firebase Unblocked",
-          description: "Testing connection...",
-        });
-      }
-
-      // Run simple test
-      const results = await simpleFirebaseTest();
-      console.log("🔥 Firebase Test Results:", results);
-
-      if (results.success) {
-        toast({
-          title: "Firebase Connected ✅",
-          description: `Found ${results.employeeCount} employees, ${results.departmentCount} departments`,
-        });
-
-        // Reload data after successful connection
-        await loadData();
-      } else {
-        const errorSummary = results.errors.join(", ");
-        toast({
-          title: "Firebase Issues ⚠️",
-          description: errorSummary || "Connection problems detected",
-          variant: "destructive",
-        });
-
-        // Show auth setup instructions if needed
-        if (
-          results.errors.some(
-            (err) => err.includes("permission") || err.includes("auth"),
-          )
-        ) {
-          setTimeout(() => {
-            toast({
-              title: "Authentication Required",
-              description:
-                "Enable Anonymous Auth in Firebase Console → Authentication → Sign-in method",
-              duration: 8000,
-            });
-          }, 2000);
-        }
-      }
-    } catch (error) {
-      console.error("Firebase test error:", error);
-      toast({
-        title: "Firebase Test Error",
-        description: `Network error: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
+        <MainNavigation />
         <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading departments...</span>
+          {/* Header Skeleton */}
+          <div className="flex justify-end mb-4">
+            <div className="flex gap-2">
+              <Skeleton className="h-10 w-36" />
+              <Skeleton className="h-10 w-40" />
+              <Skeleton className="h-10 w-44" />
+            </div>
           </div>
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="h-8 w-8 rounded" />
+            <div>
+              <Skeleton className="h-8 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
+          </div>
+
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-4 w-28 mb-2" />
+                      <Skeleton className="h-8 w-16" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-44 mb-2" />
+              <Skeleton className="h-4 w-72" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
+                    <div className="flex items-center gap-2">
+                      <Skeleton className="h-4 w-4 rounded-full" />
+                      <Skeleton className="h-4 w-32" />
+                    </div>
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    <Skeleton className="h-6 w-12 rounded-full" />
+                    <Skeleton className="h-8 w-8 rounded ml-auto" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -294,21 +281,11 @@ export default function Departments() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         {/* Department Management Buttons */}
-        <div className="flex justify-between items-center mb-4">
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={testFirebaseConnection}
-              className="text-xs"
-            >
-              <Database className="mr-2 h-4 w-4" />
-              Test Firebase
-            </Button>
-          </div>
+        <div className="flex justify-end items-center mb-4">
           <div className="flex gap-2">
             <Button
               variant="outline"
@@ -331,7 +308,7 @@ export default function Departments() {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => navigate("/staff/org-chart")}
+              onClick={() => navigate("/people/org-chart")}
             >
               <Users className="mr-2 h-4 w-4" />
               Organization Chart
@@ -350,18 +327,8 @@ export default function Departments() {
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                isFirebaseReady() && !isFirebaseBlocked()
-                  ? "bg-green-500"
-                  : "bg-orange-500"
-              }`}
-            />
-            <span className="text-muted-foreground">
-              {isFirebaseReady() && !isFirebaseBlocked()
-                ? "Firebase Connected"
-                : "Using Mock Data"}
-            </span>
+            <div className="w-3 h-3 rounded-full bg-green-500" />
+            <span className="text-muted-foreground">Firebase Connected</span>
           </div>
         </div>
 
@@ -670,10 +637,6 @@ export default function Departments() {
           employee={selectedEmployee}
           open={showEmployeeProfile}
           onOpenChange={setShowEmployeeProfile}
-          onEditEmployee={(employee) => {
-            // Navigate to edit employee
-            window.open(`/staff/add?edit=${employee.id}`, "_blank");
-          }}
         />
       </div>
     </div>

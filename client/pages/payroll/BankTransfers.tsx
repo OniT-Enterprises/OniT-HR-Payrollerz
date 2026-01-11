@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -34,7 +34,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import {
   DollarSign,
   Plus,
@@ -43,96 +43,147 @@ import {
   CheckCircle,
   Clock,
   XCircle,
+  AlertCircle,
   Eye,
   Filter,
+  Loader2,
+  RefreshCw,
 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { payrollService } from "@/services/payrollService";
+import { formatCurrency } from "@/lib/payroll/constants";
+import type { BankTransfer, PayrollRun } from "@/types/payroll";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function BankTransfers() {
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [transfers, setTransfers] = useState<BankTransfer[]>([]);
+  const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
 
   const [formData, setFormData] = useState({
-    payrollPeriod: "",
+    payrollRunId: "",
     bankAccount: "",
     transferDate: "",
     notes: "",
   });
 
-  // Mock data
+  // Bank accounts (could be fetched from settings in future)
   const bankAccounts = [
     { id: "main", name: "Main Business Account - ****1234" },
     { id: "payroll", name: "Payroll Account - ****5678" },
     { id: "backup", name: "Backup Account - ****9012" },
   ];
 
-  const transfers = [
-    {
-      id: 1,
-      payrollPeriod: "January 2024",
-      amount: 125000.0,
-      employeeCount: 25,
-      transferDate: "2024-01-31",
-      bankAccount: "Payroll Account - ****5678",
-      status: "Completed",
-      reference: "TXN-202401-001",
-      initiatedBy: "Sarah Johnson",
-    },
-    {
-      id: 2,
-      payrollPeriod: "December 2023",
-      amount: 118500.0,
-      employeeCount: 24,
-      transferDate: "2023-12-31",
-      bankAccount: "Payroll Account - ****5678",
-      status: "Completed",
-      reference: "TXN-202312-001",
-      initiatedBy: "Sarah Johnson",
-    },
-    {
-      id: 3,
-      payrollPeriod: "February 2024",
-      amount: 132000.0,
-      employeeCount: 26,
-      transferDate: "2024-02-29",
-      bankAccount: "Payroll Account - ****5678",
-      status: "Pending",
-      reference: "TXN-202402-001",
-      initiatedBy: "Michael Chen",
-    },
-    {
-      id: 4,
-      payrollPeriod: "November 2023",
-      amount: 115000.0,
-      employeeCount: 23,
-      transferDate: "2023-11-30",
-      bankAccount: "Main Business Account - ****1234",
-      status: "Failed",
-      reference: "TXN-202311-001",
-      initiatedBy: "Sarah Johnson",
-    },
-  ];
+  // Load transfers and payroll runs
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [transfersData, runsData] = await Promise.all([
+          payrollService.transfers.getAllTransfers(),
+          payrollService.runs.getAllPayrollRuns(),
+        ]);
+        setTransfers(transfersData);
+        setPayrollRuns(runsData);
+      } catch (error) {
+        console.error("Failed to load data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load transfers. Please refresh the page.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const getStatusBadge = (status: string) => {
+    loadData();
+  }, [toast]);
+
+  // Calculate summary stats
+  const stats = useMemo(() => {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+
+    const thisMonthTransfers = transfers.filter((t) => {
+      const transferDate = new Date(t.transferDate);
+      return (
+        transferDate.getMonth() === currentMonth &&
+        transferDate.getFullYear() === currentYear
+      );
+    });
+
+    const thisMonthTotal = thisMonthTransfers.reduce(
+      (sum, t) => sum + t.amount,
+      0
+    );
+    const pendingCount = transfers.filter(
+      (t) => t.status === "pending" || t.status === "processing"
+    ).length;
+    const completedCount = transfers.filter(
+      (t) => t.status === "completed"
+    ).length;
+    const failedCount = transfers.filter((t) => t.status === "failed").length;
+
+    return {
+      thisMonthTotal,
+      pendingCount,
+      completedCount,
+      failedCount,
+    };
+  }, [transfers]);
+
+  // Get unique periods for filter
+  const availablePeriods = useMemo(() => {
+    const periods = new Set<string>();
+    transfers.forEach((t) => periods.add(t.payrollPeriod));
+    return Array.from(periods).sort().reverse();
+  }, [transfers]);
+
+  // Get approved/paid payroll runs that haven't been transferred yet
+  const availablePayrollRuns = useMemo(() => {
+    const transferredRunIds = new Set(transfers.map((t) => t.payrollRunId));
+    return payrollRuns.filter(
+      (run) =>
+        (run.status === "approved" || run.status === "paid") &&
+        run.id &&
+        !transferredRunIds.has(run.id)
+    );
+  }, [payrollRuns, transfers]);
+
+  const getStatusBadge = (status: BankTransfer["status"]) => {
     switch (status) {
-      case "Completed":
+      case "completed":
         return (
-          <Badge className="bg-green-100 text-green-800">
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-3 w-3 mr-1" />
             Completed
           </Badge>
         );
-      case "Pending":
+      case "pending":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800">
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <Clock className="h-3 w-3 mr-1" />
             Pending
           </Badge>
         );
-      case "Failed":
+      case "processing":
         return (
-          <Badge className="bg-red-100 text-red-800">
+          <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
+            <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+            Processing
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-red-500/10 text-red-600 dark:text-red-400">
             <XCircle className="h-3 w-3 mr-1" />
             Failed
           </Badge>
@@ -153,7 +204,7 @@ export default function BankTransfers() {
     e.preventDefault();
 
     if (
-      !formData.payrollPeriod ||
+      !formData.payrollRunId ||
       !formData.bankAccount ||
       !formData.transferDate
     ) {
@@ -165,76 +216,224 @@ export default function BankTransfers() {
       return;
     }
 
+    // Find the selected payroll run
+    const selectedRun = payrollRuns.find((r) => r.id === formData.payrollRunId);
+    if (!selectedRun) {
+      toast({
+        title: "Error",
+        description: "Selected payroll run not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // Find the bank account name
+    const bankAccount = bankAccounts.find((a) => a.id === formData.bankAccount);
+
     try {
-      console.log("Creating bank transfer:", formData);
+      setSubmitting(true);
+
+      // Generate reference number
+      const now = new Date();
+      const reference = `TXN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(transfers.length + 1).padStart(3, "0")}`;
+
+      const newTransfer: Omit<BankTransfer, "id" | "createdAt" | "updatedAt"> = {
+        payrollRunId: formData.payrollRunId,
+        payrollPeriod: `${new Date(selectedRun.periodStart).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`,
+        amount: selectedRun.totalNetPay,
+        employeeCount: selectedRun.employeeCount,
+        transferDate: formData.transferDate,
+        bankAccountId: formData.bankAccount,
+        bankAccountName: bankAccount?.name || formData.bankAccount,
+        status: "pending",
+        reference,
+        initiatedBy: user?.email || "Unknown",
+        notes: formData.notes || undefined,
+      };
+
+      const transferId = await payrollService.transfers.createTransfer(newTransfer);
+
+      // Update local state with the new transfer including its ID
+      const createdTransfer: BankTransfer = {
+        ...newTransfer,
+        id: transferId,
+      };
+      setTransfers((prev) => [createdTransfer, ...prev]);
 
       toast({
         title: "Success",
-        description: "Bank transfer initiated successfully.",
+        description: `Bank transfer ${reference} initiated successfully.`,
       });
 
       setFormData({
-        payrollPeriod: "",
+        payrollRunId: "",
         bankAccount: "",
         transferDate: "",
         notes: "",
       });
       setShowTransferDialog(false);
     } catch (error) {
+      console.error("Failed to create transfer:", error);
       toast({
         title: "Error",
         description: "Failed to initiate transfer. Please try again.",
         variant: "destructive",
       });
+    } finally {
+      setSubmitting(false);
     }
   };
 
   const handleExportCSV = () => {
-    const csvData = transfers.map((transfer) => ({
-      "Payroll Period": transfer.payrollPeriod,
-      Amount: `$${transfer.amount.toFixed(2)}`,
-      "Employee Count": transfer.employeeCount,
-      "Transfer Date": transfer.transferDate,
-      "Bank Account": transfer.bankAccount,
-      Status: transfer.status,
-      Reference: transfer.reference,
-      "Initiated By": transfer.initiatedBy,
-    }));
+    if (filteredTransfers.length === 0) {
+      toast({
+        title: "No Data",
+        description: "No transfers to export.",
+        variant: "destructive",
+      });
+      return;
+    }
 
-    console.log("Exporting CSV data:", csvData);
+    // Create CSV content
+    const headers = [
+      "Payroll Period",
+      "Amount",
+      "Employee Count",
+      "Transfer Date",
+      "Bank Account",
+      "Status",
+      "Reference",
+      "Initiated By",
+      "Notes",
+    ];
+
+    const rows = filteredTransfers.map((transfer) => [
+      transfer.payrollPeriod,
+      transfer.amount.toFixed(2),
+      transfer.employeeCount.toString(),
+      transfer.transferDate,
+      transfer.bankAccountName,
+      transfer.status,
+      transfer.reference,
+      transfer.initiatedBy,
+      transfer.notes || "",
+    ]);
+
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((row) =>
+        row.map((cell) => `"${cell.replace(/"/g, '""')}"`).join(",")
+      ),
+    ].join("\n");
+
+    // Download file
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `bank-transfers-${new Date().toISOString().split("T")[0]}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
     toast({
-      title: "Export Started",
-      description: "CSV file will be downloaded shortly.",
+      title: "Export Complete",
+      description: `Exported ${filteredTransfers.length} transfers to CSV.`,
     });
   };
 
-  const filteredTransfers = transfers.filter((transfer) => {
-    if (
-      selectedStatus &&
-      selectedStatus !== "all" &&
-      transfer.status !== selectedStatus
-    )
-      return false;
-    if (
-      selectedPeriod &&
-      selectedPeriod !== "all" &&
-      transfer.payrollPeriod !== selectedPeriod
-    )
-      return false;
-    return true;
-  });
+  const filteredTransfers = useMemo(() => {
+    return transfers.filter((transfer) => {
+      if (
+        selectedStatus &&
+        selectedStatus !== "all" &&
+        transfer.status !== selectedStatus
+      )
+        return false;
+      if (
+        selectedPeriod &&
+        selectedPeriod !== "all" &&
+        transfer.payrollPeriod !== selectedPeriod
+      )
+        return false;
+      return true;
+    });
+  }, [transfers, selectedStatus, selectedPeriod]);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex items-center gap-3 mb-6">
+              <Skeleton className="h-8 w-8 rounded" />
+              <div>
+                <Skeleton className="h-8 w-48 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-5">
+                    <Skeleton className="h-4 w-28 mb-2" />
+                    <Skeleton className="h-8 w-20 mb-1" />
+                    <Skeleton className="h-3 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            <Card className="mb-6">
+              <CardHeader>
+                <Skeleton className="h-6 w-24" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[1, 2, 3].map((i) => (
+                    <Skeleton key={i} className="h-10 w-full" />
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-20" />
+                      <Skeleton className="h-4 w-16" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-20 ml-auto" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               Bank Transfers
             </h1>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               Manage payroll bank transfers and transaction history
             </p>
           </div>
@@ -245,12 +444,14 @@ export default function BankTransfers() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-muted-foreground">
                       This Month
                     </p>
-                    <p className="text-2xl font-bold">$132,000</p>
+                    <p className="text-2xl font-bold text-foreground">
+                      {formatCurrency(stats.thisMonthTotal)}
+                    </p>
                   </div>
-                  <DollarSign className="h-8 w-8 text-green-600" />
+                  <DollarSign className="h-8 w-8 text-emerald-500" />
                 </div>
               </CardContent>
             </Card>
@@ -258,12 +459,12 @@ export default function BankTransfers() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Pending Transfers
                     </p>
-                    <p className="text-2xl font-bold">1</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.pendingCount}</p>
                   </div>
-                  <Clock className="h-8 w-8 text-yellow-600" />
+                  <Clock className="h-8 w-8 text-amber-500" />
                 </div>
               </CardContent>
             </Card>
@@ -271,12 +472,12 @@ export default function BankTransfers() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
+                    <p className="text-sm font-medium text-muted-foreground">
                       Completed
                     </p>
-                    <p className="text-2xl font-bold">2</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.completedCount}</p>
                   </div>
-                  <CheckCircle className="h-8 w-8 text-green-600" />
+                  <CheckCircle className="h-8 w-8 text-emerald-500" />
                 </div>
               </CardContent>
             </Card>
@@ -284,10 +485,10 @@ export default function BankTransfers() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">Failed</p>
-                    <p className="text-2xl font-bold">1</p>
+                    <p className="text-sm font-medium text-muted-foreground">Failed</p>
+                    <p className="text-2xl font-bold text-foreground">{stats.failedCount}</p>
                   </div>
-                  <XCircle className="h-8 w-8 text-red-600" />
+                  <XCircle className="h-8 w-8 text-red-500" />
                 </div>
               </CardContent>
             </Card>
@@ -314,9 +515,10 @@ export default function BankTransfers() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Failed">Failed</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="processing">Processing</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -331,16 +533,11 @@ export default function BankTransfers() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All periods</SelectItem>
-                      <SelectItem value="February 2024">
-                        February 2024
-                      </SelectItem>
-                      <SelectItem value="January 2024">January 2024</SelectItem>
-                      <SelectItem value="December 2023">
-                        December 2023
-                      </SelectItem>
-                      <SelectItem value="November 2023">
-                        November 2023
-                      </SelectItem>
+                      {availablePeriods.map((period) => (
+                        <SelectItem key={period} value={period}>
+                          {period}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -371,7 +568,7 @@ export default function BankTransfers() {
                     onOpenChange={setShowTransferDialog}
                   >
                     <DialogTrigger asChild>
-                      <Button>
+                      <Button disabled={availablePayrollRuns.length === 0}>
                         <Plus className="h-4 w-4 mr-2" />
                         New Transfer
                       </Button>
@@ -385,18 +582,34 @@ export default function BankTransfers() {
                       </DialogHeader>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                          <Label htmlFor="payroll-period">
-                            Payroll Period *
-                          </Label>
-                          <Input
-                            id="payroll-period"
-                            value={formData.payrollPeriod}
-                            onChange={(e) =>
-                              handleInputChange("payrollPeriod", e.target.value)
+                          <Label htmlFor="payroll-run">Payroll Run *</Label>
+                          <Select
+                            value={formData.payrollRunId}
+                            onValueChange={(value) =>
+                              handleInputChange("payrollRunId", value)
                             }
-                            placeholder="e.g., March 2024"
-                            required
-                          />
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select payroll run" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availablePayrollRuns.map((run) => (
+                                <SelectItem key={run.id} value={run.id || ""}>
+                                  {new Date(run.periodStart).toLocaleDateString(
+                                    "en-US",
+                                    { month: "long", year: "numeric" }
+                                  )}{" "}
+                                  - {formatCurrency(run.totalNetPay)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          {availablePayrollRuns.length === 0 && (
+                            <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
+                              <AlertCircle className="h-3 w-3" />
+                              No approved payroll runs available
+                            </p>
+                          )}
                         </div>
                         <div>
                           <Label htmlFor="bank-account">Bank Account *</Label>
@@ -411,10 +624,7 @@ export default function BankTransfers() {
                             </SelectTrigger>
                             <SelectContent>
                               {bankAccounts.map((account) => (
-                                <SelectItem
-                                  key={account.id}
-                                  value={account.name}
-                                >
+                                <SelectItem key={account.id} value={account.id}>
                                   {account.name}
                                 </SelectItem>
                               ))}
@@ -450,11 +660,23 @@ export default function BankTransfers() {
                             variant="outline"
                             onClick={() => setShowTransferDialog(false)}
                             className="flex-1"
+                            disabled={submitting}
                           >
                             Cancel
                           </Button>
-                          <Button type="submit" className="flex-1">
-                            Initiate Transfer
+                          <Button
+                            type="submit"
+                            className="flex-1"
+                            disabled={submitting}
+                          >
+                            {submitting ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Processing...
+                              </>
+                            ) : (
+                              "Initiate Transfer"
+                            )}
                           </Button>
                         </div>
                       </form>
@@ -464,42 +686,62 @@ export default function BankTransfers() {
               </div>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Payroll Period</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Employees</TableHead>
-                    <TableHead>Transfer Date</TableHead>
-                    <TableHead>Bank Account</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredTransfers.map((transfer) => (
-                    <TableRow key={transfer.id}>
-                      <TableCell className="font-medium">
-                        {transfer.payrollPeriod}
-                      </TableCell>
-                      <TableCell>${transfer.amount.toLocaleString()}</TableCell>
-                      <TableCell>{transfer.employeeCount}</TableCell>
-                      <TableCell>{transfer.transferDate}</TableCell>
-                      <TableCell>{transfer.bankAccount}</TableCell>
-                      <TableCell>{getStatusBadge(transfer.status)}</TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {transfer.reference}
-                      </TableCell>
-                      <TableCell>
-                        <Button size="sm" variant="ghost">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              {filteredTransfers.length === 0 ? (
+                <div className="text-center py-12">
+                  <Send className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">No transfers found</p>
+                  <p className="text-sm text-muted-foreground/70">
+                    {transfers.length === 0
+                      ? "Create your first transfer by running payroll and initiating a bank transfer."
+                      : "Try adjusting your filters."}
+                  </p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payroll Period</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Employees</TableHead>
+                      <TableHead>Transfer Date</TableHead>
+                      <TableHead>Bank Account</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTransfers.map((transfer) => (
+                      <TableRow key={transfer.id}>
+                        <TableCell className="font-medium">
+                          {transfer.payrollPeriod}
+                        </TableCell>
+                        <TableCell>
+                          {formatCurrency(transfer.amount)}
+                        </TableCell>
+                        <TableCell>{transfer.employeeCount}</TableCell>
+                        <TableCell>
+                          {new Date(transfer.transferDate).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>{transfer.bankAccountName}</TableCell>
+                        <TableCell>{getStatusBadge(transfer.status)}</TableCell>
+                        <TableCell className="font-mono text-xs">
+                          {transfer.reference}
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            title="View details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </div>

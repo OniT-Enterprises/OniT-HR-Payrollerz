@@ -8,7 +8,8 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -53,12 +54,46 @@ export default function Reviews() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
+        <MainNavigation />
         <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading performance reviews...</span>
+          <div className="flex items-center gap-3 mb-6">
+            <Skeleton className="h-8 w-8 rounded" />
+            <div>
+              <Skeleton className="h-8 w-48 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </div>
           </div>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-5">
+                  <Skeleton className="h-4 w-28 mb-2" />
+                  <Skeleton className="h-8 w-16 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
+                    <Skeleton className="h-10 w-10 rounded" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-36 mb-1" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                    <Skeleton className="h-8 w-24" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -66,7 +101,7 @@ export default function Reviews() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-6">

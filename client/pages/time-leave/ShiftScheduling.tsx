@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +40,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import {
   Calendar,
   Plus,
@@ -148,6 +149,15 @@ export default function ShiftScheduling() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [loading, setLoading] = useState(true);
+
+  // Simulate initial data loading
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   const [formData, setFormData] = useState({
     employee: "",
@@ -1398,9 +1408,84 @@ export default function ShiftScheduling() {
     </div>
   );
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <MainNavigation />
+        <div className="p-6">
+          <div className="max-w-7xl mx-auto">
+            {/* Header skeleton */}
+            <div className="mb-6">
+              <Skeleton className="h-9 w-48 mb-2" />
+              <Skeleton className="h-4 w-80" />
+            </div>
+            {/* Controls skeleton */}
+            <Card className="mb-6">
+              <CardHeader>
+                <Skeleton className="h-6 w-40" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  {[1, 2, 3, 4, 5, 6].map((i) => (
+                    <div key={i}>
+                      <Skeleton className="h-4 w-20 mb-2" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+            {/* Tabs skeleton */}
+            <Skeleton className="h-10 w-full max-w-md mb-6" />
+            {/* Stats skeleton */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i}>
+                  <CardContent className="p-5">
+                    <Skeleton className="h-4 w-28 mb-2" />
+                    <Skeleton className="h-8 w-20 mb-1" />
+                    <Skeleton className="h-3 w-24" />
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+            {/* Calendar skeleton */}
+            <Card>
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-56" />
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-7 gap-4">
+                  {[0, 1, 2, 3, 4, 5, 6].map((day) => (
+                    <div key={day} className="border rounded-lg p-3 min-h-[200px]">
+                      <div className="text-center border-b pb-2 mb-3">
+                        <Skeleton className="h-4 w-20 mx-auto mb-1" />
+                        <Skeleton className="h-3 w-16 mx-auto" />
+                      </div>
+                      <div className="space-y-2">
+                        {[1, 2].map((shift) => (
+                          <div key={shift} className="p-2 rounded border">
+                            <Skeleton className="h-3 w-24 mb-1" />
+                            <Skeleton className="h-3 w-20 mb-1" />
+                            <Skeleton className="h-3 w-16" />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">

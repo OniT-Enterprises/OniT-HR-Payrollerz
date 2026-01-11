@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import DataSourceIndicator from "@/components/DataSourceIndicator";
 import {
   Dialog,
   DialogContent,
@@ -286,7 +285,6 @@ export default function DepartmentManager({
               <Building className="h-5 w-5" />
               {mode === "add" ? "Add Department" : "Manage Departments"}
             </div>
-            <DataSourceIndicator />
           </DialogTitle>
           <DialogDescription>
             {mode === "add"

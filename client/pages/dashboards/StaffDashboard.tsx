@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -7,7 +8,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -15,13 +18,123 @@ import {
   UserCheck,
   UserX,
   Building,
-  TrendingUp,
-  Calendar,
-  Award,
-  Briefcase,
+  Plus,
+  ChevronRight,
+  UserPlus,
+  Building2,
 } from "lucide-react";
 
+function StaffDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+
+      {/* Header Skeleton */}
+      <div className="border-b border-border bg-card">
+        <div className="px-6 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <Skeleton className="h-8 w-44 mb-2" />
+                <Skeleton className="h-5 w-64" />
+              </div>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-28" />
+                <Skeleton className="h-10 w-36" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-5 w-5 rounded" />
+                  </div>
+                  <Skeleton className="h-9 w-16 mb-2" />
+                  <Skeleton className="h-4 w-24" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Content Grid Skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-6 w-32 mb-2" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                  <Skeleton className="h-8 w-20" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {[1, 2, 3, 4, 5].map((i) => (
+                  <div key={i}>
+                    <div className="flex justify-between mb-2">
+                      <Skeleton className="h-4 w-32" />
+                      <Skeleton className="h-4 w-20" />
+                    </div>
+                    <Skeleton className="h-2 w-full rounded-full" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-6 w-36 mb-2" />
+                    <Skeleton className="h-4 w-44" />
+                  </div>
+                  <Skeleton className="h-6 w-12 rounded-full" />
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-4 p-3 rounded-lg bg-muted/30">
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-40" />
+                    </div>
+                    <Skeleton className="h-8 w-12" />
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions Skeleton */}
+          <div>
+            <Skeleton className="h-6 w-32 mb-4" />
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border">
+                  <Skeleton className="h-5 w-5" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function StaffDashboard() {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
@@ -47,344 +160,247 @@ export default function StaffDashboard() {
     }
   };
 
-  // Calculate real statistics
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter(
-    (emp) => emp.status === "active",
-  ).length;
-  const inactiveEmployees = employees.filter(
-    (emp) => emp.status === "inactive",
-  ).length;
+  const activeEmployees = employees.filter((emp) => emp.status === "active").length;
+  const inactiveEmployees = employees.filter((emp) => emp.status === "inactive").length;
 
-  // Calculate department breakdown
   const departmentStats = employees.reduce(
     (acc, emp) => {
-      const dept = emp.jobDetails.department;
+      const dept = emp.jobDetails?.department || "Unknown";
       acc[dept] = (acc[dept] || 0) + 1;
       return acc;
     },
-    {} as Record<string, number>,
+    {} as Record<string, number>
   );
 
   const totalDepartments = Object.keys(departmentStats).length;
-  const activeRate =
-    totalEmployees > 0
-      ? ((activeEmployees / totalEmployees) * 100).toFixed(1)
-      : "0";
+  const activeRate = totalEmployees > 0
+    ? ((activeEmployees / totalEmployees) * 100).toFixed(1)
+    : "0";
 
-  // Get top departments
   const topDepartments = Object.entries(departmentStats)
     .sort(([, a], [, b]) => b - a)
-    .slice(0, 4);
+    .slice(0, 5);
+
+  const stats = [
+    {
+      title: "Total Employees",
+      value: totalEmployees,
+      subtitle: "In database",
+      icon: Users,
+    },
+    {
+      title: "Active Employees",
+      value: activeEmployees,
+      subtitle: `${activeRate}% active rate`,
+      icon: UserCheck,
+    },
+    {
+      title: "Departments",
+      value: totalDepartments,
+      subtitle: "Active departments",
+      icon: Building,
+    },
+    {
+      title: "Inactive",
+      value: inactiveEmployees,
+      subtitle: `${totalEmployees > 0 ? ((inactiveEmployees / totalEmployees) * 100).toFixed(1) : "0"}% of workforce`,
+      icon: UserX,
+    },
+  ];
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <HotDogStyleNavigation />
-        <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading dashboard...</span>
-          </div>
-        </div>
-      </div>
-    );
+    return <StaffDashboardSkeleton />;
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <div className="flex items-center gap-3 mb-4">
-              <Users className="h-8 w-8 text-cyan-400" />
+      {/* Clean Header */}
+      <div className="border-b border-border bg-card">
+        <div className="px-6 py-6 lg:px-8">
+          <div className="max-w-7xl mx-auto">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <h1 className="text-3xl font-bold text-gray-900">
-                  Staff Dashboard
-                </h1>
-                <p className="text-gray-600">
-                  Overview of employee management and organization
+                <h1 className="text-2xl font-bold text-foreground">Staff Dashboard</h1>
+                <p className="text-muted-foreground mt-1">
+                  Overview of employees and organization
                 </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <Button variant="outline" className="gap-2" onClick={() => navigate("/people/employees")}>
+                  <Users className="h-4 w-4" />
+                  View All
+                </Button>
+                <Button onClick={() => navigate("/people/add")} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Employee
+                </Button>
               </div>
             </div>
           </div>
+        </div>
+      </div>
 
-          {/* Key Metrics */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="p-6 lg:p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {stats.map((stat, index) => (
+              <Card key={index}>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-medium text-muted-foreground">
+                      {stat.title}
+                    </span>
+                    <stat.icon className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="text-3xl font-bold text-foreground">{stat.value}</div>
+                  <p className="text-sm text-muted-foreground mt-1">{stat.subtitle}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          {/* Main Content Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Department Breakdown */}
             <Card>
-              <CardContent className="p-6">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Total Employees
-                    </p>
-                    <p className="text-2xl font-bold">{totalEmployees}</p>
-                    <p className="text-xs text-blue-600">In database</p>
+                    <CardTitle className="text-lg font-semibold">Departments</CardTitle>
+                    <CardDescription>
+                      Employee distribution ({totalEmployees} total)
+                    </CardDescription>
                   </div>
-                  <Users className="h-8 w-8 text-cyan-500" />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground gap-1"
+                    onClick={() => navigate("/people/departments")}
+                  >
+                    View All
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
+              </CardHeader>
+              <CardContent>
+                {totalEmployees === 0 ? (
+                  <div className="text-center py-8">
+                    <Users className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground">No employees in database</p>
+                    <Button
+                      variant="link"
+                      className="mt-2"
+                      onClick={() => navigate("/admin/seed")}
+                    >
+                      Seed database
+                    </Button>
+                  </div>
+                ) : topDepartments.length === 0 ? (
+                  <div className="text-center py-8">
+                    <Building className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+                    <p className="text-muted-foreground">No department data</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {topDepartments.map(([department, count], index) => {
+                      const percentage = totalEmployees > 0
+                        ? Math.round((count / totalEmployees) * 100)
+                        : 0;
+
+                      return (
+                        <div key={department} className="space-y-2">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="font-medium truncate max-w-[200px]">{department}</span>
+                            <span className="text-muted-foreground">{count} ({percentage}%)</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-primary rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
+            {/* Status Overview */}
             <Card>
-              <CardContent className="p-6">
+              <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Active Employees
-                    </p>
-                    <p className="text-2xl font-bold">{activeEmployees}</p>
-                    <p className="text-xs text-green-600">
-                      {activeRate}% active rate
-                    </p>
+                    <CardTitle className="text-lg font-semibold">Status Overview</CardTitle>
+                    <CardDescription>Employee status breakdown</CardDescription>
                   </div>
-                  <UserCheck className="h-8 w-8 text-green-500" />
+                  <Badge variant="secondary">Live</Badge>
                 </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Departments
-                    </p>
-                    <p className="text-2xl font-bold">{totalDepartments}</p>
-                    <p className="text-xs text-purple-600">
-                      Active departments
-                    </p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-lg bg-primary/10">
+                      <UserCheck className="h-4 w-4 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Active Employees</p>
+                      <p className="text-xs text-muted-foreground">Currently employed</p>
+                    </div>
+                    <span className="text-2xl font-bold">{activeEmployees}</span>
                   </div>
-                  <Building className="h-8 w-8 text-purple-500" />
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-gray-600">
-                      Inactive/Terminated
-                    </p>
-                    <p className="text-2xl font-bold">{inactiveEmployees}</p>
-                    <p className="text-xs text-orange-600">
-                      {totalEmployees > 0
-                        ? ((inactiveEmployees / totalEmployees) * 100).toFixed(
-                            1,
-                          )
-                        : "0"}
-                      % of workforce
-                    </p>
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-lg bg-orange-500/10">
+                      <UserX className="h-4 w-4 text-orange-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Inactive Employees</p>
+                      <p className="text-xs text-muted-foreground">Terminated or on leave</p>
+                    </div>
+                    <span className="text-2xl font-bold">{inactiveEmployees}</span>
                   </div>
-                  <UserX className="h-8 w-8 text-orange-500" />
+
+                  <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Building className="h-4 w-4 text-blue-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">Departments</p>
+                      <p className="text-xs text-muted-foreground">Active work units</p>
+                    </div>
+                    <span className="text-2xl font-bold">{totalDepartments}</span>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
 
-          {/* Department Overview & Recent Activity */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Department Breakdown</CardTitle>
-                <CardDescription>
-                  Employee distribution by department ({totalEmployees} total)
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {totalEmployees === 0 ? (
-                    <div className="text-center text-gray-500 py-8">
-                      <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-sm">No employees in database</p>
-                      <p className="text-xs text-gray-400">
-                        Add employees to see department breakdown
-                      </p>
-                    </div>
-                  ) : topDepartments.length === 0 ? (
-                    <div className="text-center text-gray-500 py-4">
-                      <p className="text-sm">No department data available</p>
-                    </div>
-                  ) : (
-                    topDepartments.map(([department, count], index) => {
-                      const percentage =
-                        totalEmployees > 0
-                          ? ((count / totalEmployees) * 100).toFixed(1)
-                          : "0";
-                      const colors = [
-                        { bg: "bg-blue-50", dot: "bg-blue-500" },
-                        { bg: "bg-green-50", dot: "bg-green-500" },
-                        { bg: "bg-purple-50", dot: "bg-purple-500" },
-                        { bg: "bg-orange-50", dot: "bg-orange-500" },
-                      ];
-                      const color = colors[index] || {
-                        bg: "bg-gray-50",
-                        dot: "bg-gray-500",
-                      };
-
-                      return (
-                        <div
-                          key={department}
-                          className={`flex items-center justify-between p-3 ${color.bg} rounded-lg`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div
-                              className={`w-3 h-3 ${color.dot} rounded-full`}
-                            ></div>
-                            <div>
-                              <p className="text-sm font-medium">
-                                {department}
-                              </p>
-                              <p className="text-xs text-gray-600">
-                                {count} employee{count !== 1 ? "s" : ""}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="text-lg font-bold">{count}</p>
-                            <p className="text-xs text-gray-600">
-                              {percentage}%
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-
-                  {topDepartments.length > 0 &&
-                    Object.keys(departmentStats).length > 4 && (
-                      <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="w-3 h-3 bg-gray-500 rounded-full"></div>
-                          <div>
-                            <p className="text-sm font-medium">
-                              Other Departments
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {Object.keys(departmentStats).length - 4} more
-                              departments
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="text-lg font-bold">
-                            {Object.entries(departmentStats)
-                              .slice(4)
-                              .reduce((sum, [, count]) => sum + count, 0)}
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {totalEmployees > 0
-                              ? (
-                                  (Object.entries(departmentStats)
-                                    .slice(4)
-                                    .reduce(
-                                      (sum, [, count]) => sum + count,
-                                      0,
-                                    ) /
-                                    totalEmployees) *
-                                  100
-                                ).toFixed(1)
-                              : "0"}
-                            %
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Database Status</CardTitle>
-                <CardDescription>
-                  Real-time employee data overview
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-lg">
-                    <Users className="h-5 w-5 text-blue-600" />
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        Live Data Connection
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        Connected to Firebase database
-                      </p>
-                    </div>
-                    <Badge className="bg-blue-100 text-blue-800">Live</Badge>
-                  </div>
-
-                  {totalEmployees > 0 ? (
-                    <>
-                      <div className="flex items-center gap-3 p-3 bg-green-50 rounded-lg">
-                        <UserCheck className="h-5 w-5 text-green-600" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            Active Employees
-                          </p>
-                          <p className="text-xs text-gray-600">
-                            {activeEmployees} employees currently active
-                          </p>
-                        </div>
-                        <Badge className="bg-green-100 text-green-800">
-                          {activeEmployees}
-                        </Badge>
-                      </div>
-
-                      {totalDepartments > 0 && (
-                        <div className="flex items-center gap-3 p-3 bg-purple-50 rounded-lg">
-                          <Building className="h-5 w-5 text-purple-600" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              Departments Active
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {totalDepartments} departments with employees
-                            </p>
-                          </div>
-                          <Badge className="bg-purple-100 text-purple-800">
-                            {totalDepartments}
-                          </Badge>
-                        </div>
-                      )}
-
-                      {inactiveEmployees > 0 && (
-                        <div className="flex items-center gap-3 p-3 bg-orange-50 rounded-lg">
-                          <UserX className="h-5 w-5 text-orange-600" />
-                          <div className="flex-1">
-                            <p className="text-sm font-medium">
-                              Inactive Employees
-                            </p>
-                            <p className="text-xs text-gray-600">
-                              {inactiveEmployees} employees marked as inactive
-                            </p>
-                          </div>
-                          <Badge className="bg-orange-100 text-orange-800">
-                            {inactiveEmployees}
-                          </Badge>
-                        </div>
-                      )}
-                    </>
-                  ) : (
-                    <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <Users className="h-5 w-5 text-gray-600" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium">No Employee Data</p>
-                        <p className="text-xs text-gray-600">
-                          Add employees to see dashboard statistics
-                        </p>
-                      </div>
-                      <Badge className="bg-gray-100 text-gray-800">Empty</Badge>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+          {/* Quick Actions */}
+          <div>
+            <h2 className="text-lg font-semibold mb-4">Quick Actions</h2>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { label: "All Employees", icon: Users, path: "/people/employees" },
+                { label: "Add Employee", icon: UserPlus, path: "/people/add" },
+                { label: "Departments", icon: Building, path: "/people/departments" },
+                { label: "Org Chart", icon: Building2, path: "/people/org-chart" },
+              ].map((action, index) => (
+                <button
+                  key={index}
+                  onClick={() => navigate(action.path)}
+                  className="flex flex-col items-center gap-2 p-4 rounded-lg border border-border bg-card hover:bg-muted transition-colors"
+                >
+                  <action.icon className="h-5 w-5 text-muted-foreground" />
+                  <span className="text-sm font-medium">{action.label}</span>
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>

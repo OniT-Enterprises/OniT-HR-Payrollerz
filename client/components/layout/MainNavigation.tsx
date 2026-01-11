@@ -1,16 +1,18 @@
 import React, { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { getCurrentUser, isAuthenticated } from "@/lib/localAuth";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "@/contexts/ThemeContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
   DropdownMenuSeparator,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   Building,
   Settings,
@@ -23,405 +25,434 @@ import {
   Clock,
   TrendingUp,
   Briefcase,
-  Cog,
   UserCog,
   Building2,
   DollarSign,
-  PieChart,
-  Activity,
   Shield,
   ChevronDown,
   Target,
   Award,
   Heart,
   CreditCard,
+  LogOut,
+  Sun,
+  Moon,
+  Sparkles,
+  BookOpen,
+  Scale,
+  Receipt,
+  Landmark,
+  ClipboardList,
+  UserCheck,
+  GraduationCap,
+  CalendarDays,
+  Banknote,
+  FileSpreadsheet,
+  LayoutDashboard,
+  Languages,
 } from "lucide-react";
+
+// Navigation structure: 3 pillars + Dashboard
+const NAVIGATION = {
+  people: {
+    id: "people",
+    labelKey: "nav.people",
+    icon: Users,
+    gradient: "from-blue-500 to-indigo-500",
+    hoverBg: "hover:bg-blue-500/10 dark:hover:bg-blue-500/20",
+    sections: [
+      {
+        titleKey: "nav.staff",
+        items: [
+          { labelKey: "nav.allEmployees", icon: Users, path: "/people/employees" },
+          { labelKey: "nav.addEmployee", icon: UserPlus, path: "/people/add" },
+          { labelKey: "nav.departments", icon: Building, path: "/people/departments" },
+          { labelKey: "nav.orgChart", icon: Building2, path: "/people/org-chart" },
+        ],
+      },
+      {
+        titleKey: "nav.hiring",
+        items: [
+          { labelKey: "nav.jobPostings", icon: Briefcase, path: "/people/jobs" },
+          { labelKey: "nav.candidates", icon: UserCheck, path: "/people/candidates" },
+          { labelKey: "nav.interviews", icon: Calendar, path: "/people/interviews" },
+          { labelKey: "nav.onboarding", icon: UserPlus, path: "/people/onboarding" },
+          { labelKey: "nav.offboarding", icon: UserCog, path: "/people/offboarding" },
+        ],
+      },
+      {
+        titleKey: "nav.timeLeave",
+        items: [
+          { labelKey: "nav.timeTracking", icon: Clock, path: "/people/time-tracking" },
+          { labelKey: "nav.attendance", icon: CalendarDays, path: "/people/attendance" },
+          { labelKey: "nav.leaveRequests", icon: Heart, path: "/people/leave" },
+          { labelKey: "nav.shiftSchedules", icon: Calendar, path: "/people/schedules" },
+        ],
+      },
+      {
+        titleKey: "nav.performance",
+        items: [
+          { labelKey: "nav.goalsOkrs", icon: Target, path: "/people/goals" },
+          { labelKey: "nav.reviews", icon: Award, path: "/people/reviews" },
+          { labelKey: "nav.training", icon: GraduationCap, path: "/people/training" },
+          { labelKey: "nav.disciplinary", icon: Shield, path: "/people/disciplinary" },
+        ],
+      },
+    ],
+  },
+  payroll: {
+    id: "payroll",
+    labelKey: "nav.payroll",
+    icon: Calculator,
+    gradient: "from-emerald-500 to-green-500",
+    hoverBg: "hover:bg-emerald-500/10 dark:hover:bg-emerald-500/20",
+    items: [
+      { labelKey: "nav.runPayroll", icon: Calculator, path: "/payroll/run" },
+      { labelKey: "nav.payrollHistory", icon: FileText, path: "/payroll/history" },
+      { labelKey: "nav.bankTransfers", icon: Banknote, path: "/payroll/transfers" },
+      { labelKey: "nav.taxReports", icon: FileSpreadsheet, path: "/payroll/taxes" },
+      { labelKey: "nav.benefits", icon: Heart, path: "/payroll/benefits" },
+      { labelKey: "nav.deductions", icon: DollarSign, path: "/payroll/deductions" },
+    ],
+  },
+  accounting: {
+    id: "accounting",
+    labelKey: "nav.accounting",
+    icon: Landmark,
+    gradient: "from-amber-500 to-orange-500",
+    hoverBg: "hover:bg-amber-500/10 dark:hover:bg-amber-500/20",
+    items: [
+      { labelKey: "nav.chartOfAccounts", icon: BookOpen, path: "/accounting/chart-of-accounts" },
+      { labelKey: "nav.journalEntries", icon: Receipt, path: "/accounting/journal-entries" },
+      { labelKey: "nav.generalLedger", icon: FileText, path: "/accounting/general-ledger" },
+      { labelKey: "nav.trialBalance", icon: Scale, path: "/accounting/trial-balance" },
+      { labelKey: "nav.financialReports", icon: BarChart3, path: "/accounting/reports" },
+    ],
+  },
+};
 
 export default function MainNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
-  const user = getCurrentUser();
+  const { user, signOut } = useAuth();
+  const { isDark, toggleTheme } = useTheme();
+  const { t, locale, setLocale, localeLabels } = useI18n();
+  const localeOptions = Object.entries(localeLabels) as Array<[typeof locale, string]>;
 
-  const navigationItems = [
-    {
-      id: "hiring",
-      label: "Hiring",
-      icon: <UserPlus className="h-5 w-5" />,
-      color: "text-green-400",
-      items: [
-        {
-          label: "Create Job",
-          icon: <Briefcase className="h-4 w-4" />,
-          path: "/hiring/create-job",
-        },
-        {
-          label: "Candidate Selection",
-          icon: <Users className="h-4 w-4" />,
-          path: "/hiring/candidates",
-        },
-        {
-          label: "Interviews",
-          icon: <Calendar className="h-4 w-4" />,
-          path: "/hiring/interviews",
-        },
-        {
-          label: "Onboarding",
-          icon: <UserPlus className="h-4 w-4" />,
-          path: "/hiring/onboarding",
-        },
-        {
-          label: "Offboarding",
-          icon: <UserCog className="h-4 w-4" />,
-          path: "/hiring/offboarding",
-        },
-      ],
-    },
-    {
-      id: "staff",
-      label: "Staff",
-      icon: <Users className="h-5 w-5" />,
-      color: "text-blue-400",
-      items: [
-        {
-          label: "All Employees",
-          icon: <Users className="h-4 w-4" />,
-          path: "/staff/employees",
-        },
-        {
-          label: "Add Employee",
-          icon: <UserPlus className="h-4 w-4" />,
-          path: "/staff/add",
-        },
-        {
-          label: "Departments",
-          icon: <Building className="h-4 w-4" />,
-          path: "/staff/departments",
-        },
-        {
-          label: "Organization Chart",
-          icon: <Building2 className="h-4 w-4" />,
-          path: "/staff/org-chart",
-        },
-      ],
-    },
-    {
-      id: "timeleave",
-      label: "Time & Leave",
-      icon: <Clock className="h-5 w-5" />,
-      color: "text-purple-400",
-      items: [
-        {
-          label: "Time Tracking",
-          icon: <Clock className="h-4 w-4" />,
-          path: "/time-leave/tracking",
-        },
-        {
-          label: "Attendance",
-          icon: <Calendar className="h-4 w-4" />,
-          path: "/time-leave/attendance",
-        },
-        {
-          label: "Leave Requests",
-          icon: <Heart className="h-4 w-4" />,
-          path: "/time-leave/requests",
-        },
-        {
-          label: "Shift Scheduling",
-          icon: <Calendar className="h-4 w-4" />,
-          path: "/time-leave/scheduling",
-        },
-      ],
-    },
-    {
-      id: "performance",
-      label: "Performance",
-      icon: <TrendingUp className="h-5 w-5" />,
-      color: "text-orange-400",
-      items: [
-        {
-          label: "Goals & OKRs",
-          icon: <Target className="h-4 w-4" />,
-          path: "/performance/goals",
-        },
-        {
-          label: "Reviews",
-          icon: <Award className="h-4 w-4" />,
-          path: "/performance/reviews",
-        },
-        {
-          label: "Training & Certifications",
-          icon: <Award className="h-4 w-4" />,
-          path: "/performance/training",
-        },
-        {
-          label: "Disciplinary",
-          icon: <Shield className="h-4 w-4" />,
-          path: "/performance/disciplinary",
-        },
-      ],
-    },
-    {
-      id: "payroll",
-      label: "Payroll",
-      icon: <Calculator className="h-5 w-5" />,
-      color: "text-yellow-400",
-      items: [
-        {
-          label: "Run Payroll",
-          icon: <Calculator className="h-4 w-4" />,
-          path: "/payroll/run",
-        },
-        {
-          label: "Payroll History",
-          icon: <FileText className="h-4 w-4" />,
-          path: "/payroll/history",
-        },
-        {
-          label: "Bank Transfers",
-          icon: <CreditCard className="h-4 w-4" />,
-          path: "/payroll/transfers",
-        },
-        {
-          label: "Tax Reports",
-          icon: <FileText className="h-4 w-4" />,
-          path: "/payroll/taxes",
-        },
-        {
-          label: "Benefits Enrollment",
-          icon: <Heart className="h-4 w-4" />,
-          path: "/payroll/benefits",
-        },
-        {
-          label: "Deductions & Advances",
-          icon: <DollarSign className="h-4 w-4" />,
-          path: "/payroll/deductions",
-        },
-      ],
-    },
-    {
-      id: "reports",
-      label: "Reports",
-      icon: <BarChart3 className="h-5 w-5" />,
-      color: "text-pink-400",
-      items: [
-        {
-          label: "Employee Reports",
-          icon: <Users className="h-4 w-4" />,
-          path: "/reports/employees",
-        },
-        {
-          label: "Payroll Reports",
-          icon: <Calculator className="h-4 w-4" />,
-          path: "/reports/payroll",
-        },
-        {
-          label: "Attendance Reports",
-          icon: <Calendar className="h-4 w-4" />,
-          path: "/reports/attendance",
-        },
-        {
-          label: "Custom Reports",
-          icon: <PieChart className="h-4 w-4" />,
-          path: "/reports/custom",
-        },
-      ],
-    },
-  ];
-
-  const isActiveRoute = (path: string) => {
-    return location.pathname === path;
-  };
-
-  const isActiveSection = (sectionId: string) => {
-    const section = navigationItems.find((item) => item.id === sectionId);
-    if (!section) return false;
-
-    return section.items.some((item) => isActiveRoute(item.path));
-  };
-
-  const handleDropdownClick = (dropdownId: string) => {
-    setActiveDropdown(activeDropdown === dropdownId ? null : dropdownId);
-  };
+  const isActiveRoute = (path: string) => location.pathname === path;
+  const isActiveSection = (basePath: string) => location.pathname.startsWith(basePath);
 
   const handleNavigate = (path: string) => {
     navigate(path);
     setActiveDropdown(null);
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/auth/login");
+  };
+
+  const userInitials = user?.displayName
+    ?.split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase() || user?.email?.[0].toUpperCase() || "U";
+
   return (
-    <nav className="bg-gray-900 border-b border-gray-700 px-4 sm:px-6 lg:px-8 sticky top-0 z-50">
-      <div className="flex justify-between h-16">
-        {/* Logo and Main Navigation */}
-        <div className="flex items-center">
-          <div className="flex-shrink-0 flex items-center">
-            <img
-              src="https://cdn.builder.io/api/v1/image/assets%2F460f188acad442d387e4846176efeb72%2F1cd62202d1d04226be6dc6ced94436eb?format=webp&width=800"
-              alt="ONIT Logo"
-              className="h-8 w-auto cursor-pointer hover:opacity-80 transition-opacity"
-              onClick={() => navigate("/")}
-            />
-          </div>
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
+      <div className="px-4 sm:px-6 lg:px-8">
+        <div className="flex h-16 items-center justify-between">
+          {/* Desktop Navigation */}
+          <div className="flex items-center gap-1">
+            <div className="hidden lg:flex items-center gap-1">
+              {/* Dashboard Link */}
+                <Button
+                  variant="ghost"
+                  onClick={() => handleNavigate("/")}
+                  className={`
+                  px-3 py-2 h-9 text-sm font-medium
+                  text-muted-foreground hover:text-foreground
+                  transition-all duration-200
+                  hover:bg-primary/10
+                  ${location.pathname === "/" || location.pathname === "/dashboard" ? "text-foreground bg-accent" : ""}
+                `}
+              >
+                <LayoutDashboard className="h-4 w-4 mr-2" />
+                {t("common.dashboard")}
+              </Button>
 
-          {/* Main Navigation Items */}
-          <div className="hidden md:ml-6 md:flex md:flex-1">
-            {navigationItems.map((section) => {
-              // Map colors to border classes
-              const borderColorMap = {
-                "text-green-400": "border-green-400",
-                "text-blue-400": "border-blue-400",
-                "text-purple-400": "border-purple-400",
-                "text-orange-400": "border-orange-400",
-                "text-yellow-400": "border-yellow-400",
-                "text-pink-400": "border-pink-400",
-              };
-
-              const borderClass =
-                borderColorMap[section.color as keyof typeof borderColorMap] ||
-                "border-gray-400";
-
-              return (
-                <DropdownMenu
-                  key={section.id}
-                  open={activeDropdown === section.id}
-                  onOpenChange={(open) =>
-                    setActiveDropdown(open ? section.id : null)
-                  }
-                >
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className={`text-white hover:bg-gray-700 flex items-center gap-2 border-2 ${borderClass} rounded-lg px-6 py-2 flex-1 justify-center ${
-                        isActiveSection(section.id) ? "bg-gray-700" : ""
-                      }`}
-                      onClick={() => handleDropdownClick(section.id)}
-                    >
-                      <span className={section.color}>{section.icon}</span>
-                      {section.label}
-                      <ChevronDown className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    className="w-56 bg-gray-900 border-gray-700"
-                    align="start"
-                    sideOffset={5}
+              {/* People Mega Menu */}
+              <DropdownMenu
+                open={activeDropdown === "people"}
+                onOpenChange={(open) => setActiveDropdown(open ? "people" : null)}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={`
+                      relative px-3 py-2 h-9 text-sm font-medium
+                      text-muted-foreground hover:text-foreground
+                      transition-all duration-200
+                      ${NAVIGATION.people.hoverBg}
+                      ${isActiveSection("/people") ? "text-foreground bg-accent" : ""}
+                    `}
                   >
-                    {section.items.map((item, index) => (
+                    <Users className="h-4 w-4 mr-2" />
+                    {t(NAVIGATION.people.labelKey)}
+                    <ChevronDown className={`ml-1 h-3 w-3 transition-transform duration-200 ${activeDropdown === "people" ? "rotate-180" : ""}`} />
+                    {isActiveSection("/people") && (
+                      <span className={`absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r ${NAVIGATION.people.gradient} rounded-full`} />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-[500px] p-4 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20"
+                  align="start"
+                  sideOffset={8}
+                >
+                  <div className="grid grid-cols-2 gap-4">
+                    {NAVIGATION.people.sections.map((section) => (
+                      <div key={section.titleKey}>
+                        <DropdownMenuLabel className="text-xs font-semibold text-muted-foreground uppercase tracking-wider px-2 mb-2">
+                          {t(section.titleKey)}
+                        </DropdownMenuLabel>
+                        {section.items.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <DropdownMenuItem
+                              key={item.path}
+                              className={`
+                                flex items-center gap-3 px-2 py-2 rounded-lg cursor-pointer
+                                text-muted-foreground hover:text-foreground
+                                transition-colors duration-150
+                                ${isActiveRoute(item.path) ? `bg-gradient-to-r ${NAVIGATION.people.gradient} text-white` : "hover:bg-accent"}
+                              `}
+                              onClick={() => handleNavigate(item.path)}
+                            >
+                              <Icon className={`h-4 w-4 ${isActiveRoute(item.path) ? "text-white" : ""}`} />
+                              <span className="font-medium text-sm">{t(item.labelKey)}</span>
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </div>
+                    ))}
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Payroll Dropdown */}
+              <DropdownMenu
+                open={activeDropdown === "payroll"}
+                onOpenChange={(open) => setActiveDropdown(open ? "payroll" : null)}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={`
+                      relative px-3 py-2 h-9 text-sm font-medium
+                      text-muted-foreground hover:text-foreground
+                      transition-all duration-200
+                      ${NAVIGATION.payroll.hoverBg}
+                      ${isActiveSection("/payroll") ? "text-foreground bg-accent" : ""}
+                    `}
+                  >
+                    <Calculator className="h-4 w-4 mr-2" />
+                    {t(NAVIGATION.payroll.labelKey)}
+                    <ChevronDown className={`ml-1 h-3 w-3 transition-transform duration-200 ${activeDropdown === "payroll" ? "rotate-180" : ""}`} />
+                    {isActiveSection("/payroll") && (
+                      <span className={`absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r ${NAVIGATION.payroll.gradient} rounded-full`} />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56 p-2 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20"
+                  align="start"
+                  sideOffset={8}
+                >
+                  {NAVIGATION.payroll.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
                       <DropdownMenuItem
-                        key={index}
-                        className={`text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer ${
-                          isActiveRoute(item.path)
-                            ? "bg-gray-700 text-white"
-                            : ""
-                        }`}
+                        key={item.path}
+                        className={`
+                          flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+                          text-muted-foreground hover:text-foreground
+                          transition-colors duration-150
+                          ${isActiveRoute(item.path) ? `bg-gradient-to-r ${NAVIGATION.payroll.gradient} text-white` : "hover:bg-accent"}
+                        `}
                         onClick={() => handleNavigate(item.path)}
                       >
-                        <span className="mr-2">{item.icon}</span>
-                        {item.label}
+                        <Icon className={`h-4 w-4 ${isActiveRoute(item.path) ? "text-white" : ""}`} />
+                        <span className="font-medium">{t(item.labelKey)}</span>
                       </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              );
-            })}
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Accounting Dropdown */}
+              <DropdownMenu
+                open={activeDropdown === "accounting"}
+                onOpenChange={(open) => setActiveDropdown(open ? "accounting" : null)}
+              >
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className={`
+                      relative px-3 py-2 h-9 text-sm font-medium
+                      text-muted-foreground hover:text-foreground
+                      transition-all duration-200
+                      ${NAVIGATION.accounting.hoverBg}
+                      ${isActiveSection("/accounting") ? "text-foreground bg-accent" : ""}
+                    `}
+                  >
+                    <Landmark className="h-4 w-4 mr-2" />
+                    {t(NAVIGATION.accounting.labelKey)}
+                    <ChevronDown className={`ml-1 h-3 w-3 transition-transform duration-200 ${activeDropdown === "accounting" ? "rotate-180" : ""}`} />
+                    {isActiveSection("/accounting") && (
+                      <span className={`absolute bottom-0 left-3 right-3 h-0.5 bg-gradient-to-r ${NAVIGATION.accounting.gradient} rounded-full`} />
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  className="w-56 p-2 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20"
+                  align="start"
+                  sideOffset={8}
+                >
+                  {NAVIGATION.accounting.items.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <DropdownMenuItem
+                        key={item.path}
+                        className={`
+                          flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer
+                          text-muted-foreground hover:text-foreground
+                          transition-colors duration-150
+                          ${isActiveRoute(item.path) ? `bg-gradient-to-r ${NAVIGATION.accounting.gradient} text-white` : "hover:bg-accent"}
+                        `}
+                        onClick={() => handleNavigate(item.path)}
+                      >
+                        <Icon className={`h-4 w-4 ${isActiveRoute(item.path) ? "text-white" : ""}`} />
+                        <span className="font-medium">{t(item.labelKey)}</span>
+                      </DropdownMenuItem>
+                    );
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
-        </div>
 
-        {/* Right side - User info and settings */}
-        <div className="flex items-center gap-3">
-          {/* User Avatar with Gear Hint */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="ghost"
-                className="relative p-0 h-10 w-10 rounded-full hover:bg-gray-700 group"
-                title={user ? `${user.name} - Click for settings` : "User menu"}
+          {/* Right side actions */}
+          <div className="flex items-center gap-2">
+            {/* Language Selector */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  title={t("common.language")}
+                >
+                  <Languages className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-44 p-1 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20"
+                align="end"
+                sideOffset={8}
               >
-                {/* Gear wheel hint - visible on hover */}
-                <div className="absolute inset-0 opacity-0 group-hover:opacity-50 transition-opacity duration-300">
-                  <Cog className="h-10 w-10 text-gray-400 animate-spin-slow" />
-                </div>
-
-                {/* User Avatar */}
-                <Avatar className="h-8 w-8 relative z-10">
-                  <AvatarFallback className="bg-blue-600 text-white text-sm font-medium">
-                    {user
-                      ? user.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")
-                          .toUpperCase()
-                      : "U"}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              className="w-56 bg-gray-900 border-gray-700"
-              align="end"
-              sideOffset={5}
-            >
-              {user && (
-                <>
-                  <DropdownMenuItem className="text-gray-300 flex-col items-start pointer-events-none">
-                    <div className="flex items-center gap-2 w-full">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 bg-blue-600 rounded-full flex items-center justify-center">
-                          <span className="text-white text-sm font-medium">
-                            {user.name
-                              .split(" ")
-                              .map((n) => n[0])
-                              .join("")
-                              .toUpperCase()}
-                          </span>
-                        </div>
-                        <div>
-                          <div className="font-medium">{user.name}</div>
-                          <div className="text-xs text-gray-500">
-                            {user.email}
-                          </div>
-                        </div>
-                      </div>
-                      <Badge variant="outline" className="text-xs ml-auto">
-                        {user.role}
-                      </Badge>
-                    </div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {user.company}
-                    </div>
+                {localeOptions.map(([key, label]) => (
+                  <DropdownMenuItem
+                    key={key}
+                    className={`flex items-center justify-between gap-3 px-3 py-2 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent transition-colors ${
+                      locale === key ? "text-foreground bg-accent" : ""
+                    }`}
+                    onClick={() => setLocale(key)}
+                  >
+                    <span className="font-medium text-sm">{label}</span>
+                    {locale === key && <span className="text-xs">✓</span>}
                   </DropdownMenuItem>
-                  <DropdownMenuSeparator className="bg-gray-700" />
-                </>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Theme Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="h-9 w-9 rounded-lg text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+            >
+              {isDark ? (
+                <Sun className="h-4 w-4 transition-transform duration-300 hover:rotate-45" />
+              ) : (
+                <Moon className="h-4 w-4 transition-transform duration-300 hover:-rotate-12" />
               )}
-              <DropdownMenuItem
-                className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                onClick={() => handleNavigate("/settings")}
+            </Button>
+
+            {/* User Menu */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="relative h-9 w-9 rounded-lg p-0 hover:bg-accent group"
+                  title={user?.displayName || user?.email || t("common.userMenu")}
+                >
+                  <Avatar className="h-8 w-8 transition-transform duration-200 group-hover:scale-105">
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-primary-foreground text-sm font-semibold">
+                      {userInitials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span className="absolute -bottom-0.5 -right-0.5 h-2.5 w-2.5 rounded-full bg-emerald-500 border-2 border-background" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-64 p-2 bg-popover/95 backdrop-blur-xl border-border/50 shadow-xl shadow-black/5 dark:shadow-black/20"
+                align="end"
+                sideOffset={8}
               >
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem
-                className="text-gray-300 hover:text-white hover:bg-gray-700 cursor-pointer"
-                onClick={() => handleNavigate("/profile")}
-              >
-                <UserCog className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuSeparator className="bg-gray-700" />
-              <DropdownMenuItem
-                className="text-red-400 hover:text-red-300 hover:bg-gray-700 cursor-pointer"
-                onClick={() => {
-                  // Handle sign out
-                  const { signOutLocal } = require("@/lib/localAuth");
-                  signOutLocal();
-                  window.location.reload();
-                }}
-              >
-                <Activity className="mr-2 h-4 w-4" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                {user && (
+                  <>
+                    <div className="px-3 py-3 mb-2">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-primary-foreground font-semibold">
+                            {userInitials}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-foreground truncate">
+                            {user.displayName || t("common.user")}
+                          </p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {user.email}
+                          </p>
+                        </div>
+                        <Sparkles className="h-4 w-4 text-amber-500" />
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator className="bg-border/50 my-2" />
+                  </>
+                )}
+                <DropdownMenuItem
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-muted-foreground hover:text-foreground hover:bg-accent transition-colors"
+                  onClick={() => handleNavigate("/settings")}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="font-medium">{t("common.settings")}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator className="bg-border/50 my-2" />
+                <DropdownMenuItem
+                  className="flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer text-red-500 hover:text-red-600 hover:bg-red-500/10 transition-colors"
+                  onClick={handleSignOut}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="font-medium">{t("common.signOut")}</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
     </nav>

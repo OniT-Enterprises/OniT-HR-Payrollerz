@@ -29,7 +29,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import {
   Plus,
   Target,
@@ -355,7 +355,7 @@ export default function GoalsOKRs() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">

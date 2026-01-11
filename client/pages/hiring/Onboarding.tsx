@@ -14,7 +14,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import { Skeleton } from "@/components/ui/skeleton";
+import MainNavigation from "@/components/layout/MainNavigation";
 import {
   UserPlus,
   FileText,
@@ -159,7 +160,7 @@ export default function Onboarding() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="flex items-center gap-3 mb-8">
@@ -517,8 +518,8 @@ export default function Onboarding() {
                         onCheckedChange={(checked) =>
                           setAcknowledgements((prev) => ({
                             ...prev,
-                            signed: checked,
-                            signatureDate: checked
+                            signed: checked === true,
+                            signatureDate: checked === true
                               ? new Date().toISOString().split("T")[0]
                               : "",
                           }))

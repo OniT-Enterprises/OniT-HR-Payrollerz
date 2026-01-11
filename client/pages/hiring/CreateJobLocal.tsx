@@ -20,8 +20,8 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
-import { getCurrentUser } from "@/lib/localAuth";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   getDepartments,
   getEmployees,
@@ -54,7 +54,7 @@ interface CreateJobFormData {
 export default function CreateJobLocal() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const localUser = getCurrentUser();
+  const { user } = useAuth();
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -201,7 +201,7 @@ export default function CreateJobLocal() {
   if (error) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
+        <MainNavigation />
         <div className="p-6 max-w-4xl mx-auto">
           <Card className="border-destructive">
             <CardContent className="pt-6">
@@ -218,7 +218,7 @@ export default function CreateJobLocal() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         <div className="max-w-4xl mx-auto">
@@ -246,7 +246,7 @@ export default function CreateJobLocal() {
 
             <div className="flex items-center gap-2">
               <Badge variant="secondary">
-                {localUser?.company || "Your Company"}
+                {user?.email || "Your Company"}
               </Badge>
               <Badge variant="outline" className="text-green-600">
                 Local Development

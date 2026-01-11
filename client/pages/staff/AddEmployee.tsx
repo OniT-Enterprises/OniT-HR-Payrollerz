@@ -7,6 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,9 +43,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
-import { employeeService, type Employee } from "@/services/employeeService";
-import OfflineStatusBanner from "@/components/OfflineStatusBanner";
+import MainNavigation from "@/components/layout/MainNavigation";
+import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
 import { fileUploadService } from "@/services/fileUploadService";
 import {
   departmentService,
@@ -68,6 +68,7 @@ import {
   Phone,
   Cross,
   Smartphone,
+  Briefcase,
 } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
@@ -105,37 +106,58 @@ export default function AddEmployee() {
     benefits: "",
   });
 
+  // TL-specific document types
   const [documents, setDocuments] = useState([
     {
       id: 1,
-      type: "Employee ID Card",
+      type: "Bilhete de Identidade",
+      fieldKey: "bilheteIdentidade",
       number: "",
       expiryDate: "",
       required: true,
+      description: "Timor-Leste National ID Card",
     },
     {
       id: 2,
-      type: "Social Security Number",
+      type: "INSS Number",
+      fieldKey: "socialSecurityNumber",
       number: "",
       expiryDate: "",
       required: true,
+      description: "Social Security registration",
     },
     {
       id: 3,
-      type: "Electoral Card Number",
+      type: "Electoral Card",
+      fieldKey: "electoralCard",
       number: "",
       expiryDate: "",
       required: false,
+      description: "Kartaun Eleitoral",
     },
-    { id: 4, type: "ID Card", number: "", expiryDate: "", required: true },
-    { id: 5, type: "Passport", number: "", expiryDate: "", required: false },
+    {
+      id: 4,
+      type: "Passport",
+      fieldKey: "passport",
+      number: "",
+      expiryDate: "",
+      required: false,
+      description: "Required for foreign nationals",
+    },
   ]);
 
   const [additionalInfo, setAdditionalInfo] = useState({
     nationality: "Timor-Leste",
+    residencyStatus: "timorese" as ResidencyStatus,
+    // TL-specific: SEFOPE (labor ministry) registration
+    sefopeNumber: "",
+    sefopeRegistrationDate: "",
+    // Tax residency for WIT calculation
+    isResident: true,
     workContract: null as File | null,
     workingVisaNumber: "",
     workingVisaExpiry: "",
+    workingVisaPermitType: "" as "" | "work_visa" | "temporary_residence" | "permanent_residence",
     workingVisaFile: null as File | null,
   });
 
@@ -184,7 +206,7 @@ export default function AddEmployee() {
           startDate: employee.jobDetails.hireDate,
           employmentType: employee.jobDetails.employmentType,
           salary: getMonthlySalary(employee.compensation).toString(),
-          leaveDays: employee.compensation.annualLeave?.toString() || "",
+          leaveDays: employee.compensation.annualLeaveDays?.toString() || "",
           benefits: employee.compensation.benefitsPackage || "",
         });
 
@@ -554,21 +576,48 @@ export default function AddEmployee() {
               benefitsPackage: mappedData.benefitsPackage || "Standard",
             },
             documents: {
+              // TL-specific: Bilhete de Identidade
+              bilheteIdentidade: {
+                number: mappedData.bilheteIdentidade || mappedData.employeeIdCardNumber || "",
+                expiryDate: mappedData.bilheteIdentidadeExpiryDate || mappedData.employeeIdCardExpiryDate || "",
+                required: true,
+              },
+              // Legacy field
+              employeeIdCard: {
+                number: mappedData.employeeIdCardNumber || "",
+                expiryDate: mappedData.employeeIdCardExpiryDate || "",
+                required: true,
+              },
               socialSecurityNumber: {
                 number: mappedData.socialSecurityNumber || "",
                 expiryDate: mappedData.ssnExpiryDate || "",
+                required: true,
               },
               electoralCard: {
                 number: mappedData.electoralCardNumber || "",
                 expiryDate: mappedData.electoralCardExpiryDate || "",
+                required: false,
               },
               idCard: {
                 number: mappedData.idCardNumber || "",
                 expiryDate: mappedData.idCardExpiryDate || "",
+                required: false,
               },
               passport: {
                 number: mappedData.passportNumber || "",
                 expiryDate: mappedData.passportExpiryDate || "",
+                required: false,
+              },
+              workContract: {
+                fileUrl: "",
+                uploadDate: "",
+              },
+              nationality: mappedData.nationality || "Timor-Leste",
+              residencyStatus: "timorese" as ResidencyStatus,
+              workingVisaResidency: {
+                number: "",
+                expiryDate: "",
+                fileUrl: "",
               },
             },
             status: "active",
@@ -620,7 +669,7 @@ export default function AddEmployee() {
 
         // Navigate to All Employees to see the imported data
         setTimeout(() => {
-          navigate("/staff/employees");
+          navigate("/people/employees");
         }, 2000);
       } else {
         toast({
@@ -725,31 +774,43 @@ export default function AddEmployee() {
         benefits: employeeData.benefits || "",
       });
 
-      // Map documents data
+      // Map documents data with TL-specific types
       setDocuments([
         {
           id: 1,
-          type: "Social Security Number",
-          number: employeeData.socialSecurityNumber || "",
-          expiryDate: employeeData.socialSecurityExpiry || "",
+          type: "Bilhete de Identidade",
+          fieldKey: "bilheteIdentidade",
+          number: employeeData.bilheteIdentidade || employeeData.idCardNumber || "",
+          expiryDate: employeeData.bilheteIdentidadeExpiry || employeeData.idCardExpiry || "",
+          required: true,
+          description: "Timor-Leste National ID Card",
         },
         {
           id: 2,
-          type: "Electoral Card Number",
-          number: employeeData.electoralCardNumber || "",
-          expiryDate: employeeData.electoralCardExpiry || "",
+          type: "INSS Number",
+          fieldKey: "socialSecurityNumber",
+          number: employeeData.socialSecurityNumber || "",
+          expiryDate: employeeData.socialSecurityExpiry || "",
+          required: true,
+          description: "Social Security registration",
         },
         {
           id: 3,
-          type: "ID Card",
-          number: employeeData.idCardNumber || "",
-          expiryDate: employeeData.idCardExpiry || "",
+          type: "Electoral Card",
+          fieldKey: "electoralCard",
+          number: employeeData.electoralCardNumber || "",
+          expiryDate: employeeData.electoralCardExpiry || "",
+          required: false,
+          description: "Kartaun Eleitoral",
         },
         {
           id: 4,
           type: "Passport",
+          fieldKey: "passport",
           number: employeeData.passportNumber || "",
           expiryDate: employeeData.passportExpiry || "",
+          required: false,
+          description: "Required for foreign nationals",
         },
       ]);
 
@@ -823,47 +884,66 @@ export default function AddEmployee() {
           employmentType: formData.employmentType,
           workLocation: "Office", // Default value
           manager: formData.manager,
+          // TL-specific: SEFOPE registration
+          sefopeNumber: additionalInfo.sefopeNumber || undefined,
+          sefopeRegistrationDate: additionalInfo.sefopeRegistrationDate || undefined,
         },
         compensation: {
           monthlySalary: parseInt(formData.salary) || 0,
           annualLeaveDays: parseInt(formData.leaveDays) || 25,
           benefitsPackage: formData.benefits || "Standard",
+          // TL-specific: Tax residency status
+          isResident: additionalInfo.isResident,
         },
         documents: {
+          // TL-specific: Bilhete de Identidade (National ID)
+          bilheteIdentidade: {
+            number: documents[0]?.number || "",
+            expiryDate: documents[0]?.expiryDate || "",
+            required: documents[0]?.required || true,
+          },
+          // Legacy field for backwards compatibility
           employeeIdCard: {
             number: documents[0]?.number || "",
             expiryDate: documents[0]?.expiryDate || "",
             required: documents[0]?.required || true,
           },
+          // INSS Social Security
           socialSecurityNumber: {
             number: documents[1]?.number || "",
             expiryDate: documents[1]?.expiryDate || "",
             required: documents[1]?.required || true,
           },
+          // Electoral Card
           electoralCard: {
             number: documents[2]?.number || "",
             expiryDate: documents[2]?.expiryDate || "",
             required: documents[2]?.required || false,
           },
+          // Generic ID Card (for foreign nationals)
           idCard: {
+            number: "",
+            expiryDate: "",
+            required: false,
+          },
+          // Passport
+          passport: {
             number: documents[3]?.number || "",
             expiryDate: documents[3]?.expiryDate || "",
-            required: documents[3]?.required || true,
-          },
-          passport: {
-            number: documents[4]?.number || "",
-            expiryDate: documents[4]?.expiryDate || "",
-            required: documents[4]?.required || false,
+            required: documents[3]?.required || false,
           },
           workContract: {
             fileUrl: "", // Will be updated after file upload
             uploadDate: new Date().toISOString(),
           },
           nationality: additionalInfo.nationality,
+          // TL-specific: Residency status
+          residencyStatus: additionalInfo.residencyStatus,
           workingVisaResidency: {
             number: additionalInfo.workingVisaNumber,
             expiryDate: additionalInfo.workingVisaExpiry,
             fileUrl: "", // Will be updated after file upload
+            permitType: additionalInfo.workingVisaPermitType || undefined,
           },
         },
         status: "active", // Default all new employees to active
@@ -935,7 +1015,7 @@ export default function AddEmployee() {
       }
 
       // Navigate back to All Employees
-      navigate("/staff/employees");
+      navigate("/people/employees");
     } catch (error) {
       console.error("Error adding employee:", error);
       toast({
@@ -951,12 +1031,28 @@ export default function AddEmployee() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
+        <MainNavigation />
         <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading departments...</span>
-          </div>
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-48 mb-2" />
+              <Skeleton className="h-4 w-72" />
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+              <div className="flex gap-3 pt-4">
+                <Skeleton className="h-10 w-32" />
+                <Skeleton className="h-10 w-24" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -964,16 +1060,15 @@ export default function AddEmployee() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
-        <OfflineStatusBanner />
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => navigate("/staff/employees")}
+              onClick={() => navigate("/people/employees")}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -1384,7 +1479,52 @@ export default function AddEmployee() {
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4">
+                {/* SEFOPE Registration - TL Labor Ministry */}
+                <div className="mt-4 p-4 border rounded-lg bg-blue-50 dark:bg-blue-950">
+                  <h4 className="font-medium mb-3 flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                    <Briefcase className="h-4 w-4" />
+                    SEFOPE Registration (Labor Ministry)
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Info className="h-3 w-3 text-blue-600 cursor-help" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p className="max-w-xs">
+                            SEFOPE (Secretaria de Estado para a Formação Profissional e Emprego)
+                            registration is required for all employees in Timor-Leste.
+                          </p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  </h4>
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="sefopeNumber">SEFOPE Number</Label>
+                      <Input
+                        id="sefopeNumber"
+                        value={additionalInfo.sefopeNumber}
+                        onChange={(e) =>
+                          handleAdditionalInfoChange("sefopeNumber", e.target.value)
+                        }
+                        placeholder="e.g., SEFOPE-2024-XXXXX"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="sefopeRegistrationDate">Registration Date</Label>
+                      <Input
+                        id="sefopeRegistrationDate"
+                        type="date"
+                        value={additionalInfo.sefopeRegistrationDate}
+                        onChange={(e) =>
+                          handleAdditionalInfoChange("sefopeRegistrationDate", e.target.value)
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 mt-4">
                   <div className="space-y-2">
                     <Label htmlFor="workContractJob">
                       Work Contract Document
@@ -1422,7 +1562,7 @@ export default function AddEmployee() {
                   Documents & Identification
                 </CardTitle>
                 <CardDescription>
-                  Employee identification documents with expiry tracking
+                  Timor-Leste identification documents with expiry tracking
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -1441,8 +1581,15 @@ export default function AddEmployee() {
                       const expiryStatus = getExpiryStatus(document.expiryDate);
                       return (
                         <TableRow key={document.id}>
-                          <TableCell className="font-medium">
-                            {document.type}
+                          <TableCell>
+                            <div>
+                              <span className="font-medium">{document.type}</span>
+                              {'description' in document && document.description && (
+                                <p className="text-xs text-muted-foreground">
+                                  {document.description}
+                                </p>
+                              )}
+                            </div>
                           </TableCell>
                           <TableCell>
                             <Input
@@ -1884,7 +2031,7 @@ export default function AddEmployee() {
             <Button
               type="button"
               variant="outline"
-              onClick={() => navigate("/staff/employees")}
+              onClick={() => navigate("/people/employees")}
             >
               Cancel
             </Button>

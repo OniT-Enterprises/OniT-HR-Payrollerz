@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import HotDogStyleNavigation from "@/components/layout/HotDogStyleNavigation";
+import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import ContactInfoPopover from "@/components/ContactInfoPopover";
@@ -30,6 +30,7 @@ import {
 } from "@/lib/employeeUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Search,
@@ -53,12 +54,6 @@ import {
   FileText,
   CalendarX,
 } from "lucide-react";
-import {
-  isFirebaseReady,
-  isFirebaseBlocked,
-  unblockFirebase,
-} from "@/lib/firebase";
-import { simpleFirebaseTest } from "@/lib/simpleFirebaseTest";
 
 export default function AllEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -508,56 +503,73 @@ export default function AllEmployees() {
     event.target.value = "";
   };
 
-  const testFirebaseConnection = async () => {
-    try {
-      console.log("🔥 Testing Firebase connection...");
-
-      if (isFirebaseBlocked()) {
-        unblockFirebase();
-        toast({
-          title: "Firebase Unblocked",
-          description: "Testing connection...",
-        });
-      }
-
-      const results = await simpleFirebaseTest();
-      console.log("🔥 Firebase Test Results:", results);
-
-      if (results.success) {
-        toast({
-          title: "Firebase Connected ✅",
-          description: `Found ${results.employeeCount} employees in database`,
-        });
-        await loadEmployees();
-      } else {
-        const errorSummary = results.errors.join(", ");
-        toast({
-          title: "Firebase Issues ⚠️",
-          description: errorSummary || "Connection problems",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
-      console.error("Firebase test error:", error);
-      toast({
-        title: "Firebase Test Error",
-        description: `Network error: ${error.message}`,
-        variant: "destructive",
-      });
-    }
-  };
-
   const incompleteEmployees = getIncompleteEmployees(employees);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <HotDogStyleNavigation />
+        <MainNavigation />
         <div className="p-6">
-          <div className="flex items-center justify-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600"></div>
-            <span className="ml-3">Loading employees...</span>
+          {/* Stats Skeleton */}
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Skeleton className="h-4 w-28 mb-2" />
+                      <Skeleton className="h-8 w-16" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
+
+          {/* Controls Skeleton */}
+          <div className="flex items-center gap-4 mb-6">
+            <Skeleton className="h-10 w-32" />
+            <Skeleton className="h-10 w-24" />
+            <Skeleton className="h-10 w-64" />
+            <div className="flex-1" />
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28" />
+            <Skeleton className="h-10 w-28" />
+          </div>
+
+          {/* Table Skeleton */}
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-6 w-40 mb-2" />
+              <Skeleton className="h-4 w-64" />
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
+                    <div className="flex items-center gap-3">
+                      <Skeleton className="h-10 w-10 rounded-full" />
+                      <div>
+                        <Skeleton className="h-4 w-32 mb-1" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-20" />
+                    <div className="flex gap-2 ml-auto">
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded" />
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -565,7 +577,7 @@ export default function AllEmployees() {
 
   return (
     <div className="min-h-screen bg-background">
-      <HotDogStyleNavigation />
+      <MainNavigation />
 
       <div className="p-6">
         {/* Connection Status */}
@@ -662,11 +674,11 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    On Leave
+                    Inactive
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
                     {
-                      employees.filter((emp) => emp.status === "on_leave")
+                      employees.filter((emp) => emp.status === "inactive")
                         .length
                     }
                   </p>
@@ -683,7 +695,7 @@ export default function AllEmployees() {
           <div className="flex items-center">
             <Button
               variant="outline"
-              onClick={() => navigate("/staff/add")}
+              onClick={() => navigate("/people/add")}
               className={"bg-white hover:bg-purple-50 border-purple-200"}
             >
               <Plus className="mr-2 h-4 w-4" />
@@ -745,14 +757,6 @@ export default function AllEmployees() {
 
           {/* Right side - CSV actions */}
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={testFirebaseConnection}
-              className="bg-white hover:bg-purple-50 border-purple-200 text-xs"
-            >
-              <Building className="mr-2 h-4 w-4" />
-              Test DB
-            </Button>
             <Button
               variant="outline"
               onClick={handleDownloadTemplate}
@@ -1212,10 +1216,7 @@ export default function AllEmployees() {
                           {(() => {
                             const completeness =
                               getProfileCompleteness(employee);
-                            const isComplete =
-                              getCompletionStatusIcon(
-                                completeness.completionPercentage,
-                              ) === "complete";
+                            const isComplete = completeness.isComplete;
                             return (
                               <Button
                                 variant="ghost"
@@ -1282,7 +1283,7 @@ export default function AllEmployees() {
                           ? "No employees match your search."
                           : "Start by adding your first employee to the system."}
                       </p>
-                      <Button onClick={() => navigate("/staff/add")}>
+                      <Button onClick={() => navigate("/people/add")}>
                         <Plus className="mr-2 h-4 w-4" />
                         Add First Employee
                       </Button>

@@ -1,120 +1,102 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer utilities {
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none;
+    scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar {
-    display: none;  /* Safari and Chrome */
-  }
-
-  /* Ensure content doesn't hide behind sticky navigation */
-  .content-with-sticky-nav {
-    padding-top: 80px; /* Adjust based on navigation height */
+    display: none;
   }
 }
 
 @layer base {
-  /**
-   * Tailwind CSS theme
-   * tailwind.config.ts expects the following color variables to be expressed as HSL values.
-   * A different format will require also updating the theme in tailwind.config.ts.
-  */
   :root {
-    --background: 0 0% 100%;
-    --foreground: 215 25% 15%;
+    /* Clean, crisp light mode - QuickBooks inspired */
+    --background: 0 0% 97%;
+    --foreground: 210 20% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 15%;
+    --card-foreground: 210 20% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 215 25% 15%;
+    --popover-foreground: 210 20% 20%;
 
-    --primary: 214 75% 47%;
-    --primary-foreground: 210 40% 98%;
+    /* Solid green primary - like QuickBooks */
+    --primary: 145 63% 42%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 215 25% 15%;
+    --secondary: 210 15% 96%;
+    --secondary-foreground: 210 20% 20%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 15% 50%;
+    --muted: 210 15% 96%;
+    --muted-foreground: 210 10% 50%;
 
-    --accent: 214 15% 93%;
-    --accent-foreground: 215 25% 15%;
+    --accent: 210 15% 96%;
+    --accent-foreground: 210 20% 20%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 214 75% 47%;
+    --border: 210 15% 90%;
+    --input: 210 15% 90%;
+    --ring: 145 63% 42%;
 
-    --radius: 0.75rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 214 32% 97%;
-    --sidebar-foreground: 215 25% 15%;
-    --sidebar-primary: 214 75% 47%;
-    --sidebar-primary-foreground: 210 40% 98%;
-    --sidebar-accent: 214 15% 93%;
-    --sidebar-accent-foreground: 215 25% 15%;
-    --sidebar-border: 214 32% 91%;
-    --sidebar-ring: 214 75% 47%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 20% 20%;
+    --sidebar-primary: 145 63% 42%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 15% 96%;
+    --sidebar-accent-foreground: 210 20% 20%;
+    --sidebar-border: 210 15% 90%;
+    --sidebar-ring: 145 63% 42%;
   }
 
   .dark {
-    --background: 215 30% 8%;
-    --foreground: 210 40% 98%;
+    /* Clean dark mode */
+    --background: 220 20% 10%;
+    --foreground: 210 15% 95%;
 
-    --card: 215 30% 10%;
-    --card-foreground: 210 40% 98%;
+    --card: 220 18% 13%;
+    --card-foreground: 210 15% 95%;
 
-    --popover: 215 30% 10%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 220 18% 13%;
+    --popover-foreground: 210 15% 95%;
 
-    --primary: 214 75% 55%;
-    --primary-foreground: 215 30% 8%;
+    --primary: 145 60% 45%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 215 20% 18%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 210 15% 95%;
 
-    --muted: 215 20% 18%;
-    --muted-foreground: 215 10% 65%;
+    --muted: 220 15% 18%;
+    --muted-foreground: 210 10% 55%;
 
-    --accent: 215 20% 18%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 220 15% 18%;
+    --accent-foreground: 210 15% 95%;
 
-    --destructive: 0 75% 55%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 215 20% 18%;
-    --input: 215 20% 18%;
-    --ring: 214 75% 55%;
-    --sidebar-background: 215 30% 8%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 214 75% 55%;
-    --sidebar-primary-foreground: 215 30% 8%;
-    --sidebar-accent: 215 20% 18%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 215 20% 18%;
-    --sidebar-ring: 214 75% 55%;
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 145 60% 45%;
+
+    --sidebar-background: 220 20% 10%;
+    --sidebar-foreground: 210 15% 95%;
+    --sidebar-primary: 145 60% 45%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 220 15% 18%;
+    --sidebar-accent-foreground: 210 15% 95%;
+    --sidebar-border: 220 15% 20%;
+    --sidebar-ring: 145 60% 45%;
   }
-}
-
-/* Custom animations */
-@keyframes spin-slow {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-.animate-spin-slow {
-  animation: spin-slow 3s linear infinite;
 }
 
 @layer base {
@@ -122,29 +104,68 @@
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html {
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
-  /* Optimize elements that commonly trigger ResizeObserver loops */
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Layout optimization */
   [data-radix-scroll-area-viewport] {
     contain: layout style;
   }
 
-  /* Prevent layout thrashing in dialogs and popovers */
   [data-radix-dialog-content],
   [data-radix-popover-content] {
     contain: layout;
   }
 
-  /* Optimize chart containers */
   .recharts-responsive-container {
     contain: layout;
   }
+}
 
-  /* Reduce layout recalculations for complex layouts */
-  .org-chart-container,
-  .complex-layout {
-    contain: layout style;
-  }
+/* Simple animations */
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Selection styling */
+::selection {
+  @apply bg-primary/20 text-foreground;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  @apply w-2 h-2;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-border rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-muted-foreground/30;
+}
+
+/* Focus ring */
+*:focus-visible {
+  @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
 }
