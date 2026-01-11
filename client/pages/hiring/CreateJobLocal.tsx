@@ -24,11 +24,8 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
-import {
-  getDepartments,
-  createJob,
-  Department,
-} from "@/lib/sqliteApiService";
+import { departmentService, Department } from "@/services/departmentService";
+import { jobService } from "@/services/jobService";
 import {
   Briefcase,
   Save,
@@ -83,7 +80,7 @@ export default function CreateJobLocal() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const depts = await getDepartments();
+        const depts = await departmentService.getAllDepartments();
         setDepartments(depts);
         setError(null);
       } catch (err) {
@@ -141,12 +138,12 @@ export default function CreateJobLocal() {
         contractType: formData.contractType,
         contractDuration: formData.contractDuration || undefined,
         probationPeriod: formData.probationPeriod || undefined,
-        status: "open",
+        status: "open" as const,
         salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
         salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
       };
 
-      await createJob(jobData);
+      await jobService.createJob(jobData);
 
       toast({
         title: t("hiring.createJob.errors.createdTitle"),
