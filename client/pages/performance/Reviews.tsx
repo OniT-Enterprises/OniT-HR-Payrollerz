@@ -10,6 +10,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -56,6 +57,7 @@ export default function Reviews() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           <div className="flex items-center gap-3 mb-6">
             <Skeleton className="h-8 w-8 rounded" />
             <div>
@@ -104,6 +106,7 @@ export default function Reviews() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="flex items-center gap-3 mb-6">
           <Star className="h-8 w-8 text-purple-600" />
           <div>

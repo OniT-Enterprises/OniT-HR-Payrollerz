@@ -8,7 +8,7 @@
  */
 
 // ============================================
-// INCOME TAX (IRPS - Imposto sobre o Rendimento das Pessoas Singulares)
+// WITHHOLDING INCOME TAX (WIT - Impostu Retidu)
 // ============================================
 
 /**
@@ -386,7 +386,7 @@ export const TL_PAYROLL_STATUS_CONFIG = {
 // ============================================
 
 export const TL_DEDUCTION_TYPE_LABELS: Record<string, { tl: string; en: string }> = {
-  income_tax: { tl: 'Impostu Rendimentu', en: 'Income Tax (IRPS)' },
+  income_tax: { tl: 'Impostu Retidu (WIT)', en: 'Withholding Income Tax (WIT)' },
   inss_employee: { tl: 'INSS Trabalhador', en: 'INSS Employee (4%)' },
   inss_employer: { tl: 'INSS Empregador', en: 'INSS Employer (6%)' },
   health_insurance: { tl: 'Seguru Saúde', en: 'Health Insurance' },

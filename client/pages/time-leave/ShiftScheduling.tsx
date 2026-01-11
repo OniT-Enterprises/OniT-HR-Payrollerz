@@ -41,6 +41,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Calendar,
   Plus,
@@ -1413,6 +1414,7 @@ export default function ShiftScheduling() {
       <div className="min-h-screen bg-gray-50">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           <div className="max-w-7xl mx-auto">
             {/* Header skeleton */}
             <div className="mb-6">
@@ -1488,6 +1490,7 @@ export default function ShiftScheduling() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

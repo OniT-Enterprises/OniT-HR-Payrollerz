@@ -38,6 +38,82 @@ npm run dev
 - Auth: `127.0.0.1:9100`
 - Emulator UI: `127.0.0.1:4001`
 
+## Firebase CLI Access
+
+**Claude has full Firebase CLI access** for this project. You can run any Firebase commands directly.
+
+### Deploy Commands
+```bash
+# Deploy everything (hosting, rules, functions)
+firebase deploy
+
+# Deploy only Firestore security rules
+firebase deploy --only firestore:rules
+
+# Deploy only hosting
+firebase deploy --only hosting
+
+# Deploy only Cloud Functions
+firebase deploy --only functions
+
+# Deploy specific function
+firebase deploy --only functions:functionName
+```
+
+### Firestore Rules
+- **Production rules**: `firestore.rules`
+- **Dev rules**: `firestore-dev.rules` (currently deployed)
+- Rules use `firestore-dev.rules` as configured in `firebase.json`
+
+To update security rules after editing:
+```bash
+firebase deploy --only firestore:rules
+```
+
+### Other Useful CLI Commands
+```bash
+# Check current project
+firebase projects:list
+
+# View deployed rules
+firebase firestore:rules:get
+
+# Open Firebase Console
+firebase open
+
+# View recent deploys
+firebase hosting:channel:list
+
+# Tail function logs
+firebase functions:log
+
+# Export Firestore data
+firebase firestore:export gs://bucket-name
+
+# Import Firestore data
+firebase firestore:import gs://bucket-name
+```
+
+### Current Firestore Collections (Legacy - Root Level)
+These are temporary legacy collections used during migration:
+- `employees`, `departments`, `candidates`, `jobs`
+- `leave_requests`, `leave_balances`, `timesheets`
+- `goals`, `reviews`, `trainings`
+- `payruns` (with nested `payslips`)
+- `payrollRuns`, `payrollRecords`, `benefitEnrollments`
+- `recurringDeductions`, `taxReports`, `bankTransfers`
+- `accounts`, `journalEntries`, `generalLedger`
+- `fiscalYears`, `fiscalPeriods`, `settings`
+- `tenant_settings`
+
+### Tenant-Scoped Collections (Multi-tenant)
+Under `/tenants/{tenantId}/`:
+- `members`, `settings`, `employees`, `departments`
+- `positions`, `jobs`, `candidates`, `interviews`
+- `contracts`, `leaveRequests`, `timesheets`
+- `payruns` (with nested `payslips`)
+- `goals`, `reviews`, `trainings`, `discipline`
+
 ## GitHub Secrets Required
 ```
 VITE_FIREBASE_API_KEY
@@ -147,7 +223,8 @@ See `docs/FIREBASE_CLEANUP.md` for full details on the cleanup that removed:
 The codebase now uses clean, direct Firebase integration.
 
 ## Remaining Technical Debt
-1. Payroll module is mostly placeholder
+1. Payroll module is mostly placeholder (partially implemented)
 2. Firebase credentials should move to env variables
-3. Need proper Firestore security rules
+3. ~~Need proper Firestore security rules~~ ✅ Done - multi-tenant rules with superadmin support
 4. Need initial seed data in Firestore
+5. Migrate legacy root-level collections to tenant-scoped paths

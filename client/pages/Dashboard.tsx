@@ -1,117 +1,75 @@
+/**
+ * Dashboard - Action-First Command Center
+ * Shows what needs attention + quick actions
+ */
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { departmentService } from "@/services/departmentService";
+import { leaveService } from "@/services/leaveService";
+import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import {
   Users,
   DollarSign,
   Building,
   TrendingUp,
-  Plus,
+  UserPlus,
   ChevronRight,
   Clock,
   FileText,
+  Calculator,
+  Heart,
+  Calendar,
+  AlertCircle,
+  CheckCircle,
+  ArrowRight,
+  Briefcase,
+  CalendarDays,
+  Keyboard,
 } from "lucide-react";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
+import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
+import { sectionThemes } from "@/lib/sectionTheme";
+
+const theme = sectionThemes.dashboard;
 
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Header Skeleton */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <Skeleton className="h-8 w-40 mb-2" />
-            <Skeleton className="h-5 w-64" />
-          </div>
-          <Skeleton className="h-10 w-36" />
+        <div className="mb-8">
+          <Skeleton className="h-8 w-64 mb-2" />
+          <Skeleton className="h-5 w-96" />
         </div>
-
-        {/* Stats Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-32" />
+          ))}
+        </div>
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-5">
-                <div className="flex items-center justify-between mb-3">
-                  <Skeleton className="h-4 w-28" />
-                  <Skeleton className="h-5 w-5 rounded" />
-                </div>
-                <Skeleton className="h-9 w-20 mb-2" />
-                <Skeleton className="h-4 w-24" />
-              </CardContent>
-            </Card>
+            <Skeleton key={i} className="h-24" />
           ))}
         </div>
-
-        {/* Main Content Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-3">
-              <Skeleton className="h-6 w-48" />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i}>
-                  <div className="flex justify-between mb-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-4 w-16" />
-                  </div>
-                  <Skeleton className="h-2 w-full rounded-full" />
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <Skeleton className="h-6 w-32" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="flex items-center gap-3 p-3">
-                  <Skeleton className="h-9 w-9 rounded-lg" />
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-24 mb-1" />
-                    <Skeleton className="h-3 w-20" />
-                  </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Bottom Row Skeleton */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          {[1, 2].map((i) => (
-            <Card key={i}>
-              <CardHeader className="pb-3">
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {[1, 2, 3, 4, 5].map((j) => (
-                  <div key={j} className="flex items-center gap-3 p-2">
-                    <Skeleton className="h-9 w-9 rounded-full" />
-                    <div className="flex-1">
-                      <Skeleton className="h-4 w-32 mb-1" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                    <Skeleton className="h-3 w-16" />
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          ))}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Skeleton className="h-80" />
+          <Skeleton className="h-80" />
         </div>
       </div>
     </div>
@@ -120,10 +78,20 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { t } = useI18n();
+  const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departmentCount, setDepartmentCount] = useState(0);
-  const [loading, setLoading] = useState(true);
+  const [pendingLeave, setPendingLeave] = useState(0);
+  const [onLeaveToday, setOnLeaveToday] = useState(0);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+
+  // Enable keyboard shortcuts globally
+  useKeyboardShortcuts({
+    enabled: true,
+    onShowHelp: () => setShowShortcuts(true),
+  });
 
   useEffect(() => {
     loadData();
@@ -132,12 +100,39 @@ export default function Dashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [employeesData, departmentsData] = await Promise.all([
+
+      // Load each data source independently so one failure doesn't block others
+      const [employeesResult, departmentsResult, leaveStatsResult] = await Promise.allSettled([
         employeeService.getAllEmployees(),
         departmentService.getAllDepartments(),
+        leaveService.getLeaveStats(),
       ]);
-      setEmployees(employeesData);
-      setDepartmentCount(departmentsData.length);
+
+      // Handle employees
+      if (employeesResult.status === 'fulfilled') {
+        setEmployees(employeesResult.value);
+      } else {
+        console.warn("Could not load employees:", employeesResult.reason);
+        setEmployees([]);
+      }
+
+      // Handle departments
+      if (departmentsResult.status === 'fulfilled') {
+        setDepartmentCount(departmentsResult.value.length);
+      } else {
+        console.warn("Could not load departments:", departmentsResult.reason);
+        setDepartmentCount(0);
+      }
+
+      // Handle leave stats
+      if (leaveStatsResult.status === 'fulfilled') {
+        setPendingLeave(leaveStatsResult.value.pendingRequests);
+        setOnLeaveToday(leaveStatsResult.value.employeesOnLeaveToday);
+      } else {
+        console.warn("Could not load leave stats:", leaveStatsResult.reason);
+        setPendingLeave(0);
+        setOnLeaveToday(0);
+      }
     } catch (error) {
       console.error("Error loading dashboard data:", error);
     } finally {
@@ -160,14 +155,18 @@ export default function Dashboard() {
     })
     .slice(0, 5);
 
-  const departmentStats = employees.reduce(
-    (acc, emp) => {
-      const dept = emp.jobDetails?.department || t("dashboard.unknownDepartment");
-      acc[dept] = (acc[dept] || 0) + 1;
-      return acc;
-    },
-    {} as Record<string, number>
-  );
+  // Calculate days until next payroll (25th)
+  const getDaysUntilPayday = () => {
+    const now = new Date();
+    let nextPay = new Date(now.getFullYear(), now.getMonth(), 25);
+    if (now.getDate() > 25) {
+      nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 25);
+    }
+    return Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+  };
+
+  const daysUntilPayday = getDaysUntilPayday();
+  const firstName = user?.displayName?.split(" ")[0] || "there";
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -178,205 +177,202 @@ export default function Dashboard() {
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Page Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("dashboard.title")}</h1>
-            <p className="text-muted-foreground">{t("dashboard.subtitle")}</p>
-          </div>
-          <Button onClick={() => navigate("/people/add")} className="bg-primary hover:bg-primary/90">
-            <Plus className="h-4 w-4 mr-2" />
-            {t("dashboard.addEmployee")}
-          </Button>
+        {/* Greeting */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold tracking-tight">
+            Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {firstName}
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            Here's what needs your attention today
+          </p>
         </div>
 
-        {/* Stats Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {/* Total Employees */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.totalEmployees")}</span>
-                <Users className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-3xl font-bold text-foreground">{activeEmployees.length}</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("dashboard.inactiveCount", { count: employees.length - activeEmployees.length })}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Monthly Payroll */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.monthlyPayroll")}</span>
-                <DollarSign className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-3xl font-bold text-foreground">${totalPayroll.toLocaleString()}</div>
-              <p className="text-sm text-muted-foreground mt-1">{t("dashboard.totalCompensation")}</p>
-            </CardContent>
-          </Card>
-
-          {/* Departments */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.departments")}</span>
-                <Building className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-3xl font-bold text-foreground">{departmentCount}</div>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("dashboard.withStaff", { count: Object.keys(departmentStats).length })}
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Average Salary */}
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-muted-foreground">{t("dashboard.avgSalary")}</span>
-                <TrendingUp className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div className="text-3xl font-bold text-foreground">
-                ${activeEmployees.length > 0
-                  ? Math.round(totalPayroll / activeEmployees.length).toLocaleString()
-                  : "0"}
-              </div>
-              <p className="text-sm text-muted-foreground mt-1">{t("dashboard.perEmployee")}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Department Breakdown */}
-          <Card className="lg:col-span-2">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">{t("dashboard.departmentBreakdown")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {Object.keys(departmentStats).length > 0 ? (
-                <div className="space-y-4">
-                  {Object.entries(departmentStats)
-                    .sort((a, b) => b[1] - a[1])
-                    .slice(0, 5)
-                    .map(([dept, count]) => {
-                      const percentage = Math.round((count / employees.length) * 100);
-                      return (
-                        <div key={dept}>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="text-sm font-medium">{dept}</span>
-                            <div className="text-right">
-                              <span className="text-sm font-bold">{count}</span>
-                              <span className="text-sm text-muted-foreground ml-2">({percentage}%)</span>
-                            </div>
-                          </div>
-                          <div className="h-2 bg-muted rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-primary rounded-full"
-                              style={{ width: `${percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      );
-                    })}
+        {/* Action Cards - What needs attention */}
+        <div className="grid gap-4 md:grid-cols-3 mb-8">
+          {/* Pending Leave */}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              pendingLeave > 0 ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20" : ""
+            }`}
+            onClick={() => navigate("/people/leave")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    {pendingLeave > 0 ? (
+                      <AlertCircle className="h-5 w-5 text-amber-500" />
+                    ) : (
+                      <CheckCircle className="h-5 w-5 text-green-500" />
+                    )}
+                    <span className="font-semibold">Leave Requests</span>
+                  </div>
+                  <p className="text-3xl font-bold">{pendingLeave}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {pendingLeave > 0 ? "awaiting approval" : "all caught up"}
+                  </p>
                 </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Building className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">{t("dashboard.noDepartmentData")}</p>
-                  <Button
-                    variant="link"
-                    className="text-primary mt-1"
-                    onClick={() => navigate("/admin/seed")}
-                  >
-                    {t("dashboard.seedData")}
+                {pendingLeave > 0 && (
+                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
+                    Review
+                    <ArrowRight className="h-4 w-4 ml-1" />
                   </Button>
-                </div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
 
-          {/* Quick Actions */}
+          {/* Payroll Due */}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              daysUntilPayday <= 7 ? "border-blue-500/50 bg-blue-50/50 dark:bg-blue-950/20" : ""
+            }`}
+            onClick={() => navigate("/payroll/run")}
+          >
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Calculator className="h-5 w-5 text-blue-500" />
+                    <span className="font-semibold">Payroll</span>
+                  </div>
+                  <p className="text-3xl font-bold">{daysUntilPayday} days</p>
+                  <p className="text-sm text-muted-foreground">until next pay date</p>
+                </div>
+                {daysUntilPayday <= 7 && (
+                  <Button size="sm">
+                    Run Payroll
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* On Leave Today */}
+          <Card className="cursor-pointer transition-all hover:shadow-md" onClick={() => navigate("/people/attendance")}>
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <CalendarDays className="h-5 w-5 text-violet-500" />
+                    <span className="font-semibold">On Leave Today</span>
+                  </div>
+                  <p className="text-3xl font-bold">{onLeaveToday}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {onLeaveToday === 1 ? "employee" : "employees"} out
+                  </p>
+                </div>
+                <Badge variant="secondary">{activeEmployees.length - onLeaveToday} in office</Badge>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Quick Actions Bar */}
+        <Card className="mb-8">
+          <CardContent className="py-4">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-medium text-muted-foreground mr-2">Quick Actions:</span>
+              <Button variant="outline" size="sm" onClick={() => navigate("/people/add")}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Add Employee
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/payroll/run")}>
+                <Calculator className="h-4 w-4 mr-2" />
+                Run Payroll
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/people/leave")}>
+                <Heart className="h-4 w-4 mr-2" />
+                Manage Leave
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/people/attendance")}>
+                <Clock className="h-4 w-4 mr-2" />
+                Attendance
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => navigate("/reports")}>
+                <FileText className="h-4 w-4 mr-2" />
+                Reports
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Stats Overview */}
+        <div className="grid gap-4 md:grid-cols-4 mb-8">
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/people/employees")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl font-bold">{activeEmployees.length}</p>
+                  <p className="text-sm text-muted-foreground">Active Employees</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/payroll/run")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
+                  <p className="text-sm text-muted-foreground">Monthly Payroll</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <DollarSign className="h-6 w-6 text-emerald-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/people/departments")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-3xl font-bold">{departmentCount}</p>
+                  <p className="text-sm text-muted-foreground">Departments</p>
+                </div>
+                <div className="h-12 w-12 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                  <Building className="h-6 w-6 text-violet-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">{t("dashboard.quickActions")}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <button
-                onClick={() => navigate("/people/add")}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-              >
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Plus className="h-4 w-4 text-primary" />
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold">
+                    {activeEmployees.length > 0
+                      ? formatCurrencyTL(Math.round(totalPayroll / activeEmployees.length))
+                      : "$0"}
+                  </p>
+                  <p className="text-sm text-muted-foreground">Avg. Salary</p>
                 </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.createRecord")}</p>
+                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-amber-500" />
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button
-                onClick={() => navigate("/payroll/run")}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-              >
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <DollarSign className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.processPayments")}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button
-                onClick={() => navigate("/people/time-tracking")}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-              >
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Clock className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.timeTracking")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.viewAttendance")}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
-
-              <button
-                onClick={() => navigate("/reports/employees")}
-                className="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-muted transition-colors text-left"
-              >
-                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <FileText className="h-4 w-4 text-primary" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm font-medium">{t("dashboard.reports")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.generateReports")}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </button>
+              </div>
             </CardContent>
           </Card>
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        <div className="grid gap-6 lg:grid-cols-2">
           {/* Recent Hires */}
           <Card>
-            <CardHeader className="pb-3 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg font-semibold">{t("dashboard.recentHires")}</CardTitle>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="text-primary hover:text-primary"
-                onClick={() => navigate("/people/employees")}
-              >
-                {t("dashboard.viewAll")}
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-lg">Recent Hires</CardTitle>
+                <CardDescription>Newest team members</CardDescription>
+              </div>
+              <Button variant="ghost" size="sm" onClick={() => navigate("/people/employees")}>
+                View All
+                <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </CardHeader>
             <CardContent>
@@ -386,24 +382,28 @@ export default function Dashboard() {
                     <div
                       key={employee.id}
                       className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                      onClick={() => navigate(`/people/employees?id=${employee.id}`)}
                     >
-                      <Avatar className="h-9 w-9">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm font-medium">
+                      <Avatar className="h-10 w-10">
+                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
                           {employee.personalInfo.firstName[0]}
                           {employee.personalInfo.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
+                        <p className="font-medium truncate">
                           {employee.personalInfo.firstName} {employee.personalInfo.lastName}
                         </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {employee.jobDetails.position}
+                        <p className="text-sm text-muted-foreground truncate">
+                          {employee.jobDetails?.position} • {employee.jobDetails?.department}
                         </p>
                       </div>
                       <div className="text-right">
                         <p className="text-xs text-muted-foreground">
-                          {new Date(employee.jobDetails.hireDate).toLocaleDateString()}
+                          {new Date(employee.jobDetails.hireDate).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                          })}
                         </p>
                       </div>
                     </div>
@@ -412,63 +412,79 @@ export default function Dashboard() {
               ) : (
                 <div className="text-center py-8">
                   <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground">{t("dashboard.noEmployees")}</p>
-                  <Button
-                    variant="link"
-                    className="text-primary mt-1"
-                    onClick={() => navigate("/admin/seed")}
-                  >
-                    {t("dashboard.seedData")}
+                  <p className="text-muted-foreground mb-2">No employees yet</p>
+                  <Button size="sm" onClick={() => navigate("/people/add")}>
+                    <UserPlus className="h-4 w-4 mr-2" />
+                    Add First Employee
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Salary Distribution */}
+          {/* Navigate to Sections */}
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-semibold">{t("dashboard.salaryRanges")}</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Explore</CardTitle>
+              <CardDescription>Jump to any section</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {[
-                  { label: t("dashboard.salaryRange0"), min: 0, max: 10000, color: "bg-emerald-500" },
-                  { label: t("dashboard.salaryRange1"), min: 10000, max: 15000, color: "bg-cyan-500" },
-                  { label: t("dashboard.salaryRange2"), min: 15000, max: 25000, color: "bg-primary" },
-                  { label: t("dashboard.salaryRange3"), min: 25000, max: Infinity, color: "bg-amber-500" },
-                ].map((range) => {
-                  const count = activeEmployees.filter((emp) => {
-                    const salary = emp.compensation?.monthlySalary || 0;
-                    return salary >= range.min && salary < range.max;
-                  }).length;
-                  const percentage = activeEmployees.length > 0
-                    ? Math.round((count / activeEmployees.length) * 100)
-                    : 0;
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 flex-col items-start border-l-4 border-l-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30"
+                  onClick={() => navigate("/people")}
+                >
+                  <Users className="h-6 w-6 mb-2 text-blue-500" />
+                  <span className="font-semibold">People</span>
+                  <span className="text-xs text-muted-foreground">Staff, hiring, leave</span>
+                </Button>
 
-                  return (
-                    <div key={range.label}>
-                      <div className="flex items-center justify-between mb-2">
-                        <span className="text-sm font-medium">{range.label}</span>
-                        <div className="text-right">
-                          <span className="text-sm font-bold">{count}</span>
-                          <span className="text-sm text-muted-foreground ml-2">({percentage}%)</span>
-                        </div>
-                      </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${range.color} rounded-full`}
-                          style={{ width: `${percentage}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 flex-col items-start border-l-4 border-l-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
+                  onClick={() => navigate("/payroll")}
+                >
+                  <Calculator className="h-6 w-6 mb-2 text-emerald-500" />
+                  <span className="font-semibold">Payroll</span>
+                  <span className="text-xs text-muted-foreground">Pay, taxes, benefits</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 flex-col items-start border-l-4 border-l-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
+                  onClick={() => navigate("/accounting")}
+                >
+                  <Building className="h-6 w-6 mb-2 text-amber-500" />
+                  <span className="font-semibold">Accounting</span>
+                  <span className="text-xs text-muted-foreground">Ledger, journal, reports</span>
+                </Button>
+
+                <Button
+                  variant="outline"
+                  className="h-auto py-4 flex-col items-start border-l-4 border-l-purple-500 hover:bg-purple-50 dark:hover:bg-purple-950/30"
+                  onClick={() => navigate("/reports")}
+                >
+                  <FileText className="h-6 w-6 mb-2 text-purple-500" />
+                  <span className="font-semibold">Reports</span>
+                  <span className="text-xs text-muted-foreground">Analytics & exports</span>
+                </Button>
               </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Keyboard Shortcuts Hint */}
+        <div className="text-center text-xs text-muted-foreground mt-4">
+          Press <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono">?</kbd> for keyboard shortcuts
+        </div>
       </div>
+
+      {/* Keyboard Shortcuts Dialog */}
+      <KeyboardShortcutsDialog
+        open={showShortcuts}
+        onOpenChange={setShowShortcuts}
+      />
     </div>
   );
 }

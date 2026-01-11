@@ -24,6 +24,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
@@ -409,6 +410,7 @@ export default function Settings() {
       <MainNavigation />
 
       <div className="p-6 max-w-6xl mx-auto">
+        <AutoBreadcrumb className="mb-6" />
         {/* Header */}
         <div className="flex items-center gap-3 mb-6">
           <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">

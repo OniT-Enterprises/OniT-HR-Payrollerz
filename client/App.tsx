@@ -15,6 +15,12 @@ import Login from "@/pages/auth/Login";
 import Dashboard from "./pages/Dashboard";
 import Settings from "./pages/Settings";
 
+// Section Dashboards
+import PeopleDashboard from "./pages/PeopleDashboard";
+import PayrollDashboard from "./pages/PayrollDashboard";
+import AccountingDashboard from "./pages/AccountingDashboard";
+import ReportsDashboard from "./pages/ReportsDashboard";
+
 // People - Staff
 import AllEmployees from "./pages/staff/AllEmployees";
 import AddEmployee from "./pages/staff/AddEmployee";
@@ -65,6 +71,57 @@ import SetupReports from "./pages/reports/SetupReports";
 // Admin & Other
 import NotFound from "./pages/NotFound";
 import SeedDatabase from "./pages/admin/SeedDatabase";
+import TenantList from "./pages/admin/TenantList";
+import TenantDetail from "./pages/admin/TenantDetail";
+import CreateTenant from "./pages/admin/CreateTenant";
+import UserList from "./pages/admin/UserList";
+import AuditLog from "./pages/admin/AuditLog";
+import AdminSetup from "./pages/admin/AdminSetup";
+import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
+
+// Auth
+import Signup from "./pages/auth/Signup";
+import Landing from "./pages/Landing";
+
+// Smart home route - shows landing for guests, appropriate dashboard for users
+import { useAuth } from "@/contexts/AuthContext";
+
+function HomeRoute() {
+  const { user, userProfile, loading, isSuperAdmin } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Not logged in - show landing page
+  if (!user) {
+    return <Landing />;
+  }
+
+  // User without a user profile - needs to complete setup
+  if (user && !userProfile) {
+    return <Navigate to="/admin/setup" replace />;
+  }
+
+  // Check if user has any tenants
+  const hasTenants = userProfile?.tenantIds && userProfile.tenantIds.length > 0;
+
+  if (!hasTenants) {
+    // Superadmin without tenants goes to admin dashboard
+    if (isSuperAdmin) {
+      return <Navigate to="/admin/tenants" replace />;
+    }
+    // Regular user without tenants needs setup
+    return <Navigate to="/admin/setup" replace />;
+  }
+
+  // User with tenants - show regular dashboard
+  return <Dashboard />;
+}
 
 const queryClient = new QueryClient();
 
@@ -83,16 +140,18 @@ const App = () => (
                     <Routes>
                       {/* Auth & Core */}
                       <Route path="/auth/login" element={<Login />} />
-                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/auth/signup" element={<Signup />} />
+                      <Route path="/" element={<HomeRoute />} />
                       <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/landing" element={<Landing />} />
                       <Route path="/settings" element={<Settings />} />
 
                     {/* ========================================== */}
                     {/* PEOPLE - All HR-related routes             */}
                     {/* ========================================== */}
 
-                    {/* People landing - redirect to employees */}
-                    <Route path="/people" element={<Navigate to="/people/employees" replace />} />
+                    {/* People Hub Dashboard */}
+                    <Route path="/people" element={<PeopleDashboard />} />
 
                     {/* Staff */}
                     <Route path="/people/employees" element={<AllEmployees />} />
@@ -122,7 +181,7 @@ const App = () => (
                     {/* ========================================== */}
                     {/* PAYROLL                                    */}
                     {/* ========================================== */}
-                    <Route path="/payroll" element={<Navigate to="/payroll/run" replace />} />
+                    <Route path="/payroll" element={<PayrollDashboard />} />
                     <Route path="/payroll/run" element={<RunPayroll />} />
                     <Route path="/payroll/history" element={<PayrollHistory />} />
                     <Route path="/payroll/transfers" element={<BankTransfers />} />
@@ -133,7 +192,7 @@ const App = () => (
                     {/* ========================================== */}
                     {/* ACCOUNTING                                 */}
                     {/* ========================================== */}
-                    <Route path="/accounting" element={<Navigate to="/accounting/chart-of-accounts" replace />} />
+                    <Route path="/accounting" element={<AccountingDashboard />} />
                     <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
                     <Route path="/accounting/journal-entries" element={<JournalEntries />} />
                     <Route path="/accounting/general-ledger" element={<GeneralLedger />} />
@@ -142,9 +201,9 @@ const App = () => (
                     <Route path="/accounting/reports" element={<PayrollReports />} />
 
                     {/* ========================================== */}
-                    {/* REPORTS - Temporary until distributed      */}
+                    {/* REPORTS                                    */}
                     {/* ========================================== */}
-                    <Route path="/reports" element={<Navigate to="/reports/payroll" replace />} />
+                    <Route path="/reports" element={<ReportsDashboard />} />
                     <Route path="/reports/payroll" element={<PayrollReports />} />
                     <Route path="/reports/employees" element={<EmployeeReports />} />
                     <Route path="/reports/attendance" element={<AttendanceReports />} />
@@ -186,8 +245,42 @@ const App = () => (
                     <Route path="/performance/training" element={<Navigate to="/people/training" replace />} />
                     <Route path="/performance/disciplinary" element={<Navigate to="/people/disciplinary" replace />} />
 
-                    {/* Admin */}
-                    <Route path="/admin/seed" element={<SeedDatabase />} />
+                    {/* ========================================== */}
+                    {/* ADMIN - Superadmin only                   */}
+                    {/* ========================================== */}
+                    {/* Bootstrap route - not protected, handles its own access control */}
+                    <Route path="/admin/setup" element={<AdminSetup />} />
+                    <Route path="/admin" element={<Navigate to="/admin/tenants" replace />} />
+                    <Route path="/admin/tenants" element={
+                      <SuperadminRoute>
+                        <TenantList />
+                      </SuperadminRoute>
+                    } />
+                    <Route path="/admin/tenants/new" element={
+                      <SuperadminRoute>
+                        <CreateTenant />
+                      </SuperadminRoute>
+                    } />
+                    <Route path="/admin/tenants/:id" element={
+                      <SuperadminRoute>
+                        <TenantDetail />
+                      </SuperadminRoute>
+                    } />
+                    <Route path="/admin/seed" element={
+                      <SuperadminRoute>
+                        <SeedDatabase />
+                      </SuperadminRoute>
+                    } />
+                    <Route path="/admin/users" element={
+                      <SuperadminRoute>
+                        <UserList />
+                      </SuperadminRoute>
+                    } />
+                    <Route path="/admin/audit" element={
+                      <SuperadminRoute>
+                        <AuditLog />
+                      </SuperadminRoute>
+                    } />
 
                       {/* Catch-all */}
                       <Route path="*" element={<NotFound />} />

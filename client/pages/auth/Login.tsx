@@ -121,7 +121,7 @@ export default function Login() {
                 {t("auth.noAccount")}{" "}
               </span>
               <Link
-                to="/auth/register"
+                to="/auth/signup"
                 className="text-sm text-blue-600 hover:underline"
               >
                 {t("auth.signUp")}

@@ -42,7 +42,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
 
-  // Fetch or create user profile from Firestore
+  // Fetch user profile from Firestore (does NOT auto-create)
   const fetchUserProfile = useCallback(async (firebaseUser: User): Promise<UserProfile | null> => {
     if (!db) return null;
 
@@ -54,32 +54,21 @@ export function AuthProvider({ children }: AuthProviderProps) {
         const profile = { ...userDocSnap.data(), uid: firebaseUser.uid } as UserProfile;
 
         // Update last login
-        await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+        try {
+          await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
+        } catch (e) {
+          // Ignore if we can't update last login (might not have permission yet)
+        }
 
         return profile;
       } else {
-        // Create new user profile
-        const newProfile = createUserProfile(
-          firebaseUser.uid,
-          firebaseUser.email || '',
-          firebaseUser.displayName || undefined
-        );
-
-        await setDoc(userDocRef, {
-          ...newProfile,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-          lastLoginAt: serverTimestamp(),
-        });
-
-        return {
-          ...newProfile,
-          createdAt: new Date() as any,
-          updatedAt: new Date() as any,
-        } as UserProfile;
+        // No profile exists - user needs to complete setup
+        // Don't auto-create, let /admin/setup or /auth/signup handle it
+        console.log("User has no profile, needs setup");
+        return null;
       }
     } catch (error) {
-      console.warn("Could not fetch/create user profile:", error);
+      console.warn("Could not fetch user profile:", error);
       return null;
     }
   }, []);

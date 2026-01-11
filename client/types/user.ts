@@ -44,7 +44,18 @@ export interface AdminAuditEntry {
   details?: Record<string, any>;
   timestamp: Timestamp;
   ipAddress?: string;
+  // Additional fields for UI compatibility
+  performedBy?: string;
+  performedByEmail?: string;
+  tenantId?: string;
+  tenantName?: string;
+  targetUserId?: string;
+  targetEmail?: string;
+  triggeredBy?: 'system' | 'user';
 }
+
+// Alias for audit log viewer
+export type AuditLogEntry = AdminAuditEntry;
 
 export type AdminAuditAction =
   | 'tenant_created'

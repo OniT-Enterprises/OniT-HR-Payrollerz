@@ -42,6 +42,8 @@ import {
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
   Filter,
@@ -72,6 +74,7 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
 export default function Attendance() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const [selectedDate, setSelectedDate] = useState(
     new Date().toISOString().split("T")[0]
   );
@@ -119,8 +122,8 @@ export default function Attendance() {
       } catch (error) {
         console.error("Error loading data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load attendance data.",
+          title: t("timeLeave.attendance.toast.errorTitle"),
+          description: t("timeLeave.attendance.toast.loadFailed"),
           variant: "destructive",
         });
       } finally {
@@ -169,16 +172,53 @@ export default function Attendance() {
 
   const getStatusBadge = (status: AttendanceStatus) => {
     const configs: Record<AttendanceStatus, { class: string; label: string }> = {
-      present: { class: "bg-green-100 text-green-800", label: "Present" },
-      late: { class: "bg-yellow-100 text-yellow-800", label: "Late" },
-      absent: { class: "bg-red-100 text-red-800", label: "Absent" },
-      half_day: { class: "bg-orange-100 text-orange-800", label: "Half Day" },
-      leave: { class: "bg-blue-100 text-blue-800", label: "On Leave" },
-      holiday: { class: "bg-purple-100 text-purple-800", label: "Holiday" },
+      present: {
+        class: "bg-green-100 text-green-800",
+        label: t("timeLeave.attendance.status.present"),
+      },
+      late: {
+        class: "bg-yellow-100 text-yellow-800",
+        label: t("timeLeave.attendance.status.late"),
+      },
+      absent: {
+        class: "bg-red-100 text-red-800",
+        label: t("timeLeave.attendance.status.absent"),
+      },
+      half_day: {
+        class: "bg-orange-100 text-orange-800",
+        label: t("timeLeave.attendance.status.halfDay"),
+      },
+      leave: {
+        class: "bg-blue-100 text-blue-800",
+        label: t("timeLeave.attendance.status.leave"),
+      },
+      holiday: {
+        class: "bg-purple-100 text-purple-800",
+        label: t("timeLeave.attendance.status.holiday"),
+      },
     };
 
     const config = configs[status] || { class: "bg-gray-100 text-gray-800", label: status };
     return <Badge className={config.class}>{config.label}</Badge>;
+  };
+
+  const getStatusLabel = (status: AttendanceStatus) => {
+    switch (status) {
+      case "present":
+        return t("timeLeave.attendance.status.present");
+      case "late":
+        return t("timeLeave.attendance.status.late");
+      case "absent":
+        return t("timeLeave.attendance.status.absent");
+      case "half_day":
+        return t("timeLeave.attendance.status.halfDay");
+      case "leave":
+        return t("timeLeave.attendance.status.leave");
+      case "holiday":
+        return t("timeLeave.attendance.status.holiday");
+      default:
+        return status;
+    }
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -193,8 +233,8 @@ export default function Attendance() {
 
     if (!formData.employeeId || !formData.date || !formData.clockIn) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: t("timeLeave.attendance.toast.validationTitle"),
+        description: t("timeLeave.attendance.toast.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -203,8 +243,8 @@ export default function Attendance() {
     const employee = employees.find(e => e.id === formData.employeeId);
     if (!employee) {
       toast({
-        title: "Error",
-        description: "Employee not found.",
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.employeeNotFound"),
         variant: "destructive",
       });
       return;
@@ -225,8 +265,8 @@ export default function Attendance() {
       });
 
       toast({
-        title: "Success",
-        description: "Attendance marked successfully.",
+        title: t("timeLeave.attendance.toast.successTitle"),
+        description: t("timeLeave.attendance.toast.successDesc"),
       });
 
       // Reload records
@@ -243,8 +283,8 @@ export default function Attendance() {
       setShowMarkDialog(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to mark attendance. Please try again.",
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.saveFailed"),
         variant: "destructive",
       });
     } finally {
@@ -254,27 +294,27 @@ export default function Attendance() {
 
   const handleExportCSV = () => {
     const headers = [
-      "Employee Name",
-      "Department",
-      "Date",
-      "Clock In",
-      "Clock Out",
-      "Regular Hours",
-      "Overtime Hours",
-      "Late (min)",
-      "Status",
+      t("timeLeave.attendance.csv.employeeName"),
+      t("timeLeave.attendance.csv.department"),
+      t("timeLeave.attendance.csv.date"),
+      t("timeLeave.attendance.csv.clockIn"),
+      t("timeLeave.attendance.csv.clockOut"),
+      t("timeLeave.attendance.csv.regularHours"),
+      t("timeLeave.attendance.csv.overtimeHours"),
+      t("timeLeave.attendance.csv.lateMinutes"),
+      t("timeLeave.attendance.csv.status"),
     ];
 
     const rows = filteredRecords.map((record) => [
       record.employeeName,
       record.department,
       record.date,
-      record.clockIn || "N/A",
-      record.clockOut || "N/A",
+      record.clockIn || t("timeLeave.attendance.csv.notAvailable"),
+      record.clockOut || t("timeLeave.attendance.csv.notAvailable"),
       record.regularHours.toFixed(2),
       record.overtimeHours.toFixed(2),
       record.lateMinutes,
-      record.status,
+      getStatusLabel(record.status),
     ]);
 
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
@@ -287,16 +327,16 @@ export default function Attendance() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: "CSV file has been downloaded.",
+      title: t("timeLeave.attendance.toast.exportTitle"),
+      description: t("timeLeave.attendance.toast.exportDesc"),
     });
   };
 
   const handleImportCSV = async () => {
     if (!importFile) {
       toast({
-        title: "Error",
-        description: "Please select a file to import.",
+        title: t("timeLeave.attendance.toast.errorTitle"),
+        description: t("timeLeave.attendance.toast.importSelect"),
         variant: "destructive",
       });
       return;
@@ -357,8 +397,8 @@ export default function Attendance() {
 
       if (records.length === 0) {
         toast({
-          title: "Import Error",
-          description: "No valid records found in the file.",
+          title: t("timeLeave.attendance.toast.importErrorTitle"),
+          description: t("timeLeave.attendance.toast.importEmpty"),
           variant: "destructive",
         });
         return;
@@ -371,8 +411,12 @@ export default function Attendance() {
       });
 
       toast({
-        title: "Import Complete",
-        description: `${result.stats.success} records imported, ${result.stats.duplicates} duplicates skipped, ${result.stats.errors} errors.`,
+        title: t("timeLeave.attendance.toast.importCompleteTitle"),
+        description: t("timeLeave.attendance.toast.importCompleteDesc", {
+          success: result.stats.success,
+          duplicates: result.stats.duplicates,
+          errors: result.stats.errors,
+        }),
       });
 
       // Reload records
@@ -384,8 +428,8 @@ export default function Attendance() {
     } catch (error) {
       console.error("Import error:", error);
       toast({
-        title: "Import Error",
-        description: "Failed to import attendance data.",
+        title: t("timeLeave.attendance.toast.importErrorTitle"),
+        description: t("timeLeave.attendance.toast.importFailed"),
         variant: "destructive",
       });
     } finally {
@@ -398,6 +442,7 @@ export default function Attendance() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <Skeleton className="h-9 w-40 mb-2" />
@@ -446,13 +491,16 @@ export default function Attendance() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Attendance</h1>
+              <h1 className="text-3xl font-bold tracking-tight">
+                {t("timeLeave.attendance.title")}
+              </h1>
               <p className="text-muted-foreground">
-                Track and manage employee attendance
+                {t("timeLeave.attendance.subtitle")}
               </p>
             </div>
             <div className="flex gap-2">
@@ -460,43 +508,45 @@ export default function Attendance() {
                 <DialogTrigger asChild>
                   <Button variant="outline">
                     <Upload className="h-4 w-4 mr-2" />
-                    Import
+                    {t("timeLeave.attendance.actions.import")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Import Attendance Data</DialogTitle>
+                    <DialogTitle>
+                      {t("timeLeave.attendance.import.title")}
+                    </DialogTitle>
                     <DialogDescription>
-                      Import attendance records from fingerprint device or CSV file
+                      {t("timeLeave.attendance.import.description")}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label>Select File</Label>
+                      <Label>{t("timeLeave.attendance.import.selectFile")}</Label>
                       <Input
                         type="file"
                         accept=".csv,.xlsx"
                         onChange={(e) => setImportFile(e.target.files?.[0] || null)}
                       />
                       <p className="text-xs text-muted-foreground mt-1">
-                        CSV format: employee_id, date, clock_in, clock_out
+                        {t("timeLeave.attendance.import.format")}
                       </p>
                     </div>
                   </div>
                   <DialogFooter>
                     <Button variant="outline" onClick={() => setShowImportDialog(false)}>
-                      Cancel
+                      {t("timeLeave.attendance.actions.cancel")}
                     </Button>
                     <Button onClick={handleImportCSV} disabled={importing || !importFile}>
                       {importing ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Importing...
+                          {t("timeLeave.attendance.import.importing")}
                         </>
                       ) : (
                         <>
                           <FileUp className="h-4 w-4 mr-2" />
-                          Import
+                          {t("timeLeave.attendance.actions.import")}
                         </>
                       )}
                     </Button>
@@ -508,25 +558,29 @@ export default function Attendance() {
                 <DialogTrigger asChild>
                   <Button>
                     <Plus className="h-4 w-4 mr-2" />
-                    Mark Attendance
+                    {t("timeLeave.attendance.actions.mark")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Mark Attendance</DialogTitle>
+                    <DialogTitle>
+                      {t("timeLeave.attendance.mark.title")}
+                    </DialogTitle>
                     <DialogDescription>
-                      Record employee check-in and check-out times
+                      {t("timeLeave.attendance.mark.description")}
                     </DialogDescription>
                   </DialogHeader>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <Label>Employee *</Label>
+                      <Label>{t("timeLeave.attendance.mark.employee")}</Label>
                       <Select
                         value={formData.employeeId}
                         onValueChange={(value) => handleInputChange("employeeId", value)}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select employee" />
+                          <SelectValue
+                            placeholder={t("timeLeave.attendance.mark.employeePlaceholder")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {employees.map((emp) => (
@@ -538,7 +592,7 @@ export default function Attendance() {
                       </Select>
                     </div>
                     <div>
-                      <Label>Date *</Label>
+                      <Label>{t("timeLeave.attendance.mark.date")}</Label>
                       <Input
                         type="date"
                         value={formData.date}
@@ -548,7 +602,7 @@ export default function Attendance() {
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label>Clock In *</Label>
+                        <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
                         <Input
                           type="time"
                           value={formData.clockIn}
@@ -557,7 +611,7 @@ export default function Attendance() {
                         />
                       </div>
                       <div>
-                        <Label>Clock Out</Label>
+                        <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
                         <Input
                           type="time"
                           value={formData.clockOut}
@@ -566,11 +620,11 @@ export default function Attendance() {
                       </div>
                     </div>
                     <div>
-                      <Label>Notes</Label>
+                      <Label>{t("timeLeave.attendance.mark.notes")}</Label>
                       <Input
                         value={formData.notes}
                         onChange={(e) => handleInputChange("notes", e.target.value)}
-                        placeholder="Optional notes..."
+                        placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
                       />
                     </div>
                     <DialogFooter>
@@ -579,16 +633,16 @@ export default function Attendance() {
                         variant="outline"
                         onClick={() => setShowMarkDialog(false)}
                       >
-                        Cancel
+                        {t("timeLeave.attendance.actions.cancel")}
                       </Button>
                       <Button type="submit" disabled={saving}>
                         {saving ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Saving...
+                            {t("timeLeave.attendance.mark.saving")}
                           </>
                         ) : (
-                          "Mark Attendance"
+                          t("timeLeave.attendance.actions.mark")
                         )}
                       </Button>
                     </DialogFooter>
@@ -604,7 +658,9 @@ export default function Attendance() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm text-muted-foreground">Total</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t("timeLeave.attendance.stats.total")}
+                  </span>
                 </div>
                 <div className="text-2xl font-bold">{stats.totalEmployees}</div>
               </CardContent>
@@ -613,7 +669,9 @@ export default function Attendance() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <CheckCircle className="h-4 w-4 text-green-600" />
-                  <span className="text-sm text-muted-foreground">Present</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t("timeLeave.attendance.stats.present")}
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-green-600">{stats.present}</div>
               </CardContent>
@@ -622,7 +680,9 @@ export default function Attendance() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <AlertTriangle className="h-4 w-4 text-yellow-600" />
-                  <span className="text-sm text-muted-foreground">Late</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t("timeLeave.attendance.stats.late")}
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-yellow-600">{stats.late}</div>
               </CardContent>
@@ -631,7 +691,9 @@ export default function Attendance() {
               <CardContent className="pt-6">
                 <div className="flex items-center gap-2 mb-2">
                   <TrendingUp className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm text-muted-foreground">Rate</span>
+                  <span className="text-sm text-muted-foreground">
+                    {t("timeLeave.attendance.stats.rate")}
+                  </span>
                 </div>
                 <div className="text-2xl font-bold text-blue-600">
                   {stats.attendanceRate.toFixed(1)}%
@@ -645,13 +707,13 @@ export default function Attendance() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <Filter className="h-5 w-5" />
-                Filters
+                {t("timeLeave.attendance.filters.title")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label>Date</Label>
+                  <Label>{t("timeLeave.attendance.filters.date")}</Label>
                   <Input
                     type="date"
                     value={selectedDate}
@@ -659,13 +721,17 @@ export default function Attendance() {
                   />
                 </div>
                 <div>
-                  <Label>Department</Label>
+                  <Label>{t("timeLeave.attendance.filters.department")}</Label>
                   <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All departments" />
+                      <SelectValue
+                        placeholder={t("timeLeave.attendance.filters.allDepartments")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
+                      <SelectItem value="all">
+                        {t("timeLeave.attendance.filters.allDepartments")}
+                      </SelectItem>
                       {departments.map((dept) => (
                         <SelectItem key={dept.id} value={dept.name}>
                           {dept.name}
@@ -675,25 +741,39 @@ export default function Attendance() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Status</Label>
+                  <Label>{t("timeLeave.attendance.filters.status")}</Label>
                   <Select value={selectedStatus} onValueChange={setSelectedStatus}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue
+                        placeholder={t("timeLeave.attendance.filters.allStatuses")}
+                      />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="present">Present</SelectItem>
-                      <SelectItem value="late">Late</SelectItem>
-                      <SelectItem value="absent">Absent</SelectItem>
-                      <SelectItem value="half_day">Half Day</SelectItem>
-                      <SelectItem value="leave">On Leave</SelectItem>
+                      <SelectItem value="all">
+                        {t("timeLeave.attendance.filters.allStatuses")}
+                      </SelectItem>
+                      <SelectItem value="present">
+                        {t("timeLeave.attendance.status.present")}
+                      </SelectItem>
+                      <SelectItem value="late">
+                        {t("timeLeave.attendance.status.late")}
+                      </SelectItem>
+                      <SelectItem value="absent">
+                        {t("timeLeave.attendance.status.absent")}
+                      </SelectItem>
+                      <SelectItem value="half_day">
+                        {t("timeLeave.attendance.status.halfDay")}
+                      </SelectItem>
+                      <SelectItem value="leave">
+                        {t("timeLeave.attendance.status.leave")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex items-end">
                   <Button variant="outline" onClick={handleExportCSV} className="w-full">
                     <Download className="h-4 w-4 mr-2" />
-                    Export CSV
+                    {t("timeLeave.attendance.actions.export")}
                   </Button>
                 </div>
               </div>
@@ -705,31 +785,42 @@ export default function Attendance() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Attendance Records
+                {t("timeLeave.attendance.table.title")}
               </CardTitle>
               <CardDescription>
-                {filteredRecords.length} records for {selectedDate}
+                {t("timeLeave.attendance.table.summary", {
+                  count: filteredRecords.length,
+                  date: selectedDate,
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {filteredRecords.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground">
                   <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No attendance records found for this date</p>
-                  <p className="text-sm">Mark attendance or import from device</p>
+                  <p>{t("timeLeave.attendance.empty.title")}</p>
+                  <p className="text-sm">
+                    {t("timeLeave.attendance.empty.description")}
+                  </p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Department</TableHead>
-                      <TableHead>Clock In</TableHead>
-                      <TableHead>Clock Out</TableHead>
-                      <TableHead className="text-right">Regular</TableHead>
-                      <TableHead className="text-right">Overtime</TableHead>
-                      <TableHead className="text-right">Late</TableHead>
-                      <TableHead>Status</TableHead>
+                      <TableHead>{t("timeLeave.attendance.table.employee")}</TableHead>
+                      <TableHead>{t("timeLeave.attendance.table.department")}</TableHead>
+                      <TableHead>{t("timeLeave.attendance.table.clockIn")}</TableHead>
+                      <TableHead>{t("timeLeave.attendance.table.clockOut")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("timeLeave.attendance.table.regular")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("timeLeave.attendance.table.overtime")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("timeLeave.attendance.table.late")}
+                      </TableHead>
+                      <TableHead>{t("timeLeave.attendance.table.status")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>

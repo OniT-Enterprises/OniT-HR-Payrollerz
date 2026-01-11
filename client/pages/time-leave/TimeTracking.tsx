@@ -46,6 +46,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
   Filter,
@@ -117,6 +119,7 @@ interface TimeEntry {
 
 export default function TimeTracking() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("daily");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -277,32 +280,32 @@ export default function TimeTracking() {
     },
   ];
 
-  const commonActivities = [
-    "Perimeter patrol",
-    "Access control",
-    "Visitor screening",
-    "Incident response",
-    "Equipment check",
-    "Report writing",
-    "Camera monitoring",
-    "Alarm response",
-    "Emergency evacuation",
-    "Traffic control",
-    "Lost & found",
-    "Building maintenance coordination",
+  const activityOptions = [
+    { key: "perimeterPatrol", label: t("timeLeave.timeTracking.activities.perimeterPatrol") },
+    { key: "accessControl", label: t("timeLeave.timeTracking.activities.accessControl") },
+    { key: "visitorScreening", label: t("timeLeave.timeTracking.activities.visitorScreening") },
+    { key: "incidentResponse", label: t("timeLeave.timeTracking.activities.incidentResponse") },
+    { key: "equipmentCheck", label: t("timeLeave.timeTracking.activities.equipmentCheck") },
+    { key: "reportWriting", label: t("timeLeave.timeTracking.activities.reportWriting") },
+    { key: "cameraMonitoring", label: t("timeLeave.timeTracking.activities.cameraMonitoring") },
+    { key: "alarmResponse", label: t("timeLeave.timeTracking.activities.alarmResponse") },
+    { key: "emergencyEvacuation", label: t("timeLeave.timeTracking.activities.emergencyEvacuation") },
+    { key: "trafficControl", label: t("timeLeave.timeTracking.activities.trafficControl") },
+    { key: "lostFound", label: t("timeLeave.timeTracking.activities.lostFound") },
+    { key: "maintenanceCoordination", label: t("timeLeave.timeTracking.activities.maintenanceCoordination") },
   ];
 
-  const equipmentList = [
-    "Radio",
-    "Flashlight",
-    "Keys",
-    "Access cards",
-    "First aid kit",
-    "Fire extinguisher",
-    "AED",
-    "Security camera system",
-    "Metal detector",
-    "Patrol vehicle",
+  const equipmentOptions = [
+    { key: "radio", label: t("timeLeave.timeTracking.equipment.radio") },
+    { key: "flashlight", label: t("timeLeave.timeTracking.equipment.flashlight") },
+    { key: "keys", label: t("timeLeave.timeTracking.equipment.keys") },
+    { key: "accessCards", label: t("timeLeave.timeTracking.equipment.accessCards") },
+    { key: "firstAid", label: t("timeLeave.timeTracking.equipment.firstAid") },
+    { key: "fireExtinguisher", label: t("timeLeave.timeTracking.equipment.fireExtinguisher") },
+    { key: "aed", label: t("timeLeave.timeTracking.equipment.aed") },
+    { key: "cameraSystem", label: t("timeLeave.timeTracking.equipment.cameraSystem") },
+    { key: "metalDetector", label: t("timeLeave.timeTracking.equipment.metalDetector") },
+    { key: "patrolVehicle", label: t("timeLeave.timeTracking.equipment.patrolVehicle") },
   ];
 
   const timeEntries: TimeEntry[] = [
@@ -393,14 +396,62 @@ export default function TimeTracking() {
     },
   ];
 
+  const shiftLabels = {
+    day: t("timeLeave.timeTracking.shiftTypes.day"),
+    night: t("timeLeave.timeTracking.shiftTypes.night"),
+    swing: t("timeLeave.timeTracking.shiftTypes.swing"),
+    overtime: t("timeLeave.timeTracking.shiftTypes.overtime"),
+  };
+
+  const shiftOptionLabels = {
+    day: t("timeLeave.timeTracking.shiftTypes.dayWithTime"),
+    swing: t("timeLeave.timeTracking.shiftTypes.swingWithTime"),
+    night: t("timeLeave.timeTracking.shiftTypes.nightWithTime"),
+    overtime: t("timeLeave.timeTracking.shiftTypes.overtime"),
+  };
+
+  const activityLabelMap: Record<string, string> = {
+    "Perimeter patrol": t("timeLeave.timeTracking.activities.perimeterPatrol"),
+    "Access control": t("timeLeave.timeTracking.activities.accessControl"),
+    "Visitor screening": t("timeLeave.timeTracking.activities.visitorScreening"),
+    "Incident response": t("timeLeave.timeTracking.activities.incidentResponse"),
+    "Equipment check": t("timeLeave.timeTracking.activities.equipmentCheck"),
+    "Report writing": t("timeLeave.timeTracking.activities.reportWriting"),
+    "Camera monitoring": t("timeLeave.timeTracking.activities.cameraMonitoring"),
+    "Alarm response": t("timeLeave.timeTracking.activities.alarmResponse"),
+    "Emergency evacuation": t("timeLeave.timeTracking.activities.emergencyEvacuation"),
+    "Traffic control": t("timeLeave.timeTracking.activities.trafficControl"),
+    "Lost & found": t("timeLeave.timeTracking.activities.lostFound"),
+    "Building maintenance coordination": t("timeLeave.timeTracking.activities.maintenanceCoordination"),
+    "Building monitoring": t("timeLeave.timeTracking.activities.buildingMonitoring"),
+    "Gate security": t("timeLeave.timeTracking.activities.gateSecurity"),
+    "Vehicle inspection": t("timeLeave.timeTracking.activities.vehicleInspection"),
+    Patrol: t("timeLeave.timeTracking.activities.patrol"),
+  };
+
+  const getActivityLabel = (activity: string) =>
+    activityLabelMap[activity] || activity;
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "approved":
-        return <Badge className="bg-green-100 text-green-800">Approved</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            {t("timeLeave.timeTracking.status.approved")}
+          </Badge>
+        );
       case "pending":
-        return <Badge className="bg-yellow-100 text-yellow-800">Pending</Badge>;
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800">
+            {t("timeLeave.timeTracking.status.pending")}
+          </Badge>
+        );
       case "rejected":
-        return <Badge className="bg-red-100 text-red-800">Rejected</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            {t("timeLeave.timeTracking.status.rejected")}
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -409,13 +460,23 @@ export default function TimeTracking() {
   const getRiskLevelBadge = (level: string) => {
     switch (level) {
       case "high":
-        return <Badge className="bg-red-100 text-red-800">High Risk</Badge>;
+        return (
+          <Badge className="bg-red-100 text-red-800">
+            {t("timeLeave.timeTracking.risk.high")}
+          </Badge>
+        );
       case "medium":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800">Medium Risk</Badge>
+          <Badge className="bg-yellow-100 text-yellow-800">
+            {t("timeLeave.timeTracking.risk.medium")}
+          </Badge>
         );
       case "low":
-        return <Badge className="bg-green-100 text-green-800">Low Risk</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800">
+            {t("timeLeave.timeTracking.risk.low")}
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{level}</Badge>;
     }
@@ -479,8 +540,8 @@ export default function TimeTracking() {
       !formData.clockOut
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: t("timeLeave.timeTracking.toast.validationTitle"),
+        description: t("timeLeave.timeTracking.toast.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -500,9 +561,8 @@ export default function TimeTracking() {
       });
 
       toast({
-        title: "Success",
-        description:
-          "Time entry logged successfully. Awaiting supervisor approval.",
+        title: t("timeLeave.timeTracking.toast.successTitle"),
+        description: t("timeLeave.timeTracking.toast.successDesc"),
       });
 
       setFormData({
@@ -521,8 +581,8 @@ export default function TimeTracking() {
       setShowAddDialog(false);
     } catch (error) {
       toast({
-        title: "Error",
-        description: "Failed to log time entry. Please try again.",
+        title: t("timeLeave.timeTracking.toast.errorTitle"),
+        description: t("timeLeave.timeTracking.toast.errorDesc"),
         variant: "destructive",
       });
     }
@@ -537,31 +597,45 @@ export default function TimeTracking() {
       selectedClient: selectedClient === "all" ? "" : selectedClient,
     });
     toast({
-      title: "Filter Applied",
-      description: `Filtering entries from ${startDate} to ${endDate}`,
+      title: t("timeLeave.timeTracking.toast.filterTitle"),
+      description: t("timeLeave.timeTracking.toast.filterDesc", {
+        startDate,
+        endDate,
+      }),
     });
   };
 
   const handleExportCSV = () => {
     const csvData = timeEntries.map((entry) => ({
-      "Badge Number": entry.badgeNumber,
-      "Employee Name": entry.employeeName,
-      Date: entry.date,
-      "Shift Type": entry.shiftType,
-      Site: entry.siteName,
-      Client: clients.find((c) => c.id === entry.clientId)?.name || "",
-      "Clock In": entry.clockIn,
-      "Clock Out": entry.clockOut,
-      "Total Hours": entry.totalHours,
-      Activities: entry.activities.join(", "),
-      Incidents: entry.incidents,
-      Status: entry.status,
+      [t("timeLeave.timeTracking.csv.badgeNumber")]: entry.badgeNumber,
+      [t("timeLeave.timeTracking.csv.employeeName")]: entry.employeeName,
+      [t("timeLeave.timeTracking.csv.date")]: entry.date,
+      [t("timeLeave.timeTracking.csv.shiftType")]:
+        shiftLabels[entry.shiftType] || entry.shiftType,
+      [t("timeLeave.timeTracking.csv.site")]: entry.siteName,
+      [t("timeLeave.timeTracking.csv.client")]:
+        clients.find((c) => c.id === entry.clientId)?.name || "",
+      [t("timeLeave.timeTracking.csv.clockIn")]: entry.clockIn,
+      [t("timeLeave.timeTracking.csv.clockOut")]: entry.clockOut,
+      [t("timeLeave.timeTracking.csv.totalHours")]: entry.totalHours,
+      [t("timeLeave.timeTracking.csv.activities")]: entry.activities
+        .map(getActivityLabel)
+        .join(", "),
+      [t("timeLeave.timeTracking.csv.incidents")]: entry.incidents,
+      [t("timeLeave.timeTracking.csv.status")]:
+        entry.status === "approved"
+          ? t("timeLeave.timeTracking.status.approved")
+          : entry.status === "pending"
+            ? t("timeLeave.timeTracking.status.pending")
+            : entry.status === "rejected"
+              ? t("timeLeave.timeTracking.status.rejected")
+              : entry.status,
     }));
 
     console.log("Exporting CSV data:", csvData);
     toast({
-      title: "Export Started",
-      description: "Security timesheet CSV will be downloaded shortly.",
+      title: t("timeLeave.timeTracking.toast.exportTitle"),
+      description: t("timeLeave.timeTracking.toast.exportDesc"),
     });
   };
 
@@ -581,45 +655,57 @@ export default function TimeTracking() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Guards on Duty
+              {t("timeLeave.timeTracking.stats.guardsOnDuty")}
             </CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">127</div>
-            <p className="text-xs text-muted-foreground">Currently active</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sites Covered</CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">Active locations</p>
+            <p className="text-xs text-muted-foreground">
+              {t("timeLeave.timeTracking.stats.currentlyActive")}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Pending Approvals
+              {t("timeLeave.timeTracking.stats.sitesCovered")}
+            </CardTitle>
+            <MapPin className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">45</div>
+            <p className="text-xs text-muted-foreground">
+              {t("timeLeave.timeTracking.stats.activeLocations")}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {t("timeLeave.timeTracking.stats.pendingApprovals")}
             </CardTitle>
             <Clock className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">Awaiting review</p>
+            <p className="text-xs text-muted-foreground">
+              {t("timeLeave.timeTracking.stats.awaitingReview")}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Hours</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("timeLeave.timeTracking.stats.totalHours")}
+            </CardTitle>
             <Timer className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">956</div>
-            <p className="text-xs text-muted-foreground">This week</p>
+            <p className="text-xs text-muted-foreground">
+              {t("timeLeave.timeTracking.stats.thisWeek")}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -627,9 +713,9 @@ export default function TimeTracking() {
       {/* Recent Entries */}
       <Card>
         <CardHeader>
-          <CardTitle>Recent Activity Logs</CardTitle>
+          <CardTitle>{t("timeLeave.timeTracking.recent.title")}</CardTitle>
           <CardDescription>
-            Latest security guard time entries and daily activities
+            {t("timeLeave.timeTracking.recent.description")}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -647,7 +733,7 @@ export default function TimeTracking() {
                       <p className="font-medium">{entry.employeeName}</p>
                       <Badge variant="outline">{entry.badgeNumber}</Badge>
                       <Badge className="bg-blue-100 text-blue-800">
-                        {entry.shiftType}
+                        {shiftLabels[entry.shiftType] || entry.shiftType}
                       </Badge>
                     </div>
                     <p className="text-sm text-gray-600">
@@ -659,7 +745,7 @@ export default function TimeTracking() {
                     {entry.incidents && (
                       <div className="flex items-center gap-1 text-sm text-orange-600">
                         <AlertTriangle className="h-4 w-4" />
-                        <span>Incident reported</span>
+                        <span>{t("timeLeave.timeTracking.recent.incident")}</span>
                       </div>
                     )}
                   </div>
@@ -681,6 +767,7 @@ export default function TimeTracking() {
       <div className="min-h-screen bg-gray-50">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           <div className="max-w-7xl mx-auto">
             {/* Stats skeleton */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -735,6 +822,7 @@ export default function TimeTracking() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto">
           <div />
 
@@ -746,55 +834,57 @@ export default function TimeTracking() {
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Guards on Duty
+                        {t("timeLeave.timeTracking.stats.guardsOnDuty")}
                       </CardTitle>
                       <Shield className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">127</div>
                       <p className="text-xs text-muted-foreground">
-                        Currently active
+                        {t("timeLeave.timeTracking.stats.currentlyActive")}
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Sites Covered
+                        {t("timeLeave.timeTracking.stats.sitesCovered")}
                       </CardTitle>
                       <MapPin className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">45</div>
                       <p className="text-xs text-muted-foreground">
-                        Active locations
+                        {t("timeLeave.timeTracking.stats.activeLocations")}
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Pending Approvals
+                        {t("timeLeave.timeTracking.stats.pendingApprovals")}
                       </CardTitle>
                       <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">23</div>
                       <p className="text-xs text-muted-foreground">
-                        Awaiting review
+                        {t("timeLeave.timeTracking.stats.awaitingReview")}
                       </p>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                       <CardTitle className="text-sm font-medium">
-                        Total Hours
+                        {t("timeLeave.timeTracking.stats.totalHours")}
                       </CardTitle>
                       <Timer className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
                       <div className="text-2xl font-bold">956</div>
-                      <p className="text-xs text-muted-foreground">This week</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("timeLeave.timeTracking.stats.thisWeek")}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
@@ -805,22 +895,24 @@ export default function TimeTracking() {
                     value="daily"
                     className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
                   >
-                    Daily Overview
+                    {t("timeLeave.timeTracking.tabs.daily")}
                   </TabsTrigger>
                   <TabsTrigger value="entries" className="ml-auto">
-                    Time Entries
+                    {t("timeLeave.timeTracking.tabs.entries")}
                   </TabsTrigger>
                   <TabsTrigger value="reports" className="ml-auto">
-                    Reports & Export
+                    {t("timeLeave.timeTracking.tabs.reports")}
                   </TabsTrigger>
                 </TabsList>
 
                 {/* Recent Entries Card */}
                 <Card className="mt-6">
                   <CardHeader>
-                    <CardTitle>Recent Activity Logs</CardTitle>
+                    <CardTitle>
+                      {t("timeLeave.timeTracking.recent.title")}
+                    </CardTitle>
                     <CardDescription>
-                      Latest security guard time entries and daily activities
+                      {t("timeLeave.timeTracking.recent.description")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -846,7 +938,8 @@ export default function TimeTracking() {
                                   {entry.badgeNumber}
                                 </Badge>
                                 <Badge className="bg-blue-100 text-blue-800">
-                                  {entry.shiftType}
+                                  {shiftLabels[entry.shiftType] ||
+                                    entry.shiftType}
                                 </Badge>
                               </div>
                               <p className="text-sm text-gray-600">
@@ -859,7 +952,9 @@ export default function TimeTracking() {
                               {entry.incidents && (
                                 <div className="flex items-center gap-1 text-sm text-orange-600">
                                   <AlertTriangle className="h-4 w-4" />
-                                  <span>Incident reported</span>
+                                  <span>
+                                    {t("timeLeave.timeTracking.recent.incident")}
+                                  </span>
                                 </div>
                               )}
                             </div>
@@ -884,13 +979,15 @@ export default function TimeTracking() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Filter className="h-5 w-5" />
-                    Filters
+                    {t("timeLeave.timeTracking.filters.title")}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
                     <div>
-                      <Label htmlFor="start-date">Start Date</Label>
+                      <Label htmlFor="start-date">
+                        {t("timeLeave.timeTracking.filters.startDate")}
+                      </Label>
                       <Input
                         id="start-date"
                         type="date"
@@ -899,7 +996,9 @@ export default function TimeTracking() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="end-date">End Date</Label>
+                      <Label htmlFor="end-date">
+                        {t("timeLeave.timeTracking.filters.endDate")}
+                      </Label>
                       <Input
                         id="end-date"
                         type="date"
@@ -908,16 +1007,22 @@ export default function TimeTracking() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="employee-filter">Security Guard</Label>
+                      <Label htmlFor="employee-filter">
+                        {t("timeLeave.timeTracking.filters.guard")}
+                      </Label>
                       <Select
                         value={selectedEmployee}
                         onValueChange={setSelectedEmployee}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All guards" />
+                          <SelectValue
+                            placeholder={t("timeLeave.timeTracking.filters.allGuards")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All guards</SelectItem>
+                          <SelectItem value="all">
+                            {t("timeLeave.timeTracking.filters.allGuards")}
+                          </SelectItem>
                           {securityGuards.map((guard) => (
                             <SelectItem key={guard.id} value={guard.id}>
                               {guard.name} ({guard.badgeNumber})
@@ -927,16 +1032,22 @@ export default function TimeTracking() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="site-filter">Site</Label>
+                      <Label htmlFor="site-filter">
+                        {t("timeLeave.timeTracking.filters.site")}
+                      </Label>
                       <Select
                         value={selectedSite}
                         onValueChange={setSelectedSite}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All sites" />
+                          <SelectValue
+                            placeholder={t("timeLeave.timeTracking.filters.allSites")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All sites</SelectItem>
+                          <SelectItem value="all">
+                            {t("timeLeave.timeTracking.filters.allSites")}
+                          </SelectItem>
                           {securitySites.map((site) => (
                             <SelectItem key={site.id} value={site.id}>
                               {site.name}
@@ -946,16 +1057,22 @@ export default function TimeTracking() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="client-filter">Client</Label>
+                      <Label htmlFor="client-filter">
+                        {t("timeLeave.timeTracking.filters.client")}
+                      </Label>
                       <Select
                         value={selectedClient}
                         onValueChange={setSelectedClient}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="All clients" />
+                          <SelectValue
+                            placeholder={t("timeLeave.timeTracking.filters.allClients")}
+                          />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All clients</SelectItem>
+                          <SelectItem value="all">
+                            {t("timeLeave.timeTracking.filters.allClients")}
+                          </SelectItem>
                           {clients.map((client) => (
                             <SelectItem key={client.id} value={client.id}>
                               {client.name}
@@ -967,7 +1084,7 @@ export default function TimeTracking() {
                     <div>
                       <Button onClick={handleFilter} className="w-full">
                         <Filter className="h-4 w-4 mr-2" />
-                        Filter
+                        {t("timeLeave.timeTracking.filters.apply")}
                       </Button>
                     </div>
                   </div>
@@ -981,17 +1098,19 @@ export default function TimeTracking() {
                     <div>
                       <CardTitle className="flex items-center gap-2">
                         <Clock className="h-5 w-5" />
-                        Time Entries
+                        {t("timeLeave.timeTracking.entries.title")}
                       </CardTitle>
                       <CardDescription>
-                        Showing {paginatedEntries.length} of{" "}
-                        {timeEntries.length} entries
+                        {t("timeLeave.timeTracking.entries.showing", {
+                          shown: paginatedEntries.length,
+                          total: timeEntries.length,
+                        })}
                       </CardDescription>
                     </div>
                     <div className="flex gap-2">
                       <Button variant="outline" onClick={handleExportCSV}>
                         <Download className="h-4 w-4 mr-2" />
-                        Export CSV
+                        {t("timeLeave.timeTracking.entries.export")}
                       </Button>
                       <Dialog
                         open={showAddDialog}
@@ -1000,22 +1119,23 @@ export default function TimeTracking() {
                         <DialogTrigger asChild>
                           <Button>
                             <Plus className="h-4 w-4 mr-2" />
-                            Log Activity
+                            {t("timeLeave.timeTracking.entries.logActivity")}
                           </Button>
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Log Security Activity</DialogTitle>
+                            <DialogTitle>
+                              {t("timeLeave.timeTracking.dialog.title")}
+                            </DialogTitle>
                             <DialogDescription>
-                              Record daily activities, incidents, and equipment
-                              checks
+                              {t("timeLeave.timeTracking.dialog.description")}
                             </DialogDescription>
                           </DialogHeader>
                           <form onSubmit={handleSubmit} className="space-y-4">
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <Label htmlFor="employee">
-                                  Security Guard *
+                                  {t("timeLeave.timeTracking.dialog.guard")}
                                 </Label>
                                 <Select
                                   value={formData.employee}
@@ -1024,7 +1144,9 @@ export default function TimeTracking() {
                                   }
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select guard" />
+                                    <SelectValue
+                                      placeholder={t("timeLeave.timeTracking.dialog.guardPlaceholder")}
+                                    />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {securityGuards.map((guard) => (
@@ -1039,7 +1161,9 @@ export default function TimeTracking() {
                                 </Select>
                               </div>
                               <div>
-                                <Label htmlFor="entry-date">Date *</Label>
+                                <Label htmlFor="entry-date">
+                                  {t("timeLeave.timeTracking.dialog.date")}
+                                </Label>
                                 <Input
                                   id="entry-date"
                                   type="date"
@@ -1054,7 +1178,9 @@ export default function TimeTracking() {
 
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <Label htmlFor="shift-type">Shift Type *</Label>
+                                <Label htmlFor="shift-type">
+                                  {t("timeLeave.timeTracking.dialog.shiftType")}
+                                </Label>
                                 <Select
                                   value={formData.shiftType}
                                   onValueChange={(value) =>
@@ -1066,22 +1192,24 @@ export default function TimeTracking() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="day">
-                                      Day Shift (8:00-16:00)
+                                      {shiftOptionLabels.day}
                                     </SelectItem>
                                     <SelectItem value="swing">
-                                      Swing Shift (16:00-00:00)
+                                      {shiftOptionLabels.swing}
                                     </SelectItem>
                                     <SelectItem value="night">
-                                      Night Shift (22:00-06:00)
+                                      {shiftOptionLabels.night}
                                     </SelectItem>
                                     <SelectItem value="overtime">
-                                      Overtime
+                                      {shiftOptionLabels.overtime}
                                     </SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>
                               <div>
-                                <Label htmlFor="site">Site Assignment *</Label>
+                                <Label htmlFor="site">
+                                  {t("timeLeave.timeTracking.dialog.site")}
+                                </Label>
                                 <Select
                                   value={formData.site}
                                   onValueChange={(value) =>
@@ -1089,7 +1217,9 @@ export default function TimeTracking() {
                                   }
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Select site" />
+                                    <SelectValue
+                                      placeholder={t("timeLeave.timeTracking.dialog.sitePlaceholder")}
+                                    />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {securitySites.map((site) => (
@@ -1105,7 +1235,9 @@ export default function TimeTracking() {
 
                             <div className="grid grid-cols-3 gap-4">
                               <div>
-                                <Label htmlFor="clock-in">Clock In *</Label>
+                                <Label htmlFor="clock-in">
+                                  {t("timeLeave.timeTracking.dialog.clockIn")}
+                                </Label>
                                 <Input
                                   id="clock-in"
                                   type="time"
@@ -1117,7 +1249,9 @@ export default function TimeTracking() {
                                 />
                               </div>
                               <div>
-                                <Label htmlFor="clock-out">Clock Out *</Label>
+                                <Label htmlFor="clock-out">
+                                  {t("timeLeave.timeTracking.dialog.clockOut")}
+                                </Label>
                                 <Input
                                   id="clock-out"
                                   type="time"
@@ -1133,7 +1267,7 @@ export default function TimeTracking() {
                               </div>
                               <div>
                                 <Label htmlFor="break-minutes">
-                                  Break (minutes)
+                                  {t("timeLeave.timeTracking.dialog.break")}
                                 </Label>
                                 <Input
                                   id="break-minutes"
@@ -1153,7 +1287,7 @@ export default function TimeTracking() {
 
                             {formData.clockIn && formData.clockOut && (
                               <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                Total Hours:{" "}
+                                {t("timeLeave.timeTracking.dialog.totalHours")}:{" "}
                                 {calculateTotalHours(
                                   formData.clockIn,
                                   formData.clockOut,
@@ -1164,24 +1298,22 @@ export default function TimeTracking() {
 
                             <div>
                               <Label htmlFor="activities">
-                                Activities Performed *
+                                {t("timeLeave.timeTracking.dialog.activities")}
                               </Label>
                               <div className="grid grid-cols-3 gap-2 mt-2">
-                                {commonActivities.map((activity) => (
+                                {activityOptions.map((activity) => (
                                   <label
-                                    key={activity}
+                                    key={activity.key}
                                     className="flex items-center space-x-2 text-sm"
                                   >
                                     <input
                                       type="checkbox"
-                                      checked={formData.activities.includes(
-                                        activity,
-                                      )}
+                                      checked={formData.activities.includes(activity.label)}
                                       onChange={(e) => {
                                         const activities = e.target.checked
-                                          ? [...formData.activities, activity]
+                                          ? [...formData.activities, activity.label]
                                           : formData.activities.filter(
-                                              (a) => a !== activity,
+                                              (a) => a !== activity.label,
                                             );
                                         handleInputChange(
                                           "activities",
@@ -1190,7 +1322,7 @@ export default function TimeTracking() {
                                       }}
                                       className="rounded"
                                     />
-                                    <span>{activity}</span>
+                                    <span>{activity.label}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1198,28 +1330,28 @@ export default function TimeTracking() {
 
                             <div>
                               <Label htmlFor="equipment">
-                                Equipment Checked
+                                {t("timeLeave.timeTracking.dialog.equipment")}
                               </Label>
                               <div className="grid grid-cols-3 gap-2 mt-2">
-                                {equipmentList.map((equipment) => (
+                                {equipmentOptions.map((equipment) => (
                                   <label
-                                    key={equipment}
+                                    key={equipment.key}
                                     className="flex items-center space-x-2 text-sm"
                                   >
                                     <input
                                       type="checkbox"
                                       checked={formData.equipmentChecked.includes(
-                                        equipment,
+                                        equipment.label,
                                       )}
                                       onChange={(e) => {
                                         const equipmentChecked = e.target
                                           .checked
                                           ? [
                                               ...formData.equipmentChecked,
-                                              equipment,
+                                              equipment.label,
                                             ]
                                           : formData.equipmentChecked.filter(
-                                              (eq) => eq !== equipment,
+                                              (eq) => eq !== equipment.label,
                                             );
                                         handleInputChange(
                                           "equipmentChecked",
@@ -1228,7 +1360,7 @@ export default function TimeTracking() {
                                       }}
                                       className="rounded"
                                     />
-                                    <span>{equipment}</span>
+                                    <span>{equipment.label}</span>
                                   </label>
                                 ))}
                               </div>
@@ -1236,7 +1368,7 @@ export default function TimeTracking() {
 
                             <div>
                               <Label htmlFor="incidents">
-                                Incidents/Observations
+                                {t("timeLeave.timeTracking.dialog.incidents")}
                               </Label>
                               <Textarea
                                 id="incidents"
@@ -1244,20 +1376,22 @@ export default function TimeTracking() {
                                 onChange={(e) =>
                                   handleInputChange("incidents", e.target.value)
                                 }
-                                placeholder="Describe any incidents, unusual observations, or security concerns..."
+                                placeholder={t("timeLeave.timeTracking.dialog.incidentsPlaceholder")}
                                 rows={3}
                               />
                             </div>
 
                             <div>
-                              <Label htmlFor="notes">Additional Notes</Label>
+                              <Label htmlFor="notes">
+                                {t("timeLeave.timeTracking.dialog.notes")}
+                              </Label>
                               <Textarea
                                 id="notes"
                                 value={formData.notes}
                                 onChange={(e) =>
                                   handleInputChange("notes", e.target.value)
                                 }
-                                placeholder="Any additional notes about the shift..."
+                                placeholder={t("timeLeave.timeTracking.dialog.notesPlaceholder")}
                                 rows={2}
                               />
                             </div>
@@ -1269,10 +1403,10 @@ export default function TimeTracking() {
                                 onClick={() => setShowAddDialog(false)}
                                 className="flex-1"
                               >
-                                Cancel
+                                {t("timeLeave.timeTracking.dialog.cancel")}
                               </Button>
                               <Button type="submit" className="flex-1">
-                                Submit Entry
+                                {t("timeLeave.timeTracking.dialog.submit")}
                               </Button>
                             </div>
                           </form>
@@ -1285,13 +1419,27 @@ export default function TimeTracking() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Guard</TableHead>
-                        <TableHead>Date/Shift</TableHead>
-                        <TableHead>Site</TableHead>
-                        <TableHead>Hours</TableHead>
-                        <TableHead>Activities</TableHead>
-                        <TableHead>Incidents</TableHead>
-                        <TableHead>Status</TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.guard")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.dateShift")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.site")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.hours")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.activities")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.incidents")}
+                        </TableHead>
+                        <TableHead>
+                          {t("timeLeave.timeTracking.table.status")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1318,7 +1466,8 @@ export default function TimeTracking() {
                               <div>
                                 <p className="font-medium">{entry.date}</p>
                                 <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                  {entry.shiftType}
+                                  {shiftLabels[entry.shiftType] ||
+                                    entry.shiftType}
                                 </Badge>
                               </div>
                             </TableCell>
@@ -1346,7 +1495,10 @@ export default function TimeTracking() {
                             <TableCell>
                               <div className="max-w-32">
                                 <p className="text-sm truncate">
-                                  {entry.activities.slice(0, 2).join(", ")}
+                                  {entry.activities
+                                    .slice(0, 2)
+                                    .map(getActivityLabel)
+                                    .join(", ")}
                                   {entry.activities.length > 2 && "..."}
                                 </p>
                               </div>
@@ -1355,10 +1507,14 @@ export default function TimeTracking() {
                               {entry.incidents ? (
                                 <div className="flex items-center gap-1">
                                   <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                  <span className="text-sm">Yes</span>
+                                  <span className="text-sm">
+                                    {t("timeLeave.timeTracking.table.incidentYes")}
+                                  </span>
                                 </div>
                               ) : (
-                                <span className="text-gray-400">None</span>
+                                <span className="text-gray-400">
+                                  {t("timeLeave.timeTracking.table.incidentNone")}
+                                </span>
                               )}
                             </TableCell>
                             <TableCell>
@@ -1425,10 +1581,10 @@ export default function TimeTracking() {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <FileText className="h-5 w-5" />
-                      Export Options
+                      {t("timeLeave.timeTracking.reports.exportTitle")}
                     </CardTitle>
                     <CardDescription>
-                      Generate reports for payroll, billing, and compliance
+                      {t("timeLeave.timeTracking.reports.exportDescription")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
@@ -1438,58 +1594,57 @@ export default function TimeTracking() {
                       className="w-full justify-start"
                     >
                       <Download className="h-4 w-4 mr-2" />
-                      Export Timesheet CSV
+                      {t("timeLeave.timeTracking.reports.exportTimesheet")}
                     </Button>
                     <Button
                       onClick={() =>
                         toast({
-                          title: "Report Generated",
-                          description:
-                            "Client billing report created successfully.",
+                          title: t("timeLeave.timeTracking.toast.reportTitle"),
+                          description: t("timeLeave.timeTracking.toast.reportClientBilling"),
                         })
                       }
                       variant="outline"
                       className="w-full justify-start"
                     >
                       <Building className="h-4 w-4 mr-2" />
-                      Generate Client Billing Report
+                      {t("timeLeave.timeTracking.reports.clientBilling")}
                     </Button>
                     <Button
                       onClick={() =>
                         toast({
-                          title: "Report Generated",
-                          description:
-                            "Incident summary report created successfully.",
+                          title: t("timeLeave.timeTracking.toast.reportTitle"),
+                          description: t("timeLeave.timeTracking.toast.reportIncident"),
                         })
                       }
                       variant="outline"
                       className="w-full justify-start"
                     >
                       <AlertTriangle className="h-4 w-4 mr-2" />
-                      Export Incident Summary
+                      {t("timeLeave.timeTracking.reports.incidentSummary")}
                     </Button>
                     <Button
                       onClick={() =>
                         toast({
-                          title: "Report Generated",
-                          description:
-                            "Guard performance report created successfully.",
+                          title: t("timeLeave.timeTracking.toast.reportTitle"),
+                          description: t("timeLeave.timeTracking.toast.reportPerformance"),
                         })
                       }
                       variant="outline"
                       className="w-full justify-start"
                     >
                       <User className="h-4 w-4 mr-2" />
-                      Guard Performance Report
+                      {t("timeLeave.timeTracking.reports.guardPerformance")}
                     </Button>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Site Coverage Summary</CardTitle>
+                    <CardTitle>
+                      {t("timeLeave.timeTracking.reports.coverageTitle")}
+                    </CardTitle>
                     <CardDescription>
-                      Current security coverage across all locations
+                      {t("timeLeave.timeTracking.reports.coverageDescription")}
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -1507,16 +1662,21 @@ export default function TimeTracking() {
                             <div>
                               <p className="font-medium">{client.name}</p>
                               <p className="text-sm text-gray-500">
-                                {clientSites.length} sites •{" "}
+                                {t("timeLeave.timeTracking.reports.coverageSites", {
+                                  count: clientSites.length,
+                                })}{" "}
+                                •{" "}
                                 {client.billingCode}
                               </p>
                             </div>
                             <div className="text-right">
                               <p className="font-medium">
-                                {activeGuards} guards
+                                {t("timeLeave.timeTracking.reports.coverageGuards", {
+                                  count: activeGuards,
+                                })}
                               </p>
                               <Badge className="bg-green-100 text-green-800">
-                                Active
+                                {t("timeLeave.timeTracking.reports.coverageStatus")}
                               </Badge>
                             </div>
                           </div>

@@ -43,6 +43,7 @@ import {
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Filter,
   Plus,
@@ -315,6 +316,7 @@ export default function TrainingCertifications() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

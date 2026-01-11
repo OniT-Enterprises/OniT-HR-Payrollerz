@@ -44,6 +44,7 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function GeneralLedger() {
@@ -248,6 +249,7 @@ export default function GeneralLedger() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
       <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <AutoBreadcrumb className="mb-2" />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

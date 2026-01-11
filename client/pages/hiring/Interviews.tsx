@@ -30,6 +30,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
   Clock,
@@ -52,6 +54,7 @@ export default function Interviews() {
   const [interviewSchedules, setInterviewSchedules] = useState<{
     [key: number]: { date: string; time: string };
   }>({});
+  const { t } = useI18n();
 
   // Mock data for existing staff (jury members)
   const staff = [
@@ -152,17 +155,33 @@ export default function Interviews() {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Scheduled":
+        return t("hiring.interviews.status.scheduled");
+      case "Pending Schedule":
+        return t("hiring.interviews.status.pending");
+      case "Completed":
+        return t("hiring.interviews.status.completed");
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="flex items-center gap-3 mb-8">
           <Calendar className="h-8 w-8 text-green-400" />
           <div>
-            <h1 className="text-3xl font-bold">Interviews</h1>
+            <h1 className="text-3xl font-bold">
+              {t("hiring.interviews.title")}
+            </h1>
             <p className="text-muted-foreground">
-              Manage interview scheduling and jury selection
+              {t("hiring.interviews.subtitle")}
             </p>
           </div>
         </div>
@@ -173,16 +192,19 @@ export default function Interviews() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5" />
-                Interview Jury Selection
+                {t("hiring.interviews.jury.title")}
               </CardTitle>
               <CardDescription>
-                Select staff members to serve on the interview panel
+                {t("hiring.interviews.jury.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search staff members..." className="pl-9" />
+                <Input
+                  placeholder={t("hiring.interviews.jury.searchPlaceholder")}
+                  className="pl-9"
+                />
               </div>
 
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -216,7 +238,9 @@ export default function Interviews() {
 
               <div className="space-y-2">
                 <h4 className="font-medium">
-                  Selected Jury Members ({selectedJury.length})
+                  {t("hiring.interviews.jury.selectedTitle", {
+                    count: selectedJury.length,
+                  })}
                 </h4>
                 {selectedJury.map((juryId) => {
                   const member = staff.find((s) => s.id.toString() === juryId);
@@ -235,7 +259,7 @@ export default function Interviews() {
                           onClick={() => sendCalendarInvite(juryId)}
                         >
                           <Mail className="h-3 w-3 mr-1" />
-                          Invite
+                          {t("hiring.interviews.jury.invite")}
                         </Button>
                         <Button
                           size="sm"
@@ -257,27 +281,35 @@ export default function Interviews() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Available Dates
+                {t("hiring.interviews.availability.title")}
               </CardTitle>
               <CardDescription>
-                Check available dates that all jury members agree to
+                {t("hiring.interviews.availability.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 gap-2">
-                <Label htmlFor="startDate">Start Date</Label>
+                <Label htmlFor="startDate">
+                  {t("hiring.interviews.availability.startDate")}
+                </Label>
                 <Input id="startDate" type="date" />
               </div>
 
               <div className="grid grid-cols-1 gap-2">
-                <Label htmlFor="endDate">End Date</Label>
+                <Label htmlFor="endDate">
+                  {t("hiring.interviews.availability.endDate")}
+                </Label>
                 <Input id="endDate" type="date" />
               </div>
 
-              <Button className="w-full">Check Availability</Button>
+              <Button className="w-full">
+                {t("hiring.interviews.availability.check")}
+              </Button>
 
               <div className="space-y-2">
-                <h4 className="font-medium">Available Slots</h4>
+                <h4 className="font-medium">
+                  {t("hiring.interviews.availability.slots")}
+                </h4>
                 <div className="space-y-1">
                   {[
                     "2024-02-15 10:00-11:00",
@@ -302,54 +334,74 @@ export default function Interviews() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5" />
-                Interview Settings
+                {t("hiring.interviews.settings.title")}
               </CardTitle>
               <CardDescription>
-                Configure interview parameters and requirements
+                {t("hiring.interviews.settings.description")}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="duration">Interview Duration</Label>
+                <Label htmlFor="duration">
+                  {t("hiring.interviews.settings.duration")}
+                </Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select duration" />
+                    <SelectValue
+                      placeholder={t("hiring.interviews.settings.durationPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="30">30 minutes</SelectItem>
-                    <SelectItem value="45">45 minutes</SelectItem>
-                    <SelectItem value="60">1 hour</SelectItem>
-                    <SelectItem value="90">1.5 hours</SelectItem>
+                    <SelectItem value="30">
+                      {t("hiring.interviews.settings.durationOptions.minutes30")}
+                    </SelectItem>
+                    <SelectItem value="45">
+                      {t("hiring.interviews.settings.durationOptions.minutes45")}
+                    </SelectItem>
+                    <SelectItem value="60">
+                      {t("hiring.interviews.settings.durationOptions.hour1")}
+                    </SelectItem>
+                    <SelectItem value="90">
+                      {t("hiring.interviews.settings.durationOptions.hour1_5")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="location">Interview Location</Label>
+                <Label htmlFor="location">
+                  {t("hiring.interviews.settings.location")}
+                </Label>
                 <Select>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select location" />
+                    <SelectValue
+                      placeholder={t("hiring.interviews.settings.locationPlaceholder")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="conference-room-a">
-                      Conference Room A
+                      {t("hiring.interviews.settings.locationOptions.roomA")}
                     </SelectItem>
                     <SelectItem value="conference-room-b">
-                      Conference Room B
+                      {t("hiring.interviews.settings.locationOptions.roomB")}
                     </SelectItem>
                     <SelectItem value="virtual">
-                      Virtual (Zoom/Teams)
+                      {t("hiring.interviews.settings.locationOptions.virtual")}
                     </SelectItem>
-                    <SelectItem value="phone">Phone Interview</SelectItem>
+                    <SelectItem value="phone">
+                      {t("hiring.interviews.settings.locationOptions.phone")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Interview Notes</Label>
+                <Label htmlFor="notes">
+                  {t("hiring.interviews.settings.notes")}
+                </Label>
                 <Textarea
                   id="notes"
-                  placeholder="Special instructions, technical requirements, etc."
+                  placeholder={t("hiring.interviews.settings.notesPlaceholder")}
                   rows={3}
                 />
               </div>
@@ -360,9 +412,9 @@ export default function Interviews() {
         {/* Shortlisted Candidates */}
         <Card className="mt-6">
           <CardHeader>
-            <CardTitle>Shortlisted Candidates</CardTitle>
+            <CardTitle>{t("hiring.interviews.candidates.title")}</CardTitle>
             <CardDescription>
-              Manage interview scheduling and pre-interview checks
+              {t("hiring.interviews.candidates.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -370,21 +422,27 @@ export default function Interviews() {
               <table className="w-full">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-3 font-medium">Candidate</th>
-                    <th className="text-center p-3 font-medium">
-                      Interview Date
+                    <th className="text-left p-3 font-medium">
+                      {t("hiring.interviews.table.candidate")}
                     </th>
                     <th className="text-center p-3 font-medium">
-                      Interview Time
+                      {t("hiring.interviews.table.date")}
                     </th>
                     <th className="text-center p-3 font-medium">
-                      Pre-Interview Checks
+                      {t("hiring.interviews.table.time")}
                     </th>
                     <th className="text-center p-3 font-medium">
-                      Communication
+                      {t("hiring.interviews.table.preChecks")}
                     </th>
-                    <th className="text-center p-3 font-medium">Status</th>
-                    <th className="text-center p-3 font-medium">Actions</th>
+                    <th className="text-center p-3 font-medium">
+                      {t("hiring.interviews.table.communication")}
+                    </th>
+                    <th className="text-center p-3 font-medium">
+                      {t("hiring.interviews.table.status")}
+                    </th>
+                    <th className="text-center p-3 font-medium">
+                      {t("hiring.interviews.table.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -472,7 +530,7 @@ export default function Interviews() {
                               htmlFor={`criminal-${candidate.id}`}
                               className="text-sm"
                             >
-                              Criminal Record
+                              {t("hiring.interviews.checks.criminalRecord")}
                             </label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -484,7 +542,7 @@ export default function Interviews() {
                               htmlFor={`references-${candidate.id}`}
                               className="text-sm"
                             >
-                              References Checked
+                              {t("hiring.interviews.checks.references")}
                             </label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -496,7 +554,7 @@ export default function Interviews() {
                               htmlFor={`id-${candidate.id}`}
                               className="text-sm"
                             >
-                              ID Verified
+                              {t("hiring.interviews.checks.idVerified")}
                             </label>
                           </div>
                         </div>
@@ -513,7 +571,7 @@ export default function Interviews() {
                               htmlFor={`invitation-${candidate.id}`}
                               className="text-sm"
                             >
-                              Invitation Sent
+                              {t("hiring.interviews.communication.inviteSent")}
                             </label>
                           </div>
                           <div className="flex items-center gap-2">
@@ -525,7 +583,7 @@ export default function Interviews() {
                               htmlFor={`followup-${candidate.id}`}
                               className="text-sm"
                             >
-                              Follow-up Call
+                              {t("hiring.interviews.communication.followUp")}
                             </label>
                           </div>
                         </div>
@@ -533,7 +591,7 @@ export default function Interviews() {
 
                       <td className="p-3 text-center">
                         <Badge className={getStatusColor(candidate.status)}>
-                          {candidate.status}
+                          {getStatusLabel(candidate.status)}
                         </Badge>
                       </td>
 
@@ -541,11 +599,11 @@ export default function Interviews() {
                         <div className="flex flex-col gap-1">
                           <Button size="sm" variant="outline">
                             <Mail className="h-3 w-3 mr-1" />
-                            Send Invite
+                            {t("hiring.interviews.actions.sendInvite")}
                           </Button>
                           <Button size="sm" variant="outline">
                             <Phone className="h-3 w-3 mr-1" />
-                            Call
+                            {t("hiring.interviews.actions.call")}
                           </Button>
                         </div>
                       </td>

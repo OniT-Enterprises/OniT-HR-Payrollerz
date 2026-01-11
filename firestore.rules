@@ -56,6 +56,12 @@ service cloud.firestore {
         request.auth.uid == userId &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isSuperAdmin']);
 
+      // BOOTSTRAP: Allow user to upgrade themselves to superadmin if bootstrap not done
+      allow update: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        request.resource.data.isSuperAdmin == true &&
+        !exists(/databases/$(database)/documents/_bootstrap/initialized);
+
       // Superadmins can update any user (including isSuperAdmin)
       allow update: if isSuperAdmin();
 
@@ -64,11 +70,26 @@ service cloud.firestore {
         request.auth.uid == userId &&
         request.resource.data.isSuperAdmin == false;
 
+      // BOOTSTRAP: Allow first user to create themselves as superadmin
+      // This only works if _bootstrap document does NOT exist
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        request.resource.data.isSuperAdmin == true &&
+        !exists(/databases/$(database)/documents/_bootstrap/initialized);
+
       // Superadmins can create any profile
       allow create: if isSuperAdmin();
 
       // Only superadmins can delete user profiles
       allow delete: if isSuperAdmin();
+    }
+
+    // Bootstrap document - once created, bootstrap is disabled
+    match /_bootstrap/{docId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() &&
+        !exists(/databases/$(database)/documents/_bootstrap/initialized);
+      allow update, delete: if false;
     }
 
     // ============================================
@@ -290,6 +311,88 @@ service cloud.firestore {
     }
 
     match /tenant_settings/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /leave_requests/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /leave_balances/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /timesheets/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /goals/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /reviews/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /trainings/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /payruns/{docId} {
+      allow read, write: if isAuthenticated();
+
+      match /payslips/{payslipId} {
+        allow read, write: if isAuthenticated();
+      }
+    }
+
+    // Payroll module collections
+    match /payrollRuns/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /payrollRecords/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /benefitEnrollments/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /recurringDeductions/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /taxReports/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /bankTransfers/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // Accounting module collections
+    match /accounts/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /journalEntries/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /generalLedger/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /fiscalYears/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /fiscalPeriods/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /settings/{docId} {
       allow read, write: if isAuthenticated();
     }
   }

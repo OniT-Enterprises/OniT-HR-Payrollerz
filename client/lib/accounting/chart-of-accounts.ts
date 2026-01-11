@@ -271,8 +271,8 @@ export const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
   },
   {
     code: '2220',
-    name: 'Income Tax Payable (IRPS)',
-    nameTL: 'Impostu Rendimentu a Pagar',
+    name: 'Withholding Income Tax (WIT)',
+    nameTL: 'Impostu Retidu (WIT)',
     type: 'liability',
     subType: 'tax_payable',
     description: 'Employee income tax withholdings to be remitted',
@@ -800,9 +800,9 @@ export const PAYROLL_JOURNAL_MAPPINGS = {
     credit: { code: '2250', name: 'Subsidio Anual Accrued' },
   },
   incomeTax: {
-    description: 'Income Tax Withholding (IRPS)',
+    description: 'Withholding Income Tax (WIT)',
     debit: { code: '2210', name: 'Salaries Payable' },
-    credit: { code: '2220', name: 'Income Tax Payable (IRPS)' },
+    credit: { code: '2220', name: 'Impostu Retidu (WIT)' },
   },
   inssEmployee: {
     description: 'INSS Employee Contribution (4%)',

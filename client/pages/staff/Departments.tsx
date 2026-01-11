@@ -18,6 +18,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -26,6 +27,7 @@ import {
 import DepartmentManager from "@/components/DepartmentManager";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Building,
@@ -54,6 +56,7 @@ export default function Departments() {
   );
   const [showEmployeeProfile, setShowEmployeeProfile] = useState(false);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadData();
@@ -74,8 +77,8 @@ export default function Departments() {
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
-        title: "Error",
-        description: "Failed to load data",
+        title: t("departments.toast.errorTitle"),
+        description: t("departments.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -87,8 +90,8 @@ export default function Departments() {
     // Reload data and notify about updates
     await loadData();
     toast({
-      title: "Departments Updated",
-      description: "Department changes have been saved successfully",
+      title: t("departments.toast.updatedTitle"),
+      description: t("departments.toast.updatedDesc"),
     });
   };
 
@@ -128,8 +131,10 @@ export default function Departments() {
         setDepartments(updatedDepartments);
 
         toast({
-          title: "Departments Migrated",
-          description: `Auto-created ${validDepartments.length} departments from existing employee records`,
+          title: t("departments.toast.migratedTitle"),
+          description: t("departments.toast.migratedDesc", {
+            count: validDepartments.length,
+          }),
         });
       }
     } catch (error) {
@@ -218,6 +223,7 @@ export default function Departments() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           {/* Header Skeleton */}
           <div className="flex justify-end mb-4">
             <div className="flex gap-2">
@@ -284,6 +290,7 @@ export default function Departments() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         {/* Department Management Buttons */}
         <div className="flex justify-end items-center mb-4">
           <div className="flex gap-2">
@@ -295,7 +302,7 @@ export default function Departments() {
               }}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Department
+              {t("departments.addDepartment")}
             </Button>
             <Button
               onClick={() => {
@@ -304,14 +311,14 @@ export default function Departments() {
               }}
             >
               <Edit className="mr-2 h-4 w-4" />
-              Edit Departments
+              {t("departments.editDepartments")}
             </Button>
             <Button
               variant="secondary"
               onClick={() => navigate("/people/org-chart")}
             >
               <Users className="mr-2 h-4 w-4" />
-              Organization Chart
+              {t("departments.organizationChart")}
             </Button>
           </div>
         </div>
@@ -320,15 +327,17 @@ export default function Departments() {
           <div className="flex items-center gap-3">
             <Building className="h-8 w-8 text-purple-600" />
             <div>
-              <h1 className="text-3xl font-bold">Departments</h1>
+              <h1 className="text-3xl font-bold">{t("departments.title")}</h1>
               <p className="text-muted-foreground">
-                Overview of all departments and their employees
+                {t("departments.subtitle")}
               </p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <div className="w-3 h-3 rounded-full bg-green-500" />
-            <span className="text-muted-foreground">Firebase Connected</span>
+            <span className="text-muted-foreground">
+              {t("departments.firebaseConnected")}
+            </span>
           </div>
         </div>
 
@@ -336,13 +345,15 @@ export default function Departments() {
           /* Empty State */
           <div className="text-center py-16">
             <Database className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">No Department Data</h3>
+            <h3 className="text-lg font-semibold mb-2">
+              {t("departments.emptyTitle")}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              Add employees to your database to see department information
+              {t("departments.emptyDesc")}
             </p>
             <Button onClick={() => (window.location.href = "/staff/add")}>
               <User className="mr-2 h-4 w-4" />
-              Add First Employee
+              {t("departments.addFirstEmployee")}
             </Button>
           </div>
         ) : (
@@ -354,7 +365,7 @@ export default function Departments() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Total Departments
+                        {t("departments.stats.totalDepartments")}
                       </p>
                       <p className="text-2xl font-bold">
                         {departmentStats.length}
@@ -369,7 +380,7 @@ export default function Departments() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Total Employees
+                        {t("departments.stats.totalEmployees")}
                       </p>
                       <p className="text-2xl font-bold">{employees.length}</p>
                     </div>
@@ -382,7 +393,7 @@ export default function Departments() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Largest Department
+                        {t("departments.stats.largestDepartment")}
                       </p>
                       <p className="text-2xl font-bold">
                         {departmentStats.length > 0
@@ -399,7 +410,7 @@ export default function Departments() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Average per Dept
+                        {t("departments.stats.averagePerDept")}
                       </p>
                       <p className="text-2xl font-bold">
                         {departmentStats.length > 0
@@ -418,9 +429,9 @@ export default function Departments() {
             {/* Department Directory */}
             <Card>
               <CardHeader>
-                <CardTitle>Department Directory</CardTitle>
+                <CardTitle>{t("departments.directoryTitle")}</CardTitle>
                 <CardDescription>
-                  Manage departments and view employee assignments
+                  {t("departments.directoryDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -429,16 +440,20 @@ export default function Departments() {
                     <thead>
                       <tr className="border-b">
                         <th className="text-left p-3 font-medium">
-                          Department
+                          {t("departments.table.department")}
                         </th>
                         <th className="text-center p-3 font-medium">
-                          Director
+                          {t("departments.table.director")}
                         </th>
-                        <th className="text-center p-3 font-medium">Manager</th>
                         <th className="text-center p-3 font-medium">
-                          Total Employees
+                          {t("departments.table.manager")}
                         </th>
-                        <th className="text-center p-3 font-medium">Actions</th>
+                        <th className="text-center p-3 font-medium">
+                          {t("departments.table.totalEmployees")}
+                        </th>
+                        <th className="text-center p-3 font-medium">
+                          {t("departments.table.actions")}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -535,11 +550,14 @@ export default function Departments() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
-                {selectedDepartment?.name} Department - Employees
+                {t("departments.dialogTitle", {
+                  department: selectedDepartment?.name,
+                })}
               </DialogTitle>
               <DialogDescription>
-                {selectedDepartment?.totalEmployees} employees in this
-                department
+                {t("departments.dialogDesc", {
+                  count: selectedDepartment?.totalEmployees || 0,
+                })}
               </DialogDescription>
             </DialogHeader>
 
@@ -551,14 +569,16 @@ export default function Departments() {
                       <thead>
                         <tr className="border-b">
                           <th className="text-left p-3 font-medium">
-                            Employee
+                            {t("departments.dialogTable.employee")}
                           </th>
                           <th className="text-left p-3 font-medium">
-                            Position
+                            {t("departments.dialogTable.position")}
                           </th>
-                          <th className="text-left p-3 font-medium">Email</th>
+                          <th className="text-left p-3 font-medium">
+                            {t("departments.dialogTable.email")}
+                          </th>
                           <th className="text-center p-3 font-medium">
-                            Actions
+                            {t("departments.dialogTable.actions")}
                           </th>
                         </tr>
                       </thead>
@@ -587,7 +607,9 @@ export default function Departments() {
                                       {employee.personalInfo.lastName}
                                     </p>
                                     <p className="text-sm text-muted-foreground">
-                                      ID: {employee.jobDetails.employeeId}
+                                      {t("employees.idLabel", {
+                                        id: employee.jobDetails.employeeId,
+                                      })}
                                     </p>
                                   </div>
                                 </div>
@@ -621,9 +643,11 @@ export default function Departments() {
                 ) : (
                   <div className="text-center py-8">
                     <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                    <h3 className="text-lg font-semibold mb-2">No Employees</h3>
+                    <h3 className="text-lg font-semibold mb-2">
+                      {t("departments.dialogEmptyTitle")}
+                    </h3>
                     <p className="text-muted-foreground">
-                      This department doesn't have any employees assigned yet.
+                      {t("departments.dialogEmptyDesc")}
                     </p>
                   </div>
                 )}

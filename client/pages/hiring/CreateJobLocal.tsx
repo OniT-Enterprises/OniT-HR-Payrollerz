@@ -18,24 +18,26 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { useAuth } from "@/contexts/AuthContext";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getDepartments,
-  getEmployees,
   createJob,
   Department,
-  Employee,
 } from "@/lib/sqliteApiService";
 import {
-  Building2,
-  Users,
-  UserCheck,
-  CheckCircle,
+  Briefcase,
   Save,
   ArrowLeft,
+  Sparkles,
+  MapPin,
+  DollarSign,
+  Clock,
+  FileText,
+  Building2,
 } from "lucide-react";
 
 interface CreateJobFormData {
@@ -54,10 +56,9 @@ interface CreateJobFormData {
 export default function CreateJobLocal() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { t } = useI18n();
 
   const [departments, setDepartments] = useState<Department[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -77,24 +78,20 @@ export default function CreateJobLocal() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Fetch data on mount
+  // Fetch departments on mount
   useEffect(() => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [depts, emps] = await Promise.all([
-          getDepartments(),
-          getEmployees(),
-        ]);
+        const depts = await getDepartments();
         setDepartments(depts);
-        setEmployees(emps.filter((e) => e.status === "active"));
         setError(null);
       } catch (err) {
-        console.error("Failed to fetch data:", err);
-        setError("Failed to load departments and employees");
+        console.error("Failed to fetch departments:", err);
+        setError(t("hiring.createJob.errors.loadDepartments"));
         toast({
-          title: "Error",
-          description: "Failed to load form data. Please try again.",
+          title: t("addEmployee.toast.errorTitle"),
+          description: t("hiring.createJob.errors.loadDepartmentsToast"),
           variant: "destructive",
         });
       } finally {
@@ -109,11 +106,11 @@ export default function CreateJobLocal() {
     const newErrors: Record<string, string> = {};
 
     if (!formData.title.trim()) {
-      newErrors.title = "Job title is required";
+      newErrors.title = t("hiring.createJob.errors.jobTitleRequired");
     }
 
     if (!formData.department) {
-      newErrors.department = "Department is required";
+      newErrors.department = t("hiring.createJob.errors.departmentRequired");
     }
 
     setErrors(newErrors);
@@ -125,8 +122,8 @@ export default function CreateJobLocal() {
 
     if (!validateForm()) {
       toast({
-        title: "Validation Error",
-        description: "Please fix the form errors before submitting",
+        title: t("hiring.createJob.errors.validationTitle"),
+        description: t("hiring.createJob.errors.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -135,7 +132,6 @@ export default function CreateJobLocal() {
     setIsSubmitting(true);
 
     try {
-      // Create job data matching API schema
       const jobData = {
         title: formData.title,
         description: formData.description,
@@ -150,20 +146,24 @@ export default function CreateJobLocal() {
         salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
       };
 
-      const result = await createJob(jobData);
+      await createJob(jobData);
 
       toast({
-        title: "Job Created Successfully! 🎉",
-        description: `"${formData.title}" has been created in the database`,
+        title: t("hiring.createJob.errors.createdTitle"),
+        description: t("hiring.createJob.errors.createdDesc", {
+          title: formData.title,
+        }),
       });
 
       navigate("/hiring");
     } catch (error) {
       console.error("Failed to create job:", error);
       toast({
-        title: "Creation Failed",
+        title: t("hiring.createJob.errors.creationFailedTitle"),
         description:
-          error instanceof Error ? error.message : "Failed to create job posting. Please try again.",
+          error instanceof Error
+            ? error.message
+            : t("hiring.createJob.errors.creationFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -177,7 +177,6 @@ export default function CreateJobLocal() {
       [field]: value,
     }));
 
-    // Clear error for this field
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -185,15 +184,48 @@ export default function CreateJobLocal() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md w-full">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-center space-x-2">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-              <span>Loading form data...</span>
+      <div className="min-h-screen bg-background">
+        <MainNavigation />
+        <div className="p-6 lg:p-8">
+          <AutoBreadcrumb className="mb-6" />
+          <div className="max-w-4xl mx-auto">
+            {/* Hero skeleton */}
+            <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8">
+              <div className="p-8">
+                <div className="flex items-start gap-4">
+                  <Skeleton className="h-14 w-14 rounded-xl" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-4 w-48" />
+                  </div>
+                </div>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Form skeleton */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <Skeleton className="h-6 w-40 mb-2" />
+                <Skeleton className="h-4 w-64" />
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-10 w-full" />
+                    </div>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
       </div>
     );
   }
@@ -202,12 +234,17 @@ export default function CreateJobLocal() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-4xl mx-auto">
-          <Card className="border-destructive">
+        <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+          <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
               <p className="text-destructive">{error}</p>
-              <Button onClick={() => navigate("/hiring")} className="mt-4">
-                Back to Hiring
+              <Button
+                onClick={() => navigate("/hiring")}
+                className="mt-4 gap-2"
+                variant="outline"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                {t("hiring.createJob.backToHiring")}
               </Button>
             </CardContent>
           </Card>
@@ -220,86 +257,99 @@ export default function CreateJobLocal() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate("/hiring")}
-              >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Hiring
-              </Button>
-              <div>
-                <h1 className="text-3xl font-bold flex items-center gap-2">
-                  <Building2 className="h-8 w-8 text-green-600" />
-                  Job Advert
-                </h1>
-                <p className="text-muted-foreground">
-                  Post a new job position with contract and probation details
-                </p>
-              </div>
-            </div>
+      <div className="p-6 lg:p-8">
+        <AutoBreadcrumb className="mb-6" />
 
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary">
-                {user?.email || "Your Company"}
-              </Badge>
-              <Badge variant="outline" className="text-green-600">
-                Local Development
-              </Badge>
+        <div className="max-w-4xl mx-auto">
+          {/* Hero Section */}
+          <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8 animate-fade-up">
+            {/* Background gradient */}
+            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 via-transparent to-teal-500/5" />
+
+            {/* Floating orb decoration */}
+            <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-emerald-500/10 to-teal-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+
+            <div className="relative p-8">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-6">
+                <div className="flex items-start gap-4">
+                  {/* Gradient icon */}
+                  <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
+                    <Briefcase className="h-6 w-6 text-white" />
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <span>{t("nav.hiring")}</span>
+                    </div>
+                    <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                      {t("hiring.createJob.title")}
+                    </h1>
+                    <p className="text-muted-foreground">
+                      {t("hiring.createJob.subtitle")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Back button */}
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/hiring")}
+                  className="gap-2 shadow-sm shrink-0"
+                >
+                  <ArrowLeft className="h-4 w-4" />
+                  {t("hiring.createJob.back")}
+                </Button>
+              </div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Basic Information */}
-            <Card>
+            {/* Job Details Card */}
+            <Card className="border-border/50 animate-fade-up stagger-1">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
-                  Job Details
-                </CardTitle>
-                <CardDescription>
-                  Basic information about the position
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="title">Job Title *</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) =>
-                        handleInputChange("title", e.target.value)
-                      }
-                      placeholder="e.g., Senior Software Engineer"
-                      className={errors.title ? "border-destructive" : ""}
-                    />
-                    {errors.title && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.title}
-                      </p>
-                    )}
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-emerald-500/10">
+                    <FileText className="h-5 w-5 text-emerald-500" />
                   </div>
-
                   <div>
-                    <Label htmlFor="department">Department *</Label>
+                    <CardTitle className="text-lg">{t("hiring.createJob.sectionTitle")}</CardTitle>
+                    <CardDescription>{t("hiring.createJob.sectionDesc")}</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Job Title - Full Width */}
+                <div className="space-y-2">
+                  <Label htmlFor="title" className="text-sm font-medium">
+                    {t("hiring.createJob.labels.jobTitle")} <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
+                    placeholder={t("hiring.createJob.placeholders.jobTitle")}
+                    className={errors.title ? "border-destructive focus-visible:ring-destructive" : ""}
+                  />
+                  {errors.title && (
+                    <p className="text-sm text-destructive">{errors.title}</p>
+                  )}
+                </div>
+
+                {/* Two Column Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Department */}
+                  <div className="space-y-2">
+                    <Label htmlFor="department" className="text-sm font-medium flex items-center gap-2">
+                      <Building2 className="h-4 w-4 text-muted-foreground" />
+                      {t("hiring.createJob.labels.department")} <span className="text-destructive">*</span>
+                    </Label>
                     <Select
                       value={formData.department}
-                      onValueChange={(value) =>
-                        handleInputChange("department", value)
-                      }
+                      onValueChange={(value) => handleInputChange("department", value)}
                     >
-                      <SelectTrigger
-                        className={
-                          errors.department ? "border-destructive" : ""
-                        }
-                      >
-                        <SelectValue placeholder="Select department" />
+                      <SelectTrigger className={errors.department ? "border-destructive" : ""}>
+                        <SelectValue placeholder={t("hiring.createJob.placeholders.department")} />
                       </SelectTrigger>
                       <SelectContent>
                         {departments.map((dept) => (
@@ -310,153 +360,193 @@ export default function CreateJobLocal() {
                       </SelectContent>
                     </Select>
                     {errors.department && (
-                      <p className="text-sm text-destructive mt-1">
-                        {errors.department}
-                      </p>
+                      <p className="text-sm text-destructive">{errors.department}</p>
                     )}
                   </div>
 
-                  <div>
-                    <Label htmlFor="location">Work Location</Label>
+                  {/* Location */}
+                  <div className="space-y-2">
+                    <Label htmlFor="location" className="text-sm font-medium flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      {t("hiring.createJob.labels.location")}
+                    </Label>
                     <Input
                       id="location"
                       value={formData.location}
-                      onChange={(e) =>
-                        handleInputChange("location", e.target.value)
-                      }
-                      placeholder="e.g., San Francisco, CA"
+                      onChange={(e) => handleInputChange("location", e.target.value)}
+                      placeholder={t("hiring.createJob.placeholders.location")}
                     />
                   </div>
 
-                  <div>
-                    <Label htmlFor="employmentType">Employment Type</Label>
+                  {/* Employment Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="employmentType" className="text-sm font-medium flex items-center gap-2">
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                      {t("hiring.createJob.labels.employmentType")}
+                    </Label>
                     <Select
                       value={formData.employmentType}
-                      onValueChange={(value: any) =>
-                        handleInputChange("employmentType", value)
-                      }
+                      onValueChange={(value) => handleInputChange("employmentType", value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select type" />
+                        <SelectValue placeholder={t("hiring.createJob.placeholders.employmentType")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Full-time">Full-time</SelectItem>
-                        <SelectItem value="Part-time">Part-time</SelectItem>
-                        <SelectItem value="Contract">Contract</SelectItem>
-                        <SelectItem value="Intern">Intern</SelectItem>
+                        <SelectItem value="Full-time">{t("hiring.createJob.options.fullTime")}</SelectItem>
+                        <SelectItem value="Part-time">{t("hiring.createJob.options.partTime")}</SelectItem>
+                        <SelectItem value="Contract">{t("hiring.createJob.options.contract")}</SelectItem>
+                        <SelectItem value="Intern">{t("hiring.createJob.options.intern")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div>
-                    <Label htmlFor="salaryMin">Salary Min (USD)</Label>
-                    <Input
-                      id="salaryMin"
-                      type="number"
-                      value={formData.salaryMin}
-                      onChange={(e) =>
-                        handleInputChange("salaryMin", e.target.value)
-                      }
-                      placeholder="50000"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="salaryMax">Salary Max (USD)</Label>
-                    <Input
-                      id="salaryMax"
-                      type="number"
-                      value={formData.salaryMax}
-                      onChange={(e) =>
-                        handleInputChange("salaryMax", e.target.value)
-                      }
-                      placeholder="80000"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="contractType">Contract Type</Label>
+                  {/* Contract Type */}
+                  <div className="space-y-2">
+                    <Label htmlFor="contractType" className="text-sm font-medium">
+                      {t("hiring.createJob.labels.contractType")}
+                    </Label>
                     <Select
                       value={formData.contractType}
-                      onValueChange={(value) =>
-                        handleInputChange("contractType", value)
-                      }
+                      onValueChange={(value) => handleInputChange("contractType", value)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select contract type" />
+                        <SelectValue placeholder={t("hiring.createJob.placeholders.contractType")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Permanent">Permanent</SelectItem>
-                        <SelectItem value="Fixed-Term">Fixed-Term</SelectItem>
+                        <SelectItem value="Permanent">{t("hiring.createJob.options.permanent")}</SelectItem>
+                        <SelectItem value="Fixed-Term">{t("hiring.createJob.options.fixedTerm")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+                </div>
 
-                  {formData.contractType === "Fixed-Term" && (
-                    <div>
-                      <Label htmlFor="contractDuration">Contract Duration</Label>
+                {/* Contract Duration (conditional) */}
+                {formData.contractType === "Fixed-Term" && (
+                  <div className="space-y-2 animate-fade-in">
+                    <Label htmlFor="contractDuration" className="text-sm font-medium">
+                      {t("hiring.createJob.labels.contractDuration")}
+                    </Label>
+                    <Input
+                      id="contractDuration"
+                      value={formData.contractDuration}
+                      onChange={(e) => handleInputChange("contractDuration", e.target.value)}
+                      placeholder={t("hiring.createJob.placeholders.contractDuration")}
+                    />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Compensation Card */}
+            <Card className="border-border/50 animate-fade-up stagger-2">
+              <CardHeader>
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-teal-500/10">
+                    <DollarSign className="h-5 w-5 text-teal-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-lg">Compensation & Terms</CardTitle>
+                    <CardDescription>Set salary range and probation period</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* Salary Min */}
+                  <div className="space-y-2">
+                    <Label htmlFor="salaryMin" className="text-sm font-medium">
+                      {t("hiring.createJob.labels.salaryMin")}
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                       <Input
-                        id="contractDuration"
-                        value={formData.contractDuration}
-                        onChange={(e) =>
-                          handleInputChange("contractDuration", e.target.value)
-                        }
-                        placeholder="e.g., 6 months, 1 year"
+                        id="salaryMin"
+                        type="number"
+                        value={formData.salaryMin}
+                        onChange={(e) => handleInputChange("salaryMin", e.target.value)}
+                        placeholder="0"
+                        className="pl-7"
                       />
                     </div>
-                  )}
+                  </div>
 
-                  <div>
-                    <Label htmlFor="probationPeriod">
-                      Probation Period (Article 14 of Labour Code)
+                  {/* Salary Max */}
+                  <div className="space-y-2">
+                    <Label htmlFor="salaryMax" className="text-sm font-medium">
+                      {t("hiring.createJob.labels.salaryMax")}
+                    </Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                      <Input
+                        id="salaryMax"
+                        type="number"
+                        value={formData.salaryMax}
+                        onChange={(e) => handleInputChange("salaryMax", e.target.value)}
+                        placeholder="0"
+                        className="pl-7"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Probation Period */}
+                  <div className="space-y-2">
+                    <Label htmlFor="probationPeriod" className="text-sm font-medium">
+                      {t("hiring.createJob.labels.probationPeriod")}
                     </Label>
                     <Input
                       id="probationPeriod"
                       value={formData.probationPeriod}
-                      onChange={(e) =>
-                        handleInputChange("probationPeriod", e.target.value)
-                      }
-                      placeholder="e.g., 3 months, 90 days"
-                    />
-                  </div>
-
-                  <div className="md:col-span-2">
-                    <Label htmlFor="description">Job Description</Label>
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleInputChange("description", e.target.value)
-                      }
-                      placeholder="Describe the role, responsibilities, and requirements..."
-                      rows={4}
+                      onChange={(e) => handleInputChange("probationPeriod", e.target.value)}
+                      placeholder={t("hiring.createJob.placeholders.probationPeriod")}
                     />
                   </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Description Card */}
+            <Card className="border-border/50 animate-fade-up stagger-3">
+              <CardHeader>
+                <CardTitle className="text-lg">{t("hiring.createJob.labels.description")}</CardTitle>
+                <CardDescription>Describe the role, responsibilities, and requirements</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  id="description"
+                  value={formData.description}
+                  onChange={(e) => handleInputChange("description", e.target.value)}
+                  placeholder={t("hiring.createJob.placeholders.description")}
+                  rows={6}
+                  className="resize-none"
+                />
+              </CardContent>
+            </Card>
 
             {/* Submit Actions */}
-            <div className="flex items-center justify-end gap-3">
+            <div className="flex items-center justify-end gap-3 pt-4 animate-fade-up stagger-4">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/hiring")}
                 disabled={isSubmitting}
+                className="gap-2 shadow-sm"
               >
-                Cancel
+                {t("hiring.createJob.buttons.cancel")}
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+              >
                 {isSubmitting ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" />
-                    Posting...
+                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
+                    {t("hiring.createJob.buttons.creating")}
                   </>
                 ) : (
                   <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Post Advert
+                    <Save className="h-4 w-4" />
+                    {t("hiring.createJob.buttons.create")}
                   </>
                 )}
               </Button>

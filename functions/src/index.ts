@@ -8,5 +8,6 @@ export * from "./hiring";
 export * from "./timeleave";
 export * from "./payroll";
 export * from "./tenant";
+export * from "./admin";
 
 // You can add more function modules here as they're created

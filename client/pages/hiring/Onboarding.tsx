@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -13,9 +13,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Separator } from "@/components/ui/separator";
-import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   UserPlus,
   FileText,
@@ -27,18 +27,19 @@ import {
   MessageCircle,
   CheckCircle,
   Upload,
-  Calendar,
-  Phone,
-  CreditCard,
-  IdCard,
-  Building,
   BookOpen,
-  Laptop,
-  Award,
+  ArrowRight,
+  Phone,
+  MapPin,
+  CreditCard,
+  User,
+  Calendar,
+  AlertCircle,
 } from "lucide-react";
 
 export default function Onboarding() {
   const [currentStep, setCurrentStep] = useState(0);
+  const { t } = useI18n();
   const [formData, setFormData] = useState({
     fullName: "",
     dateOfBirth: "",
@@ -61,65 +62,109 @@ export default function Onboarding() {
   });
   const [sopStatuses, setSopStatuses] = useState({});
 
-  const steps = [
-    { id: 0, label: "Pre-Boarding", icon: <UserPlus className="h-4 w-4" /> },
-    {
-      id: 1,
-      label: "Personal & Legal",
-      icon: <FileText className="h-4 w-4" />,
-    },
-    {
-      id: 2,
-      label: "Policies & Acknowledgements",
-      icon: <Shield className="h-4 w-4" />,
-    },
-    { id: 3, label: "Department SOPs", icon: <BookOpen className="h-4 w-4" /> },
-    { id: 4, label: "IT & Equipment", icon: <Monitor className="h-4 w-4" /> },
-    {
-      id: 5,
-      label: "Orientation & Training",
-      icon: <GraduationCap className="h-4 w-4" />,
-    },
-    {
-      id: 6,
-      label: "Benefits Enrollment",
-      icon: <Heart className="h-4 w-4" />,
-    },
-    { id: 7, label: "Probation & Goals", icon: <Target className="h-4 w-4" /> },
-    {
-      id: 8,
-      label: "Feedback & Completion",
-      icon: <MessageCircle className="h-4 w-4" />,
-    },
-  ];
+  const steps = useMemo(
+    () => [
+      {
+        id: 0,
+        label: t("hiring.onboarding.steps.preBoarding"),
+        icon: <UserPlus className="h-4 w-4" />,
+      },
+      {
+        id: 1,
+        label: t("hiring.onboarding.steps.personalLegal"),
+        icon: <FileText className="h-4 w-4" />,
+      },
+      {
+        id: 2,
+        label: t("hiring.onboarding.steps.policies"),
+        icon: <Shield className="h-4 w-4" />,
+      },
+      {
+        id: 3,
+        label: t("hiring.onboarding.steps.departmentSops"),
+        icon: <BookOpen className="h-4 w-4" />,
+      },
+      {
+        id: 4,
+        label: t("hiring.onboarding.steps.itEquipment"),
+        icon: <Monitor className="h-4 w-4" />,
+      },
+      {
+        id: 5,
+        label: t("hiring.onboarding.steps.orientation"),
+        icon: <GraduationCap className="h-4 w-4" />,
+      },
+      {
+        id: 6,
+        label: t("hiring.onboarding.steps.benefits"),
+        icon: <Heart className="h-4 w-4" />,
+      },
+      {
+        id: 7,
+        label: t("hiring.onboarding.steps.probation"),
+        icon: <Target className="h-4 w-4" />,
+      },
+      {
+        id: 8,
+        label: t("hiring.onboarding.steps.feedback"),
+        icon: <MessageCircle className="h-4 w-4" />,
+      },
+    ],
+    [t],
+  );
 
   // Mock SOPs data
-  const departmentSOPs = [
-    {
-      id: 1,
-      title: "Code Review Process",
-      description: "Guidelines for conducting effective code reviews",
-      department: "Engineering",
-    },
-    {
-      id: 2,
-      title: "Deployment Procedures",
-      description: "Step-by-step deployment and rollback procedures",
-      department: "Engineering",
-    },
-    {
-      id: 3,
-      title: "Security Best Practices",
-      description: "Security protocols and data handling guidelines",
-      department: "Engineering",
-    },
-  ];
+  const departmentSOPs = useMemo(
+    () => [
+      {
+        id: 1,
+        title: t("hiring.onboarding.sops.items.codeReview.title"),
+        description: t("hiring.onboarding.sops.items.codeReview.description"),
+        department: t("hiring.onboarding.sops.department"),
+      },
+      {
+        id: 2,
+        title: t("hiring.onboarding.sops.items.deployment.title"),
+        description: t("hiring.onboarding.sops.items.deployment.description"),
+        department: t("hiring.onboarding.sops.department"),
+      },
+      {
+        id: 3,
+        title: t("hiring.onboarding.sops.items.security.title"),
+        description: t("hiring.onboarding.sops.items.security.description"),
+        department: t("hiring.onboarding.sops.department"),
+      },
+    ],
+    [t],
+  );
+
+  const policies = useMemo(
+    () => [
+      { id: "dressCode", label: t("hiring.onboarding.policies.items.dress") },
+      {
+        id: "codeOfConduct",
+        label: t("hiring.onboarding.policies.items.conduct"),
+      },
+      {
+        id: "leavePolicy",
+        label: t("hiring.onboarding.policies.items.leave"),
+      },
+      {
+        id: "safetyGuidelines",
+        label: t("hiring.onboarding.policies.items.safety"),
+      },
+      {
+        id: "dataProtection",
+        label: t("hiring.onboarding.policies.items.data"),
+      },
+    ],
+    [t],
+  );
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Mock Firebase save
     console.log("Saving to Firestore:", formData);
-    setCurrentStep(2); // Advance to Policies & Acknowledgements
+    setCurrentStep(2);
   };
 
   const handleAcknowledgementsSubmit = () => {
@@ -127,12 +172,11 @@ export default function Onboarding() {
       (v) => v === true,
     );
     if (!hasCheckedItems || !acknowledgements.signed) {
-      alert("Please acknowledge policies and provide signature");
+      alert(t("hiring.onboarding.policies.alert"));
       return;
     }
-    // Mock Firebase save
     console.log("Saving acknowledgements:", acknowledgements);
-    setCurrentStep(3); // Advance to Department SOPs
+    setCurrentStep(3);
   };
 
   const handleSOPToggle = (sopId: number) => {
@@ -162,110 +206,155 @@ export default function Onboarding() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        <div className="flex items-center gap-3 mb-8">
-          <UserPlus className="h-8 w-8 text-green-400" />
-          <div>
-            <h1 className="text-3xl font-bold">Employee Onboarding</h1>
-            <p className="text-muted-foreground">
-              Complete your onboarding process step by step
-            </p>
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative max-w-6xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center gap-4 animate-fade-up">
+            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+              <UserPlus className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">
+                {t("hiring.onboarding.title")}
+              </h1>
+              <p className="text-emerald-100 mt-1">
+                {t("hiring.onboarding.subtitle")}
+              </p>
+            </div>
           </div>
         </div>
+      </div>
 
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
         {/* Horizontal Stepper */}
-        <Card className="mb-8">
+        <Card className="mb-8 border-border/50 animate-fade-up stagger-1">
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between overflow-x-auto pb-2">
               {steps.map((step, index) => (
-                <div key={step.id} className="flex flex-col items-center">
+                <div key={step.id} className="flex flex-col items-center min-w-[80px] relative">
                   <button
                     onClick={() => scrollToSection(step.id)}
-                    className={`flex items-center justify-center w-12 h-12 rounded-full border-2 mb-2 transition-colors ${
+                    className={`flex items-center justify-center w-10 h-10 rounded-full border-2 mb-2 transition-all duration-200 ${
                       getStepStatus(step.id) === "completed"
-                        ? "bg-green-500 border-green-500 text-white"
+                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 border-transparent text-white shadow-lg shadow-emerald-500/25"
                         : getStepStatus(step.id) === "current"
-                          ? "bg-primary border-primary text-primary-foreground"
-                          : "bg-background border-muted-foreground text-muted-foreground"
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-500 border-transparent text-white shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-500/20"
+                          : "bg-muted border-border text-muted-foreground hover:border-emerald-300 hover:text-emerald-600"
                     }`}
                   >
                     {getStepStatus(step.id) === "completed" ? (
-                      <CheckCircle className="h-6 w-6" />
+                      <CheckCircle className="h-5 w-5" />
                     ) : (
                       step.icon
                     )}
                   </button>
                   <span
-                    className={`text-xs text-center font-medium max-w-20 ${
+                    className={`text-xs text-center font-medium max-w-[70px] leading-tight ${
                       getStepStatus(step.id) === "current"
-                        ? "text-primary"
-                        : "text-muted-foreground"
+                        ? "text-emerald-600"
+                        : getStepStatus(step.id) === "completed"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
                     }`}
                   >
                     {step.label}
                   </span>
                   {index < steps.length - 1 && (
                     <div
-                      className={`absolute w-full h-0.5 top-6 left-1/2 transform -translate-y-1/2 ${
+                      className={`absolute top-5 left-[calc(50%+20px)] w-[calc(100%-40px)] h-0.5 ${
                         getStepStatus(step.id) === "completed"
-                          ? "bg-green-500"
-                          : "bg-muted"
+                          ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                          : "bg-border"
                       }`}
-                      style={{ zIndex: -1 }}
                     />
                   )}
                 </div>
               ))}
             </div>
-            <Progress
-              value={(currentStep / (steps.length - 1)) * 100}
-              className="mt-4"
-            />
+            <div className="mt-4">
+              <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
+                <span>Progress</span>
+                <span>{Math.round((currentStep / (steps.length - 1)) * 100)}%</span>
+              </div>
+              <div className="h-2 rounded-full bg-muted overflow-hidden">
+                <div
+                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                  style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
+                />
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         {/* Step Content Sections */}
         <div className="space-y-8">
           {/* Step 0: Pre-Boarding */}
-          <section id="step-0" className="py-8">
-            <Card>
+          <section id="step-0" className="animate-fade-up stagger-2">
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <UserPlus className="h-6 w-6" />
-                  Pre-Boarding
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                    <UserPlus className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  {t("hiring.onboarding.preBoarding.title")}
                 </CardTitle>
                 <CardDescription>
-                  Welcome to the team! Let's get you started with the onboarding
-                  process.
+                  {t("hiring.onboarding.preBoarding.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   <p className="text-muted-foreground">
-                    Welcome to PayrollHR! We're excited to have you join our
-                    team. This onboarding process will help you get familiar
-                    with our company policies, procedures, and systems.
+                    {t("hiring.onboarding.preBoarding.welcome")}
                   </p>
                   <div className="grid md:grid-cols-2 gap-4">
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-semibold mb-2">What to Expect</h4>
-                      <ul className="text-sm text-muted-foreground space-y-1">
-                        <li>• Complete personal information forms</li>
-                        <li>• Review company policies and procedures</li>
-                        <li>• Set up IT equipment and accounts</li>
-                        <li>• Attend orientation sessions</li>
+                    <div className="p-5 border border-border/50 rounded-xl bg-card hover:shadow-md transition-shadow">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Target className="h-4 w-4 text-emerald-500" />
+                        {t("hiring.onboarding.preBoarding.expectTitle")}
+                      </h4>
+                      <ul className="text-sm text-muted-foreground space-y-2">
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          {t("hiring.onboarding.preBoarding.expect.items.info")}
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          {t("hiring.onboarding.preBoarding.expect.items.policies")}
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          {t("hiring.onboarding.preBoarding.expect.items.it")}
+                        </li>
+                        <li className="flex items-start gap-2">
+                          <CheckCircle className="h-4 w-4 text-emerald-500 mt-0.5 shrink-0" />
+                          {t("hiring.onboarding.preBoarding.expect.items.orientation")}
+                        </li>
                       </ul>
                     </div>
-                    <div className="p-4 border rounded-lg">
-                      <h4 className="font-semibold mb-2">Estimated Time</h4>
+                    <div className="p-5 border border-border/50 rounded-xl bg-card hover:shadow-md transition-shadow">
+                      <h4 className="font-semibold mb-3 flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-teal-500" />
+                        {t("hiring.onboarding.preBoarding.timeTitle")}
+                      </h4>
                       <p className="text-sm text-muted-foreground">
-                        The complete onboarding process typically takes 2-3
-                        hours spread over your first week.
+                        {t("hiring.onboarding.preBoarding.timeDescription")}
                       </p>
                     </div>
                   </div>
-                  <Button onClick={() => scrollToSection(1)}>
-                    Start Onboarding Process
+                  <Button
+                    onClick={() => scrollToSection(1)}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  >
+                    {t("hiring.onboarding.preBoarding.start")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </div>
               </CardContent>
@@ -273,33 +362,42 @@ export default function Onboarding() {
           </section>
 
           {/* Step 1: Personal & Legal */}
-          <section id="step-1" className="py-8">
-            <Card>
+          <section id="step-1" className="animate-fade-up stagger-3">
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-6 w-6" />
-                  Personal & Legal Information
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                    <FileText className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  {t("hiring.onboarding.personal.title")}
                 </CardTitle>
                 <CardDescription>
-                  Please provide your personal details and legal documentation.
+                  {t("hiring.onboarding.personal.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleFormSubmit} className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="fullName">Full Name *</Label>
+                      <Label htmlFor="fullName" className="flex items-center gap-2">
+                        <User className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.fullName")}
+                      </Label>
                       <Input
                         id="fullName"
                         value={formData.fullName}
                         onChange={(e) =>
                           setFormData({ ...formData, fullName: e.target.value })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                      <Label htmlFor="dateOfBirth" className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.dob")}
+                      </Label>
                       <Input
                         id="dateOfBirth"
                         type="date"
@@ -310,27 +408,35 @@ export default function Onboarding() {
                             dateOfBirth: e.target.value,
                           })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Address *</Label>
+                    <Label htmlFor="address" className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground" />
+                      {t("hiring.onboarding.personal.fields.address")}
+                    </Label>
                     <Textarea
                       id="address"
                       value={formData.address}
                       onChange={(e) =>
                         setFormData({ ...formData, address: e.target.value })
                       }
-                      placeholder="Enter your full address"
+                      placeholder={t("hiring.onboarding.personal.placeholders.address")}
+                      className="border-border/50"
                       required
                     />
                   </div>
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="mobilePhone">Mobile Phone *</Label>
+                      <Label htmlFor="mobilePhone" className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.mobile")}
+                      </Label>
                       <Input
                         id="mobilePhone"
                         type="tel"
@@ -341,12 +447,14 @@ export default function Onboarding() {
                             mobilePhone: e.target.value,
                           })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="emergencyContactName">
-                        Emergency Contact Name *
+                      <Label htmlFor="emergencyContactName" className="flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.emergencyName")}
                       </Label>
                       <Input
                         id="emergencyContactName"
@@ -357,6 +465,7 @@ export default function Onboarding() {
                             emergencyContactName: e.target.value,
                           })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
@@ -364,8 +473,9 @@ export default function Onboarding() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="emergencyContactPhone">
-                        Emergency Contact Phone *
+                      <Label htmlFor="emergencyContactPhone" className="flex items-center gap-2">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.emergencyPhone")}
                       </Label>
                       <Input
                         id="emergencyContactPhone"
@@ -377,12 +487,14 @@ export default function Onboarding() {
                             emergencyContactPhone: e.target.value,
                           })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="bankAccountNumber">
-                        Bank Account Number *
+                      <Label htmlFor="bankAccountNumber" className="flex items-center gap-2">
+                        <CreditCard className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.bankAccount")}
                       </Label>
                       <Input
                         id="bankAccountNumber"
@@ -393,6 +505,7 @@ export default function Onboarding() {
                             bankAccountNumber: e.target.value,
                           })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
@@ -400,8 +513,9 @@ export default function Onboarding() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="taxId">
-                        Tax ID / Social Security Number *
+                      <Label htmlFor="taxId" className="flex items-center gap-2">
+                        <FileText className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.taxId")}
                       </Label>
                       <Input
                         id="taxId"
@@ -409,13 +523,17 @@ export default function Onboarding() {
                         onChange={(e) =>
                           setFormData({ ...formData, taxId: e.target.value })
                         }
+                        className="border-border/50"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="idDocument">ID Document Scan *</Label>
-                      <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                        <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
+                      <Label htmlFor="idDocument" className="flex items-center gap-2">
+                        <Upload className="h-4 w-4 text-muted-foreground" />
+                        {t("hiring.onboarding.personal.fields.idDocument")}
+                      </Label>
+                      <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-emerald-300 transition-colors cursor-pointer bg-muted/30">
+                        <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
                         <input
                           type="file"
                           accept=".pdf,.jpg,.png"
@@ -423,19 +541,23 @@ export default function Onboarding() {
                           id="idDocument"
                         />
                         <label htmlFor="idDocument" className="cursor-pointer">
-                          <p className="text-sm text-gray-600">
-                            Click to upload ID document
+                          <p className="text-sm text-muted-foreground">
+                            {t("hiring.onboarding.personal.upload.cta")}
                           </p>
-                          <p className="text-xs text-gray-400">
-                            PDF, JPG, PNG (max 5MB)
+                          <p className="text-xs text-muted-foreground/70">
+                            {t("hiring.onboarding.personal.upload.types")}
                           </p>
                         </label>
                       </div>
                     </div>
                   </div>
 
-                  <Button type="submit" className="w-full">
-                    Save & Continue to Policies
+                  <Button
+                    type="submit"
+                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  >
+                    {t("hiring.onboarding.personal.actions.saveContinue")}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
                 </form>
               </CardContent>
@@ -443,44 +565,44 @@ export default function Onboarding() {
           </section>
 
           {/* Step 2: Policies & Acknowledgements */}
-          <section id="step-2" className="py-8">
-            <Card>
+          <section id="step-2">
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Shield className="h-6 w-6" />
-                  Policies & Acknowledgements
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                    <Shield className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  {t("hiring.onboarding.policies.title")}
                 </CardTitle>
                 <CardDescription>
-                  Please review our company handbook and acknowledge
-                  understanding of our policies.
+                  {t("hiring.onboarding.policies.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 {/* PDF Viewer Placeholder */}
-                <div className="border rounded-lg p-8 bg-gray-50 text-center">
-                  <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="font-semibold mb-2">Company Handbook</h3>
+                <div className="border border-border/50 rounded-xl p-8 bg-muted/30 text-center">
+                  <FileText className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <h3 className="font-semibold mb-2">
+                    {t("hiring.onboarding.policies.handbook.title")}
+                  </h3>
                   <p className="text-sm text-muted-foreground mb-4">
-                    Employee handbook with company policies, procedures, and
-                    guidelines
+                    {t("hiring.onboarding.policies.handbook.description")}
                   </p>
-                  <Button variant="outline">View Full Handbook (PDF)</Button>
+                  <Button variant="outline" className="border-border/50">
+                    {t("hiring.onboarding.policies.handbook.button")}
+                  </Button>
                 </div>
 
                 {/* Policy Acknowledgements */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Policy Acknowledgements</h4>
+                  <h4 className="font-semibold">
+                    {t("hiring.onboarding.policies.ackTitle")}
+                  </h4>
                   <div className="space-y-3">
-                    {[
-                      { id: "dressCode", label: "Dress Code Policy" },
-                      { id: "codeOfConduct", label: "Code of Conduct" },
-                      { id: "leavePolicy", label: "Leave and Holiday Policy" },
-                      { id: "safetyGuidelines", label: "Safety Guidelines" },
-                      { id: "dataProtection", label: "Data Protection Policy" },
-                    ].map((policy) => (
+                    {policies.map((policy) => (
                       <div
                         key={policy.id}
-                        className="flex items-center space-x-2"
+                        className="flex items-center space-x-3 p-3 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors"
                       >
                         <Checkbox
                           id={policy.id}
@@ -491,12 +613,15 @@ export default function Onboarding() {
                               [policy.id]: checked,
                             }))
                           }
+                          className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                         />
                         <label
                           htmlFor={policy.id}
-                          className="text-sm font-medium"
+                          className="text-sm font-medium cursor-pointer flex-1"
                         >
-                          I have read and understand the {policy.label}
+                          {t("hiring.onboarding.policies.acknowledge", {
+                            policy: policy.label,
+                          })}
                         </label>
                       </div>
                     ))}
@@ -505,13 +630,14 @@ export default function Onboarding() {
 
                 {/* Signature Pad */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Employee Signature</h4>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center bg-gray-50">
+                  <h4 className="font-semibold">
+                    {t("hiring.onboarding.policies.signatureTitle")}
+                  </h4>
+                  <div className="border-2 border-dashed border-border rounded-xl p-8 text-center bg-muted/30">
                     <p className="text-sm text-muted-foreground mb-4">
-                      By checking the box below, I acknowledge that I have read,
-                      understood, and agree to comply with all company policies.
+                      {t("hiring.onboarding.policies.signaturePrompt")}
                     </p>
-                    <div className="flex items-center justify-center space-x-2">
+                    <div className="flex items-center justify-center space-x-3">
                       <Checkbox
                         id="signature"
                         checked={acknowledgements.signed}
@@ -524,15 +650,22 @@ export default function Onboarding() {
                               : "",
                           }))
                         }
+                        className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                       />
-                      <label htmlFor="signature" className="font-medium">
-                        Electronic Signature -{" "}
-                        {formData.fullName || "Employee Name"}
+                      <label htmlFor="signature" className="font-medium cursor-pointer">
+                        {t("hiring.onboarding.policies.signatureLabel", {
+                          name:
+                            formData.fullName ||
+                            t("hiring.onboarding.policies.signaturePlaceholder"),
+                        })}
                       </label>
                     </div>
                     {acknowledgements.signed && (
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Signed on: {acknowledgements.signatureDate}
+                      <p className="text-xs text-emerald-600 mt-3 flex items-center justify-center gap-1">
+                        <CheckCircle className="h-3 w-3" />
+                        {t("hiring.onboarding.policies.signedOn", {
+                          date: acknowledgements.signatureDate,
+                        })}
                       </p>
                     )}
                   </div>
@@ -540,52 +673,70 @@ export default function Onboarding() {
 
                 <Button
                   onClick={handleAcknowledgementsSubmit}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
                 >
-                  Confirm & Next
+                  {t("hiring.onboarding.policies.confirm")}
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
           </section>
 
           {/* Step 3: Department SOPs */}
-          <section id="step-3" className="py-8">
-            <Card>
+          <section id="step-3">
+            <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <BookOpen className="h-6 w-6" />
-                  Department Standard Operating Procedures
+                <CardTitle className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                    <BookOpen className="h-5 w-5 text-emerald-600" />
+                  </div>
+                  {t("hiring.onboarding.sops.title")}
                 </CardTitle>
                 <CardDescription>
-                  Review and acknowledge understanding of department-specific
-                  procedures.
+                  {t("hiring.onboarding.sops.description")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   {departmentSOPs.map((sop) => (
-                    <div key={sop.id} className="border rounded-lg p-4">
-                      <div className="flex items-start justify-between">
+                    <div
+                      key={sop.id}
+                      className={`border rounded-xl p-5 transition-all ${
+                        sopStatuses[sop.id]
+                          ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20'
+                          : 'border-border/50 hover:border-emerald-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
-                          <h4 className="font-semibold">{sop.title}</h4>
+                          <h4 className="font-semibold flex items-center gap-2">
+                            {sopStatuses[sop.id] && (
+                              <CheckCircle className="h-4 w-4 text-emerald-500" />
+                            )}
+                            {sop.title}
+                          </h4>
                           <p className="text-sm text-muted-foreground mt-1">
                             {sop.description}
                           </p>
-                          <Badge variant="outline" className="mt-2">
+                          <Badge
+                            variant="outline"
+                            className="mt-3 bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800"
+                          >
                             {sop.department}
                           </Badge>
                         </div>
-                        <div className="flex items-center space-x-2 ml-4">
+                        <div className="flex items-center space-x-2">
                           <Checkbox
                             id={`sop-${sop.id}`}
                             checked={sopStatuses[sop.id] || false}
                             onCheckedChange={() => handleSOPToggle(sop.id)}
+                            className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                           />
                           <label
                             htmlFor={`sop-${sop.id}`}
-                            className="text-sm font-medium"
+                            className="text-sm font-medium cursor-pointer"
                           >
-                            Mark as Read
+                            {t("hiring.onboarding.sops.markRead")}
                           </label>
                         </div>
                       </div>
@@ -596,9 +747,10 @@ export default function Onboarding() {
                 <Button
                   onClick={() => setCurrentStep(4)}
                   disabled={!allSOPsCompleted}
-                  className="w-full"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 disabled:opacity-50"
                 >
-                  Continue to IT & Equipment
+                  {t("hiring.onboarding.sops.continue")}
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -606,32 +758,41 @@ export default function Onboarding() {
 
           {/* Placeholder sections for remaining steps */}
           {[4, 5, 6, 7, 8].map((stepId) => (
-            <section key={stepId} id={`step-${stepId}`} className="py-8">
-              <Card>
+            <section key={stepId} id={`step-${stepId}`}>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    {steps[stepId].icon}
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                      {React.cloneElement(steps[stepId].icon as React.ReactElement, {
+                        className: "h-5 w-5 text-emerald-600"
+                      })}
+                    </div>
                     {steps[stepId].label}
                   </CardTitle>
                   <CardDescription>
                     {stepId === 4 &&
-                      "Set up your IT equipment and system accounts."}
+                      t("hiring.onboarding.placeholders.it")}
                     {stepId === 5 &&
-                      "Complete orientation sessions and training modules."}
+                      t("hiring.onboarding.placeholders.orientation")}
                     {stepId === 6 &&
-                      "Enroll in company benefits and insurance plans."}
+                      t("hiring.onboarding.placeholders.benefits")}
                     {stepId === 7 &&
-                      "Set probation period goals and expectations."}
+                      t("hiring.onboarding.placeholders.probation")}
                     {stepId === 8 &&
-                      "Provide feedback and complete the onboarding process."}
+                      t("hiring.onboarding.placeholders.feedback")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="p-8 text-center border-2 border-dashed border-gray-200 rounded-lg">
-                    <div className="mb-4">{steps[stepId].icon}</div>
+                  <div className="p-8 text-center border-2 border-dashed border-border rounded-xl bg-muted/30">
+                    <div className="mb-4 p-3 rounded-full bg-muted inline-flex">
+                      {React.cloneElement(steps[stepId].icon as React.ReactElement, {
+                        className: "h-6 w-6 text-muted-foreground"
+                      })}
+                    </div>
                     <p className="text-muted-foreground">
-                      Content for {steps[stepId].label} will be implemented
-                      here.
+                      {t("hiring.onboarding.placeholders.content", {
+                        step: steps[stepId].label,
+                      })}
                     </p>
                   </div>
                 </CardContent>

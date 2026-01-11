@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -18,6 +19,7 @@ import {
 } from "@/services/departmentService";
 import DepartmentManager from "@/components/DepartmentManager";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   DragDropContext,
   Droppable,
@@ -66,6 +68,7 @@ export default function OrganizationChart() {
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
   const [dragMode, setDragMode] = useState(false);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   useEffect(() => {
     loadData();
@@ -118,12 +121,12 @@ export default function OrganizationChart() {
       const errorMessage =
         error instanceof Error
           ? error.message.includes("network") || error.message.includes("fetch")
-            ? "Unable to connect to database. Showing demo data."
-            : "Failed to load organization data. Please try again."
-          : "An unexpected error occurred while loading data.";
+            ? t("orgChart.toast.connectionOffline")
+            : t("orgChart.toast.loadFailed")
+          : t("orgChart.toast.unexpected");
 
       toast({
-        title: "Connection Issue",
+        title: t("orgChart.toast.connectionTitle"),
         description: errorMessage,
         variant: "destructive",
         duration: 6000,
@@ -238,7 +241,7 @@ export default function OrganizationChart() {
           id: `exec-${ceo.id}`,
           name: `${ceo.personalInfo.firstName} ${ceo.personalInfo.lastName}`,
           title: ceo.jobDetails.position,
-          department: "Executive",
+          department: t("orgChart.labels.executive"),
           employee: ceo,
         });
         usedIds.add(ceo.id);
@@ -258,7 +261,7 @@ export default function OrganizationChart() {
           id: `exec-${cfo.id}`,
           name: `${cfo.personalInfo.firstName} ${cfo.personalInfo.lastName}`,
           title: cfo.jobDetails.position,
-          department: "Executive",
+          department: t("orgChart.labels.executive"),
           employee: cfo,
         });
         usedIds.add(cfo.id);
@@ -282,7 +285,7 @@ export default function OrganizationChart() {
           id: `exec-${otherExec.id}`,
           name: `${otherExec.personalInfo.firstName} ${otherExec.personalInfo.lastName}`,
           title: otherExec.jobDetails.position,
-          department: "Executive",
+          department: t("orgChart.labels.executive"),
           employee: otherExec,
         });
         usedIds.add(otherExec.id);
@@ -330,7 +333,7 @@ export default function OrganizationChart() {
         } else {
           // Create a placeholder head using department's assigned director/manager or a generic placeholder
           const assignedHead =
-            dept.director || dept.manager || "No Head Assigned";
+            dept.director || dept.manager || t("orgChart.labels.noHeadAssigned");
           console.log(
             `📋 No employee head found for ${dept.name}, using assigned: ${assignedHead}`,
           );
@@ -338,10 +341,10 @@ export default function OrganizationChart() {
             id: `head-placeholder-${dept.id}`,
             name: assignedHead,
             title: dept.director
-              ? "Director"
+              ? t("orgChart.labels.director")
               : dept.manager
-                ? "Manager"
-                : "Department Head",
+                ? t("orgChart.labels.manager")
+                : t("orgChart.labels.departmentHead"),
             department: dept.name,
           };
         }
@@ -377,14 +380,14 @@ export default function OrganizationChart() {
       );
       setDepartmentGroups(deptGroups);
     },
-    [],
+    [t],
   );
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;
     toast({
-      title: "Organization Updated",
-      description: "Position moved successfully",
+      title: t("orgChart.toast.updatedTitle"),
+      description: t("orgChart.toast.updatedDesc"),
     });
   };
 
@@ -392,8 +395,8 @@ export default function OrganizationChart() {
     // Reload data when departments are changed
     await loadData();
     toast({
-      title: "Data Refreshed",
-      description: "Organization chart updated with latest department changes",
+      title: t("orgChart.toast.refreshedTitle"),
+      description: t("orgChart.toast.refreshedDesc"),
     });
   };
 
@@ -413,10 +416,9 @@ export default function OrganizationChart() {
           </div>
 
           {/* Statistics skeleton */}
-          <div className="bg-blue-500 rounded-lg p-6 mb-8">
-            <div className="flex gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               {[1, 2, 3, 4].map((i) => (
-                <Card key={i} className="bg-white flex-1">
+                <Card key={i}>
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div className="space-y-2">
@@ -428,11 +430,10 @@ export default function OrganizationChart() {
                   </CardContent>
                 </Card>
               ))}
-            </div>
           </div>
 
           {/* Org chart skeleton */}
-          <div className="bg-white rounded-lg shadow-sm border p-12">
+          <div className="bg-card rounded-lg shadow-sm border border-border p-12">
             <div className="flex flex-col items-center space-y-8">
               {/* Executive chain skeleton */}
               <div className="flex flex-col items-center space-y-4">
@@ -474,6 +475,7 @@ export default function OrganizationChart() {
       <MainNavigation />
 
       <div className="p-8">
+        <AutoBreadcrumb className="mb-6" />
         {/* Header with Title and Controls */}
         <div className="flex flex-col gap-6 mb-8">
           {/* Title and Controls */}
@@ -481,8 +483,8 @@ export default function OrganizationChart() {
             <div className="flex flex-col relative mt-5">
               <div className="flex gap-5 max-md:flex-col max-md:items-stretch max-md:gap-0">
                 <div className="flex flex-col leading-normal w-[33%] ml-0 max-md:w-full max-md:ml-0">
-                  <h1 className="text-4xl font-bold text-gray-900">
-                    &nbsp;Organizational Chart
+                  <h1 className="text-4xl font-bold text-foreground">
+                    {t("orgChart.title")}
                   </h1>
                 </div>
                 <div className="flex flex-col leading-normal w-[67%] ml-auto max-md:w-full max-md:ml-0">
@@ -493,7 +495,9 @@ export default function OrganizationChart() {
                       onClick={() => setDragMode(!dragMode)}
                     >
                       <Move className="mr-2 h-4 w-4" />
-                      {dragMode ? "Exit Reorganize" : "Reorganize"}
+                      {dragMode
+                        ? t("orgChart.exitReorganize")
+                        : t("orgChart.reorganize")}
                     </Button>
                     <Button
                       variant="outline"
@@ -503,7 +507,7 @@ export default function OrganizationChart() {
                       }}
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Add Department
+                      {t("departments.addDepartment")}
                     </Button>
                     <Button
                       onClick={() => {
@@ -512,7 +516,7 @@ export default function OrganizationChart() {
                       }}
                     >
                       <Edit className="mr-2 h-4 w-4" />
-                      Manage
+                      {t("orgChart.manage")}
                     </Button>
                   </div>
                 </div>
@@ -520,127 +524,117 @@ export default function OrganizationChart() {
             </div>
           </div>
 
-          {/* Statistics Dashboard - Horizontal Blue Container */}
+          {/* Statistics Dashboard */}
           {employees.length > 0 && (
-            <div className="bg-blue-500 rounded-lg p-6">
-              <div className="flex flex-col gap-6">
-                <div className="flex gap-5 max-md:flex-col max-md:items-stretch max-md:gap-0">
-                  <div className="flex flex-col leading-normal w-[20%] ml-0 max-md:w-full max-md:ml-0">
-                    <Card className="bg-white">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">
-                              Executives
-                            </p>
-                            <p className="text-2xl font-bold text-purple-700">
-                              {executives.length}
-                            </p>
-                          </div>
-                          <Crown className="h-8 w-8 text-purple-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {t("orgChart.stats.executives")}
+                      </p>
+                      <p className="text-2xl font-bold text-foreground">
+                        {executives.length}
+                      </p>
+                    </div>
+                    <Crown className="h-8 w-8 text-purple-500" />
                   </div>
-                  <div className="flex flex-col leading-normal w-[20%] ml-5 max-md:w-full max-md:ml-0">
-                    <Card className="bg-white">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">
-                              Managers
-                            </p>
-                            <p className="text-2xl font-bold text-green-700">
-                              {
-                                employees.filter(
-                                  (emp) =>
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("manager") ||
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("director") ||
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("head"),
-                                ).length
-                              }
-                            </p>
-                          </div>
-                          <UserCheck className="h-8 w-8 text-green-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {t("orgChart.stats.managers")}
+                      </p>
+                      <p className="text-2xl font-bold text-foreground">
+                        {
+                          employees.filter(
+                            (emp) =>
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("manager") ||
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("director") ||
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("head"),
+                          ).length
+                        }
+                      </p>
+                    </div>
+                    <UserCheck className="h-8 w-8 text-emerald-500" />
                   </div>
-                  <div className="flex flex-col leading-normal w-[20%] ml-5 max-md:w-full max-md:ml-0">
-                    <Card className="bg-white">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">
-                              Senior Staff
-                            </p>
-                            <p className="text-2xl font-bold text-blue-700">
-                              {
-                                employees.filter(
-                                  (emp) =>
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("senior") ||
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("lead") ||
-                                    emp.jobDetails.position
-                                      .toLowerCase()
-                                      .includes("principal"),
-                                ).length
-                              }
-                            </p>
-                          </div>
-                          <GraduationCap className="h-8 w-8 text-blue-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {t("orgChart.stats.seniorStaff")}
+                      </p>
+                      <p className="text-2xl font-bold text-foreground">
+                        {
+                          employees.filter(
+                            (emp) =>
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("senior") ||
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("lead") ||
+                              emp.jobDetails.position
+                                .toLowerCase()
+                                .includes("principal"),
+                          ).length
+                        }
+                      </p>
+                    </div>
+                    <GraduationCap className="h-8 w-8 text-blue-500" />
                   </div>
-                  <div className="flex flex-col leading-normal w-[20%] ml-5 max-md:w-full max-md:ml-0">
-                    <Card className="bg-white">
-                      <CardContent className="p-4">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-sm font-medium text-gray-600">
-                              Total Employees
-                            </p>
-                            <p className="text-2xl font-bold text-orange-700">
-                              {employees.length}
-                            </p>
-                          </div>
-                          <Users className="h-8 w-8 text-orange-500" />
-                        </div>
-                      </CardContent>
-                    </Card>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">
+                        {t("orgChart.stats.totalEmployees")}
+                      </p>
+                      <p className="text-2xl font-bold text-foreground">
+                        {employees.length}
+                      </p>
+                    </div>
+                    <Users className="h-8 w-8 text-orange-500" />
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
           )}
         </div>
 
         {employees.length === 0 ? (
           <div className="text-center py-16">
-            <Database className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">No Organization Data</h3>
+            <Database className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" />
+            <h3 className="text-lg font-semibold mb-2 text-foreground">
+              {t("orgChart.emptyTitle")}
+            </h3>
             <p className="text-muted-foreground mb-6">
-              Add employees to see the organization chart
+              {t("orgChart.emptyDesc")}
             </p>
             <Button onClick={() => (window.location.href = "/staff/add")}>
               <User className="mr-2 h-4 w-4" />
-              Add First Employee
+              {t("orgChart.addFirstEmployee")}
             </Button>
           </div>
         ) : (
           <div className="space-y-8">
             {/* Apple-Style Organization Chart */}
-            <div className="bg-white rounded-lg shadow-sm border p-12 mx-auto overflow-x-auto min-w-max">
+            <div className="bg-card rounded-lg shadow-sm border border-border p-12 mx-auto overflow-x-auto min-w-max">
               <DragDropContext onDragEnd={handleDragEnd}>
                 <div className="flex flex-col items-center space-y-8">
                   {/* 1. Executive Chain (Vertical) */}
@@ -674,20 +668,20 @@ export default function OrganizationChart() {
                                       {...provided.dragHandleProps}
                                       className="absolute top-2 right-2 z-10"
                                     >
-                                      <Grip className="h-4 w-4 text-gray-400" />
+                                      <Grip className="h-4 w-4 text-muted-foreground" />
                                     </div>
                                   )}
 
                                   {/* Executive Card */}
-                                  <div className="w-56 h-32 border-2 border-blue-300 rounded-lg bg-gradient-to-b from-blue-50 to-white shadow-md">
+                                  <div className="w-56 h-32 border-2 border-primary/50 rounded-lg bg-gradient-to-b from-primary/10 to-card shadow-md">
                                     <div className="p-4 text-center h-full flex flex-col justify-center">
                                       <div className="flex justify-center mb-2">
-                                        <Avatar className="h-12 w-12 border-2 border-blue-400">
+                                        <Avatar className="h-12 w-12 border-2 border-primary/60">
                                           <AvatarImage
                                             src="/placeholder.svg"
                                             alt={exec.name}
                                           />
-                                          <AvatarFallback className="bg-blue-100 text-blue-800 font-bold text-sm">
+                                          <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
                                             {exec.name
                                               .split(" ")
                                               .map((n) => n[0])
@@ -695,10 +689,10 @@ export default function OrganizationChart() {
                                           </AvatarFallback>
                                         </Avatar>
                                       </div>
-                                      <h3 className="font-bold text-sm text-gray-900 mb-1">
+                                      <h3 className="font-bold text-sm text-foreground mb-1">
                                         {exec.name}
                                       </h3>
-                                      <p className="text-xs text-blue-700 font-medium">
+                                      <p className="text-xs text-primary font-medium">
                                         {exec.title}
                                       </p>
                                     </div>
@@ -706,7 +700,7 @@ export default function OrganizationChart() {
 
                                   {/* Connecting line to next */}
                                   {index < executives.length - 1 && (
-                                    <div className="w-0.5 h-6 bg-gray-400 mx-auto"></div>
+                                    <div className="w-0.5 h-6 bg-border mx-auto"></div>
                                   )}
                                 </div>
                               )}
@@ -716,7 +710,7 @@ export default function OrganizationChart() {
 
                           {/* Line to departments */}
                           {departmentGroups.length > 0 && (
-                            <div className="w-0.5 h-8 bg-gray-400"></div>
+                            <div className="w-0.5 h-8 bg-border"></div>
                           )}
                         </div>
                       )}
@@ -728,7 +722,7 @@ export default function OrganizationChart() {
                     <div className="flex flex-col items-center space-y-6">
                       {/* Horizontal connector line */}
                       <div
-                        className="h-0.5 bg-gray-400"
+                        className="h-0.5 bg-border"
                         style={{
                           width: `${Math.max(0, (departmentGroups.length - 1) * 240)}px`,
                         }}
@@ -760,7 +754,7 @@ export default function OrganizationChart() {
                                     className="flex flex-col items-center space-y-4"
                                   >
                                     {/* Line up to horizontal connector */}
-                                    <div className="w-0.5 h-6 bg-gray-400"></div>
+                                    <div className="w-0.5 h-6 bg-border"></div>
 
                                     {/* Department Head Card (Gray) */}
                                     <div
@@ -775,19 +769,19 @@ export default function OrganizationChart() {
                                           {...provided.dragHandleProps}
                                           className="absolute top-1 right-1 z-10"
                                         >
-                                          <Grip className="h-3 w-3 text-gray-500" />
+                                          <Grip className="h-3 w-3 text-muted-foreground" />
                                         </div>
                                       )}
 
-                                      <div className="w-48 h-28 border-2 border-gray-400 rounded-lg bg-gradient-to-b from-gray-100 to-gray-50 shadow-md">
+                                      <div className="w-48 h-28 border-2 border-border rounded-lg bg-gradient-to-b from-muted to-card shadow-md">
                                         <div className="p-3 text-center h-full flex flex-col justify-center">
                                           <div className="flex justify-center mb-2">
-                                            <Avatar className="h-10 w-10 border border-gray-500">
+                                            <Avatar className="h-10 w-10 border border-border">
                                               <AvatarImage
                                                 src="/placeholder.svg"
                                                 alt={group.head.name}
                                               />
-                                              <AvatarFallback className="bg-gray-200 text-gray-800 font-semibold text-xs">
+                                              <AvatarFallback className="bg-muted text-foreground font-semibold text-xs">
                                                 {group.head.name
                                                   .split(" ")
                                                   .map((n) => n[0])
@@ -795,14 +789,14 @@ export default function OrganizationChart() {
                                               </AvatarFallback>
                                             </Avatar>
                                           </div>
-                                          <h3 className="font-bold text-xs text-gray-900 mb-1">
+                                          <h3 className="font-bold text-xs text-foreground mb-1">
                                             {group.head.name}
                                           </h3>
-                                          <p className="text-xs text-gray-600">
+                                          <p className="text-xs text-muted-foreground">
                                             {group.head.title}
                                           </p>
                                           <div className="mt-1">
-                                            <span className="text-xs bg-gray-200 px-2 py-0.5 rounded">
+                                            <span className="text-xs bg-muted px-2 py-0.5 rounded text-muted-foreground">
                                               {group.name}
                                             </span>
                                           </div>
@@ -813,21 +807,21 @@ export default function OrganizationChart() {
                                     {/* 3. Team Members Grid (Blue) */}
                                     {group.members.length > 0 && (
                                       <div className="flex flex-col items-center space-y-3">
-                                        <div className="w-0.5 h-4 bg-gray-300"></div>
+                                        <div className="w-0.5 h-4 bg-border"></div>
                                         <div className="grid grid-cols-2 gap-3">
                                           {group.members.map((member) => (
                                             <div
                                               key={member.id}
-                                              className="w-36 h-24 border border-blue-300 rounded-lg bg-gradient-to-b from-blue-50 to-white shadow-sm"
+                                              className="w-36 h-24 border border-primary/30 rounded-lg bg-gradient-to-b from-primary/10 to-card shadow-sm"
                                             >
                                               <div className="p-2 text-center h-full flex flex-col justify-center">
                                                 <div className="flex justify-center mb-1">
-                                                  <Avatar className="h-8 w-8 border border-blue-300">
+                                                  <Avatar className="h-8 w-8 border border-primary/40">
                                                     <AvatarImage
                                                       src="/placeholder.svg"
                                                       alt={member.name}
                                                     />
-                                                    <AvatarFallback className="bg-blue-100 text-blue-700 font-medium text-xs">
+                                                    <AvatarFallback className="bg-primary/20 text-primary font-medium text-xs">
                                                       {member.name
                                                         .split(" ")
                                                         .map((n) => n[0])
@@ -835,10 +829,10 @@ export default function OrganizationChart() {
                                                     </AvatarFallback>
                                                   </Avatar>
                                                 </div>
-                                                <h4 className="font-medium text-xs text-gray-900 mb-0.5 leading-tight">
+                                                <h4 className="font-medium text-xs text-foreground mb-0.5 leading-tight">
                                                   {member.name}
                                                 </h4>
-                                                <p className="text-xs text-blue-600 leading-tight">
+                                                <p className="text-xs text-primary leading-tight">
                                                   {member.title.length > 20
                                                     ? `${member.title.substring(0, 17)}...`
                                                     : member.title}

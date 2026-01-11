@@ -41,6 +41,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   FileText,
   DollarSign,
@@ -333,6 +334,7 @@ export default function PayrollHistory() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto">
           {/* Header */}
           <div className="mb-6">

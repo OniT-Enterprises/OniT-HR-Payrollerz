@@ -293,16 +293,16 @@ class JournalEntryService {
       description: 'Net salaries payable',
     });
 
-    // 4. Credit Income Tax Payable
+    // 4. Credit WIT (Withholding Income Tax)
     const taxPayableId = await getAccountId('2220');
     lines.push({
       lineNumber: lineNumber++,
       accountId: taxPayableId,
       accountCode: '2220',
-      accountName: 'Income Tax Payable (IRPS)',
+      accountName: 'Withholding Income Tax (WIT)',
       debit: 0,
       credit: payrollRun.totalIncomeTax,
-      description: 'Income tax withholdings',
+      description: 'WIT withholdings',
     });
 
     // 5. Credit INSS Payable - Employee

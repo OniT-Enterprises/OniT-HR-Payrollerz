@@ -2,7 +2,7 @@
  * Timor-Leste Payroll Calculation Engine
  *
  * Implements:
- * - Income Tax (IRPS): 10% above $500 for residents, 10% all income for non-residents
+ * - Withholding Income Tax (WIT): 10% above $500 for residents, 10% all income for non-residents
  * - INSS: 4% employee + 6% employer
  * - Overtime calculations per Labor Code
  * - Subsidio Anual (13th month)
@@ -125,7 +125,7 @@ export interface TLPayrollResult {
   inssBase: number;              // Base for INSS calculation
 
   // Deductions - statutory
-  incomeTax: number;             // IRPS
+  incomeTax: number;             // WIT (Withholding Income Tax)
   inssEmployee: number;          // 4%
 
   // Deductions - other
@@ -245,7 +245,7 @@ export function calculateSickPay(
 }
 
 /**
- * Calculate Timor-Leste income tax (IRPS)
+ * Calculate Timor-Leste Withholding Income Tax (WIT)
  * - Residents: 10% on income above $500/month
  * - Non-residents: 10% on all income
  */
@@ -570,7 +570,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   // Adjust INSS base for absences
   const adjustedInssBase = Math.max(0, inssBase - absenceDeduction);
 
-  // Income Tax (IRPS)
+  // Withholding Income Tax (WIT)
   const incomeTax = calculateIncomeTax(
     taxableIncome - absenceDeduction - lateDeduction,
     input.taxInfo.isResident,
@@ -580,8 +580,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   if (incomeTax > 0) {
     deductions.push({
       type: 'income_tax',
-      description: 'Income Tax (IRPS)',
-      descriptionTL: 'Impostu Rendimentu (IRPS)',
+      description: 'Withholding Income Tax (WIT)',
+      descriptionTL: 'Impostu Retidu (WIT)',
       amount: incomeTax,
       isStatutory: true,
     });

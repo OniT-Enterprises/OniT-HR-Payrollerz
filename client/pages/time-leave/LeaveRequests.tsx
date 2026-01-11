@@ -59,6 +59,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Calendar,
   Plus,
@@ -427,6 +428,7 @@ export default function LeaveRequests() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <Skeleton className="h-9 w-64 mb-2" />
@@ -476,6 +478,7 @@ export default function LeaveRequests() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto space-y-6">
           {/* Header */}
           <div className="flex items-center justify-between">

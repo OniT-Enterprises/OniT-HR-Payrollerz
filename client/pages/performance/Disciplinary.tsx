@@ -55,6 +55,7 @@ import {
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Filter,
   Plus,
@@ -76,7 +77,9 @@ export default function Disciplinary() {
   const [selectedStatus, setSelectedStatus] = useState("");
   const [showRecordDialog, setShowRecordDialog] = useState(false);
   const [showViewDialog, setShowViewDialog] = useState(false);
+  const [showEditDialog, setShowEditDialog] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  const [editingIncident, setEditingIncident] = useState<any>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -87,6 +90,16 @@ export default function Disciplinary() {
     severity: "",
     summary: "",
     evidence: null as File | null,
+  });
+
+  const [editFormData, setEditFormData] = useState({
+    employee: "",
+    date: "",
+    type: "",
+    severity: "",
+    status: "",
+    summary: "",
+    actionTaken: "",
   });
 
   // Mock data
@@ -333,12 +346,56 @@ export default function Disciplinary() {
     setShowViewDialog(true);
   };
 
-  const handleEditRecord = (actionId: number) => {
-    console.log("Editing disciplinary action:", actionId);
-    toast({
-      title: "Edit Record",
-      description: "Opening edit form...",
+  const handleEditRecord = (action: any) => {
+    setEditingIncident(action);
+    setEditFormData({
+      employee: action.employeeId,
+      date: action.date,
+      type: action.type,
+      severity: action.severity,
+      status: action.status,
+      summary: action.summary,
+      actionTaken: action.actionTaken || "",
     });
+    setShowEditDialog(true);
+  };
+
+  const handleEditInputChange = (field: string, value: string) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editFormData.type || !editFormData.severity || !editFormData.summary) {
+      toast({
+        title: "Validation Error",
+        description: "Please fill in all required fields.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      console.log("Updating disciplinary incident:", editingIncident?.id, editFormData);
+
+      toast({
+        title: "Success",
+        description: "Incident updated successfully.",
+      });
+
+      setShowEditDialog(false);
+      setEditingIncident(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to update incident. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleCloseCase = async (actionId: number) => {
@@ -402,6 +459,7 @@ export default function Disciplinary() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -683,7 +741,7 @@ export default function Disciplinary() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            onClick={() => handleEditRecord(action.id)}
+                            onClick={() => handleEditRecord(action)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -741,6 +799,134 @@ export default function Disciplinary() {
               )}
             </CardContent>
           </Card>
+
+          {/* Edit Dialog */}
+          <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
+            <DialogContent className="max-w-md">
+              <DialogHeader>
+                <DialogTitle>Edit Disciplinary Record</DialogTitle>
+                <DialogDescription>
+                  Update the incident details and status
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                  <Label htmlFor="edit-employee">Employee</Label>
+                  <Select
+                    value={editFormData.employee}
+                    onValueChange={(value) => handleEditInputChange("employee", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select employee" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((employee) => (
+                        <SelectItem key={employee.id} value={employee.id}>
+                          {employee.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-date">Date</Label>
+                  <Input
+                    id="edit-date"
+                    type="date"
+                    value={editFormData.date}
+                    onChange={(e) => handleEditInputChange("date", e.target.value)}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="edit-type">Type *</Label>
+                    <Select
+                      value={editFormData.type}
+                      onValueChange={(value) => handleEditInputChange("type", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {incidentTypes.map((type) => (
+                          <SelectItem key={type.id} value={type.name}>
+                            {type.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="edit-severity">Severity *</Label>
+                    <Select
+                      value={editFormData.severity}
+                      onValueChange={(value) => handleEditInputChange("severity", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select severity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {severityLevels.map((level) => (
+                          <SelectItem key={level.id} value={level.name}>
+                            {level.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div>
+                  <Label htmlFor="edit-status">Status</Label>
+                  <Select
+                    value={editFormData.status}
+                    onValueChange={(value) => handleEditInputChange("status", value)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Open">Open</SelectItem>
+                      <SelectItem value="In Review">In Review</SelectItem>
+                      <SelectItem value="Closed">Closed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="edit-summary">Summary *</Label>
+                  <Textarea
+                    id="edit-summary"
+                    value={editFormData.summary}
+                    onChange={(e) => handleEditInputChange("summary", e.target.value)}
+                    placeholder="Describe the incident..."
+                    rows={3}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="edit-action">Action Taken</Label>
+                  <Textarea
+                    id="edit-action"
+                    value={editFormData.actionTaken}
+                    onChange={(e) => handleEditInputChange("actionTaken", e.target.value)}
+                    placeholder="Document actions taken..."
+                    rows={2}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEditDialog(false)}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button type="submit" className="flex-1">
+                    Save Changes
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
 
           {/* View Details Dialog */}
           <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>

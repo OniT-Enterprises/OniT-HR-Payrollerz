@@ -19,10 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import ContactInfoPopover from "@/components/ContactInfoPopover";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   getProfileCompleteness,
   getIncompleteEmployees,
@@ -82,6 +84,7 @@ export default function AllEmployees() {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { t } = useI18n();
 
   // Monitor network status
   useEffect(() => {
@@ -97,7 +100,7 @@ export default function AllEmployees() {
     const handleOffline = () => {
       setIsOnline(false);
       setConnectionError(
-        "You're currently offline. Some features may not work.",
+        t("employees.offlineMessage"),
       );
     };
 
@@ -141,11 +144,11 @@ export default function AllEmployees() {
 
       // Show specific error message from the service
       const errorMessage =
-        error instanceof Error ? error.message : "Failed to load employees";
+        error instanceof Error ? error.message : t("employees.connectionErrorFallback");
       setConnectionError(errorMessage);
 
       toast({
-        title: "Connection Error",
+        title: t("employees.connectionErrorTitle"),
         description: errorMessage,
         variant: "destructive",
         duration: 8000, // Show longer for network errors
@@ -287,6 +290,25 @@ export default function AllEmployees() {
     minSalary ||
     maxSalary;
 
+  const activeFilterCount = Object.values({
+    departmentFilter: departmentFilter !== "all" ? departmentFilter : null,
+    positionFilter: positionFilter !== "all" ? positionFilter : null,
+    employmentTypeFilter: employmentTypeFilter !== "all" ? employmentTypeFilter : null,
+    workLocationFilter: workLocationFilter !== "all" ? workLocationFilter : null,
+    statusFilter: statusFilter !== "all" ? statusFilter : null,
+    minSalary,
+    maxSalary,
+  }).filter(Boolean).length;
+
+  const getStatusLabel = (status: string) => {
+    const key = `employees.statusLabels.${status}`;
+    const label = t(key);
+    if (label !== key) {
+      return label;
+    }
+    return status.charAt(0).toUpperCase() + status.slice(1);
+  };
+
   const handleSearch = () => {
     filterEmployees();
   };
@@ -294,17 +316,17 @@ export default function AllEmployees() {
   const handleExport = () => {
     // Create CSV content
     const headers = [
-      "Employee ID",
-      "First Name",
-      "Last Name",
-      "Email",
-      "Phone",
-      "Department",
-      "Position",
-      "Hire Date",
-      "Employment Type",
-      "Work Location",
-      "Monthly Salary",
+      t("employees.csvHeaders.employeeId"),
+      t("employees.csvHeaders.firstName"),
+      t("employees.csvHeaders.lastName"),
+      t("employees.csvHeaders.email"),
+      t("employees.csvHeaders.phone"),
+      t("employees.csvHeaders.department"),
+      t("employees.csvHeaders.position"),
+      t("employees.csvHeaders.hireDate"),
+      t("employees.csvHeaders.employmentType"),
+      t("employees.csvHeaders.workLocation"),
+      t("employees.csvHeaders.monthlySalary"),
     ];
 
     const csvContent = [
@@ -338,8 +360,10 @@ export default function AllEmployees() {
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: `Exported ${filteredEmployees.length} employees to CSV`,
+      title: t("employees.exportCompleteTitle"),
+      description: t("employees.exportCompleteDesc", {
+        count: filteredEmployees.length,
+      }),
     });
   };
 
@@ -378,26 +402,26 @@ export default function AllEmployees() {
   const handleDownloadTemplate = () => {
     // Create CSV template with headers
     const headers = [
-      "Employee ID",
-      "First Name",
-      "Last Name",
-      "Email",
-      "Phone",
-      "Department",
-      "Position",
-      "Hire Date (YYYY-MM-DD)",
-      "Employment Type",
-      "Work Location",
-      "Monthly Salary",
-      "Benefits Package",
-      "Street Address",
-      "City",
-      "State",
-      "ZIP Code",
-      "Emergency Contact Name",
-      "Emergency Contact Phone",
-      "Date of Birth (YYYY-MM-DD)",
-      "Status (active/inactive/on_leave)",
+      t("employees.csvHeaders.employeeId"),
+      t("employees.csvHeaders.firstName"),
+      t("employees.csvHeaders.lastName"),
+      t("employees.csvHeaders.email"),
+      t("employees.csvHeaders.phone"),
+      t("employees.csvHeaders.department"),
+      t("employees.csvHeaders.position"),
+      t("employees.csvHeaders.hireDateTemplate"),
+      t("employees.csvHeaders.employmentType"),
+      t("employees.csvHeaders.workLocation"),
+      t("employees.csvHeaders.monthlySalary"),
+      t("employees.csvHeaders.benefitsPackage"),
+      t("employees.csvHeaders.streetAddress"),
+      t("employees.csvHeaders.city"),
+      t("employees.csvHeaders.state"),
+      t("employees.csvHeaders.zipCode"),
+      t("employees.csvHeaders.emergencyContactName"),
+      t("employees.csvHeaders.emergencyContactPhone"),
+      t("employees.csvHeaders.dateOfBirth"),
+      t("employees.csvHeaders.statusTemplate"),
     ];
 
     // Add example row
@@ -436,8 +460,8 @@ export default function AllEmployees() {
     window.URL.revokeObjectURL(url);
 
     toast({
-      title: "Template Downloaded",
-      description: "Employee CSV template has been downloaded successfully",
+      title: t("employees.templateDownloadedTitle"),
+      description: t("employees.templateDownloadedDesc"),
     });
   };
 
@@ -484,14 +508,17 @@ export default function AllEmployees() {
         });
 
         toast({
-          title: "CSV Import Complete",
-          description: `Preview: ${successCount} employees would be imported, ${errorCount} errors found. (Import functionality not fully implemented yet)`,
+          title: t("employees.csvImportCompleteTitle"),
+          description: t("employees.csvImportCompleteDesc", {
+            success: successCount,
+            errors: errorCount,
+          }),
           variant: errorCount > 0 ? "destructive" : "default",
         });
       } catch (error) {
         toast({
-          title: "Import Error",
-          description: "Failed to parse CSV file. Please check the format.",
+          title: t("employees.importErrorTitle"),
+          description: t("employees.importErrorDesc"),
           variant: "destructive",
         });
       }
@@ -510,6 +537,7 @@ export default function AllEmployees() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           {/* Stats Skeleton */}
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
             {[1, 2, 3, 4, 5].map((i) => (
@@ -580,15 +608,16 @@ export default function AllEmployees() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         {/* Connection Status */}
         {(connectionError || !isOnline) && (
           <Alert className="mb-6" variant="destructive">
             <AlertTriangle className="h-4 w-4" />
             <div className="flex items-center justify-between w-full">
               <div>
-                <h4 className="font-medium">Connection Issue</h4>
+                <h4 className="font-medium">{t("employees.connectionIssueTitle")}</h4>
                 <p className="text-sm">
-                  {!isOnline ? "You're currently offline" : connectionError}
+                  {!isOnline ? t("employees.offlineMessage") : connectionError}
                 </p>
               </div>
               <Button
@@ -597,7 +626,7 @@ export default function AllEmployees() {
                 onClick={loadEmployees}
                 disabled={loading}
               >
-                {loading ? "Retrying..." : "Retry"}
+                {loading ? t("employees.retrying") : t("employees.retry")}
               </Button>
             </div>
           </Alert>
@@ -610,7 +639,7 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Employees
+                    {t("employees.stats.totalEmployees")}
                   </p>
                   <p className="text-2xl font-bold">{employees.length}</p>
                 </div>
@@ -623,7 +652,7 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Active Employees
+                    {t("employees.stats.activeEmployees")}
                   </p>
                   <p className="text-2xl font-bold">
                     {employees.filter((emp) => emp.status === "active").length}
@@ -638,7 +667,7 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Departments
+                    {t("employees.stats.departments")}
                   </p>
                   <p className="text-2xl font-bold">
                     {
@@ -659,7 +688,7 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Incomplete Profiles
+                    {t("employees.stats.incompleteProfiles")}
                   </p>
                   <p className="text-2xl font-bold text-orange-600">
                     {incompleteEmployees.length}
@@ -674,7 +703,7 @@ export default function AllEmployees() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Inactive
+                    {t("employees.stats.inactive")}
                   </p>
                   <p className="text-2xl font-bold text-purple-600">
                     {
@@ -699,7 +728,7 @@ export default function AllEmployees() {
               className={"bg-white hover:bg-purple-50 border-purple-200"}
             >
               <Plus className="mr-2 h-4 w-4" />
-              Add Employee
+              {t("employees.buttons.addEmployee")}
             </Button>
           </div>
 
@@ -715,31 +744,15 @@ export default function AllEmployees() {
               }
             >
               <Filter className="mr-2 h-4 w-4" />
-              Filters{" "}
+              {t("employees.buttons.filters")}{" "}
               {hasActiveFilters &&
-                `(${
-                  Object.values({
-                    departmentFilter:
-                      departmentFilter !== "all" ? departmentFilter : null,
-                    positionFilter:
-                      positionFilter !== "all" ? positionFilter : null,
-                    employmentTypeFilter:
-                      employmentTypeFilter !== "all"
-                        ? employmentTypeFilter
-                        : null,
-                    workLocationFilter:
-                      workLocationFilter !== "all" ? workLocationFilter : null,
-                    statusFilter: statusFilter !== "all" ? statusFilter : null,
-                    minSalary,
-                    maxSalary,
-                  }).filter(Boolean).length
-                })`}
+                t("employees.filtersCount", { count: activeFilterCount })}
             </Button>
 
             <div className="relative flex-1 max-w-md">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
-                placeholder="Search employees..."
+                placeholder={t("employees.searchPlaceholder")}
                 className="pl-9 pr-20 bg-white border-purple-200"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -750,7 +763,7 @@ export default function AllEmployees() {
                 onClick={handleSearch}
                 className="absolute right-1 top-1 h-8 bg-purple-600 hover:bg-purple-700"
               >
-                Search
+                {t("employees.buttons.search")}
               </Button>
             </div>
           </div>
@@ -763,7 +776,7 @@ export default function AllEmployees() {
               className="bg-white hover:bg-purple-50 border-purple-200"
             >
               <FileText className="mr-2 h-4 w-4" />
-              Template CSV
+              {t("employees.buttons.templateCsv")}
             </Button>
             <Button
               variant="outline"
@@ -771,7 +784,7 @@ export default function AllEmployees() {
               className="bg-white hover:bg-purple-50 border-purple-200"
             >
               <Upload className="mr-2 h-4 w-4" />
-              Import CSV
+              {t("employees.buttons.importCsv")}
             </Button>
             <Button
               variant="outline"
@@ -779,7 +792,7 @@ export default function AllEmployees() {
               className="bg-white hover:bg-purple-50 border-purple-200"
             >
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              {t("employees.buttons.exportCsv")}
             </Button>
           </div>
 
@@ -797,7 +810,7 @@ export default function AllEmployees() {
         {hasActiveFilters && (
           <div className="flex justify-start mb-4">
             <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Clear Filters
+              {t("employees.buttons.clearFilters")}
             </Button>
           </div>
         )}
@@ -806,9 +819,9 @@ export default function AllEmployees() {
         {showFilters && (
           <Card className="mb-6">
             <CardHeader>
-              <CardTitle className="text-lg">Filter Employees</CardTitle>
+              <CardTitle className="text-lg">{t("employees.filterPanelTitle")}</CardTitle>
               <CardDescription>
-                Use filters to narrow down the employee list
+                {t("employees.filterPanelDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -816,17 +829,17 @@ export default function AllEmployees() {
                 {/* Department Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Department
+                    {t("employees.filterLabels.department")}
                   </label>
                   <Select
                     value={departmentFilter}
                     onValueChange={setDepartmentFilter}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All departments" />
+                      <SelectValue placeholder={t("employees.filterPlaceholders.allDepartments")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All departments</SelectItem>
+                      <SelectItem value="all">{t("employees.filterPlaceholders.allDepartments")}</SelectItem>
                       {getUniqueValues("department").map((dept) => (
                         <SelectItem key={dept} value={dept}>
                           {dept}
@@ -839,17 +852,17 @@ export default function AllEmployees() {
                 {/* Position Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Position
+                    {t("employees.filterLabels.position")}
                   </label>
                   <Select
                     value={positionFilter}
                     onValueChange={setPositionFilter}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All positions" />
+                      <SelectValue placeholder={t("employees.filterPlaceholders.allPositions")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All positions</SelectItem>
+                      <SelectItem value="all">{t("employees.filterPlaceholders.allPositions")}</SelectItem>
                       {getUniqueValues("position").map((position) => (
                         <SelectItem key={position} value={position}>
                           {position}
@@ -862,17 +875,17 @@ export default function AllEmployees() {
                 {/* Employment Type Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Employment Type
+                    {t("employees.filterLabels.employmentType")}
                   </label>
                   <Select
                     value={employmentTypeFilter}
                     onValueChange={setEmploymentTypeFilter}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All types" />
+                      <SelectValue placeholder={t("employees.filterPlaceholders.allTypes")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All types</SelectItem>
+                      <SelectItem value="all">{t("employees.filterPlaceholders.allTypes")}</SelectItem>
                       {getUniqueValues("employmentType").map((type) => (
                         <SelectItem key={type} value={type}>
                           {type}
@@ -885,17 +898,17 @@ export default function AllEmployees() {
                 {/* Work Location Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Work Location
+                    {t("employees.filterLabels.workLocation")}
                   </label>
                   <Select
                     value={workLocationFilter}
                     onValueChange={setWorkLocationFilter}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All locations" />
+                      <SelectValue placeholder={t("employees.filterPlaceholders.allLocations")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All locations</SelectItem>
+                      <SelectItem value="all">{t("employees.filterPlaceholders.allLocations")}</SelectItem>
                       {getUniqueValues("workLocation").map((location) => (
                         <SelectItem key={location} value={location}>
                           {location}
@@ -908,17 +921,17 @@ export default function AllEmployees() {
                 {/* Status Filter */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Status
+                    {t("employees.filterLabels.status")}
                   </label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("employees.filterPlaceholders.allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
+                      <SelectItem value="all">{t("employees.filterPlaceholders.allStatuses")}</SelectItem>
                       {getUniqueValues("status").map((status) => (
                         <SelectItem key={status} value={status}>
-                          {status.charAt(0).toUpperCase() + status.slice(1)}
+                          {getStatusLabel(status)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -928,11 +941,11 @@ export default function AllEmployees() {
                 {/* Salary Range */}
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Min Salary
+                    {t("employees.filterLabels.minSalary")}
                   </label>
                   <Input
                     type="number"
-                    placeholder="Min monthly salary"
+                    placeholder={t("employees.filterPlaceholders.minSalary")}
                     value={minSalary}
                     onChange={(e) => setMinSalary(e.target.value)}
                   />
@@ -940,11 +953,11 @@ export default function AllEmployees() {
 
                 <div>
                   <label className="text-sm font-medium mb-2 block">
-                    Max Salary
+                    {t("employees.filterLabels.maxSalary")}
                   </label>
                   <Input
                     type="number"
-                    placeholder="Max monthly salary"
+                    placeholder={t("employees.filterPlaceholders.maxSalary")}
                     value={maxSalary}
                     onChange={(e) => setMaxSalary(e.target.value)}
                   />
@@ -958,7 +971,7 @@ export default function AllEmployees() {
                     disabled={!hasActiveFilters}
                     className="w-full"
                   >
-                    Clear All Filters
+                    {t("employees.buttons.clearAllFilters")}
                   </Button>
                 </div>
               </div>
@@ -967,40 +980,55 @@ export default function AllEmployees() {
               {hasActiveFilters && (
                 <div className="mt-4 p-3 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-800">
-                    <strong>Active Filters:</strong> {filteredEmployees.length}{" "}
-                    of {employees.length} employees shown
+                    <strong>{t("employees.activeFiltersTitle")}</strong>{" "}
+                    {t("employees.activeFiltersSummary", {
+                      shown: filteredEmployees.length,
+                      total: employees.length,
+                    })}
                   </p>
                   <div className="flex flex-wrap gap-2 mt-2">
                     {departmentFilter && departmentFilter !== "all" && (
                       <Badge variant="secondary" className="text-xs">
-                        Department: {departmentFilter}
+                        {t("employees.filterBadge.department", {
+                          value: departmentFilter,
+                        })}
                       </Badge>
                     )}
                     {positionFilter && positionFilter !== "all" && (
                       <Badge variant="secondary" className="text-xs">
-                        Position: {positionFilter}
+                        {t("employees.filterBadge.position", {
+                          value: positionFilter,
+                        })}
                       </Badge>
                     )}
                     {employmentTypeFilter && employmentTypeFilter !== "all" && (
                       <Badge variant="secondary" className="text-xs">
-                        Type: {employmentTypeFilter}
+                        {t("employees.filterBadge.employmentType", {
+                          value: employmentTypeFilter,
+                        })}
                       </Badge>
                     )}
                     {workLocationFilter && workLocationFilter !== "all" && (
                       <Badge variant="secondary" className="text-xs">
-                        Location: {workLocationFilter}
+                        {t("employees.filterBadge.workLocation", {
+                          value: workLocationFilter,
+                        })}
                       </Badge>
                     )}
                     {statusFilter && statusFilter !== "all" && (
                       <Badge variant="secondary" className="text-xs">
-                        Status: {statusFilter}
+                        {t("employees.filterBadge.status", {
+                          value: getStatusLabel(statusFilter),
+                        })}
                       </Badge>
                     )}
                     {(minSalary || maxSalary) && (
                       <Badge variant="secondary" className="text-xs">
-                        Salary: {minSalary ? `$${minSalary}+` : ""}
-                        {minSalary && maxSalary ? " - " : ""}
-                        {maxSalary ? `$${maxSalary}` : ""}
+                        {t("employees.filterBadge.salary", {
+                          range: `${minSalary ? `$${minSalary}` : ""}${
+                            minSalary && maxSalary ? " - " : minSalary && !maxSalary ? "+" : ""
+                          }${maxSalary ? `$${maxSalary}` : ""}`,
+                        })}
                       </Badge>
                     )}
                   </div>
@@ -1013,9 +1041,9 @@ export default function AllEmployees() {
         {/* Employees Table */}
         <Card>
           <CardHeader>
-            <CardTitle>Employee Directory</CardTitle>
+            <CardTitle>{t("employees.directoryTitle")}</CardTitle>
             <CardDescription>
-              Complete list of all employees with details
+              {t("employees.directoryDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -1025,7 +1053,7 @@ export default function AllEmployees() {
                   <tr className="border-b">
                     <th className="text-left p-3 font-medium">
                       <div className="flex items-center gap-1">
-                        Employee
+                        {t("employees.table.employee")}
                         <Filter
                           className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground"
                           onClick={() => setShowFilters(!showFilters)}
@@ -1034,7 +1062,7 @@ export default function AllEmployees() {
                     </th>
                     <th className="text-left p-3 font-medium">
                       <div className="flex items-center gap-1">
-                        Department
+                        {t("employees.table.department")}
                         <Filter
                           className={`h-3 w-3 cursor-pointer hover:text-foreground ${
                             departmentFilter
@@ -1047,7 +1075,7 @@ export default function AllEmployees() {
                     </th>
                     <th className="text-left p-3 font-medium">
                       <div className="flex items-center gap-1">
-                        Position
+                        {t("employees.table.position")}
                         <Filter
                           className={`h-3 w-3 cursor-pointer hover:text-foreground ${
                             positionFilter
@@ -1058,10 +1086,12 @@ export default function AllEmployees() {
                         />
                       </div>
                     </th>
-                    <th className="text-left p-3 font-medium">Contact</th>
+                    <th className="text-left p-3 font-medium">
+                      {t("employees.table.contact")}
+                    </th>
                     <th className="text-left p-3 font-medium">
                       <div className="flex items-center gap-1">
-                        Hire Date
+                        {t("employees.table.hireDate")}
                         <Filter
                           className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground"
                           onClick={() => setShowFilters(!showFilters)}
@@ -1070,7 +1100,7 @@ export default function AllEmployees() {
                     </th>
                     <th className="text-left p-3 font-medium">
                       <div className="flex items-center gap-1">
-                        MonthlySalary
+                        {t("employees.table.monthlySalary")}
                         <Filter
                           className={`h-3 w-3 cursor-pointer hover:text-foreground ${
                             minSalary || maxSalary
@@ -1081,7 +1111,9 @@ export default function AllEmployees() {
                         />
                       </div>
                     </th>
-                    <th className="text-center p-3 font-medium">Actions</th>
+                    <th className="text-center p-3 font-medium">
+                      {t("employees.table.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1108,7 +1140,9 @@ export default function AllEmployees() {
                               {employee.personalInfo.lastName}
                             </h3>
                             <p className="text-sm text-muted-foreground">
-                              ID: {employee.jobDetails.employeeId}
+                              {t("employees.idLabel", {
+                                id: employee.jobDetails.employeeId,
+                              })}
                             </p>
                           </div>
                         </div>
@@ -1152,7 +1186,10 @@ export default function AllEmployees() {
                           {/* Phone */}
                           <div className="flex items-center justify-center p-1">
                             <div
-                              title={employee.personalInfo.phone || "No phone"}
+                              title={
+                                employee.personalInfo.phone ||
+                                t("employees.contactTooltips.noPhone")
+                              }
                             >
                               <Phone className="h-4 w-4 text-green-600 cursor-pointer hover:bg-green-50 rounded" />
                             </div>
@@ -1163,8 +1200,10 @@ export default function AllEmployees() {
                             <div
                               title={
                                 employee.personalInfo.emergencyContactName
-                                  ? `Emergency: ${employee.personalInfo.emergencyContactName}`
-                                  : "No emergency contact"
+                                  ? t("employees.contactTooltips.emergency", {
+                                      name: employee.personalInfo.emergencyContactName,
+                                    })
+                                  : t("employees.contactTooltips.noEmergency")
                               }
                             >
                               <Cross className="h-4 w-4 text-red-600 cursor-pointer hover:bg-red-50 rounded" />
@@ -1176,8 +1215,10 @@ export default function AllEmployees() {
                             <div
                               title={
                                 (employee.personalInfo as any).phoneApp
-                                  ? `App: ${(employee.personalInfo as any).phoneApp}`
-                                  : "No app phone"
+                                  ? t("employees.contactTooltips.app", {
+                                      app: (employee.personalInfo as any).phoneApp,
+                                    })
+                                  : t("employees.contactTooltips.noApp")
                               }
                             >
                               <Smartphone className="h-4 w-4 text-purple-600 cursor-pointer hover:bg-purple-50 rounded" />
@@ -1207,7 +1248,11 @@ export default function AllEmployees() {
                             )}
                           </span>
                           <div className="text-xs text-muted-foreground mt-1">
-                            {employee.compensation.benefitsPackage} Benefits
+                            {t("employees.benefitsLabel", {
+                              benefits:
+                                employee.compensation.benefitsPackage ||
+                                t("employees.benefitsNone"),
+                            })}
                           </div>
                         </div>
                       </td>
@@ -1261,31 +1306,30 @@ export default function AllEmployees() {
                     <>
                       <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-red-400" />
                       <h3 className="text-lg font-semibold mb-2">
-                        Connection Problem
+                        {t("employees.empty.connectionTitle")}
                       </h3>
                       <p className="text-muted-foreground mb-4">
-                        Unable to load employee data. Please check your
-                        connection.
+                        {t("employees.empty.connectionDesc")}
                       </p>
                       <Button onClick={loadEmployees} disabled={loading}>
                         <Users className="mr-2 h-4 w-4" />
-                        Retry Loading
+                        {t("employees.buttons.retryLoading")}
                       </Button>
                     </>
                   ) : (
                     <>
                       <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
                       <h3 className="text-lg font-semibold mb-2">
-                        No Employees Found
+                        {t("employees.empty.noEmployeesTitle")}
                       </h3>
                       <p className="text-muted-foreground mb-4">
                         {searchTerm
-                          ? "No employees match your search."
-                          : "Start by adding your first employee to the system."}
+                          ? t("employees.empty.noEmployeesSearch")
+                          : t("employees.empty.noEmployeesStart")}
                       </p>
                       <Button onClick={() => navigate("/people/add")}>
                         <Plus className="mr-2 h-4 w-4" />
-                        Add First Employee
+                        {t("employees.buttons.addFirstEmployee")}
                       </Button>
                     </>
                   )}
@@ -1297,12 +1341,14 @@ export default function AllEmployees() {
             {totalPages > 1 && (
               <div className="flex items-center justify-between mt-4">
                 <div className="text-sm text-muted-foreground">
-                  Showing {startIndex + 1} to{" "}
-                  {Math.min(
-                    startIndex + itemsPerPage,
-                    filteredEmployees.length,
-                  )}{" "}
-                  of {filteredEmployees.length} employees
+                  {t("employees.pagination.showing", {
+                    start: startIndex + 1,
+                    end: Math.min(
+                      startIndex + itemsPerPage,
+                      filteredEmployees.length,
+                    ),
+                    total: filteredEmployees.length,
+                  })}
                 </div>
                 <div className="flex items-center gap-2">
                   <Button
@@ -1313,10 +1359,13 @@ export default function AllEmployees() {
                     }
                     disabled={currentPage === 1}
                   >
-                    Previous
+                    {t("employees.pagination.previous")}
                   </Button>
                   <span className="text-sm">
-                    Page {currentPage} of {totalPages}
+                    {t("employees.pagination.pageOf", {
+                      page: currentPage,
+                      total: totalPages,
+                    })}
                   </span>
                   <Button
                     variant="outline"
@@ -1326,7 +1375,7 @@ export default function AllEmployees() {
                     }
                     disabled={currentPage === totalPages}
                   >
-                    Next
+                    {t("employees.pagination.next")}
                   </Button>
                 </div>
               </div>

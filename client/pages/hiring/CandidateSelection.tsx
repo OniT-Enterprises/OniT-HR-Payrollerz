@@ -22,7 +22,9 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Users,
   Search,
@@ -102,6 +104,7 @@ export default function CandidateSelection() {
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   // Load candidates from Firebase on component mount
   useEffect(() => {
@@ -116,8 +119,8 @@ export default function CandidateSelection() {
     } catch (error) {
       console.error("Error loading candidates:", error);
       toast({
-        title: "Error",
-        description: "Failed to load candidates",
+        title: t("addEmployee.toast.errorTitle"),
+        description: t("hiring.candidates.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -196,8 +199,8 @@ export default function CandidateSelection() {
 
       if (candidateId) {
         toast({
-          title: "Success",
-          description: "Candidate added successfully",
+          title: t("addEmployee.toast.addedTitle"),
+          description: t("hiring.candidates.toast.addSuccess"),
         });
         // Reload candidates to get the updated list
         await loadCandidates();
@@ -207,8 +210,8 @@ export default function CandidateSelection() {
     } catch (error) {
       console.error("Error adding candidate:", error);
       toast({
-        title: "Error",
-        description: "Failed to add candidate",
+        title: t("addEmployee.toast.errorTitle"),
+        description: t("hiring.candidates.toast.addFailed"),
         variant: "destructive",
       });
     } finally {
@@ -232,6 +235,21 @@ export default function CandidateSelection() {
         return "bg-red-100 text-red-800";
       default:
         return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "Shortlisted":
+        return t("hiring.candidates.statusLabels.shortlisted");
+      case "Under Review":
+        return t("hiring.candidates.statusLabels.underReview");
+      case "New":
+        return t("hiring.candidates.statusLabels.new");
+      case "Rejected":
+        return t("hiring.candidates.statusLabels.rejected");
+      default:
+        return status;
     }
   };
 
@@ -262,13 +280,14 @@ export default function CandidateSelection() {
       <MainNavigation />
 
       <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
             <Users className="h-8 w-8 text-green-400" />
             <div>
-              <h1 className="text-3xl font-bold">Candidate Selection</h1>
+              <h1 className="text-3xl font-bold">{t("hiring.candidates.title")}</h1>
               <p className="text-muted-foreground">
-                Review and manage job applications
+                {t("hiring.candidates.subtitle")}
               </p>
             </div>
           </div>
@@ -281,7 +300,7 @@ export default function CandidateSelection() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Total Applications
+                    {t("hiring.candidates.stats.totalApplications")}
                   </p>
                   <p className="text-2xl font-bold">{candidates.length}</p>
                 </div>
@@ -294,7 +313,7 @@ export default function CandidateSelection() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Shortlisted
+                    {t("hiring.candidates.stats.shortlisted")}
                   </p>
                   <p className="text-2xl font-bold">
                     {
@@ -312,7 +331,7 @@ export default function CandidateSelection() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Under Review
+                    {t("hiring.candidates.stats.underReview")}
                   </p>
                   <p className="text-2xl font-bold">
                     {
@@ -330,7 +349,7 @@ export default function CandidateSelection() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    New Applications
+                    {t("hiring.candidates.stats.newApplications")}
                   </p>
                   <p className="text-2xl font-bold">
                     {candidates.filter((c) => c.status === "New").length}
@@ -347,42 +366,58 @@ export default function CandidateSelection() {
           <div className="flex items-center gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search candidates..." className="pl-9 w-64" />
+              <Input
+                placeholder={t("hiring.candidates.controls.searchPlaceholder")}
+                className="pl-9 w-64"
+              />
             </div>
-            <Button size="sm">Search</Button>
+            <Button size="sm">{t("hiring.candidates.controls.search")}</Button>
           </div>
 
           <div className="flex items-center gap-3">
             <select className="px-4 py-2 border rounded-md bg-background min-w-[200px] h-9">
-              <option value="">Select job position...</option>
-              <option value="senior-software-engineer">
-                Senior Software Engineer
+              <option value="">
+                {t("hiring.candidates.controls.selectPosition")}
               </option>
-              <option value="marketing-manager">Marketing Manager</option>
-              <option value="hr-specialist">HR Specialist</option>
-              <option value="data-analyst">Data Analyst</option>
-              <option value="product-manager">Product Manager</option>
+              <option value="senior-software-engineer">
+                {t("hiring.candidates.positions.seniorSoftwareEngineer")}
+              </option>
+              <option value="marketing-manager">
+                {t("hiring.candidates.positions.marketingManager")}
+              </option>
+              <option value="hr-specialist">
+                {t("hiring.candidates.positions.hrSpecialist")}
+              </option>
+              <option value="data-analyst">
+                {t("hiring.candidates.positions.dataAnalyst")}
+              </option>
+              <option value="product-manager">
+                {t("hiring.candidates.positions.productManager")}
+              </option>
             </select>
 
             <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <Upload className="mr-2 h-4 w-4" />
-                  Import Application
+                  {t("hiring.candidates.controls.importApplication")}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Import Application</DialogTitle>
+                  <DialogTitle>
+                    {t("hiring.candidates.import.title")}
+                  </DialogTitle>
                   <DialogDescription>
-                    Upload CV and cover letter files. Our AI will automatically
-                    extract candidate information.
+                    {t("hiring.candidates.import.description")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">CV/Resume</label>
+                      <label className="text-sm font-medium">
+                        {t("hiring.candidates.import.cvLabel")}
+                      </label>
                       <div
                         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
                           uploadedFiles.cv
@@ -408,17 +443,17 @@ export default function CandidateSelection() {
                           <p className="text-sm text-gray-600">
                             {uploadedFiles.cv
                               ? uploadedFiles.cv.name
-                              : "Click to upload CV"}
+                              : t("hiring.candidates.import.clickUploadCv")}
                           </p>
                           <p className="text-xs text-gray-400">
-                            PDF, DOC, DOCX
+                            {t("hiring.candidates.import.fileTypes")}
                           </p>
                         </label>
                       </div>
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">
-                        Cover Letter
+                        {t("hiring.candidates.import.coverLabel")}
                       </label>
                       <div
                         className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
@@ -445,10 +480,10 @@ export default function CandidateSelection() {
                           <p className="text-sm text-gray-600">
                             {uploadedFiles.coverLetter
                               ? uploadedFiles.coverLetter.name
-                              : "Click to upload Cover Letter"}
+                              : t("hiring.candidates.import.clickUploadCover")}
                           </p>
                           <p className="text-xs text-gray-400">
-                            PDF, DOC, DOCX
+                            {t("hiring.candidates.import.fileTypes")}
                           </p>
                         </label>
                       </div>
@@ -461,10 +496,10 @@ export default function CandidateSelection() {
                         <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
                         <div>
                           <h4 className="font-medium text-blue-800">
-                            AI Processing Documents...
+                            {t("hiring.candidates.import.processingTitle")}
                           </h4>
                           <p className="text-sm text-blue-600">
-                            Extracting candidate information from uploaded files
+                            {t("hiring.candidates.import.processingDesc")}
                           </p>
                         </div>
                       </div>
@@ -474,19 +509,25 @@ export default function CandidateSelection() {
                   {!isProcessing && importedData.name && (
                     <div className="border rounded-lg p-4 bg-green-50">
                       <h4 className="font-medium mb-3 text-green-800">
-                        AI Extracted Information
+                        {t("hiring.candidates.import.extractedTitle")}
                       </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         <div>
-                          <label className="text-xs text-gray-600">Name</label>
+                          <label className="text-xs text-gray-600">
+                            {t("hiring.candidates.import.fields.name")}
+                          </label>
                           <p className="font-medium">{importedData.name}</p>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600">Email</label>
+                          <label className="text-xs text-gray-600">
+                            {t("hiring.candidates.import.fields.email")}
+                          </label>
                           <p className="font-medium">{importedData.email}</p>
                         </div>
                         <div>
-                          <label className="text-xs text-gray-600">Phone</label>
+                          <label className="text-xs text-gray-600">
+                            {t("hiring.candidates.import.fields.phone")}
+                          </label>
                           <p className="font-medium">{importedData.phone}</p>
                         </div>
                       </div>
@@ -503,13 +544,15 @@ export default function CandidateSelection() {
                         setIsProcessing(false);
                       }}
                     >
-                      Cancel
+                      {t("hiring.candidates.import.cancel")}
                     </Button>
                     <Button
                       disabled={!importedData.name || isProcessing}
                       onClick={addCandidate}
                     >
-                      {isProcessing ? "Processing..." : "Add Candidate"}
+                      {isProcessing
+                        ? t("hiring.candidates.import.processing")
+                        : t("hiring.candidates.import.addCandidate")}
                     </Button>
                   </div>
                 </div>
@@ -518,11 +561,11 @@ export default function CandidateSelection() {
 
             <Button variant="outline" size="sm">
               <Download className="mr-2 h-4 w-4" />
-              Export
+              {t("hiring.candidates.controls.export")}
             </Button>
             <Button variant="outline" size="sm">
               <Filter className="mr-2 h-4 w-4" />
-              Filter
+              {t("hiring.candidates.controls.filter")}
             </Button>
           </div>
         </div>
@@ -530,9 +573,9 @@ export default function CandidateSelection() {
         {/* Candidates List */}
         <Card>
           <CardHeader className="ml-2.5">
-            <CardTitle>Candidate Applications</CardTitle>
+            <CardTitle>{t("hiring.candidates.list.title")}</CardTitle>
             <CardDescription>
-              Review and manage candidate applications for open positions
+              {t("hiring.candidates.list.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -565,28 +608,38 @@ export default function CandidateSelection() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3 font-medium">Candidate</th>
+                      <th className="text-left p-3 font-medium">
+                        {t("hiring.candidates.table.candidate")}
+                      </th>
                       <th className="text-center p-3 font-medium">
                         <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
-                          <span className="text-xs leading-tight">CV</span>
-                          <span className="text-xs leading-tight">Quality</span>
+                          <span className="text-xs leading-tight">
+                            {t("hiring.candidates.table.cv")}
+                          </span>
+                          <span className="text-xs leading-tight">
+                            {t("hiring.candidates.table.quality")}
+                          </span>
                           <ChevronDown className="h-3 w-3" />
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
                         <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
-                          <span className="text-xs leading-tight">Cover</span>
-                          <span className="text-xs leading-tight">Letter</span>
+                          <span className="text-xs leading-tight">
+                            {t("hiring.candidates.table.cover")}
+                          </span>
+                          <span className="text-xs leading-tight">
+                            {t("hiring.candidates.table.letter")}
+                          </span>
                           <ChevronDown className="h-3 w-3" />
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
                         <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
                           <span className="text-xs leading-tight ml-2.5">
-                            Technical
+                            {t("hiring.candidates.table.technical")}
                           </span>
                           <span className="text-xs leading-tight ml-2.5">
-                            Skills
+                            {t("hiring.candidates.table.skills")}
                           </span>
                           <ChevronDown className="h-3 w-3 ml-2.5" />
                         </button>
@@ -594,26 +647,34 @@ export default function CandidateSelection() {
                       <th className="text-center p-3 font-medium">
                         <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded ml-3.5">
                           <span className="text-xs leading-tight">
-                            Interview
+                            {t("hiring.candidates.table.interview")}
                           </span>
-                          <span className="text-xs leading-tight">Score</span>
+                          <span className="text-xs leading-tight">
+                            {t("hiring.candidates.table.score")}
+                          </span>
                           <ChevronDown className="h-3 w-3" />
                         </button>
                       </th>
                       <th className="text-center p-3 font-medium">
                         <button className="flex flex-col items-center gap-1 hover:bg-gray-50 p-1 rounded">
                           <span className="text-sm font-semibold leading-tight ml-2.5">
-                            Total
+                            {t("hiring.candidates.table.total")}
                           </span>
                           <span className="text-sm font-semibold leading-tight ml-2.5">
-                            Score
+                            {t("hiring.candidates.table.score")}
                           </span>
                           <ChevronDown className="h-3 w-3 ml-2.5" />
                         </button>
                       </th>
-                      <th className="text-center p-3 font-medium">Status</th>
-                      <th className="text-center p-3 font-medium">Documents</th>
-                      <th className="text-center p-3 font-medium">Actions</th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.status")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.documents")}
+                      </th>
+                      <th className="text-center p-3 font-medium">
+                        {t("hiring.candidates.table.actions")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -646,7 +707,9 @@ export default function CandidateSelection() {
                                   {candidate.experience}
                                 </Badge>
                                 <span className="text-xs text-muted-foreground">
-                                  Applied: {candidate.appliedDate}
+                                  {t("hiring.candidates.appliedLabel", {
+                                    date: candidate.appliedDate,
+                                  })}
                                 </span>
                               </div>
                             </div>
@@ -690,7 +753,7 @@ export default function CandidateSelection() {
                             </span>
                           ) : (
                             <span className="text-gray-400 font-semibold">
-                              NA
+                              {t("hiring.candidates.na")}
                             </span>
                           )}
                         </td>
@@ -709,7 +772,7 @@ export default function CandidateSelection() {
                           <div className="flex items-center justify-center gap-2">
                             {getStatusIcon(candidate.status)}
                             <Badge className={getStatusColor(candidate.status)}>
-                              {candidate.status}
+                              {getStatusLabel(candidate.status)}
                             </Badge>
                           </div>
                         </td>
@@ -720,8 +783,12 @@ export default function CandidateSelection() {
                             {/* CV and CL stacked */}
                             <div className="flex items-center gap-2">
                               <div className="flex flex-col gap-1">
-                                <span className="text-xs font-medium">CV</span>
-                                <span className="text-xs font-medium">CL</span>
+                                <span className="text-xs font-medium">
+                                  {t("hiring.candidates.documents.cv")}
+                                </span>
+                                <span className="text-xs font-medium">
+                                  {t("hiring.candidates.documents.cl")}
+                                </span>
                               </div>
                               <div className="flex flex-col gap-1">
                                 {/* CV Viewer */}
@@ -740,17 +807,21 @@ export default function CandidateSelection() {
                                   <DialogContent className="max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
                                       <DialogTitle>
-                                        CV - {candidate.name}
+                                        {t("hiring.candidates.documents.cvTitle", {
+                                          name: candidate.name,
+                                        })}
                                       </DialogTitle>
                                       <DialogDescription>
-                                        Resume/CV document for review
+                                        {t("hiring.candidates.documents.cvDesc")}
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-gray-50">
                                       <div className="text-center text-muted-foreground">
                                         <File className="h-16 w-16 mx-auto mb-4" />
                                         <p>
-                                          CV document would be displayed here
+                                          {t(
+                                            "hiring.candidates.documents.cvPlaceholder",
+                                          )}
                                         </p>
                                         <p className="text-sm">
                                           {candidate.resume}
@@ -776,21 +847,30 @@ export default function CandidateSelection() {
                                   <DialogContent className="max-w-4xl max-h-[80vh]">
                                     <DialogHeader>
                                       <DialogTitle>
-                                        Cover Letter - {candidate.name}
+                                        {t(
+                                          "hiring.candidates.documents.coverTitle",
+                                          { name: candidate.name },
+                                        )}
                                       </DialogTitle>
                                       <DialogDescription>
-                                        Cover letter document for review
+                                        {t(
+                                          "hiring.candidates.documents.coverDesc",
+                                        )}
                                       </DialogDescription>
                                     </DialogHeader>
                                     <div className="border rounded-lg p-4 h-[60vh] overflow-auto bg-gray-50">
                                       <div className="text-center text-muted-foreground">
                                         <Mail className="h-16 w-16 mx-auto mb-4" />
                                         <p>
-                                          Cover letter would be displayed here
+                                          {t(
+                                            "hiring.candidates.documents.coverPlaceholder",
+                                          )}
                                         </p>
                                         <p className="text-sm">
-                                          Cover letter content for{" "}
-                                          {candidate.name}
+                                          {t(
+                                            "hiring.candidates.documents.coverContent",
+                                            { name: candidate.name },
+                                          )}
                                         </p>
                                       </div>
                                     </div>
@@ -827,10 +907,10 @@ export default function CandidateSelection() {
                               size="sm"
                               className="w-20"
                             >
-                              Reject
+                              {t("hiring.candidates.actions.reject")}
                             </Button>
                             <Button size="sm" className="w-20">
-                              Shortlist
+                              {t("hiring.candidates.actions.shortlist")}
                             </Button>
                           </div>
                         </td>

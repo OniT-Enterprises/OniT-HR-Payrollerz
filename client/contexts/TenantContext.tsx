@@ -4,15 +4,14 @@ import React, {
   useState,
   useEffect,
   ReactNode,
+  useCallback,
 } from "react";
 import { User } from "firebase/auth";
 import {
   doc,
   getDoc,
-  collection,
-  query,
-  where,
-  getDocs,
+  updateDoc,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -26,6 +25,7 @@ import {
   DEFAULT_ROLE_PERMISSIONS,
   hasModulePermission,
 } from "@/types/tenant";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface TenantContextType {
   // Current session
@@ -35,6 +35,13 @@ interface TenantContextType {
 
   // Available tenants for current user
   availableTenants: Array<{ id: string; name: string; role: TenantRole }>;
+
+  // Impersonation (superadmin only)
+  isImpersonating: boolean;
+  impersonatedTenantId: string | null;
+  impersonatedTenantName: string | null;
+  startImpersonation: (tenantId: string, tenantName: string) => Promise<void>;
+  stopImpersonation: () => Promise<void>;
 
   // Tenant switching
   switchTenant: (tid: string) => Promise<void>;
@@ -65,6 +72,11 @@ export function useTenantId(): string {
     throw new Error("useTenantId must be used within a TenantProvider");
   }
 
+  // If impersonating, return the impersonated tenant ID
+  if (context.isImpersonating && context.impersonatedTenantId) {
+    return context.impersonatedTenantId;
+  }
+
   if (!context.session?.tid) {
     // For local development mode, return a fallback tenant ID
     return "local-dev-tenant";
@@ -78,13 +90,18 @@ interface TenantProviderProps {
 }
 
 export function TenantProvider({ children }: TenantProviderProps) {
+  const { user, isSuperAdmin, userProfile } = useAuth();
   const [session, setSession] = useState<TenantSession | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [availableTenants, setAvailableTenants] = useState<
     Array<{ id: string; name: string; role: TenantRole }>
   >([]);
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+
+  // Impersonation state
+  const [isImpersonating, setIsImpersonating] = useState(false);
+  const [impersonatedTenantId, setImpersonatedTenantId] = useState<string | null>(null);
+  const [impersonatedTenantName, setImpersonatedTenantName] = useState<string | null>(null);
 
   // Get current user and custom claims
   const getCurrentUserAndClaims = async (): Promise<{
@@ -107,7 +124,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   // Load available tenants for current user
   const loadAvailableTenants = async (
-    user: User,
+    firebaseUser: User,
   ): Promise<Array<{ id: string; name: string; role: TenantRole }>> => {
     if (!db) {
       console.warn("Database not available");
@@ -123,7 +140,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
             // Get tenant config
             const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
             const memberDoc = await getDoc(
-              doc(db, paths.member(tid, user.uid)),
+              doc(db, paths.member(tid, firebaseUser.uid)),
             );
 
             if (tenantDoc.exists() && memberDoc.exists()) {
@@ -151,12 +168,40 @@ export function TenantProvider({ children }: TenantProviderProps) {
         }
       }
 
-      // Method 2: Fallback - discover tenants by checking member collections
-      // This is less efficient but works when custom claims aren't set yet
-      console.log("Discovering tenants by checking memberships...");
+      // Method 2: Check user profile for tenantIds
+      if (userProfile?.tenantIds && userProfile.tenantIds.length > 0) {
+        const tenantPromises = userProfile.tenantIds.map(async (tid: string) => {
+          try {
+            const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
+            const memberDoc = await getDoc(
+              doc(db, paths.member(tid, firebaseUser.uid)),
+            );
 
-      // Note: This requires a composite index on members collection
-      // For now, we'll return empty array and rely on proper tenant provisioning
+            if (tenantDoc.exists() && memberDoc.exists()) {
+              const tenantData = tenantDoc.data() as TenantConfig;
+              const memberData = memberDoc.data() as TenantMember;
+
+              return {
+                id: tid,
+                name: tenantData.name || tid,
+                role: memberData.role,
+              };
+            }
+            return null;
+          } catch (error) {
+            console.warn(`Failed to load tenant ${tid}:`, error);
+            return null;
+          }
+        });
+
+        const tenants = (await Promise.all(tenantPromises)).filter(
+          Boolean,
+        ) as Array<{ id: string; name: string; role: TenantRole }>;
+        if (tenants.length > 0) {
+          return tenants;
+        }
+      }
+
       return [];
     } catch (error) {
       console.error("Failed to load available tenants:", error);
@@ -164,10 +209,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
   };
 
-  // Load tenant session data
+  // Load tenant session data (for superadmin impersonation, skip membership check)
   const loadTenantSession = async (
     tid: string,
-    user: User,
+    firebaseUser: User,
+    bypassMembershipCheck = false,
   ): Promise<TenantSession | null> => {
     if (!db) {
       console.warn("Database not available");
@@ -175,21 +221,38 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
 
     try {
-      // Load tenant config and member data in parallel
-      const [tenantDoc, memberDoc] = await Promise.all([
-        getDoc(doc(db, paths.tenant(tid))),
-        getDoc(doc(db, paths.member(tid, user.uid))),
-      ]);
+      // Load tenant config
+      const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
 
       if (!tenantDoc.exists()) {
         throw new Error(`Tenant ${tid} not found`);
       }
 
+      const config = { id: tid, ...tenantDoc.data() } as TenantConfig;
+
+      // For superadmin impersonation, create a virtual "owner" session
+      if (bypassMembershipCheck) {
+        return {
+          tid,
+          role: 'owner' as TenantRole,
+          modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'] as ModulePermission[],
+          config,
+          member: {
+            uid: firebaseUser.uid,
+            role: 'owner' as TenantRole,
+            email: firebaseUser.email || undefined,
+            displayName: firebaseUser.displayName || undefined,
+          },
+        };
+      }
+
+      // Regular member check
+      const memberDoc = await getDoc(doc(db, paths.member(tid, firebaseUser.uid)));
+
       if (!memberDoc.exists()) {
         throw new Error(`User is not a member of tenant ${tid}`);
       }
 
-      const config = { id: tid, ...tenantDoc.data() } as TenantConfig;
       const member = memberDoc.data() as TenantMember;
 
       // Determine modules based on role and explicit permissions
@@ -209,17 +272,116 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
   };
 
-  // Switch to a different tenant
-  const switchTenant = async (tid: string) => {
-    if (!currentUser) {
-      throw new Error("No authenticated user");
+  // Start impersonation (superadmin only)
+  const startImpersonation = useCallback(async (tenantId: string, tenantName: string) => {
+    if (!user || !isSuperAdmin) {
+      throw new Error("Only superadmins can impersonate");
     }
 
     try {
       setLoading(true);
       setError(null);
 
-      const newSession = await loadTenantSession(tid, currentUser);
+      // Load the tenant session with bypass
+      const impersonatedSession = await loadTenantSession(tenantId, user, true);
+
+      if (impersonatedSession) {
+        // Update user profile in Firestore
+        if (db && userProfile) {
+          const userRef = doc(db, paths.user(user.uid));
+          await updateDoc(userRef, {
+            impersonating: {
+              tenantId,
+              tenantName,
+              startedAt: serverTimestamp(),
+            },
+            updatedAt: serverTimestamp(),
+          });
+        }
+
+        setSession(impersonatedSession);
+        setIsImpersonating(true);
+        setImpersonatedTenantId(tenantId);
+        setImpersonatedTenantName(tenantName);
+
+        // Store in localStorage for page refresh persistence
+        localStorage.setItem("impersonatingTenantId", tenantId);
+        localStorage.setItem("impersonatingTenantName", tenantName);
+      }
+    } catch (error: any) {
+      console.error("Failed to start impersonation:", error);
+      setError(error.message || "Failed to impersonate");
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [user, isSuperAdmin, userProfile]);
+
+  // Stop impersonation
+  const stopImpersonation = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      setLoading(true);
+
+      // Clear impersonation in Firestore
+      if (db) {
+        const userRef = doc(db, paths.user(user.uid));
+        await updateDoc(userRef, {
+          impersonating: null,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      // Clear local state
+      setIsImpersonating(false);
+      setImpersonatedTenantId(null);
+      setImpersonatedTenantName(null);
+      setSession(null);
+
+      // Clear localStorage
+      localStorage.removeItem("impersonatingTenantId");
+      localStorage.removeItem("impersonatingTenantName");
+
+      // Reload user's actual tenants
+      const tenants = await loadAvailableTenants(user);
+      setAvailableTenants(tenants);
+
+      if (tenants.length > 0) {
+        const savedTenantId = localStorage.getItem("currentTenantId");
+        const targetTenant =
+          savedTenantId && tenants.find((t) => t.id === savedTenantId)
+            ? savedTenantId
+            : tenants[0]?.id;
+
+        if (targetTenant) {
+          const session = await loadTenantSession(targetTenant, user);
+          setSession(session);
+        }
+      }
+    } catch (error) {
+      console.error("Failed to stop impersonation:", error);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  // Switch to a different tenant
+  const switchTenant = async (tid: string) => {
+    if (!user) {
+      throw new Error("No authenticated user");
+    }
+
+    // If impersonating, stop first
+    if (isImpersonating) {
+      await stopImpersonation();
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+
+      const newSession = await loadTenantSession(tid, user);
       if (newSession) {
         setSession(newSession);
         // Store current tenant in localStorage for persistence
@@ -236,12 +398,13 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   // Refresh current session
   const refreshSession = async () => {
-    if (!session || !currentUser) return;
+    if (!session || !user) return;
 
     try {
       const refreshedSession = await loadTenantSession(
         session.tid,
-        currentUser,
+        user,
+        isImpersonating,
       );
       if (refreshedSession) {
         setSession(refreshedSession);
@@ -254,80 +417,106 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   // Refresh available tenants
   const refreshTenants = async () => {
-    if (!currentUser) return;
+    if (!user) return;
 
     try {
-      const tenants = await loadAvailableTenants(currentUser);
+      const tenants = await loadAvailableTenants(user);
       setAvailableTenants(tenants);
     } catch (error) {
       console.error("Failed to refresh tenants:", error);
     }
   };
 
-  // Initialize tenant session with real Firebase auth
+  // Initialize tenant session
   useEffect(() => {
-    console.log("🔧 TenantProvider initializing with Firebase authentication");
+    const initializeTenant = async () => {
+      if (!user) {
+        setSession(null);
+        setAvailableTenants([]);
+        setIsImpersonating(false);
+        setImpersonatedTenantId(null);
+        setImpersonatedTenantName(null);
+        setLoading(false);
+        return;
+      }
 
-    if (!auth) {
-      console.log(
-        "🔧 Firebase auth disabled in TenantProvider, using fallback mode",
-      );
-      setLoading(false);
-      setCurrentUser(null);
-      setAvailableTenants([]);
-      return () => {};
-    }
-
-    const unsubscribe = auth.onAuthStateChanged(async (user) => {
       try {
         setLoading(true);
         setError(null);
 
-        if (user) {
-          console.log("✅ User authenticated:", user.email);
-          setCurrentUser(user);
+        // Check if superadmin is impersonating (from user profile or localStorage)
+        if (isSuperAdmin && userProfile?.impersonating) {
+          const { tenantId, tenantName } = userProfile.impersonating;
+          const impersonatedSession = await loadTenantSession(tenantId, user, true);
 
-          // Load available tenants
-          const tenants = await loadAvailableTenants(user);
-          setAvailableTenants(tenants);
-
-          // Try to restore previous tenant or use first available
-          const savedTenantId = localStorage.getItem("currentTenantId");
-          const targetTenant =
-            savedTenantId && tenants.find((t) => t.id === savedTenantId)
-              ? savedTenantId
-              : tenants[0]?.id;
-
-          if (targetTenant) {
-            try {
-              const session = await loadTenantSession(targetTenant, user);
-              setSession(session);
-              localStorage.setItem("currentTenantId", targetTenant);
-            } catch (error) {
-              console.error("Failed to load tenant session:", error);
-              setError(`Failed to load tenant: ${error}`);
-            }
-          } else {
-            console.warn("No tenants available for user");
-            setError("No tenants available. Contact your administrator.");
+          if (impersonatedSession) {
+            setSession(impersonatedSession);
+            setIsImpersonating(true);
+            setImpersonatedTenantId(tenantId);
+            setImpersonatedTenantName(tenantName || tenantId);
+            setLoading(false);
+            return;
           }
-        } else {
-          console.log("❌ User not authenticated");
-          setCurrentUser(null);
-          setSession(null);
-          setAvailableTenants([]);
-          localStorage.removeItem("currentTenantId");
+        }
+
+        // Check localStorage for persisted impersonation
+        const savedImpersonatingId = localStorage.getItem("impersonatingTenantId");
+        const savedImpersonatingName = localStorage.getItem("impersonatingTenantName");
+
+        if (isSuperAdmin && savedImpersonatingId) {
+          try {
+            const impersonatedSession = await loadTenantSession(savedImpersonatingId, user, true);
+
+            if (impersonatedSession) {
+              setSession(impersonatedSession);
+              setIsImpersonating(true);
+              setImpersonatedTenantId(savedImpersonatingId);
+              setImpersonatedTenantName(savedImpersonatingName || savedImpersonatingId);
+              setLoading(false);
+              return;
+            }
+          } catch (error) {
+            // Clear invalid impersonation data
+            localStorage.removeItem("impersonatingTenantId");
+            localStorage.removeItem("impersonatingTenantName");
+          }
+        }
+
+        // Load available tenants normally
+        const tenants = await loadAvailableTenants(user);
+        setAvailableTenants(tenants);
+
+        // Try to restore previous tenant or use first available
+        const savedTenantId = localStorage.getItem("currentTenantId");
+        const targetTenant =
+          savedTenantId && tenants.find((t) => t.id === savedTenantId)
+            ? savedTenantId
+            : tenants[0]?.id;
+
+        if (targetTenant) {
+          try {
+            const session = await loadTenantSession(targetTenant, user);
+            setSession(session);
+            localStorage.setItem("currentTenantId", targetTenant);
+          } catch (error) {
+            console.error("Failed to load tenant session:", error);
+            setError(`Failed to load tenant: ${error}`);
+          }
+        } else if (!isSuperAdmin) {
+          // Only show error for non-superadmins
+          console.warn("No tenants available for user");
+          setError("No tenants available. Contact your administrator.");
         }
       } catch (error) {
-        console.error("Auth state change error:", error);
-        setError(`Authentication error: ${error}`);
+        console.error("Tenant initialization error:", error);
+        setError(`Tenant error: ${error}`);
       } finally {
         setLoading(false);
       }
-    });
+    };
 
-    return () => unsubscribe();
-  }, []);
+    initializeTenant();
+  }, [user, isSuperAdmin, userProfile]);
 
   // Permission helpers
   const hasModule = (module: ModulePermission): boolean => {
@@ -350,6 +539,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
     loading,
     error,
     availableTenants,
+    isImpersonating,
+    impersonatedTenantId,
+    impersonatedTenantName,
+    startImpersonation,
+    stopImpersonation,
     switchTenant,
     hasModule,
     canWrite,

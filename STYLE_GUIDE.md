@@ -454,6 +454,132 @@ The main navigation uses a glass-morphism effect:
 
 ---
 
+## Subpage Pattern
+
+Subpages (forms, detail views, secondary pages) use a constrained width layout with a colored hero section. The hero uses the **module's gradient colors** for consistency.
+
+### Full Subpage Template
+
+```tsx
+export default function SubpageName() {
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+
+      {/* Hero Section - Uses module gradient */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
+
+        <div className="relative max-w-5xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
+
+          <div className="flex items-center gap-4 animate-fade-up">
+            <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+              <PageIcon className="h-8 w-8 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Page Title</h1>
+              <p className="text-emerald-100 mt-1">Page subtitle or description</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content - Constrained width */}
+      <div className="max-w-5xl mx-auto px-6 py-8">
+        {/* Cards for form sections */}
+        <Card className="border-border/50 animate-fade-up stagger-1">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                <SectionIcon className="h-5 w-5 text-emerald-600" />
+              </div>
+              Section Title
+            </CardTitle>
+            <CardDescription>Section description</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {/* Form fields, content, etc. */}
+          </CardContent>
+        </Card>
+
+        {/* Gradient submit button */}
+        <Button className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+          Submit Action
+          <ArrowRight className="ml-2 h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+```
+
+### Module-Specific Hero Gradients
+
+Each module uses its signature colors for subpage heroes:
+
+| Module | Hero Gradient | Text Color | Icon BG | Button Gradient |
+|--------|---------------|------------|---------|-----------------|
+| **Hiring** | `from-emerald-600 via-emerald-500 to-teal-500` | `text-emerald-100` | `bg-white/10` | `from-emerald-500 to-teal-500` |
+| **Staff** | `from-blue-600 via-blue-500 to-indigo-500` | `text-blue-100` | `bg-white/10` | `from-blue-500 to-indigo-500` |
+| **Time & Leave** | `from-cyan-600 via-cyan-500 to-teal-500` | `text-cyan-100` | `bg-white/10` | `from-cyan-500 to-teal-500` |
+| **Performance** | `from-orange-600 via-orange-500 to-amber-500` | `text-orange-100` | `bg-white/10` | `from-orange-500 to-amber-500` |
+| **Payroll** | `from-green-600 via-green-500 to-emerald-500` | `text-green-100` | `bg-white/10` | `from-green-500 to-emerald-500` |
+| **Reports** | `from-violet-600 via-violet-500 to-purple-500` | `text-violet-100` | `bg-white/10` | `from-violet-500 to-purple-500` |
+
+### Subpage Key Patterns
+
+1. **Max Width**: Use `max-w-5xl` or `max-w-6xl` for constrained content
+2. **Hero Breadcrumb**: Style breadcrumbs for visibility on colored backgrounds
+3. **Card Section Icons**: Wrap section icons in gradient background div
+4. **Form Labels with Icons**: Add small icons to labels for visual clarity
+5. **Gradient Buttons**: Match button gradients to module colors
+6. **Border Styling**: Use `border-border/50` for subtle card borders
+7. **Input Styling**: Add `border-border/50` class to inputs
+8. **Animations**: Use `animate-fade-up` with stagger classes
+
+### Form Field with Icon Label
+
+```tsx
+<div className="space-y-2">
+  <Label htmlFor="fieldName" className="flex items-center gap-2">
+    <FieldIcon className="h-4 w-4 text-muted-foreground" />
+    Field Label
+  </Label>
+  <Input
+    id="fieldName"
+    className="border-border/50"
+    placeholder="Placeholder text"
+  />
+</div>
+```
+
+### File Upload Area
+
+```tsx
+<div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-emerald-300 transition-colors cursor-pointer bg-muted/30">
+  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+  <input type="file" className="hidden" id="fileUpload" />
+  <label htmlFor="fileUpload" className="cursor-pointer">
+    <p className="text-sm text-muted-foreground">Click to upload or drag and drop</p>
+    <p className="text-xs text-muted-foreground/70">PDF, JPG, PNG up to 10MB</p>
+  </label>
+</div>
+```
+
+### Checkbox with Theme Styling
+
+```tsx
+<Checkbox
+  id="checkboxId"
+  className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+/>
+```
+
+---
+
 ## Quick Reference
 
 ### DO

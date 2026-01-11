@@ -32,8 +32,10 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   UserMinus,
   Calendar,
@@ -110,6 +112,7 @@ export default function Offboarding() {
   const [showDialog, setShowDialog] = useState(false);
   const [isOffline, setIsOffline] = useState(false);
   const { toast } = useToast();
+  const { t } = useI18n();
 
   // New offboarding form data
   const [newOffboarding, setNewOffboarding] = useState({
@@ -169,8 +172,8 @@ export default function Offboarding() {
           employeesData = JSON.parse(cachedEmployees);
           setEmployees(employeesData);
           toast({
-            title: "Using Cached Data",
-            description: "Firebase connection failed. Using local data.",
+            title: t("hiring.offboarding.toast.cachedTitle"),
+            description: t("hiring.offboarding.toast.cachedDesc"),
             variant: "destructive",
           });
         } else {
@@ -178,9 +181,8 @@ export default function Offboarding() {
           employeesData = [];
           setEmployees([]);
           toast({
-            title: "Connection Error",
-            description:
-              "Unable to connect to database. Please check your internet connection.",
+            title: t("hiring.offboarding.toast.connectionTitle"),
+            description: t("hiring.offboarding.toast.connectionDesc"),
             variant: "destructive",
           });
         }
@@ -210,8 +212,8 @@ export default function Offboarding() {
     } catch (error) {
       console.error("Error loading data:", error);
       toast({
-        title: "Error",
-        description: "Failed to load application data",
+        title: t("hiring.offboarding.toast.errorTitle"),
+        description: t("hiring.offboarding.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -251,8 +253,8 @@ export default function Offboarding() {
   const handleStartOffboarding = () => {
     if (!newOffboarding.employeeId || !newOffboarding.departureReason) {
       toast({
-        title: "Validation Error",
-        description: "Please select an employee and departure reason",
+        title: t("hiring.offboarding.toast.validationTitle"),
+        description: t("hiring.offboarding.toast.validationDesc"),
         variant: "destructive",
       });
       return;
@@ -302,8 +304,10 @@ export default function Offboarding() {
     localStorage.setItem("offboardingCases", JSON.stringify(allCases));
 
     toast({
-      title: "Offboarding Started",
-      description: `Offboarding process initiated for ${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+      title: t("hiring.offboarding.toast.startedTitle"),
+      description: t("hiring.offboarding.toast.startedDesc", {
+        name: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+      }),
     });
 
     setShowDialog(false);
@@ -395,8 +399,8 @@ export default function Offboarding() {
   const saveDraft = () => {
     if (selectedCase) {
       toast({
-        title: "Draft Saved",
-        description: "Offboarding progress has been saved",
+        title: t("hiring.offboarding.toast.draftTitle"),
+        description: t("hiring.offboarding.toast.draftDesc"),
       });
     }
   };
@@ -404,13 +408,43 @@ export default function Offboarding() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20";
       case "in-progress":
-        return "bg-yellow-100 text-yellow-800";
+        return "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20";
       case "pending":
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-muted text-muted-foreground";
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    switch (status) {
+      case "completed":
+        return t("hiring.offboarding.status.completed");
+      case "in-progress":
+        return t("hiring.offboarding.status.inProgress");
+      case "pending":
+        return t("hiring.offboarding.status.pending");
+      default:
+        return status;
+    }
+  };
+
+  const getDepartureReasonLabel = (reason: string) => {
+    switch (reason) {
+      case "resignation":
+        return t("hiring.offboarding.dialog.reasons.resignation");
+      case "redundancy":
+        return t("hiring.offboarding.dialog.reasons.redundancy");
+      case "termination":
+        return t("hiring.offboarding.dialog.reasons.termination");
+      case "retirement":
+        return t("hiring.offboarding.dialog.reasons.retirement");
+      case "contract-end":
+        return t("hiring.offboarding.dialog.reasons.contractEnd");
+      default:
+        return reason;
     }
   };
 
@@ -425,6 +459,7 @@ export default function Offboarding() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
+        <AutoBreadcrumb className="mb-6" />
           {/* Header Skeleton */}
           <div className="flex items-center gap-3 mb-8">
             <Skeleton className="h-8 w-8 rounded" />
@@ -504,49 +539,51 @@ export default function Offboarding() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6">
-        {/* Connection Status Banner */}
-        {isOffline && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-red-600" />
-              <span className="text-sm text-red-700">
-                You're currently offline. Some features may not work properly.
-              </span>
-            </div>
-          </div>
-        )}
+      {/* Hero Section */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500">
+        {/* Decorative orb */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2" />
+        <div className="absolute bottom-0 left-0 w-64 h-64 bg-teal-400/20 rounded-full blur-2xl transform -translate-x-1/2 translate-y-1/2" />
 
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <UserMinus className="h-8 w-8 text-green-400" />
-            <div>
-              <h1 className="text-3xl font-bold">Employee Offboarding</h1>
-              <p className="text-muted-foreground">
-                Manage employee departures and exit processes
-              </p>
-            </div>
-          </div>
+        <div className="relative max-w-6xl mx-auto px-6 py-12">
+          <AutoBreadcrumb className="mb-6 text-white/70 [&_a]:text-white/70 [&_a:hover]:text-white" />
 
-          {activeEmployees.length > 0 && (
-            <Dialog open={showDialog} onOpenChange={setShowDialog}>
-              <DialogTrigger asChild>
-                <Button>
-                  <UserMinus className="mr-2 h-4 w-4" />
-                  Start Offboarding Process
-                </Button>
-              </DialogTrigger>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 animate-fade-up">
+              <div className="p-3 rounded-2xl bg-white/10 backdrop-blur-sm">
+                <UserMinus className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-white">
+                  {t("hiring.offboarding.title")}
+                </h1>
+                <p className="text-emerald-100 mt-1">
+                  {t("hiring.offboarding.subtitle")}
+                </p>
+              </div>
+            </div>
+
+            {activeEmployees.length > 0 && (
+              <Dialog open={showDialog} onOpenChange={setShowDialog}>
+                <DialogTrigger asChild>
+                  <Button className="bg-white/10 border border-white/20 text-white hover:bg-white/20 shadow-lg animate-fade-up stagger-1">
+                    <UserMinus className="mr-2 h-4 w-4" />
+                    {t("hiring.offboarding.actions.start")}
+                  </Button>
+                </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Initiate Employee Offboarding</DialogTitle>
+                  <DialogTitle>
+                    {t("hiring.offboarding.dialog.title")}
+                  </DialogTitle>
                   <DialogDescription>
-                    Start the offboarding process for a departing employee
+                    {t("hiring.offboarding.dialog.description")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Filter by Department</Label>
+                      <Label>{t("hiring.offboarding.dialog.department")}</Label>
                       <Select
                         value={newOffboarding.department}
                         onValueChange={(value) =>
@@ -560,7 +597,9 @@ export default function Offboarding() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">All Departments</SelectItem>
+                          <SelectItem value="all">
+                            {t("hiring.offboarding.dialog.departmentAll")}
+                          </SelectItem>
                           {departments.map((dept) => (
                             <SelectItem key={dept} value={dept}>
                               {dept}
@@ -570,11 +609,11 @@ export default function Offboarding() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label>Search Employee</Label>
+                      <Label>{t("hiring.offboarding.dialog.search")}</Label>
                       <div className="relative">
                         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                         <Input
-                          placeholder="Name or ID..."
+                          placeholder={t("hiring.offboarding.dialog.searchPlaceholder")}
                           value={newOffboarding.search}
                           onChange={(e) =>
                             setNewOffboarding((prev) => ({
@@ -590,7 +629,9 @@ export default function Offboarding() {
 
                   <div className="space-y-2">
                     <Label>
-                      Select Employee ({filteredEmployees.length} available)
+                      {t("hiring.offboarding.dialog.selectEmployee", {
+                        count: filteredEmployees.length,
+                      })}
                     </Label>
                     <Select
                       value={newOffboarding.employeeId}
@@ -602,7 +643,9 @@ export default function Offboarding() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Choose an employee..." />
+                        <SelectValue
+                          placeholder={t("hiring.offboarding.dialog.selectPlaceholder")}
+                        />
                       </SelectTrigger>
                       <SelectContent>
                         {filteredEmployees.map((employee) => (
@@ -620,7 +663,7 @@ export default function Offboarding() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Departure Reason</Label>
+                    <Label>{t("hiring.offboarding.dialog.reason")}</Label>
                     <Select
                       value={newOffboarding.departureReason}
                       onValueChange={(value) =>
@@ -631,15 +674,25 @@ export default function Offboarding() {
                       }
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select reason..." />
+                        <SelectValue
+                          placeholder={t("hiring.offboarding.dialog.reasonPlaceholder")}
+                        />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="resignation">Resignation</SelectItem>
-                        <SelectItem value="redundancy">Redundancy</SelectItem>
-                        <SelectItem value="termination">Termination</SelectItem>
-                        <SelectItem value="retirement">Retirement</SelectItem>
+                        <SelectItem value="resignation">
+                          {t("hiring.offboarding.dialog.reasons.resignation")}
+                        </SelectItem>
+                        <SelectItem value="redundancy">
+                          {t("hiring.offboarding.dialog.reasons.redundancy")}
+                        </SelectItem>
+                        <SelectItem value="termination">
+                          {t("hiring.offboarding.dialog.reasons.termination")}
+                        </SelectItem>
+                        <SelectItem value="retirement">
+                          {t("hiring.offboarding.dialog.reasons.retirement")}
+                        </SelectItem>
                         <SelectItem value="contract-end">
-                          Contract End
+                          {t("hiring.offboarding.dialog.reasons.contractEnd")}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -647,7 +700,7 @@ export default function Offboarding() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Last Working Day</Label>
+                      <Label>{t("hiring.offboarding.dialog.lastDay")}</Label>
                       <Input
                         type="date"
                         value={newOffboarding.lastWorkingDay}
@@ -660,7 +713,7 @@ export default function Offboarding() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label>Notice Date</Label>
+                      <Label>{t("hiring.offboarding.dialog.noticeDate")}</Label>
                       <Input
                         type="date"
                         value={newOffboarding.noticeDate}
@@ -675,9 +728,9 @@ export default function Offboarding() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label>Additional Notes</Label>
+                    <Label>{t("hiring.offboarding.dialog.notes")}</Label>
                     <Textarea
-                      placeholder="Any special instructions or notes..."
+                      placeholder={t("hiring.offboarding.dialog.notesPlaceholder")}
                       value={newOffboarding.notes}
                       onChange={(e) =>
                         setNewOffboarding((prev) => ({
@@ -693,125 +746,177 @@ export default function Offboarding() {
                       variant="outline"
                       onClick={() => setShowDialog(false)}
                     >
-                      Cancel
+                      {t("hiring.offboarding.dialog.cancel")}
                     </Button>
                     <Button onClick={handleStartOffboarding}>
-                      Start Offboarding
+                      {t("hiring.offboarding.dialog.confirm")}
                     </Button>
                   </div>
                 </div>
               </DialogContent>
-            </Dialog>
-          )}
+              </Dialog>
+            )}
+          </div>
         </div>
+      </div>
 
-        {employees.length === 0 ? (
-          <div className="text-center py-16">
-            <UserMinus className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <h3 className="text-lg font-semibold mb-2">
-              {isOffline ? "Connection Error" : "No Employee Data"}
-            </h3>
-            <p className="text-muted-foreground mb-6">
-              {isOffline
-                ? "Unable to connect to the database. Please check your internet connection and try again."
-                : "Add employees to your database to manage offboarding processes"}
-            </p>
-            <div className="flex gap-3 justify-center">
-              {isOffline ? (
-                <Button onClick={() => loadData()}>
-                  <Database className="mr-2 h-4 w-4" />
-                  Retry Connection
-                </Button>
-              ) : (
-                <Button onClick={() => (window.location.href = "/staff/add")}>
-                  <User className="mr-2 h-4 w-4" />
-                  Add Employees First
-                </Button>
-              )}
+      {/* Main Content */}
+      <div className="max-w-6xl mx-auto px-6 py-8">
+        {/* Connection Status Banner */}
+        {isOffline && (
+          <div className="mb-6 p-4 bg-destructive/10 border border-destructive/20 rounded-xl">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <span className="text-sm text-destructive">
+                {t("hiring.offboarding.offlineBanner")}
+              </span>
             </div>
           </div>
+        )}
+
+        {employees.length === 0 ? (
+          <Card className="border-border/50 animate-fade-up">
+            <CardContent className="text-center py-16">
+              <div className="p-4 rounded-full bg-muted inline-flex mb-4">
+                <UserMinus className="h-12 w-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-semibold mb-2">
+                {isOffline
+                  ? t("hiring.offboarding.empty.connectionTitle")
+                  : t("hiring.offboarding.empty.noEmployeesTitle")}
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                {isOffline
+                  ? t("hiring.offboarding.empty.connectionDesc")
+                  : t("hiring.offboarding.empty.noEmployeesDesc")}
+              </p>
+              <div className="flex gap-3 justify-center">
+                {isOffline ? (
+                  <Button
+                    onClick={() => loadData()}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  >
+                    <Database className="mr-2 h-4 w-4" />
+                    {t("hiring.offboarding.empty.retry")}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => (window.location.href = "/staff/add")}
+                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    {t("hiring.offboarding.empty.addEmployees")}
+                  </Button>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           <div className="space-y-6">
             {/* Statistics */}
-            <div className="grid lg:grid-cols-4 gap-4 mb-8">
-              <Card>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 animate-fade-up">
+              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Total Employees
+                        {t("hiring.offboarding.stats.totalEmployees")}
                       </p>
                       <p className="text-2xl font-bold">{employees.length}</p>
-                      <p className="text-xs text-blue-600">In database</p>
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        {t("hiring.offboarding.stats.inDatabase")}
+                      </p>
                     </div>
-                    <Users className="h-8 w-8 text-blue-500" />
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
+                      <Users className="h-5 w-5 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Employee Departures
+                        {t("hiring.offboarding.stats.departures")}
                       </p>
                       <p className="text-2xl font-bold">{departuresLastYear}</p>
-                      <p className="text-xs text-orange-600">Last year</p>
+                      <p className="text-xs text-orange-600 dark:text-orange-400">
+                        {t("hiring.offboarding.stats.lastYear")}
+                      </p>
                     </div>
-                    <History className="h-8 w-8 text-orange-500" />
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg">
+                      <History className="h-5 w-5 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Offboarding Cases
+                        {t("hiring.offboarding.stats.cases")}
                       </p>
                       <p className="text-2xl font-bold">
                         {ongoingCases.length}
                       </p>
-                      <p className="text-xs text-green-600">Currently active</p>
+                      <p className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {t("hiring.offboarding.stats.active")}
+                      </p>
                     </div>
-                    <Clock className="h-8 w-8 text-green-500" />
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
+                      <Clock className="h-5 w-5 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">
-                        Offboarding History
+                        {t("hiring.offboarding.stats.history")}
                       </p>
                       <p className="text-2xl font-bold">
                         {offboardingHistory.length}
                       </p>
-                      <p className="text-xs text-purple-600">Completed cases</p>
+                      <p className="text-xs text-violet-600 dark:text-violet-400">
+                        {t("hiring.offboarding.stats.completed")}
+                      </p>
                     </div>
-                    <Archive className="h-8 w-8 text-purple-500" />
+                    <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg">
+                      <Archive className="h-5 w-5 text-white" />
+                    </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid lg:grid-cols-2 gap-6">
+            <div className="grid lg:grid-cols-2 gap-6 animate-fade-up stagger-1">
               {/* Ongoing Departures */}
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle>Ongoing Departures</CardTitle>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                      <Clock className="h-5 w-5 text-emerald-600" />
+                    </div>
+                    {t("hiring.offboarding.ongoing.title")}
+                  </CardTitle>
                   <CardDescription>
-                    {ongoingCases.length} employees currently in offboarding
-                    process
+                    {t("hiring.offboarding.ongoing.description", {
+                      count: ongoingCases.length,
+                    })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {ongoingCases.length === 0 ? (
                     <div className="text-center py-8">
-                      <Clock className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-sm text-gray-600">
-                        No ongoing offboarding cases
+                      <div className="p-3 rounded-full bg-muted inline-flex mb-4">
+                        <Clock className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t("hiring.offboarding.ongoing.empty")}
                       </p>
                     </div>
                   ) : (
@@ -819,10 +924,10 @@ export default function Offboarding() {
                       {ongoingCases.map((case_) => (
                         <Card
                           key={case_.id}
-                          className={`cursor-pointer transition-colors ${
+                          className={`cursor-pointer transition-all duration-200 border-border/50 ${
                             selectedCase?.id === case_.id
-                              ? "ring-2 ring-blue-500"
-                              : "hover:bg-gray-50"
+                              ? "ring-2 ring-emerald-500 shadow-lg"
+                              : "hover:bg-muted/30 hover:shadow-md"
                           }`}
                           onClick={() => setSelectedCase(case_)}
                         >
@@ -848,15 +953,16 @@ export default function Offboarding() {
                                 </div>
                               </div>
                               <Badge className={getStatusColor(case_.status)}>
-                                {case_.status.replace("-", " ")}
+                                {getStatusLabel(case_.status)}
                               </Badge>
                             </div>
                             <div className="space-y-2">
                               <div className="flex justify-between text-sm">
-                                <span>Progress:</span>
+                                <span>{t("hiring.offboarding.progress.label")}</span>
                                 <span>
-                                  {getProgressPercentage(case_.checklist)}%
-                                  completed
+                                  {t("hiring.offboarding.progress.completed", {
+                                    percent: getProgressPercentage(case_.checklist),
+                                  })}
                                 </span>
                               </div>
                               <Progress
@@ -865,10 +971,18 @@ export default function Offboarding() {
                               />
                               <div className="flex justify-between items-center text-sm">
                                 <span className="text-muted-foreground">
-                                  Reason: {case_.departureReason}
+                                  {t("hiring.offboarding.progress.reason", {
+                                    reason: getDepartureReasonLabel(
+                                      case_.departureReason,
+                                    ),
+                                  })}
                                 </span>
                                 <span className="text-muted-foreground">
-                                  Last day: {case_.lastWorkingDay || "TBD"}
+                                  {t("hiring.offboarding.progress.lastDay", {
+                                    date:
+                                      case_.lastWorkingDay ||
+                                      t("hiring.offboarding.progress.tbd"),
+                                  })}
                                 </span>
                               </div>
                             </div>
@@ -881,41 +995,52 @@ export default function Offboarding() {
               </Card>
 
               {/* Offboarding Checklist */}
-              <Card>
+              <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle>
+                  <CardTitle className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
+                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    </div>
                     {selectedCase
-                      ? `Offboarding Checklist - ${selectedCase.employee.personalInfo.firstName} ${selectedCase.employee.personalInfo.lastName}`
-                      : "Offboarding Checklist"}
+                      ? t("hiring.offboarding.checklist.titleWithName", {
+                          name: `${selectedCase.employee.personalInfo.firstName} ${selectedCase.employee.personalInfo.lastName}`,
+                        })
+                      : t("hiring.offboarding.checklist.title")}
                   </CardTitle>
                   <CardDescription>
                     {selectedCase
-                      ? "Complete the offboarding process"
-                      : "Select an employee to view their checklist"}
+                      ? t("hiring.offboarding.checklist.description")
+                      : t("hiring.offboarding.checklist.empty")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {!selectedCase ? (
                     <div className="text-center py-8">
-                      <CheckCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                      <p className="text-sm text-gray-600">
-                        Select an ongoing departure to view checklist
+                      <div className="p-3 rounded-full bg-muted inline-flex mb-4">
+                        <CheckCircle className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {t("hiring.offboarding.checklist.emptyPrompt")}
                       </p>
                     </div>
                   ) : (
                     <div className="space-y-6">
                       {/* Progress Summary */}
-                      <div className="p-4 bg-blue-50 rounded-lg">
+                      <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/20">
                         <div className="flex justify-between items-center mb-2">
-                          <span className="font-medium">Overall Progress</span>
-                          <span className="text-sm">
+                          <span className="font-medium">
+                            {t("hiring.offboarding.progress.overall")}
+                          </span>
+                          <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
                             {getProgressPercentage(selectedCase.checklist)}%
                           </span>
                         </div>
-                        <Progress
-                          value={getProgressPercentage(selectedCase.checklist)}
-                          className="h-3"
-                        />
+                        <div className="h-3 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                            style={{ width: `${getProgressPercentage(selectedCase.checklist)}%` }}
+                          />
+                        </div>
                       </div>
 
                       {/* Checklist Items */}
@@ -923,48 +1048,52 @@ export default function Offboarding() {
                         {[
                           {
                             id: "accessRevoked",
-                            label: "Revoke System Access",
+                            label: t("hiring.offboarding.checklist.items.access"),
                             icon: <Key className="h-4 w-4" />,
                           },
                           {
                             id: "equipmentReturned",
-                            label: "Equipment Return",
+                            label: t("hiring.offboarding.checklist.items.equipment"),
                             icon: <Building className="h-4 w-4" />,
                           },
                           {
                             id: "documentsSigned",
-                            label: "Exit Documents Signed",
+                            label: t("hiring.offboarding.checklist.items.documents"),
                             icon: <FileText className="h-4 w-4" />,
                           },
                           {
                             id: "knowledgeTransfer",
-                            label: "Knowledge Transfer",
+                            label: t("hiring.offboarding.checklist.items.knowledge"),
                             icon: <Archive className="h-4 w-4" />,
                           },
                           {
                             id: "finalPayCalculated",
-                            label: "Final Pay Calculated",
+                            label: t("hiring.offboarding.checklist.items.finalPay"),
                             icon: <DollarSign className="h-4 w-4" />,
                           },
                           {
                             id: "benefitsCancelled",
-                            label: "Benefits Cancelled",
+                            label: t("hiring.offboarding.checklist.items.benefits"),
                             icon: <CreditCard className="h-4 w-4" />,
                           },
                           {
                             id: "exitInterviewCompleted",
-                            label: "Exit Interview Completed",
+                            label: t("hiring.offboarding.checklist.items.exitInterview"),
                             icon: <Mail className="h-4 w-4" />,
                           },
                           {
                             id: "referenceLetter",
-                            label: "Reference Letter Prepared",
+                            label: t("hiring.offboarding.checklist.items.reference"),
                             icon: <Download className="h-4 w-4" />,
                           },
                         ].map((item) => (
                           <div
                             key={item.id}
-                            className="flex items-center space-x-3"
+                            className={`flex items-center space-x-3 p-3 rounded-lg border transition-colors ${
+                              selectedCase.checklist[item.id as keyof OffboardingChecklist]
+                                ? 'border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20'
+                                : 'border-border/50 hover:bg-muted/30'
+                            }`}
                           >
                             <Checkbox
                               checked={
@@ -979,10 +1108,11 @@ export default function Offboarding() {
                                   checked as boolean,
                                 )
                               }
+                              className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
                             />
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-muted-foreground">
                               {item.icon}
-                              <label className="text-sm font-medium">
+                              <label className="text-sm font-medium text-foreground cursor-pointer">
                                 {item.label}
                               </label>
                             </div>
@@ -994,12 +1124,12 @@ export default function Offboarding() {
                       <Separator />
                       <div className="space-y-4">
                         <h4 className="font-medium">
-                          Exit Interview Questions
+                          {t("hiring.offboarding.exit.title")}
                         </h4>
 
                         <div className="grid grid-cols-1 gap-4">
                           <div className="space-y-2">
-                            <Label>Overall Job Satisfaction</Label>
+                            <Label>{t("hiring.offboarding.exit.overall")}</Label>
                             <Select
                               value={
                                 selectedCase.exitInterview.overallSatisfaction
@@ -1013,28 +1143,32 @@ export default function Offboarding() {
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Rate satisfaction..." />
+                                <SelectValue
+                                  placeholder={t("hiring.offboarding.exit.overallPlaceholder")}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="very-satisfied">
-                                  Very Satisfied
+                                  {t("hiring.offboarding.exit.overallOptions.verySatisfied")}
                                 </SelectItem>
                                 <SelectItem value="satisfied">
-                                  Satisfied
+                                  {t("hiring.offboarding.exit.overallOptions.satisfied")}
                                 </SelectItem>
-                                <SelectItem value="neutral">Neutral</SelectItem>
+                                <SelectItem value="neutral">
+                                  {t("hiring.offboarding.exit.overallOptions.neutral")}
+                                </SelectItem>
                                 <SelectItem value="dissatisfied">
-                                  Dissatisfied
+                                  {t("hiring.offboarding.exit.overallOptions.dissatisfied")}
                                 </SelectItem>
                                 <SelectItem value="very-dissatisfied">
-                                  Very Dissatisfied
+                                  {t("hiring.offboarding.exit.overallOptions.veryDissatisfied")}
                                 </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Manager Relationship</Label>
+                            <Label>{t("hiring.offboarding.exit.manager")}</Label>
                             <Select
                               value={
                                 selectedCase.exitInterview.managerRelationship
@@ -1048,23 +1182,31 @@ export default function Offboarding() {
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Rate manager relationship..." />
+                                <SelectValue
+                                  placeholder={t("hiring.offboarding.exit.managerPlaceholder")}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="excellent">
-                                  Excellent
+                                  {t("hiring.offboarding.exit.managerOptions.excellent")}
                                 </SelectItem>
-                                <SelectItem value="good">Good</SelectItem>
-                                <SelectItem value="average">Average</SelectItem>
-                                <SelectItem value="poor">Poor</SelectItem>
+                                <SelectItem value="good">
+                                  {t("hiring.offboarding.exit.managerOptions.good")}
+                                </SelectItem>
+                                <SelectItem value="average">
+                                  {t("hiring.offboarding.exit.managerOptions.average")}
+                                </SelectItem>
+                                <SelectItem value="poor">
+                                  {t("hiring.offboarding.exit.managerOptions.poor")}
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Primary Reason for Leaving</Label>
+                            <Label>{t("hiring.offboarding.exit.reason")}</Label>
                             <Textarea
-                              placeholder="Please explain..."
+                              placeholder={t("hiring.offboarding.exit.reasonPlaceholder")}
                               value={selectedCase.exitInterview.primaryReason}
                               onChange={(e) =>
                                 updateExitInterview(
@@ -1078,7 +1220,7 @@ export default function Offboarding() {
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Would Recommend Company</Label>
+                            <Label>{t("hiring.offboarding.exit.recommend")}</Label>
                             <Select
                               value={selectedCase.exitInterview.wouldRecommend}
                               onValueChange={(value) =>
@@ -1090,22 +1232,28 @@ export default function Offboarding() {
                               }
                             >
                               <SelectTrigger>
-                                <SelectValue placeholder="Would you recommend us?" />
+                                <SelectValue
+                                  placeholder={t("hiring.offboarding.exit.recommendPlaceholder")}
+                                />
                               </SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="yes">
-                                  Yes, definitely
+                                  {t("hiring.offboarding.exit.recommendOptions.yes")}
                                 </SelectItem>
-                                <SelectItem value="maybe">Maybe</SelectItem>
-                                <SelectItem value="no">No</SelectItem>
+                                <SelectItem value="maybe">
+                                  {t("hiring.offboarding.exit.recommendOptions.maybe")}
+                                </SelectItem>
+                                <SelectItem value="no">
+                                  {t("hiring.offboarding.exit.recommendOptions.no")}
+                                </SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-2">
-                            <Label>Additional Comments</Label>
+                            <Label>{t("hiring.offboarding.exit.comments")}</Label>
                             <Textarea
-                              placeholder="Any other feedback..."
+                              placeholder={t("hiring.offboarding.exit.commentsPlaceholder")}
                               value={
                                 selectedCase.exitInterview.additionalComments
                               }
@@ -1127,10 +1275,10 @@ export default function Offboarding() {
                         <Button
                           variant="outline"
                           onClick={saveDraft}
-                          className="flex-1"
+                          className="flex-1 border-border/50"
                         >
                           <Save className="mr-2 h-4 w-4" />
-                          Save Draft
+                          {t("hiring.offboarding.actions.saveDraft")}
                         </Button>
                         <Button
                           onClick={() =>
@@ -1140,13 +1288,13 @@ export default function Offboarding() {
                               true,
                             )
                           }
-                          className="flex-1"
+                          className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 disabled:opacity-50"
                           disabled={
                             getProgressPercentage(selectedCase.checklist) ===
                             100
                           }
                         >
-                          Complete Exit Interview
+                          {t("hiring.offboarding.actions.completeExit")}
                         </Button>
                       </div>
                     </div>

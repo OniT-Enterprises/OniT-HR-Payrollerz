@@ -36,6 +36,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   FileText,
   Plus,
@@ -418,6 +419,7 @@ export default function JournalEntries() {
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
+          <AutoBreadcrumb className="mb-6" />
           {/* Header */}
           <div className="mb-6">
             <div className="flex items-center justify-between">

@@ -81,7 +81,7 @@ Standard Timorese chart structure:
 2xxx - Liabilities (Passivos)
   2100 - Accounts Payable
   2200 - Salaries Payable
-  2300 - Tax Payable (IRPC/IRPS)
+  2300 - Tax Payable (WIT)
   2400 - INSS Payable
   2500 - Loans & Borrowings
 
@@ -122,7 +122,7 @@ When payroll is approved, auto-generate journal entries:
 DR 5100 Salary Expense           $10,000.00
 DR 5200 INSS Employer (6%)          $600.00
     CR 2200 Salaries Payable                 $8,600.00
-    CR 2300 Tax Payable (IRPS)               $1,000.00
+    CR 2300 Tax Payable (WIT)                $1,000.00
     CR 2400 INSS Payable (10%)               $1,000.00
 ```
 
