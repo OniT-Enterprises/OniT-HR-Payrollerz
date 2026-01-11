@@ -2,8 +2,10 @@
 import { initializeApp } from "firebase/app";
 import {
   getFirestore,
-  enableIndexedDbPersistence,
-  CACHE_SIZE_UNLIMITED
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  memoryLocalCache,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -21,21 +23,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with offline persistence
-export const db = getFirestore(app);
-
-// Enable offline persistence to reduce reads and enable offline access
-// This caches data locally so repeated reads don't hit the server
-enableIndexedDbPersistence(db, {
-  forceOwnership: true // Take ownership if another tab has it
-}).catch((err) => {
-  if (err.code === 'failed-precondition') {
-    // Multiple tabs open, persistence can only be enabled in one tab at a time
-    console.warn('Firebase persistence failed: Multiple tabs open');
-  } else if (err.code === 'unimplemented') {
-    // The current browser doesn't support persistence
-    console.warn('Firebase persistence not supported in this browser');
-  }
+// Initialize Firestore with memory cache (avoids Safari IndexedDB issues)
+// Using memory cache for better cross-browser compatibility
+export const db = initializeFirestore(app, {
+  localCache: memoryLocalCache()
 });
 
 // Initialize other services

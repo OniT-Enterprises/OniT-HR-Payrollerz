@@ -11,6 +11,35 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/spa",
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // Core React runtime
+          if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) {
+            return "vendor-react";
+          }
+          if (id.includes("node_modules/react-router")) {
+            return "vendor-router";
+          }
+          // Firebase SDK
+          if (id.includes("node_modules/firebase") || id.includes("node_modules/@firebase")) {
+            return "vendor-firebase";
+          }
+          // UI components (Radix)
+          if (id.includes("node_modules/@radix-ui")) {
+            return "vendor-ui";
+          }
+          // Data management
+          if (id.includes("node_modules/@tanstack")) {
+            return "vendor-data";
+          }
+          // Charts
+          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) {
+            return "vendor-charts";
+          }
+        },
+      },
+    },
   },
   plugins: [react(), expressPlugin()],
   resolve: {

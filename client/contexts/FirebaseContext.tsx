@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
   useEffect,
+  useCallback,
   ReactNode,
 } from "react";
 import { db } from "@/lib/firebase";
@@ -35,10 +36,12 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
   children,
 }) => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isConnected, setIsConnected] = useState(false);
+  // Assume connected when online - actual connection verified lazily on first query
+  const [isConnected, setIsConnected] = useState(navigator.onLine);
   const [error, setError] = useState<string | null>(null);
 
-  const checkConnection = async () => {
+  // Only verify connection when explicitly requested (e.g., after error)
+  const checkConnection = useCallback(async () => {
     try {
       if (!navigator.onLine) {
         setError("No internet connection");
@@ -52,30 +55,29 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
       setIsConnected(true);
       setError(null);
-      console.log("✅ Firebase connected");
     } catch (err: any) {
       // Permission denied is actually a successful connection - Firebase is reachable
       if (err.code === "permission-denied") {
         setIsConnected(true);
         setError(null);
-        console.log("✅ Firebase connected (auth required for data)");
       } else {
         console.error("Firebase connection error:", err);
         setError(err.message || "Connection failed");
         setIsConnected(false);
       }
     }
-  };
+  }, []);
 
-  const retryConnection = async () => {
+  const retryConnection = useCallback(async () => {
     setError(null);
     await checkConnection();
-  };
+  }, [checkConnection]);
 
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      checkConnection();
+      setIsConnected(true);
+      setError(null);
     };
 
     const handleOffline = () => {
@@ -84,7 +86,8 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       setError("Device is offline");
     };
 
-    checkConnection();
+    // No startup connection check - assume connected when online
+    // Connection will be verified naturally on first actual data fetch
 
     window.addEventListener("online", handleOnline);
     window.addEventListener("offline", handleOffline);

@@ -529,6 +529,8 @@ export const translations = {
       },
     },
     employees: {
+      title: "All Employees",
+      subtitle: "View and manage your entire workforce",
       connectionIssueTitle: "Connection Issue",
       offlineMessage: "You're currently offline",
       retrying: "Retrying...",
@@ -3086,6 +3088,8 @@ export const translations = {
       },
     },
     employees: {
+      title: "Todos os Colaboradores",
+      subtitle: "Ver e gerir todos os colaboradores",
       connectionIssueTitle: "Problema de Ligacao",
       offlineMessage: "Esta sem ligacao",
       retrying: "A tentar...",
@@ -5297,6 +5301,8 @@ export const translations = {
       },
     },
     employees: {
+      title: "Empregadu Hotu",
+      subtitle: "Hare no jere empregadu hotu",
       connectionIssueTitle: "Problema Ligasaun",
       offlineMessage: "Laiha ligasaun",
       retrying: "Tenta hela...",

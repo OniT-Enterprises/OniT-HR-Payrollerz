@@ -1,5 +1,5 @@
 import "./global.css";
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
@@ -14,77 +14,91 @@ import { HRChatProvider } from "@/contexts/HRChatContext";
 import HRChatWidget from "@/components/chat/HRChatWidget";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import Login from "@/pages/auth/Login";
-import Dashboard from "./pages/Dashboard";
-import Settings from "./pages/Settings";
-
-// Section Dashboards
-import PeopleDashboard from "./pages/PeopleDashboard";
-import PayrollDashboard from "./pages/PayrollDashboard";
-import AccountingDashboard from "./pages/AccountingDashboard";
-import ReportsDashboard from "./pages/ReportsDashboard";
-
-// People - Staff
-import AllEmployees from "./pages/staff/AllEmployees";
-import AddEmployee from "./pages/staff/AddEmployee";
-import Departments from "./pages/staff/Departments";
-import OrganizationChart from "./pages/staff/OrganizationChart";
-
-// People - Hiring
-import CreateJobLocal from "./pages/hiring/CreateJobLocal";
-import CandidateSelection from "./pages/hiring/CandidateSelection";
-import Interviews from "./pages/hiring/Interviews";
-import Onboarding from "./pages/hiring/Onboarding";
-import Offboarding from "./pages/hiring/Offboarding";
-
-// People - Time & Leave
-import TimeTracking from "./pages/time-leave/TimeTracking";
-import Attendance from "./pages/time-leave/Attendance";
-import LeaveRequests from "./pages/time-leave/LeaveRequests";
-import ShiftScheduling from "./pages/time-leave/ShiftScheduling";
-
-// People - Performance
-import Reviews from "./pages/performance/Reviews";
-import Goals from "./pages/performance/Goals";
-import TrainingCertifications from "./pages/performance/TrainingCertifications";
-import Disciplinary from "./pages/performance/Disciplinary";
-
-// Payroll
-import RunPayroll from "./pages/payroll/RunPayroll";
-import PayrollHistory from "./pages/payroll/PayrollHistory";
-import TaxReports from "./pages/payroll/TaxReports";
-import BankTransfers from "./pages/payroll/BankTransfers";
-import BenefitsEnrollment from "./pages/payroll/BenefitsEnrollment";
-import DeductionsAdvances from "./pages/payroll/DeductionsAdvances";
-
-// Accounting
-import ChartOfAccounts from "./pages/accounting/ChartOfAccounts";
-import JournalEntries from "./pages/accounting/JournalEntries";
-import GeneralLedger from "./pages/accounting/GeneralLedger";
-import TrialBalance from "./pages/accounting/TrialBalance";
-
-// Reports (distributed - will eventually move into pillars)
-import PayrollReports from "./pages/reports/PayrollReports";
-import EmployeeReports from "./pages/reports/EmployeeReports";
-import AttendanceReports from "./pages/reports/AttendanceReports";
-import CustomReports from "./pages/reports/CustomReports";
-import DepartmentReports from "./pages/reports/DepartmentReports";
-import SetupReports from "./pages/reports/SetupReports";
-
-// Admin & Other
-import NotFound from "./pages/NotFound";
-import SeedDatabase from "./pages/admin/SeedDatabase";
-import TenantList from "./pages/admin/TenantList";
-import TenantDetail from "./pages/admin/TenantDetail";
-import CreateTenant from "./pages/admin/CreateTenant";
-import UserList from "./pages/admin/UserList";
-import AuditLog from "./pages/admin/AuditLog";
-import AdminSetup from "./pages/admin/AdminSetup";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 
-// Auth
-import Signup from "./pages/auth/Signup";
+// Essential routes - eagerly loaded (first paint)
+import Login from "@/pages/auth/Login";
+import Dashboard from "./pages/Dashboard";
 import Landing from "./pages/Landing";
+import NotFound from "./pages/NotFound";
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="flex flex-col items-center gap-3">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+        <p className="text-sm text-muted-foreground">Loading...</p>
+      </div>
+    </div>
+  );
+}
+
+// Lazy loaded routes - code split by section
+const Settings = lazy(() => import("./pages/Settings"));
+const Signup = lazy(() => import("./pages/auth/Signup"));
+
+// Section Dashboards
+const PeopleDashboard = lazy(() => import("./pages/PeopleDashboard"));
+const PayrollDashboard = lazy(() => import("./pages/PayrollDashboard"));
+const AccountingDashboard = lazy(() => import("./pages/AccountingDashboard"));
+const ReportsDashboard = lazy(() => import("./pages/ReportsDashboard"));
+
+// People - Staff
+const AllEmployees = lazy(() => import("./pages/staff/AllEmployees"));
+const AddEmployee = lazy(() => import("./pages/staff/AddEmployee"));
+const Departments = lazy(() => import("./pages/staff/Departments"));
+const OrganizationChart = lazy(() => import("./pages/staff/OrganizationChart"));
+
+// People - Hiring
+const CreateJobLocal = lazy(() => import("./pages/hiring/CreateJobLocal"));
+const CandidateSelection = lazy(() => import("./pages/hiring/CandidateSelection"));
+const Interviews = lazy(() => import("./pages/hiring/Interviews"));
+const Onboarding = lazy(() => import("./pages/hiring/Onboarding"));
+const Offboarding = lazy(() => import("./pages/hiring/Offboarding"));
+
+// People - Time & Leave
+const TimeTracking = lazy(() => import("./pages/time-leave/TimeTracking"));
+const Attendance = lazy(() => import("./pages/time-leave/Attendance"));
+const LeaveRequests = lazy(() => import("./pages/time-leave/LeaveRequests"));
+const ShiftScheduling = lazy(() => import("./pages/time-leave/ShiftScheduling"));
+
+// People - Performance
+const Reviews = lazy(() => import("./pages/performance/Reviews"));
+const Goals = lazy(() => import("./pages/performance/Goals"));
+const TrainingCertifications = lazy(() => import("./pages/performance/TrainingCertifications"));
+const Disciplinary = lazy(() => import("./pages/performance/Disciplinary"));
+
+// Payroll
+const RunPayroll = lazy(() => import("./pages/payroll/RunPayroll"));
+const PayrollHistory = lazy(() => import("./pages/payroll/PayrollHistory"));
+const TaxReports = lazy(() => import("./pages/payroll/TaxReports"));
+const BankTransfers = lazy(() => import("./pages/payroll/BankTransfers"));
+const BenefitsEnrollment = lazy(() => import("./pages/payroll/BenefitsEnrollment"));
+const DeductionsAdvances = lazy(() => import("./pages/payroll/DeductionsAdvances"));
+
+// Accounting
+const ChartOfAccounts = lazy(() => import("./pages/accounting/ChartOfAccounts"));
+const JournalEntries = lazy(() => import("./pages/accounting/JournalEntries"));
+const GeneralLedger = lazy(() => import("./pages/accounting/GeneralLedger"));
+const TrialBalance = lazy(() => import("./pages/accounting/TrialBalance"));
+
+// Reports
+const PayrollReports = lazy(() => import("./pages/reports/PayrollReports"));
+const EmployeeReports = lazy(() => import("./pages/reports/EmployeeReports"));
+const AttendanceReports = lazy(() => import("./pages/reports/AttendanceReports"));
+const CustomReports = lazy(() => import("./pages/reports/CustomReports"));
+const DepartmentReports = lazy(() => import("./pages/reports/DepartmentReports"));
+const SetupReports = lazy(() => import("./pages/reports/SetupReports"));
+
+// Admin
+const SeedDatabase = lazy(() => import("./pages/admin/SeedDatabase"));
+const TenantList = lazy(() => import("./pages/admin/TenantList"));
+const TenantDetail = lazy(() => import("./pages/admin/TenantDetail"));
+const CreateTenant = lazy(() => import("./pages/admin/CreateTenant"));
+const UserList = lazy(() => import("./pages/admin/UserList"));
+const AuditLog = lazy(() => import("./pages/admin/AuditLog"));
+const AdminSetup = lazy(() => import("./pages/admin/AdminSetup"));
 
 // Smart home route - shows landing for guests, appropriate dashboard for users
 import { useAuth } from "@/contexts/AuthContext";
@@ -93,11 +107,7 @@ function HomeRoute() {
   const { user, userProfile, loading, isSuperAdmin } = useAuth();
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
-      </div>
-    );
+    return <PageLoader />;
   }
 
   // Not logged in - show landing page
@@ -126,7 +136,14 @@ function HomeRoute() {
   return <Dashboard />;
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <HelmetProvider>
@@ -142,6 +159,7 @@ const App = () => (
                 <AuthProvider>
                   <TenantProvider>
                     <HRChatProvider>
+                    <Suspense fallback={<PageLoader />}>
                     <Routes>
                       {/* Auth & Core */}
                       <Route path="/auth/login" element={<Login />} />
@@ -290,6 +308,7 @@ const App = () => (
                       {/* Catch-all */}
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </Suspense>
                     <HRChatWidget />
                     </HRChatProvider>
                   </TenantProvider>
