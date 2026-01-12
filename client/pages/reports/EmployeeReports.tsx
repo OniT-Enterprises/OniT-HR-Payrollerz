@@ -19,6 +19,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -45,16 +46,26 @@ export default function EmployeeReports() {
 
   const loadEmployees = async () => {
     try {
-      setLoading(true);
+      // Show cached data immediately if available
+      const cached = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+      if (cached) {
+        setEmployees(cached);
+        setLoading(false);
+      }
+
+      // Fetch fresh data
       const data = await employeeService.getAllEmployees();
+      cacheService.set(CACHE_KEYS.EMPLOYEES, data);
       setEmployees(data);
     } catch (error) {
       console.error("Error loading employees:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load employee data",
-        variant: "destructive",
-      });
+      if (employees.length === 0) {
+        toast({
+          title: "Error",
+          description: "Failed to load employee data",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }

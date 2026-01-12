@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -37,8 +38,18 @@ export default function PayrollReports() {
 
   const loadEmployees = async () => {
     try {
-      setLoading(true);
+      // Show cached data immediately if available
+      const cached = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+      if (cached) {
+        setEmployees(cached);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
+      // Fetch fresh data
       const employeesData = await employeeService.getAllEmployees();
+      cacheService.set(CACHE_KEYS.EMPLOYEES, employeesData);
       setEmployees(employeesData);
     } catch (error) {
       console.error("Error loading employees:", error);

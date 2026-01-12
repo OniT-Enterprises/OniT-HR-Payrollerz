@@ -14,6 +14,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { adminService } from "@/services/adminService";
 import { settingsService } from "@/services/settingsService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -57,13 +58,35 @@ export default function SetupReports() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
       const tenantId = session?.tid;
 
+      // Show cached data immediately if available
+      const cachedAudit = cacheService.get<AdminAuditEntry[]>(CACHE_KEYS.AUDIT_LOG);
+      const cachedUsers = cacheService.get<UserProfile[]>(CACHE_KEYS.USERS);
+      const cachedSettings = tenantId
+        ? cacheService.get<TenantSettings>(CACHE_KEYS.TENANT_SETTINGS(tenantId))
+        : null;
+
+      if (cachedAudit && cachedUsers) {
+        setAuditLog(cachedAudit);
+        setUsers(cachedUsers);
+        if (cachedSettings) {
+          setSettings(cachedSettings);
+        }
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
+      // Fetch fresh data
       const [auditData, usersData] = await Promise.all([
         adminService.getAuditLog(50).catch(() => []),
         adminService.getAllUsers(100).catch(() => []),
       ]);
+
+      // Update cache
+      cacheService.set(CACHE_KEYS.AUDIT_LOG, auditData);
+      cacheService.set(CACHE_KEYS.USERS, usersData);
 
       setAuditLog(auditData);
       setUsers(usersData);
@@ -73,6 +96,9 @@ export default function SetupReports() {
           settingsService.getSettings(tenantId).catch(() => null),
           settingsService.getSetupProgress(tenantId).catch(() => null),
         ]);
+        if (settingsData) {
+          cacheService.set(CACHE_KEYS.TENANT_SETTINGS(tenantId), settingsData);
+        }
         setSettings(settingsData);
         setSetupProgress(progressData);
       }

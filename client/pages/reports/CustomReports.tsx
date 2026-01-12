@@ -32,6 +32,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { departmentService, Department } from "@/services/departmentService";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -164,7 +165,14 @@ export default function CustomReports() {
 
   const loadDepartments = async () => {
     try {
+      // Show cached data immediately if available
+      const cached = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
+      if (cached) {
+        setDepartments(cached);
+      }
+      // Fetch fresh data
       const depts = await departmentService.getAllDepartments();
+      cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
       setDepartments(depts);
     } catch (error) {
       console.error("Error loading departments:", error);
@@ -199,7 +207,12 @@ export default function CustomReports() {
       let data: any[] = [];
 
       if (config.dataSource === "employees") {
-        const employees = await employeeService.getAllEmployees();
+        // Try cache first
+        let employees = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+        if (!employees) {
+          employees = await employeeService.getAllEmployees();
+          cacheService.set(CACHE_KEYS.EMPLOYEES, employees);
+        }
         data = employees.filter((e) => {
           if (config.filters.status && e.status !== config.filters.status) return false;
           if (config.filters.department && e.jobDetails?.department !== config.filters.department)
@@ -210,13 +223,31 @@ export default function CustomReports() {
         const today = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - parseInt(config.filters.dateRange || "30"));
-        data = await attendanceService.getAttendanceByDateRange(
+        const dateKey = CACHE_KEYS.ATTENDANCE(
           startDate.toISOString().split("T")[0],
-          today.toISOString().split("T")[0],
-          config.filters.department || undefined
+          today.toISOString().split("T")[0]
         );
+        // Try cache first
+        let attendance = cacheService.get<AttendanceRecord[]>(dateKey);
+        if (!attendance) {
+          attendance = await attendanceService.getAttendanceByDateRange(
+            startDate.toISOString().split("T")[0],
+            today.toISOString().split("T")[0],
+            config.filters.department || undefined
+          );
+          cacheService.set(dateKey, attendance);
+        }
+        data = config.filters.department
+          ? attendance.filter((a) => a.department === config.filters.department)
+          : attendance;
       } else if (config.dataSource === "departments") {
-        data = await departmentService.getAllDepartments();
+        // Try cache first
+        let depts = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
+        if (!depts) {
+          depts = await departmentService.getAllDepartments();
+          cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
+        }
+        data = depts;
       }
 
       const columns = config.columns

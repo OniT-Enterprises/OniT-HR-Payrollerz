@@ -1358,6 +1358,7 @@ export const translations = {
     },
     timeLeave: {
       timeTracking: {
+        title: "Time Tracking",
         stats: {
           guardsOnDuty: "Guards on Duty",
           currentlyActive: "Currently active",
@@ -3918,6 +3919,7 @@ export const translations = {
     },
     timeLeave: {
       timeTracking: {
+        title: "Controlo de Tempo",
         stats: {
           guardsOnDuty: "Guardas de servico",
           currentlyActive: "Ativos agora",
@@ -6130,6 +6132,7 @@ export const translations = {
     },
     timeLeave: {
       timeTracking: {
+        title: "Kontrola Tempu",
         stats: {
           guardsOnDuty: "Guarda iha servisu",
           currentlyActive: "Ativu agora",

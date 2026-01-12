@@ -20,6 +20,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { departmentService, Department } from "@/services/departmentService";
 import { employeeService } from "@/services/employeeService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -58,11 +59,27 @@ export default function DepartmentReports() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
+      // Show cached data immediately if available
+      const cachedDepts = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
+      const cachedEmps = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+
+      if (cachedDepts && cachedEmps) {
+        setDepartments(cachedDepts);
+        setEmployees(cachedEmps);
+        setLoading(false);
+      } else {
+        setLoading(true);
+      }
+
+      // Fetch fresh data
       const [depts, emps] = await Promise.all([
         departmentService.getAllDepartments(),
         employeeService.getAllEmployees(),
       ]);
+
+      // Update cache
+      cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
+      cacheService.set(CACHE_KEYS.EMPLOYEES, emps);
 
       setDepartments(depts);
       setEmployees(emps);

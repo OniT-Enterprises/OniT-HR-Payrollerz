@@ -21,6 +21,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
 import { leaveService, LeaveRequest, LeaveBalance } from "@/services/leaveService";
 import { employeeService } from "@/services/employeeService";
+import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -51,11 +52,26 @@ export default function AttendanceReports() {
 
   const loadData = async () => {
     try {
-      setLoading(true);
       const today = new Date();
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - parseInt(dateRange));
+      const dateKey = CACHE_KEYS.ATTENDANCE(startDate.toISOString().split("T")[0], today.toISOString().split("T")[0]);
 
+      // Show cached data immediately if available
+      const cachedAttendance = cacheService.get<AttendanceRecord[]>(dateKey);
+      const cachedLeave = cacheService.get<LeaveRequest[]>(CACHE_KEYS.LEAVE_REQUESTS);
+      const cachedBalances = cacheService.get<LeaveBalance[]>(CACHE_KEYS.LEAVE_BALANCES);
+      const cachedEmps = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+
+      if (cachedAttendance && cachedEmps) {
+        setAttendanceRecords(cachedAttendance);
+        setLeaveRequests(cachedLeave || []);
+        setLeaveBalances(cachedBalances || []);
+        setEmployees(cachedEmps);
+        setLoading(false);
+      }
+
+      // Fetch fresh data
       const [attendance, leave, balances, emps] = await Promise.all([
         attendanceService.getAttendanceByDateRange(
           startDate.toISOString().split("T")[0],
@@ -66,17 +82,25 @@ export default function AttendanceReports() {
         employeeService.getAllEmployees(),
       ]);
 
+      // Cache all data
+      cacheService.set(dateKey, attendance);
+      cacheService.set(CACHE_KEYS.LEAVE_REQUESTS, leave);
+      cacheService.set(CACHE_KEYS.LEAVE_BALANCES, balances);
+      cacheService.set(CACHE_KEYS.EMPLOYEES, emps);
+
       setAttendanceRecords(attendance);
       setLeaveRequests(leave);
       setLeaveBalances(balances);
       setEmployees(emps);
     } catch (error) {
       console.error("Error loading data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load attendance data",
-        variant: "destructive",
-      });
+      if (attendanceRecords.length === 0) {
+        toast({
+          title: "Error",
+          description: "Failed to load attendance data",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
