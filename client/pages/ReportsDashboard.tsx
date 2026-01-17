@@ -4,9 +4,10 @@
  * Payroll reports = most used, Employee = second, others = less frequent
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -43,6 +44,140 @@ import { useI18n } from "@/i18n/I18nProvider";
 
 const theme = sectionThemes.reports;
 
+function ReportsDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+      {/* Hero Section */}
+      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <Skeleton className="h-4 w-24 mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 rounded-2xl" />
+              <div>
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-5 w-48" />
+              </div>
+            </div>
+            <Skeleton className="h-9 w-24 rounded-md" />
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 max-w-7xl mx-auto space-y-8">
+        {/* Recent Reports */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Skeleton className="h-4 w-4" />
+            <Skeleton className="h-4 w-28" />
+          </div>
+          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Skeleton className="h-4 w-28 mb-1" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                    <Skeleton className="h-4 w-4" />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4">
+          <div className="h-px flex-1 bg-border" />
+          <Skeleton className="h-4 w-32" />
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        {/* Primary Categories */}
+        <section>
+          <div className="grid gap-6 md:grid-cols-2">
+            {[1, 2].map((i) => (
+              <Card key={i} className="border-l-4 border-l-muted">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-12 w-12 rounded-lg" />
+                    <div>
+                      <Skeleton className="h-6 w-32 mb-1" />
+                      <Skeleton className="h-4 w-48" />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {[1, 2, 3].map((j) => (
+                      <div key={j} className="flex items-center justify-between py-2 px-3 rounded-lg">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-4 w-4" />
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </section>
+
+        {/* More Categories Toggle */}
+        <div className="flex items-center gap-2">
+          <Skeleton className="h-4 w-4" />
+          <Skeleton className="h-4 w-36" />
+          <Skeleton className="h-5 w-6 rounded-full" />
+        </div>
+
+        {/* Divider */}
+        <div className="flex items-center gap-4 pt-4">
+          <div className="h-px flex-1 bg-border" />
+          <Skeleton className="h-4 w-36" />
+          <div className="h-px flex-1 bg-border" />
+        </div>
+
+        {/* Scheduled Reports */}
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div>
+                  <Skeleton className="h-5 w-36 mb-1" />
+                  <Skeleton className="h-4 w-56" />
+                </div>
+              </div>
+              <Skeleton className="h-9 w-24 rounded-md" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="divide-y">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center justify-between py-3">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-2 w-2 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-40 mb-1" />
+                      <Skeleton className="h-3 w-24" />
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Skeleton className="h-3 w-16 mb-1 ml-auto" />
+                    <Skeleton className="h-4 w-12 ml-auto" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 // Recent reports - would come from Firestore in production
 const recentReports = [
   { id: 1, name: "Payroll Summary", period: "Jan 2026", date: "2026-01-15", type: "payroll" },
@@ -61,7 +196,14 @@ const scheduledReports = [
 export default function ReportsDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const [loading, setLoading] = useState(true);
   const [showOtherCategories, setShowOtherCategories] = useState(false);
+
+  // Simulate loading delay for data fetch
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Primary categories (most used) - Payroll first, then Employee
   const primaryCategories = [
@@ -132,6 +274,10 @@ export default function ReportsDashboard() {
       ],
     },
   ];
+
+  if (loading) {
+    return <ReportsDashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

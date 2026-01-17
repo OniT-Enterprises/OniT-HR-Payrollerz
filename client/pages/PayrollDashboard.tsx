@@ -339,16 +339,171 @@ export default function PayrollDashboard() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-7xl mx-auto">
-          <Skeleton className="h-6 w-32 mb-6" />
-          <Skeleton className="h-10 w-64 mb-2" />
-          <Skeleton className="h-5 w-96 mb-8" />
-          <Skeleton className="h-48 w-full mb-8" />
-          <div className="grid gap-4 md:grid-cols-4 mb-8">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24" />
-            ))}
+        {/* Hero Section */}
+        <div className="border-b bg-green-50 dark:bg-green-950/30">
+          <div className="max-w-7xl mx-auto px-6 py-8">
+            <Skeleton className="h-4 w-24 mb-4" />
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 rounded-2xl" />
+              <div>
+                <Skeleton className="h-8 w-24 mb-2" />
+                <Skeleton className="h-5 w-64" />
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="p-6 max-w-7xl mx-auto">
+          {/* Status Block */}
+          <Card className="mb-8">
+            <CardContent className="p-6">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <Skeleton className="h-6 w-48" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                  </div>
+                  <div className="flex items-center gap-6">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-4 w-24" />
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <Skeleton className="h-11 w-44 rounded-md" />
+                  <Skeleton className="h-11 w-36 rounded-md" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Checklist Card */}
+          <Card className="mb-8">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-5 w-5" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+              <Skeleton className="h-4 w-48" />
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 sm:grid-cols-2">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex items-start gap-3 p-4 rounded-lg border">
+                    <Skeleton className="h-5 w-5 rounded-full mt-0.5" />
+                    <div className="flex-1">
+                      <Skeleton className="h-4 w-36 mb-1" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Stats Cards */}
+          <div className="grid gap-4 md:grid-cols-3 mb-8">
+            {/* Gross Payroll with breakdown */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-8 w-32" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </div>
+                <div className="pt-3 border-t border-border/50 space-y-1.5">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3 w-32" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-border/30">
+                    <Skeleton className="h-3 w-36" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Employee coverage */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-4 w-32 mb-1" />
+                    <Skeleton className="h-9 w-16 mb-1" />
+                    <Skeleton className="h-3 w-28" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Last Payroll */}
+            <Card className="border-l-4 border-l-green-500">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-5 w-28 mb-1" />
+                    <Skeleton className="h-3 w-20" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Manage Section */}
+          <div className="mb-6">
+            <Skeleton className="h-4 w-20 mb-4" />
+            <div className="grid gap-4 md:grid-cols-2">
+              {[1, 2].map((i) => (
+                <Card key={i} className="border-l-4 border-l-green-500/50">
+                  <CardContent className="pt-6">
+                    <div className="flex items-start gap-4">
+                      <Skeleton className="h-12 w-12 rounded-lg" />
+                      <div className="flex-1">
+                        <Skeleton className="h-5 w-24 mb-1" />
+                        <Skeleton className="h-4 w-48" />
+                      </div>
+                      <Skeleton className="h-5 w-5" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+
+          {/* Past & Reports Toggle */}
+          <Skeleton className="h-10 w-full rounded-md mb-4" />
+
+          {/* Compliance Section */}
+          <Card className="mt-8">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-4 w-4" />
+                <Skeleton className="h-5 w-40" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <Skeleton className="h-2 w-2 rounded-full" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                    <Skeleton className="h-5 w-10 rounded" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );

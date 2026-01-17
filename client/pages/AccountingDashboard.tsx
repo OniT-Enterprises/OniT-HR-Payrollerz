@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Landmark,
   BookOpen,
@@ -46,10 +47,110 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
 const theme = sectionThemes.accounting;
 
+function AccountingDashboardSkeleton() {
+  return (
+    <div className="min-h-screen bg-background">
+      <MainNavigation />
+      {/* Hero Section */}
+      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <Skeleton className="h-4 w-24 mb-3" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-11 w-11 rounded-xl" />
+              <div>
+                <Skeleton className="h-7 w-28 mb-1" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-9 w-24 rounded-md" />
+              <Skeleton className="h-9 w-40 rounded-md" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-6 max-w-6xl mx-auto">
+        {/* Status Card */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <Skeleton className="h-5 w-24" />
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                  <Skeleton className="h-5 w-5 rounded-full" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-24 mb-1" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <Skeleton className="h-6 w-20" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Payroll → Accounting Card */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton className="h-5 w-40 mb-1" />
+                <Skeleton className="h-4 w-32" />
+              </div>
+              <Skeleton className="h-5 w-20" />
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between pb-3 border-b border-border/50">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-5 w-24" />
+              </div>
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center justify-between py-1.5">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="h-5 w-14 rounded" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <Skeleton className="h-4 w-20" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Tools Collapsible */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <Skeleton className="h-5 w-32 mb-1" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+              <Skeleton className="h-5 w-5" />
+            </div>
+          </CardHeader>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const [loading, setLoading] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(false);
+
+  // Simulate loading delay for data fetch
+  React.useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 100);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Simulated data - in production, fetch from accounting service
   const accountingStatus = {
@@ -124,6 +225,10 @@ export default function AccountingDashboard() {
       path: "/accounting/reports",
     },
   ];
+
+  if (loading) {
+    return <AccountingDashboardSkeleton />;
+  }
 
   return (
     <div className="min-h-screen bg-background">

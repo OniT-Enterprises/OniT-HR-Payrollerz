@@ -73,9 +73,10 @@ function PeopleDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
+      {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
         <div className="max-w-7xl mx-auto px-6 py-8">
-          <Skeleton className="h-5 w-32 mb-4" />
+          <Skeleton className="h-4 w-32 mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -84,17 +85,125 @@ function PeopleDashboardSkeleton() {
                 <Skeleton className="h-5 w-64" />
               </div>
             </div>
-            <Skeleton className="h-11 w-36" />
+            <Skeleton className="h-11 w-36 rounded-md" />
           </div>
         </div>
       </div>
+
       <div className="p-6 max-w-7xl mx-auto">
+        {/* KPI Cards */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-24" />
+            <Card key={i} className="border-l-4 border-l-muted">
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Skeleton className="h-9 w-12 mb-1" />
+                    <Skeleton className="h-4 w-28" />
+                  </div>
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        <Skeleton className="h-96" />
+
+        {/* Payroll Status Badge */}
+        <div className="mb-4">
+          <Skeleton className="h-6 w-32 rounded-full" />
+        </div>
+
+        {/* Attention Section */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Skeleton className="h-4 w-4" />
+              <Skeleton className="h-5 w-36" />
+            </div>
+            <Skeleton className="h-4 w-52" />
+          </CardHeader>
+          <CardContent className="pt-0 space-y-2">
+            {[1, 2].map((i) => (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div>
+                    <Skeleton className="h-4 w-32 mb-1" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-8 w-20 rounded-md" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Employee Table */}
+        <Card className="mb-6">
+          <CardHeader className="pb-4">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <Skeleton className="h-5 w-28 mb-1" />
+                <Skeleton className="h-4 w-36" />
+              </div>
+              <Skeleton className="h-9 w-16 rounded-md" />
+            </div>
+            {/* Filters */}
+            <div className="flex items-center gap-3">
+              <Skeleton className="h-9 w-64 rounded-md" />
+              <Skeleton className="h-9 w-32 rounded-md" />
+              <Skeleton className="h-9 w-28 rounded-md" />
+            </div>
+          </CardHeader>
+          <CardContent className="pt-0">
+            {/* Table Header */}
+            <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b mb-2">
+              <Skeleton className="col-span-4 h-3 w-20" />
+              <Skeleton className="col-span-2 h-3 w-12" />
+              <Skeleton className="col-span-2 h-3 w-20" />
+              <Skeleton className="col-span-1 h-3 w-14" />
+              <Skeleton className="col-span-2 h-3 w-20" />
+              <Skeleton className="col-span-1 h-3 w-14" />
+            </div>
+            {/* Table Rows */}
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="grid grid-cols-12 gap-4 px-4 py-3 items-center">
+                <div className="col-span-4 flex items-center gap-3">
+                  <Skeleton className="h-9 w-9 rounded-full" />
+                  <div>
+                    <Skeleton className="h-4 w-32 mb-1" />
+                    <Skeleton className="h-3 w-40" />
+                  </div>
+                </div>
+                <Skeleton className="col-span-2 h-4 w-24" />
+                <Skeleton className="col-span-2 h-4 w-20" />
+                <Skeleton className="col-span-1 h-5 w-14 rounded-full" />
+                <Skeleton className="col-span-2 h-4 w-20" />
+                <Skeleton className="col-span-1 h-8 w-8 rounded-md ml-auto" />
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+
+        {/* Collapsible Sections */}
+        <div className="space-y-2 opacity-80">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i} className="border border-border/40 shadow-none">
+              <CardHeader className="py-3 px-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <Skeleton className="h-7 w-7 rounded-md" />
+                    <div>
+                      <Skeleton className="h-4 w-32 mb-1" />
+                      <Skeleton className="h-3 w-48" />
+                    </div>
+                  </div>
+                  <Skeleton className="h-4 w-4" />
+                </div>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
       </div>
     </div>
   );
