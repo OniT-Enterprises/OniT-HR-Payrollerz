@@ -7,7 +7,6 @@ import {
   collection,
   doc,
   getDocs,
-  getDoc,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -16,12 +15,10 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
+import Papa from 'papaparse';
 import { db } from '@/lib/firebase';
-import { useAuth } from '@/contexts/AuthContext';
 import type {
   BankTransaction,
-  BankReconciliation,
-  BankTransactionType,
   ReconciliationStatus,
 } from '@/types/money';
 
@@ -48,24 +45,39 @@ class BankReconciliationService {
 
   /**
    * Parse CSV file and return bank transactions
+   * Uses papaparse for robust handling of edge cases like:
+   * - Quoted fields containing commas
+   * - Escaped quotes within quoted fields
+   * - Different line endings (CRLF vs LF)
+   * - Newlines within quoted fields
    */
   parseCSV(csvContent: string): Omit<BankTransaction, 'id' | 'createdAt' | 'status'>[] {
-    const lines = csvContent.trim().split('\n');
-    if (lines.length < 2) return [];
+    // Use papaparse for robust CSV parsing
+    const result = Papa.parse<string[]>(csvContent, {
+      skipEmptyLines: true,
+      dynamicTyping: false, // Keep as strings for custom parsing
+      header: false, // We'll detect headers ourselves
+    });
+
+    if (result.errors.length > 0) {
+      console.warn('CSV parsing warnings:', result.errors);
+    }
+
+    const rows = result.data;
+    if (rows.length < 2) return [];
 
     // Try to detect header row
-    const header = lines[0].toLowerCase();
-    const hasHeader = header.includes('date') || header.includes('amount') || header.includes('description');
-    const dataLines = hasHeader ? lines.slice(1) : lines;
+    const firstRow = rows[0];
+    const headerText = firstRow.join(' ').toLowerCase();
+    const hasHeader = headerText.includes('date') ||
+                      headerText.includes('amount') ||
+                      headerText.includes('description');
+    const dataRows = hasHeader ? rows.slice(1) : rows;
 
     const transactions: Omit<BankTransaction, 'id' | 'createdAt' | 'status'>[] = [];
 
-    for (const line of dataLines) {
-      if (!line.trim()) continue;
-
-      // Parse CSV line (handle quoted values)
-      const values = this.parseCSVLine(line);
-      if (values.length < 3) continue;
+    for (const values of dataRows) {
+      if (!values || values.length < 3) continue;
 
       // Try common CSV formats:
       // Format 1: Date, Description, Amount
@@ -81,20 +93,20 @@ class BankReconciliationService {
       if (values.length === 3) {
         // Format 1: Date, Description, Amount
         date = this.parseDate(values[0]);
-        description = values[1].trim();
+        description = (values[1] || '').trim();
         amount = this.parseAmount(values[2]);
       } else if (values.length === 4) {
         // Format 2: Date, Description, Debit, Credit
         date = this.parseDate(values[0]);
-        description = values[1].trim();
+        description = (values[1] || '').trim();
         const debit = this.parseAmount(values[2]);
         const credit = this.parseAmount(values[3]);
         amount = credit > 0 ? credit : -debit;
       } else if (values.length >= 5) {
         // Format 3: Date, Reference, Description, Amount, Balance
         date = this.parseDate(values[0]);
-        reference = values[1].trim();
-        description = values[2].trim();
+        reference = (values[1] || '').trim();
+        description = (values[2] || '').trim();
         amount = this.parseAmount(values[3]);
         balance = this.parseAmount(values[4]) || undefined;
       }
@@ -112,26 +124,6 @@ class BankReconciliationService {
     }
 
     return transactions;
-  }
-
-  private parseCSVLine(line: string): string[] {
-    const values: string[] = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (const char of line) {
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        values.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    values.push(current.trim());
-
-    return values;
   }
 
   private parseDate(value: string): string {
