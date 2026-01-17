@@ -4,6 +4,7 @@
  */
 
 import { TLPayFrequency, TLContractType } from '@/lib/payroll/constants-tl';
+import { FirestoreTimestamp } from './firebase';
 
 // ============================================
 // EMPLOYEE TYPES (TL-Specific)
@@ -93,10 +94,10 @@ export interface TLPayrollRun {
 
   // Workflow
   createdBy: string;
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
   approvedBy?: string;
-  approvedAt?: any;
-  paidAt?: any;
+  approvedAt?: FirestoreTimestamp;
+  paidAt?: FirestoreTimestamp;
 
   // Notes
   notes?: string;
@@ -104,7 +105,7 @@ export interface TLPayrollRun {
   // Accounting integration
   journalEntryId?: string;       // Link to accounting journal entry
 
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -170,8 +171,8 @@ export interface TLPayrollRecord {
   paymentMethod: 'bank_transfer' | 'cash' | 'cheque';
   bankAccountLast4?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface TLPayrollEarningRecord {
@@ -214,8 +215,8 @@ export interface TLSubsidioAnual {
   paymentDate?: string;
   payrollRunId?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -235,7 +236,7 @@ export interface TLSickLeaveRecord {
   // Individual records
   records: TLSickLeaveEntry[];
 
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface TLSickLeaveEntry {
@@ -274,12 +275,12 @@ export interface TLEmployeeLoan {
   // Status
   status: 'pending' | 'approved' | 'active' | 'completed' | 'cancelled';
   approvedBy?: string;
-  approvedAt?: any;
+  approvedAt?: FirestoreTimestamp;
   startDate?: string;
   endDate?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -311,10 +312,10 @@ export interface TLPerDiem {
   // Approval
   status: 'pending' | 'approved' | 'rejected' | 'completed';
   approvedBy?: string;
-  approvedAt?: any;
+  approvedAt?: FirestoreTimestamp;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -334,13 +335,13 @@ export interface TLBankTransferFile {
   // Summary
   totalAmount: number;
   transactionCount: number;
-  generatedAt: any;
+  generatedAt: FirestoreTimestamp;
   generatedBy: string;
 
   // Status
   status: 'generated' | 'submitted' | 'processed' | 'failed';
-  submittedAt?: any;
-  processedAt?: any;
+  submittedAt?: FirestoreTimestamp;
+  processedAt?: FirestoreTimestamp;
   errorMessage?: string;
 }
 
@@ -372,8 +373,8 @@ export interface TLTaxReport {
   fileUrl?: string;
 
   createdBy: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -408,7 +409,7 @@ export interface TLSefopeRegistration {
 
   // Form generation
   pdfUrl?: string;
-  generatedAt?: any;
+  generatedAt?: FirestoreTimestamp;
 
   // Submission
   status: 'draft' | 'generated' | 'submitted' | 'registered';
@@ -416,8 +417,8 @@ export interface TLSefopeRegistration {
   submittedDate?: string;
   registeredDate?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -466,8 +467,8 @@ export interface TLShift {
   checkInMethod?: 'fingerprint' | 'qr_code' | 'gps' | 'manual';
   checkInLocation?: { lat: number; lng: number };
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface TLSite {
@@ -491,8 +492,8 @@ export interface TLSite {
   allowedRadius?: number;        // Meters
 
   status: 'active' | 'inactive';
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -527,15 +528,15 @@ export interface TLAttendanceRecord {
   adjustedBy?: string;
   adjustmentReason?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface TLAttendanceImport {
   id?: string;
   fileName: string;
   deviceType: 'zkteco' | 'anviz' | 'hikvision' | 'other';
-  importDate: any;
+  importDate: FirestoreTimestamp;
   importedBy: string;
 
   // Stats
@@ -546,7 +547,7 @@ export interface TLAttendanceImport {
 
   status: 'processing' | 'completed' | 'failed';
 
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -580,8 +581,8 @@ export interface TLWarningLetter {
   status: 'draft' | 'issued' | 'acknowledged' | 'appealed';
   issuedBy: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================

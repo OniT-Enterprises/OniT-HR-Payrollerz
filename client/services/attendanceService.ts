@@ -21,6 +21,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { TL_WORKING_HOURS, TL_OVERTIME_RATES } from '@/lib/payroll/constants-tl';
+import { FirestoreTimestamp } from '@/types/firebase';
 
 // ============================================
 // TYPES
@@ -69,15 +70,15 @@ export interface AttendanceRecord {
   notes?: string;
 
   // Timestamps
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface AttendanceImportBatch {
   id?: string;
   fileName: string;
   deviceType: 'zkteco' | 'anviz' | 'hikvision' | 'suprema' | 'other';
-  importDate: any;
+  importDate: FirestoreTimestamp;
   importedBy: string;
 
   // Stats
@@ -90,7 +91,7 @@ export interface AttendanceImportBatch {
   // Status
   status: 'processing' | 'completed' | 'failed';
 
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
 }
 
 export interface AttendanceSummary {

@@ -2,6 +2,8 @@
  * TypeScript types for multi-tenant structure and RBAC
  */
 
+import { FirestoreTimestamp } from './firebase';
+
 // Tenant status for SaaS management
 export type TenantStatus = 'active' | 'suspended' | 'pending' | 'cancelled';
 
@@ -53,12 +55,12 @@ export interface TenantConfig {
   };
 
   // Audit fields
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
   createdBy?: string; // uid of creator (superadmin or self-service)
 
   // Suspension tracking
-  suspendedAt?: any;
+  suspendedAt?: FirestoreTimestamp;
   suspendedBy?: string;
   suspendedReason?: string;
 }
@@ -88,8 +90,8 @@ export interface TenantMember {
   modules?: ModulePermission[];
   email?: string;
   displayName?: string;
-  joinedAt?: any;
-  lastActiveAt?: any;
+  joinedAt?: FirestoreTimestamp;
+  lastActiveAt?: FirestoreTimestamp;
   permissions?: {
     [key: string]: boolean;
   };
@@ -119,8 +121,8 @@ export interface Department {
   managerId?: string;
   parentDepartmentId?: string;
   budget?: number;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // Employee types
@@ -164,8 +166,8 @@ export interface Employee {
     workingVisaResidency: { number: string; expiryDate: string; fileUrl: string };
   };
   status: 'active' | 'inactive' | 'terminated';
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
   // Tenant-specific fields
   departmentId: string;
   managerId?: string;
@@ -182,8 +184,8 @@ export interface Position {
   description?: string;
   requirements?: string[];
   responsibilities?: string[];
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // Job posting types
@@ -207,10 +209,10 @@ export interface Job {
   };
   location?: string;
   employmentType?: 'full-time' | 'part-time' | 'contract' | 'intern';
-  postedDate?: any;
-  closingDate?: any;
-  createdAt?: any;
-  updatedAt?: any;
+  postedDate?: FirestoreTimestamp;
+  closingDate?: FirestoreTimestamp;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // Candidate types
@@ -224,13 +226,13 @@ export interface Candidate {
   resume?: {
     fileUrl: string;
     fileName: string;
-    uploadDate: any;
+    uploadDate: FirestoreTimestamp;
   };
   notes?: string;
-  appliedDate?: any;
-  lastUpdated?: any;
-  createdAt?: any;
-  updatedAt?: any;
+  appliedDate?: FirestoreTimestamp;
+  lastUpdated?: FirestoreTimestamp;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // Contract types
@@ -243,8 +245,8 @@ export interface Contract {
   weeklyHours: number;
   overtimeRate: number;
   status: 'active' | 'expired' | 'terminated';
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // Filter and query options

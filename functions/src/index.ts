@@ -10,5 +10,6 @@ export * from "./payroll";
 export * from "./tenant";
 export * from "./admin";
 export * from "./documentAlerts";
+export * from "./chat";
 
 // You can add more function modules here as they're created

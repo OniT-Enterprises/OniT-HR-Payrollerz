@@ -1,4 +1,5 @@
 // HR Chatbot Service - OpenAI-powered AI assistant for Timor-Leste HR/Payroll
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import {
   TL_TAX_RULES,
   TL_LABOR_LAW,
@@ -374,88 +375,69 @@ IMPORTANT RULES:
 9. Be concise but thorough`;
 };
 
-// Main chat function that calls OpenAI directly
+// Main chat function that calls the secure Cloud Function
 export const sendHRChatMessage = async (
   message: string,
   context: HRChatContext,
   conversationHistory: HRChatMessage[],
-  apiKey: string | null,
+  _apiKey?: string | null, // Deprecated - API key is now stored securely on server
   tenantData?: TenantData
 ): Promise<{ message: string; action?: HRChatAction }> => {
   try {
-    if (!apiKey) {
-      return {
-        message: "AI assistant is not configured. Click the ⚙️ gear icon above to add your OpenAI API key.",
-      };
-    }
-
     // Build conversation history (last 10 messages for context)
     const history = conversationHistory.slice(-10).map((msg) => ({
-      role: msg.role,
+      role: msg.role as 'system' | 'user' | 'assistant',
       content: msg.role === 'assistant' && msg.action
         ? JSON.stringify({ message: msg.content, action: msg.action })
         : msg.content,
     }));
 
-    const openAIMessages = [
-      { role: "system", content: getSystemPrompt(context, tenantData) },
+    const messages = [
+      { role: "system" as const, content: getSystemPrompt(context, tenantData) },
       ...history,
-      { role: "user", content: message },
+      { role: "user" as const, content: message },
     ];
 
-    // Call OpenAI API directly
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "gpt-5-mini",
-        messages: openAIMessages,
-        max_completion_tokens: 2000,
-        response_format: { type: "json_object" },
-      }),
+    // Call the secure Cloud Function instead of OpenAI directly
+    // This keeps the API key on the server, never exposing it to the client
+    const functions = getFunctions();
+    const hrChatFunction = httpsCallable<
+      { tenantId: string; messages: typeof messages },
+      { success: boolean; message: string; action?: HRChatAction }
+    >(functions, 'hrChat');
+
+    const result = await hrChatFunction({
+      tenantId: context.tenantId,
+      messages,
     });
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => "");
-      if (response.status === 401) {
-        throw new Error("Invalid API key. Please check your OpenAI API key in Settings.");
-      }
-      if (response.status === 429) {
-        throw new Error("Rate limit exceeded. Please try again in a moment.");
-      }
-      throw new Error(`OpenAI request failed (${response.status}): ${errorText || response.statusText}`);
+    if (!result.data.success) {
+      throw new Error(result.data.message || 'Chat request failed');
     }
 
-    const data = await response.json();
-
-    // Check for API errors in response
-    if (data?.error) {
-      throw new Error(data.error.message || "OpenAI API error");
-    }
-
-    const assistantMessage = data?.choices?.[0]?.message?.content;
-
-    if (!assistantMessage) {
-      console.error('Unexpected response structure:', data);
-      throw new Error(`No response content from OpenAI`);
-    }
-
-    try {
-      const parsed = JSON.parse(assistantMessage);
-      return {
-        message: typeof parsed?.message === "string" ? parsed.message : assistantMessage,
-        action: parsed?.action,
-      };
-    } catch {
-      // If JSON parsing fails, return raw message
-      return { message: assistantMessage };
-    }
+    return {
+      message: result.data.message,
+      action: result.data.action,
+    };
   } catch (error: unknown) {
     console.error('HR Chat error:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Handle Firebase function errors
+    const errorCode = (error as { code?: string })?.code;
+    const errorMessage = (error as { message?: string })?.message || 'Unknown error';
+
+    if (errorCode === 'functions/failed-precondition') {
+      return {
+        message: "AI assistant is not configured. Please ask an administrator to configure the OpenAI API key in Settings.",
+      };
+    }
+
+    if (errorCode === 'functions/resource-exhausted') {
+      return {
+        message: "Rate limit exceeded. Please try again in a moment.",
+      };
+    }
+
     return {
       message: `I'm having trouble connecting right now. ${errorMessage}`,
     };

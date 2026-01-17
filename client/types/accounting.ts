@@ -4,6 +4,8 @@
  * Designed to replace QuickBooks for HR/Payroll integrated accounting
  */
 
+import { FirestoreTimestamp } from './firebase';
+
 // ============================================
 // CHART OF ACCOUNTS
 // ============================================
@@ -80,8 +82,8 @@ export interface Account {
   taxCode?: string;          // For tax reporting
 
   // Metadata
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
   createdBy?: string;
 }
 
@@ -123,9 +125,9 @@ export interface JournalEntry {
 
   // Status
   status: JournalEntryStatus;
-  postedAt?: any;
+  postedAt?: FirestoreTimestamp;
   postedBy?: string;
-  voidedAt?: any;
+  voidedAt?: FirestoreTimestamp;
   voidedBy?: string;
   voidReason?: string;
 
@@ -137,9 +139,9 @@ export interface JournalEntry {
   fiscalPeriod: number;      // 1-12
 
   // Metadata
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
   createdBy?: string;
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface JournalEntryLine {
@@ -191,7 +193,7 @@ export interface GeneralLedgerEntry {
   fiscalYear: number;
   fiscalPeriod: number;
 
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -225,7 +227,7 @@ export interface TrialBalance {
   totalCredit: number;
   isBalanced: boolean;
 
-  generatedAt: any;
+  generatedAt: FirestoreTimestamp;
   generatedBy: string;
 }
 
@@ -260,7 +262,7 @@ export interface IncomeStatement {
   netIncome: number;
   netIncomeLabel: string;    // "Net Profit" or "Net Loss"
 
-  generatedAt: any;
+  generatedAt: FirestoreTimestamp;
   generatedBy: string;
 }
 
@@ -293,7 +295,7 @@ export interface BalanceSheet {
   // Must balance
   isBalanced: boolean;       // Assets = Liabilities + Equity
 
-  generatedAt: any;
+  generatedAt: FirestoreTimestamp;
   generatedBy: string;
 }
 
@@ -309,15 +311,15 @@ export interface FiscalYear {
 
   // Status
   status: 'open' | 'closed' | 'locked';
-  closedAt?: any;
+  closedAt?: FirestoreTimestamp;
   closedBy?: string;
 
   // Opening balances
   openingBalancesPosted: boolean;
   openingBalanceEntryId?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface FiscalPeriod {
@@ -330,10 +332,10 @@ export interface FiscalPeriod {
 
   // Status
   status: 'open' | 'closed' | 'locked';
-  closedAt?: any;
+  closedAt?: FirestoreTimestamp;
   closedBy?: string;
 
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -355,8 +357,8 @@ export interface BankAccount {
   lastReconciledDate?: string;
   lastReconciledBalance?: number;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface BankReconciliation {
@@ -381,11 +383,11 @@ export interface BankReconciliation {
 
   // Status
   status: 'in_progress' | 'completed';
-  completedAt?: any;
+  completedAt?: FirestoreTimestamp;
   completedBy?: string;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface BankReconciliationItem {
@@ -432,8 +434,8 @@ export interface PayrollAccountMapping {
   descriptionTemplate: string;
 
   isActive: boolean;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -460,7 +462,7 @@ export interface PayrollJournalEntry {
     creditAmount: number;
   }[];
 
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -524,8 +526,8 @@ export interface Invoice {
   journalEntryId?: string;
 
   notes?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 export interface InvoiceLineItem {
@@ -569,7 +571,7 @@ export interface Expense {
   // Approval
   status: 'pending' | 'approved' | 'paid' | 'rejected';
   approvedBy?: string;
-  approvedAt?: any;
+  approvedAt?: FirestoreTimestamp;
 
   // Journal entry
   journalEntryId?: string;
@@ -578,8 +580,8 @@ export interface Expense {
   employeeId?: string;
   isReimbursement: boolean;
 
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 // ============================================
@@ -607,7 +609,7 @@ export interface AccountingAuditLog {
   // User
   userId: string;
   userEmail: string;
-  timestamp: any;
+  timestamp: FirestoreTimestamp;
   ipAddress?: string;
 }
 
@@ -645,6 +647,6 @@ export interface AccountingSettings {
   autoGeneratePayrollJournals: boolean;
   payrollMappings: PayrollAccountMapping[];
 
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp;
   updatedBy?: string;
 }

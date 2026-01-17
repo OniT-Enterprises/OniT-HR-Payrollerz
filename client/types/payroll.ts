@@ -3,6 +3,8 @@
  * Adapted from timor-payroll patterns for Firebase/OniT HR system
  */
 
+import { FirestoreTimestamp } from './firebase';
+
 // Payroll Run Status
 export type PayrollStatus = 'draft' | 'processing' | 'approved' | 'paid' | 'cancelled';
 
@@ -68,15 +70,15 @@ export interface PayrollRun {
 
   // Workflow
   createdBy: string;
-  createdAt?: any;
+  createdAt?: FirestoreTimestamp;
   approvedBy?: string;
-  approvedAt?: any;
-  paidAt?: any;
+  approvedAt?: FirestoreTimestamp;
+  paidAt?: FirestoreTimestamp;
 
   // Notes
   notes?: string;
 
-  updatedAt?: any;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -136,8 +138,8 @@ export interface PayrollRecord {
   ytdMedicare: number;
 
   // Metadata
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -212,8 +214,8 @@ export interface BenefitEnrollment {
   effectiveDate: string;
   terminationDate?: string;
   status: 'active' | 'pending' | 'terminated';
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -234,8 +236,8 @@ export interface RecurringDeduction {
   totalAmount?: number;       // Original amount for advances
   frequency: PayFrequency | 'per_paycheck';
   status: 'active' | 'paused' | 'completed';
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -268,8 +270,8 @@ export interface TaxReport {
   fileUrl?: string;
 
   createdBy: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
@@ -289,9 +291,9 @@ export interface BankTransfer {
   initiatedBy: string;
   notes?: string;
   errorMessage?: string;
-  completedAt?: any;
-  createdAt?: any;
-  updatedAt?: any;
+  completedAt?: FirestoreTimestamp;
+  createdAt?: FirestoreTimestamp;
+  updatedAt?: FirestoreTimestamp;
 }
 
 /**
