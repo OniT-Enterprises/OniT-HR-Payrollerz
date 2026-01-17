@@ -55,11 +55,22 @@ import {
   TrendingDown,
   PiggyBank,
   RefreshCw,
+  Lock,
+  Calculator,
+  AlertTriangle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { accountingService } from "@/services/accountingService";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
+
+// Payroll-linked account codes - these should not be edited carelessly
+const PAYROLL_LINKED_CODES = [
+  '1130', // Cash in Bank - Payroll
+  '1220', // Employee Advances
+  '2200', '2210', '2220', '2230', '2240', '2250', // All Payroll Liabilities
+  '5100', '5110', '5120', '5130', '5140', '5150', '5160', '5170', // Payroll Expenses
+];
 
 export default function ChartOfAccounts() {
   const { toast } = useToast();
@@ -127,9 +138,18 @@ export default function ChartOfAccounts() {
     }
   };
 
-  // Group accounts by type
+  // Group accounts by type with deduplication
   const groupedAccounts = useMemo(() => {
-    const filtered = accounts.filter((acc) => {
+    // First, deduplicate by code (in case of data issues)
+    const uniqueByCode = new Map<string, Account>();
+    accounts.forEach((acc) => {
+      if (!uniqueByCode.has(acc.code)) {
+        uniqueByCode.set(acc.code, acc);
+      }
+    });
+    const deduped = Array.from(uniqueByCode.values());
+
+    const filtered = deduped.filter((acc) => {
       if (typeFilter !== "all" && acc.type !== typeFilter) return false;
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
@@ -142,11 +162,16 @@ export default function ChartOfAccounts() {
       return true;
     });
 
-    // Build hierarchy
-    const topLevel = filtered.filter((a) => !a.parentAccountId || a.level === 1);
-    const children = filtered.filter((a) => a.parentAccountId && a.level > 1);
+    // Build hierarchy - top level are accounts with level 1 only
+    const topLevel = filtered.filter((a) => a.level === 1 || !a.parentAccountId);
+    // Children are accounts with level > 1 AND a parent
+    const children = filtered.filter((a) => a.level > 1 && a.parentAccountId);
 
-    return { topLevel, children, all: filtered };
+    // Remove any topLevel accounts that also appear as children (extra safety)
+    const childCodes = new Set(children.map(c => c.code));
+    const cleanTopLevel = topLevel.filter(a => !childCodes.has(a.code));
+
+    return { topLevel: cleanTopLevel, children, all: filtered };
   }, [accounts, typeFilter, searchTerm]);
 
   // Get children of an account
@@ -263,6 +288,9 @@ export default function ChartOfAccounts() {
     setShowAddDialog(true);
   };
 
+  // Check if account is payroll-linked
+  const isPayrollLinked = (code: string) => PAYROLL_LINKED_CODES.includes(code);
+
   // Render account row with hierarchy
   const renderAccountRow = (account: Account, depth: number = 0) => {
     const children = getChildren(account.id!);
@@ -270,10 +298,11 @@ export default function ChartOfAccounts() {
     const isExpanded = expandedAccounts.has(account.id!);
     const typeConfig = getTypeConfig(account.type);
     const TypeIcon = typeConfig.icon;
+    const payrollLinked = isPayrollLinked(account.code);
 
     return (
       <React.Fragment key={account.id}>
-        <TableRow className={depth > 0 ? "bg-gray-50/50" : ""}>
+        <TableRow className={depth > 0 ? "bg-muted/30" : ""}>
           <TableCell>
             <div
               className="flex items-center gap-2"
@@ -282,18 +311,18 @@ export default function ChartOfAccounts() {
               {hasChildren ? (
                 <button
                   onClick={() => toggleExpand(account.id!)}
-                  className="p-0.5 hover:bg-gray-200 rounded"
+                  className="p-0.5 hover:bg-muted rounded"
                 >
                   {isExpanded ? (
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
                   ) : (
-                    <ChevronRight className="h-4 w-4 text-gray-500" />
+                    <ChevronRight className="h-4 w-4 text-muted-foreground" />
                   )}
                 </button>
               ) : (
                 <div className="w-5" />
               )}
-              <code className="font-mono text-sm bg-gray-100 px-2 py-0.5 rounded">
+              <code className="font-mono text-sm bg-muted px-2 py-0.5 rounded">
                 {account.code}
               </code>
             </div>
@@ -302,37 +331,51 @@ export default function ChartOfAccounts() {
             <div>
               <p className="font-medium">{account.name}</p>
               {account.nameTL && (
-                <p className="text-sm text-gray-500">{account.nameTL}</p>
+                <p className="text-xs text-muted-foreground italic">{account.nameTL}</p>
               )}
             </div>
           </TableCell>
           <TableCell>
-            <Badge className={`${typeConfig.bg} ${typeConfig.color}`}>
+            <Badge className={`${typeConfig.bg} ${typeConfig.color} dark:bg-opacity-20`}>
               <TypeIcon className="h-3 w-3 mr-1" />
               {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
             </Badge>
           </TableCell>
           <TableCell>
-            <span className="text-sm text-gray-600">
+            <span className="text-sm text-muted-foreground capitalize">
               {account.subType.replace(/_/g, " ")}
             </span>
           </TableCell>
           <TableCell>
-            {account.isSystem ? (
-              <Badge variant="secondary">System</Badge>
-            ) : (
-              <Badge variant="outline">Custom</Badge>
-            )}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              {account.isSystem ? (
+                <Badge variant="secondary" className="gap-1 text-xs">
+                  <Lock className="h-3 w-3" />
+                  System
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-xs">Custom</Badge>
+              )}
+              {payrollLinked && (
+                <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 gap-1 text-xs">
+                  <Calculator className="h-3 w-3" />
+                  Payroll
+                </Badge>
+              )}
+            </div>
           </TableCell>
           <TableCell>
-            {!account.isSystem && (
+            {!account.isSystem ? (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => openEditDialog(account)}
+                title={payrollLinked ? "Edit (affects payroll)" : "Edit account"}
               >
                 <Edit className="h-4 w-4" />
               </Button>
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
             )}
           </TableCell>
         </TableRow>
@@ -433,7 +476,7 @@ export default function ChartOfAccounts() {
                 </p>
               </div>
             </div>
-              <div className="flex gap-2">
+              <div className="flex items-center gap-3">
                 {accounts.length === 0 && (
                   <Button
                     variant="outline"
@@ -455,7 +498,10 @@ export default function ChartOfAccounts() {
                 )}
                 <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => { setEditingAccount(null); resetForm(); }} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
+                    <Button
+                      variant="outline"
+                      onClick={() => { setEditingAccount(null); resetForm(); }}
+                    >
                       <Plus className="h-4 w-4 mr-2" />
                       Add Account
                     </Button>
@@ -471,6 +517,13 @@ export default function ChartOfAccounts() {
                           : "Create a new account in your chart of accounts"}
                       </DialogDescription>
                     </DialogHeader>
+                    {/* Warning for account changes */}
+                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-sm">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                      <p className="text-amber-800 dark:text-amber-200">
+                        Changing accounts affects financial reports and payroll calculations. Only modify if you understand the impact.
+                      </p>
+                    </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -596,72 +649,98 @@ export default function ChartOfAccounts() {
 
       <div className="p-6 max-w-7xl mx-auto">
         {/* Summary Cards */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4 mb-6">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-gray-600">Total</p>
-                <p className="text-2xl font-bold">{stats.total}</p>
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xl font-bold">{stats.total}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-blue-600">Assets</p>
-                <p className="text-2xl font-bold">{stats.assets}</p>
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-blue-600 dark:text-blue-400">Assets</p>
+                <p className="text-xl font-bold">{stats.assets}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-red-600">Liabilities</p>
-                <p className="text-2xl font-bold">{stats.liabilities}</p>
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-red-600 dark:text-red-400">Liabilities</p>
+                <p className="text-xl font-bold">{stats.liabilities}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-purple-600">Equity</p>
-                <p className="text-2xl font-bold">{stats.equity}</p>
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-purple-600 dark:text-purple-400">Equity</p>
+                <p className="text-xl font-bold">{stats.equity}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-green-600">Revenue</p>
-                <p className="text-2xl font-bold">{stats.revenue}</p>
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-green-600 dark:text-green-400">Revenue</p>
+                <p className="text-xl font-bold">{stats.revenue}</p>
               </CardContent>
             </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-sm text-orange-600">Expenses</p>
-                <p className="text-2xl font-bold">{stats.expenses}</p>
+            <Card className="border-border/50">
+              <CardContent className="p-3">
+                <p className="text-xs text-orange-600 dark:text-orange-400">Expenses</p>
+                <p className="text-xl font-bold">{stats.expenses}</p>
               </CardContent>
             </Card>
           </div>
 
           {/* Filters */}
-          <Card className="mb-6">
+          <Card className="mb-6 border-border/50">
             <CardContent className="p-4">
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by code or name..."
+                      placeholder="Search by code (e.g., 5110) or name..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
                     />
                   </div>
                 </div>
-                <div className="w-48">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">Type:</span>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger>
+                    <SelectTrigger className="w-[150px]">
                       <SelectValue placeholder="All types" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All Types</SelectItem>
-                      <SelectItem value="asset">Assets</SelectItem>
-                      <SelectItem value="liability">Liabilities</SelectItem>
-                      <SelectItem value="equity">Equity</SelectItem>
-                      <SelectItem value="revenue">Revenue</SelectItem>
-                      <SelectItem value="expense">Expenses</SelectItem>
+                      <SelectItem value="asset">
+                        <span className="flex items-center gap-2">
+                          <Wallet className="h-3.5 w-3.5 text-blue-600" />
+                          Assets
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="liability">
+                        <span className="flex items-center gap-2">
+                          <Building2 className="h-3.5 w-3.5 text-red-600" />
+                          Liabilities
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="equity">
+                        <span className="flex items-center gap-2">
+                          <PiggyBank className="h-3.5 w-3.5 text-purple-600" />
+                          Equity
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="revenue">
+                        <span className="flex items-center gap-2">
+                          <TrendingUp className="h-3.5 w-3.5 text-green-600" />
+                          Revenue
+                        </span>
+                      </SelectItem>
+                      <SelectItem value="expense">
+                        <span className="flex items-center gap-2">
+                          <TrendingDown className="h-3.5 w-3.5 text-orange-600" />
+                          Expenses
+                        </span>
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -670,18 +749,18 @@ export default function ChartOfAccounts() {
           </Card>
 
           {/* Accounts Table */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Accounts</CardTitle>
+          <Card className="border-border/50">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Accounts</CardTitle>
               <CardDescription>
-                Showing {groupedAccounts.all.length} accounts
+                Showing {groupedAccounts.all.length} of {accounts.length} accounts
               </CardDescription>
             </CardHeader>
             <CardContent>
               {accounts.length === 0 ? (
                 <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No accounts found</p>
+                  <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-4">No accounts found</p>
                   <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (
                       <>
@@ -695,8 +774,8 @@ export default function ChartOfAccounts() {
                 </div>
               ) : groupedAccounts.all.length === 0 ? (
                 <div className="text-center py-12">
-                  <Search className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500">No accounts match your search</p>
+                  <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground">No accounts match your search</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
@@ -707,8 +786,8 @@ export default function ChartOfAccounts() {
                         <TableHead>Name</TableHead>
                         <TableHead className="w-32">Type</TableHead>
                         <TableHead className="w-40">Sub-Type</TableHead>
-                        <TableHead className="w-24">Origin</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
+                        <TableHead className="w-32">Status</TableHead>
+                        <TableHead className="w-16">Edit</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

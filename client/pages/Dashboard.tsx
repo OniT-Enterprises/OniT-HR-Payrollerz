@@ -1,9 +1,10 @@
 /**
- * Dashboard - Action-First Command Center
- * Shows what needs attention + quick actions
+ * Dashboard - Enterprise Command Center
+ * Answers: "Is anything wrong, urgent, or blocking payroll?"
+ * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -26,52 +27,40 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import {
   Users,
   DollarSign,
-  Building,
-  TrendingUp,
   UserPlus,
   ChevronRight,
-  Clock,
   FileText,
   Calculator,
-  Heart,
-  Calendar,
   AlertCircle,
   CheckCircle,
   ArrowRight,
-  Briefcase,
   CalendarDays,
-  Keyboard,
+  HelpCircle,
+  AlertTriangle,
+  Play,
+  Zap,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
-import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
-
-const theme = sectionThemes.dashboard;
 
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="p-6 max-w-7xl mx-auto">
-        <div className="mb-8">
-          <Skeleton className="h-8 w-64 mb-2" />
-          <Skeleton className="h-5 w-96" />
-        </div>
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
+      <div className="p-6 max-w-6xl mx-auto">
+        <Skeleton className="h-8 w-48 mb-6" />
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-32" />
+            <Skeleton key={i} className="h-36" />
           ))}
         </div>
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          {[1, 2, 3, 4].map((i) => (
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          {[1, 2, 3].map((i) => (
             <Skeleton key={i} className="h-24" />
           ))}
         </div>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <Skeleton className="h-80" />
-          <Skeleton className="h-80" />
-        </div>
+        <Skeleton className="h-64" />
       </div>
     </div>
   );
@@ -83,12 +72,10 @@ export default function Dashboard() {
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departmentCount, setDepartmentCount] = useState(0);
   const [pendingLeave, setPendingLeave] = useState(0);
   const [onLeaveToday, setOnLeaveToday] = useState(0);
   const [showShortcuts, setShowShortcuts] = useState(false);
 
-  // Enable keyboard shortcuts globally
   useKeyboardShortcuts({
     enabled: true,
     onShowHelp: () => setShowShortcuts(true),
@@ -102,35 +89,21 @@ export default function Dashboard() {
     try {
       setLoading(true);
 
-      // Load each data source independently so one failure doesn't block others
-      const [employeesResult, departmentsResult, leaveStatsResult] = await Promise.allSettled([
+      const [employeesResult, leaveStatsResult] = await Promise.allSettled([
         employeeService.getAllEmployees(),
-        departmentService.getAllDepartments(),
         leaveService.getLeaveStats(),
       ]);
 
-      // Handle employees
       if (employeesResult.status === 'fulfilled') {
         setEmployees(employeesResult.value);
       } else {
-        console.warn("Could not load employees:", employeesResult.reason);
         setEmployees([]);
       }
 
-      // Handle departments
-      if (departmentsResult.status === 'fulfilled') {
-        setDepartmentCount(departmentsResult.value.length);
-      } else {
-        console.warn("Could not load departments:", departmentsResult.reason);
-        setDepartmentCount(0);
-      }
-
-      // Handle leave stats
       if (leaveStatsResult.status === 'fulfilled') {
         setPendingLeave(leaveStatsResult.value.pendingRequests);
         setOnLeaveToday(leaveStatsResult.value.employeesOnLeaveToday);
       } else {
-        console.warn("Could not load leave stats:", leaveStatsResult.reason);
         setPendingLeave(0);
         setOnLeaveToday(0);
       }
@@ -141,20 +114,12 @@ export default function Dashboard() {
     }
   };
 
+  // Derived data
   const activeEmployees = employees.filter((e) => e.status === "active");
   const totalPayroll = activeEmployees.reduce(
     (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
     0
   );
-
-  const recentHires = [...employees]
-    .filter((e) => e.jobDetails?.hireDate)
-    .sort((a, b) => {
-      const dateA = new Date(a.jobDetails.hireDate);
-      const dateB = new Date(b.jobDetails.hireDate);
-      return dateB.getTime() - dateA.getTime();
-    })
-    .slice(0, 5);
 
   // Calculate days until next payroll (25th)
   const getDaysUntilPayday = () => {
@@ -166,8 +131,80 @@ export default function Dashboard() {
     return Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   };
 
+  // Compliance deadlines (Timor-Leste specific)
+  const getComplianceStatus = () => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+
+    // Subsidio Anual (13th month) - Due December 20
+    const subsidioDate = new Date(currentYear, 11, 20);
+    let daysToSubsidio = Math.ceil((subsidioDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    if (daysToSubsidio < 0) daysToSubsidio += 365;
+
+    // INSS & WIT - Due 15th of following month
+    let taxDate = new Date(now.getFullYear(), now.getMonth() + 1, 15);
+    if (now.getDate() > 15) {
+      taxDate = new Date(now.getFullYear(), now.getMonth() + 2, 15);
+    }
+    const daysToTax = Math.ceil((taxDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+
+    return {
+      wit: { days: daysToTax, status: daysToTax > 7 ? 'ok' : daysToTax > 3 ? 'warning' : 'urgent' },
+      inss: { days: daysToTax, status: daysToTax > 7 ? 'ok' : daysToTax > 3 ? 'warning' : 'urgent' },
+      subsidio: { days: daysToSubsidio, status: daysToSubsidio > 60 ? 'ok' : daysToSubsidio > 30 ? 'warning' : 'urgent' },
+    };
+  };
+
+  // Check for blocking issues (incomplete onboarding)
+  const getBlockingIssues = useMemo(() => {
+    const issues: Array<{ employee: Employee; issue: string; action: string; path: string }> = [];
+
+    employees.forEach((emp) => {
+      if (!emp.documents?.socialSecurityNumber?.number) {
+        issues.push({
+          employee: emp,
+          issue: "Missing INSS number",
+          action: "Add INSS",
+          path: `/people/employees?id=${emp.id}&edit=true`,
+        });
+      }
+      if (!emp.documents?.workContract?.fileUrl) {
+        issues.push({
+          employee: emp,
+          issue: "Contract not uploaded",
+          action: "Upload",
+          path: `/people/employees?id=${emp.id}&tab=documents`,
+        });
+      }
+    });
+
+    return issues.slice(0, 4); // Show max 4 issues
+  }, [employees]);
+
   const daysUntilPayday = getDaysUntilPayday();
+  const compliance = getComplianceStatus();
   const firstName = user?.displayName?.split(" ")[0] || "there";
+
+  // Payroll status
+  const payrollPrepared = false; // In production, check actual payroll status
+  const isPayrollUrgent = daysUntilPayday <= 7;
+  const isPayrollSafe = daysUntilPayday > 14 || payrollPrepared;
+
+  // Next recommended action logic
+  const getNextAction = () => {
+    if (isPayrollUrgent && !payrollPrepared) {
+      return { label: "Prepare payroll", path: "/payroll/run", urgent: true };
+    }
+    if (getBlockingIssues.length > 0) {
+      return { label: `Fix ${getBlockingIssues.length} blocking issue${getBlockingIssues.length > 1 ? 's' : ''}`, path: getBlockingIssues[0].path, urgent: true };
+    }
+    if (pendingLeave > 0) {
+      return { label: `Review ${pendingLeave} leave request${pendingLeave > 1 ? 's' : ''}`, path: "/people/leave", urgent: false };
+    }
+    return null;
+  };
+
+  const nextAction = getNextAction();
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -178,311 +215,318 @@ export default function Dashboard() {
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        {/* Greeting */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold tracking-tight">
+      <div className="p-6 max-w-6xl mx-auto">
+        {/* Header - Minimal */}
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">
             Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {firstName}
           </h1>
-          <p className="text-muted-foreground text-lg">
-            Here's what needs your attention today
-          </p>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-muted-foreground"
+            onClick={() => setShowShortcuts(true)}
+          >
+            <HelpCircle className="h-4 w-4 mr-1" />
+            <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">?</kbd>
+          </Button>
         </div>
 
-        {/* Action Cards - What needs attention */}
-        <div className="grid gap-4 md:grid-cols-3 mb-8">
-          {/* Pending Leave */}
+        {/* ═══════════════════════════════════════════════════════════════
+            TODAY'S STATUS - 3 Cards: Payroll (PRIMARY), Compliance, Team
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          {/* PAYROLL STATUS - PRIMARY CARD */}
           <Card
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              pendingLeave > 0 ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20" : ""
-            }`}
-            onClick={() => navigate("/people/leave")}
-          >
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    {pendingLeave > 0 ? (
-                      <AlertCircle className="h-5 w-5 text-amber-500" />
-                    ) : (
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    )}
-                    <span className="font-semibold">Leave Requests</span>
-                  </div>
-                  <p className="text-3xl font-bold">{pendingLeave}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {pendingLeave > 0 ? "awaiting approval" : "all caught up"}
-                  </p>
-                </div>
-                {pendingLeave > 0 && (
-                  <Button size="sm" className="bg-amber-500 hover:bg-amber-600">
-                    Review
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Payroll Due */}
-          <Card
-            className={`cursor-pointer transition-all hover:shadow-md ${
-              daysUntilPayday <= 7 ? "border-green-500/50 bg-green-50/50 dark:bg-green-950/20" : ""
+            className={`cursor-pointer transition-all hover:shadow-lg ${
+              isPayrollUrgent && !payrollPrepared
+                ? "ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                : isPayrollSafe
+                  ? "border-border/50"
+                  : "border-emerald-500/30"
             }`}
             onClick={() => navigate("/payroll/run")}
           >
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Calculator className="h-5 w-5 text-green-500" />
-                    <span className="font-semibold">Payroll</span>
-                  </div>
+              <div className="flex items-start justify-between mb-4">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Payroll Status</p>
                   <p className="text-3xl font-bold">{daysUntilPayday} days</p>
-                  <p className="text-sm text-muted-foreground">until next pay date</p>
+                  <p className="text-sm text-muted-foreground">until pay date (25th)</p>
                 </div>
-                {daysUntilPayday <= 7 && (
-                  <Button size="sm" className="bg-green-500 hover:bg-green-600">
-                    Run Payroll
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                )}
+                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
+                  isPayrollUrgent
+                    ? "bg-emerald-500 text-white"
+                    : "bg-muted"
+                }`}>
+                  <Calculator className="h-6 w-6" />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-3 border-t border-border/50">
+                <div className="flex items-center gap-2">
+                  {payrollPrepared ? (
+                    <>
+                      <CheckCircle className="h-4 w-4 text-emerald-500" />
+                      <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">Prepared</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="h-4 w-4 text-amber-500" />
+                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Not prepared</span>
+                    </>
+                  )}
+                </div>
+                <Button
+                  size="sm"
+                  className={isPayrollUrgent
+                    ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                    : ""
+                  }
+                  variant={isPayrollUrgent ? "default" : "outline"}
+                >
+                  {payrollPrepared ? "Review" : "Prepare"}
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </CardContent>
           </Card>
 
-          {/* On Leave Today */}
-          <Card className="cursor-pointer transition-all hover:shadow-md" onClick={() => navigate("/people/attendance")}>
+          {/* COMPLIANCE STATUS - Timeline Strip */}
+          <Card className="border-border/50">
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between mb-4">
                 <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <CalendarDays className="h-5 w-5 text-cyan-500" />
-                    <span className="font-semibold">On Leave Today</span>
-                  </div>
-                  <p className="text-3xl font-bold">{onLeaveToday}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {onLeaveToday === 1 ? "employee" : "employees"} out
+                  <p className="text-sm font-medium text-muted-foreground">Compliance</p>
+                  <p className="text-lg font-semibold mt-1">
+                    {compliance.wit.status === 'ok' && compliance.inss.status === 'ok'
+                      ? "On track"
+                      : "Needs attention"}
                   </p>
                 </div>
-                <Badge variant="secondary">{activeEmployees.length - onLeaveToday} in office</Badge>
+              </div>
+
+              {/* Visual Timeline Strip */}
+              <div className="space-y-2">
+                <div className="flex items-center gap-3">
+                  <span className={`h-2 w-2 rounded-full ${
+                    compliance.wit.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.wit.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                  }`} />
+                  <span className="text-sm flex-1">WIT</span>
+                  <span className="text-xs text-muted-foreground">{compliance.wit.days}d</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`h-2 w-2 rounded-full ${
+                    compliance.inss.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                  }`} />
+                  <span className="text-sm flex-1">INSS</span>
+                  <span className="text-xs text-muted-foreground">{compliance.inss.days}d</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className={`h-2 w-2 rounded-full ${
+                    compliance.subsidio.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.subsidio.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                  }`} />
+                  <span className="text-sm flex-1">13th Month</span>
+                  <span className="text-xs text-muted-foreground">{compliance.subsidio.days}d</span>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* TEAM STATUS */}
+          <Card className="border-border/50">
+            <CardContent className="pt-6">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Team Status</p>
+                  <p className="text-lg font-semibold mt-1">
+                    {activeEmployees.length - onLeaveToday} / {activeEmployees.length} present
+                  </p>
+                </div>
+                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
+                  <Users className="h-5 w-5 text-muted-foreground" />
+                </div>
+              </div>
+
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">On leave today</span>
+                  <span className={onLeaveToday > 0 ? "font-medium" : "text-muted-foreground"}>{onLeaveToday}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Pending requests</span>
+                  <span className={pendingLeave > 0 ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
+                    {pendingLeave}
+                  </span>
+                </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Quick Actions Bar */}
-        <Card className="mb-8">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-medium text-muted-foreground mr-2">Quick Actions:</span>
-              <Button variant="outline" size="sm" onClick={() => navigate("/people/add")}>
-                <UserPlus className="h-4 w-4 mr-2" />
-                Add Employee
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate("/payroll/run")}>
-                <Calculator className="h-4 w-4 mr-2" />
-                Run Payroll
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate("/people/leave")}>
-                <Heart className="h-4 w-4 mr-2" />
-                Manage Leave
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate("/people/attendance")}>
-                <Clock className="h-4 w-4 mr-2" />
-                Attendance
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => navigate("/reports")}>
-                <FileText className="h-4 w-4 mr-2" />
-                Reports
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
+        {/* ═══════════════════════════════════════════════════════════════
+            NEXT RECOMMENDED ACTION - Smart suggestion
+        ═══════════════════════════════════════════════════════════════ */}
+        {nextAction && (
+          <Card className={`mb-6 cursor-pointer transition-all hover:shadow-md ${
+            nextAction.urgent
+              ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20"
+              : "border-primary/30"
+          }`} onClick={() => navigate(nextAction.path)}>
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                  nextAction.urgent
+                    ? "bg-amber-500 text-white"
+                    : "bg-primary/10"
+                }`}>
+                  <Zap className={`h-5 w-5 ${nextAction.urgent ? "" : "text-primary"}`} />
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next recommended action</p>
+                  <p className="font-semibold">{nextAction.label}</p>
+                </div>
+                <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
+                  nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
+                }>
+                  Do it now
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        {/* Stats Overview */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/people/employees")}>
-            <CardContent className="pt-6">
+        {/* ═══════════════════════════════════════════════════════════════
+            KPIs - 3 Only: Active Employees, Monthly Payroll, Next Payroll
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/people/employees")}>
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold">{activeEmployees.length}</p>
+                  <p className="text-2xl font-bold">{activeEmployees.length}</p>
                   <p className="text-sm text-muted-foreground">Active Employees</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-500" />
+                <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/payroll/run")}>
-            <CardContent className="pt-6">
+          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/payroll/history")}>
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
                   <p className="text-sm text-muted-foreground">Monthly Payroll</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <DollarSign className="h-6 w-6 text-emerald-500" />
+                <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-emerald-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => navigate("/people/departments")}>
-            <CardContent className="pt-6">
+          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/payroll/run")}>
+            <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold">{departmentCount}</p>
-                  <p className="text-sm text-muted-foreground">Departments</p>
+                  <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
+                  <p className="text-sm text-muted-foreground">Next Payroll Amount</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Building className="h-6 w-6 text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">
-                    {activeEmployees.length > 0
-                      ? formatCurrencyTL(Math.round(totalPayroll / activeEmployees.length))
-                      : "$0"}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Avg. Salary</p>
-                </div>
-                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                  <TrendingUp className="h-6 w-6 text-amber-500" />
+                <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
+                  <CalendarDays className="h-5 w-5 text-violet-500" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Bottom Row */}
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Recent Hires */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <div>
-                <CardTitle className="text-lg">Recent Hires</CardTitle>
-                <CardDescription>Newest team members</CardDescription>
+        {/* ═══════════════════════════════════════════════════════════════
+            QUICK ACTIONS - 3 Only: Run Payroll, Add Employee, Generate Report
+        ═══════════════════════════════════════════════════════════════ */}
+        <Card className="mb-6 border-border/50">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm text-muted-foreground">Quick actions</span>
+              <div className="h-4 w-px bg-border" />
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  className={isPayrollUrgent
+                    ? "bg-emerald-500 hover:bg-emerald-600 text-white gap-2"
+                    : "gap-2"
+                  }
+                  variant={isPayrollUrgent ? "default" : "outline"}
+                  onClick={() => navigate("/payroll/run")}
+                >
+                  <Play className="h-3.5 w-3.5" />
+                  Run Payroll
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/people/add")}>
+                  <UserPlus className="h-3.5 w-3.5" />
+                  Add Employee
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports")}>
+                  <FileText className="h-3.5 w-3.5" />
+                  Generate Report
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/people/employees")}>
-                View All
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ATTENTION REQUIRED - Blocking issues before payroll
+        ═══════════════════════════════════════════════════════════════ */}
+        {getBlockingIssues.length > 0 && (
+          <Card className="border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Attention Required
+              </CardTitle>
+              <CardDescription>Fix these before running payroll</CardDescription>
             </CardHeader>
-            <CardContent>
-              {recentHires.length > 0 ? (
-                <div className="space-y-3">
-                  {recentHires.map((employee) => (
-                    <div
-                      key={employee.id}
-                      className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted transition-colors cursor-pointer"
-                      onClick={() => navigate(`/people/employees?id=${employee.id}`)}
-                    >
-                      <Avatar className="h-10 w-10">
-                        <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                          {employee.personalInfo.firstName[0]}
-                          {employee.personalInfo.lastName[0]}
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {getBlockingIssues.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-8 w-8">
+                        <AvatarFallback className="text-xs bg-muted">
+                          {item.employee.personalInfo.firstName[0]}
+                          {item.employee.personalInfo.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">
-                          {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                      <div>
+                        <p className="text-sm font-medium">
+                          {item.employee.personalInfo.firstName} {item.employee.personalInfo.lastName}
                         </p>
-                        <p className="text-sm text-muted-foreground truncate">
-                          {employee.jobDetails?.position} • {employee.jobDetails?.department}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(employee.jobDetails.hireDate).toLocaleDateString("en-US", {
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </p>
+                        <p className="text-xs text-amber-600 dark:text-amber-400">{item.issue}</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Users className="h-10 w-10 text-muted-foreground mx-auto mb-3" />
-                  <p className="text-muted-foreground mb-2">No employees yet</p>
-                  <Button size="sm" onClick={() => navigate("/people/add")}>
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add First Employee
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Navigate to Sections */}
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg">Explore</CardTitle>
-              <CardDescription>Jump to any section</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 flex-col items-start border-l-4 border-l-blue-500 hover:bg-blue-50 dark:hover:bg-blue-950/30"
-                  onClick={() => navigate("/people")}
-                >
-                  <Users className="h-6 w-6 mb-2 text-blue-500" />
-                  <span className="font-semibold">People</span>
-                  <span className="text-xs text-muted-foreground">Staff, hiring, leave</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 flex-col items-start border-l-4 border-l-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30"
-                  onClick={() => navigate("/payroll")}
-                >
-                  <Calculator className="h-6 w-6 mb-2 text-emerald-500" />
-                  <span className="font-semibold">Payroll</span>
-                  <span className="text-xs text-muted-foreground">Pay, taxes, benefits</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 flex-col items-start border-l-4 border-l-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                  onClick={() => navigate("/accounting")}
-                >
-                  <Building className="h-6 w-6 mb-2 text-amber-500" />
-                  <span className="font-semibold">Accounting</span>
-                  <span className="text-xs text-muted-foreground">Ledger, journal, reports</span>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  className="h-auto py-4 flex-col items-start border-l-4 border-l-violet-500 hover:bg-violet-50 dark:hover:bg-violet-950/30"
-                  onClick={() => navigate("/reports")}
-                >
-                  <FileText className="h-6 w-6 mb-2 text-violet-500" />
-                  <span className="font-semibold">Reports</span>
-                  <span className="text-xs text-muted-foreground">Analytics & exports</span>
-                </Button>
+                    <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400 hover:text-amber-700">
+                      {item.action}
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>
-        </div>
-
-        {/* Keyboard Shortcuts Hint */}
-        <div className="text-center text-xs text-muted-foreground mt-4">
-          Press <kbd className="px-1.5 py-0.5 bg-muted rounded font-mono">?</kbd> for keyboard shortcuts
-        </div>
+        )}
       </div>
 
-      {/* Keyboard Shortcuts Dialog */}
       <KeyboardShortcutsDialog
         open={showShortcuts}
         onOpenChange={setShowShortcuts}

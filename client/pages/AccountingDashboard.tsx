@@ -1,12 +1,25 @@
 /**
- * Accounting Dashboard - Section Hub
- * Quick access to all accounting features
+ * Accounting Dashboard - Payroll-Linked Accounting
+ * Answers: "Did payroll post correctly, and do my books reconcile?"
+ * NOT a full QuickBooks replacement - supports payroll, audits, reports
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
@@ -16,88 +29,99 @@ import {
   Scale,
   BarChart3,
   ChevronRight,
-  DollarSign,
-  TrendingUp,
+  ChevronDown,
+  CheckCircle,
+  AlertCircle,
+  AlertTriangle,
+  ArrowRight,
   Calculator,
-  ArrowUpDown,
+  Eye,
+  Clock,
+  FilePlus,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
 const theme = sectionThemes.accounting;
 
 export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const [toolsOpen, setToolsOpen] = useState(false);
 
-  const accountingLinks = [
+  // Simulated data - in production, fetch from accounting service
+  const accountingStatus = {
+    payrollPosted: true,
+    trialBalanced: true,
+    pendingEntries: 3,
+    lastReconciliation: "Jan 25, 2026",
+    lastPayrollAmount: 124350,
+    lastPayrollDate: "Jan 25, 2026",
+  };
+
+  // Last payroll journal entry details
+  const lastPayrollEntry = {
+    payrollRun: "January 2026",
+    date: "Jan 25, 2026",
+    totalAmount: 124350,
+    entries: [
+      { account: "Salary Expense", type: "debit", amount: 110000 },
+      { account: "INSS Employer", type: "debit", amount: 8000 },
+      { account: "Cash / Bank", type: "credit", amount: 95000 },
+      { account: "WIT Payable", type: "credit", amount: 12000 },
+      { account: "INSS Payable", type: "credit", amount: 11000 },
+    ],
+  };
+
+  // Attention items (only show if there are issues)
+  const attentionItems = accountingStatus.pendingEntries > 0
+    ? [
+        {
+          issue: `${accountingStatus.pendingEntries} manual entries pending review`,
+          action: "Review",
+          path: "/accounting/journal-entries?status=pending",
+        },
+      ]
+    : [];
+
+  // Accounting tools (collapsed by default)
+  const accountingTools = [
     {
       id: "chart-of-accounts",
-      title: t("accounting.dashboard.links.chart.title"),
-      description: t("accounting.dashboard.links.chart.description"),
+      title: "Chart of Accounts",
+      description: "Manage account structure",
       icon: BookOpen,
       path: "/accounting/chart-of-accounts",
-      primary: true,
     },
     {
       id: "journal-entries",
-      title: t("accounting.dashboard.links.journal.title"),
-      description: t("accounting.dashboard.links.journal.description"),
+      title: "Journal Entries",
+      description: "View and create entries",
       icon: FileSpreadsheet,
       path: "/accounting/journal-entries",
     },
     {
       id: "general-ledger",
-      title: t("accounting.dashboard.links.ledger.title"),
-      description: t("accounting.dashboard.links.ledger.description"),
+      title: "General Ledger",
+      description: "Account transaction history",
       icon: Landmark,
       path: "/accounting/general-ledger",
     },
     {
       id: "trial-balance",
-      title: t("accounting.dashboard.links.trial.title"),
-      description: t("accounting.dashboard.links.trial.description"),
+      title: "Trial Balance",
+      description: "Verify debits equal credits",
       icon: Scale,
       path: "/accounting/trial-balance",
     },
     {
       id: "reports",
-      title: t("accounting.dashboard.links.reports.title"),
-      description: t("accounting.dashboard.links.reports.description"),
+      title: "Financial Reports",
+      description: "Income statement, balance sheet",
       icon: BarChart3,
       path: "/accounting/reports",
-    },
-  ];
-
-  const quickStats = [
-    {
-      label: t("accounting.dashboard.stats.assets"),
-      value: "$245,000",
-      icon: DollarSign,
-      iconColor: "text-blue-600",
-      iconBg: "bg-blue-100 dark:bg-blue-900/30",
-    },
-    {
-      label: t("accounting.dashboard.stats.liabilities"),
-      value: "$82,500",
-      icon: ArrowUpDown,
-      iconColor: "text-red-600",
-      iconBg: "bg-red-100 dark:bg-red-900/30",
-    },
-    {
-      label: t("accounting.dashboard.stats.netIncome"),
-      value: "$18,450",
-      icon: TrendingUp,
-      iconColor: "text-green-600",
-      iconBg: "bg-green-100 dark:bg-green-900/30",
-    },
-    {
-      label: t("accounting.dashboard.stats.pendingEntries"),
-      value: "3",
-      icon: FileSpreadsheet,
-      iconColor: "text-amber-600",
-      iconBg: "bg-amber-100 dark:bg-amber-900/30",
     },
   ];
 
@@ -106,122 +130,283 @@ export default function AccountingDashboard() {
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
 
-      {/* Hero Section */}
+      {/* Hero Section - Simplified */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          <AutoBreadcrumb className="mb-3" />
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <Landmark className="h-8 w-8 text-white" />
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
+                <Landmark className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("accounting.dashboard.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.dashboard.subtitle")}
+                <h1 className="text-2xl font-bold text-foreground">Accounting</h1>
+                <p className="text-sm text-muted-foreground">
+                  Review payroll accounting and financial reports
                 </p>
               </div>
             </div>
-            <Button onClick={() => navigate("/accounting/journal-entries")} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-              <FileSpreadsheet className="h-4 w-4 mr-2" />
-              {t("accounting.dashboard.actions.newEntry")}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate("/accounting/journal-entries")}
+              >
+                <FilePlus className="h-4 w-4 mr-1.5" />
+                New Entry
+              </Button>
+              <Button
+                size="sm"
+                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
+              >
+                <Eye className="h-4 w-4 mr-1.5" />
+                Review Payroll Entries
+              </Button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto">
-
-        {/* Quick Stats */}
-        <div className="grid gap-4 md:grid-cols-4 mb-8">
-          {quickStats.map((stat) => {
-            const StatIcon = stat.icon;
-            return (
-              <Card key={stat.label} className={theme.borderLeft}>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-2xl font-bold">{stat.value}</p>
-                      <p className="text-sm text-muted-foreground">{stat.label}</p>
-                    </div>
-                    <div className={`h-12 w-12 rounded-full ${stat.iconBg} flex items-center justify-center`}>
-                      <StatIcon className={`h-6 w-6 ${stat.iconColor}`} />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Accounting Links */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {accountingLinks.map((link) => {
-            const LinkIcon = link.icon;
-            return (
-              <Card
-                key={link.id}
-                className={`cursor-pointer hover:shadow-md transition-all border-l-4 border-l-orange-500/50 hover:border-l-orange-500 ${
-                  link.primary ? "ring-2 ring-orange-500/20" : ""
-                }`}
-                onClick={() => navigate(link.path)}
-              >
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <div className="h-12 w-12 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                      <LinkIcon className="h-6 w-6 text-muted-foreground" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold">{link.title}</h3>
-                      <p className="text-sm text-muted-foreground">{link.description}</p>
-                    </div>
-                    <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Double-Entry Accounting Info */}
-        <Card className="mt-8">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calculator className="h-5 w-5" />
-              {t("accounting.dashboard.doubleEntry.title")}
-            </CardTitle>
+      <div className="p-6 max-w-6xl mx-auto">
+        {/* ═══════════════════════════════════════════════════════════════
+            ACCOUNTING STATUS - Primary question: "Are my books OK?"
+        ═══════════════════════════════════════════════════════════════ */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">This Month</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-3 text-sm">
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">
-                  {t("accounting.dashboard.doubleEntry.assetsTitle")}
-                </p>
-                <p className="text-muted-foreground">
-                  {t("accounting.dashboard.doubleEntry.assetsDesc")}
-                </p>
+            <div className="grid gap-4 md:grid-cols-3">
+              {/* Payroll Posted */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                {accountingStatus.payrollPosted ? (
+                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                ) : (
+                  <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Payroll Entries</p>
+                  <p className="text-xs text-muted-foreground">
+                    {accountingStatus.payrollPosted ? "Posted" : "Not posted"}
+                  </p>
+                </div>
+                <span className="text-lg font-bold">
+                  {formatCurrencyTL(accountingStatus.lastPayrollAmount)}
+                </span>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">
-                  {t("accounting.dashboard.doubleEntry.debitsTitle")}
-                </p>
-                <p className="text-muted-foreground">
-                  {t("accounting.dashboard.doubleEntry.debitsDesc")}
-                </p>
+
+              {/* Trial Balance */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                {accountingStatus.trialBalanced ? (
+                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                ) : (
+                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Trial Balance</p>
+                  <p className="text-xs text-muted-foreground">
+                    {accountingStatus.trialBalanced ? "Balanced" : "Unbalanced"}
+                  </p>
+                </div>
+                <Badge
+                  variant={accountingStatus.trialBalanced ? "secondary" : "destructive"}
+                  className="text-xs"
+                >
+                  {accountingStatus.trialBalanced ? "OK" : "Check"}
+                </Badge>
               </div>
-              <div className="p-4 bg-muted rounded-lg">
-                <p className="font-medium mb-1">
-                  {t("accounting.dashboard.doubleEntry.trialTitle")}
-                </p>
-                <p className="text-muted-foreground">
-                  {t("accounting.dashboard.doubleEntry.trialDesc")}
-                </p>
+
+              {/* Pending Items */}
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+                {accountingStatus.pendingEntries === 0 ? (
+                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                ) : (
+                  <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">Pending Items</p>
+                  <p className="text-xs text-muted-foreground">Manual entries</p>
+                </div>
+                <span className={`text-lg font-bold ${
+                  accountingStatus.pendingEntries > 0 ? "text-amber-600 dark:text-amber-400" : ""
+                }`}>
+                  {accountingStatus.pendingEntries}
+                </span>
+              </div>
+            </div>
+
+            {/* CTA if there are issues */}
+            {(!accountingStatus.payrollPosted || !accountingStatus.trialBalanced || accountingStatus.pendingEntries > 0) && (
+              <div className="mt-4 pt-4 border-t border-border/50">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate("/accounting/journal-entries")}
+                >
+                  Review entries
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            PAYROLL → ACCOUNTING - Shows how payroll flows to books
+        ═══════════════════════════════════════════════════════════════ */}
+        <Card className="mb-6 border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calculator className="h-4 w-4 text-orange-500" />
+                  Payroll → Accounting
+                </CardTitle>
+                <CardDescription>Last payroll journal entry</CardDescription>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {lastPayrollEntry.date}
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {/* Payroll run info */}
+              <div className="flex items-center justify-between text-sm pb-3 border-b border-border/50">
+                <span className="font-medium">{lastPayrollEntry.payrollRun}</span>
+                <span className="font-bold">{formatCurrencyTL(lastPayrollEntry.totalAmount)}</span>
+              </div>
+
+              {/* Journal entries breakdown */}
+              <div className="space-y-2">
+                {lastPayrollEntry.entries.map((entry, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-sm py-1.5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className={`w-14 text-xs font-medium px-2 py-0.5 rounded ${
+                        entry.type === "debit"
+                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                          : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                      }`}>
+                        {entry.type === "debit" ? "Debit" : "Credit"}
+                      </span>
+                      <span className="text-muted-foreground">{entry.account}</span>
+                    </div>
+                    <span className="font-medium tabular-nums">
+                      {formatCurrencyTL(entry.amount)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* View full entry link */}
+              <div className="pt-3 border-t border-border/50">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-muted-foreground hover:text-foreground -ml-2"
+                  onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
+                >
+                  View all payroll entries
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ATTENTION REQUIRED - Only shows when there are issues
+        ═══════════════════════════════════════════════════════════════ */}
+        {attentionItems.length > 0 && (
+          <Card className="mb-6 border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <AlertTriangle className="h-4 w-4 text-amber-500" />
+                Attention Required
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-2">
+                {attentionItems.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
+                    onClick={() => navigate(item.path)}
+                  >
+                    <span className="text-sm">{item.issue}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-amber-600 dark:text-amber-400"
+                    >
+                      {item.action}
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ACCOUNTING TOOLS - Collapsed by default
+        ═══════════════════════════════════════════════════════════════ */}
+        <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
+          <Card className="border-border/50">
+            <CollapsibleTrigger asChild>
+              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-base">Accounting Tools</CardTitle>
+                    <CardDescription>
+                      Chart of accounts, journal entries, ledger, reports
+                    </CardDescription>
+                  </div>
+                  <ChevronDown
+                    className={`h-5 w-5 text-muted-foreground transition-transform ${
+                      toolsOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </div>
+              </CardHeader>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <CardContent className="pt-0">
+                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                  {accountingTools.map((tool) => {
+                    const ToolIcon = tool.icon;
+                    return (
+                      <div
+                        key={tool.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-orange-500/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                        onClick={() => navigate(tool.path)}
+                      >
+                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                          <ToolIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{tool.title}</p>
+                          <p className="text-xs text-muted-foreground">{tool.description}</p>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </CollapsibleContent>
+          </Card>
+        </Collapsible>
+
+        {/* Last reconciliation note */}
+        <p className="text-xs text-muted-foreground text-center mt-6">
+          Last reconciliation: {accountingStatus.lastReconciliation}
+        </p>
       </div>
     </div>
   );

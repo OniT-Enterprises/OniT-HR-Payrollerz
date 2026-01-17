@@ -32,31 +32,27 @@ import {
   getCompletionStatusIcon,
 } from "@/lib/employeeUtils";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Search,
   Filter,
   Download,
-  Mail,
-  Phone,
-  Smartphone,
-  Cross,
-  MapPin,
-  Calendar,
-  Briefcase,
-  DollarSign,
   Building,
   Eye,
   Edit,
-  Trash2,
+  UserMinus,
   Plus,
   AlertTriangle,
   Upload,
   FileText,
-  CalendarX,
+  EyeOff,
+  SlidersHorizontal,
 } from "lucide-react";
+
+// Compliance filter types for URL params
+type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
 
 export default function AllEmployees() {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -66,6 +62,9 @@ export default function AllEmployees() {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
 
+  // URL params for deep linking from Dashboard/PayrollHub
+  const [searchParams, setSearchParams] = useSearchParams();
+
   // Filter states
   const [departmentFilter, setDepartmentFilter] = useState<string>("all");
   const [positionFilter, setPositionFilter] = useState<string>("all");
@@ -73,9 +72,11 @@ export default function AllEmployees() {
     useState<string>("all");
   const [workLocationFilter, setWorkLocationFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [complianceFilter, setComplianceFilter] = useState<ComplianceFilter>("all");
   const [minSalary, setMinSalary] = useState<string>("");
   const [maxSalary, setMaxSalary] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
+  const [showSalary, setShowSalary] = useState(true); // Toggle for salary visibility
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
   );
@@ -119,6 +120,16 @@ export default function AllEmployees() {
     loadEmployees();
   }, []);
 
+  // Read URL params for compliance filtering (from Dashboard/PayrollHub links)
+  useEffect(() => {
+    const filterParam = searchParams.get("filter") as ComplianceFilter | null;
+    if (filterParam && ["missing-contract", "missing-inss", "missing-bank", "blocking-issues"].includes(filterParam)) {
+      setComplianceFilter(filterParam);
+      // Show the filter banner when coming from a link
+      setShowFilters(true);
+    }
+  }, [searchParams]);
+
   // Filter employees when search term or filters change
   useEffect(() => {
     filterEmployees();
@@ -130,6 +141,7 @@ export default function AllEmployees() {
     employmentTypeFilter,
     workLocationFilter,
     statusFilter,
+    complianceFilter,
     minSalary,
     maxSalary,
   ]);
@@ -224,6 +236,29 @@ export default function AllEmployees() {
       const matchesMinSalary = !minSalary || salary >= parseInt(minSalary);
       const matchesMaxSalary = !maxSalary || salary <= parseInt(maxSalary);
 
+      // Compliance filter (for links from Dashboard/PayrollHub)
+      let matchesCompliance = true;
+      if (complianceFilter !== "all") {
+        const hasContract = !!employee.documents?.workContract?.fileUrl;
+        const hasINSS = !!employee.documents?.socialSecurityNumber?.number;
+        const hasBankAccount = !!(employee as any).bankDetails?.accountNumber;
+
+        switch (complianceFilter) {
+          case "missing-contract":
+            matchesCompliance = !hasContract;
+            break;
+          case "missing-inss":
+            matchesCompliance = !hasINSS;
+            break;
+          case "missing-bank":
+            matchesCompliance = !hasBankAccount;
+            break;
+          case "blocking-issues":
+            matchesCompliance = !hasContract || !hasINSS;
+            break;
+        }
+      }
+
       return (
         matchesSearch &&
         matchesDepartment &&
@@ -232,7 +267,8 @@ export default function AllEmployees() {
         matchesWorkLocation &&
         matchesStatus &&
         matchesMinSalary &&
-        matchesMaxSalary
+        matchesMaxSalary &&
+        matchesCompliance
       );
     });
 
@@ -248,8 +284,11 @@ export default function AllEmployees() {
     setEmploymentTypeFilter("all");
     setWorkLocationFilter("all");
     setStatusFilter("all");
+    setComplianceFilter("all");
     setMinSalary("");
     setMaxSalary("");
+    // Clear URL params
+    setSearchParams({});
   };
 
   // Get unique values for filter options
@@ -653,171 +692,163 @@ export default function AllEmployees() {
           </Alert>
         )}
 
-        {/* Statistics */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6 animate-fade-up">
-          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("employees.stats.totalEmployees")}
-                  </p>
-                  <p className="text-2xl font-bold">{employees.length}</p>
-                </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("employees.stats.activeEmployees")}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {employees.filter((emp) => emp.status === "active").length}
-                  </p>
-                </div>
-                <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
-                  <Building className="h-5 w-5 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("employees.stats.departments")}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {
-                      new Set(employees.map((emp) => emp.jobDetails.department))
-                        .size
-                    }
-                  </p>
-                </div>
-                <Briefcase className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card
-            className="cursor-pointer hover:bg-muted/50 transition-colors"
-            onClick={() => setShowIncompleteProfiles(true)}
-          >
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("employees.stats.incompleteProfiles")}
-                  </p>
-                  <p className="text-2xl font-bold text-orange-600">
-                    {incompleteEmployees.length}
-                  </p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-orange-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("employees.stats.inactive")}
-                  </p>
-                  <p className="text-2xl font-bold text-purple-600">
-                    {
-                      employees.filter((emp) => emp.status === "inactive")
-                        .length
-                    }
-                  </p>
-                </div>
-                <CalendarX className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
+        {/* Statistics - Quieter, data-first orientation */}
+        <div className="flex items-center gap-6 mb-6 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Total:</span>
+            <span className="font-semibold">{employees.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Active:</span>
+            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+              {employees.filter((emp) => emp.status === "active").length}
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-muted-foreground">Depts:</span>
+            <span className="font-semibold">
+              {new Set(employees.map((emp) => emp.jobDetails.department)).size}
+            </span>
+          </div>
+          {incompleteEmployees.length > 0 && (
+            <button
+              onClick={() => setShowIncompleteProfiles(true)}
+              className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:underline"
+            >
+              <AlertTriangle className="h-3.5 w-3.5" />
+              <span>{incompleteEmployees.length} incomplete</span>
+            </button>
+          )}
         </div>
 
-        {/* Controls */}
-        <div className="flex flex-col lg:flex-row items-center gap-4 mb-6">
-          {/* Left side - Add Employee with gap */}
-          <div className="flex items-center">
-            <Button
-              variant="outline"
-              onClick={() => navigate("/people/add")}
-              className={"bg-white hover:bg-purple-50 border-purple-200"}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              {t("employees.buttons.addEmployee")}
-            </Button>
-          </div>
-
-          {/* Middle section - Filters and Search */}
-          <div className="flex items-center gap-3 flex-1">
-            <Button
-              variant="outline"
-              onClick={() => setShowFilters(!showFilters)}
-              className={
-                showFilters
-                  ? "bg-purple-600 text-white hover:bg-purple-700"
-                  : "bg-white hover:bg-purple-50 border-purple-200"
-              }
-            >
-              <Filter className="mr-2 h-4 w-4" />
-              {t("employees.buttons.filters")}{" "}
-              {hasActiveFilters &&
-                t("employees.filtersCount", { count: activeFilterCount })}
-            </Button>
-
-            <div className="relative flex-1 max-w-md">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={t("employees.searchPlaceholder")}
-                className="pl-9 pr-20 bg-white border-purple-200"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-              />
-              <Button
-                size="sm"
-                onClick={handleSearch}
-                className="absolute right-1 top-1 h-8 bg-purple-600 hover:bg-purple-700"
-              >
-                {t("employees.buttons.search")}
-              </Button>
+        {/* Compliance Filter Alert - Shows when filtering by compliance issues */}
+        {complianceFilter !== "all" && (
+          <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                {complianceFilter === "missing-contract" && "Showing employees missing work contract"}
+                {complianceFilter === "missing-inss" && "Showing employees missing INSS number"}
+                {complianceFilter === "missing-bank" && "Showing employees missing bank details"}
+                {complianceFilter === "blocking-issues" && "Showing employees with payroll-blocking issues"}
+              </span>
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                ({filteredEmployees.length} found)
+              </span>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setComplianceFilter("all");
+                setSearchParams({});
+              }}
+              className="text-amber-700 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
+            >
+              Clear filter
+            </Button>
+          </div>
+        )}
+
+        {/* Controls - Streamlined */}
+        <div className="flex flex-col lg:flex-row items-center gap-3 mb-6">
+          {/* Search */}
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, ID, or department..."
+              className="pl-9"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            />
           </div>
 
-          {/* Right side - CSV actions */}
+          {/* Quick filters inline */}
+          <div className="flex items-center gap-2">
+            <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+              <SelectTrigger className="w-[140px] h-9">
+                <SelectValue placeholder="Department" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Depts</SelectItem>
+                {getUniqueValues("department").map((dept) => (
+                  <SelectItem key={dept} value={dept}>{dept}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[110px] h-9">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                {getUniqueValues("status").map((status) => (
+                  <SelectItem key={status} value={status}>{getStatusLabel(status)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowFilters(!showFilters)}
+              className={hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
+            >
+              <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+              Advanced
+              {activeFilterCount > 2 && ` (${activeFilterCount - 2})`}
+            </Button>
+          </div>
+
+          {/* Salary toggle */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowSalary(!showSalary)}
+            className="text-muted-foreground"
+            title={showSalary ? "Hide salary column" : "Show salary column"}
+          >
+            {showSalary ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
+            {showSalary ? "Hide salary" : "Show salary"}
+          </Button>
+
+          <div className="flex-1" />
+
+          {/* Actions */}
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              size="sm"
               onClick={handleDownloadTemplate}
-              className="bg-white hover:bg-purple-50 border-purple-200"
+              title="Download CSV template"
             >
-              <FileText className="mr-2 h-4 w-4" />
-              {t("employees.buttons.templateCsv")}
+              <FileText className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={() => document.getElementById("csv-upload")?.click()}
-              className="bg-white hover:bg-purple-50 border-purple-200"
+              title="Import from CSV"
             >
-              <Upload className="mr-2 h-4 w-4" />
-              {t("employees.buttons.importCsv")}
+              <Upload className="h-4 w-4" />
             </Button>
             <Button
               variant="outline"
+              size="sm"
               onClick={handleExport}
-              className="bg-white hover:bg-purple-50 border-purple-200"
+              title="Export to CSV"
             >
-              <Download className="mr-2 h-4 w-4" />
-              {t("employees.buttons.exportCsv")}
+              <Download className="h-4 w-4" />
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate("/people/add")}
+              className="bg-blue-500 hover:bg-blue-600"
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Add
             </Button>
           </div>
 
@@ -1003,8 +1034,8 @@ export default function AllEmployees() {
 
               {/* Filter Summary */}
               {hasActiveFilters && (
-                <div className="mt-4 p-3 bg-blue-50 rounded-lg">
-                  <p className="text-sm text-blue-800">
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <p className="text-sm text-foreground">
                     <strong>{t("employees.activeFiltersTitle")}</strong>{" "}
                     {t("employees.activeFiltersSummary", {
                       shown: filteredEmployees.length,
@@ -1063,259 +1094,147 @@ export default function AllEmployees() {
           </Card>
         )}
 
-        {/* Employees Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("employees.directoryTitle")}</CardTitle>
-            <CardDescription>
-              {t("employees.directoryDesc")}
-            </CardDescription>
+        {/* Employees Table - Simplified, data-first */}
+        <Card className="border-border/50">
+          <CardHeader className="pb-3">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg">Employee Directory</CardTitle>
+                <CardDescription>
+                  {filteredEmployees.length} of {employees.length} employees
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-medium">
-                      <div className="flex items-center gap-1">
-                        {t("employees.table.employee")}
-                        <Filter
-                          className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground"
-                          onClick={() => setShowFilters(!showFilters)}
-                        />
-                      </div>
+                <thead className="sticky top-0 bg-background border-b z-10">
+                  <tr>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Employee
                     </th>
-                    <th className="text-left p-3 font-medium">
-                      <div className="flex items-center gap-1">
-                        {t("employees.table.department")}
-                        <Filter
-                          className={`h-3 w-3 cursor-pointer hover:text-foreground ${
-                            departmentFilter
-                              ? "text-blue-600"
-                              : "text-muted-foreground"
-                          }`}
-                          onClick={() => setShowFilters(!showFilters)}
-                        />
-                      </div>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Department
                     </th>
-                    <th className="text-left p-3 font-medium">
-                      <div className="flex items-center gap-1">
-                        {t("employees.table.position")}
-                        <Filter
-                          className={`h-3 w-3 cursor-pointer hover:text-foreground ${
-                            positionFilter
-                              ? "text-blue-600"
-                              : "text-muted-foreground"
-                          }`}
-                          onClick={() => setShowFilters(!showFilters)}
-                        />
-                      </div>
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Position
                     </th>
-                    <th className="text-left p-3 font-medium">
-                      {t("employees.table.contact")}
+                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Status
                     </th>
-                    <th className="text-left p-3 font-medium">
-                      <div className="flex items-center gap-1">
-                        {t("employees.table.hireDate")}
-                        <Filter
-                          className="h-3 w-3 text-muted-foreground cursor-pointer hover:text-foreground"
-                          onClick={() => setShowFilters(!showFilters)}
-                        />
-                      </div>
-                    </th>
-                    <th className="text-left p-3 font-medium">
-                      <div className="flex items-center gap-1">
-                        {t("employees.table.monthlySalary")}
-                        <Filter
-                          className={`h-3 w-3 cursor-pointer hover:text-foreground ${
-                            minSalary || maxSalary
-                              ? "text-blue-600"
-                              : "text-muted-foreground"
-                          }`}
-                          onClick={() => setShowFilters(!showFilters)}
-                        />
-                      </div>
-                    </th>
-                    <th className="text-center p-3 font-medium">
-                      {t("employees.table.actions")}
+                    {showSalary && (
+                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        Salary
+                      </th>
+                    )}
+                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                      Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody className="divide-y divide-border/50">
                   {paginatedEmployees.map((employee) => (
                     <tr
                       key={employee.id}
-                      className="border-b hover:bg-muted/50 transition-colors"
+                      className="hover:bg-muted/50 transition-colors cursor-pointer group"
+                      onClick={() => handleViewEmployee(employee)}
                     >
-                      <td className="p-3">
+                      <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
-                          <Avatar>
+                          <Avatar className="h-9 w-9">
                             <AvatarImage
                               src="/placeholder.svg"
                               alt={employee.personalInfo.firstName}
                             />
-                            <AvatarFallback>
+                            <AvatarFallback className="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600">
                               {employee.personalInfo.firstName[0]}
                               {employee.personalInfo.lastName[0]}
                             </AvatarFallback>
                           </Avatar>
-                          <div>
-                            <h3 className="font-semibold">
+                          <div className="min-w-0">
+                            <p className="font-medium truncate">
                               {employee.personalInfo.firstName}{" "}
                               {employee.personalInfo.lastName}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {t("employees.idLabel", {
-                                id: employee.jobDetails.employeeId,
-                              })}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {employee.jobDetails.employeeId}
                             </p>
                           </div>
                         </div>
                       </td>
-                      <td className="p-3 max-w-[100px]">
-                        <div className="flex items-center gap-2">
-                          <Building className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                          <span className="text-sm leading-tight break-words">
-                            {employee.jobDetails.department
-                              .split(" ")
-                              .map((word, index, array) => (
-                                <span key={index}>
-                                  {word}
-                                  {index < array.length - 1 && <br />}
-                                </span>
-                              ))}
-                          </span>
-                        </div>
+                      <td className="px-4 py-3">
+                        <span className="text-sm">
+                          {employee.jobDetails.department}
+                        </span>
                       </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <Briefcase className="h-4 w-4 text-muted-foreground" />
-                          <span>{employee.jobDetails.position}</span>
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <MapPin className="h-3 w-3 text-muted-foreground" />
-                          <span className="text-xs text-muted-foreground">
-                            {employee.jobDetails.workLocation}
-                          </span>
-                        </div>
+                      <td className="px-4 py-3">
+                        <span className="text-sm">
+                          {employee.jobDetails.position}
+                        </span>
                       </td>
-                      <td className="p-3">
-                        <div className="grid grid-cols-2 gap-1 w-fit">
-                          {/* Email */}
-                          <div className="flex items-center justify-center p-1">
-                            <div title={employee.personalInfo.email}>
-                              <Mail className="h-4 w-4 text-blue-600 cursor-pointer hover:bg-blue-50 rounded" />
-                            </div>
-                          </div>
-
-                          {/* Phone */}
-                          <div className="flex items-center justify-center p-1">
-                            <div
-                              title={
-                                employee.personalInfo.phone ||
-                                t("employees.contactTooltips.noPhone")
-                              }
-                            >
-                              <Phone className="h-4 w-4 text-green-600 cursor-pointer hover:bg-green-50 rounded" />
-                            </div>
-                          </div>
-
-                          {/* Emergency Contact */}
-                          <div className="flex items-center justify-center p-1">
-                            <div
-                              title={
-                                employee.personalInfo.emergencyContactName
-                                  ? t("employees.contactTooltips.emergency", {
-                                      name: employee.personalInfo.emergencyContactName,
-                                    })
-                                  : t("employees.contactTooltips.noEmergency")
-                              }
-                            >
-                              <Cross className="h-4 w-4 text-red-600 cursor-pointer hover:bg-red-50 rounded" />
-                            </div>
-                          </div>
-
-                          {/* Mobile App */}
-                          <div className="flex items-center justify-center p-1">
-                            <div
-                              title={
-                                (employee.personalInfo as any).phoneApp
-                                  ? t("employees.contactTooltips.app", {
-                                      app: (employee.personalInfo as any).phoneApp,
-                                    })
-                                  : t("employees.contactTooltips.noApp")
-                              }
-                            >
-                              <Smartphone className="h-4 w-4 text-purple-600 cursor-pointer hover:bg-purple-50 rounded" />
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center gap-2">
-                          <Calendar className="h-4 w-4 text-muted-foreground" />
-                          <span>{employee.jobDetails.hireDate}</span>
-                        </div>
-                        <Badge variant="outline" className="mt-1">
-                          {employee.jobDetails.employmentType}
+                      <td className="px-4 py-3">
+                        <Badge
+                          className={
+                            employee.status === "active"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              : employee.status === "inactive"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                          }
+                        >
+                          {getStatusLabel(employee.status)}
                         </Badge>
                       </td>
-                      <td className="p-3">
-                        <div>
-                          <span className="font-semibold">
+                      {showSalary && (
+                        <td className="px-4 py-3">
+                          <span className="font-medium tabular-nums">
                             {formatSalary(
                               employee.compensation.monthlySalary ||
                                 Math.round(
-                                  (employee.compensation as any).annualSalary /
-                                    12,
-                                ) ||
-                                0,
+                                  (employee.compensation as any).annualSalary / 12
+                                ) || 0
                             )}
                           </span>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            {t("employees.benefitsLabel", {
-                              benefits:
-                                employee.compensation.benefitsPackage ||
-                                t("employees.benefitsNone"),
-                            })}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="p-3">
-                        <div className="flex items-center justify-center gap-2">
-                          {(() => {
-                            const completeness =
-                              getProfileCompleteness(employee);
-                            const isComplete = completeness.isComplete;
-                            return (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleViewEmployee(employee)}
-                                className={
-                                  isComplete
-                                    ? "text-green-600 hover:text-green-700"
-                                    : "text-red-600 hover:text-red-700"
-                                }
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                            );
-                          })()}
+                        </td>
+                      )}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button
                             variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditEmployee(employee)}
+                            size="icon"
+                            className="h-8 w-8"
+                            title="View profile"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleViewEmployee(employee);
+                            }}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            title="Edit employee"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEditEmployee(employee);
+                            }}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-700"
-                            onClick={() => handleDeleteEmployee(employee)}
+                            size="icon"
+                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
+                            title="Offboard employee"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDeleteEmployee(employee);
+                            }}
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <UserMinus className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
@@ -1326,10 +1245,10 @@ export default function AllEmployees() {
 
               {/* Empty State */}
               {paginatedEmployees.length === 0 && !loading && (
-                <div className="text-center py-12">
+                <div className="text-center py-12 px-4">
                   {connectionError ? (
                     <>
-                      <AlertTriangle className="h-16 w-16 mx-auto mb-4 text-red-400" />
+                      <AlertTriangle className="h-12 w-12 mx-auto mb-4 text-red-400" />
                       <h3 className="text-lg font-semibold mb-2">
                         {t("employees.empty.connectionTitle")}
                       </h3>
@@ -1343,7 +1262,7 @@ export default function AllEmployees() {
                     </>
                   ) : (
                     <>
-                      <Users className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                      <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
                       <h3 className="text-lg font-semibold mb-2">
                         {t("employees.empty.noEmployeesTitle")}
                       </h3>

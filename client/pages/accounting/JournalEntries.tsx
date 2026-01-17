@@ -33,6 +33,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -49,6 +54,9 @@ import {
   Filter,
   Trash2,
   Calculator,
+  ChevronRight,
+  Lock,
+  AlertCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { accountingService } from "@/services/accountingService";
@@ -77,8 +85,12 @@ export default function JournalEntries() {
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // Expanded entries state
+  const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   // New entry form
   const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
@@ -120,6 +132,7 @@ export default function JournalEntries() {
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
+      if (sourceFilter !== "all" && entry.source !== sourceFilter) return false;
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         return (
@@ -129,7 +142,25 @@ export default function JournalEntries() {
       }
       return true;
     });
-  }, [entries, statusFilter, searchTerm]);
+  }, [entries, statusFilter, sourceFilter, searchTerm]);
+
+  // Toggle entry expansion
+  const toggleExpanded = (entryId: string) => {
+    setExpandedEntries((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(entryId)) {
+        newSet.delete(entryId);
+      } else {
+        newSet.add(entryId);
+      }
+      return newSet;
+    });
+  };
+
+  // Check if entry is from payroll (locked)
+  const isLockedEntry = (source: JournalEntry["source"] | undefined) => {
+    return source === "payroll";
+  };
 
   // Calculate totals for form
   const formTotals = useMemo(() => {
@@ -441,16 +472,19 @@ export default function JournalEntries() {
                   Journal Entries
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Lançamentos Contábeis - Record and manage transactions
+                  Lançamentos Contábeis - Review accounting entries from payroll and operations
                 </p>
               </div>
             </div>
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                 <DialogTrigger asChild>
-                  <Button onClick={resetForm} className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600">
-                    <Plus className="h-4 w-4 mr-2" />
-                    New Entry
-                  </Button>
+                  <div className="flex flex-col items-end gap-1">
+                    <Button onClick={resetForm} variant="outline" size="sm" className="border-orange-300 hover:border-orange-400 hover:bg-orange-50">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Manual Entry
+                    </Button>
+                    <span className="text-xs text-muted-foreground">For non-payroll adjustments only</span>
+                  </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
@@ -639,26 +673,30 @@ export default function JournalEntries() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-gray-600">Total Entries</p>
+                <p className="text-sm text-muted-foreground">Total Entries</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
+                <p className="text-xs text-muted-foreground/70">for {yearFilter}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-green-600">Posted</p>
+                <p className="text-sm text-green-600 dark:text-green-400">Posted</p>
                 <p className="text-2xl font-bold">{stats.posted}</p>
+                <p className="text-xs text-muted-foreground/70">entries finalized</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-yellow-600">Drafts</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">Drafts</p>
                 <p className="text-2xl font-bold">{stats.drafts}</p>
+                <p className="text-xs text-muted-foreground/70">pending review</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-gray-600">Total Debits</p>
+                <p className="text-sm text-muted-foreground">Total Debits</p>
                 <p className="text-2xl font-bold">{formatCurrencyTL(stats.totalDebit)}</p>
+                <p className="text-xs text-muted-foreground/70">posted entries for {yearFilter}</p>
               </CardContent>
             </Card>
           </div>
@@ -669,7 +707,7 @@ export default function JournalEntries() {
               <div className="flex flex-col md:flex-row gap-4">
                 <div className="flex-1">
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       placeholder="Search by entry number or description..."
                       value={searchTerm}
@@ -678,7 +716,24 @@ export default function JournalEntries() {
                     />
                   </div>
                 </div>
-                <div className="w-40">
+                <div className="w-36">
+                  <Select value={sourceFilter} onValueChange={setSourceFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="All sources" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Sources</SelectItem>
+                      <SelectItem value="payroll">Payroll</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="opening">Opening</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="revenue">Revenue</SelectItem>
+                      <SelectItem value="payment">Payment</SelectItem>
+                      <SelectItem value="receipt">Receipt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="w-32">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
                       <SelectValue placeholder="All statuses" />
@@ -691,7 +746,7 @@ export default function JournalEntries() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="w-32">
+                <div className="w-28">
                   <Select value={yearFilter} onValueChange={setYearFilter}>
                     <SelectTrigger>
                       <SelectValue />
@@ -709,73 +764,180 @@ export default function JournalEntries() {
             </CardContent>
           </Card>
 
-          {/* Entries Table */}
+          {/* Entries Table - Grouped by Journal Entry */}
           <Card>
             <CardHeader>
               <CardTitle>Journal Entries</CardTitle>
               <CardDescription>
-                Showing {filteredEntries.length} entries
+                Showing {filteredEntries.length} entries for {yearFilter}
+                {sourceFilter !== "all" && ` • Source: ${sourceFilter}`}
+                {statusFilter !== "all" && ` • Status: ${statusFilter}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {filteredEntries.length === 0 ? (
                 <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                  <p className="text-gray-500 mb-4">No journal entries found</p>
-                  <Button onClick={() => setShowAddDialog(true)}>
-                    Create Your First Entry
-                  </Button>
+                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <p className="text-muted-foreground mb-2">No journal entries found</p>
+                  <p className="text-sm text-muted-foreground/70 mb-4">
+                    Journal entries are typically generated from payroll runs
+                  </p>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Entry #</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead>Source</TableHead>
-                        <TableHead className="text-right">Debit</TableHead>
-                        <TableHead className="text-right">Credit</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="w-20">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredEntries.map((entry) => (
-                        <TableRow key={entry.id}>
-                          <TableCell>
-                            <code className="font-mono text-sm">
-                              {entry.entryNumber}
-                            </code>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(entry.date).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell>
-                            <span className="line-clamp-1">{entry.description}</span>
-                          </TableCell>
-                          <TableCell>{getSourceBadge(entry.source)}</TableCell>
-                          <TableCell className="text-right font-mono">
-                            {formatCurrencyTL(entry.totalDebit)}
-                          </TableCell>
-                          <TableCell className="text-right font-mono">
-                            {formatCurrencyTL(entry.totalCredit)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(entry.status)}</TableCell>
-                          <TableCell>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => viewDetails(entry)}
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                <div className="space-y-2">
+                  {filteredEntries.map((entry) => {
+                    const isExpanded = expandedEntries.has(entry.id!);
+                    const isLocked = isLockedEntry(entry.source);
+                    const isBalanced = Math.abs(entry.totalDebit - entry.totalCredit) < 0.01;
+
+                    return (
+                      <Collapsible
+                        key={entry.id}
+                        open={isExpanded}
+                        onOpenChange={() => toggleExpanded(entry.id!)}
+                      >
+                        {/* Entry Header Row */}
+                        <div className="border rounded-lg overflow-hidden bg-card hover:bg-muted/30 transition-colors">
+                          <CollapsibleTrigger asChild>
+                            <button className="w-full px-4 py-3 flex items-center gap-4 text-left">
+                              <ChevronRight
+                                className={`h-4 w-4 text-muted-foreground transition-transform ${
+                                  isExpanded ? "rotate-90" : ""
+                                }`}
+                              />
+                              <div className="flex-1 grid grid-cols-12 gap-4 items-center">
+                                {/* Entry Number + Lock */}
+                                <div className="col-span-2 flex items-center gap-2">
+                                  <code className="font-mono text-sm font-medium">
+                                    {entry.entryNumber}
+                                  </code>
+                                  {isLocked && (
+                                    <span title="Linked to payroll run">
+                                      <Lock className="h-3 w-3 text-blue-500" />
+                                    </span>
+                                  )}
+                                </div>
+
+                                {/* Date */}
+                                <div className="col-span-1 text-sm text-muted-foreground">
+                                  {new Date(entry.date).toLocaleDateString()}
+                                </div>
+
+                                {/* Description */}
+                                <div className="col-span-4">
+                                  <span className="text-sm font-medium line-clamp-1">
+                                    {entry.description}
+                                  </span>
+                                </div>
+
+                                {/* Source */}
+                                <div className="col-span-1">
+                                  {getSourceBadge(entry.source)}
+                                </div>
+
+                                {/* Balanced Totals */}
+                                <div className="col-span-2 text-right">
+                                  <span className="font-mono text-sm font-semibold">
+                                    {formatCurrencyTL(entry.totalDebit)}
+                                  </span>
+                                  {isBalanced ? (
+                                    <CheckCircle className="h-3 w-3 text-green-500 inline ml-1" />
+                                  ) : (
+                                    <AlertCircle className="h-3 w-3 text-red-500 inline ml-1" />
+                                  )}
+                                </div>
+
+                                {/* Status */}
+                                <div className="col-span-2">
+                                  {getStatusBadge(entry.status)}
+                                </div>
+                              </div>
+                            </button>
+                          </CollapsibleTrigger>
+
+                          {/* Expanded Lines */}
+                          <CollapsibleContent>
+                            <div className="border-t bg-muted/20">
+                              <Table>
+                                <TableHeader>
+                                  <TableRow className="hover:bg-transparent">
+                                    <TableHead className="w-16"></TableHead>
+                                    <TableHead>Account</TableHead>
+                                    <TableHead className="text-right w-32">Debit</TableHead>
+                                    <TableHead className="text-right w-32">Credit</TableHead>
+                                  </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                  {entry.lines.map((line, index) => (
+                                    <TableRow key={index} className="hover:bg-muted/30">
+                                      <TableCell></TableCell>
+                                      <TableCell>
+                                        <div className="flex items-center gap-2">
+                                          <code className="text-xs text-muted-foreground">
+                                            {line.accountCode}
+                                          </code>
+                                          <span className="text-sm">{line.accountName}</span>
+                                        </div>
+                                        {line.description && (
+                                          <p className="text-xs text-muted-foreground mt-0.5 pl-12">
+                                            {line.description}
+                                          </p>
+                                        )}
+                                      </TableCell>
+                                      <TableCell className="text-right font-mono text-sm">
+                                        {line.debit > 0 ? formatCurrencyTL(line.debit) : "-"}
+                                      </TableCell>
+                                      <TableCell className="text-right font-mono text-sm">
+                                        {line.credit > 0 ? formatCurrencyTL(line.credit) : "-"}
+                                      </TableCell>
+                                    </TableRow>
+                                  ))}
+                                  {/* Totals Row */}
+                                  <TableRow className="bg-muted/50 font-semibold border-t">
+                                    <TableCell></TableCell>
+                                    <TableCell className="text-sm">Total</TableCell>
+                                    <TableCell className="text-right font-mono text-sm">
+                                      {formatCurrencyTL(entry.totalDebit)}
+                                    </TableCell>
+                                    <TableCell className="text-right font-mono text-sm">
+                                      {formatCurrencyTL(entry.totalCredit)}
+                                    </TableCell>
+                                  </TableRow>
+                                </TableBody>
+                              </Table>
+
+                              {/* Entry metadata footer */}
+                              <div className="px-4 py-2 flex items-center justify-between text-xs text-muted-foreground border-t">
+                                <div className="flex items-center gap-4">
+                                  {isLocked && (
+                                    <span className="flex items-center gap-1">
+                                      <Lock className="h-3 w-3" />
+                                      Linked to payroll run
+                                    </span>
+                                  )}
+                                  {entry.sourceRef && (
+                                    <span>Ref: {entry.sourceRef}</span>
+                                  )}
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    viewDetails(entry);
+                                  }}
+                                  className="h-7 text-xs"
+                                >
+                                  <Eye className="h-3 w-3 mr-1" />
+                                  Full Details
+                                </Button>
+                              </div>
+                            </div>
+                          </CollapsibleContent>
+                        </div>
+                      </Collapsible>
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
