@@ -31,11 +31,12 @@ import {
   BarChart3,
   Menu,
   X,
+  Wallet,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
 
-// Simple 5-tab navigation
+// Simple 6-tab navigation
 const NAV_ITEMS: Array<{
   id: SectionId;
   label: string;
@@ -63,6 +64,13 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.payroll",
     path: "/payroll",
     icon: Calculator,
+  },
+  {
+    id: "money",
+    label: "Money",
+    labelKey: "nav.money",
+    path: "/money",
+    icon: Wallet,
   },
   {
     id: "accounting",

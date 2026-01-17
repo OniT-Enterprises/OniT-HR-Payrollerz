@@ -3,7 +3,7 @@
  * Defines color theming for each major section of the app
  */
 
-export type SectionId = "dashboard" | "people" | "payroll" | "accounting" | "reports";
+export type SectionId = "dashboard" | "people" | "payroll" | "money" | "accounting" | "reports";
 
 export interface SectionTheme {
   id: SectionId;
@@ -52,6 +52,17 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     gradient: "from-emerald-500 to-emerald-600",
     ring: "ring-emerald-500",
   },
+  money: {
+    id: "money",
+    text: "text-teal-600 dark:text-teal-400",
+    textMuted: "text-teal-500 dark:text-teal-500",
+    bg: "bg-teal-100 dark:bg-teal-900/30",
+    bgSubtle: "bg-teal-50 dark:bg-teal-950/30",
+    border: "border-teal-300 dark:border-teal-800",
+    borderLeft: "border-l-4 border-l-teal-500",
+    gradient: "from-teal-500 to-teal-600",
+    ring: "ring-teal-500",
+  },
   accounting: {
     id: "accounting",
     text: "text-amber-600 dark:text-amber-400",
@@ -86,6 +97,9 @@ export function getSectionFromPath(pathname: string): SectionId {
   if (pathname.startsWith("/payroll")) {
     return "payroll";
   }
+  if (pathname.startsWith("/money")) {
+    return "money";
+  }
   if (pathname.startsWith("/accounting")) {
     return "accounting";
   }
@@ -109,6 +123,7 @@ export const navColors: Record<SectionId, string> = {
   dashboard: "text-slate-600 dark:text-slate-400",
   people: "text-blue-500",
   payroll: "text-emerald-500",
+  money: "text-teal-500",
   accounting: "text-amber-500",
   reports: "text-purple-500",
 };
@@ -120,6 +135,7 @@ export const navActiveIndicator: Record<SectionId, string> = {
   dashboard: "bg-slate-500",
   people: "bg-blue-500",
   payroll: "bg-emerald-500",
+  money: "bg-teal-500",
   accounting: "bg-amber-500",
   reports: "bg-purple-500",
 };
