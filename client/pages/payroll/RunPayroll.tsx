@@ -5,7 +5,7 @@
  * UX Principle: "Point of no return" - treat this page with seriousness
  */
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -207,79 +207,88 @@ export default function RunPayroll() {
     loadEmployees();
   }, [toast, payFrequency]);
 
-  // Recalculate payroll whenever inputs change
+  /**
+   * Calculate payroll for a single employee data object.
+   * Extracted to avoid code duplication and enable inline calculation.
+   */
+  const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
+    const monthlySalary = data.employee.compensation.monthlySalary || 0;
+    const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
+    const hourlyRate = monthlySalary / monthlyHours;
+
+    const input: TLPayrollInput = {
+      employeeId: data.employee.id || "",
+      monthlySalary,
+      payFrequency,
+      isHourly: false,
+      hourlyRate,
+      regularHours: data.regularHours,
+      overtimeHours: data.overtimeHours,
+      nightShiftHours: data.nightShiftHours,
+      holidayHours: data.holidayHours,
+      restDayHours: 0,
+      absenceHours: 0,
+      lateArrivalMinutes: 0,
+      sickDaysUsed: data.sickDays,
+      ytdSickDaysUsed: 0,
+      bonus: data.bonus,
+      commission: 0,
+      perDiem: data.perDiem,
+      foodAllowance: 0,
+      transportAllowance: data.allowances,
+      otherEarnings: 0,
+      taxInfo: {
+        isResident: true,
+        hasTaxExemption: false,
+      },
+      loanRepayment: 0,
+      advanceRepayment: 0,
+      courtOrders: 0,
+      otherDeductions: 0,
+      ytdGrossPay: 0,
+      ytdIncomeTax: 0,
+      ytdINSSEmployee: 0,
+      monthsWorkedThisYear: new Date().getMonth() + 1,
+      hireDate: data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0],
+    };
+
+    try {
+      return calculateTLPayroll(input);
+    } catch (error) {
+      console.error("Calculation error for employee:", data.employee.id, error);
+      return null;
+    }
+  }, [payFrequency]);
+
+  // Track if we need to recalculate (used by useEffect below)
+  const calculationVersion = useRef(0);
+
+  // Initial calculation when data is first loaded
+  useEffect(() => {
+    if (employeePayrollData.length === 0) return;
+    // Only run initial calculation if no calculations exist yet
+    if (employeePayrollData.some(d => d.calculation !== null)) return;
+
+    calculationVersion.current++;
+    const updatedData = employeePayrollData.map((data) => ({
+      ...data,
+      calculation: calculateForEmployee(data),
+    }));
+    setEmployeePayrollData(updatedData);
+  }, [employeePayrollData.length, calculateForEmployee]);
+
+  // Recalculate when pay frequency changes
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
 
-    const updatedData = employeePayrollData.map((data) => {
-      const monthlySalary = data.employee.compensation.monthlySalary || 0;
-      const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-      const hourlyRate = monthlySalary / monthlyHours;
-
-      const input: TLPayrollInput = {
-        employeeId: data.employee.id || "",
-        monthlySalary,
-        payFrequency,
-        isHourly: false,
-        hourlyRate,
-        regularHours: data.regularHours,
-        overtimeHours: data.overtimeHours,
-        nightShiftHours: data.nightShiftHours,
-        holidayHours: data.holidayHours,
-        restDayHours: 0,
-        absenceHours: 0,
-        lateArrivalMinutes: 0,
-        sickDaysUsed: data.sickDays,
-        ytdSickDaysUsed: 0,
-        bonus: data.bonus,
-        commission: 0,
-        perDiem: data.perDiem,
-        foodAllowance: 0,
-        transportAllowance: data.allowances,
-        otherEarnings: 0,
-        taxInfo: {
-          isResident: true,
-          hasTaxExemption: false,
-        },
-        loanRepayment: 0,
-        advanceRepayment: 0,
-        courtOrders: 0,
-        otherDeductions: 0,
-        ytdGrossPay: 0,
-        ytdIncomeTax: 0,
-        ytdINSSEmployee: 0,
-        monthsWorkedThisYear: new Date().getMonth() + 1,
-        hireDate: data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0],
-      };
-
-      try {
-        const calculation = calculateTLPayroll(input);
-        return { ...data, calculation };
-      } catch (error) {
-        console.error("Calculation error for employee:", data.employee.id, error);
-        return { ...data, calculation: null };
-      }
-    });
-
-    // Only update if calculations changed
-    const hasChanges = updatedData.some(
-      (item, i) =>
-        item.calculation?.grossPay !== employeePayrollData[i].calculation?.grossPay ||
-        item.calculation?.netPay !== employeePayrollData[i].calculation?.netPay
-    );
-
-    if (hasChanges) {
-      setEmployeePayrollData(updatedData);
-    }
-  }, [
-    employeePayrollData
-      .map(
-        (d) =>
-          `${d.regularHours}-${d.overtimeHours}-${d.nightShiftHours}-${d.bonus}-${d.perDiem}`
-      )
-      .join(","),
-    payFrequency,
-  ]);
+    calculationVersion.current++;
+    const updatedData = employeePayrollData.map((data) => ({
+      ...data,
+      calculation: calculateForEmployee(data),
+    }));
+    setEmployeePayrollData(updatedData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [payFrequency]);
 
   // Detect employees with compliance issues (for NGO "run anyway" scenarios)
   const complianceIssues = useMemo(() => {

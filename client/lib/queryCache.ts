@@ -2,42 +2,44 @@
  * Query Cache Persistence
  * Saves React Query cache to localStorage for instant loading on page refresh
  *
- * SECURITY: Sensitive data (payroll, salary, bank info) is excluded from
- * localStorage to prevent data leakage on shared computers.
+ * SECURITY: Uses ALLOW-LIST approach - only explicitly safe data is persisted.
+ * This prevents PII/financial data leakage even if new queries are added
+ * without considering caching implications.
  */
 
 import { QueryClient } from '@tanstack/react-query';
 
 const CACHE_KEY = 'onit-query-cache';
-const CACHE_VERSION = 2; // Bumped version to clear old caches with sensitive data
+const CACHE_VERSION = 3; // Bumped version to clear old caches (switched to allow-list)
 const MAX_AGE = 1000 * 60 * 30; // 30 minutes
 
 /**
- * Query keys containing these patterns will NOT be persisted to localStorage.
- * This prevents sensitive payroll/financial data from being stored on the client.
+ * ALLOW-LIST: Only these query key patterns are safe to persist to localStorage.
+ * Everything else is excluded by default.
+ *
+ * This is safer than a deny-list because:
+ * 1. New queries default to NOT being cached (secure by default)
+ * 2. Developers must explicitly opt-in to persistence
+ * 3. No risk of missing a sensitive pattern like "bonus" or "commission"
  */
-const SENSITIVE_PATTERNS = [
-  'payroll',
-  'salary',
-  'salaries',
-  'bank',
-  'compensation',
-  'deduction',
-  'advance',
-  'loan',
-  'tax',
-  'inss',
-  'wit',
-  'earnings',
-  'netpay',
-  'grosspay',
-  'transfer',
-  'payment',
-  'ssn',
-  'social-security',
-  'apikey',
-  'secret',
-  'credential',
+const SAFE_TO_PERSIST_PATTERNS = [
+  // Static configuration data
+  'settings',
+  'departments',
+  'positions',
+  'locations',
+  'work-locations',
+  // UI preferences
+  'preferences',
+  'theme',
+  'language',
+  // Public/static lists
+  'countries',
+  'currencies',
+  'timezones',
+  // Feature flags
+  'features',
+  'flags',
 ];
 
 interface CacheEntry {
@@ -52,21 +54,21 @@ interface CacheStore {
 }
 
 /**
- * Check if a query key contains sensitive data patterns
- * Returns true if the key should NOT be persisted
+ * Check if a query key is explicitly safe to persist
+ * Returns true ONLY if the key matches an allowed pattern
  */
-function isSensitiveQueryKey(queryKey: string): boolean {
+function isSafeToPersist(queryKey: string): boolean {
   const lowerKey = queryKey.toLowerCase();
-  return SENSITIVE_PATTERNS.some((pattern) => lowerKey.includes(pattern));
+  return SAFE_TO_PERSIST_PATTERNS.some((pattern) => lowerKey.includes(pattern));
 }
 
 /**
  * Save specific query data to localStorage
- * SECURITY: Skips sensitive data to prevent leakage
+ * SECURITY: Only persists data that matches the allow-list
  */
 export function persistQueryData(queryKey: string, data: unknown): void {
-  // Skip sensitive data - never persist to localStorage
-  if (isSensitiveQueryKey(queryKey)) {
+  // Only persist if explicitly allowed - secure by default
+  if (!isSafeToPersist(queryKey)) {
     return;
   }
 
@@ -86,7 +88,7 @@ export function persistQueryData(queryKey: string, data: unknown): void {
 
 /**
  * Load cache store from localStorage
- * Also cleans up any sensitive entries that shouldn't be persisted
+ * Cleans up expired entries and any that no longer match the allow-list
  */
 function loadCacheStore(): CacheStore {
   try {
@@ -94,13 +96,13 @@ function loadCacheStore(): CacheStore {
     if (raw) {
       const store = JSON.parse(raw) as CacheStore;
       if (store.version === CACHE_VERSION) {
-        // Clean up expired entries AND sensitive entries that shouldn't be persisted
+        // Clean up expired entries AND entries no longer in allow-list
         const now = Date.now();
         let needsUpdate = false;
         Object.keys(store.entries).forEach((key) => {
           if (
             now - store.entries[key].timestamp > MAX_AGE ||
-            isSensitiveQueryKey(key)
+            !isSafeToPersist(key)
           ) {
             delete store.entries[key];
             needsUpdate = true;
@@ -173,7 +175,7 @@ export function hydrateQueryClient(queryClient: QueryClient): void {
 /**
  * Setup persistence for a QueryClient
  * Saves data whenever a query succeeds
- * SECURITY: Sensitive data is automatically filtered by persistQueryData
+ * SECURITY: Only allow-listed queries are persisted (secure by default)
  */
 export function setupQueryPersistence(queryClient: QueryClient): () => void {
   const unsubscribe = queryClient.getQueryCache().subscribe((event) => {
@@ -181,10 +183,8 @@ export function setupQueryPersistence(queryClient: QueryClient): () => void {
       const { queryKey, state } = event.query;
       const keyString = JSON.stringify(queryKey);
 
-      // Only persist list/count queries, and persistQueryData will filter sensitive ones
-      if (keyString.includes('list') || keyString.includes('counts')) {
-        persistQueryData(keyString, state.data);
-      }
+      // persistQueryData will only save if key matches allow-list
+      persistQueryData(keyString, state.data);
     }
   });
 

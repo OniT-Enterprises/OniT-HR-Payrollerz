@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -330,28 +331,31 @@ export default function CSVColumnMapper({
     setLoading(true);
     try {
       const text = await csvFile.text();
-      const lines = text.split("\n").filter((line) => line.trim());
 
-      if (lines.length < 2) {
+      // Use papaparse for robust CSV handling:
+      // - Correctly handles quoted fields with commas (e.g., "Address: Apt 1, Dili")
+      // - Handles escaped quotes within quoted fields
+      // - Handles different line endings (CRLF vs LF)
+      // - Handles newlines within quoted fields
+      const result = Papa.parse<Record<string, string>>(text, {
+        header: true,
+        skipEmptyLines: true,
+        transformHeader: (header) => header.trim(),
+        transform: (value) => value.trim(),
+      });
+
+      if (result.errors.length > 0) {
+        console.warn("CSV parsing warnings:", result.errors);
+      }
+
+      const data = result.data;
+      const headers = result.meta.fields || [];
+
+      if (headers.length === 0 || data.length === 0) {
         throw new Error(
           "CSV file must have at least a header row and one data row",
         );
       }
-
-      const headers = lines[0]
-        .split(",")
-        .map((header) => header.replace(/"/g, "").trim());
-
-      const data = lines.slice(1).map((line) => {
-        const values = line
-          .split(",")
-          .map((value) => value.replace(/"/g, "").trim());
-        const row: any = {};
-        headers.forEach((header, index) => {
-          row[header] = values[index] || "";
-        });
-        return row;
-      });
 
       const columns: CSVColumn[] = headers.map((header, index) => ({
         id: `csv-col-${index}`,
