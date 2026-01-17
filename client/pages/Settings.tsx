@@ -68,7 +68,9 @@ import {
   DollarSign,
   Percent,
   Clock,
+  Plug,
 } from "lucide-react";
+import { QuickBooksSettings } from "@/components/settings/QuickBooksSettings";
 
 // ============================================
 // Loading Skeleton
@@ -431,7 +433,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 mb-6">
+          <TabsList className="grid w-full grid-cols-6 mb-6">
             <TabsTrigger value="company" className="gap-2">
               <Building className="h-4 w-4" />
               <span className="hidden sm:inline">{t("settings.tabs.company")}</span>
@@ -451,6 +453,10 @@ export default function Settings() {
             <TabsTrigger value="payroll" className="gap-2">
               <Calculator className="h-4 w-4" />
               <span className="hidden sm:inline">{t("settings.tabs.payroll")}</span>
+            </TabsTrigger>
+            <TabsTrigger value="integrations" className="gap-2">
+              <Plug className="h-4 w-4" />
+              <span className="hidden sm:inline">{t("settings.tabs.integrations") || "Integrations"}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1721,6 +1727,13 @@ export default function Settings() {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* ================================ */}
+          {/* Integrations Tab */}
+          {/* ================================ */}
+          <TabsContent value="integrations">
+            {tenantId && <QuickBooksSettings tenantId={tenantId} />}
           </TabsContent>
         </Tabs>
       </div>

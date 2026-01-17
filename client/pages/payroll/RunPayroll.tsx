@@ -67,6 +67,7 @@ import {
 } from "lucide-react";
 import { employeeService, Employee } from "@/services/employeeService";
 import { payrollService } from "@/services/payrollService";
+import { accountingService } from "@/services/accountingService";
 import {
   calculateTLPayroll,
   type TLPayrollInput,
@@ -566,16 +567,32 @@ export default function RunPayroll() {
   const handleProcessPayroll = async () => {
     setProcessing(true);
     try {
-      // In a real app, this would:
-      // 1. Lock the payroll data
-      // 2. Generate payslips
-      // 3. Create accounting entries
-      // 4. Trigger bank transfers
+      if (!periodStart || !periodEnd || !payDate) {
+        toast({
+          title: "Dates required",
+          description: "Set pay period and pay date before processing.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // For now, show a success message
+      // Create and post accounting journal entry from totals
+      await accountingService.journalEntries.createFromPayrollSummary({
+        periodStart,
+        periodEnd,
+        payDate,
+        totalGrossPay: totals.grossPay,
+        totalINSSEmployer: totals.inssEmployer,
+        totalIncomeTax: totals.incomeTax,
+        totalINSSEmployee: totals.inssEmployee,
+        totalNetPay: totals.netPay,
+        employeeCount: employees.length,
+        approvedBy: "current-user",
+      });
+
       toast({
         title: "Payroll Processed",
-        description: `Payroll for ${employees.length} employees has been processed successfully.`,
+        description: `Payroll for ${employees.length} employees processed and journal posted.`,
       });
 
       setShowFinalConfirmDialog(false);

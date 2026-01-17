@@ -147,6 +147,16 @@ class JournalEntryService {
       ...entry,
       createdAt: serverTimestamp(),
     });
+
+    // If the entry is already posted, immediately create GL rows so downstream
+    // reports (GL/TB) stay in sync.
+    if (entry.status === 'posted') {
+      await generalLedgerService.createEntriesFromJournal({
+        id: docRef.id,
+        ...entry,
+      } as JournalEntry);
+    }
+
     return docRef.id;
   }
 
@@ -254,7 +264,10 @@ class JournalEntryService {
     // Get account IDs from codes
     const getAccountId = async (code: string) => {
       const account = await accountService.getAccountByCode(code);
-      return account?.id || '';
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return account.id;
     };
 
     // 1. Debit Salary Expense
@@ -352,6 +365,127 @@ class JournalEntryService {
 
     return await this.createJournalEntry(journalEntry);
   }
+
+  /**
+   * Create journal entry from summary payroll totals (generic payroll flow)
+   * Use this when detailed TL payroll records are not available.
+   */
+  async createFromPayrollSummary(summary: {
+    periodStart: string;
+    periodEnd: string;
+    payDate: string;
+    totalGrossPay: number;
+    totalINSSEmployer: number;
+    totalIncomeTax: number;
+    totalINSSEmployee: number;
+    totalNetPay: number;
+    employeeCount: number;
+    approvedBy?: string;
+    sourceId?: string;
+  }): Promise<string> {
+    const year = new Date(summary.periodEnd).getFullYear();
+    const month = new Date(summary.periodEnd).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(year);
+
+    const lines: JournalEntryLine[] = [];
+    let lineNumber = 1;
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    const salaryAccount = await getAccountId('5110');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: salaryAccount.id,
+      accountCode: '5110',
+      accountName: salaryAccount.name,
+      debit: summary.totalGrossPay,
+      credit: 0,
+      description: 'Gross salaries',
+    });
+
+    const inssExpense = await getAccountId('5150');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: inssExpense.id,
+      accountCode: '5150',
+      accountName: inssExpense.name,
+      debit: summary.totalINSSEmployer,
+      credit: 0,
+      description: 'INSS employer contribution (6%)',
+    });
+
+    const salariesPayable = await getAccountId('2210');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: salariesPayable.id,
+      accountCode: '2210',
+      accountName: salariesPayable.name,
+      debit: 0,
+      credit: summary.totalNetPay,
+      description: 'Net salaries payable',
+    });
+
+    const witPayable = await getAccountId('2220');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: witPayable.id,
+      accountCode: '2220',
+      accountName: witPayable.name,
+      debit: 0,
+      credit: summary.totalIncomeTax,
+      description: 'Withholding Income Tax (WIT)',
+    });
+
+    const inssEmployeePayable = await getAccountId('2230');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: inssEmployeePayable.id,
+      accountCode: '2230',
+      accountName: inssEmployeePayable.name,
+      debit: 0,
+      credit: summary.totalINSSEmployee,
+      description: 'INSS employee contribution (4%)',
+    });
+
+    const inssEmployerPayable = await getAccountId('2240');
+    lines.push({
+      lineNumber: lineNumber++,
+      accountId: inssEmployerPayable.id,
+      accountCode: '2240',
+      accountName: inssEmployerPayable.name,
+      debit: 0,
+      credit: summary.totalINSSEmployer,
+      description: 'INSS employer contribution (6%)',
+    });
+
+    const totalDebit = lines.reduce((sum, l) => sum + l.debit, 0);
+    const totalCredit = lines.reduce((sum, l) => sum + l.credit, 0);
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: summary.payDate,
+      description: `Payroll for ${summary.periodStart} to ${summary.periodEnd}`,
+      source: 'payroll',
+      sourceId: summary.sourceId,
+      sourceRef: `Payroll Run - ${summary.employeeCount} employees`,
+      lines,
+      totalDebit,
+      totalCredit,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: summary.approvedBy || 'system',
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(journalEntry);
+  }
 }
 
 // ============================================
@@ -387,25 +521,37 @@ class GeneralLedgerService {
   }
 
   async getEntriesByAccount(
-    accountId: string,
+    accountKey: string,
     options?: {
       startDate?: string;
       endDate?: string;
       fiscalYear?: number;
     }
   ): Promise<GeneralLedgerEntry[]> {
-    let q = query(
-      this.collectionRef,
-      where('accountId', '==', accountId),
-      orderBy('entryDate')
-    );
+    // Support legacy rows where accountId stored as accountCode by querying both.
+    const queries = [
+      query(this.collectionRef, where('accountId', '==', accountKey), orderBy('entryDate')),
+      query(this.collectionRef, where('accountCode', '==', accountKey), orderBy('entryDate')),
+    ];
 
     if (options?.fiscalYear) {
-      q = query(q, where('fiscalYear', '==', options.fiscalYear));
+      queries[0] = query(queries[0], where('fiscalYear', '==', options.fiscalYear));
+      queries[1] = query(queries[1], where('fiscalYear', '==', options.fiscalYear));
     }
 
-    const snapshot = await getDocs(q);
-    let entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as GeneralLedgerEntry));
+    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+
+    // Merge and dedupe by doc id
+    const seen = new Set<string>();
+    let entries: GeneralLedgerEntry[] = [];
+    snapshots.forEach(snapshot => {
+      snapshot.docs.forEach(doc => {
+        if (!seen.has(doc.id)) {
+          seen.add(doc.id);
+          entries.push({ id: doc.id, ...doc.data() } as GeneralLedgerEntry);
+        }
+      });
+    });
 
     // Calculate running balance
     let runningBalance = 0;
@@ -425,14 +571,25 @@ class GeneralLedgerService {
     return entries;
   }
 
-  async getAccountBalance(accountId: string, asOfDate?: string): Promise<number> {
-    let q = query(
-      this.collectionRef,
-      where('accountId', '==', accountId)
-    );
+  async getAccountBalance(accountId: string, accountCode?: string, asOfDate?: string): Promise<number> {
+    const queries = [
+      query(this.collectionRef, where('accountId', '==', accountId)),
+    ];
+    if (accountCode) {
+      queries.push(query(this.collectionRef, where('accountCode', '==', accountCode)));
+    }
 
-    const snapshot = await getDocs(q);
-    let entries = snapshot.docs.map(doc => doc.data() as GeneralLedgerEntry);
+    const snapshots = await Promise.all(queries.map(q => getDocs(q)));
+    const seen = new Set<string>();
+    let entries: GeneralLedgerEntry[] = [];
+    snapshots.forEach(snapshot => {
+      snapshot.docs.forEach(doc => {
+        if (!seen.has(doc.id)) {
+          seen.add(doc.id);
+          entries.push(doc.data() as GeneralLedgerEntry);
+        }
+      });
+    });
 
     if (asOfDate) {
       entries = entries.filter(e => e.entryDate <= asOfDate);
@@ -454,7 +611,7 @@ class TrialBalanceService {
     for (const account of accounts) {
       if (!account.isActive) continue;
 
-      const balance = await generalLedgerService.getAccountBalance(account.id!, asOfDate);
+      const balance = await generalLedgerService.getAccountBalance(account.id!, account.code, asOfDate);
 
       // Skip zero balances for cleaner report
       if (Math.abs(balance) < 0.01) continue;

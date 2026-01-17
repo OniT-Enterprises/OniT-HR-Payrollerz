@@ -104,7 +104,7 @@ export default function GeneralLedger() {
       try {
         // Query by account code since that's what we store in GL entries
         const entries = await accountingService.generalLedger.getEntriesByAccount(
-          selectedAccount.code,
+          selectedAccount.id || selectedAccount.code,
           { startDate, endDate }
         );
         setLedgerEntries(entries);

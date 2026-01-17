@@ -71,6 +71,7 @@ export interface Account {
   // Hierarchy
   parentAccountId?: string;  // For sub-accounts
   level: number;             // 1 = top level, 2 = sub-account, etc.
+  parentCode?: string;       // Stored when parent doc ID isn't known yet
 
   // Balances (computed, not stored directly)
   // Balance is calculated from journal entries

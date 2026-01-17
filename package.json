@@ -16,7 +16,8 @@
     "emul:rules": "firebase emulators:exec --only firestore 'vitest run -c tests/vitest.config.ts'",
     "emulators": "firebase emulators:start --only firestore,auth --import=./firebaseemulator_payroll/ --export-on-exit",
     "emulators:ui": "firebase emulators:start --import=./firebaseemulator_payroll/ --export-on-exit",
-    "reset:emulator": "node scripts/resetEmulator.js"
+    "reset:emulator": "node scripts/resetEmulator.js",
+    "backfill:gl-ids": "node scripts/backfill-gl-account-ids.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -71,6 +72,8 @@
     "cmdk": "^1.0.0",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.3.0",
+    "firebase-admin": "^13.6.0",
+    "firebase-tools": "^15.3.1",
     "framer-motion": "^12.6.2",
     "globals": "^15.9.0",
     "input-otp": "^1.2.4",

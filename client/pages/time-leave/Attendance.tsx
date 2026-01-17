@@ -76,9 +76,10 @@ import { SEO, seoConfig } from "@/components/SEO";
 export default function Attendance() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+
+  // Today's date as default
+  const today = new Date().toISOString().split("T")[0];
+  const [selectedDate, setSelectedDate] = useState(today);
   const [viewMode, setViewMode] = useState<"calendar" | "table">("table");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
@@ -86,6 +87,9 @@ export default function Attendance() {
   const [showImportDialog, setShowImportDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+
+  // Is today selected?
+  const isToday = selectedDate === today;
 
   // Data
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -134,6 +138,14 @@ export default function Attendance() {
 
     loadData();
   }, [selectedDate, toast]);
+
+  // Format date for display
+  const formatDateLabel = (dateStr: string) => {
+    const date = new Date(dateStr + 'T00:00:00');
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+    const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return `${dayName}, ${monthDay}`;
+  };
 
   // Calculate statistics
   const stats = useMemo(() => {
@@ -504,10 +516,17 @@ export default function Attendance() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  {t("timeLeave.attendance.title")}
+                  {isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  {t("timeLeave.attendance.subtitle")}
+                  {isToday ? (
+                    <>
+                      {formatDateLabel(selectedDate)}
+                      <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
+                    </>
+                  ) : (
+                    formatDateLabel(selectedDate)
+                  )}
                 </p>
               </div>
             </div>
@@ -566,7 +585,7 @@ export default function Attendance() {
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600">
                     <Plus className="h-4 w-4 mr-2" />
-                    {t("timeLeave.attendance.actions.mark")}
+                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -670,9 +689,10 @@ export default function Attendance() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">
-                    {t("timeLeave.attendance.stats.total")}
+                    {t("timeLeave.attendance.stats.employees")}
                   </p>
                   <p className="text-2xl font-bold">{stats.totalEmployees}</p>
+                  <p className="text-xs text-muted-foreground">{t("timeLeave.attendance.stats.active")}</p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
                   <Users className="h-6 w-6 text-white" />
@@ -687,7 +707,13 @@ export default function Attendance() {
                   <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.present")}
                   </p>
-                  <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</p>
+                  {attendanceRecords.length === 0 ? (
+                    <>
+                      <p className="text-lg font-medium text-muted-foreground/70">{t("timeLeave.attendance.stats.notRecorded")}</p>
+                    </>
+                  ) : (
+                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</p>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl">
                   <CheckCircle className="h-6 w-6 text-white" />
@@ -702,7 +728,11 @@ export default function Attendance() {
                   <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.late")}
                   </p>
-                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.late}</p>
+                  {attendanceRecords.length === 0 ? (
+                    <p className="text-lg font-medium text-muted-foreground/70">—</p>
+                  ) : (
+                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.late}</p>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl">
                   <AlertTriangle className="h-6 w-6 text-white" />
@@ -717,9 +747,13 @@ export default function Attendance() {
                   <p className="text-sm text-muted-foreground">
                     {t("timeLeave.attendance.stats.rate")}
                   </p>
-                  <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-                    {stats.attendanceRate.toFixed(1)}%
-                  </p>
+                  {attendanceRecords.length === 0 ? (
+                    <p className="text-lg font-medium text-muted-foreground/70">—</p>
+                  ) : (
+                    <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
+                      {stats.attendanceRate.toFixed(1)}%
+                    </p>
+                  )}
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
                   <TrendingUp className="h-6 w-6 text-white" />
@@ -831,10 +865,28 @@ export default function Attendance() {
                 <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
                   <Clock className="h-12 w-12 text-cyan-500" />
                 </div>
-                <p className="font-medium text-foreground">{t("timeLeave.attendance.empty.title")}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t("timeLeave.attendance.empty.description")}
+                <h3 className="font-semibold text-lg text-foreground mb-1">
+                  {isToday ? t("timeLeave.attendance.empty.titleToday") : t("timeLeave.attendance.empty.title")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+                  {t("timeLeave.attendance.empty.instructions")}
                 </p>
+                <div className="flex justify-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowImportDialog(true)}
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    {t("timeLeave.attendance.empty.importButton")}
+                  </Button>
+                  <Button
+                    className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+                    onClick={() => setShowMarkDialog(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
+                  </Button>
+                </div>
               </div>
             ) : (
                 <Table>

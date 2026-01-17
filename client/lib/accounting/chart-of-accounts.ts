@@ -771,6 +771,7 @@ export function getDefaultAccounts(): Omit<Account, 'id' | 'createdAt' | 'update
     isSystem: acc.isSystem,
     isActive: true,
     parentAccountId: acc.parentCode,
+    parentCode: acc.parentCode,
     level: acc.parentCode ? 2 : 1,
   }));
 }

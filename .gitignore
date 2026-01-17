@@ -194,3 +194,4 @@ dist-ssr/
 firebase-emulators/
 firestore-export/
 firebaseemulator_payroll/
+service-account.json
