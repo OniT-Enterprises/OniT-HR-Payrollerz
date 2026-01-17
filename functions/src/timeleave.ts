@@ -3,7 +3,7 @@ import {
   onDocumentWritten,
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
-import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
+import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions/v2";
 
@@ -297,10 +297,13 @@ export const recomputeWeekTotals = async (
 ): Promise<void> => {
   try {
     // Get all shifts for this employee in this week
+    const [yearStr, weekStr] = weekIso.split("-W");
+    const year = parseInt(yearStr);
+    const weekNum = parseInt(weekStr);
     const weekStart = new Date(
-      weekIso.split("-W")[0],
+      year,
       0,
-      1 + (parseInt(weekIso.split("-W")[1]) - 1) * 7,
+      1 + (weekNum - 1) * 7,
     );
     const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
 
@@ -507,7 +510,6 @@ export const approveLeaveRequest = onCall(async (request) => {
         .get();
 
       if (balanceDoc.exists) {
-        const balance = balanceDoc.data()!;
         const leaveDays =
           Math.ceil(
             (leave.to.toDate().getTime() - leave.from.toDate().getTime()) /
@@ -697,14 +699,4 @@ export const onLeaveStatusChange = onDocumentUpdated(
   },
 );
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export {
-  createOrUpdateShift,
-  recomputeWeekTotals,
-  approveLeaveRequest,
-  onShiftChange,
-  onLeaveStatusChange,
-};
+// Functions are exported inline with their declarations above

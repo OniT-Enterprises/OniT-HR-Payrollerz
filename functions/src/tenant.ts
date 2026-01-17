@@ -3,36 +3,6 @@ import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions";
 
-interface ProvisionTenantRequest {
-  name: string;
-  ownerEmail: string;
-  slug?: string;
-  config?: {
-    branding?: {
-      logoUrl?: string;
-      primaryColor?: string;
-      secondaryColor?: string;
-    };
-    features?: {
-      hiring?: boolean;
-      timeleave?: boolean;
-      performance?: boolean;
-      payroll?: boolean;
-      reports?: boolean;
-    };
-    payrollPolicy?: {
-      overtimeThreshold?: number;
-      overtimeRate?: number;
-      payrollCycle?: 'weekly' | 'biweekly' | 'monthly';
-    };
-    settings?: {
-      timezone?: string;
-      currency?: string;
-      dateFormat?: string;
-    };
-  };
-}
-
 interface ProvisionTenantResponse {
   tenantId: string;
   ownerUid: string;
@@ -43,8 +13,8 @@ interface ProvisionTenantResponse {
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
  */
-export const provisionTenant = onCall<ProvisionTenantRequest, ProvisionTenantResponse>(
-  async (request) => {
+export const provisionTenant = onCall(
+  async (request): Promise<ProvisionTenantResponse> => {
     const { name, ownerEmail, slug, config } = request.data;
 
     // Validate input
@@ -308,15 +278,8 @@ async function createDefaultTenantData(db: FirebaseFirestore.Firestore, tenantId
 /**
  * Cloud Function to add a user to an existing tenant
  */
-interface AddTenantMemberRequest {
-  tenantId: string;
-  userEmail: string;
-  role: "hr-admin" | "manager" | "viewer";
-  modules?: string[];
-}
-
-export const addTenantMember = onCall<AddTenantMemberRequest, { success: boolean; message: string }>(
-  async (request) => {
+export const addTenantMember = onCall(
+  async (request): Promise<{ success: boolean; message: string }> => {
     const { tenantId, userEmail, role, modules = [] } = request.data;
 
     // Validate caller permissions (should be owner or hr-admin of the tenant)

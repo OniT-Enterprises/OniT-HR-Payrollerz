@@ -230,7 +230,6 @@ export const checkDocumentExpiry = onSchedule(
 
             if (existingAlert.exists) {
               // Update existing alert (preserve acknowledged status)
-              const existing = existingAlert.data()!;
               batch.update(alertRef, {
                 daysUntilExpiry: alert.daysUntilExpiry,
                 severity: alert.severity,
@@ -420,8 +419,4 @@ export const acknowledgeDocumentAlert = onCall(async (request) => {
   }
 });
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export { checkDocumentExpiry, refreshDocumentAlerts, acknowledgeDocumentAlert };
+// Functions are exported inline with their declarations above

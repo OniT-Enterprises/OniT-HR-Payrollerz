@@ -254,9 +254,13 @@ export const createEmploymentSnapshot = onCall(async (request) => {
       );
     }
 
+    const currentContractData = contractsQuery.docs[0].data() as {
+      weeklyHours?: number;
+      overtimeRate?: number;
+    };
     const currentContract = {
       id: contractsQuery.docs[0].id,
-      ...contractsQuery.docs[0].data(),
+      ...currentContractData,
     };
 
     // Create new contract with changes
@@ -493,13 +497,4 @@ export const validateJobApproval = onCall(async (request) => {
   }
 });
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export {
-  acceptOffer,
-  createEmploymentSnapshot,
-  onOfferAccepted,
-  validateJobApproval,
-};
+// Functions are exported inline with their declarations above

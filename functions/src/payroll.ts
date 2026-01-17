@@ -400,7 +400,25 @@ export const validatePayrunInputs = onCall(async (request) => {
   await validateTenantAccess(auth.uid, tenantId);
 
   try {
-    const { inputs } = await getPayrunInputs.handler({ auth, data });
+    // Get all input records for validation
+    const summaryDoc = await db
+      .doc(`tenants/${tenantId}/payrunInputs/${yyyymm}/_summary`)
+      .get();
+
+    if (!summaryDoc.exists) {
+      throw new HttpsError(
+        "not-found",
+        "Payroll inputs not found for this month",
+      );
+    }
+
+    const inputsQuery = await db
+      .collection(`tenants/${tenantId}/payrunInputs/${yyyymm}`)
+      .get();
+
+    const inputs = inputsQuery.docs
+      .filter((doc) => doc.id !== "_summary")
+      .map((doc) => ({ id: doc.id, ...doc.data() })) as any[];
 
     const validationErrors: any[] = [];
     const warnings: any[] = [];
@@ -475,8 +493,4 @@ export const validatePayrunInputs = onCall(async (request) => {
   }
 });
 
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-export { compilePayrunInputs, getPayrunInputs, validatePayrunInputs };
+// Functions are exported inline with their declarations above
