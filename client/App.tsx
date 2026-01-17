@@ -88,6 +88,10 @@ const Expenses = lazy(() => import("./pages/money/Expenses"));
 const Bills = lazy(() => import("./pages/money/Bills"));
 const BillForm = lazy(() => import("./pages/money/BillForm"));
 const ProfitLoss = lazy(() => import("./pages/money/ProfitLoss"));
+const BalanceSheet = lazy(() => import("./pages/money/BalanceSheet"));
+const Cashflow = lazy(() => import("./pages/money/Cashflow"));
+const ARAgingReport = lazy(() => import("./pages/money/ARAgingReport"));
+const APAgingReport = lazy(() => import("./pages/money/APAgingReport"));
 
 // Accounting
 const ChartOfAccounts = lazy(() => import("./pages/accounting/ChartOfAccounts"));
@@ -241,6 +245,10 @@ const App = () => (
                     <Route path="/money/bills/:id" element={<BillForm />} />
                     <Route path="/money/bills/:id/edit" element={<BillForm />} />
                     <Route path="/money/profit-loss" element={<ProfitLoss />} />
+                    <Route path="/money/balance-sheet" element={<BalanceSheet />} />
+                    <Route path="/money/cashflow" element={<Cashflow />} />
+                    <Route path="/money/ar-aging" element={<ARAgingReport />} />
+                    <Route path="/money/ap-aging" element={<APAgingReport />} />
 
                     {/* ========================================== */}
                     {/* ACCOUNTING                                 */}

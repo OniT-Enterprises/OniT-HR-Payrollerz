@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { customerService } from '@/services/customerService';
 import type { MoneyStats, Invoice } from '@/types/money';
 import {
   Wallet,
@@ -30,6 +31,11 @@ import {
   Receipt,
   Truck,
   BarChart3,
+  Settings,
+  FileCheck,
+  UserPlus,
+  Circle,
+  CheckCircle,
 } from 'lucide-react';
 
 export default function MoneyDashboard() {
@@ -38,6 +44,8 @@ export default function MoneyDashboard() {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MoneyStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
+  const [customerCount, setCustomerCount] = useState(0);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -46,12 +54,16 @@ export default function MoneyDashboard() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [statsData, invoices] = await Promise.all([
+      const [statsData, invoices, customers] = await Promise.all([
         invoiceService.getStats(),
         invoiceService.getAllInvoices(5),
+        customerService.getAllCustomers(),
       ]);
       setStats(statsData);
       setRecentInvoices(invoices);
+      setCustomerCount(customers.length);
+      // Show onboarding if no customers or no invoices
+      setShowOnboarding(customers.length === 0 || invoices.length === 0);
     } catch (error) {
       console.error('Error loading money dashboard:', error);
     } finally {
@@ -124,6 +136,97 @@ export default function MoneyDashboard() {
             {t('money.dashboard.newInvoice') || 'New Invoice'}
           </Button>
         </div>
+
+        {/* Onboarding Checklist - Shows for new users */}
+        {showOnboarding && (
+          <Card className="mb-8 border-teal-200 dark:border-teal-800 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/30 dark:to-transparent">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-teal-600" />
+                {t('money.dashboard.getStarted') || 'Get Started with Invoicing'}
+              </CardTitle>
+              <CardDescription>
+                {t('money.dashboard.getStartedDesc') || 'Complete these steps to start sending invoices'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Step 1: Company Details */}
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="flex items-start gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className="mt-0.5">
+                    <Circle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4 text-teal-600" />
+                      <span className="font-medium text-sm">
+                        {t('money.dashboard.step1Title') || 'Company Details'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('money.dashboard.step1Desc') || 'Add your business name and address'}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Step 2: Invoice Template */}
+                <button
+                  onClick={() => navigate('/settings')}
+                  className="flex items-start gap-3 p-3 rounded-lg border bg-background hover:bg-muted/50 transition-colors text-left"
+                >
+                  <div className="mt-0.5">
+                    <Circle className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4 text-teal-600" />
+                      <span className="font-medium text-sm">
+                        {t('money.dashboard.step2Title') || 'Invoice Settings'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t('money.dashboard.step2Desc') || 'Set default terms and tax rate'}
+                    </p>
+                  </div>
+                </button>
+
+                {/* Step 3: Add Customer */}
+                <button
+                  onClick={() => navigate('/money/customers')}
+                  className={`flex items-start gap-3 p-3 rounded-lg border transition-colors text-left ${
+                    customerCount > 0
+                      ? 'bg-green-50 dark:bg-green-950/30 border-green-200 dark:border-green-800'
+                      : 'bg-background hover:bg-muted/50'
+                  }`}
+                >
+                  <div className="mt-0.5">
+                    {customerCount > 0 ? (
+                      <CheckCircle className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <UserPlus className="h-4 w-4 text-teal-600" />
+                      <span className="font-medium text-sm">
+                        {t('money.dashboard.step3Title') || 'Add First Customer'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {customerCount > 0
+                        ? t('money.dashboard.step3Done') || `${customerCount} customer${customerCount > 1 ? 's' : ''} added`
+                        : t('money.dashboard.step3Desc') || 'Create a customer to invoice'}
+                    </p>
+                  </div>
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

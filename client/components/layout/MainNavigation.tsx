@@ -43,6 +43,8 @@ const NAV_ITEMS: Array<{
   labelKey: string;
   path: string;
   icon: typeof LayoutDashboard;
+  subtitle?: string;
+  subtitleKey?: string;
 }> = [
   {
     id: "dashboard",
@@ -78,6 +80,8 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.accounting",
     path: "/accounting",
     icon: Landmark,
+    subtitle: "Advanced",
+    subtitleKey: "nav.accountingSubtitle",
   },
   {
     id: "reports",
@@ -158,7 +162,14 @@ export default function MainNavigation() {
                     `}
                   >
                     <Icon className={`h-4 w-4 mr-2 ${active ? iconColor : ""}`} />
-                    {t(item.labelKey) || item.label}
+                    <span className="flex items-center gap-1.5">
+                      {t(item.labelKey) || item.label}
+                      {item.subtitleKey && (
+                        <span className="text-[10px] text-muted-foreground font-normal opacity-70">
+                          ({t(item.subtitleKey) || item.subtitle})
+                        </span>
+                      )}
+                    </span>
                     {active && (
                       <span className={`absolute bottom-0 left-2 right-2 h-0.5 ${indicatorColor} rounded-full`} />
                     )}
