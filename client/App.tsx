@@ -92,6 +92,7 @@ const BalanceSheet = lazy(() => import("./pages/money/BalanceSheet"));
 const Cashflow = lazy(() => import("./pages/money/Cashflow"));
 const ARAgingReport = lazy(() => import("./pages/money/ARAgingReport"));
 const APAgingReport = lazy(() => import("./pages/money/APAgingReport"));
+const BankReconciliation = lazy(() => import("./pages/money/BankReconciliation"));
 
 // Accounting
 const ChartOfAccounts = lazy(() => import("./pages/accounting/ChartOfAccounts"));
@@ -249,6 +250,7 @@ const App = () => (
                     <Route path="/money/cashflow" element={<Cashflow />} />
                     <Route path="/money/ar-aging" element={<ARAgingReport />} />
                     <Route path="/money/ap-aging" element={<APAgingReport />} />
+                    <Route path="/money/bank-reconciliation" element={<BankReconciliation />} />
 
                     {/* ========================================== */}
                     {/* ACCOUNTING                                 */}

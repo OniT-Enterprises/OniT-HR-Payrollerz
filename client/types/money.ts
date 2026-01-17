@@ -357,3 +357,50 @@ export const DEFAULT_INVOICE_SETTINGS: Partial<InvoiceSettings> = {
   defaultNotes: 'Thank you for your business',
   defaultDueDays: 30,
 };
+
+// ============================================
+// BANK RECONCILIATION
+// ============================================
+
+export type BankTransactionType = 'deposit' | 'withdrawal';
+export type ReconciliationStatus = 'unmatched' | 'matched' | 'reconciled';
+
+export interface BankTransaction {
+  id: string;
+  date: string;                      // YYYY-MM-DD
+  description: string;
+  amount: number;                    // Positive for deposits, negative for withdrawals
+  type: BankTransactionType;
+  reference?: string;                // Check number, transfer ref
+  balance?: number;                  // Running balance (if provided)
+
+  // Matching
+  status: ReconciliationStatus;
+  matchedTo?: {
+    type: 'invoice_payment' | 'bill_payment' | 'expense';
+    id: string;
+    description: string;
+  };
+
+  createdAt: Date;
+  reconciledAt?: Date;
+}
+
+export interface BankReconciliation {
+  id: string;
+  accountName: string;
+  statementDate: string;
+  statementBalance: number;
+
+  // Calculated
+  clearedBalance: number;
+  outstandingDeposits: number;
+  outstandingWithdrawals: number;
+  difference: number;
+
+  transactions: BankTransaction[];
+
+  status: 'in_progress' | 'completed';
+  createdAt: Date;
+  completedAt?: Date;
+}
