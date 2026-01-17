@@ -225,9 +225,11 @@ export const reportsRoutes = (
     <Route path="/reports" element={<ReportsDashboard />} />
     <Route path="/reports/payroll" element={<PayrollReports />} />
     <Route path="/reports/employees" element={<EmployeeReports />} />
+    <Route path="/reports/employee" element={<Navigate to="/reports/employees" replace />} />
     <Route path="/reports/attendance" element={<AttendanceReports />} />
     <Route path="/reports/custom" element={<CustomReports />} />
     <Route path="/reports/departments" element={<DepartmentReports />} />
+    <Route path="/reports/department" element={<Navigate to="/reports/departments" replace />} />
     <Route path="/reports/setup" element={<SetupReports />} />
   </>
 );
