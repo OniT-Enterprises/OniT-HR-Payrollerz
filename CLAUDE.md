@@ -258,3 +258,18 @@ The codebase now uses clean, direct Firebase integration.
 3. ~~Need proper Firestore security rules~~ ✅ Done - multi-tenant rules with superadmin support
 4. Need initial seed data in Firestore
 5. Migrate legacy root-level collections to tenant-scoped paths
+
+## Pending Features (Work in Progress)
+
+### QuickBooks Export (70% complete)
+**Status**: Implementation started, needs completion
+**Files**:
+- `client/components/payroll/QuickBooksExportDialog.tsx` - Export dialog component
+- `client/services/quickbooksExportService.ts` - CSV/IIF export service
+- `client/types/quickbooks.ts` - Type definitions
+**Documentation**: `docs/QUICKBOOKS_EXPORT_IMPLEMENTATION.md`
+**Remaining work**:
+- Wire up export dialog to PayrollHistory page
+- Add account mapping settings to Settings page
+- Test with real payroll data
+- Add i18n translations
