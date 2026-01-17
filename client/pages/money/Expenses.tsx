@@ -40,6 +40,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { vendorService } from '@/services/vendorService';
+import { fileUploadService } from '@/services/fileUploadService';
 import type { Expense, ExpenseFormData, ExpenseCategory, Vendor, PaymentMethod } from '@/types/money';
 import {
   Receipt,
@@ -52,6 +53,12 @@ import {
   Filter,
   TrendingDown,
   DollarSign,
+  Camera,
+  Upload,
+  X,
+  FileText,
+  Image,
+  ExternalLink,
 } from 'lucide-react';
 
 const EXPENSE_CATEGORIES: { value: ExpenseCategory; label: string }[] = [
@@ -99,6 +106,10 @@ export default function Expenses() {
     paymentMethod: 'cash',
     notes: '',
   });
+  const [receiptFile, setReceiptFile] = useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = useState<string | null>(null);
+  const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null);
+  const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -174,6 +185,40 @@ export default function Expenses() {
     return t(`money.expenses.categories.${category}`) || found?.label || category;
   };
 
+  const handleReceiptSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const validation = fileUploadService.validateReceiptFile(file);
+    if (!validation.valid) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: validation.error,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setReceiptFile(file);
+
+    // Create preview for images
+    if (file.type.startsWith('image/')) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    } else {
+      setReceiptPreview(null);
+    }
+  };
+
+  const clearReceipt = () => {
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    setExistingReceiptUrl(null);
+  };
+
   const handleSubmit = async () => {
     if (!formData.description.trim()) {
       toast({
@@ -194,14 +239,40 @@ export default function Expenses() {
     }
 
     try {
+      let receiptUrl = existingReceiptUrl || undefined;
+
+      // Upload receipt if a new file was selected
+      if (receiptFile) {
+        setUploadingReceipt(true);
+        try {
+          const expenseId = editingExpense?.id || fileUploadService.generateTempExpenseId();
+          receiptUrl = await fileUploadService.uploadExpenseReceipt(receiptFile, expenseId);
+        } catch (uploadError) {
+          console.error('Error uploading receipt:', uploadError);
+          toast({
+            title: t('common.error') || 'Error',
+            description: t('money.expenses.receiptUploadError') || 'Failed to upload receipt',
+            variant: 'destructive',
+          });
+          setUploadingReceipt(false);
+          return;
+        }
+        setUploadingReceipt(false);
+      }
+
+      const dataWithReceipt = {
+        ...formData,
+        receiptUrl,
+      };
+
       if (editingExpense) {
-        await expenseService.updateExpense(editingExpense.id, formData);
+        await expenseService.updateExpense(editingExpense.id, dataWithReceipt);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.expenses.updated') || 'Expense updated successfully',
         });
       } else {
-        await expenseService.createExpense(formData);
+        await expenseService.createExpense(dataWithReceipt);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.expenses.created') || 'Expense created successfully',
@@ -232,6 +303,9 @@ export default function Expenses() {
       paymentMethod: expense.paymentMethod,
       notes: expense.notes || '',
     });
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    setExistingReceiptUrl(expense.receiptUrl || null);
     setShowAddDialog(true);
   };
 
@@ -267,6 +341,9 @@ export default function Expenses() {
       paymentMethod: 'cash',
       notes: '',
     });
+    setReceiptFile(null);
+    setReceiptPreview(null);
+    setExistingReceiptUrl(null);
   };
 
   const openAddDialog = () => {
@@ -439,6 +516,18 @@ export default function Expenses() {
                             <span className="text-xs text-muted-foreground">
                               {expense.vendorName}
                             </span>
+                          )}
+                          {expense.receiptUrl && (
+                            <a
+                              href={expense.receiptUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-xs text-teal-600 dark:text-teal-400 hover:underline flex items-center gap-1"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Image className="h-3 w-3" />
+                              {t('money.expenses.receipt') || 'Receipt'}
+                            </a>
                           )}
                         </div>
                       </div>
@@ -619,16 +708,114 @@ export default function Expenses() {
                 rows={2}
               />
             </div>
+
+            {/* Receipt Upload */}
+            <div className="space-y-2">
+              <Label>{t('money.expenses.receipt') || 'Receipt'}</Label>
+
+              {/* Show preview if we have one */}
+              {(receiptPreview || existingReceiptUrl) && (
+                <div className="relative w-full max-w-xs border rounded-lg overflow-hidden bg-muted">
+                  {receiptPreview ? (
+                    <img
+                      src={receiptPreview}
+                      alt="Receipt preview"
+                      className="w-full h-32 object-contain"
+                    />
+                  ) : existingReceiptUrl && existingReceiptUrl.includes('.pdf') ? (
+                    <div className="w-full h-32 flex items-center justify-center">
+                      <FileText className="h-12 w-12 text-muted-foreground" />
+                      <span className="ml-2 text-sm text-muted-foreground">PDF Receipt</span>
+                    </div>
+                  ) : existingReceiptUrl ? (
+                    <img
+                      src={existingReceiptUrl}
+                      alt="Existing receipt"
+                      className="w-full h-32 object-contain"
+                    />
+                  ) : null}
+                  <Button
+                    type="button"
+                    variant="destructive"
+                    size="icon"
+                    className="absolute top-2 right-2 h-6 w-6"
+                    onClick={clearReceipt}
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
+                  {existingReceiptUrl && (
+                    <a
+                      href={existingReceiptUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="absolute bottom-2 right-2"
+                    >
+                      <Button type="button" variant="secondary" size="sm">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        {t('common.view') || 'View'}
+                      </Button>
+                    </a>
+                  )}
+                </div>
+              )}
+
+              {/* Upload buttons - shown when no preview */}
+              {!receiptPreview && !existingReceiptUrl && (
+                <div className="flex flex-col sm:flex-row gap-2">
+                  {/* Camera button - mobile friendly */}
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      capture="environment"
+                      className="sr-only"
+                      onChange={handleReceiptSelect}
+                    />
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 border rounded-md hover:bg-muted transition-colors">
+                      <Camera className="h-4 w-4" />
+                      <span className="text-sm">{t('money.expenses.takePhoto') || 'Take Photo'}</span>
+                    </div>
+                  </label>
+
+                  {/* File upload button */}
+                  <label className="cursor-pointer">
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      className="sr-only"
+                      onChange={handleReceiptSelect}
+                    />
+                    <div className="flex items-center justify-center gap-2 px-4 py-2 border rounded-md hover:bg-muted transition-colors">
+                      <Upload className="h-4 w-4" />
+                      <span className="text-sm">{t('money.expenses.uploadFile') || 'Upload File'}</span>
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {receiptFile && (
+                <p className="text-xs text-muted-foreground">
+                  {receiptFile.name} ({(receiptFile.size / 1024).toFixed(1)} KB)
+                </p>
+              )}
+            </div>
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
+            <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={uploadingReceipt}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-teal-600 hover:bg-teal-700">
-              {editingExpense
-                ? t('common.save') || 'Save'
-                : t('money.expenses.add') || 'Add Expense'}
+            <Button onClick={handleSubmit} className="bg-teal-600 hover:bg-teal-700" disabled={uploadingReceipt}>
+              {uploadingReceipt ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  {t('money.expenses.uploading') || 'Uploading...'}
+                </>
+              ) : editingExpense ? (
+                t('common.save') || 'Save'
+              ) : (
+                t('money.expenses.add') || 'Add Expense'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

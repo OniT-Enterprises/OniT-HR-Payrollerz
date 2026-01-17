@@ -112,7 +112,7 @@ class ExpenseService {
   /**
    * Create a new expense
    */
-  async createExpense(data: ExpenseFormData): Promise<string> {
+  async createExpense(data: ExpenseFormData & { receiptUrl?: string }): Promise<string> {
     // Get vendor name if vendorId provided
     let vendorName: string | undefined;
     if (data.vendorId) {
@@ -137,7 +137,7 @@ class ExpenseService {
   /**
    * Update an existing expense
    */
-  async updateExpense(id: string, data: Partial<ExpenseFormData>): Promise<boolean> {
+  async updateExpense(id: string, data: Partial<ExpenseFormData> & { receiptUrl?: string }): Promise<boolean> {
     const updates: Partial<Expense> = { ...data };
 
     // Update vendor name if vendorId changed

@@ -74,6 +74,46 @@ export class FileUploadService {
   generateTempEmployeeId(): string {
     return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  /**
+   * Upload expense receipt
+   * @param file - The receipt file (image or PDF)
+   * @param expenseId - Expense ID (use 'temp' prefix for new expenses)
+   * @returns Promise with download URL
+   */
+  async uploadExpenseReceipt(file: File, expenseId: string): Promise<string> {
+    const timestamp = Date.now();
+    const fileExtension = file.name.split(".").pop();
+    const fileName = `receipt_${timestamp}.${fileExtension}`;
+    const path = `expenses/${expenseId}/receipts/${fileName}`;
+
+    return this.uploadFile(file, path);
+  }
+
+  /**
+   * Validate receipt file (images and PDFs, max 10MB)
+   */
+  validateReceiptFile(file: File): { valid: boolean; error?: string } {
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'application/pdf'];
+
+    if (!allowedTypes.includes(file.type)) {
+      return { valid: false, error: 'Please upload an image (JPG, PNG, WebP) or PDF file' };
+    }
+
+    if (file.size > maxSize) {
+      return { valid: false, error: 'File size must be under 10MB' };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Generate a temporary expense ID for file uploads before expense creation
+   */
+  generateTempExpenseId(): string {
+    return `temp_expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
 }
 
 export const fileUploadService = FileUploadService.getInstance();
