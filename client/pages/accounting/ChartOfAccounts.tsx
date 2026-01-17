@@ -164,8 +164,8 @@ export default function ChartOfAccounts() {
 
     // Build hierarchy - top level are accounts with level 1 only
     const topLevel = filtered.filter((a) => a.level === 1 || !a.parentAccountId);
-    // Children are accounts with level > 1 AND a parent
-    const children = filtered.filter((a) => a.level > 1 && a.parentAccountId);
+    // Children are accounts with level > 1 AND a parent (by id or code)
+    const children = filtered.filter((a) => a.level > 1 && (a.parentAccountId || a.parentCode));
 
     // Remove any topLevel accounts that also appear as children (extra safety)
     const childCodes = new Set(children.map(c => c.code));
@@ -176,7 +176,15 @@ export default function ChartOfAccounts() {
 
   // Get children of an account
   const getChildren = (parentId: string) => {
-    return groupedAccounts.children.filter((a) => a.parentAccountId === parentId);
+    // Support both stored parent document IDs and legacy parent codes
+    const parent = accounts.find((a) => a.id === parentId);
+    const parentCode = parent?.code;
+
+    return groupedAccounts.children.filter(
+      (a) =>
+        a.parentAccountId === parentId ||
+        (!!parentCode && (a.parentAccountId === parentCode || a.parentCode === parentCode))
+    );
   };
 
   // Toggle expand/collapse
@@ -585,16 +593,16 @@ export default function ChartOfAccounts() {
                       <div>
                         <Label htmlFor="parentAccount">Parent Account</Label>
                         <Select
-                          value={formData.parentAccountId}
+                          value={formData.parentAccountId || "_none_"}
                           onValueChange={(v) =>
-                            setFormData({ ...formData, parentAccountId: v })
+                            setFormData({ ...formData, parentAccountId: v === "_none_" ? "" : v })
                           }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="None (top-level)" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="">None (top-level)</SelectItem>
+                            <SelectItem value="_none_">None (top-level)</SelectItem>
                             {accounts
                               .filter((a) => a.type === formData.type && a.level === 1)
                               .map((a) => (

@@ -68,7 +68,12 @@ import {
   getPayPeriodLabel,
   PAYROLL_STATUS_CONFIG,
 } from "@/lib/payroll/constants";
-import { downloadPayslip } from "@/components/payroll/PayslipPDF";
+// Lazy load PDF generator to avoid 1.5MB bundle hit
+const downloadPayslip = async (...args: Parameters<typeof import("@/components/payroll/PayslipPDF").downloadPayslip>) => {
+  const { downloadPayslip: download } = await import("@/components/payroll/PayslipPDF");
+  return download(...args);
+};
+import { QuickBooksExportDialog } from "@/components/payroll/QuickBooksExportDialog";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 
@@ -81,6 +86,11 @@ export default function PayrollHistory() {
   const [runRecords, setRunRecords] = useState<PayrollRecord[]>([]);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [loadingRecords, setLoadingRecords] = useState(false);
+
+  // QuickBooks export
+  const [showQBExportDialog, setShowQBExportDialog] = useState(false);
+  const [qbExportRun, setQBExportRun] = useState<PayrollRun | null>(null);
+  const [qbExportRecords, setQBExportRecords] = useState<PayrollRecord[]>([]);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -231,6 +241,27 @@ export default function PayrollHistory() {
       title: "Export Started",
       description: "CSV file will be downloaded shortly.",
     });
+  };
+
+  // Export to QuickBooks
+  const handleExportToQuickBooks = async (run: PayrollRun) => {
+    setQBExportRun(run);
+    setShowQBExportDialog(true);
+
+    // Load records for this run
+    try {
+      if (run.id) {
+        const records = await payrollService.records.getPayrollRecordsByRunId(run.id);
+        setQBExportRecords(records);
+      }
+    } catch (error) {
+      console.error("Failed to load payroll records for QB export:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load payroll records.",
+        variant: "destructive",
+      });
+    }
   };
 
   // Download payslip PDF for an employee
@@ -583,6 +614,12 @@ export default function PayrollHistory() {
                                   <Download className="h-4 w-4 mr-2" />
                                   Export CSV
                                 </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleExportToQuickBooks(run)}
+                                >
+                                  <FileText className="h-4 w-4 mr-2" />
+                                  Export to QuickBooks
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -595,6 +632,17 @@ export default function PayrollHistory() {
             </CardContent>
           </Card>
         </div>
+
+      {/* QuickBooks Export Dialog */}
+      {qbExportRun && (
+        <QuickBooksExportDialog
+          open={showQBExportDialog}
+          onOpenChange={setShowQBExportDialog}
+          payrollRun={qbExportRun}
+          records={qbExportRecords}
+          currentUser="Current User" // TODO: Get from auth context
+        />
+      )}
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
