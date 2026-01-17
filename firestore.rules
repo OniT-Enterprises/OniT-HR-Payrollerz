@@ -395,5 +395,34 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read, write: if isAuthenticated();
     }
+
+    // Money module collections
+    match /customers/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /invoices/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /payments_received/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /vendors/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /bills/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /bill_payments/{docId} {
+      allow read, write: if isAuthenticated();
+    }
+
+    match /expenses/{docId} {
+      allow read, write: if isAuthenticated();
+    }
   }
 }
