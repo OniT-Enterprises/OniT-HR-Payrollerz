@@ -4,7 +4,12 @@ import { HelmetProvider } from "react-helmet-async";
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
+import {
+  createOptimizedQueryClient,
+  hydrateQueryClient,
+  setupQueryPersistence,
+} from "@/lib/queryCache";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
@@ -65,14 +70,10 @@ function HomeRoute() {
   return <Dashboard />;
 }
 
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      retry: 1,
-    },
-  },
-});
+// Optimized QueryClient with localStorage persistence for instant loading
+const queryClient = createOptimizedQueryClient();
+hydrateQueryClient(queryClient); // Load cached data immediately
+setupQueryPersistence(queryClient); // Save data as it loads
 
 const App = () => (
   <HelmetProvider>
