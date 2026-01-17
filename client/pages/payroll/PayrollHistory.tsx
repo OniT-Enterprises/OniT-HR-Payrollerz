@@ -59,6 +59,7 @@ import {
   TrendingUp,
   TrendingDown,
   FileDown,
+  Mail,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService } from "@/services/payrollService";
@@ -74,6 +75,7 @@ const downloadPayslip = async (...args: Parameters<typeof import("@/components/p
   return download(...args);
 };
 import { QuickBooksExportDialog } from "@/components/payroll/QuickBooksExportDialog";
+import { SendPayslipsDialog } from "@/components/payroll/SendPayslipsDialog";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 
@@ -91,6 +93,11 @@ export default function PayrollHistory() {
   const [showQBExportDialog, setShowQBExportDialog] = useState(false);
   const [qbExportRun, setQBExportRun] = useState<PayrollRun | null>(null);
   const [qbExportRecords, setQBExportRecords] = useState<PayrollRecord[]>([]);
+
+  // Send payslips
+  const [showSendPayslipsDialog, setShowSendPayslipsDialog] = useState(false);
+  const [sendPayslipsRun, setSendPayslipsRun] = useState<PayrollRun | null>(null);
+  const [sendPayslipsRecords, setSendPayslipsRecords] = useState<PayrollRecord[]>([]);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -256,6 +263,27 @@ export default function PayrollHistory() {
       }
     } catch (error) {
       console.error("Failed to load payroll records for QB export:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load payroll records.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  // Send payslips via email
+  const handleSendPayslips = async (run: PayrollRun) => {
+    setSendPayslipsRun(run);
+    setShowSendPayslipsDialog(true);
+
+    // Load records for this run
+    try {
+      if (run.id) {
+        const records = await payrollService.records.getPayrollRecordsByRunId(run.id);
+        setSendPayslipsRecords(records);
+      }
+    } catch (error) {
+      console.error("Failed to load payroll records for email:", error);
       toast({
         title: "Error",
         description: "Failed to load payroll records.",
@@ -620,6 +648,14 @@ export default function PayrollHistory() {
                                   <FileText className="h-4 w-4 mr-2" />
                                   Export to QuickBooks
                                 </DropdownMenuItem>
+                                {(run.status === "approved" || run.status === "paid") && (
+                                  <DropdownMenuItem
+                                    onClick={() => handleSendPayslips(run)}
+                                  >
+                                    <Mail className="h-4 w-4 mr-2" />
+                                    Send Payslips
+                                  </DropdownMenuItem>
+                                )}
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </TableCell>
@@ -644,18 +680,46 @@ export default function PayrollHistory() {
         />
       )}
 
+      {/* Send Payslips Dialog */}
+      {sendPayslipsRun && (
+        <SendPayslipsDialog
+          open={showSendPayslipsDialog}
+          onOpenChange={setShowSendPayslipsDialog}
+          payrollRun={sendPayslipsRun}
+          records={sendPayslipsRecords}
+        />
+      )}
+
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>
         <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>
-              Payroll Details -{" "}
-              {selectedRun &&
-                getPayPeriodLabel(selectedRun.periodStart, selectedRun.periodEnd)}
-            </DialogTitle>
-            <DialogDescription>
-              View individual employee payroll records
-            </DialogDescription>
+            <div className="flex items-start justify-between">
+              <div>
+                <DialogTitle>
+                  Payroll Details -{" "}
+                  {selectedRun &&
+                    getPayPeriodLabel(selectedRun.periodStart, selectedRun.periodEnd)}
+                </DialogTitle>
+                <DialogDescription>
+                  View individual employee payroll records
+                </DialogDescription>
+              </div>
+              {selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    setSendPayslipsRun(selectedRun);
+                    setSendPayslipsRecords(runRecords);
+                    setShowSendPayslipsDialog(true);
+                  }}
+                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+                >
+                  <Mail className="h-4 w-4 mr-2" />
+                  Send Payslips
+                </Button>
+              )}
+            </div>
           </DialogHeader>
 
           {selectedRun && (

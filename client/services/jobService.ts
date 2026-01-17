@@ -9,9 +9,16 @@ import {
   query,
   where,
   orderBy,
+  limit,
+  startAfter,
   serverTimestamp,
+  QueryConstraint,
+  DocumentSnapshot,
+  Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+
+export type JobStatus = "draft" | "open" | "closed" | "filled";
 
 export interface Job {
   id?: string;
@@ -25,12 +32,56 @@ export interface Job {
   contractType?: string;
   contractDuration?: string;
   probationPeriod?: string;
-  status: "draft" | "open" | "closed" | "filled";
+  status: JobStatus;
   postedDate?: string;
   closingDate?: string;
   createdBy?: string;
-  createdAt?: any;
-  updatedAt?: any;
+  createdAt?: Date | Timestamp;
+  updatedAt?: Date | Timestamp;
+}
+
+/**
+ * Filter options for job queries
+ */
+export interface JobFilters {
+  // Server-side filters
+  status?: JobStatus;
+  department?: string;
+  employmentType?: string;
+
+  // Pagination
+  pageSize?: number;
+  startAfterDoc?: DocumentSnapshot;
+
+  // Client-side filters
+  searchTerm?: string;
+  location?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+  totalFetched: number;
+}
+
+/**
+ * Maps Firestore document to Job
+ */
+function mapJob(docSnap: DocumentSnapshot): Job {
+  const data = docSnap.data();
+  if (!data) throw new Error("Document data is undefined");
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+    updatedAt: data.updatedAt instanceof Timestamp
+      ? data.updatedAt.toDate()
+      : data.updatedAt || new Date(),
+  } as Job;
 }
 
 class JobService {
@@ -38,20 +89,86 @@ class JobService {
     return collection(db, "jobs");
   }
 
-  async getAllJobs(): Promise<Job[]> {
-    const querySnapshot = await getDocs(
-      query(this.collectionRef, orderBy("createdAt", "desc"))
-    );
+  /**
+   * Get jobs with server-side filtering and pagination
+   */
+  async getJobs(filters: JobFilters = {}): Promise<PaginatedResult<Job>> {
+    const {
+      status,
+      department,
+      employmentType,
+      pageSize = 100,
+      startAfterDoc,
+      searchTerm,
+      location,
+    } = filters;
 
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as Job;
-    });
+    const constraints: QueryConstraint[] = [];
+
+    // Server-side filters
+    if (status) {
+      constraints.push(where("status", "==", status));
+    }
+    if (department) {
+      constraints.push(where("department", "==", department));
+    }
+    if (employmentType) {
+      constraints.push(where("employmentType", "==", employmentType));
+    }
+
+    // Ordering and pagination
+    constraints.push(orderBy("createdAt", "desc"));
+
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(this.collectionRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let jobs = querySnapshot.docs.map(mapJob);
+    const hasMore = jobs.length > pageSize;
+
+    if (hasMore) {
+      jobs = jobs.slice(0, pageSize);
+    }
+
+    const lastDoc = jobs.length > 0
+      ? querySnapshot.docs[jobs.length - 1]
+      : null;
+
+    // Client-side filters
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      jobs = jobs.filter(
+        (job) =>
+          job.title.toLowerCase().includes(term) ||
+          job.description?.toLowerCase().includes(term) ||
+          job.department.toLowerCase().includes(term)
+      );
+    }
+
+    if (location) {
+      jobs = jobs.filter((job) => job.location === location);
+    }
+
+    return {
+      data: jobs,
+      lastDoc,
+      hasMore,
+      totalFetched: jobs.length,
+    };
+  }
+
+  /**
+   * Get all jobs
+   * @deprecated Use getJobs() with filters for better performance
+   */
+  async getAllJobs(): Promise<Job[]> {
+    const result = await this.getJobs({ pageSize: 500 });
+    return result.data;
   }
 
   async getJobById(id: string): Promise<Job | null> {
@@ -62,13 +179,7 @@ class JobService {
       return null;
     }
 
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-    } as Job;
+    return mapJob(docSnap);
   }
 
   async createJob(job: Omit<Job, "id">): Promise<string> {
@@ -96,27 +207,27 @@ class JobService {
     return true;
   }
 
-  async getJobsByStatus(status: Job["status"]): Promise<Job[]> {
-    const q = query(
-      this.collectionRef,
-      where("status", "==", status),
-      orderBy("createdAt", "desc")
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as Job;
-    });
+  /**
+   * Get jobs by status (server-side filtered)
+   */
+  async getJobsByStatus(status: JobStatus): Promise<Job[]> {
+    const result = await this.getJobs({ status, pageSize: 500 });
+    return result.data;
   }
 
+  /**
+   * Get open jobs only (server-side filtered)
+   */
   async getOpenJobs(): Promise<Job[]> {
     return this.getJobsByStatus("open");
+  }
+
+  /**
+   * Search jobs by text (client-side filtering)
+   */
+  async searchJobs(searchTerm: string): Promise<Job[]> {
+    const result = await this.getJobs({ searchTerm, pageSize: 500 });
+    return result.data;
   }
 }
 

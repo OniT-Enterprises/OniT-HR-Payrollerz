@@ -15,11 +15,58 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   serverTimestamp,
+  QueryConstraint,
+  DocumentSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
+
+/**
+ * Filter options for expense queries
+ */
+export interface ExpenseFilters {
+  // Server-side filters
+  category?: ExpenseCategory;
+  vendorId?: string;
+  startDate?: string;
+  endDate?: string;
+
+  // Pagination
+  pageSize?: number;
+  startAfterDoc?: DocumentSnapshot;
+
+  // Client-side filters
+  searchTerm?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+  totalFetched: number;
+}
+
+/**
+ * Maps Firestore document to Expense
+ */
+function mapExpense(docSnap: DocumentSnapshot): Expense {
+  const data = docSnap.data();
+  if (!data) throw new Error('Document data is undefined');
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+  } as Expense;
+}
 
 class ExpenseService {
   private get collectionRef() {
@@ -27,57 +74,117 @@ class ExpenseService {
   }
 
   /**
+   * Get expenses with server-side filtering and pagination
+   */
+  async getExpenses(filters: ExpenseFilters = {}): Promise<PaginatedResult<Expense>> {
+    const {
+      category,
+      vendorId,
+      startDate,
+      endDate,
+      pageSize = 100,
+      startAfterDoc,
+      searchTerm,
+      minAmount,
+      maxAmount,
+    } = filters;
+
+    const constraints: QueryConstraint[] = [];
+
+    // Server-side filters
+    if (category) {
+      constraints.push(where('category', '==', category));
+    }
+    if (vendorId) {
+      constraints.push(where('vendorId', '==', vendorId));
+    }
+    if (startDate) {
+      constraints.push(where('date', '>=', startDate));
+    }
+    if (endDate) {
+      constraints.push(where('date', '<=', endDate));
+    }
+
+    // Ordering and pagination
+    constraints.push(orderBy('date', 'desc'));
+
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(this.collectionRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let expenses = querySnapshot.docs.map(mapExpense);
+    const hasMore = expenses.length > pageSize;
+
+    if (hasMore) {
+      expenses = expenses.slice(0, pageSize);
+    }
+
+    const lastDoc = expenses.length > 0
+      ? querySnapshot.docs[expenses.length - 1]
+      : null;
+
+    // Client-side filters
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      expenses = expenses.filter(
+        (expense) =>
+          expense.description?.toLowerCase().includes(term) ||
+          expense.vendorName?.toLowerCase().includes(term)
+      );
+    }
+
+    if (minAmount !== undefined) {
+      expenses = expenses.filter((expense) => expense.amount >= minAmount);
+    }
+
+    if (maxAmount !== undefined) {
+      expenses = expenses.filter((expense) => expense.amount <= maxAmount);
+    }
+
+    return {
+      data: expenses,
+      lastDoc,
+      hasMore,
+      totalFetched: expenses.length,
+    };
+  }
+
+  /**
    * Get all expenses
+   * @deprecated Use getExpenses() with filters for better performance
    */
   async getAllExpenses(maxResults: number = 500): Promise<Expense[]> {
-    const querySnapshot = await getDocs(
-      query(this.collectionRef, orderBy('date', 'desc'), limit(maxResults))
-    );
-
-    return querySnapshot.docs.map((doc) => this.mapExpense(doc));
+    const result = await this.getExpenses({ pageSize: maxResults });
+    return result.data;
   }
 
   /**
-   * Get expenses by category
+   * Get expenses by category (server-side filtered)
    */
   async getExpensesByCategory(category: ExpenseCategory): Promise<Expense[]> {
-    const q = query(
-      this.collectionRef,
-      where('category', '==', category),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapExpense(doc));
+    const result = await this.getExpenses({ category, pageSize: 500 });
+    return result.data;
   }
 
   /**
-   * Get expenses by vendor
+   * Get expenses by vendor (server-side filtered)
    */
   async getExpensesByVendor(vendorId: string): Promise<Expense[]> {
-    const q = query(
-      this.collectionRef,
-      where('vendorId', '==', vendorId),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapExpense(doc));
+    const result = await this.getExpenses({ vendorId, pageSize: 500 });
+    return result.data;
   }
 
   /**
-   * Get expenses for a date range
+   * Get expenses for a date range (server-side filtered)
    */
   async getExpensesByDateRange(startDate: string, endDate: string): Promise<Expense[]> {
-    const q = query(
-      this.collectionRef,
-      where('date', '>=', startDate),
-      where('date', '<=', endDate),
-      orderBy('date', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapExpense(doc));
+    const result = await this.getExpenses({ startDate, endDate, pageSize: 500 });
+    return result.data;
   }
 
   /**
@@ -106,7 +213,7 @@ class ExpenseService {
       return null;
     }
 
-    return this.mapExpense(docSnap);
+    return mapExpense(docSnap);
   }
 
   /**
@@ -188,14 +295,6 @@ class ExpenseService {
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }
 
-  private mapExpense(doc: any): Expense {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-    } as Expense;
-  }
 }
 
 export const expenseService = new ExpenseService();

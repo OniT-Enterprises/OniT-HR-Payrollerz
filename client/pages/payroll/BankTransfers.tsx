@@ -33,6 +33,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
@@ -49,6 +50,8 @@ import {
   Filter,
   Loader2,
   RefreshCw,
+  FileText,
+  Building2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService } from "@/services/payrollService";
@@ -56,10 +59,22 @@ import { formatCurrency } from "@/lib/payroll/constants";
 import type { BankTransfer, PayrollRun } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
+import {
+  BankCode,
+  BankFileResult,
+  generateBankFile,
+  groupRecordsByBank,
+  downloadBankFile,
+} from "@/lib/bank-transfers";
+import { TL_BANKS } from "@/lib/payroll/constants-tl";
+import { employeeService, type Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
+import { settingsService } from "@/services/settingsService";
 
 export default function BankTransfers() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [transfers, setTransfers] = useState<BankTransfer[]>([]);
@@ -67,6 +82,16 @@ export default function BankTransfers() {
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
+
+  // Bank file generation state
+  const [showBankFileDialog, setShowBankFileDialog] = useState(false);
+  const [selectedBankFileRun, setSelectedBankFileRun] = useState<string>("");
+  const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
+  const [generatingFiles, setGeneratingFiles] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [companyName, setCompanyName] = useState("Company");
+  const [companyAccount, setCompanyAccount] = useState("");
+  const [bankFileSummary, setBankFileSummary] = useState<Record<BankCode, number> | null>(null);
 
   const [formData, setFormData] = useState({
     payrollRunId: "",
@@ -107,6 +132,199 @@ export default function BankTransfers() {
 
     loadData();
   }, [toast]);
+
+  // Load employees and company details for bank file generation
+  useEffect(() => {
+    const loadEmployeesAndSettings = async () => {
+      try {
+        // Load all employees
+        const result = await employeeService.getAllEmployees();
+        setEmployees(result);
+
+        // Load company details
+        if (tenantId && tenantId !== "local-dev-tenant") {
+          const settings = await settingsService.getSettings(tenantId);
+          if (settings?.companyDetails) {
+            setCompanyName(settings.companyDetails.legalName || settings.companyDetails.tradingName || "Company");
+          }
+          if (settings?.paymentStructure?.bankAccounts?.[0]) {
+            setCompanyAccount(settings.paymentStructure.bankAccounts[0].accountNumber || "");
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load employees:", error);
+      }
+    };
+    loadEmployeesAndSettings();
+  }, [tenantId]);
+
+  // Calculate bank file summary when payroll run is selected
+  useEffect(() => {
+    if (!selectedBankFileRun || employees.length === 0) {
+      setBankFileSummary(null);
+      return;
+    }
+
+    // Create mock payroll records from employees for summary calculation
+    const mockRecords = employees.map(emp => ({
+      employeeId: emp.id || "",
+      employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+      employeeNumber: emp.jobDetails.employeeId,
+      department: emp.jobDetails.department,
+      position: emp.jobDetails.position,
+      isResident: emp.compensation?.isResident ?? true,
+      netPay: emp.compensation.monthlySalary * 0.85, // Approximate after deductions
+      payrollRunId: selectedBankFileRun,
+      regularHours: 0,
+      overtimeHours: 0,
+      nightShiftHours: 0,
+      holidayHours: 0,
+      restDayHours: 0,
+      absenceHours: 0,
+      lateArrivalMinutes: 0,
+      sickDaysUsed: 0,
+      hourlyRate: 0,
+      dailyRate: 0,
+      monthlySalary: emp.compensation.monthlySalary,
+      earnings: [],
+      grossPay: emp.compensation.monthlySalary,
+      taxableIncome: emp.compensation.monthlySalary,
+      inssBase: emp.compensation.monthlySalary,
+      deductions: [],
+      incomeTax: 0,
+      inssEmployee: 0,
+      totalDeductions: 0,
+      inssEmployer: 0,
+      totalEmployerCost: emp.compensation.monthlySalary,
+      ytdGrossPay: 0,
+      ytdNetPay: 0,
+      ytdIncomeTax: 0,
+      ytdINSSEmployee: 0,
+      ytdSickDaysUsed: 0,
+      paymentMethod: 'bank_transfer' as const,
+    }));
+
+    const grouped = groupRecordsByBank(mockRecords as any, employees);
+    const summary: Record<BankCode, number> = {
+      BNU: grouped.BNU.length,
+      MANDIRI: grouped.MANDIRI.length,
+      ANZ: grouped.ANZ.length,
+      BNCTL: grouped.BNCTL.length,
+    };
+    setBankFileSummary(summary);
+
+    // Pre-select banks that have employees
+    const availableBanks = (Object.keys(summary) as BankCode[]).filter(bank => summary[bank] > 0);
+    setSelectedBanks(availableBanks);
+  }, [selectedBankFileRun, employees]);
+
+  // Handle bank file generation
+  const handleGenerateBankFiles = async () => {
+    if (!selectedBankFileRun || selectedBanks.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please select a payroll run and at least one bank.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const selectedRun = payrollRuns.find(r => r.id === selectedBankFileRun);
+    if (!selectedRun) {
+      toast({
+        title: "Error",
+        description: "Selected payroll run not found.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setGeneratingFiles(true);
+    try {
+      // Create mock payroll records (in real implementation, fetch from payroll service)
+      const mockRecords = employees.map(emp => ({
+        employeeId: emp.id || "",
+        employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+        employeeNumber: emp.jobDetails.employeeId,
+        department: emp.jobDetails.department,
+        position: emp.jobDetails.position,
+        isResident: emp.compensation?.isResident ?? true,
+        netPay: emp.compensation.monthlySalary * 0.85,
+        payrollRunId: selectedBankFileRun,
+        regularHours: 0,
+        overtimeHours: 0,
+        nightShiftHours: 0,
+        holidayHours: 0,
+        restDayHours: 0,
+        absenceHours: 0,
+        lateArrivalMinutes: 0,
+        sickDaysUsed: 0,
+        hourlyRate: 0,
+        dailyRate: 0,
+        monthlySalary: emp.compensation.monthlySalary,
+        earnings: [],
+        grossPay: emp.compensation.monthlySalary,
+        taxableIncome: emp.compensation.monthlySalary,
+        inssBase: emp.compensation.monthlySalary,
+        deductions: [],
+        incomeTax: 0,
+        inssEmployee: 0,
+        totalDeductions: 0,
+        inssEmployer: 0,
+        totalEmployerCost: emp.compensation.monthlySalary,
+        ytdGrossPay: 0,
+        ytdNetPay: 0,
+        ytdIncomeTax: 0,
+        ytdINSSEmployee: 0,
+        ytdSickDaysUsed: 0,
+        paymentMethod: 'bank_transfer' as const,
+      }));
+
+      const today = new Date().toISOString().split('T')[0];
+
+      for (const bankCode of selectedBanks) {
+        const result = generateBankFile(bankCode, {
+          payrollRun: selectedRun as any,
+          records: mockRecords as any,
+          employees,
+          valueDate: today,
+          companyName,
+          companyAccountNumber: companyAccount,
+        });
+
+        downloadBankFile(result);
+
+        // Small delay between downloads to prevent browser blocking
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
+
+      toast({
+        title: "Success",
+        description: `Generated ${selectedBanks.length} bank file(s) successfully.`,
+      });
+
+      setShowBankFileDialog(false);
+      setSelectedBankFileRun("");
+      setSelectedBanks([]);
+    } catch (error) {
+      console.error("Failed to generate bank files:", error);
+      toast({
+        title: "Error",
+        description: "Failed to generate bank files. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setGeneratingFiles(false);
+    }
+  };
+
+  const toggleBankSelection = (bankCode: BankCode) => {
+    setSelectedBanks(prev =>
+      prev.includes(bankCode)
+        ? prev.filter(b => b !== bankCode)
+        : [...prev, bankCode]
+    );
+  };
 
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -585,6 +803,139 @@ export default function BankTransfers() {
                     <Download className="h-4 w-4 mr-2" />
                     Export CSV
                   </Button>
+
+                  {/* Bank File Generation Dialog */}
+                  <Dialog open={showBankFileDialog} onOpenChange={setShowBankFileDialog}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
+                        <FileText className="h-4 w-4 mr-2" />
+                        Bank Files
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-lg">
+                      <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                          <Building2 className="h-5 w-5 text-green-600" />
+                          Generate Bank Transfer Files
+                        </DialogTitle>
+                        <DialogDescription>
+                          Generate bank-specific files for salary payments (BNU, Mandiri, ANZ, BNCTL)
+                        </DialogDescription>
+                      </DialogHeader>
+
+                      <div className="space-y-4 mt-4">
+                        {/* Payroll Run Selection */}
+                        <div>
+                          <Label>Select Payroll Run</Label>
+                          <Select
+                            value={selectedBankFileRun}
+                            onValueChange={setSelectedBankFileRun}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a payroll run" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {payrollRuns
+                                .filter(r => r.status === "approved" || r.status === "paid")
+                                .map((run) => (
+                                  <SelectItem key={run.id} value={run.id || ""}>
+                                    {new Date(run.periodStart).toLocaleDateString("en-US", {
+                                      month: "long",
+                                      year: "numeric",
+                                    })}{" "}
+                                    - {formatCurrency(run.totalNetPay)}
+                                  </SelectItem>
+                                ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        {/* Bank Summary & Selection */}
+                        {bankFileSummary && (
+                          <div className="space-y-3">
+                            <Label>Select Banks to Generate</Label>
+                            <div className="grid grid-cols-2 gap-3">
+                              {TL_BANKS.map((bank) => {
+                                const bankCode = bank.code as BankCode;
+                                const count = bankFileSummary[bankCode] || 0;
+                                const isSelected = selectedBanks.includes(bankCode);
+                                const isDisabled = count === 0;
+
+                                return (
+                                  <div
+                                    key={bank.code}
+                                    className={`
+                                      flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors
+                                      ${isDisabled ? 'bg-gray-50 dark:bg-gray-900 opacity-50 cursor-not-allowed' : ''}
+                                      ${isSelected && !isDisabled ? 'border-green-500 bg-green-50 dark:bg-green-950/30' : 'border-border hover:border-green-300'}
+                                    `}
+                                    onClick={() => !isDisabled && toggleBankSelection(bankCode)}
+                                  >
+                                    <Checkbox
+                                      checked={isSelected}
+                                      disabled={isDisabled}
+                                      onCheckedChange={() => !isDisabled && toggleBankSelection(bankCode)}
+                                    />
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm">{bank.code}</p>
+                                      <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
+                                    </div>
+                                    <Badge variant={count > 0 ? "default" : "secondary"} className="shrink-0">
+                                      {count} emp
+                                    </Badge>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Company Account Info */}
+                        {selectedBankFileRun && (
+                          <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
+                            <p className="text-muted-foreground">
+                              Files will be generated for <strong>{companyName}</strong>
+                            </p>
+                            {companyAccount && (
+                              <p className="text-muted-foreground">
+                                Debit account: ****{companyAccount.slice(-4)}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            variant="outline"
+                            onClick={() => setShowBankFileDialog(false)}
+                            className="flex-1"
+                            disabled={generatingFiles}
+                          >
+                            Cancel
+                          </Button>
+                          <Button
+                            onClick={handleGenerateBankFiles}
+                            disabled={!selectedBankFileRun || selectedBanks.length === 0 || generatingFiles}
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                          >
+                            {generatingFiles ? (
+                              <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Download className="h-4 w-4 mr-2" />
+                                Generate {selectedBanks.length} File(s)
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
                   <Dialog
                     open={showTransferDialog}
                     onOpenChange={setShowTransferDialog}

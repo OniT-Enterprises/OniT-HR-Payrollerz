@@ -9,5 +9,6 @@ export * from "./timeleave";
 export * from "./payroll";
 export * from "./tenant";
 export * from "./admin";
+export * from "./documentAlerts";
 
 // You can add more function modules here as they're created

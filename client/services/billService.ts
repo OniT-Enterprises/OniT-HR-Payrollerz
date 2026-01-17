@@ -15,7 +15,11 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   serverTimestamp,
+  QueryConstraint,
+  DocumentSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type {
@@ -27,6 +31,54 @@ import type {
   ExpenseCategory,
 } from '@/types/money';
 import { vendorService } from './vendorService';
+
+/**
+ * Filter options for bill queries
+ */
+export interface BillFilters {
+  // Server-side filters
+  status?: BillStatus;
+  vendorId?: string;
+  category?: ExpenseCategory;
+
+  // Pagination
+  pageSize?: number;
+  startAfterDoc?: DocumentSnapshot;
+
+  // Client-side filters
+  searchTerm?: string;
+  minAmount?: number;
+  maxAmount?: number;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+  totalFetched: number;
+}
+
+/**
+ * Maps Firestore document to Bill
+ */
+function mapBill(docSnap: DocumentSnapshot): Bill {
+  const data = docSnap.data();
+  if (!data) throw new Error('Document data is undefined');
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+    updatedAt: data.updatedAt instanceof Timestamp
+      ? data.updatedAt.toDate()
+      : data.updatedAt || new Date(),
+    paidAt: data.paidAt instanceof Timestamp
+      ? data.paidAt.toDate()
+      : data.paidAt || undefined,
+  } as Bill;
+}
 
 class BillService {
   private get collectionRef() {
@@ -42,42 +94,106 @@ class BillService {
   // ----------------------------------------
 
   /**
+   * Get bills with server-side filtering and pagination
+   */
+  async getBills(filters: BillFilters = {}): Promise<PaginatedResult<Bill>> {
+    const {
+      status,
+      vendorId,
+      category,
+      pageSize = 100,
+      startAfterDoc,
+      searchTerm,
+      minAmount,
+      maxAmount,
+    } = filters;
+
+    const constraints: QueryConstraint[] = [];
+
+    // Server-side filters
+    if (status && status !== 'all' as unknown as BillStatus) {
+      constraints.push(where('status', '==', status));
+    }
+    if (vendorId) {
+      constraints.push(where('vendorId', '==', vendorId));
+    }
+    if (category) {
+      constraints.push(where('category', '==', category));
+    }
+
+    // Ordering and pagination
+    constraints.push(orderBy('billDate', 'desc'));
+
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(this.collectionRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let bills = querySnapshot.docs.map(mapBill);
+    const hasMore = bills.length > pageSize;
+
+    if (hasMore) {
+      bills = bills.slice(0, pageSize);
+    }
+
+    const lastDoc = bills.length > 0
+      ? querySnapshot.docs[bills.length - 1]
+      : null;
+
+    // Client-side filters
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      bills = bills.filter(
+        (bill) =>
+          bill.billNumber?.toLowerCase().includes(term) ||
+          bill.vendorName?.toLowerCase().includes(term) ||
+          bill.description?.toLowerCase().includes(term)
+      );
+    }
+
+    if (minAmount !== undefined) {
+      bills = bills.filter((bill) => bill.total >= minAmount);
+    }
+
+    if (maxAmount !== undefined) {
+      bills = bills.filter((bill) => bill.total <= maxAmount);
+    }
+
+    return {
+      data: bills,
+      lastDoc,
+      hasMore,
+      totalFetched: bills.length,
+    };
+  }
+
+  /**
    * Get all bills
+   * @deprecated Use getBills() with filters for better performance
    */
   async getAllBills(maxResults: number = 500): Promise<Bill[]> {
-    const querySnapshot = await getDocs(
-      query(this.collectionRef, orderBy('billDate', 'desc'), limit(maxResults))
-    );
-
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    const result = await this.getBills({ pageSize: maxResults });
+    return result.data;
   }
 
   /**
-   * Get bills by status
+   * Get bills by status (server-side filtered)
    */
   async getBillsByStatus(status: BillStatus): Promise<Bill[]> {
-    const q = query(
-      this.collectionRef,
-      where('status', '==', status),
-      orderBy('billDate', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    const result = await this.getBills({ status, pageSize: 500 });
+    return result.data;
   }
 
   /**
-   * Get bills by vendor
+   * Get bills by vendor (server-side filtered)
    */
   async getBillsByVendor(vendorId: string): Promise<Bill[]> {
-    const q = query(
-      this.collectionRef,
-      where('vendorId', '==', vendorId),
-      orderBy('billDate', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    const result = await this.getBills({ vendorId, pageSize: 500 });
+    return result.data;
   }
 
   /**
@@ -92,7 +208,7 @@ class BillService {
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    return querySnapshot.docs.map((doc) => mapBill(doc));
   }
 
   /**
@@ -106,7 +222,7 @@ class BillService {
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    return querySnapshot.docs.map((doc) => mapBill(doc));
   }
 
   /**
@@ -120,7 +236,7 @@ class BillService {
       return null;
     }
 
-    return this.mapBill(docSnap);
+    return mapBill(docSnap);
   }
 
   /**
@@ -379,7 +495,7 @@ class BillService {
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => this.mapBill(doc));
+    return querySnapshot.docs.map((doc) => mapBill(doc));
   }
 
   /**
@@ -407,16 +523,6 @@ class BillService {
     return updated;
   }
 
-  private mapBill(doc: any): Bill {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-      paidAt: data.paidAt?.toDate() || undefined,
-    } as Bill;
-  }
 }
 
 export const billService = new BillService();

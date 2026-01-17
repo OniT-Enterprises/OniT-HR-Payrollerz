@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -20,8 +21,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
 import { leaveService, LeaveRequest, LeaveBalance } from "@/services/leaveService";
-import { employeeService } from "@/services/employeeService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -37,112 +37,86 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 
 export default function AttendanceReports() {
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
 
-  useEffect(() => {
-    loadData();
+  // Calculate date range for queries
+  const dateParams = useMemo(() => {
+    const today = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - parseInt(dateRange));
+    return {
+      startDate: startDate.toISOString().split("T")[0],
+      endDate: today.toISOString().split("T")[0],
+    };
   }, [dateRange]);
 
-  const loadData = async () => {
-    try {
-      const today = new Date();
-      const startDate = new Date();
-      startDate.setDate(startDate.getDate() - parseInt(dateRange));
-      const dateKey = CACHE_KEYS.ATTENDANCE(startDate.toISOString().split("T")[0], today.toISOString().split("T")[0]);
+  // Fetch employees with React Query hook
+  const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
 
-      // Show cached data immediately if available
-      const cachedAttendance = cacheService.get<AttendanceRecord[]>(dateKey);
-      const cachedLeave = cacheService.get<LeaveRequest[]>(CACHE_KEYS.LEAVE_REQUESTS);
-      const cachedBalances = cacheService.get<LeaveBalance[]>(CACHE_KEYS.LEAVE_BALANCES);
-      const cachedEmps = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+  // Fetch attendance data with React Query
+  const { data: attendanceRecords = [], isLoading: attendanceLoading } = useQuery({
+    queryKey: ['attendance', dateParams.startDate, dateParams.endDate],
+    queryFn: () => attendanceService.getAttendanceByDateRange(dateParams.startDate, dateParams.endDate),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      if (cachedAttendance && cachedEmps) {
-        setAttendanceRecords(cachedAttendance);
-        setLeaveRequests(cachedLeave || []);
-        setLeaveBalances(cachedBalances || []);
-        setEmployees(cachedEmps);
-        setLoading(false);
-      }
+  // Fetch leave requests with React Query
+  const { data: leaveRequests = [], isLoading: leaveLoading } = useQuery({
+    queryKey: ['leaveRequests'],
+    queryFn: () => leaveService.getLeaveRequests(),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Fetch fresh data
-      const [attendance, leave, balances, emps] = await Promise.all([
-        attendanceService.getAttendanceByDateRange(
-          startDate.toISOString().split("T")[0],
-          today.toISOString().split("T")[0]
-        ),
-        leaveService.getLeaveRequests(),
-        leaveService.getAllBalances(),
-        employeeService.getAllEmployees(),
-      ]);
+  // Fetch leave balances with React Query
+  const { data: leaveBalances = [], isLoading: balancesLoading } = useQuery({
+    queryKey: ['leaveBalances'],
+    queryFn: () => leaveService.getAllBalances(),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Cache all data
-      cacheService.set(dateKey, attendance);
-      cacheService.set(CACHE_KEYS.LEAVE_REQUESTS, leave);
-      cacheService.set(CACHE_KEYS.LEAVE_BALANCES, balances);
-      cacheService.set(CACHE_KEYS.EMPLOYEES, emps);
-
-      setAttendanceRecords(attendance);
-      setLeaveRequests(leave);
-      setLeaveBalances(balances);
-      setEmployees(emps);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      if (attendanceRecords.length === 0) {
-        toast({
-          title: "Error",
-          description: "Failed to load attendance data",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = empsLoading || attendanceLoading || leaveLoading || balancesLoading;
 
   // Calculate stats
   const totalRecords = attendanceRecords.length;
-  const presentRecords = attendanceRecords.filter(
+  const presentRecords = useMemo(() => attendanceRecords.filter(
     (r) => r.status === "present" || r.status === "late"
-  );
-  const lateRecords = attendanceRecords.filter((r) => r.status === "late");
-  const totalOvertimeHours = attendanceRecords.reduce(
+  ), [attendanceRecords]);
+  const lateRecords = useMemo(() => attendanceRecords.filter((r) => r.status === "late"), [attendanceRecords]);
+  const totalOvertimeHours = useMemo(() => attendanceRecords.reduce(
     (sum, r) => sum + (r.overtimeHours || 0),
     0
-  );
-  const totalLateMinutes = attendanceRecords.reduce(
+  ), [attendanceRecords]);
+  const totalLateMinutes = useMemo(() => attendanceRecords.reduce(
     (sum, r) => sum + (r.lateMinutes || 0),
     0
-  );
+  ), [attendanceRecords]);
 
   // Get today's status
-  const today = new Date().toISOString().split("T")[0];
-  const todayOnLeave = leaveRequests.filter(
-    (r) =>
-      r.status === "approved" &&
-      r.startDate <= today &&
-      r.endDate >= today
-  );
+  const todayOnLeave = useMemo(() => {
+    const today = new Date().toISOString().split("T")[0];
+    return leaveRequests.filter(
+      (r) =>
+        r.status === "approved" &&
+        r.startDate <= today &&
+        r.endDate >= today
+    );
+  }, [leaveRequests]);
 
   // Attendance by status
-  const statusBreakdown = attendanceRecords.reduce((acc, r) => {
+  const statusBreakdown = useMemo(() => attendanceRecords.reduce((acc, r) => {
     acc[r.status] = (acc[r.status] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [attendanceRecords]);
 
   // Leave by type
-  const leaveByType = leaveRequests
+  const leaveByType = useMemo(() => leaveRequests
     .filter((r) => r.status === "approved")
     .reduce((acc, r) => {
       acc[r.leaveType] = (acc[r.leaveType] || 0) + r.duration;
       return acc;
-    }, {} as Record<string, number>);
+    }, {} as Record<string, number>), [leaveRequests]);
 
   // Export to CSV
   const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {

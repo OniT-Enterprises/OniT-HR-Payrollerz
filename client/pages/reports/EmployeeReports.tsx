@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -18,8 +18,7 @@ import {
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService } from "@/services/employeeService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -34,70 +33,40 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 
 export default function EmployeeReports() {
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: employees = [], isLoading: loading } = useAllEmployees(500);
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
 
-  useEffect(() => {
-    loadEmployees();
-  }, []);
-
-  const loadEmployees = async () => {
-    try {
-      // Show cached data immediately if available
-      const cached = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
-      if (cached) {
-        setEmployees(cached);
-        setLoading(false);
-      }
-
-      // Fetch fresh data
-      const data = await employeeService.getAllEmployees();
-      cacheService.set(CACHE_KEYS.EMPLOYEES, data);
-      setEmployees(data);
-    } catch (error) {
-      console.error("Error loading employees:", error);
-      if (employees.length === 0) {
-        toast({
-          title: "Error",
-          description: "Failed to load employee data",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Calculate stats
-  const activeEmployees = employees.filter((e) => e.status === "active");
-  const inactiveEmployees = employees.filter((e) => e.status !== "active");
+  const activeEmployees = useMemo(() => employees.filter((e) => e.status === "active"), [employees]);
+  const inactiveEmployees = useMemo(() => employees.filter((e) => e.status !== "active"), [employees]);
 
   // Get employees by department
-  const departmentCounts = employees.reduce((acc, emp) => {
+  const departmentCounts = useMemo(() => employees.reduce((acc, emp) => {
     const dept = emp.jobDetails?.department || "Unassigned";
     acc[dept] = (acc[dept] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [employees]);
 
   // Get new hires (based on date range)
-  const cutoffDate = new Date();
-  cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
-  const newHires = employees.filter((emp) => {
-    const hireDate = emp.jobDetails?.hireDate
-      ? new Date(emp.jobDetails.hireDate)
-      : null;
-    return hireDate && hireDate >= cutoffDate;
-  });
+  const newHires = useMemo(() => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
+    return employees.filter((emp) => {
+      const hireDate = emp.jobDetails?.hireDate
+        ? new Date(emp.jobDetails.hireDate)
+        : null;
+      return hireDate && hireDate >= cutoffDate;
+    });
+  }, [employees, dateRange]);
 
   // Employment type breakdown
-  const employmentTypes = employees.reduce((acc, emp) => {
+  const employmentTypes = useMemo(() => employees.reduce((acc, emp) => {
     const type = emp.jobDetails?.employmentType || "Unknown";
     acc[type] = (acc[type] || 0) + 1;
     return acc;
-  }, {} as Record<string, number>);
+  }, {} as Record<string, number>), [employees]);
 
   // Export to CSV
   const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {

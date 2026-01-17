@@ -73,6 +73,8 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.money",
     path: "/money",
     icon: Wallet,
+    subtitle: "Daily",
+    subtitleKey: "nav.moneySubtitle",
   },
   {
     id: "accounting",
@@ -80,7 +82,7 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.accounting",
     path: "/accounting",
     icon: Landmark,
-    subtitle: "Advanced",
+    subtitle: "Formal",
     subtitleKey: "nav.accountingSubtitle",
   },
   {

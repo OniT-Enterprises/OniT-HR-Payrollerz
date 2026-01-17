@@ -43,6 +43,7 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
+import DocumentAlertsCard from "@/components/dashboard/DocumentAlertsCard";
 
 function DashboardSkeleton() {
   return (
@@ -329,10 +330,10 @@ export default function Dashboard() {
           <Card
             className={`cursor-pointer transition-all hover:shadow-lg ${
               isPayrollUrgent && !payrollPrepared
-                ? "ring-2 ring-emerald-500 bg-emerald-50 dark:bg-emerald-950/30"
+                ? "ring-2 ring-green-500 bg-green-50 dark:bg-green-950/30"
                 : isPayrollSafe
                   ? "border-border/50"
-                  : "border-emerald-500/30"
+                  : "border-green-500/30"
             }`}
             onClick={() => navigate("/payroll/run")}
           >
@@ -345,7 +346,7 @@ export default function Dashboard() {
                 </div>
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
                   isPayrollUrgent
-                    ? "bg-emerald-500 text-white"
+                    ? "bg-green-500 text-white"
                     : "bg-muted"
                 }`}>
                   <Calculator className="h-6 w-6" />
@@ -356,8 +357,8 @@ export default function Dashboard() {
                 <div className="flex items-center gap-2">
                   {payrollPrepared ? (
                     <>
-                      <CheckCircle className="h-4 w-4 text-emerald-500" />
-                      <span className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">Prepared</span>
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                      <span className="text-sm text-green-600 dark:text-green-400 font-medium">Prepared</span>
                     </>
                   ) : (
                     <>
@@ -369,7 +370,7 @@ export default function Dashboard() {
                 <Button
                   size="sm"
                   className={isPayrollUrgent
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-white"
+                    ? "bg-green-500 hover:bg-green-600 text-white"
                     : ""
                   }
                   variant={isPayrollUrgent ? "default" : "outline"}
@@ -399,7 +400,7 @@ export default function Dashboard() {
               <div className="space-y-2">
                 <div className="flex items-center gap-3">
                   <span className={`h-2 w-2 rounded-full ${
-                    compliance.wit.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.wit.status === 'ok' ? 'bg-green-500' :
                     compliance.wit.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
                   <span className="text-sm flex-1">WIT</span>
@@ -407,7 +408,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`h-2 w-2 rounded-full ${
-                    compliance.inss.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.inss.status === 'ok' ? 'bg-green-500' :
                     compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
                   <span className="text-sm flex-1">INSS</span>
@@ -415,7 +416,7 @@ export default function Dashboard() {
                 </div>
                 <div className="flex items-center gap-3">
                   <span className={`h-2 w-2 rounded-full ${
-                    compliance.subsidio.status === 'ok' ? 'bg-emerald-500' :
+                    compliance.subsidio.status === 'ok' ? 'bg-green-500' :
                     compliance.subsidio.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
                   <span className="text-sm flex-1">13th Month</span>
@@ -514,8 +515,8 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
                   <p className="text-sm text-muted-foreground">Monthly Payroll</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-emerald-500" />
+                <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5 text-green-500" />
                 </div>
               </div>
             </CardContent>
@@ -528,8 +529,8 @@ export default function Dashboard() {
                   <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
                   <p className="text-sm text-muted-foreground">Next Payroll Amount</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                  <CalendarDays className="h-5 w-5 text-violet-500" />
+                <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <CalendarDays className="h-5 w-5 text-green-500" />
                 </div>
               </div>
             </CardContent>
@@ -548,7 +549,7 @@ export default function Dashboard() {
                 <Button
                   size="sm"
                   className={isPayrollUrgent
-                    ? "bg-emerald-500 hover:bg-emerald-600 text-white gap-2"
+                    ? "bg-green-500 hover:bg-green-600 text-white gap-2"
                     : "gap-2"
                   }
                   variant={isPayrollUrgent ? "default" : "outline"}
@@ -614,6 +615,11 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* ═══════════════════════════════════════════════════════════════
+            DOCUMENT EXPIRY ALERTS - Employee documents requiring attention
+        ═══════════════════════════════════════════════════════════════ */}
+        <DocumentAlertsCard className="border-border/50" maxItems={5} />
       </div>
 
       <KeyboardShortcutsDialog

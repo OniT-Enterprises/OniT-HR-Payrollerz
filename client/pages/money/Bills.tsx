@@ -176,8 +176,8 @@ export default function Bills() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('money.bills.title') || 'Bills'}</h1>
@@ -188,7 +188,7 @@ export default function Bills() {
           </div>
           <Button
             onClick={() => navigate('/money/bills/new')}
-            className="bg-teal-600 hover:bg-teal-700"
+            className="bg-indigo-600 hover:bg-indigo-700"
           >
             <Plus className="h-4 w-4 mr-2" />
             {t('money.bills.new') || 'New Bill'}
@@ -290,7 +290,7 @@ export default function Bills() {
             {filteredBills.map((bill) => (
               <Card
                 key={bill.id}
-                className="hover:border-teal-300 dark:hover:border-teal-800 transition-colors cursor-pointer"
+                className="hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors cursor-pointer"
                 onClick={() => navigate(`/money/bills/${bill.id}`)}
               >
                 <CardContent className="p-4">

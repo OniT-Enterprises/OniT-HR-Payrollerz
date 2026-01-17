@@ -228,8 +228,8 @@ export default function Vendors() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <Truck className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <Truck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('money.vendors.title') || 'Vendors'}</h1>
@@ -238,7 +238,7 @@ export default function Vendors() {
               </p>
             </div>
           </div>
-          <Button onClick={openAddDialog} className="bg-teal-600 hover:bg-teal-700">
+          <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
             <Plus className="h-4 w-4 mr-2" />
             {t('money.vendors.add') || 'Add Vendor'}
           </Button>
@@ -280,7 +280,7 @@ export default function Vendors() {
             {filteredVendors.map((vendor) => (
               <Card
                 key={vendor.id}
-                className="hover:border-teal-300 dark:hover:border-teal-800 transition-colors"
+                className="hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors"
               >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between">
@@ -490,7 +490,7 @@ export default function Vendors() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-teal-600 hover:bg-teal-700">
+            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700">
               {editingVendor
                 ? t('common.save') || 'Save'
                 : t('money.vendors.add') || 'Add Vendor'}

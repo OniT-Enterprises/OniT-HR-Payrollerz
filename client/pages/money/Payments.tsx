@@ -151,8 +151,8 @@ export default function Payments() {
 
         {/* Header */}
         <div className="flex items-center gap-3 mb-8">
-          <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-            <DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+          <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+            <DollarSign className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
             <h1 className="text-2xl font-bold">{t('money.payments.title') || 'Payments'}</h1>
@@ -281,7 +281,7 @@ export default function Payments() {
               return (
                 <Card
                   key={payment.id}
-                  className="hover:border-teal-300 dark:hover:border-teal-800 transition-colors cursor-pointer"
+                  className="hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors cursor-pointer"
                   onClick={() => payment.invoiceId && navigate(`/money/invoices/${payment.invoiceId}`)}
                 >
                   <CardContent className="p-4">

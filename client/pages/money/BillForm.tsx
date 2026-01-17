@@ -344,7 +344,7 @@ export default function BillForm() {
               {['pending', 'partial', 'overdue'].includes(bill.status) && (
                 <Button
                   onClick={() => setShowPaymentDialog(true)}
-                  className="bg-teal-600 hover:bg-teal-700"
+                  className="bg-indigo-600 hover:bg-indigo-700"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   {t('money.bills.recordPayment') || 'Record Payment'}
@@ -528,7 +528,7 @@ export default function BillForm() {
               <Button
                 onClick={handleRecordPayment}
                 disabled={saving}
-                className="bg-teal-600 hover:bg-teal-700"
+                className="bg-indigo-600 hover:bg-indigo-700"
               >
                 {t('money.payments.record') || 'Record'}
               </Button>
@@ -571,7 +571,7 @@ export default function BillForm() {
           <Button
             onClick={handleSave}
             disabled={saving}
-            className="bg-teal-600 hover:bg-teal-700"
+            className="bg-indigo-600 hover:bg-indigo-700"
           >
             <Save className="h-4 w-4 mr-2" />
             {saving

@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -32,7 +33,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { departmentService, Department } from "@/services/departmentService";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
+import { useAllDepartments } from "@/hooks/useDepartments";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -145,7 +146,10 @@ export default function CustomReports() {
   const [previewData, setPreviewData] = useState<any[] | null>(null);
   const [previewColumns, setPreviewColumns] = useState<ColumnOption[]>([]);
   const [loading, setLoading] = useState(false);
-  const [departments, setDepartments] = useState<Department[]>([]);
+
+  // Fetch departments with React Query hook
+  const { data: departments = [] } = useAllDepartments(100);
+  const queryClient = useQueryClient();
 
   // Builder state
   const [reportName, setReportName] = useState("");
@@ -158,26 +162,6 @@ export default function CustomReports() {
 
   const { toast } = useToast();
   const { t } = useI18n();
-
-  useEffect(() => {
-    loadDepartments();
-  }, []);
-
-  const loadDepartments = async () => {
-    try {
-      // Show cached data immediately if available
-      const cached = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
-      if (cached) {
-        setDepartments(cached);
-      }
-      // Fetch fresh data
-      const depts = await departmentService.getAllDepartments();
-      cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
-      setDepartments(depts);
-    } catch (error) {
-      console.error("Error loading departments:", error);
-    }
-  };
 
   const availableColumns = COLUMN_OPTIONS.filter((c) => c.dataSource === dataSource);
 
@@ -207,11 +191,12 @@ export default function CustomReports() {
       let data: any[] = [];
 
       if (config.dataSource === "employees") {
-        // Try cache first
-        let employees = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+        // Try React Query cache first, then fetch
+        let employees = queryClient.getQueryData<any[]>(['employees', 'list', { pageSize: 500 }]);
         if (!employees) {
-          employees = await employeeService.getAllEmployees();
-          cacheService.set(CACHE_KEYS.EMPLOYEES, employees);
+          const result = await employeeService.getEmployees({ pageSize: 500 });
+          employees = result.data;
+          queryClient.setQueryData(['employees', 'list', { pageSize: 500 }], result);
         }
         data = employees.filter((e) => {
           if (config.filters.status && e.status !== config.filters.status) return false;
@@ -223,29 +208,27 @@ export default function CustomReports() {
         const today = new Date();
         const startDate = new Date();
         startDate.setDate(startDate.getDate() - parseInt(config.filters.dateRange || "30"));
-        const dateKey = CACHE_KEYS.ATTENDANCE(
-          startDate.toISOString().split("T")[0],
-          today.toISOString().split("T")[0]
-        );
-        // Try cache first
-        let attendance = cacheService.get<AttendanceRecord[]>(dateKey);
+        const startDateStr = startDate.toISOString().split("T")[0];
+        const endDateStr = today.toISOString().split("T")[0];
+        // Try React Query cache first
+        let attendance = queryClient.getQueryData<AttendanceRecord[]>(['attendance', startDateStr, endDateStr]);
         if (!attendance) {
           attendance = await attendanceService.getAttendanceByDateRange(
-            startDate.toISOString().split("T")[0],
-            today.toISOString().split("T")[0],
+            startDateStr,
+            endDateStr,
             config.filters.department || undefined
           );
-          cacheService.set(dateKey, attendance);
+          queryClient.setQueryData(['attendance', startDateStr, endDateStr], attendance);
         }
         data = config.filters.department
           ? attendance.filter((a) => a.department === config.filters.department)
           : attendance;
       } else if (config.dataSource === "departments") {
-        // Try cache first
-        let depts = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
+        // Try React Query cache first
+        let depts = queryClient.getQueryData<Department[]>(['departments', 'list', { maxResults: 100 }]);
         if (!depts) {
           depts = await departmentService.getAllDepartments();
-          cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
+          queryClient.setQueryData(['departments', 'list', { maxResults: 100 }], depts);
         }
         data = depts;
       }

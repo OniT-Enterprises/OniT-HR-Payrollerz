@@ -80,25 +80,25 @@ Preference is persisted in localStorage.
 
 ```css
 :root {
-  /* Warm, refined light mode */
-  --background: 40 20% 98%;      /* Warm off-white */
-  --foreground: 220 20% 14%;     /* Rich dark text */
+  /* Clean, crisp light mode - QuickBooks inspired */
+  --background: 0 0% 97%;        /* Clean off-white */
+  --foreground: 210 20% 20%;     /* Rich dark text */
   --card: 0 0% 100%;             /* Pure white cards */
-  --muted: 220 14% 95%;          /* Subtle backgrounds */
-  --muted-foreground: 220 10% 45%;
-  --border: 220 13% 90%;
-  --primary: 230 75% 52%;        /* Rich blue */
+  --muted: 210 15% 96%;          /* Subtle backgrounds */
+  --muted-foreground: 210 10% 50%;
+  --border: 210 15% 90%;
+  --primary: 145 63% 42%;        /* Green (QuickBooks style) */
 }
 
 .dark {
-  /* Rich, deep dark mode */
-  --background: 225 25% 8%;      /* Deep blue-gray */
-  --foreground: 210 20% 95%;
-  --card: 225 20% 11%;
-  --muted: 225 15% 16%;
-  --muted-foreground: 215 12% 55%;
-  --border: 225 15% 18%;
-  --primary: 230 75% 62%;
+  /* Clean dark mode */
+  --background: 220 20% 10%;     /* Deep blue-gray */
+  --foreground: 210 15% 95%;
+  --card: 220 18% 13%;
+  --muted: 220 15% 18%;
+  --muted-foreground: 210 10% 55%;
+  --border: 220 15% 20%;
+  --primary: 145 60% 45%;
 }
 ```
 
@@ -108,13 +108,13 @@ Each module has a signature color palette used consistently across hero sections
 
 | Module | Tinted BG | Gradient | Border Accent |
 |--------|-----------|----------|---------------|
-| **People/Staff** | `bg-blue-50 dark:bg-blue-950/30` | `from-blue-500 to-indigo-500` | `border-l-blue-500` |
-| **Hiring** | `bg-emerald-50 dark:bg-emerald-950/30` | `from-emerald-500 to-teal-500` | `border-l-emerald-500` |
-| **Time & Leave** | `bg-cyan-50 dark:bg-cyan-950/30` | `from-cyan-500 to-teal-500` | `border-l-cyan-500` |
-| **Performance** | `bg-orange-50 dark:bg-orange-950/30` | `from-orange-500 to-amber-500` | `border-l-orange-500` |
+| **People** | `bg-blue-50 dark:bg-blue-950/30` | `from-blue-500 to-indigo-500` | `border-l-blue-500` |
 | **Payroll** | `bg-green-50 dark:bg-green-950/30` | `from-green-500 to-emerald-500` | `border-l-green-500` |
+| **Money** | `bg-indigo-50 dark:bg-indigo-950/30` | `from-indigo-500 to-indigo-600` | `border-l-indigo-500` |
 | **Accounting** | `bg-orange-50 dark:bg-orange-950/30` | `from-orange-500 to-amber-500` | `border-l-orange-500` |
 | **Reports** | `bg-violet-50 dark:bg-violet-950/30` | `from-violet-500 to-purple-500` | `border-l-violet-500` |
+
+**Note:** These colors are defined in `lib/sectionTheme.ts` and used throughout the app for consistent theming.
 
 ---
 
@@ -416,12 +416,22 @@ Navigation link cards should be **visually secondary** to stat cards. Use neutra
 ### Available Animation Classes
 
 ```css
-.animate-fade-in     /* Fade in */
-.animate-fade-up     /* Fade in + slide up */
-.animate-scale-in    /* Fade in + scale up */
-.animate-slide-in-right
-.animate-pulse-subtle
-.animate-shimmer
+/* Core animations */
+.animate-fade-in         /* Simple fade in */
+.animate-fade-up         /* Fade in + slide up (signature page load) */
+.animate-scale-in        /* Fade in + scale up (modals, dropdowns) */
+.animate-slide-in-right  /* Fade in + slide from right (sidebars) */
+.animate-pulse-subtle    /* Gentle pulse (attention indicators) */
+.animate-shimmer         /* Loading shimmer effect */
+.animate-bounce-subtle   /* Micro bounce (success states) */
+```
+
+### Utility Classes
+
+```css
+.glass          /* Glass morphism background */
+.hover-lift     /* Subtle lift on hover */
+.text-gradient  /* Primary-to-violet gradient text */
 ```
 
 ### Stagger Animation Delays
@@ -598,11 +608,10 @@ Each module uses its signature colors for subpage heroes:
 
 | Module | Hero Gradient | Text Color | Icon BG | Button Gradient |
 |--------|---------------|------------|---------|-----------------|
-| **Hiring** | `from-emerald-600 via-emerald-500 to-teal-500` | `text-emerald-100` | `bg-white/10` | `from-emerald-500 to-teal-500` |
-| **Staff** | `from-blue-600 via-blue-500 to-indigo-500` | `text-blue-100` | `bg-white/10` | `from-blue-500 to-indigo-500` |
-| **Time & Leave** | `from-cyan-600 via-cyan-500 to-teal-500` | `text-cyan-100` | `bg-white/10` | `from-cyan-500 to-teal-500` |
-| **Performance** | `from-orange-600 via-orange-500 to-amber-500` | `text-orange-100` | `bg-white/10` | `from-orange-500 to-amber-500` |
+| **People** | `from-blue-600 via-blue-500 to-indigo-500` | `text-blue-100` | `bg-white/10` | `from-blue-500 to-indigo-500` |
 | **Payroll** | `from-green-600 via-green-500 to-emerald-500` | `text-green-100` | `bg-white/10` | `from-green-500 to-emerald-500` |
+| **Money** | `from-indigo-600 via-indigo-500 to-indigo-600` | `text-indigo-100` | `bg-white/10` | `from-indigo-500 to-indigo-600` |
+| **Accounting** | `from-orange-600 via-orange-500 to-amber-500` | `text-orange-100` | `bg-white/10` | `from-orange-500 to-amber-500` |
 | **Reports** | `from-violet-600 via-violet-500 to-purple-500` | `text-violet-100` | `bg-white/10` | `from-violet-500 to-purple-500` |
 
 ### Subpage Key Patterns

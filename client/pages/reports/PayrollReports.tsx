@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -11,9 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService } from "@/services/employeeService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
-import { useToast } from "@/hooks/use-toast";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   FileText,
@@ -27,54 +25,21 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 
 export default function PayrollReports() {
-  const [employees, setEmployees] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const { toast } = useToast();
+  const { data: employees = [], isLoading: loading } = useAllEmployees(500);
   const { t, locale } = useI18n();
 
-  useEffect(() => {
-    loadEmployees();
-  }, []);
-
-  const loadEmployees = async () => {
-    try {
-      // Show cached data immediately if available
-      const cached = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
-      if (cached) {
-        setEmployees(cached);
-        setLoading(false);
-      } else {
-        setLoading(true);
-      }
-
-      // Fetch fresh data
-      const employeesData = await employeeService.getAllEmployees();
-      cacheService.set(CACHE_KEYS.EMPLOYEES, employeesData);
-      setEmployees(employeesData);
-    } catch (error) {
-      console.error("Error loading employees:", error);
-      toast({
-        title: t("reports.payroll.toast.errorTitle"),
-        description: t("reports.payroll.toast.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const totalMonthlySalary = employees.reduce(
+  const totalMonthlySalary = useMemo(() => employees.reduce(
     (sum, emp) =>
       sum +
-      (emp.compensation.monthlySalary ||
-        Math.round((emp.compensation as any).annualSalary / 12) ||
+      (emp.compensation?.monthlySalary ||
+        Math.round((emp.compensation as any)?.annualSalary / 12) ||
         0),
     0,
-  );
-  const averageMonthlySalary =
+  ), [employees]);
+  const averageMonthlySalary = useMemo(() =>
     employees.length > 0
       ? Math.round(totalMonthlySalary / employees.length)
-      : 0;
+      : 0, [employees.length, totalMonthlySalary]);
   const formatCurrency = (amount) => {
     const formatLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
     return new Intl.NumberFormat(formatLocale, {

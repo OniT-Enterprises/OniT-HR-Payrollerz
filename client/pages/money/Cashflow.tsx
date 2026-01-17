@@ -195,8 +195,8 @@ export default function Cashflow() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <Banknote className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <Banknote className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('money.cashflow.title') || 'Cash Flow'}</h1>

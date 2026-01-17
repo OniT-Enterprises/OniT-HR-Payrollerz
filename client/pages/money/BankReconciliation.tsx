@@ -356,8 +356,8 @@ export default function BankReconciliation() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('money.bankRecon.title') || 'Bank Reconciliation'}</h1>
@@ -377,7 +377,7 @@ export default function BankReconciliation() {
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
-              className="bg-teal-600 hover:bg-teal-700"
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
               <Upload className="h-4 w-4 mr-2" />
               {importing

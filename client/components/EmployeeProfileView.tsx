@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { type Employee } from "@/services/employeeService";
+import { settingsService } from "@/services/settingsService";
+import { useTenantId } from "@/contexts/TenantContext";
+import { downloadSefopeForm } from "@/components/documents/SefopePDF";
+import { CompanyDetails } from "@/types/settings";
 import {
   User,
   Mail,
@@ -32,6 +36,8 @@ import {
   Globe,
   Users,
   X,
+  Download,
+  Loader2,
 } from "lucide-react";
 
 interface EmployeeProfileViewProps {
@@ -45,6 +51,48 @@ export default function EmployeeProfileView({
   open,
   onOpenChange,
 }: EmployeeProfileViewProps) {
+  const tenantId = useTenantId();
+  const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
+  const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
+
+  // Fetch company details for SEFOPE form
+  useEffect(() => {
+    const fetchCompanyDetails = async () => {
+      if (!tenantId || tenantId === "local-dev-tenant") {
+        // Use default values for local dev
+        setCompanyDetails({
+          legalName: "OniT Demo Company",
+          tinNumber: "000000000",
+          registeredAddress: "Dili, Timor-Leste",
+          city: "Dili",
+          country: "Timor-Leste",
+        });
+        return;
+      }
+      try {
+        const settings = await settingsService.getSettings(tenantId);
+        if (settings?.companyDetails) {
+          setCompanyDetails(settings.companyDetails);
+        }
+      } catch (error) {
+        console.error("Failed to fetch company details:", error);
+      }
+    };
+    fetchCompanyDetails();
+  }, [tenantId]);
+
+  const handleDownloadSefope = async () => {
+    if (!employee) return;
+    setIsGeneratingSefope(true);
+    try {
+      await downloadSefopeForm(employee, companyDetails);
+    } catch (error) {
+      console.error("Failed to generate SEFOPE form:", error);
+    } finally {
+      setIsGeneratingSefope(false);
+    }
+  };
+
   if (!employee) return null;
 
   const formatSalary = (monthlySalary: number) => {
@@ -124,7 +172,21 @@ export default function EmployeeProfileView({
                 {employee.jobDetails.employeeId}
               </p>
             </div>
-            <div className="ml-auto">
+            <div className="ml-auto flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadSefope}
+                disabled={isGeneratingSefope}
+                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+              >
+                {isGeneratingSefope ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                SEFOPE Form
+              </Button>
               <Badge className={getStatusColor(employee.status)}>
                 {employee.status.charAt(0).toUpperCase() +
                   employee.status.slice(1)}

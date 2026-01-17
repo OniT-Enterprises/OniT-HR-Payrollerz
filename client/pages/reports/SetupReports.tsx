@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -14,7 +15,6 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { adminService } from "@/services/adminService";
 import { settingsService } from "@/services/settingsService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
@@ -38,96 +38,59 @@ import type { TenantSettings } from "@/types/settings";
 import type { UserProfile, AdminAuditEntry } from "@/types/user";
 
 export default function SetupReports() {
-  const [auditLog, setAuditLog] = useState<AdminAuditEntry[]>([]);
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [settings, setSettings] = useState<TenantSettings | null>(null);
-  const [setupProgress, setSetupProgress] = useState<{
-    isComplete: boolean;
-    progress: Record<string, boolean>;
-    percentComplete: number;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
   const { session } = useTenant();
   const { user } = useAuth();
   const { toast } = useToast();
   const { t } = useI18n();
 
-  useEffect(() => {
-    loadData();
-  }, [session?.tid]);
+  const tenantId = session?.tid;
 
-  const loadData = async () => {
-    try {
-      const tenantId = session?.tid;
+  // Fetch audit log with React Query
+  const { data: auditLog = [], isLoading: auditLoading } = useQuery({
+    queryKey: ['auditLog'],
+    queryFn: () => adminService.getAuditLog(50).catch(() => []),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Show cached data immediately if available
-      const cachedAudit = cacheService.get<AdminAuditEntry[]>(CACHE_KEYS.AUDIT_LOG);
-      const cachedUsers = cacheService.get<UserProfile[]>(CACHE_KEYS.USERS);
-      const cachedSettings = tenantId
-        ? cacheService.get<TenantSettings>(CACHE_KEYS.TENANT_SETTINGS(tenantId))
-        : null;
+  // Fetch users with React Query
+  const { data: users = [], isLoading: usersLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: () => adminService.getAllUsers(100).catch(() => []),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      if (cachedAudit && cachedUsers) {
-        setAuditLog(cachedAudit);
-        setUsers(cachedUsers);
-        if (cachedSettings) {
-          setSettings(cachedSettings);
-        }
-        setLoading(false);
-      } else {
-        setLoading(true);
-      }
+  // Fetch settings with React Query
+  const { data: settings = null, isLoading: settingsLoading } = useQuery({
+    queryKey: ['settings', tenantId],
+    queryFn: () => settingsService.getSettings(tenantId!).catch(() => null),
+    enabled: !!tenantId,
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Fetch fresh data
-      const [auditData, usersData] = await Promise.all([
-        adminService.getAuditLog(50).catch(() => []),
-        adminService.getAllUsers(100).catch(() => []),
-      ]);
+  // Fetch setup progress with React Query
+  const { data: setupProgress = null, isLoading: progressLoading } = useQuery({
+    queryKey: ['setupProgress', tenantId],
+    queryFn: () => settingsService.getSetupProgress(tenantId!).catch(() => null),
+    enabled: !!tenantId,
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Update cache
-      cacheService.set(CACHE_KEYS.AUDIT_LOG, auditData);
-      cacheService.set(CACHE_KEYS.USERS, usersData);
-
-      setAuditLog(auditData);
-      setUsers(usersData);
-
-      if (tenantId) {
-        const [settingsData, progressData] = await Promise.all([
-          settingsService.getSettings(tenantId).catch(() => null),
-          settingsService.getSetupProgress(tenantId).catch(() => null),
-        ]);
-        if (settingsData) {
-          cacheService.set(CACHE_KEYS.TENANT_SETTINGS(tenantId), settingsData);
-        }
-        setSettings(settingsData);
-        setSetupProgress(progressData);
-      }
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load setup data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const loading = auditLoading || usersLoading || (tenantId ? (settingsLoading || progressLoading) : false);
 
   // Calculate stats
   const totalUsers = users.length;
-  const superAdmins = users.filter((u) => u.isSuperAdmin).length;
-  const recentActions = auditLog.filter((a) => {
+  const superAdmins = useMemo(() => users.filter((u) => u.isSuperAdmin).length, [users]);
+  const recentActions = useMemo(() => auditLog.filter((a) => {
     const actionDate = a.timestamp?.toDate?.() || new Date(a.timestamp as any);
     const dayAgo = new Date();
     dayAgo.setDate(dayAgo.getDate() - 1);
     return actionDate > dayAgo;
-  }).length;
+  }).length, [auditLog]);
 
   // Setup status
   const setupSteps = setupProgress?.progress || {};
-  const completedSteps = Object.values(setupSteps).filter(Boolean).length;
-  const totalSteps = Object.keys(setupSteps).length || 5;
+  const completedSteps = useMemo(() => Object.values(setupSteps).filter(Boolean).length, [setupSteps]);
+  const totalSteps = useMemo(() => Object.keys(setupSteps).length || 5, [setupSteps]);
 
   // Export functions
   const exportToCSV = (

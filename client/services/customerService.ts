@@ -15,10 +15,55 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   serverTimestamp,
+  QueryConstraint,
+  DocumentSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type { Customer, CustomerFormData } from '@/types/money';
+
+/**
+ * Filter options for customer queries
+ */
+export interface CustomerFilters {
+  // Server-side filters
+  isActive?: boolean;
+
+  // Pagination
+  pageSize?: number;
+  startAfterDoc?: DocumentSnapshot;
+
+  // Client-side filters
+  searchTerm?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+  totalFetched: number;
+}
+
+/**
+ * Maps Firestore document to Customer
+ */
+function mapCustomer(docSnap: DocumentSnapshot): Customer {
+  const data = docSnap.data();
+  if (!data) throw new Error('Document data is undefined');
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+    updatedAt: data.updatedAt instanceof Timestamp
+      ? data.updatedAt.toDate()
+      : data.updatedAt || new Date(),
+  } as Customer;
+}
 
 class CustomerService {
   private get collectionRef() {
@@ -26,44 +71,80 @@ class CustomerService {
   }
 
   /**
-   * Get all customers
+   * Get customers with server-side filtering and pagination
    */
-  async getAllCustomers(maxResults: number = 500): Promise<Customer[]> {
-    const querySnapshot = await getDocs(
-      query(this.collectionRef, orderBy('name', 'asc'), limit(maxResults))
-    );
+  async getCustomers(filters: CustomerFilters = {}): Promise<PaginatedResult<Customer>> {
+    const {
+      isActive,
+      pageSize = 100,
+      startAfterDoc,
+      searchTerm,
+    } = filters;
 
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as Customer;
-    });
+    const constraints: QueryConstraint[] = [];
+
+    // Server-side filters
+    if (isActive !== undefined) {
+      constraints.push(where('isActive', '==', isActive));
+    }
+
+    // Ordering and pagination
+    constraints.push(orderBy('name', 'asc'));
+
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(this.collectionRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let customers = querySnapshot.docs.map(mapCustomer);
+    const hasMore = customers.length > pageSize;
+
+    if (hasMore) {
+      customers = customers.slice(0, pageSize);
+    }
+
+    const lastDoc = customers.length > 0
+      ? querySnapshot.docs[customers.length - 1]
+      : null;
+
+    // Client-side filters
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      customers = customers.filter(
+        (customer) =>
+          customer.name.toLowerCase().includes(term) ||
+          customer.email?.toLowerCase().includes(term) ||
+          customer.phone?.includes(term)
+      );
+    }
+
+    return {
+      data: customers,
+      lastDoc,
+      hasMore,
+      totalFetched: customers.length,
+    };
   }
 
   /**
-   * Get active customers only
+   * Get all customers
+   * @deprecated Use getCustomers() with filters for better performance
+   */
+  async getAllCustomers(maxResults: number = 500): Promise<Customer[]> {
+    const result = await this.getCustomers({ pageSize: maxResults });
+    return result.data;
+  }
+
+  /**
+   * Get active customers only (server-side filtered)
    */
   async getActiveCustomers(): Promise<Customer[]> {
-    const q = query(
-      this.collectionRef,
-      where('isActive', '==', true),
-      orderBy('name', 'asc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as Customer;
-    });
+    const result = await this.getCustomers({ isActive: true, pageSize: 500 });
+    return result.data;
   }
 
   /**
@@ -77,13 +158,7 @@ class CustomerService {
       return null;
     }
 
-    const data = docSnap.data();
-    return {
-      id: docSnap.id,
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-    } as Customer;
+    return mapCustomer(docSnap);
   }
 
   /**
@@ -140,18 +215,11 @@ class CustomerService {
   }
 
   /**
-   * Search customers by name
+   * Search customers by name (client-side filtering)
    */
   async searchCustomers(searchTerm: string): Promise<Customer[]> {
-    const customers = await this.getAllCustomers();
-    const term = searchTerm.toLowerCase();
-
-    return customers.filter(
-      (customer) =>
-        customer.name.toLowerCase().includes(term) ||
-        customer.email?.toLowerCase().includes(term) ||
-        customer.phone?.includes(term)
-    );
+    const result = await this.getCustomers({ searchTerm, pageSize: 500 });
+    return result.data;
   }
 
   /**

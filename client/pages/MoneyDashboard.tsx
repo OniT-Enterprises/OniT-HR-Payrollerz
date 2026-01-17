@@ -195,17 +195,17 @@ export default function MoneyDashboard() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <Wallet className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <Wallet className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">{t('money.dashboard.title') || 'Money'}</h1>
               <p className="text-muted-foreground">
-                {t('money.dashboard.subtitle') || 'Invoices, payments, and financial overview'}
+                {t('money.dashboard.subtitle') || 'Run the business — invoices, expenses, and daily cash flow'}
               </p>
             </div>
           </div>
-          <Button onClick={() => navigate('/money/invoices/new')} className="bg-teal-600 hover:bg-teal-700">
+          <Button onClick={() => navigate('/money/invoices/new')} className="bg-indigo-600 hover:bg-indigo-700">
             <Plus className="h-4 w-4 mr-2" />
             {t('money.dashboard.newInvoice') || 'New Invoice'}
           </Button>
@@ -213,10 +213,10 @@ export default function MoneyDashboard() {
 
         {/* Onboarding Checklist - Shows for new users */}
         {showOnboarding && (
-          <Card className="mb-8 border-teal-200 dark:border-teal-800 bg-gradient-to-r from-teal-50 to-transparent dark:from-teal-950/30 dark:to-transparent">
+          <Card className="mb-8 border-indigo-200 dark:border-indigo-800 bg-gradient-to-r from-indigo-50 to-transparent dark:from-indigo-950/30 dark:to-transparent">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
-                <FileCheck className="h-5 w-5 text-teal-600" />
+                <FileCheck className="h-5 w-5 text-indigo-600" />
                 {t('money.dashboard.getStarted') || 'Get Started with Invoicing'}
               </CardTitle>
               <CardDescription>
@@ -235,7 +235,7 @@ export default function MoneyDashboard() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4 text-teal-600" />
+                      <Settings className="h-4 w-4 text-indigo-600" />
                       <span className="font-medium text-sm">
                         {t('money.dashboard.step1Title') || 'Company Details'}
                       </span>
@@ -256,7 +256,7 @@ export default function MoneyDashboard() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-teal-600" />
+                      <FileText className="h-4 w-4 text-indigo-600" />
                       <span className="font-medium text-sm">
                         {t('money.dashboard.step2Title') || 'Invoice Settings'}
                       </span>
@@ -285,7 +285,7 @@ export default function MoneyDashboard() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <UserPlus className="h-4 w-4 text-teal-600" />
+                      <UserPlus className="h-4 w-4 text-indigo-600" />
                       <span className="font-medium text-sm">
                         {t('money.dashboard.step3Title') || 'Add First Customer'}
                       </span>
@@ -407,8 +407,8 @@ export default function MoneyDashboard() {
                 className="w-full justify-start h-auto py-3"
                 onClick={() => navigate('/money/invoices/new')}
               >
-                <div className="h-8 w-8 rounded bg-teal-100 dark:bg-teal-900 flex items-center justify-center mr-3">
-                  <Plus className="h-4 w-4 text-teal-600" />
+                <div className="h-8 w-8 rounded bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center mr-3">
+                  <Plus className="h-4 w-4 text-indigo-600" />
                 </div>
                 <div className="text-left">
                   <p className="font-medium">{t('money.dashboard.createInvoice') || 'Create Invoice'}</p>

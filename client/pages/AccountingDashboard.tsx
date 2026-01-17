@@ -144,7 +144,7 @@ export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
-  const [toolsOpen, setToolsOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(true);
 
   // Simulate loading delay for data fetch
   React.useEffect(() => {
@@ -180,7 +180,8 @@ export default function AccountingDashboard() {
   const attentionItems = accountingStatus.pendingEntries > 0
     ? [
         {
-          issue: `${accountingStatus.pendingEntries} manual entries pending review`,
+          issue: `${accountingStatus.pendingEntries} manual entries awaiting approval`,
+          hint: "Manual entries can affect financial reports",
           action: "Review",
           path: "/accounting/journal-entries?status=pending",
         },
@@ -247,7 +248,7 @@ export default function AccountingDashboard() {
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Accounting</h1>
                 <p className="text-sm text-muted-foreground">
-                  Review payroll accounting and financial reports
+                  Verify the books — ledger, journal entries, and audit trail. For accountants only.
                 </p>
               </div>
             </div>
@@ -255,10 +256,10 @@ export default function AccountingDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/accounting/journal-entries")}
+                onClick={() => navigate("/accounting/journal-entries?action=new")}
               >
                 <FilePlus className="h-4 w-4 mr-1.5" />
-                New Entry
+                New Manual Entry
               </Button>
               <Button
                 size="sm"
@@ -301,24 +302,35 @@ export default function AccountingDashboard() {
                 </span>
               </div>
 
-              {/* Trial Balance */}
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
+              {/* Trial Balance - Primary health indicator */}
+              <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                accountingStatus.trialBalanced
+                  ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50"
+                  : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50"
+              }`}>
                 {accountingStatus.trialBalanced ? (
-                  <CheckCircle className="h-5 w-5 text-emerald-500 flex-shrink-0" />
+                  <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
                 ) : (
-                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">Trial Balance</p>
-                  <p className="text-xs text-muted-foreground">
-                    {accountingStatus.trialBalanced ? "Balanced" : "Unbalanced"}
+                  <p className={`text-xs ${
+                    accountingStatus.trialBalanced
+                      ? "text-emerald-600 dark:text-emerald-400"
+                      : "text-red-600 dark:text-red-400"
+                  }`}>
+                    {accountingStatus.trialBalanced ? "Balanced" : "Out of balance"}
                   </p>
                 </div>
                 <Badge
-                  variant={accountingStatus.trialBalanced ? "secondary" : "destructive"}
-                  className="text-xs"
+                  className={`text-xs font-semibold ${
+                    accountingStatus.trialBalanced
+                      ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700"
+                      : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700"
+                  }`}
                 >
-                  {accountingStatus.trialBalanced ? "OK" : "Check"}
+                  {accountingStatus.trialBalanced ? "Balanced" : "Check"}
                 </Badge>
               </div>
 
@@ -376,6 +388,11 @@ export default function AccountingDashboard() {
             </div>
           </CardHeader>
           <CardContent>
+            {/* Clarification text */}
+            <p className="text-xs text-muted-foreground mb-4 pb-3 border-b border-border/50">
+              Payroll automatically posts journal entries. These entries should normally not be edited.
+            </p>
+
             <div className="space-y-3">
               {/* Payroll run info */}
               <div className="flex items-center justify-between text-sm pb-3 border-b border-border/50">
@@ -442,7 +459,12 @@ export default function AccountingDashboard() {
                     className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
                     onClick={() => navigate(item.path)}
                   >
-                    <span className="text-sm">{item.issue}</span>
+                    <div>
+                      <span className="text-sm font-medium">{item.issue}</span>
+                      {item.hint && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.hint}</p>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       variant="ghost"

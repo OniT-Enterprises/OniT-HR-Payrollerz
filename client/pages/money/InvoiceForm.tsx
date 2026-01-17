@@ -374,7 +374,7 @@ export default function InvoiceForm() {
                     setPaymentAmount(invoice.balanceDue.toString());
                     setShowPaymentDialog(true);
                   }}
-                  className="bg-teal-600 hover:bg-teal-700"
+                  className="bg-indigo-600 hover:bg-indigo-700"
                 >
                   <DollarSign className="h-4 w-4 mr-2" />
                   {t('money.invoices.recordPayment') || 'Record Payment'}
@@ -586,7 +586,7 @@ export default function InvoiceForm() {
               <Button
                 onClick={handleRecordPayment}
                 disabled={saving}
-                className="bg-teal-600 hover:bg-teal-700"
+                className="bg-indigo-600 hover:bg-indigo-700"
               >
                 {saving
                   ? t('common.saving') || 'Saving...'
@@ -617,8 +617,8 @@ export default function InvoiceForm() {
               <ArrowLeft className="h-4 w-4 mr-2" />
               {t('common.back') || 'Back'}
             </Button>
-            <div className="h-10 w-10 rounded-lg bg-teal-100 dark:bg-teal-900 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
+              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h1 className="text-xl font-bold">
@@ -636,7 +636,7 @@ export default function InvoiceForm() {
             <Button
               onClick={() => handleSave(true)}
               disabled={saving}
-              className="bg-teal-600 hover:bg-teal-700"
+              className="bg-indigo-600 hover:bg-indigo-700"
             >
               <Send className="h-4 w-4 mr-2" />
               {t('money.invoices.saveAndSend') || 'Save & Send'}
@@ -676,7 +676,7 @@ export default function InvoiceForm() {
                 {customers.length === 0 && (
                   <Button
                     variant="link"
-                    className="mt-2 p-0 h-auto text-teal-600"
+                    className="mt-2 p-0 h-auto text-indigo-600"
                     onClick={() => navigate('/money/customers')}
                   >
                     <Plus className="h-3 w-3 mr-1" />
@@ -871,7 +871,7 @@ export default function InvoiceForm() {
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
                   <span>{t('money.invoices.total') || 'Total'}</span>
-                  <span className="text-teal-600">{formatCurrency(total)}</span>
+                  <span className="text-indigo-600">{formatCurrency(total)}</span>
                 </div>
               </CardContent>
             </Card>

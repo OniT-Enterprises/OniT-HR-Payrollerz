@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Card,
   CardContent,
@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { departmentService, Department } from "@/services/departmentService";
-import { employeeService } from "@/services/employeeService";
-import { cacheService, CACHE_KEYS } from "@/services/cacheService";
+import { useAllDepartments } from "@/hooks/useDepartments";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import type { Department } from "@/services/departmentService";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -45,126 +45,88 @@ interface DepartmentStats {
 }
 
 export default function DepartmentReports() {
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [departmentStats, setDepartmentStats] = useState<DepartmentStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(100);
+  const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
 
-  useEffect(() => {
-    loadData();
-  }, [dateRange]);
+  const loading = deptsLoading || empsLoading;
 
-  const loadData = async () => {
-    try {
-      // Show cached data immediately if available
-      const cachedDepts = cacheService.get<Department[]>(CACHE_KEYS.DEPARTMENTS);
-      const cachedEmps = cacheService.get<any[]>(CACHE_KEYS.EMPLOYEES);
+  // Calculate stats per department
+  const departmentStats = useMemo((): DepartmentStats[] => {
+    const cutoffDate = new Date();
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
 
-      if (cachedDepts && cachedEmps) {
-        setDepartments(cachedDepts);
-        setEmployees(cachedEmps);
-        setLoading(false);
-      } else {
-        setLoading(true);
-      }
+    const stats: DepartmentStats[] = departments.map((dept) => {
+      const deptEmployees = employees.filter(
+        (e) => e.jobDetails?.department === dept.name
+      );
+      const activeEmps = deptEmployees.filter((e) => e.status === "active");
+      const newHires = deptEmployees.filter((e) => {
+        const hireDate = e.jobDetails?.hireDate
+          ? new Date(e.jobDetails.hireDate)
+          : null;
+        return hireDate && hireDate >= cutoffDate;
+      });
 
-      // Fetch fresh data
-      const [depts, emps] = await Promise.all([
-        departmentService.getAllDepartments(),
-        employeeService.getAllEmployees(),
-      ]);
-
-      // Update cache
-      cacheService.set(CACHE_KEYS.DEPARTMENTS, depts);
-      cacheService.set(CACHE_KEYS.EMPLOYEES, emps);
-
-      setDepartments(depts);
-      setEmployees(emps);
-
-      // Calculate stats per department
-      const cutoffDate = new Date();
-      cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
-
-      const stats: DepartmentStats[] = depts.map((dept) => {
-        const deptEmployees = emps.filter(
-          (e) => e.jobDetails?.department === dept.name
-        );
-        const activeEmps = deptEmployees.filter((e) => e.status === "active");
-        const newHires = deptEmployees.filter((e) => {
-          const hireDate = e.jobDetails?.hireDate
-            ? new Date(e.jobDetails.hireDate)
-            : null;
-          return hireDate && hireDate >= cutoffDate;
+      // Calculate average tenure in months
+      const tenures = activeEmps
+        .filter((e) => e.jobDetails?.hireDate)
+        .map((e) => {
+          const hireDate = new Date(e.jobDetails.hireDate);
+          const now = new Date();
+          return (
+            (now.getFullYear() - hireDate.getFullYear()) * 12 +
+            (now.getMonth() - hireDate.getMonth())
+          );
         });
+      const avgTenure =
+        tenures.length > 0
+          ? tenures.reduce((a, b) => a + b, 0) / tenures.length
+          : 0;
 
-        // Calculate average tenure in months
-        const tenures = activeEmps
-          .filter((e) => e.jobDetails?.hireDate)
-          .map((e) => {
-            const hireDate = new Date(e.jobDetails.hireDate);
-            const now = new Date();
-            return (
-              (now.getFullYear() - hireDate.getFullYear()) * 12 +
-              (now.getMonth() - hireDate.getMonth())
-            );
-          });
-        const avgTenure =
-          tenures.length > 0
-            ? tenures.reduce((a, b) => a + b, 0) / tenures.length
-            : 0;
+      // Employment type breakdown
+      const employmentTypes = deptEmployees.reduce((acc, e) => {
+        const type = e.jobDetails?.employmentType || "Unknown";
+        acc[type] = (acc[type] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
 
-        // Employment type breakdown
-        const employmentTypes = deptEmployees.reduce((acc, e) => {
-          const type = e.jobDetails?.employmentType || "Unknown";
-          acc[type] = (acc[type] || 0) + 1;
-          return acc;
-        }, {} as Record<string, number>);
+      return {
+        department: dept,
+        headcount: deptEmployees.length,
+        activeEmployees: activeEmps.length,
+        newHires: newHires.length,
+        averageTenure: avgTenure,
+        employmentTypes,
+      };
+    });
 
-        return {
-          department: dept,
-          headcount: deptEmployees.length,
-          activeEmployees: activeEmps.length,
-          newHires: newHires.length,
-          averageTenure: avgTenure,
-          employmentTypes,
-        };
-      });
-
-      // Sort by headcount
-      stats.sort((a, b) => b.headcount - a.headcount);
-      setDepartmentStats(stats);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load department data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // Sort by headcount
+    stats.sort((a, b) => b.headcount - a.headcount);
+    return stats;
+  }, [departments, employees, dateRange]);
 
   // Calculate overall stats
   const totalDepartments = departments.length;
   const totalEmployees = employees.length;
-  const activeEmployees = employees.filter((e) => e.status === "active").length;
+  const activeEmployees = useMemo(() => employees.filter((e) => e.status === "active").length, [employees]);
   const largestDept = departmentStats[0];
-  const avgHeadcount =
+  const avgHeadcount = useMemo(() =>
     totalDepartments > 0
       ? (totalEmployees / totalDepartments).toFixed(1)
-      : "0";
+      : "0", [totalDepartments, totalEmployees]);
 
   // Unassigned employees
-  const assignedDepts = departments.map((d) => d.name);
-  const unassignedEmployees = employees.filter(
-    (e) =>
-      !e.jobDetails?.department ||
-      !assignedDepts.includes(e.jobDetails?.department)
-  );
+  const unassignedEmployees = useMemo(() => {
+    const assignedDepts = departments.map((d) => d.name);
+    return employees.filter(
+      (e) =>
+        !e.jobDetails?.department ||
+        !assignedDepts.includes(e.jobDetails?.department)
+    );
+  }, [departments, employees]);
 
   // Export to CSV
   const exportToCSV = (

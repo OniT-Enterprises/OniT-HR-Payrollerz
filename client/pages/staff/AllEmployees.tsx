@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService, type Employee } from "@/services/employeeService";
+import { type Employee } from "@/services/employeeService";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import ContactInfoPopover from "@/components/ContactInfoPopover";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
@@ -55,9 +56,14 @@ import {
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
 
 export default function AllEmployees() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [filteredEmployees, setFilteredEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(true);
+  // React Query for data fetching with caching
+  const {
+    data: employees = [],
+    isLoading: loading,
+    error: queryError,
+    refetch: loadEmployees,
+  } = useAllEmployees(500);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(20);
@@ -82,28 +88,25 @@ export default function AllEmployees() {
   );
   const [showProfileView, setShowProfileView] = useState(false);
   const [showIncompleteProfiles, setShowIncompleteProfiles] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useI18n();
 
+  // Derive connection error from React Query
+  const connectionError = queryError
+    ? (queryError instanceof Error ? queryError.message : t("employees.connectionErrorFallback"))
+    : null;
+
   // Monitor network status
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setConnectionError(null);
-      // Try to reload data when coming back online
-      if (employees.length === 0) {
-        loadEmployees();
-      }
+      // React Query will automatically refetch when network is restored
     };
 
     const handleOffline = () => {
       setIsOnline(false);
-      setConnectionError(
-        t("employees.offlineMessage"),
-      );
     };
 
     window.addEventListener("online", handleOnline);
@@ -113,11 +116,6 @@ export default function AllEmployees() {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
     };
-  }, [employees.length]);
-
-  // Load employees from Firebase
-  useEffect(() => {
-    loadEmployees();
   }, []);
 
   // Read URL params for compliance filtering (from Dashboard/PayrollHub links)
@@ -130,51 +128,8 @@ export default function AllEmployees() {
     }
   }, [searchParams]);
 
-  // Filter employees when search term or filters change
-  useEffect(() => {
-    filterEmployees();
-  }, [
-    employees,
-    searchTerm,
-    departmentFilter,
-    positionFilter,
-    employmentTypeFilter,
-    workLocationFilter,
-    statusFilter,
-    complianceFilter,
-    minSalary,
-    maxSalary,
-  ]);
-
-  const loadEmployees = async () => {
-    try {
-      setLoading(true);
-      setConnectionError(null);
-      const employeesData = await employeeService.getAllEmployees();
-      setEmployees(employeesData);
-    } catch (error) {
-      console.error("Error loading employees:", error);
-
-      // Show specific error message from the service
-      const errorMessage =
-        error instanceof Error ? error.message : t("employees.connectionErrorFallback");
-      setConnectionError(errorMessage);
-
-      toast({
-        title: t("employees.connectionErrorTitle"),
-        description: errorMessage,
-        variant: "destructive",
-        duration: 8000, // Show longer for network errors
-      });
-
-      // Set empty employees array to show empty state instead of loading forever
-      setEmployees([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filterEmployees = () => {
+  // Filter employees using useMemo for performance
+  const filteredEmployees = useMemo(() => {
     let filtered = employees.filter((employee) => {
       // Search filter
       const matchesSearch =
@@ -272,9 +227,34 @@ export default function AllEmployees() {
       );
     });
 
-    setFilteredEmployees(filtered);
-    setCurrentPage(1); // Reset to first page when filtering
-  };
+    return filtered;
+  }, [
+    employees,
+    searchTerm,
+    departmentFilter,
+    positionFilter,
+    employmentTypeFilter,
+    workLocationFilter,
+    statusFilter,
+    complianceFilter,
+    minSalary,
+    maxSalary,
+  ]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    searchTerm,
+    departmentFilter,
+    positionFilter,
+    employmentTypeFilter,
+    workLocationFilter,
+    statusFilter,
+    complianceFilter,
+    minSalary,
+    maxSalary,
+  ]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -350,7 +330,8 @@ export default function AllEmployees() {
   };
 
   const handleSearch = () => {
-    filterEmployees();
+    // Filtering is now handled by useMemo automatically
+    // This function is kept for the search input's onKeyDown handler
   };
 
   const handleExport = () => {
@@ -683,7 +664,7 @@ export default function AllEmployees() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={loadEmployees}
+                onClick={() => loadEmployees()}
                 disabled={loading}
               >
                 {loading ? t("employees.retrying") : t("employees.retry")}
@@ -1255,7 +1236,7 @@ export default function AllEmployees() {
                       <p className="text-muted-foreground mb-4">
                         {t("employees.empty.connectionDesc")}
                       </p>
-                      <Button onClick={loadEmployees} disabled={loading}>
+                      <Button onClick={() => loadEmployees()} disabled={loading}>
                         <Users className="mr-2 h-4 w-4" />
                         {t("employees.buttons.retryLoading")}
                       </Button>

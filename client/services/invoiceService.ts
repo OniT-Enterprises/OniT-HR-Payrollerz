@@ -1,6 +1,7 @@
 /**
  * Invoice Service
  * Firestore CRUD operations for invoices and payments
+ * Refactored with server-side filtering and proper type safety
  */
 
 import {
@@ -15,9 +16,12 @@ import {
   where,
   orderBy,
   limit,
+  startAfter,
   serverTimestamp,
-  increment,
   runTransaction,
+  QueryConstraint,
+  DocumentSnapshot,
+  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import type {
@@ -29,9 +33,77 @@ import type {
   PaymentReceived,
   PaymentFormData,
   MoneyStats,
-  DEFAULT_INVOICE_SETTINGS,
 } from '@/types/money';
 import { customerService } from './customerService';
+
+// ============================================
+// FILTER INTERFACES
+// ============================================
+
+export interface InvoiceFilters {
+  // Server-side filters
+  status?: InvoiceStatus | InvoiceStatus[];
+  customerId?: string;
+  dueBefore?: string; // YYYY-MM-DD
+
+  // Pagination
+  pageSize?: number;
+  startAfterDoc?: DocumentSnapshot;
+
+  // Client-side filters
+  searchTerm?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  lastDoc: DocumentSnapshot | null;
+  hasMore: boolean;
+  totalFetched: number;
+}
+
+// ============================================
+// MAPPER FUNCTION
+// ============================================
+
+function mapInvoice(docSnap: DocumentSnapshot): Invoice {
+  const data = docSnap.data();
+  if (!data) throw new Error('Document data is undefined');
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+    updatedAt: data.updatedAt instanceof Timestamp
+      ? data.updatedAt.toDate()
+      : data.updatedAt || new Date(),
+    sentAt: data.sentAt instanceof Timestamp
+      ? data.sentAt.toDate()
+      : data.sentAt || undefined,
+    paidAt: data.paidAt instanceof Timestamp
+      ? data.paidAt.toDate()
+      : data.paidAt || undefined,
+    viewedAt: data.viewedAt instanceof Timestamp
+      ? data.viewedAt.toDate()
+      : data.viewedAt || undefined,
+  } as Invoice;
+}
+
+function mapPayment(docSnap: DocumentSnapshot): PaymentReceived {
+  const data = docSnap.data();
+  if (!data) throw new Error('Document data is undefined');
+
+  return {
+    id: docSnap.id,
+    ...data,
+    createdAt: data.createdAt instanceof Timestamp
+      ? data.createdAt.toDate()
+      : data.createdAt || new Date(),
+  } as PaymentReceived;
+}
 
 // ============================================
 // INVOICE SERVICE
@@ -51,61 +123,128 @@ class InvoiceService {
   }
 
   // ----------------------------------------
-  // Invoice CRUD
+  // Invoice CRUD with Server-Side Filtering
   // ----------------------------------------
 
   /**
-   * Get all invoices
+   * Get invoices with server-side filtering and pagination
+   */
+  async getInvoices(filters: InvoiceFilters = {}): Promise<PaginatedResult<Invoice>> {
+    const {
+      status,
+      customerId,
+      dueBefore,
+      pageSize = 100,
+      startAfterDoc,
+      searchTerm,
+      dateFrom,
+      dateTo,
+    } = filters;
+
+    const constraints: QueryConstraint[] = [];
+
+    // Server-side filters
+    if (status) {
+      if (Array.isArray(status)) {
+        constraints.push(where('status', 'in', status));
+      } else {
+        constraints.push(where('status', '==', status));
+      }
+    }
+
+    if (customerId) {
+      constraints.push(where('customerId', '==', customerId));
+    }
+
+    if (dueBefore) {
+      constraints.push(where('dueDate', '<', dueBefore));
+    }
+
+    // Ordering and pagination
+    constraints.push(orderBy('issueDate', 'desc'));
+
+    if (startAfterDoc) {
+      constraints.push(startAfter(startAfterDoc));
+    }
+
+    constraints.push(limit(pageSize + 1));
+
+    const q = query(this.collectionRef, ...constraints);
+    const querySnapshot = await getDocs(q);
+
+    let invoices = querySnapshot.docs.map(mapInvoice);
+    const hasMore = invoices.length > pageSize;
+
+    if (hasMore) {
+      invoices = invoices.slice(0, pageSize);
+    }
+
+    const lastDoc = invoices.length > 0
+      ? querySnapshot.docs[invoices.length - 1]
+      : null;
+
+    // Client-side filters
+    if (searchTerm) {
+      const term = searchTerm.toLowerCase();
+      invoices = invoices.filter(inv =>
+        inv.invoiceNumber.toLowerCase().includes(term) ||
+        inv.customerName.toLowerCase().includes(term) ||
+        inv.customerEmail?.toLowerCase().includes(term)
+      );
+    }
+
+    if (dateFrom) {
+      invoices = invoices.filter(inv => inv.issueDate >= dateFrom);
+    }
+
+    if (dateTo) {
+      invoices = invoices.filter(inv => inv.issueDate <= dateTo);
+    }
+
+    return {
+      data: invoices,
+      lastDoc,
+      hasMore,
+      totalFetched: invoices.length,
+    };
+  }
+
+  /**
+   * Get all invoices (convenience method)
+   * @deprecated Use getInvoices() with filters for better performance
    */
   async getAllInvoices(maxResults: number = 500): Promise<Invoice[]> {
-    const querySnapshot = await getDocs(
-      query(this.collectionRef, orderBy('issueDate', 'desc'), limit(maxResults))
-    );
-
-    return querySnapshot.docs.map((doc) => this.mapInvoice(doc));
+    const result = await this.getInvoices({ pageSize: maxResults });
+    return result.data;
   }
 
   /**
-   * Get invoices by status
+   * Get invoices by status (server-side filtered)
    */
   async getInvoicesByStatus(status: InvoiceStatus): Promise<Invoice[]> {
-    const q = query(
-      this.collectionRef,
-      where('status', '==', status),
-      orderBy('issueDate', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapInvoice(doc));
+    const result = await this.getInvoices({ status, pageSize: 500 });
+    return result.data;
   }
 
   /**
-   * Get invoices for a customer
+   * Get invoices for a customer (server-side filtered)
    */
   async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
-    const q = query(
-      this.collectionRef,
-      where('customerId', '==', customerId),
-      orderBy('issueDate', 'desc')
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapInvoice(doc));
+    const result = await this.getInvoices({ customerId, pageSize: 500 });
+    return result.data;
   }
 
   /**
-   * Get overdue invoices
+   * Get overdue invoices (server-side filtered)
    */
   async getOverdueInvoices(): Promise<Invoice[]> {
     const today = new Date().toISOString().split('T')[0];
-    const q = query(
-      this.collectionRef,
-      where('status', 'in', ['sent', 'viewed', 'partial']),
-      where('dueDate', '<', today)
-    );
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => this.mapInvoice(doc));
+    const result = await this.getInvoices({
+      status: ['sent', 'viewed', 'partial'],
+      dueBefore: today,
+      pageSize: 500,
+    });
+    return result.data;
   }
 
   /**
@@ -119,7 +258,7 @@ class InvoiceService {
       return null;
     }
 
-    return this.mapInvoice(docSnap);
+    return mapInvoice(docSnap);
   }
 
   /**
@@ -137,7 +276,7 @@ class InvoiceService {
       return null;
     }
 
-    return this.mapInvoice(querySnapshot.docs[0]);
+    return mapInvoice(querySnapshot.docs[0]);
   }
 
   /**
@@ -421,14 +560,7 @@ class InvoiceService {
     );
     const querySnapshot = await getDocs(q);
 
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-      } as PaymentReceived;
-    });
+    return querySnapshot.docs.map(mapPayment);
   }
 
   /**
@@ -439,14 +571,7 @@ class InvoiceService {
       query(this.paymentsRef, orderBy('date', 'desc'), limit(maxResults))
     );
 
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-      } as PaymentReceived;
-    });
+    return querySnapshot.docs.map(mapPayment);
   }
 
   // ----------------------------------------
@@ -505,11 +630,12 @@ class InvoiceService {
   }
 
   // ----------------------------------------
-  // Stats
+  // Stats (Optimized)
   // ----------------------------------------
 
   /**
    * Get money stats for dashboard
+   * Note: For very large datasets, consider using Firestore aggregation queries
    */
   async getStats(): Promise<MoneyStats> {
     const invoices = await this.getAllInvoices();
@@ -554,9 +680,9 @@ class InvoiceService {
         ['sent', 'viewed'].includes(inv.status)
       ).length,
       invoicesOverdue: overdueInvoices.length,
-      totalExpenses: 0, // Phase 2
-      expensesThisMonth: 0, // Phase 2
-      profitThisMonth: revenueThisMonth, // Will subtract expenses in Phase 2
+      totalExpenses: 0, // From expense service
+      expensesThisMonth: 0, // From expense service
+      profitThisMonth: revenueThisMonth,
       profitPreviousMonth: revenuePreviousMonth,
     };
   }
@@ -564,19 +690,6 @@ class InvoiceService {
   // ----------------------------------------
   // Helpers
   // ----------------------------------------
-
-  private mapInvoice(doc: any): Invoice {
-    const data = doc.data();
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.toDate() || new Date(),
-      updatedAt: data.updatedAt?.toDate() || new Date(),
-      sentAt: data.sentAt?.toDate() || undefined,
-      paidAt: data.paidAt?.toDate() || undefined,
-      viewedAt: data.viewedAt?.toDate() || undefined,
-    } as Invoice;
-  }
 
   private async getNextInvoiceNumber(): Promise<string> {
     const settings = await this.getSettings();
