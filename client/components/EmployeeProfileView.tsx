@@ -18,8 +18,18 @@ import { Button } from "@/components/ui/button";
 import { type Employee } from "@/services/employeeService";
 import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
-import { downloadSefopeForm } from "@/components/documents/SefopePDF";
 import { CompanyDetails } from "@/types/settings";
+
+// Lazy load PDF generation to avoid loading react-pdf in main bundle
+const downloadSefopeForm = async (
+  employee: Employee,
+  companyDetails: Partial<CompanyDetails>
+) => {
+  const { downloadSefopeForm: download } = await import(
+    "@/components/documents/SefopePDF"
+  );
+  return download(employee, companyDetails);
+};
 import {
   User,
   Mail,

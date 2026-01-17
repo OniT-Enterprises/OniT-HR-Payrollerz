@@ -20,6 +20,16 @@ import {
   TL_PAY_PERIODS,
   TLPayFrequency,
 } from './constants-tl';
+import {
+  divideMoney,
+  multiplyMoney,
+  applyRate,
+  addMoney,
+  subtractMoney,
+  sumMoney,
+  proRata,
+  roundMoney,
+} from '@/lib/currency';
 
 // ============================================
 // TYPES
@@ -163,6 +173,7 @@ export interface TLPayrollResult {
 
 /**
  * Calculate regular pay based on salary and frequency
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateRegularPay(
   monthlySalary: number,
@@ -174,21 +185,22 @@ export function calculateRegularPay(
   totalPeriodsInMonth?: number
 ): number {
   if (isHourly && hourlyRate) {
-    return hourlyRate * regularHours;
+    return multiplyMoney(hourlyRate, regularHours);
   }
 
   const periods = TL_PAY_PERIODS[payFrequency];
 
   // For weekly payroll in partial months, use actual days
   if (payFrequency === 'weekly' && totalPeriodsInMonth) {
-    return monthlySalary / totalPeriodsInMonth;
+    return divideMoney(monthlySalary, totalPeriodsInMonth);
   }
 
-  return monthlySalary / periods.periodsPerMonth;
+  return divideMoney(monthlySalary, periods.periodsPerMonth);
 }
 
 /**
  * Calculate overtime pay
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateOvertimePay(
   hourlyRate: number,
@@ -203,51 +215,54 @@ export function calculateOvertimePay(
   restDay: number;
 } {
   return {
-    overtime: hourlyRate * overtimeHours * TL_OVERTIME_RATES.standard,
-    nightShift: hourlyRate * nightShiftHours * TL_OVERTIME_RATES.nightShift,
-    holiday: hourlyRate * holidayHours * TL_OVERTIME_RATES.publicHoliday,
-    restDay: hourlyRate * restDayHours * TL_OVERTIME_RATES.restDay,
+    overtime: multiplyMoney(multiplyMoney(hourlyRate, overtimeHours), TL_OVERTIME_RATES.standard),
+    nightShift: multiplyMoney(multiplyMoney(hourlyRate, nightShiftHours), TL_OVERTIME_RATES.nightShift),
+    holiday: multiplyMoney(multiplyMoney(hourlyRate, holidayHours), TL_OVERTIME_RATES.publicHoliday),
+    restDay: multiplyMoney(multiplyMoney(hourlyRate, restDayHours), TL_OVERTIME_RATES.restDay),
   };
 }
 
 /**
  * Calculate hourly rate from monthly salary
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateHourlyRate(monthlySalary: number): number {
   // 44 hours/week * ~4.33 weeks/month = ~190.5 hours/month
   const monthlyHours = TL_WORKING_HOURS.standardWeeklyHours * (52 / 12);
-  return monthlySalary / monthlyHours;
+  return divideMoney(monthlySalary, monthlyHours);
 }
 
 /**
  * Calculate sick pay based on TL rules
  * First 6 days: 100%, next 6 days: 50%
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateSickPay(
   dailyRate: number,
   sickDaysThisPeriod: number,
   ytdSickDaysUsed: number
 ): number {
-  let totalSickPay = 0;
+  const dayAmounts: number[] = [];
 
   for (let i = 0; i < sickDaysThisPeriod; i++) {
     const dayNumber = ytdSickDaysUsed + i + 1;
 
     if (dayNumber <= TL_SICK_LEAVE.fullPayDays) {
-      totalSickPay += dailyRate * TL_SICK_LEAVE.fullPayRate;
+      dayAmounts.push(applyRate(dailyRate, TL_SICK_LEAVE.fullPayRate));
     } else if (dayNumber <= TL_SICK_LEAVE.totalDays) {
-      totalSickPay += dailyRate * TL_SICK_LEAVE.reducedPayRate;
+      dayAmounts.push(applyRate(dailyRate, TL_SICK_LEAVE.reducedPayRate));
     }
     // Beyond 12 days: no pay
   }
 
-  return totalSickPay;
+  return sumMoney(dayAmounts);
 }
 
 /**
  * Calculate Timor-Leste Withholding Income Tax (WIT)
  * - Residents: 10% on income above $500/month
  * - Non-residents: 10% on all income
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateIncomeTax(
   taxableIncome: number,
@@ -258,40 +273,42 @@ export function calculateIncomeTax(
 
   // Convert threshold to period amount
   const periods = TL_PAY_PERIODS[payFrequency];
-  const periodThreshold = TL_INCOME_TAX.residentThreshold / periods.periodsPerMonth;
+  const periodThreshold = divideMoney(TL_INCOME_TAX.residentThreshold, periods.periodsPerMonth);
 
   if (isResident) {
     // Only tax amount above threshold
-    const taxableAmount = Math.max(0, taxableIncome - periodThreshold);
-    return taxableAmount * TL_INCOME_TAX.rate;
+    const taxableAmount = Math.max(0, subtractMoney(taxableIncome, periodThreshold));
+    return applyRate(taxableAmount, TL_INCOME_TAX.rate);
   } else {
     // Non-residents pay on all income
-    return taxableIncome * TL_INCOME_TAX.rate;
+    return applyRate(taxableIncome, TL_INCOME_TAX.rate);
   }
 }
 
 /**
  * Calculate INSS contributions
  * Base: Gross - absences - food allowance - per diem
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateINSS(inssBase: number): {
   employee: number;
   employer: number;
   total: number;
 } {
-  const employee = inssBase * TL_INSS.employeeRate;
-  const employer = inssBase * TL_INSS.employerRate;
+  const employee = applyRate(inssBase, TL_INSS.employeeRate);
+  const employer = applyRate(inssBase, TL_INSS.employerRate);
 
   return {
     employee,
     employer,
-    total: employee + employer,
+    total: addMoney(employee, employer),
   };
 }
 
 /**
  * Calculate Subsidio Anual (13th month salary)
  * Pro-rated for employees with less than 12 months
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateSubsidioAnual(
   monthlySalary: number,
@@ -310,24 +327,24 @@ export function calculateSubsidioAnual(
   }
 
   // Pro-rate if less than 12 months
-  const proRataFactor = Math.min(effectiveMonths, 12) / TL_SUBSIDIO_ANUAL.fullYearMonths;
-
-  return monthlySalary * proRataFactor;
+  return proRata(monthlySalary, Math.min(effectiveMonths, 12), TL_SUBSIDIO_ANUAL.fullYearMonths);
 }
 
 /**
  * Calculate absence deduction
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateAbsenceDeduction(
   hourlyRate: number,
   absenceHours: number
 ): number {
-  return hourlyRate * absenceHours;
+  return multiplyMoney(hourlyRate, absenceHours);
 }
 
 /**
  * Calculate late arrival deduction
  * Typically rounded to nearest 15 or 30 minutes
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateLateDeduction(
   hourlyRate: number,
@@ -336,8 +353,8 @@ export function calculateLateDeduction(
 ): number {
   // Round up to nearest increment
   const roundedMinutes = Math.ceil(lateMinutes / roundToMinutes) * roundToMinutes;
-  const lateHours = roundedMinutes / 60;
-  return hourlyRate * lateHours;
+  const lateHours = divideMoney(roundedMinutes, 60);
+  return multiplyMoney(hourlyRate, lateHours);
 }
 
 // ============================================
@@ -536,10 +553,11 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // ========== CALCULATE TOTALS ==========
+  // Use decimal.js for precise currency summation
 
-  const grossPay = earnings.reduce((sum, e) => sum + e.amount, 0);
-  const taxableIncome = earnings.filter(e => e.isTaxable).reduce((sum, e) => sum + e.amount, 0);
-  const inssBase = earnings.filter(e => e.isINSSBase).reduce((sum, e) => sum + e.amount, 0);
+  const grossPay = sumMoney(earnings.map(e => e.amount));
+  const taxableIncome = sumMoney(earnings.filter(e => e.isTaxable).map(e => e.amount));
+  const inssBase = sumMoney(earnings.filter(e => e.isINSSBase).map(e => e.amount));
 
   // ========== DEDUCTIONS ==========
 
@@ -567,12 +585,12 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
-  // Adjust INSS base for absences
-  const adjustedInssBase = Math.max(0, inssBase - absenceDeduction);
+  // Adjust INSS base for absences (use decimal.js)
+  const adjustedInssBase = Math.max(0, subtractMoney(inssBase, absenceDeduction));
 
   // Withholding Income Tax (WIT)
   const incomeTax = calculateIncomeTax(
-    taxableIncome - absenceDeduction - lateDeduction,
+    subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
     input.taxInfo.isResident,
     input.payFrequency
   );
@@ -645,10 +663,11 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // ========== FINAL CALCULATIONS ==========
+  // Use decimal.js for precise final totals
 
-  const totalDeductions = deductions.reduce((sum, d) => sum + d.amount, 0);
-  const netPay = grossPay - totalDeductions;
-  const totalEmployerCost = grossPay + inss.employer;
+  const totalDeductions = sumMoney(deductions.map(d => d.amount));
+  const netPay = subtractMoney(grossPay, totalDeductions);
+  const totalEmployerCost = addMoney(grossPay, inss.employer);
 
   // Warnings
   if (netPay < 0) {
@@ -701,10 +720,10 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     earnings,
     deductions,
 
-    // YTD updates
-    newYtdGrossPay: input.ytdGrossPay + grossPay,
-    newYtdIncomeTax: input.ytdIncomeTax + incomeTax,
-    newYtdINSSEmployee: input.ytdINSSEmployee + inss.employee,
+    // YTD updates (use decimal.js for precision)
+    newYtdGrossPay: addMoney(input.ytdGrossPay, grossPay),
+    newYtdIncomeTax: addMoney(input.ytdIncomeTax, incomeTax),
+    newYtdINSSEmployee: addMoney(input.ytdINSSEmployee, inss.employee),
 
     // Warnings
     warnings,
@@ -714,6 +733,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 /**
  * Calculate weekly sub-payroll as portion of monthly
  * Used when company pays some workers weekly but tracks monthly
+ * Uses decimal.js for precise currency calculations
  */
 export function calculateWeeklySubPayroll(
   monthlySalary: number,
@@ -722,8 +742,7 @@ export function calculateWeeklySubPayroll(
   totalWorkingDaysInMonth: number
 ): number {
   // Pro-rate based on actual working days
-  const dailyRate = monthlySalary / totalWorkingDaysInMonth;
-  return dailyRate * daysInWeek;
+  return proRata(monthlySalary, daysInWeek, totalWorkingDaysInMonth);
 }
 
 /**

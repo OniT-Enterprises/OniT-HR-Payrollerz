@@ -87,6 +87,7 @@ import {
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
+import { sumMoney } from "@/lib/currency";
 
 interface EmployeePayrollData {
   employee: Employee;
@@ -293,32 +294,20 @@ export default function RunPayroll() {
   const hasComplianceIssues = complianceIssues.length > 0;
 
   // Calculate totals (excluding excluded employees)
+  // Uses sumMoney for precise currency arithmetic (avoids floating-point drift)
   const totals = useMemo(() => {
-    return employeePayrollData
-      .filter(data => !excludedEmployees.has(data.employee.id || ""))
-      .reduce(
-        (acc, data) => {
-          if (!data.calculation) return acc;
-          return {
-            grossPay: acc.grossPay + data.calculation.grossPay,
-            totalDeductions: acc.totalDeductions + data.calculation.totalDeductions,
-            netPay: acc.netPay + data.calculation.netPay,
-            incomeTax: acc.incomeTax + data.calculation.incomeTax,
-            inssEmployee: acc.inssEmployee + data.calculation.inssEmployee,
-            inssEmployer: acc.inssEmployer + data.calculation.inssEmployer,
-            totalEmployerCost: acc.totalEmployerCost + data.calculation.totalEmployerCost,
-          };
-        },
-        {
-          grossPay: 0,
-          totalDeductions: 0,
-          netPay: 0,
-          incomeTax: 0,
-          inssEmployee: 0,
-          inssEmployer: 0,
-          totalEmployerCost: 0,
-        }
-      );
+    const includedData = employeePayrollData
+      .filter(data => !excludedEmployees.has(data.employee.id || "") && data.calculation);
+
+    return {
+      grossPay: sumMoney(includedData.map(d => d.calculation!.grossPay)),
+      totalDeductions: sumMoney(includedData.map(d => d.calculation!.totalDeductions)),
+      netPay: sumMoney(includedData.map(d => d.calculation!.netPay)),
+      incomeTax: sumMoney(includedData.map(d => d.calculation!.incomeTax)),
+      inssEmployee: sumMoney(includedData.map(d => d.calculation!.inssEmployee)),
+      inssEmployer: sumMoney(includedData.map(d => d.calculation!.inssEmployer)),
+      totalEmployerCost: sumMoney(includedData.map(d => d.calculation!.totalEmployerCost)),
+    };
   }, [employeePayrollData, excludedEmployees]);
 
   // Count edited rows

@@ -19,7 +19,18 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { PayrollRecord, PayrollRun } from "@/types/payroll";
-import { generatePayslipBlob } from "@/components/payroll/PayslipPDF";
+
+// Lazy load PDF generation to avoid loading react-pdf in main bundle
+const generatePayslipBlob = async (
+  ...args: Parameters<
+    typeof import("@/components/payroll/PayslipPDF").generatePayslipBlob
+  >
+) => {
+  const { generatePayslipBlob: generate } = await import(
+    "@/components/payroll/PayslipPDF"
+  );
+  return generate(...args);
+};
 
 // ============================================================================
 // TYPES

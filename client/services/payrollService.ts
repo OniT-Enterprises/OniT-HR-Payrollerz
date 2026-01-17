@@ -96,6 +96,49 @@ class PayrollRunService {
     return docRef.id;
   }
 
+  /**
+   * Create a payroll run with its records atomically using a Firestore batch.
+   * This prevents corrupt state if the browser crashes mid-operation.
+   * Either all writes succeed or none do.
+   */
+  async createPayrollRunWithRecords(
+    payrollRun: Omit<PayrollRun, 'id'>,
+    records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[]
+  ): Promise<{ runId: string; recordIds: string[] }> {
+    const batch = writeBatch(db);
+
+    // Create the payroll run document
+    const runRef = doc(this.collectionRef);
+    const runId = runRef.id;
+
+    batch.set(runRef, {
+      ...payrollRun,
+      status: payrollRun.status || 'draft',
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
+
+    // Create all payroll records with reference to the run
+    const recordIds: string[] = [];
+    const recordsCollection = collection(db, 'payrollRecords');
+
+    for (const record of records) {
+      const recordRef = doc(recordsCollection);
+      recordIds.push(recordRef.id);
+      batch.set(recordRef, {
+        ...record,
+        payrollRunId: runId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+    }
+
+    // Atomic commit - all or nothing
+    await batch.commit();
+
+    return { runId, recordIds };
+  }
+
   async updatePayrollRun(id: string, updates: Partial<PayrollRun>): Promise<boolean> {
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {

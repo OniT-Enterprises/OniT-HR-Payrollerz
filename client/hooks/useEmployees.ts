@@ -3,7 +3,8 @@
  * Provides caching, background refetching, and optimistic updates
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { DocumentSnapshot } from 'firebase/firestore';
 import {
   employeeService,
   type Employee,
@@ -129,5 +130,56 @@ export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClie
       queryFn: () => employeeService.getEmployees(filters),
       staleTime: 5 * 60 * 1000,
     });
+  };
+}
+
+/**
+ * Server-side paginated employees using infinite query
+ * Ideal for large datasets - only fetches data as needed
+ *
+ * Usage:
+ * const { data, fetchNextPage, hasNextPage, isFetchingNextPage } = usePaginatedEmployees({
+ *   pageSize: 20,
+ *   department: 'Engineering',
+ *   status: 'active'
+ * });
+ *
+ * // Flatten pages into single array
+ * const employees = data?.pages.flatMap(page => page.data) ?? [];
+ */
+export function usePaginatedEmployees(
+  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {}
+) {
+  return useInfiniteQuery({
+    queryKey: [...employeeKeys.lists(), 'paginated', filters] as const,
+    queryFn: async ({ pageParam }) => {
+      return employeeService.getEmployees({
+        ...filters,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      });
+    },
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Helper hook to flatten paginated results into a single array
+ * Returns employees array plus pagination controls
+ */
+export function useFlattenedPaginatedEmployees(
+  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {}
+) {
+  const query = usePaginatedEmployees(filters);
+
+  return {
+    ...query,
+    // Flatten all pages into single array
+    employees: query.data?.pages.flatMap(page => page.data) ?? [],
+    // Total count across all loaded pages
+    totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
   };
 }
