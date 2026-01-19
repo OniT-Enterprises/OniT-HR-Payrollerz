@@ -30,6 +30,10 @@ import {
   MapPin,
   GraduationCap,
   ChevronDown,
+  Settings,
+  Target,
+  Wallet,
+  Briefcase,
 } from "lucide-react";
 
 export default function Landing() {
@@ -515,6 +519,65 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* All Platform Modules */}
+      <section className="py-24 lg:py-32 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-4">
+              <Settings className="h-3 w-3 text-violet-400" />
+              <span className="text-xs text-violet-400">Complete Platform</span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-black mb-4">
+              9 Integrated Modules
+              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+                One Complete System
+              </span>
+            </h2>
+            <p className="text-zinc-400">
+              From hiring to retirement, payroll to accounting - everything your HR team needs in one place.
+            </p>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {[
+              { icon: Users, name: "People Management", desc: "Employee profiles, departments, org charts, document tracking", color: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { icon: Briefcase, name: "Hiring & Recruitment", desc: "Job postings, applicant tracking, onboarding, offboarding", color: "text-violet-400", bg: "bg-violet-500/10" },
+              { icon: Clock, name: "Time & Attendance", desc: "Clock in/out, timesheets, leave requests, shift scheduling", color: "text-orange-400", bg: "bg-orange-500/10" },
+              { icon: Target, name: "Performance", desc: "Goals, reviews, training, certifications, disciplinary", color: "text-pink-400", bg: "bg-pink-500/10" },
+              { icon: Calculator, name: "Payroll", desc: "INSS, tax, overtime, bank transfers, payslips", color: "text-blue-400", bg: "bg-blue-500/10" },
+              { icon: Wallet, name: "Money (Invoicing)", desc: "Customers, invoices, bills, expenses, payments", color: "text-indigo-400", bg: "bg-indigo-500/10" },
+              { icon: Landmark, name: "Accounting", desc: "Chart of accounts, journal entries, general ledger", color: "text-slate-400", bg: "bg-slate-500/10" },
+              { icon: BarChart3, name: "Reports & Analytics", desc: "Payroll reports, HR analytics, custom report builder", color: "text-cyan-400", bg: "bg-cyan-500/10" },
+              { icon: Shield, name: "Compliance", desc: "Foreign workers, document alerts, SEPFOPE reporting", color: "text-red-400", bg: "bg-red-500/10" },
+            ].map((module, i) => {
+              const Icon = module.icon;
+              return (
+                <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/5 hover:border-white/10 transition-colors">
+                  <div className="flex items-start gap-3">
+                    <div className={`p-2 rounded-lg ${module.bg}`}>
+                      <Icon className={`h-5 w-5 ${module.color}`} />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">{module.name}</h3>
+                      <p className="text-xs text-zinc-500 leading-relaxed">{module.desc}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="text-center mt-10">
+            <Button asChild variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10">
+              <Link to="/features">
+                View All 65+ Features
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
           </div>
         </div>
       </section>
