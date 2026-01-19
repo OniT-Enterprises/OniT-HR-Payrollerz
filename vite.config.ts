@@ -32,10 +32,8 @@ export default defineConfig({
           if (id.includes("node_modules/@tanstack")) {
             return "vendor-data";
           }
-          // Charts
-          if (id.includes("node_modules/recharts") || id.includes("node_modules/d3")) {
-            return "vendor-charts";
-          }
+          // Charts - let Vite handle recharts/d3 to avoid circular dependency issues
+          // Manual chunking can break d3's module initialization order
         },
       },
     },
