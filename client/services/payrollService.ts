@@ -561,8 +561,13 @@ class RecurringDeductionService {
     tenantId: string,
     deduction: Omit<RecurringDeduction, 'id' | 'tenantId'>
   ): Promise<string> {
+    // Remove undefined values - Firestore doesn't accept them
+    const cleanedDeduction = Object.fromEntries(
+      Object.entries(deduction).filter(([_, v]) => v !== undefined)
+    );
+
     const docRef = await addDoc(this.collectionRef, {
-      ...deduction,
+      ...cleanedDeduction,
       tenantId,
       status: 'active',
       createdAt: serverTimestamp(),
@@ -572,9 +577,14 @@ class RecurringDeductionService {
   }
 
   async updateDeduction(id: string, updates: Partial<RecurringDeduction>): Promise<boolean> {
+    // Remove undefined values - Firestore doesn't accept them
+    const cleanedUpdates = Object.fromEntries(
+      Object.entries(updates).filter(([_, v]) => v !== undefined)
+    );
+
     const docRef = doc(db, 'recurringDeductions', id);
     await updateDoc(docRef, {
-      ...updates,
+      ...cleanedUpdates,
       updatedAt: serverTimestamp(),
     });
     return true;
