@@ -40,6 +40,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { useTenant } from '@/contexts/TenantContext';
 import { customerService } from '@/services/customerService';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { Customer, CustomerFormData } from '@/types/money';
 import {
   Users,
@@ -238,7 +239,13 @@ export default function Customers() {
               <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.customers.title') || 'Customers'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.customers.title') || 'Customers'}
+                <InfoTooltip
+                  title="Customers"
+                  content="People or businesses you invoice for goods or services. Customer records store contact info and are linked to invoices."
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.customers.subtitle') || 'Manage your customer list'}
               </p>

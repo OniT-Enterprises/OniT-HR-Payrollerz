@@ -26,6 +26,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { InvoiceSettings } from '@/types/money';
 import {
   Settings,
@@ -157,8 +158,12 @@ export default function InvoiceSettingsPage() {
               <Settings className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.settings.title') || 'Invoice Settings'}
+                <InfoTooltip
+                  title="Invoice Settings"
+                  content="Configure your company details, logo, default tax rate, payment terms, and bank information that appears on all invoices."
+                />
               </h1>
               <p className="text-muted-foreground">
                 {t('money.settings.subtitle') || 'Configure your invoice defaults and company information'}

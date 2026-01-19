@@ -16,6 +16,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, Vendor } from '@/types/money';
 import {
   Clock,
@@ -191,7 +192,13 @@ export default function APAgingReport() {
               <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.apAging.title') || 'A/P Aging Report'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.apAging.title') || 'A/P Aging Report'}
+                <InfoTooltip
+                  title="Accounts Payable Aging"
+                  content={MoneyTooltips.terms.apAging}
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.apAging.subtitle') || 'Outstanding bills by age'}
               </p>

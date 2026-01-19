@@ -23,6 +23,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { ExpenseCategory } from '@/types/money';
 import {
   TrendingUp,
@@ -206,7 +207,13 @@ export default function ProfitLoss() {
               <TrendingUp className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.profitLoss.title') || 'Profit & Loss'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.profitLoss.title') || 'Profit & Loss'}
+                <InfoTooltip
+                  title="Profit & Loss Statement"
+                  content="Also called an Income Statement. Shows revenue (money earned from invoices) minus expenses (costs) to calculate net profit or loss for a period."
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.profitLoss.subtitle') || 'Income statement'}
               </p>

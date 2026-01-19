@@ -95,6 +95,12 @@ export interface Invoice {
   sentAt?: Date;
   paidAt?: Date;
   viewedAt?: Date;
+  cancelledAt?: Date;
+  cancelReason?: string;
+
+  // Reminders
+  lastReminderAt?: Date;
+  reminderCount?: number;
 
   // For sharing
   shareToken?: string;             // Random token for public link
@@ -436,4 +442,61 @@ export interface BankReconciliation {
   status: 'in_progress' | 'completed';
   createdAt: Date;
   completedAt?: Date;
+}
+
+// ============================================
+// RECURRING INVOICES
+// ============================================
+
+export type RecurringFrequency = 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+export type RecurringStatus = 'active' | 'paused' | 'completed';
+
+export interface RecurringInvoice {
+  id: string;
+
+  // Customer
+  customerId: string;
+  customerName: string;
+  customerEmail?: string;
+
+  // Schedule
+  frequency: RecurringFrequency;
+  startDate: string;               // YYYY-MM-DD
+  endDate?: string;                // Optional end date
+  endAfterOccurrences?: number;    // Optional - stop after N invoices
+  nextRunDate: string;             // YYYY-MM-DD - when to generate next
+
+  // Template
+  items: InvoiceItem[];
+  taxRate: number;
+  notes?: string;
+  terms?: string;
+  dueDays: number;                 // Days until due from issue date
+
+  // Settings
+  autoSend: boolean;               // Auto-send on generation
+  status: RecurringStatus;
+
+  // Tracking
+  generatedCount: number;          // How many invoices generated
+  lastGeneratedAt?: Date;
+  lastInvoiceId?: string;          // ID of last generated invoice
+
+  // Metadata
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface RecurringInvoiceFormData {
+  customerId: string;
+  frequency: RecurringFrequency;
+  startDate: string;
+  endDate?: string;
+  endAfterOccurrences?: number;
+  items: Omit<InvoiceItem, 'id'>[];
+  taxRate: number;
+  notes?: string;
+  terms?: string;
+  dueDays: number;
+  autoSend: boolean;
 }

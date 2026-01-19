@@ -42,6 +42,7 @@ import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { vendorService } from '@/services/vendorService';
 import { fileUploadService } from '@/services/fileUploadService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Expense, ExpenseFormData, ExpenseCategory, Vendor, PaymentMethod } from '@/types/money';
 import {
   Receipt,
@@ -396,7 +397,13 @@ export default function Expenses() {
               <Receipt className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.expenses.title') || 'Expenses'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.expenses.title') || 'Expenses'}
+                <InfoTooltip
+                  title="Expenses vs Bills"
+                  content={MoneyTooltips.bills.expense}
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.expenses.subtitle') || 'Track business expenses'}
               </p>

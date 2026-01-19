@@ -38,6 +38,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
 import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Invoice, InvoiceItem, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
 import {
   FileText,
@@ -860,7 +861,10 @@ export default function InvoiceForm() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('money.invoices.dueDate') || 'Due Date'}</Label>
+                  <Label className="flex items-center gap-1.5">
+                    {t('money.invoices.dueDate') || 'Due Date'}
+                    <InfoTooltip content={MoneyTooltips.terms.dueDate} />
+                  </Label>
                   <Input
                     type="date"
                     value={formData.dueDate}
@@ -873,8 +877,9 @@ export default function InvoiceForm() {
             {/* Tax */}
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">
+                <CardTitle className="text-base flex items-center gap-1.5">
                   {t('money.invoices.tax') || 'Tax'}
+                  <InfoTooltip content={MoneyTooltips.tlSpecific.taxRate} title="TL Tax Rate" />
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -907,22 +912,27 @@ export default function InvoiceForm() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground flex items-center gap-1">
                     {t('money.invoices.subtotal') || 'Subtotal'}
+                    <InfoTooltip content={MoneyTooltips.calculations.subtotal} size="sm" />
                   </span>
                   <span>{formatCurrency(subtotal)}</span>
                 </div>
                 {formData.taxRate > 0 && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">
+                    <span className="text-muted-foreground flex items-center gap-1">
                       {t('money.invoices.tax') || 'Tax'} ({formData.taxRate}%)
+                      <InfoTooltip content={MoneyTooltips.calculations.taxAmount} size="sm" />
                     </span>
                     <span>{formatCurrency(taxAmount)}</span>
                   </div>
                 )}
                 <Separator />
                 <div className="flex justify-between font-bold text-lg">
-                  <span>{t('money.invoices.total') || 'Total'}</span>
+                  <span className="flex items-center gap-1">
+                    {t('money.invoices.total') || 'Total'}
+                    <InfoTooltip content={MoneyTooltips.calculations.total} size="sm" />
+                  </span>
                   <span className="text-indigo-600">{formatCurrency(total)}</span>
                 </div>
               </CardContent>

@@ -510,6 +510,48 @@ class BillService {
   }
 
   /**
+   * Get payables summary for dashboard widget
+   */
+  async getPayablesSummary(tenantId: string): Promise<{
+    overdue: number;
+    overdueCount: number;
+    dueThisWeek: number;
+    dueThisWeekCount: number;
+    dueLater: number;
+    dueLaterCount: number;
+  }> {
+    const unpaidBills = await this.getUnpaidBills(tenantId);
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
+    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+
+    const result = {
+      overdue: 0,
+      overdueCount: 0,
+      dueThisWeek: 0,
+      dueThisWeekCount: 0,
+      dueLater: 0,
+      dueLaterCount: 0,
+    };
+
+    for (const bill of unpaidBills) {
+      if (bill.dueDate < todayStr) {
+        result.overdue += bill.balanceDue;
+        result.overdueCount++;
+      } else if (bill.dueDate <= nextWeekStr) {
+        result.dueThisWeek += bill.balanceDue;
+        result.dueThisWeekCount++;
+      } else {
+        result.dueLater += bill.balanceDue;
+        result.dueLaterCount++;
+      }
+    }
+
+    return result;
+  }
+
+  /**
    * Update overdue status for all bills
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {

@@ -40,6 +40,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { useTenant } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
   Truck,
@@ -239,7 +240,13 @@ export default function Vendors() {
               <Truck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.vendors.title') || 'Vendors'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.vendors.title') || 'Vendors'}
+                <InfoTooltip
+                  title="Vendors (Suppliers)"
+                  content={MoneyTooltips.bills.vendor}
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.vendors.subtitle') || 'Manage your suppliers'}
               </p>

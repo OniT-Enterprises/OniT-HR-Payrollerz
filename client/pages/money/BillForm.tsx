@@ -36,6 +36,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, BillFormData, BillPayment, Vendor, ExpenseCategory, PaymentMethod } from '@/types/money';
 import {
   FileText,
@@ -595,7 +596,10 @@ export default function BillForm() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>{t('money.bills.vendor') || 'Vendor'} *</Label>
+                <Label className="flex items-center gap-1.5">
+                  {t('money.bills.vendor') || 'Vendor'} *
+                  <InfoTooltip content={MoneyTooltips.bills.vendor} />
+                </Label>
                 <Select
                   value={formData.vendorId}
                   onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
@@ -664,7 +668,10 @@ export default function BillForm() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>{t('money.bills.dueDate') || 'Due Date'}</Label>
+                  <Label className="flex items-center gap-1.5">
+                    {t('money.bills.dueDate') || 'Due Date'}
+                    <InfoTooltip content="The date by which this bill should be paid to avoid late fees or service interruption." />
+                  </Label>
                   <Input
                     type="date"
                     value={formData.dueDate}

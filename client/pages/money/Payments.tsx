@@ -24,6 +24,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { PaymentReceived } from '@/types/money';
 import {
   DollarSign,
@@ -160,7 +161,13 @@ export default function Payments() {
             <DollarSign className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold">{t('money.payments.title') || 'Payments'}</h1>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.payments.title') || 'Payments'}
+                <InfoTooltip
+                  title="Payments Received"
+                  content="Record of all payments received from customers. Each payment is linked to an invoice and updates that invoice's balance."
+                />
+              </h1>
             <p className="text-muted-foreground">
               {t('money.payments.subtitle') || 'Payment history and summaries'}
             </p>

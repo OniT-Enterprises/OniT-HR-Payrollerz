@@ -126,6 +126,9 @@ export const paths = {
   invoices: (tid: string) => `tenants/${tid}/invoices`,
   invoice: (tid: string, invoiceId: string) => `tenants/${tid}/invoices/${invoiceId}`,
 
+  recurringInvoices: (tid: string) => `tenants/${tid}/recurring_invoices`,
+  recurringInvoice: (tid: string, recurringId: string) => `tenants/${tid}/recurring_invoices/${recurringId}`,
+
   paymentsReceived: (tid: string) => `tenants/${tid}/payments_received`,
   paymentReceived: (tid: string, paymentId: string) => `tenants/${tid}/payments_received/${paymentId}`,
 

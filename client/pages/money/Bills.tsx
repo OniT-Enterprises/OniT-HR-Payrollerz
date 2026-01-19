@@ -31,6 +31,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, BillStatus } from '@/types/money';
 import {
   FileText,
@@ -186,7 +187,13 @@ export default function Bills() {
               <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.bills.title') || 'Bills'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.bills.title') || 'Bills'}
+                <InfoTooltip
+                  title="Bills (Accounts Payable)"
+                  content={MoneyTooltips.bills.bill}
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.bills.subtitle') || 'Manage accounts payable'}
               </p>
@@ -207,8 +214,9 @@ export default function Bills() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
                     {t('money.bills.totalPayables') || 'Total Payables'}
+                    <InfoTooltip content={MoneyTooltips.dashboard.totalPayables} />
                   </p>
                   <p className="text-2xl font-bold text-orange-600">{formatCurrency(totalPayables)}</p>
                   <p className="text-xs text-muted-foreground mt-1">

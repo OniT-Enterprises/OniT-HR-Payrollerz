@@ -16,6 +16,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Invoice } from '@/types/money';
 import {
   Clock,
@@ -183,7 +184,13 @@ export default function ARAgingReport() {
               <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">{t('money.arAging.title') || 'A/R Aging Report'}</h1>
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                {t('money.arAging.title') || 'A/R Aging Report'}
+                <InfoTooltip
+                  title="Accounts Receivable Aging"
+                  content={MoneyTooltips.terms.arAging}
+                />
+              </h1>
               <p className="text-muted-foreground">
                 {t('money.arAging.subtitle') || 'Outstanding invoices by age'}
               </p>

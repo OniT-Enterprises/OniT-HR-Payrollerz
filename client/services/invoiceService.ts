@@ -445,10 +445,21 @@ class InvoiceService {
   /**
    * Cancel an invoice
    */
-  async cancelInvoice(tenantId: string, id: string): Promise<boolean> {
+  async cancelInvoice(tenantId: string, id: string, reason?: string): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+
+    if (invoice.status === 'paid') {
+      throw new Error('Cannot void a fully paid invoice');
+    }
+
     const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       status: 'cancelled',
+      cancelledAt: serverTimestamp(),
+      cancelReason: reason || null,
       updatedAt: serverTimestamp(),
     });
     return true;
@@ -469,6 +480,33 @@ class InvoiceService {
 
     const docRef = doc(db, paths.invoice(tenantId, id));
     await deleteDoc(docRef);
+    return true;
+  }
+
+  /**
+   * Send a payment reminder for an invoice
+   * Updates reminder tracking fields
+   */
+  async sendReminder(tenantId: string, id: string): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+
+    if (!['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status)) {
+      throw new Error('Cannot send reminder for this invoice status');
+    }
+
+    const docRef = doc(db, paths.invoice(tenantId, id));
+    await updateDoc(docRef, {
+      lastReminderAt: serverTimestamp(),
+      reminderCount: (invoice.reminderCount || 0) + 1,
+      updatedAt: serverTimestamp(),
+    });
+
+    // TODO: Integrate with email service to send actual reminder
+    // For now, just track that a reminder was sent
+
     return true;
   }
 

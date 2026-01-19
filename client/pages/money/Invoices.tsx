@@ -33,6 +33,10 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
+import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
+import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
+import { SendReminderDialog } from '@/components/money/SendReminderDialog';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Invoice, InvoiceStatus, InvoiceSettings } from '@/types/money';
 import {
   FileText,
@@ -51,6 +55,9 @@ import {
   Share2,
   Loader2,
   Settings,
+  XCircle,
+  Bell,
+  Repeat,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
@@ -74,6 +81,9 @@ export default function Invoices() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
+  const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
+  const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
 
   useEffect(() => {
     if (session?.tid) {
@@ -263,6 +273,14 @@ export default function Invoices() {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
+              onClick={() => navigate('/money/invoices/recurring')}
+              title={t('money.recurring.title') || 'Recurring Invoices'}
+            >
+              <Repeat className="h-4 w-4 mr-2" />
+              Recurring
+            </Button>
+            <Button
+              variant="outline"
               size="icon"
               onClick={() => navigate('/money/invoices/settings')}
               title={t('money.settings.title') || 'Invoice Settings'}
@@ -290,22 +308,39 @@ export default function Invoices() {
               className="pl-10"
             />
           </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder={t('money.invoices.status') || 'Status'} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('common.all') || 'All'}</SelectItem>
-              <SelectItem value="draft">{t('money.status.draft') || 'Draft'}</SelectItem>
-              <SelectItem value="sent">{t('money.status.sent') || 'Sent'}</SelectItem>
-              <SelectItem value="viewed">{t('money.status.viewed') || 'Viewed'}</SelectItem>
-              <SelectItem value="partial">{t('money.status.partial') || 'Partial'}</SelectItem>
-              <SelectItem value="paid">{t('money.status.paid') || 'Paid'}</SelectItem>
-              <SelectItem value="overdue">{t('money.status.overdue') || 'Overdue'}</SelectItem>
-              <SelectItem value="cancelled">{t('money.status.cancelled') || 'Cancelled'}</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[180px]">
+                <Filter className="h-4 w-4 mr-2" />
+                <SelectValue placeholder={t('money.invoices.status') || 'Status'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('common.all') || 'All'}</SelectItem>
+                <SelectItem value="draft">{t('money.status.draft') || 'Draft'}</SelectItem>
+                <SelectItem value="sent">{t('money.status.sent') || 'Sent'}</SelectItem>
+                <SelectItem value="viewed">{t('money.status.viewed') || 'Viewed'}</SelectItem>
+                <SelectItem value="partial">{t('money.status.partial') || 'Partial'}</SelectItem>
+                <SelectItem value="paid">{t('money.status.paid') || 'Paid'}</SelectItem>
+                <SelectItem value="overdue">{t('money.status.overdue') || 'Overdue'}</SelectItem>
+                <SelectItem value="cancelled">{t('money.status.cancelled') || 'Cancelled'}</SelectItem>
+              </SelectContent>
+            </Select>
+            <InfoTooltip
+              title="Invoice Statuses"
+              maxWidth={320}
+              content={
+                <div className="space-y-1.5">
+                  <p><strong>Draft:</strong> {MoneyTooltips.invoiceStatus.draft}</p>
+                  <p><strong>Sent:</strong> {MoneyTooltips.invoiceStatus.sent}</p>
+                  <p><strong>Viewed:</strong> {MoneyTooltips.invoiceStatus.viewed}</p>
+                  <p><strong>Partial:</strong> {MoneyTooltips.invoiceStatus.partial}</p>
+                  <p><strong>Paid:</strong> {MoneyTooltips.invoiceStatus.paid}</p>
+                  <p><strong>Overdue:</strong> {MoneyTooltips.invoiceStatus.overdue}</p>
+                  <p><strong>Cancelled:</strong> {MoneyTooltips.invoiceStatus.cancelled}</p>
+                </div>
+              }
+            />
+          </div>
         </div>
 
         {/* Invoice List */}
@@ -415,22 +450,40 @@ export default function Invoices() {
                             <Copy className="h-4 w-4 mr-2" />
                             {t('money.invoices.duplicate') || 'Duplicate'}
                           </DropdownMenuItem>
-                          {['sent', 'viewed', 'partial'].includes(invoice.status) && (
+                          {['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
                             <DropdownMenuItem
-                              onClick={() => navigate(`/money/invoices/${invoice.id}?record=payment`)}
+                              onClick={() => setPaymentInvoice(invoice)}
                             >
                               <DollarSign className="h-4 w-4 mr-2" />
                               {t('money.invoices.recordPayment') || 'Record Payment'}
                             </DropdownMenuItem>
                           )}
+                          {['sent', 'viewed', 'partial', 'overdue'].includes(invoice.status) && (
+                            <DropdownMenuItem
+                              onClick={() => setReminderInvoice(invoice)}
+                            >
+                              <Bell className="h-4 w-4 mr-2" />
+                              {t('money.invoices.sendReminder') || 'Send Reminder'}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(invoice)}
-                            className="text-red-500"
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" />
-                            {t('common.delete') || 'Delete'}
-                          </DropdownMenuItem>
+                          {invoice.status === 'draft' ? (
+                            <DropdownMenuItem
+                              onClick={() => handleDelete(invoice)}
+                              className="text-red-500"
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              {t('common.delete') || 'Delete'}
+                            </DropdownMenuItem>
+                          ) : invoice.status !== 'cancelled' && invoice.status !== 'paid' ? (
+                            <DropdownMenuItem
+                              onClick={() => setVoidInvoice(invoice)}
+                              className="text-red-500"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              {t('money.invoices.void') || 'Void Invoice'}
+                            </DropdownMenuItem>
+                          ) : null}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </div>
@@ -451,6 +504,45 @@ export default function Invoices() {
           </p>
         )}
       </div>
+
+      {/* Record Payment Modal */}
+      {paymentInvoice && (
+        <RecordPaymentModal
+          invoice={paymentInvoice}
+          open={!!paymentInvoice}
+          onClose={() => setPaymentInvoice(null)}
+          onPaymentRecorded={() => {
+            setPaymentInvoice(null);
+            loadInvoices();
+          }}
+        />
+      )}
+
+      {/* Void Invoice Dialog */}
+      {voidInvoice && (
+        <VoidInvoiceDialog
+          invoice={voidInvoice}
+          open={!!voidInvoice}
+          onClose={() => setVoidInvoice(null)}
+          onVoided={() => {
+            setVoidInvoice(null);
+            loadInvoices();
+          }}
+        />
+      )}
+
+      {/* Send Reminder Dialog */}
+      {reminderInvoice && (
+        <SendReminderDialog
+          invoice={reminderInvoice}
+          open={!!reminderInvoice}
+          onClose={() => setReminderInvoice(null)}
+          onReminderSent={() => {
+            setReminderInvoice(null);
+            loadInvoices();
+          }}
+        />
+      )}
     </div>
   );
 }

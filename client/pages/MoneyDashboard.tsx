@@ -19,6 +19,10 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
+import { billService } from '@/services/billService';
+import { ReceivablesWidget } from '@/components/money/ReceivablesWidget';
+import { PayablesSummaryWidget } from '@/components/money/PayablesSummaryWidget';
+import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { MoneyStats, Invoice } from '@/types/money';
 import {
   Wallet,
@@ -44,6 +48,7 @@ import {
   Send,
   AlertTriangle,
   Activity,
+  Repeat,
 } from 'lucide-react';
 
 // Chart colors
@@ -72,6 +77,14 @@ export default function MoneyDashboard() {
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
   const [customerCount, setCustomerCount] = useState(0);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [payablesSummary, setPayablesSummary] = useState<{
+    overdue: number;
+    overdueCount: number;
+    dueThisWeek: number;
+    dueThisWeekCount: number;
+    dueLater: number;
+    dueLaterCount: number;
+  } | null>(null);
 
   useEffect(() => {
     if (session?.tid) {
@@ -84,14 +97,16 @@ export default function MoneyDashboard() {
 
     try {
       setLoading(true);
-      const [statsData, invoices, customers] = await Promise.all([
+      const [statsData, invoices, customers, payables] = await Promise.all([
         invoiceService.getStats(session.tid),
         invoiceService.getAllInvoices(session.tid, 5),
         customerService.getAllCustomers(session.tid),
+        billService.getPayablesSummary(session.tid),
       ]);
       setStats(statsData);
       setRecentInvoices(invoices);
       setCustomerCount(customers.length);
+      setPayablesSummary(payables);
       setShowOnboarding(customers.length === 0 || invoices.length === 0);
     } catch (error) {
       console.error('Error loading money dashboard:', error);
@@ -314,7 +329,13 @@ export default function MoneyDashboard() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Revenue MTD</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Revenue MTD
+                    <InfoTooltip
+                      content="Month-to-date revenue from paid invoices. Shows total payments received this month."
+                      title="Revenue MTD"
+                    />
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.revenueThisMonth || 0)}</p>
                   {stats && stats.revenuePreviousMonth > 0 && (
                     <div className="flex items-center gap-1 mt-1">
@@ -340,7 +361,13 @@ export default function MoneyDashboard() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Outstanding</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Outstanding
+                    <InfoTooltip
+                      content={MoneyTooltips.dashboard.totalReceivables}
+                      title="Total Outstanding"
+                    />
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.totalOutstanding || 0)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     {stats?.invoicesSent || 0} unpaid invoices
@@ -357,7 +384,13 @@ export default function MoneyDashboard() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Overdue</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Overdue
+                    <InfoTooltip
+                      content={MoneyTooltips.dashboard.overdueAmount}
+                      title="Overdue Amount"
+                    />
+                  </p>
                   <p className={`text-2xl font-bold ${stats?.overdueAmount && stats.overdueAmount > 0 ? 'text-red-600' : ''}`}>
                     {formatCurrency(stats?.overdueAmount || 0)}
                   </p>
@@ -376,7 +409,13 @@ export default function MoneyDashboard() {
             <CardContent className="pt-4 pb-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Drafts</p>
+                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                    Drafts
+                    <InfoTooltip
+                      content={MoneyTooltips.invoiceStatus.draft}
+                      title="Draft Invoices"
+                    />
+                  </p>
                   <p className="text-2xl font-bold">{stats?.invoicesDraft || 0}</p>
                   <p className="text-xs text-muted-foreground mt-1">Ready to send</p>
                 </div>
@@ -389,54 +428,29 @@ export default function MoneyDashboard() {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* AR Aging Chart */}
-          <Card>
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-base">AR Aging</CardTitle>
-                  <CardDescription>Outstanding invoices by age</CardDescription>
-                </div>
-                <Button variant="ghost" size="sm" onClick={() => navigate('/money/reports/ar-aging')}>
-                  View Report
-                  <ArrowRight className="h-3 w-3 ml-1" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {agingData.some(d => d.value > 0) ? (
-                <ChartContainer config={CHART_CONFIG} className="h-[200px]">
-                  <BarChart data={agingData} layout="vertical">
-                    <XAxis type="number" tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
-                    <YAxis type="category" dataKey="name" width={60} />
-                    <ChartTooltip
-                      content={<ChartTooltipContent formatter={(value) => formatCurrency(value as number)} />}
-                    />
-                    <Bar dataKey="value" radius={[0, 4, 4, 0]}>
-                      {agingData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.fill} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ChartContainer>
-              ) : (
-                <div className="h-[200px] flex items-center justify-center text-muted-foreground">
-                  <div className="text-center">
-                    <CheckCircle2 className="h-10 w-10 mx-auto mb-2 text-green-500" />
-                    <p>No outstanding invoices</p>
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {/* Receivables Widget */}
+          {stats?.aging && (
+            <ReceivablesWidget aging={stats.aging} />
+          )}
+
+          {/* Payables Widget */}
+          {payablesSummary && (
+            <PayablesSummaryWidget payables={payablesSummary} />
+          )}
 
           {/* Cash Flow Chart */}
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-base">Cash Flow</CardTitle>
+                  <CardTitle className="text-base flex items-center gap-1">
+                    Cash Flow
+                    <InfoTooltip
+                      content={MoneyTooltips.dashboard.cashFlow}
+                      title="Cash Flow"
+                    />
+                  </CardTitle>
                   <CardDescription>Payments received (6 months)</CardDescription>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/money/cashflow')}>
@@ -607,6 +621,15 @@ export default function MoneyDashboard() {
                 </div>
                 <div className="text-left">
                   <p className="font-medium text-sm">Manage Vendors</p>
+                </div>
+              </Button>
+
+              <Button variant="ghost" className="w-full justify-start h-auto py-2.5" onClick={() => navigate('/money/invoices/recurring')}>
+                <div className="h-7 w-7 rounded bg-purple-100 dark:bg-purple-900 flex items-center justify-center mr-3">
+                  <Repeat className="h-3.5 w-3.5 text-purple-600" />
+                </div>
+                <div className="text-left">
+                  <p className="font-medium text-sm">Recurring Invoices</p>
                 </div>
               </Button>
 

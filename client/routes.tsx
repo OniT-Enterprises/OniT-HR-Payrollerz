@@ -74,6 +74,8 @@ const Customers = lazy(() => import("@/pages/money/Customers"));
 const Invoices = lazy(() => import("@/pages/money/Invoices"));
 const InvoiceForm = lazy(() => import("@/pages/money/InvoiceForm"));
 const InvoiceSettings = lazy(() => import("@/pages/money/InvoiceSettings"));
+const RecurringInvoices = lazy(() => import("@/pages/money/RecurringInvoices"));
+const RecurringInvoiceForm = lazy(() => import("@/pages/money/RecurringInvoiceForm"));
 const Payments = lazy(() => import("@/pages/money/Payments"));
 const Vendors = lazy(() => import("@/pages/money/Vendors"));
 const Expenses = lazy(() => import("@/pages/money/Expenses"));
@@ -191,6 +193,10 @@ export const moneyRoutes = (
     <Route path="/money/invoices/:id" element={<InvoiceForm />} />
     <Route path="/money/invoices/:id/edit" element={<InvoiceForm />} />
     <Route path="/money/invoices/settings" element={<InvoiceSettings />} />
+    <Route path="/money/invoices/recurring" element={<RecurringInvoices />} />
+    <Route path="/money/invoices/recurring/new" element={<RecurringInvoiceForm />} />
+    <Route path="/money/invoices/recurring/:id" element={<RecurringInvoiceForm />} />
+    <Route path="/money/invoices/recurring/:id/edit" element={<RecurringInvoiceForm />} />
     <Route path="/money/payments" element={<Payments />} />
     <Route path="/money/vendors" element={<Vendors />} />
     <Route path="/money/expenses" element={<Expenses />} />
