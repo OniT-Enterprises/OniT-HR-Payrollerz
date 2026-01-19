@@ -1,3 +1,9 @@
+/**
+ * Employee Allowances - Timor-Leste focused
+ * Manages transport, housing, meal, phone, and other allowances
+ * Common in TL businesses instead of US-style benefits
+ */
+
 import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -37,7 +43,7 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
-  Heart,
+  Wallet,
   Plus,
   Users,
   DollarSign,
@@ -48,70 +54,55 @@ import {
   XCircle,
   Edit,
   Trash2,
-  Shield,
-  Stethoscope,
-  Eye,
-  Wallet,
+  Car,
+  Home,
+  Utensils,
+  Phone,
+  MapPin,
+  GraduationCap,
+  Shirt,
+  Briefcase,
+  Fuel,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { employeeService, Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { payrollService } from "@/services/payrollService";
-import { formatCurrency, BENEFIT_LIMITS } from "@/lib/payroll/constants";
+import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 
-const BENEFIT_TYPES = [
-  { value: "health", label: "Health Insurance", icon: Stethoscope },
-  { value: "dental", label: "Dental Insurance", icon: Heart },
-  { value: "vision", label: "Vision Insurance", icon: Eye },
-  { value: "life", label: "Life Insurance", icon: Shield },
-  { value: "401k", label: "401(k) Retirement", icon: Wallet },
-  { value: "hsa", label: "HSA", icon: Heart },
-  { value: "fsa", label: "FSA", icon: Heart },
+// TL-relevant allowance types
+const ALLOWANCE_TYPES = [
+  { value: "transport", label: "Transport", icon: Car, description: "Daily commute costs" },
+  { value: "fuel", label: "Fuel", icon: Fuel, description: "Vehicle fuel allowance" },
+  { value: "housing", label: "Housing", icon: Home, description: "Rent or accommodation" },
+  { value: "meal", label: "Meal", icon: Utensils, description: "Daily meal subsidy" },
+  { value: "phone", label: "Phone/Data", icon: Phone, description: "Mobile & internet" },
+  { value: "hardship", label: "Hardship", icon: MapPin, description: "Remote area posting" },
+  { value: "education", label: "Education", icon: GraduationCap, description: "Training & courses" },
+  { value: "uniform", label: "Uniform", icon: Shirt, description: "Work clothing" },
+  { value: "other", label: "Other", icon: Briefcase, description: "Other allowances" },
 ];
 
-const COVERAGE_LEVELS = [
-  { value: "employee_only", label: "Employee Only" },
-  { value: "employee_spouse", label: "Employee + Spouse" },
-  { value: "employee_children", label: "Employee + Children" },
-  { value: "family", label: "Family" },
-];
-
-const SAMPLE_PLANS = {
-  health: [
-    { id: "health-basic", name: "Basic Health Plan", employeeCost: 150, employerCost: 350 },
-    { id: "health-standard", name: "Standard Health Plan", employeeCost: 250, employerCost: 450 },
-    { id: "health-premium", name: "Premium Health Plan", employeeCost: 400, employerCost: 600 },
-  ],
-  dental: [
-    { id: "dental-basic", name: "Basic Dental", employeeCost: 25, employerCost: 25 },
-    { id: "dental-premium", name: "Premium Dental", employeeCost: 50, employerCost: 50 },
-  ],
-  vision: [
-    { id: "vision-basic", name: "Basic Vision", employeeCost: 10, employerCost: 10 },
-    { id: "vision-premium", name: "Premium Vision", employeeCost: 25, employerCost: 25 },
-  ],
-  life: [
-    { id: "life-1x", name: "1x Salary", employeeCost: 15, employerCost: 0 },
-    { id: "life-2x", name: "2x Salary", employeeCost: 30, employerCost: 0 },
-  ],
-  "401k": [
-    { id: "401k-standard", name: "401(k) Plan", employeeCost: 0, employerCost: 0 },
-  ],
-  hsa: [
-    { id: "hsa-standard", name: "HSA Account", employeeCost: 0, employerCost: 0 },
-  ],
-  fsa: [
-    { id: "fsa-standard", name: "FSA Account", employeeCost: 0, employerCost: 0 },
-  ],
+// Common allowance amounts in TL (in USD)
+const SUGGESTED_AMOUNTS: Record<string, { low: number; typical: number; high: number }> = {
+  transport: { low: 50, typical: 100, high: 200 },
+  fuel: { low: 75, typical: 150, high: 300 },
+  housing: { low: 100, typical: 250, high: 500 },
+  meal: { low: 50, typical: 100, high: 150 },
+  phone: { low: 20, typical: 50, high: 100 },
+  hardship: { low: 100, typical: 200, high: 400 },
+  education: { low: 50, typical: 100, high: 200 },
+  uniform: { low: 25, typical: 50, high: 100 },
+  other: { low: 50, typical: 100, high: 200 },
 };
 
-export default function BenefitsEnrollment() {
+export default function EmployeeAllowances() {
   const { toast } = useToast();
   const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
-  const [enrollments, setEnrollments] = useState<BenefitEnrollment[]>([]);
+  const [allowances, setAllowances] = useState<BenefitEnrollment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -120,31 +111,30 @@ export default function BenefitsEnrollment() {
 
   // Form state
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [benefitType, setBenefitType] = useState("");
-  const [planId, setPlanId] = useState("");
-  const [coverageLevel, setCoverageLevel] = useState("employee_only");
+  const [allowanceType, setAllowanceType] = useState("");
+  const [amount, setAmount] = useState(0);
   const [effectiveDate, setEffectiveDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [employeeContribution, setEmployeeContribution] = useState(0);
-  const [employerContribution, setEmployerContribution] = useState(0);
+  const [notes, setNotes] = useState("");
 
   // Load data
   useEffect(() => {
     const loadData = async () => {
+      if (!tenantId) return;
       try {
-	        setLoading(true);
-	        const [enrollmentData, employeeData] = await Promise.all([
-	          payrollService.benefits.getAllEnrollments(tenantId),
-	          employeeService.getAllEmployees(tenantId),
-	        ]);
-        setEnrollments(enrollmentData);
+        setLoading(true);
+        const [enrollmentData, employeeData] = await Promise.all([
+          payrollService.benefits.getAllEnrollments(tenantId),
+          employeeService.getAllEmployees(tenantId),
+        ]);
+        setAllowances(enrollmentData);
         setEmployees(employeeData.filter((e) => e.status === "active"));
       } catch (error) {
         console.error("Failed to load data:", error);
         toast({
           title: "Error",
-          description: "Failed to load benefits data. Please refresh the page.",
+          description: "Failed to load allowances data. Please refresh the page.",
           variant: "destructive",
         });
       } finally {
@@ -153,33 +143,38 @@ export default function BenefitsEnrollment() {
     };
 
     loadData();
-	  }, [toast, tenantId]);
+  }, [toast, tenantId]);
 
   // Calculate stats
   const stats = useMemo(() => {
-    const active = enrollments.filter((e) => e.status === "active");
-    const totalEmployeeCost = active.reduce((sum, e) => sum + e.employeeContribution, 0);
-    const totalEmployerCost = active.reduce((sum, e) => sum + e.employerContribution, 0);
-    const enrolledEmployees = new Set(active.map((e) => e.employeeId)).size;
+    const active = allowances.filter((e) => e.status === "active");
+    const totalMonthly = active.reduce((sum, e) => sum + e.employerContribution, 0);
+    const employeesWithAllowances = new Set(active.map((e) => e.employeeId)).size;
+
+    // Count by type
+    const byType: Record<string, number> = {};
+    active.forEach((a) => {
+      byType[a.benefitType] = (byType[a.benefitType] || 0) + a.employerContribution;
+    });
 
     return {
-      totalEnrollments: active.length,
-      enrolledEmployees,
-      totalEmployeeCost,
-      totalEmployerCost,
+      totalAllowances: active.length,
+      employeesWithAllowances,
+      totalMonthly,
+      byType,
     };
-  }, [enrollments]);
+  }, [allowances]);
 
-  // Filter enrollments
-  const filteredEnrollments = useMemo(() => {
-    return enrollments.filter((enrollment) => {
-      if (filterType !== "all" && enrollment.benefitType !== filterType) {
+  // Filter allowances
+  const filteredAllowances = useMemo(() => {
+    return allowances.filter((allowance) => {
+      if (filterType !== "all" && allowance.benefitType !== filterType) {
         return false;
       }
 
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
-        const employee = employees.find((e) => e.id === enrollment.employeeId);
+        const employee = employees.find((e) => e.id === allowance.employeeId);
         if (employee) {
           const name = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`.toLowerCase();
           if (!name.includes(term)) {
@@ -190,25 +185,7 @@ export default function BenefitsEnrollment() {
 
       return true;
     });
-  }, [enrollments, filterType, searchTerm, employees]);
-
-  // Get available plans for selected benefit type
-  const availablePlans = useMemo(() => {
-    if (!benefitType) return [];
-    return SAMPLE_PLANS[benefitType as keyof typeof SAMPLE_PLANS] || [];
-  }, [benefitType]);
-
-  // Update contribution when plan changes
-  useEffect(() => {
-    if (planId && benefitType) {
-      const plans = SAMPLE_PLANS[benefitType as keyof typeof SAMPLE_PLANS] || [];
-      const plan = plans.find((p) => p.id === planId);
-      if (plan) {
-        setEmployeeContribution(plan.employeeCost);
-        setEmployerContribution(plan.employerCost);
-      }
-    }
-  }, [planId, benefitType]);
+  }, [allowances, filterType, searchTerm, employees]);
 
   // Get employee name
   const getEmployeeName = (employeeId: string) => {
@@ -219,11 +196,9 @@ export default function BenefitsEnrollment() {
     return "Unknown";
   };
 
-  // Get benefit type icon
-  const getBenefitIcon = (type: string) => {
-    const benefitType = BENEFIT_TYPES.find((t) => t.value === type);
-    const Icon = benefitType?.icon || Heart;
-    return <Icon className="h-4 w-4" />;
+  // Get allowance type config
+  const getAllowanceConfig = (type: string) => {
+    return ALLOWANCE_TYPES.find((t) => t.value === type) || ALLOWANCE_TYPES[ALLOWANCE_TYPES.length - 1];
   };
 
   // Get status badge
@@ -245,12 +220,12 @@ export default function BenefitsEnrollment() {
     );
   };
 
-  // Handle add enrollment
-  const handleAddEnrollment = async () => {
-    if (!selectedEmployee || !benefitType || !planId) {
+  // Handle add allowance
+  const handleAddAllowance = async () => {
+    if (!selectedEmployee || !allowanceType || amount <= 0) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: "Missing Information",
+        description: "Please select an employee, allowance type, and enter an amount.",
         variant: "destructive",
       });
       return;
@@ -258,18 +233,17 @@ export default function BenefitsEnrollment() {
 
     setSaving(true);
     try {
-      const plans = SAMPLE_PLANS[benefitType as keyof typeof SAMPLE_PLANS] || [];
-      const plan = plans.find((p) => p.id === planId);
+      const config = getAllowanceConfig(allowanceType);
 
       const enrollment: Omit<BenefitEnrollment, "id"> = {
         employeeId: selectedEmployee,
-        benefitType: benefitType as BenefitEnrollment["benefitType"],
-        planName: plan?.name || "Unknown Plan",
-        planId,
-        coverageLevel: coverageLevel as BenefitEnrollment["coverageLevel"],
-        employeeContribution,
-        employerContribution,
-        isPreTax: ["health", "dental", "vision", "401k", "hsa", "fsa"].includes(benefitType),
+        benefitType: allowanceType as BenefitEnrollment["benefitType"],
+        planName: config.label,
+        planId: `allowance-${allowanceType}`,
+        coverageLevel: "employee_only",
+        employeeContribution: 0, // Allowances are employer-paid
+        employerContribution: amount,
+        isPreTax: false,
         effectiveDate,
         status: "active",
       };
@@ -277,21 +251,21 @@ export default function BenefitsEnrollment() {
       await payrollService.benefits.createEnrollment(tenantId, enrollment);
 
       toast({
-        title: "Success",
-        description: "Benefit enrollment created successfully.",
+        title: "Allowance Added",
+        description: `${config.label} allowance of ${formatCurrency(amount)}/month added.`,
       });
 
-      // Reload enrollments
+      // Reload allowances
       const data = await payrollService.benefits.getAllEnrollments(tenantId);
-      setEnrollments(data);
+      setAllowances(data);
 
       setShowAddDialog(false);
       resetForm();
     } catch (error) {
-      console.error("Failed to create enrollment:", error);
+      console.error("Failed to create allowance:", error);
       toast({
         title: "Error",
-        description: "Failed to create enrollment. Please try again.",
+        description: "Failed to add allowance. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -302,12 +276,17 @@ export default function BenefitsEnrollment() {
   // Reset form
   const resetForm = () => {
     setSelectedEmployee("");
-    setBenefitType("");
-    setPlanId("");
-    setCoverageLevel("employee_only");
+    setAllowanceType("");
+    setAmount(0);
     setEffectiveDate(new Date().toISOString().split("T")[0]);
-    setEmployeeContribution(0);
-    setEmployerContribution(0);
+    setNotes("");
+  };
+
+  // Set suggested amount
+  const setSuggestedAmount = (level: "low" | "typical" | "high") => {
+    if (allowanceType && SUGGESTED_AMOUNTS[allowanceType]) {
+      setAmount(SUGGESTED_AMOUNTS[allowanceType][level]);
+    }
   };
 
   if (loading) {
@@ -323,8 +302,8 @@ export default function BenefitsEnrollment() {
                 <Skeleton className="h-4 w-64" />
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {[1, 2, 3].map((i) => (
                 <Card key={i}>
                   <CardContent className="p-5">
                     <Skeleton className="h-4 w-28 mb-2" />
@@ -334,42 +313,6 @@ export default function BenefitsEnrollment() {
                 </Card>
               ))}
             </div>
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-32" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                  {[1, 2, 3, 4, 5, 6, 7].map((i) => (
-                    <div key={i} className="p-4 border rounded-lg">
-                      <Skeleton className="h-6 w-6 mb-2" />
-                      <Skeleton className="h-4 w-20 mb-1" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-32 mb-2" />
-                <Skeleton className="h-4 w-40" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-28" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-20 ml-auto" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -378,246 +321,247 @@ export default function BenefitsEnrollment() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.benefits} />
+      <SEO title="Employee Allowances - OniT" description="Manage employee allowances for transport, housing, meals, and more" />
       <MainNavigation />
 
       {/* Hero Section */}
-      <div className="border-b bg-green-50 dark:bg-green-950/30">
+      <div className="border-b bg-teal-50 dark:bg-teal-950/30">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
-                <Heart className="h-8 w-8 text-white" />
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/25">
+                <Wallet className="h-8 w-8 text-white" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Benefits Enrollment
+                  Employee Allowances
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Manage employee benefits enrollment
+                  Transport, housing, meals, and other monthly allowances
                 </p>
               </div>
             </div>
-            <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+            <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600">
               <Plus className="h-4 w-4 mr-2" />
-              Add Enrollment
+              Add Allowance
             </Button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 py-6">
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Active Enrollments
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.totalEnrollments}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                    <Heart className="h-6 w-6 text-white" />
-                  </div>
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Active Allowances
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.totalAllowances}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    for {stats.employeesWithAllowances} employees
+                  </p>
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Enrolled Employees
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.enrolledEmployees}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
+                <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
+                  <Users className="h-6 w-6 text-white" />
                 </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Employee Cost/mo
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(stats.totalEmployeeCost)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Employer Cost/mo
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(stats.totalEmployerCost)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Benefit Type Cards */}
-          <Card className="mb-6 border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Heart className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Benefit Types
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                {BENEFIT_TYPES.map((type) => {
-                  const Icon = type.icon;
-                  const count = enrollments.filter(
-                    (e) => e.benefitType === type.value && e.status === "active"
-                  ).length;
-
-                  return (
-                    <div
-                      key={type.value}
-                      className={`p-4 border rounded-lg cursor-pointer transition-colors ${
-                        filterType === type.value
-                          ? "border-emerald-500 bg-emerald-500/10"
-                          : "hover:border-border"
-                      }`}
-                      onClick={() =>
-                        setFilterType(filterType === type.value ? "all" : type.value)
-                      }
-                    >
-                      <Icon className="h-6 w-6 text-emerald-500 mb-2" />
-                      <p className="text-sm font-medium text-foreground">{type.label}</p>
-                      <p className="text-xs text-muted-foreground">{count} enrolled</p>
-                    </div>
-                  );
-                })}
               </div>
             </CardContent>
           </Card>
 
-          {/* Enrollments Table */}
-          <Card className="border-border/50">
-            <CardHeader>
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    Enrollments
-                  </CardTitle>
-                  <CardDescription>
-                    {filteredEnrollments.length} enrollments
-                  </CardDescription>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Monthly Total
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {formatCurrency(stats.totalMonthly)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    all allowances combined
+                  </p>
                 </div>
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search employees..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
-                  />
+                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
+                  <DollarSign className="h-6 w-6 text-white" />
                 </div>
               </div>
-            </CardHeader>
-            <CardContent>
-              {filteredEnrollments.length === 0 ? (
-                <div className="text-center py-12">
-                  <Heart className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No enrollments found</p>
-                  <Button onClick={() => setShowAddDialog(true)}>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add First Enrollment
-                  </Button>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/50 shadow-lg">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">
+                    Avg per Employee
+                  </p>
+                  <p className="text-2xl font-bold">
+                    {stats.employeesWithAllowances > 0
+                      ? formatCurrency(stats.totalMonthly / stats.employeesWithAllowances)
+                      : formatCurrency(0)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    monthly average
+                  </p>
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Benefit</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead>Coverage</TableHead>
-                        <TableHead className="text-right">Employee Cost</TableHead>
-                        <TableHead className="text-right">Employer Cost</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredEnrollments.map((enrollment) => (
-                        <TableRow key={enrollment.id}>
+                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
+                  <Wallet className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Allowance Type Filter Cards */}
+        <Card className="mb-6 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-teal-600 dark:text-teal-400" />
+              Allowance Types
+            </CardTitle>
+            <CardDescription>Click to filter by type</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
+              {ALLOWANCE_TYPES.map((type) => {
+                const Icon = type.icon;
+                const count = allowances.filter(
+                  (a) => a.benefitType === type.value && a.status === "active"
+                ).length;
+                const total = stats.byType[type.value] || 0;
+
+                return (
+                  <button
+                    key={type.value}
+                    className={`p-3 border rounded-lg text-left transition-colors ${
+                      filterType === type.value
+                        ? "border-teal-500 bg-teal-500/10"
+                        : "hover:border-teal-300 dark:hover:border-teal-700"
+                    }`}
+                    onClick={() =>
+                      setFilterType(filterType === type.value ? "all" : type.value)
+                    }
+                  >
+                    <Icon className={`h-5 w-5 mb-1.5 ${
+                      filterType === type.value ? "text-teal-600" : "text-muted-foreground"
+                    }`} />
+                    <p className="text-xs font-medium truncate">{type.label}</p>
+                    <p className="text-xs text-muted-foreground">{count} active</p>
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Allowances Table */}
+        <Card className="border-border/50">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                  Allowances
+                </CardTitle>
+                <CardDescription>
+                  {filteredAllowances.length} allowance{filteredAllowances.length !== 1 ? "s" : ""}
+                  {filterType !== "all" && ` (${getAllowanceConfig(filterType).label})`}
+                </CardDescription>
+              </div>
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search employees..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {filteredAllowances.length === 0 ? (
+              <div className="text-center py-12">
+                <Wallet className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                <p className="text-muted-foreground mb-4">No allowances found</p>
+                <Button onClick={() => setShowAddDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add First Allowance
+                </Button>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead className="text-right">Amount/Month</TableHead>
+                      <TableHead>Start Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAllowances.map((allowance) => {
+                      const config = getAllowanceConfig(allowance.benefitType);
+                      const Icon = config.icon;
+
+                      return (
+                        <TableRow key={allowance.id}>
                           <TableCell className="font-medium">
-                            {getEmployeeName(enrollment.employeeId)}
+                            {getEmployeeName(allowance.employeeId)}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-2">
-                              {getBenefitIcon(enrollment.benefitType)}
-                              {BENEFIT_TYPES.find((t) => t.value === enrollment.benefitType)?.label}
+                              <div className="p-1.5 rounded bg-teal-100 dark:bg-teal-900">
+                                <Icon className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400" />
+                              </div>
+                              <span>{config.label}</span>
                             </div>
                           </TableCell>
-                          <TableCell>{enrollment.planName}</TableCell>
-                          <TableCell>
-                            {COVERAGE_LEVELS.find((c) => c.value === enrollment.coverageLevel)?.label}
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(allowance.employerContribution)}
                           </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(enrollment.employeeContribution)}
+                          <TableCell className="text-muted-foreground">
+                            {new Date(allowance.effectiveDate).toLocaleDateString()}
                           </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(enrollment.employerContribution)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(enrollment.status)}</TableCell>
+                          <TableCell>{getStatusBadge(allowance.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" title="Edit">
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm">
+                              <Button variant="ghost" size="sm" title="Remove">
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
                           </TableCell>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Add Enrollment Dialog */}
+      {/* Add Allowance Dialog */}
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Benefit Enrollment</DialogTitle>
+            <DialogTitle>Add Employee Allowance</DialogTitle>
             <DialogDescription>
-              Enroll an employee in a benefit plan
+              Set up a monthly allowance for an employee
             </DialogDescription>
           </DialogHeader>
 
@@ -639,63 +583,78 @@ export default function BenefitsEnrollment() {
             </div>
 
             <div>
-              <Label htmlFor="benefit-type">Benefit Type *</Label>
+              <Label htmlFor="allowance-type">Allowance Type *</Label>
               <Select
-                value={benefitType}
+                value={allowanceType}
                 onValueChange={(v) => {
-                  setBenefitType(v);
-                  setPlanId("");
+                  setAllowanceType(v);
+                  // Set typical amount as default
+                  if (SUGGESTED_AMOUNTS[v]) {
+                    setAmount(SUGGESTED_AMOUNTS[v].typical);
+                  }
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select benefit type" />
+                  <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {BENEFIT_TYPES.map((type) => (
-                    <SelectItem key={type.value} value={type.value}>
-                      {type.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {benefitType && (
-              <div>
-                <Label htmlFor="plan">Plan *</Label>
-                <Select value={planId} onValueChange={setPlanId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {availablePlans.map((plan) => (
-                      <SelectItem key={plan.id} value={plan.id}>
-                        {plan.name} - {formatCurrency(plan.employeeCost)}/mo
+                  {ALLOWANCE_TYPES.map((type) => {
+                    const Icon = type.icon;
+                    return (
+                      <SelectItem key={type.value} value={type.value}>
+                        <div className="flex items-center gap-2">
+                          <Icon className="h-4 w-4 text-muted-foreground" />
+                          <span>{type.label}</span>
+                          <span className="text-xs text-muted-foreground">- {type.description}</span>
+                        </div>
                       </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-
-            <div>
-              <Label htmlFor="coverage">Coverage Level</Label>
-              <Select value={coverageLevel} onValueChange={setCoverageLevel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COVERAGE_LEVELS.map((level) => (
-                    <SelectItem key={level.value} value={level.value}>
-                      {level.label}
-                    </SelectItem>
-                  ))}
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <Label htmlFor="effective-date">Effective Date</Label>
+              <Label htmlFor="amount">Amount per Month (USD) *</Label>
+              <Input
+                id="amount"
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(parseFloat(e.target.value) || 0)}
+                min={0}
+                step={10}
+                placeholder="100"
+              />
+              {allowanceType && SUGGESTED_AMOUNTS[allowanceType] && (
+                <div className="flex gap-2 mt-2">
+                  <span className="text-xs text-muted-foreground">Suggested:</span>
+                  <button
+                    type="button"
+                    className="text-xs text-teal-600 hover:underline"
+                    onClick={() => setSuggestedAmount("low")}
+                  >
+                    ${SUGGESTED_AMOUNTS[allowanceType].low}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs text-teal-600 hover:underline font-medium"
+                    onClick={() => setSuggestedAmount("typical")}
+                  >
+                    ${SUGGESTED_AMOUNTS[allowanceType].typical}
+                  </button>
+                  <button
+                    type="button"
+                    className="text-xs text-teal-600 hover:underline"
+                    onClick={() => setSuggestedAmount("high")}
+                  >
+                    ${SUGGESTED_AMOUNTS[allowanceType].high}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="effective-date">Start Date</Label>
               <Input
                 id="effective-date"
                 type="date"
@@ -703,47 +662,26 @@ export default function BenefitsEnrollment() {
                 onChange={(e) => setEffectiveDate(e.target.value)}
               />
             </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="employee-contribution">Employee Cost/mo</Label>
-                <Input
-                  id="employee-contribution"
-                  type="number"
-                  value={employeeContribution}
-                  onChange={(e) => setEmployeeContribution(parseFloat(e.target.value) || 0)}
-                  min={0}
-                  step={10}
-                />
-              </div>
-              <div>
-                <Label htmlFor="employer-contribution">Employer Cost/mo</Label>
-                <Input
-                  id="employer-contribution"
-                  type="number"
-                  value={employerContribution}
-                  onChange={(e) => setEmployerContribution(parseFloat(e.target.value) || 0)}
-                  min={0}
-                  step={10}
-                />
-              </div>
-            </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleAddEnrollment} disabled={saving}>
+            <Button
+              onClick={handleAddAllowance}
+              disabled={saving}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  Adding...
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Enrollment
+                  Add Allowance
                 </>
               )}
             </Button>

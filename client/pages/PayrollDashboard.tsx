@@ -40,6 +40,7 @@ import {
   Play,
   ExternalLink,
   UserX,
+  Wallet,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -317,10 +318,10 @@ export default function PayrollDashboard() {
   // Primary and secondary links
   const primaryLinks = [
     {
-      label: "Benefits",
-      description: "Employee benefits enrollment",
+      label: "Allowances",
+      description: "Transport, housing, meals & more",
       path: "/payroll/benefits",
-      icon: Heart,
+      icon: Wallet,
     },
     {
       label: "Deductions",
