@@ -205,11 +205,12 @@ export default function AddEmployee() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
   useEffect(() => {
+    if (!tenantId) return; // Wait for tenantId to be available
     loadDepartmentsAndManagers();
     if (editEmployeeId) {
       loadEmployeeForEdit(editEmployeeId);
     }
-  }, [editEmployeeId]);
+  }, [editEmployeeId, tenantId]);
 
   const loadEmployeeForEdit = async (employeeId: string) => {
     try {
