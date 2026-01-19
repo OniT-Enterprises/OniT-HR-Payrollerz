@@ -281,13 +281,13 @@ export default function PayrollDashboard() {
   // Status display config
   const statusConfig = {
     not_prepared: {
-      label: "Not Prepared",
-      color: "text-red-600 dark:text-red-400",
-      bg: "bg-red-100 dark:bg-red-900/30",
-      borderColor: "border-red-200 dark:border-red-800",
+      label: "Getting Ready",
+      color: "text-amber-600 dark:text-amber-400",
+      bg: "bg-amber-100 dark:bg-amber-900/30",
+      borderColor: "border-amber-200 dark:border-amber-800",
     },
     preparing: {
-      label: "Needs Review",
+      label: "Almost Ready",
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-100 dark:bg-amber-900/30",
       borderColor: "border-amber-200 dark:border-amber-800",
@@ -654,7 +654,7 @@ export default function PayrollDashboard() {
                     className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                   >
                     <Calculator className="h-5 w-5 mr-2" />
-                    Prepare Payroll
+                    Review Payroll
                   </Button>
                 )}
                 <Button
@@ -786,7 +786,7 @@ export default function PayrollDashboard() {
             </CardContent>
           </Card>
 
-          {/* Employees Blocked - More actionable than "Active Employees" */}
+          {/* Employees needing attention - Softer than "Blocked" */}
           <Card
             className={`${theme.borderLeft} cursor-pointer transition-all hover:shadow-md ${
               stats.blockedEmployees > 0 ? "border-amber-500/50" : ""
@@ -797,7 +797,7 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    {stats.blockedEmployees > 0 ? "Employees Blocked" : "Payroll Coverage"}
+                    {stats.blockedEmployees > 0 ? "Employees Need Attention" : "Payroll Coverage"}
                   </p>
                   {stats.blockedEmployees > 0 ? (
                     <>
@@ -806,7 +806,7 @@ export default function PayrollDashboard() {
                       </p>
                       <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
-                        Issues preventing payroll
+                        Missing contracts or INSS
                       </p>
                     </>
                   ) : (

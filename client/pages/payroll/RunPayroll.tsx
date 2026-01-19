@@ -393,8 +393,8 @@ export default function RunPayroll() {
   const complianceIssues = useMemo(() => {
     return employees.map(emp => {
       const issues: string[] = [];
-      if (!emp.documents?.workContract?.fileUrl) issues.push("Missing contract");
-      if (!emp.documents?.socialSecurityNumber?.number) issues.push("Missing INSS");
+      if (!emp.documents?.workContract?.fileUrl) issues.push("Contract needed");
+      if (!emp.documents?.socialSecurityNumber?.number) issues.push("INSS needed");
       return { employee: emp, issues };
     }).filter(item => item.issues.length > 0);
   }, [employees]);
@@ -928,16 +928,16 @@ export default function RunPayroll() {
           </CardContent>
         </Card>
 
-        {/* Compliance Warning Banner - Shows when employees have issues */}
+        {/* Compliance Notice - Shows when employees need documents */}
         {hasComplianceIssues && (
           <Card className="mb-6 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
                 <AlertTriangle className="h-5 w-5 text-amber-600" />
-                {complianceIssues.length} Employee{complianceIssues.length > 1 ? "s" : ""} with Compliance Issues
+                {complianceIssues.length} Employee{complianceIssues.length > 1 ? "s" : ""} Need Documents
               </CardTitle>
               <CardDescription className="text-amber-700 dark:text-amber-400">
-                The following employees have missing documents that may affect compliance
+                These employees need contracts or INSS numbers. You can still run payroll and add documents later.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -995,8 +995,8 @@ export default function RunPayroll() {
                       className="mt-1 h-4 w-4 rounded border-amber-400"
                     />
                     <span className="text-sm text-amber-800 dark:text-amber-200">
-                      I acknowledge that including employees with compliance issues may affect
-                      INSS submissions and audit compliance. I will resolve these issues within 30 days.
+                      I understand these employees need documents for full compliance.
+                      I will add the missing contracts/INSS numbers within 30 days.
                     </span>
                   </label>
                   {complianceAcknowledged && (

@@ -248,7 +248,7 @@ export default function AccountingDashboard() {
               <div>
                 <h1 className="text-2xl font-bold text-foreground">Accounting</h1>
                 <p className="text-sm text-muted-foreground">
-                  Verify the books — ledger, journal entries, and audit trail. For accountants only.
+                  Ledger, journal entries, and audit trail
                 </p>
               </div>
             </div>
@@ -275,6 +275,29 @@ export default function AccountingDashboard() {
       </div>
 
       <div className="p-6 max-w-6xl mx-auto">
+        {/* ═══════════════════════════════════════════════════════════════
+            ACCOUNTANT GATE - Help non-accountants understand this section
+        ═══════════════════════════════════════════════════════════════ */}
+        <div className="mb-6 p-4 rounded-lg bg-orange-50/50 dark:bg-orange-950/20 border border-orange-200/50 dark:border-orange-800/30">
+          <div className="flex items-start gap-3">
+            <div className="h-8 w-8 rounded-lg bg-orange-100 dark:bg-orange-900/50 flex items-center justify-center flex-shrink-0">
+              <BookOpen className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div className="flex-1">
+              <p className="font-medium text-orange-800 dark:text-orange-200">
+                This section is for accountants and auditors
+              </p>
+              <p className="text-sm text-orange-700/80 dark:text-orange-400/80 mt-0.5">
+                For everyday tasks like sending invoices, paying bills, or running payroll,
+                use <button onClick={() => navigate("/money")} className="underline hover:text-orange-800 dark:hover:text-orange-300">Money</button> or <button onClick={() => navigate("/payroll")} className="underline hover:text-orange-800 dark:hover:text-orange-300">Payroll</button> instead.
+              </p>
+              <p className="text-xs text-orange-600/70 dark:text-orange-500/70 mt-2">
+                Most businesses never need to change anything here — OniT keeps this in sync automatically.
+              </p>
+            </div>
+          </div>
+        </div>
+
         {/* ═══════════════════════════════════════════════════════════════
             ACCOUNTING STATUS - Primary question: "Are my books OK?"
         ═══════════════════════════════════════════════════════════════ */}

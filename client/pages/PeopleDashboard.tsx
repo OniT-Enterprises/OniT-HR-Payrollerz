@@ -307,7 +307,7 @@ export default function PeopleDashboard() {
       if (!emp.documents?.socialSecurityNumber?.number) {
         items.push({
           employee: emp,
-          issue: "Missing INSS number",
+          issue: "INSS number needed",
           action: "Add INSS",
           path: `/people/employees?id=${emp.id}&edit=true`,
           type: "error",
@@ -317,7 +317,7 @@ export default function PeopleDashboard() {
       if (!emp.documents?.workContract?.fileUrl) {
         items.push({
           employee: emp,
-          issue: "Contract not uploaded",
+          issue: "Contract needed",
           action: "Upload",
           path: `/people/employees?id=${emp.id}&tab=documents`,
           type: "warning",
@@ -466,7 +466,7 @@ export default function PeopleDashboard() {
               onClick={() => document.getElementById('attention-section')?.scrollIntoView({ behavior: 'smooth' })}
             >
               <AlertCircle className="h-3.5 w-3.5" />
-              Payroll blocked ({attentionItems.length} issue{attentionItems.length > 1 ? 's' : ''})
+              {attentionItems.length} item{attentionItems.length > 1 ? 's' : ''} needed for payroll
             </Badge>
           )}
         </div>
@@ -479,10 +479,10 @@ export default function PeopleDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Attention Required
+                Complete Before Payroll
               </CardTitle>
               <CardDescription>
-                Fix these issues before running payroll
+                These items are needed to run payroll. This is normal for new employees.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
@@ -671,17 +671,17 @@ export default function PeopleDashboard() {
                         {isCompliant ? (
                           <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
                             <CheckCircle className="h-4 w-4" />
-                            <span className="text-sm">Compliant</span>
+                            <span className="text-sm">Ready</span>
                           </div>
                         ) : (
                           <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                             <AlertCircle className="h-4 w-4" />
                             <span className="text-sm">
                               {!hasINSS && !hasContract
-                                ? "Missing docs"
+                                ? "Docs needed"
                                 : !hasINSS
-                                ? "No INSS"
-                                : "No contract"}
+                                ? "INSS needed"
+                                : "Contract needed"}
                             </span>
                           </div>
                         )}
