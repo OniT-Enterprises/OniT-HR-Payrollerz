@@ -32,6 +32,7 @@ import type {
   ExpenseCategory,
 } from '@/types/money';
 import { vendorService } from './vendorService';
+import { journalEntryService, accountService } from './accountingService';
 
 /**
  * Filter options for bill queries
@@ -245,8 +246,9 @@ class BillService {
 
   /**
    * Create a new bill
+   * Also creates a journal entry (Debit Expense, Credit AP)
    */
-  async createBill(tenantId: string, data: BillFormData): Promise<string> {
+  async createBill(tenantId: string, data: BillFormData, userId?: string): Promise<string> {
     // Get vendor info
     const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
     if (!vendor) {
@@ -281,6 +283,21 @@ class BillService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // Create accounting journal entry (if chart of accounts is set up)
+    try {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        await journalEntryService.createFromBill(
+          tenantId,
+          { ...bill, id: docRef.id },
+          userId || 'system'
+        );
+      }
+    } catch (error) {
+      // Log but don't fail - accounting integration is optional
+      console.warn('Could not create journal entry for bill:', error);
+    }
 
     return docRef.id;
   }
@@ -375,11 +392,13 @@ class BillService {
 
   /**
    * Record a payment for a bill
+   * Also creates a journal entry (Debit AP, Credit Cash)
    */
   async recordPayment(
     tenantId: string,
     billId: string,
-    payment: BillPaymentFormData
+    payment: BillPaymentFormData,
+    userId?: string
   ): Promise<string> {
     const bill = await this.getBillById(tenantId, billId);
     if (!bill) {
@@ -420,6 +439,29 @@ class BillService {
       paidAt: newStatus === 'paid' ? serverTimestamp() : null,
       updatedAt: serverTimestamp(),
     });
+
+    // Create accounting journal entry (if chart of accounts is set up)
+    try {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        await journalEntryService.createFromBillPayment(
+          tenantId,
+          {
+            billId: bill.id,
+            billNumber: bill.billNumber,
+            vendorName: bill.vendorName,
+            date: payment.date,
+            amount: payment.amount,
+            method: payment.method,
+            reference: payment.reference,
+          },
+          userId || 'system'
+        );
+      }
+    } catch (error) {
+      // Log but don't fail - accounting integration is optional
+      console.warn('Could not create journal entry for bill payment:', error);
+    }
 
     return paymentRef.id;
   }

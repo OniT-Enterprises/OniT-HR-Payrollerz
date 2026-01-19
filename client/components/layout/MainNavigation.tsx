@@ -32,6 +32,7 @@ import {
   Menu,
   X,
   Wallet,
+  Map,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
@@ -271,6 +272,10 @@ export default function MainNavigation() {
                   <Settings className="h-4 w-4 mr-2" />
                   {t("common.settings")}
                 </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleNavigate("/sitemap")}>
+                  <Map className="h-4 w-4 mr-2" />
+                  Sitemap
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
                   <LogOut className="h-4 w-4 mr-2" />
@@ -329,6 +334,14 @@ export default function MainNavigation() {
               >
                 <Settings className="h-5 w-5 mr-3" />
                 {t("common.settings")}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => handleNavigate("/sitemap")}
+                className="justify-start h-12 text-base text-muted-foreground"
+              >
+                <Map className="h-5 w-5 mr-3" />
+                Sitemap
               </Button>
             </div>
           </div>

@@ -36,6 +36,7 @@ import type {
   MoneyStats,
 } from '@/types/money';
 import { customerService } from './customerService';
+import { journalEntryService, accountService } from './accountingService';
 
 // ============================================
 // FILTER INTERFACES
@@ -413,14 +414,36 @@ class InvoiceService {
 
   /**
    * Mark invoice as sent
+   * Also creates a journal entry (Debit AR, Credit Revenue)
    */
-  async markAsSent(tenantId: string, id: string): Promise<boolean> {
+  async markAsSent(tenantId: string, id: string, userId?: string): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
+    if (!invoice) {
+      throw new Error('Invoice not found');
+    }
+
     const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       status: 'sent',
       sentAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // Create accounting journal entry (if chart of accounts is set up)
+    try {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        await journalEntryService.createFromInvoice(
+          tenantId,
+          invoice,
+          userId || 'system'
+        );
+      }
+    } catch (error) {
+      // Log but don't fail - accounting integration is optional
+      console.warn('Could not create journal entry for invoice:', error);
+    }
+
     return true;
   }
 
@@ -547,11 +570,13 @@ class InvoiceService {
 
   /**
    * Record a payment for an invoice
+   * Also creates a journal entry (Debit Cash, Credit AR)
    */
   async recordPayment(
     tenantId: string,
     invoiceId: string,
-    payment: PaymentFormData
+    payment: PaymentFormData,
+    userId?: string
   ): Promise<string> {
     const invoice = await this.getInvoiceById(tenantId, invoiceId);
     if (!invoice) {
@@ -595,6 +620,29 @@ class InvoiceService {
       paidAt: newStatus === 'paid' ? serverTimestamp() : null,
       updatedAt: serverTimestamp(),
     });
+
+    // Create accounting journal entry (if chart of accounts is set up)
+    try {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        await journalEntryService.createFromInvoicePayment(
+          tenantId,
+          {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.customerName,
+            date: payment.date,
+            amount: payment.amount,
+            method: payment.method,
+            reference: payment.reference,
+          },
+          userId || 'system'
+        );
+      }
+    } catch (error) {
+      // Log but don't fail - accounting integration is optional
+      console.warn('Could not create journal entry for payment:', error);
+    }
 
     return paymentRef.id;
   }

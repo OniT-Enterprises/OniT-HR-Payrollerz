@@ -24,6 +24,7 @@ import Login from "@/pages/auth/Login";
 import Dashboard from "@/pages/Dashboard";
 import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
+import Sitemap from "@/pages/Sitemap";
 
 // Lazy loaded routes - code split by section
 const Settings = lazy(() => import("@/pages/Settings"));
@@ -116,7 +117,7 @@ const DocumentAlerts = lazy(() => import("@/pages/admin/DocumentAlerts"));
 const ForeignWorkers = lazy(() => import("@/pages/admin/ForeignWorkers"));
 
 // Export components for use in HomeRoute
-export { Login, Dashboard, Landing, NotFound, Settings, Signup, AdminSetup };
+export { Login, Dashboard, Landing, NotFound, Settings, Signup, AdminSetup, Sitemap };
 
 /**
  * Auth & Core Routes
@@ -128,6 +129,7 @@ export const authRoutes = (
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/landing" element={<Landing />} />
     <Route path="/settings" element={<Settings />} />
+    <Route path="/sitemap" element={<Sitemap />} />
   </>
 );
 
@@ -322,14 +324,17 @@ export const adminRoutes = (
         </SuperadminRoute>
       }
     />
-    <Route
-      path="/admin/seed"
-      element={
-        <SuperadminRoute>
-          <SeedDatabase />
-        </SuperadminRoute>
-      }
-    />
+    {/* DEV ONLY: Seed Database - disabled in production builds */}
+    {import.meta.env.DEV && (
+      <Route
+        path="/admin/seed"
+        element={
+          <SuperadminRoute>
+            <SeedDatabase />
+          </SuperadminRoute>
+        }
+      />
+    )}
     <Route
       path="/admin/users"
       element={

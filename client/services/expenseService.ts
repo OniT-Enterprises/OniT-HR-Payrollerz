@@ -25,6 +25,7 @@ import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
+import { journalEntryService, accountService } from './accountingService';
 
 /**
  * Filter options for expense queries
@@ -226,10 +227,12 @@ class ExpenseService {
 
   /**
    * Create a new expense
+   * Also creates a journal entry (Debit Expense, Credit Cash)
    */
   async createExpense(
     tenantId: string,
-    data: ExpenseFormData & { receiptUrl?: string }
+    data: ExpenseFormData & { receiptUrl?: string },
+    userId?: string
   ): Promise<string> {
     // Get vendor name if vendorId provided
     let vendorName: string | undefined;
@@ -248,6 +251,21 @@ class ExpenseService {
       ...expense,
       createdAt: serverTimestamp(),
     });
+
+    // Create accounting journal entry (if chart of accounts is set up)
+    try {
+      const accounts = await accountService.getAllAccounts(tenantId);
+      if (accounts.length > 0) {
+        await journalEntryService.createFromExpense(
+          tenantId,
+          { ...expense, id: docRef.id },
+          userId || 'system'
+        );
+      }
+    } catch (error) {
+      // Log but don't fail - accounting integration is optional
+      console.warn('Could not create journal entry for expense:', error);
+    }
 
     return docRef.id;
   }

@@ -828,6 +828,63 @@ export const PAYROLL_JOURNAL_MAPPINGS = {
 };
 
 /**
+ * Expense category to account code mappings for auto-generating journal entries
+ * from the Money module (Expenses, Bills)
+ */
+export const EXPENSE_CATEGORY_TO_ACCOUNT: Record<string, { code: string; name: string }> = {
+  rent: { code: '5200', name: 'Rent Expense' },
+  utilities: { code: '5300', name: 'Utilities Expense' },
+  supplies: { code: '5400', name: 'Office Supplies' },
+  equipment: { code: '5400', name: 'Office Supplies' }, // Small equipment; capitalize large ones manually
+  transport: { code: '5500', name: 'Transportation Expense' },
+  fuel: { code: '5510', name: 'Fuel' },
+  meals: { code: '5900', name: 'Other Expenses' },
+  professional_services: { code: '5600', name: 'Professional Services' },
+  insurance: { code: '5700', name: 'Insurance Expense' },
+  taxes_licenses: { code: '5920', name: 'Licenses and Permits' },
+  marketing: { code: '5900', name: 'Other Expenses' },
+  communication: { code: '5330', name: 'Telephone and Internet' },
+  maintenance: { code: '5520', name: 'Vehicle Maintenance' },
+  other: { code: '5900', name: 'Other Expenses' },
+};
+
+/**
+ * Money module journal mappings for auto-generating journal entries
+ */
+export const MONEY_JOURNAL_MAPPINGS = {
+  // When invoice is sent: Debit AR, Credit Revenue
+  invoiceCreated: {
+    description: 'Invoice Created',
+    debit: { code: '1210', name: 'Trade Receivables' },
+    credit: { code: '4100', name: 'Service Revenue' },
+  },
+  // When payment received: Debit Cash, Credit AR
+  invoicePayment: {
+    description: 'Payment Received',
+    debit: { code: '1120', name: 'Cash in Bank - Operating' },
+    credit: { code: '1210', name: 'Trade Receivables' },
+  },
+  // When bill created: Debit Expense, Credit AP
+  billCreated: {
+    description: 'Bill Created',
+    debit: null, // Dynamic based on expense category
+    credit: { code: '2110', name: 'Trade Payables' },
+  },
+  // When bill paid: Debit AP, Credit Cash
+  billPayment: {
+    description: 'Bill Payment',
+    debit: { code: '2110', name: 'Trade Payables' },
+    credit: { code: '1120', name: 'Cash in Bank - Operating' },
+  },
+  // When expense recorded: Debit Expense, Credit Cash
+  expenseCreated: {
+    description: 'Expense Recorded',
+    debit: null, // Dynamic based on expense category
+    credit: { code: '1120', name: 'Cash in Bank - Operating' },
+  },
+};
+
+/**
  * Get account by code
  */
 export function getAccountByCode(code: string): DefaultAccount | undefined {

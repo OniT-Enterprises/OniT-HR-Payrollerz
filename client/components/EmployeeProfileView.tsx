@@ -416,17 +416,17 @@ export default function EmployeeProfileView({
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Social Security Number</span>
                   </div>
-                  {employee.documents.socialSecurityNumber.number ? (
+                  {employee.documents?.socialSecurityNumber?.number ? (
                     <div>
                       <p className="text-sm">
-                        {employee.documents.socialSecurityNumber.number}
+                        {employee.documents?.socialSecurityNumber?.number}
                       </p>
-                      {employee.documents.socialSecurityNumber.expiryDate && (
+                      {employee.documents?.socialSecurityNumber?.expiryDate && (
                         <div className="mt-1">
                           {(() => {
                             const status = getExpiryStatus(
-                              employee.documents.socialSecurityNumber
-                                .expiryDate,
+                              employee.documents?.socialSecurityNumber
+                                ?.expiryDate ?? "",
                             );
                             return status ? (
                               <Badge
@@ -453,16 +453,16 @@ export default function EmployeeProfileView({
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Electoral Card</span>
                   </div>
-                  {employee.documents.electoralCard.number ? (
+                  {employee.documents?.electoralCard?.number ? (
                     <div>
                       <p className="text-sm">
-                        {employee.documents.electoralCard.number}
+                        {employee.documents?.electoralCard?.number}
                       </p>
-                      {employee.documents.electoralCard.expiryDate && (
+                      {employee.documents?.electoralCard?.expiryDate && (
                         <div className="mt-1">
                           {(() => {
                             const status = getExpiryStatus(
-                              employee.documents.electoralCard.expiryDate,
+                              employee.documents?.electoralCard?.expiryDate ?? "",
                             );
                             return status ? (
                               <Badge
@@ -489,16 +489,16 @@ export default function EmployeeProfileView({
                     <CreditCard className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">ID Card</span>
                   </div>
-                  {employee.documents.idCard.number ? (
+                  {employee.documents?.idCard?.number ? (
                     <div>
                       <p className="text-sm">
-                        {employee.documents.idCard.number}
+                        {employee.documents?.idCard?.number}
                       </p>
-                      {employee.documents.idCard.expiryDate && (
+                      {employee.documents?.idCard?.expiryDate && (
                         <div className="mt-1">
                           {(() => {
                             const status = getExpiryStatus(
-                              employee.documents.idCard.expiryDate,
+                              employee.documents?.idCard?.expiryDate ?? "",
                             );
                             return status ? (
                               <Badge
@@ -525,16 +525,16 @@ export default function EmployeeProfileView({
                     <Globe className="h-4 w-4 text-muted-foreground" />
                     <span className="font-medium">Passport</span>
                   </div>
-                  {employee.documents.passport.number ? (
+                  {employee.documents?.passport?.number ? (
                     <div>
                       <p className="text-sm">
-                        {employee.documents.passport.number}
+                        {employee.documents?.passport?.number}
                       </p>
-                      {employee.documents.passport.expiryDate && (
+                      {employee.documents?.passport?.expiryDate && (
                         <div className="mt-1">
                           {(() => {
                             const status = getExpiryStatus(
-                              employee.documents.passport.expiryDate,
+                              employee.documents?.passport?.expiryDate ?? "",
                             );
                             return status ? (
                               <Badge
@@ -569,8 +569,8 @@ export default function EmployeeProfileView({
                       <FileText className="h-4 w-4 text-muted-foreground" />
                       <span className="font-medium">Work Contract</span>
                     </div>
-                    {employee.documents.workContract?.fileUrl &&
-                    employee.documents.workContract.fileUrl.trim() !== "" ? (
+                    {employee.documents?.workContract?.fileUrl &&
+                    employee.documents?.workContract?.fileUrl.trim() !== "" ? (
                       <div>
                         <Badge
                           variant="default"
@@ -578,11 +578,11 @@ export default function EmployeeProfileView({
                         >
                           ✓ Document uploaded
                         </Badge>
-                        {employee.documents.workContract.uploadDate && (
+                        {employee.documents?.workContract?.uploadDate && (
                           <p className="text-xs text-muted-foreground mt-1">
                             Uploaded:{" "}
                             {new Date(
-                              employee.documents.workContract.uploadDate,
+                              employee.documents?.workContract?.uploadDate,
                             ).toLocaleDateString()}
                           </p>
                         )}
@@ -598,7 +598,7 @@ export default function EmployeeProfileView({
                   </div>
 
                   {/* Working Visa/Residency */}
-                  {employee.documents.nationality !== "Timor-Leste" && (
+                  {employee.documents?.nationality !== "Timor-Leste" && (
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
                         <Globe className="h-4 w-4 text-muted-foreground" />
@@ -606,18 +606,18 @@ export default function EmployeeProfileView({
                           Working Visa/Residency
                         </span>
                       </div>
-                      {employee.documents.workingVisaResidency?.number ? (
+                      {employee.documents?.workingVisaResidency?.number ? (
                         <div className="space-y-2">
                           <p className="text-sm font-medium">
-                            {employee.documents.workingVisaResidency.number}
+                            {employee.documents?.workingVisaResidency?.number}
                           </p>
-                          {employee.documents.workingVisaResidency
-                            .expiryDate && (
+                          {employee.documents?.workingVisaResidency
+                            ?.expiryDate && (
                             <div>
                               {(() => {
                                 const status = getExpiryStatus(
-                                  employee.documents.workingVisaResidency
-                                    .expiryDate,
+                                  employee.documents?.workingVisaResidency
+                                    ?.expiryDate ?? "",
                                 );
                                 return status ? (
                                   <Badge
@@ -630,8 +630,8 @@ export default function EmployeeProfileView({
                               })()}
                             </div>
                           )}
-                          {employee.documents.workingVisaResidency.fileUrl &&
-                          employee.documents.workingVisaResidency.fileUrl.trim() !==
+                          {employee.documents?.workingVisaResidency?.fileUrl &&
+                          employee.documents?.workingVisaResidency?.fileUrl.trim() !==
                             "" ? (
                             <Badge
                               variant="default"

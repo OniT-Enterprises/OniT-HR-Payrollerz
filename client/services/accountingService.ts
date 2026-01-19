@@ -34,8 +34,14 @@ import type {
   TrialBalanceRow,
   GeneralLedgerEntry,
 } from '@/types/accounting';
-import { getDefaultAccounts, PAYROLL_JOURNAL_MAPPINGS } from '@/lib/accounting/chart-of-accounts';
+import {
+  getDefaultAccounts,
+  PAYROLL_JOURNAL_MAPPINGS,
+  EXPENSE_CATEGORY_TO_ACCOUNT,
+  MONEY_JOURNAL_MAPPINGS,
+} from '@/lib/accounting/chart-of-accounts';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
+import type { Invoice, Expense, Bill, PaymentMethod, ExpenseCategory } from '@/types/money';
 
 // ============================================
 // ACCOUNTS SERVICE
@@ -492,6 +498,371 @@ class JournalEntryService {
       status: 'posted',
       postedAt: serverTimestamp(),
       postedBy: summary.approvedBy || 'system',
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  // ============================================
+  // MONEY MODULE JOURNAL ENTRIES
+  // ============================================
+
+  /**
+   * Create journal entry when an invoice is sent
+   * Debit: Trade Receivables (1210)
+   * Credit: Service Revenue (4100)
+   */
+  async createFromInvoice(
+    tenantId: string,
+    invoice: Invoice,
+    createdBy: string
+  ): Promise<string> {
+    const invoiceDate = invoice.issueDate;
+    const year = new Date(invoiceDate).getFullYear();
+    const month = new Date(invoiceDate).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    const mapping = MONEY_JOURNAL_MAPPINGS.invoiceCreated;
+    const arAccount = await getAccountId(mapping.debit.code);
+    const revenueAccount = await getAccountId(mapping.credit.code);
+
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: arAccount.id,
+        accountCode: mapping.debit.code,
+        accountName: arAccount.name,
+        debit: invoice.total,
+        credit: 0,
+        description: `AR - ${invoice.invoiceNumber}`,
+      },
+      {
+        lineNumber: 2,
+        accountId: revenueAccount.id,
+        accountCode: mapping.credit.code,
+        accountName: revenueAccount.name,
+        debit: 0,
+        credit: invoice.total,
+        description: `Revenue - ${invoice.invoiceNumber}`,
+      },
+    ];
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: invoiceDate,
+      description: `Invoice ${invoice.invoiceNumber} - ${invoice.customerName}`,
+      source: 'invoice',
+      sourceId: invoice.id,
+      sourceRef: invoice.invoiceNumber,
+      lines,
+      totalDebit: invoice.total,
+      totalCredit: invoice.total,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  /**
+   * Create journal entry when payment is received on an invoice
+   * Debit: Cash in Bank (1120) or Cash on Hand (1110)
+   * Credit: Trade Receivables (1210)
+   */
+  async createFromInvoicePayment(
+    tenantId: string,
+    payment: {
+      invoiceId: string;
+      invoiceNumber: string;
+      customerName: string;
+      date: string;
+      amount: number;
+      method: PaymentMethod;
+      reference?: string;
+    },
+    createdBy: string
+  ): Promise<string> {
+    const year = new Date(payment.date).getFullYear();
+    const month = new Date(payment.date).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    // Use Cash on Hand for cash payments, Bank for others
+    const cashCode = payment.method === 'cash' ? '1110' : '1120';
+    const cashAccount = await getAccountId(cashCode);
+    const arAccount = await getAccountId('1210');
+
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: cashAccount.id,
+        accountCode: cashCode,
+        accountName: cashAccount.name,
+        debit: payment.amount,
+        credit: 0,
+        description: `Payment received - ${payment.invoiceNumber}`,
+      },
+      {
+        lineNumber: 2,
+        accountId: arAccount.id,
+        accountCode: '1210',
+        accountName: arAccount.name,
+        debit: 0,
+        credit: payment.amount,
+        description: `Clear AR - ${payment.invoiceNumber}`,
+      },
+    ];
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: payment.date,
+      description: `Payment received for ${payment.invoiceNumber} - ${payment.customerName}`,
+      source: 'payment',
+      sourceId: payment.invoiceId,
+      sourceRef: payment.reference || payment.invoiceNumber,
+      lines,
+      totalDebit: payment.amount,
+      totalCredit: payment.amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  /**
+   * Create journal entry when a bill (vendor invoice) is received
+   * Debit: Expense account (based on category)
+   * Credit: Trade Payables (2110)
+   */
+  async createFromBill(
+    tenantId: string,
+    bill: Bill,
+    createdBy: string
+  ): Promise<string> {
+    const year = new Date(bill.billDate).getFullYear();
+    const month = new Date(bill.billDate).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    // Get expense account from category
+    const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[bill.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+    const expenseAccount = await getAccountId(expenseMapping.code);
+    const apAccount = await getAccountId('2110');
+
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: expenseAccount.id,
+        accountCode: expenseMapping.code,
+        accountName: expenseAccount.name,
+        debit: bill.total,
+        credit: 0,
+        description: `${bill.description} - ${bill.vendorName}`,
+      },
+      {
+        lineNumber: 2,
+        accountId: apAccount.id,
+        accountCode: '2110',
+        accountName: apAccount.name,
+        debit: 0,
+        credit: bill.total,
+        description: `AP - ${bill.billNumber || bill.vendorName}`,
+      },
+    ];
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: bill.billDate,
+      description: `Bill from ${bill.vendorName} - ${bill.description}`,
+      source: 'invoice', // Using 'invoice' for bills too (vendor invoice)
+      sourceId: bill.id,
+      sourceRef: bill.billNumber || `Bill-${bill.id.slice(0, 8)}`,
+      lines,
+      totalDebit: bill.total,
+      totalCredit: bill.total,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  /**
+   * Create journal entry when a bill is paid
+   * Debit: Trade Payables (2110)
+   * Credit: Cash in Bank (1120) or Cash on Hand (1110)
+   */
+  async createFromBillPayment(
+    tenantId: string,
+    payment: {
+      billId: string;
+      billNumber?: string;
+      vendorName: string;
+      date: string;
+      amount: number;
+      method: PaymentMethod;
+      reference?: string;
+    },
+    createdBy: string
+  ): Promise<string> {
+    const year = new Date(payment.date).getFullYear();
+    const month = new Date(payment.date).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    const apAccount = await getAccountId('2110');
+    // Use Cash on Hand for cash payments, Bank for others
+    const cashCode = payment.method === 'cash' ? '1110' : '1120';
+    const cashAccount = await getAccountId(cashCode);
+
+    const refLabel = payment.billNumber || `Bill-${payment.billId.slice(0, 8)}`;
+
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: apAccount.id,
+        accountCode: '2110',
+        accountName: apAccount.name,
+        debit: payment.amount,
+        credit: 0,
+        description: `Clear AP - ${refLabel}`,
+      },
+      {
+        lineNumber: 2,
+        accountId: cashAccount.id,
+        accountCode: cashCode,
+        accountName: cashAccount.name,
+        debit: 0,
+        credit: payment.amount,
+        description: `Payment to ${payment.vendorName}`,
+      },
+    ];
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: payment.date,
+      description: `Bill payment to ${payment.vendorName} - ${refLabel}`,
+      source: 'payment',
+      sourceId: payment.billId,
+      sourceRef: payment.reference || refLabel,
+      lines,
+      totalDebit: payment.amount,
+      totalCredit: payment.amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry);
+  }
+
+  /**
+   * Create journal entry when an expense is recorded (direct expense, not from a bill)
+   * Debit: Expense account (based on category)
+   * Credit: Cash in Bank (1120) or Cash on Hand (1110)
+   */
+  async createFromExpense(
+    tenantId: string,
+    expense: Expense,
+    createdBy: string
+  ): Promise<string> {
+    const year = new Date(expense.date).getFullYear();
+    const month = new Date(expense.date).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+
+    const getAccountId = async (code: string) => {
+      const account = await accountService.getAccountByCode(tenantId, code);
+      if (!account?.id) {
+        throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
+      }
+      return { id: account.id, name: account.name };
+    };
+
+    // Get expense account from category
+    const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[expense.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+    const expenseAccount = await getAccountId(expenseMapping.code);
+
+    // Use Cash on Hand for cash payments, Bank for others
+    const cashCode = expense.paymentMethod === 'cash' ? '1110' : '1120';
+    const cashAccount = await getAccountId(cashCode);
+
+    const lines: JournalEntryLine[] = [
+      {
+        lineNumber: 1,
+        accountId: expenseAccount.id,
+        accountCode: expenseMapping.code,
+        accountName: expenseAccount.name,
+        debit: expense.amount,
+        credit: 0,
+        description: expense.description,
+      },
+      {
+        lineNumber: 2,
+        accountId: cashAccount.id,
+        accountCode: cashCode,
+        accountName: cashAccount.name,
+        debit: 0,
+        credit: expense.amount,
+        description: `Expense - ${expense.description}`,
+      },
+    ];
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: expense.date,
+      description: `Expense: ${expense.description}${expense.vendorName ? ` - ${expense.vendorName}` : ''}`,
+      source: 'receipt', // Using 'receipt' for direct expenses
+      sourceId: expense.id,
+      sourceRef: `EXP-${expense.id.slice(0, 8)}`,
+      lines,
+      totalDebit: expense.amount,
+      totalCredit: expense.amount,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: createdBy,
       fiscalYear: year,
       fiscalPeriod: month,
     };
