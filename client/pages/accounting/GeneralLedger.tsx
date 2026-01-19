@@ -47,8 +47,10 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 export default function GeneralLedger() {
+  const tenantId = useTenantId();
   // State
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -73,7 +75,7 @@ export default function GeneralLedger() {
   useEffect(() => {
     const loadAccounts = async () => {
       try {
-        const accountsList = await accountingService.accounts.getAllAccounts();
+        const accountsList = await accountingService.accounts.getAllAccounts(tenantId);
         // Sort by code
         accountsList.sort((a, b) => a.code.localeCompare(b.code));
         setAccounts(accountsList);
@@ -104,6 +106,7 @@ export default function GeneralLedger() {
       try {
         // Query by account code since that's what we store in GL entries
         const entries = await accountingService.generalLedger.getEntriesByAccount(
+          tenantId,
           selectedAccount.id || selectedAccount.code,
           { startDate, endDate }
         );

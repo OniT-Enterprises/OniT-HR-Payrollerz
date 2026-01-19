@@ -273,6 +273,36 @@ service cloud.firestore {
       }
 
       // ============================================
+      // AUDIT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /auditLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Audit logs are immutable in-client
+        allow update, delete: if false;
+      }
+
+      // ============================================
+      // ARCHIVES SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /archives/{archiveId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Permanent deletion reserved for superadmins
+        allow delete: if isSuperAdmin();
+      }
+
+      // ============================================
+      // QUICKBOOKS EXPORT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /qbExportLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Export logs are immutable
+        allow update, delete: if false;
+      }
+
+      // ============================================
       // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
       // ============================================
       match /{collection}/{docId} {

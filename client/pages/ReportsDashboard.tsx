@@ -37,6 +37,8 @@ import {
   Play,
   Settings2,
   History,
+  Landmark,
+  AlertCircle,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -425,6 +427,58 @@ export default function ReportsDashboard() {
               );
             })}
           </div>
+        </section>
+
+        {/* Tax & Compliance Section - TL Government Reporting */}
+        <section>
+          <div className="flex items-center gap-2 mb-4">
+            <Landmark className="h-4 w-4 text-amber-600" />
+            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">Tax & Compliance (ATTL)</h2>
+          </div>
+          <Card className="border-l-4 border-l-amber-500 hover:border-l-amber-600 transition-all">
+            <CardContent className="p-4">
+              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                <div
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                  onClick={() => navigate("/reports/attl-monthly-wit")}
+                >
+                  <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Monthly WIT Return</p>
+                    <p className="text-xs text-muted-foreground">10% wage income tax filing</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div
+                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-not-allowed opacity-60"
+                  title="Coming soon"
+                >
+                  <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">Annual WIT Return</p>
+                    <p className="text-xs text-muted-foreground">Coming soon</p>
+                  </div>
+                </div>
+                <div
+                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
+                  onClick={() => navigate("/reports/inss-monthly")}
+                >
+                  <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                    <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium text-sm">INSS Contribution Report</p>
+                    <p className="text-xs text-muted-foreground">Monthly INSS submission</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </section>
 
         {/* Secondary Categories - Collapsible */}

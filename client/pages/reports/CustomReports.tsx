@@ -31,6 +31,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import { departmentService, Department } from "@/services/departmentService";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
 import { useAllDepartments } from "@/hooks/useDepartments";
@@ -162,6 +163,7 @@ export default function CustomReports() {
 
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   const availableColumns = COLUMN_OPTIONS.filter((c) => c.dataSource === dataSource);
 
@@ -192,11 +194,11 @@ export default function CustomReports() {
 
       if (config.dataSource === "employees") {
         // Try React Query cache first, then fetch
-        let employees = queryClient.getQueryData<any[]>(['employees', 'list', { pageSize: 500 }]);
+        let employees = queryClient.getQueryData<any[]>(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }]);
         if (!employees) {
-          const result = await employeeService.getEmployees({ pageSize: 500 });
+          const result = await employeeService.getEmployees(tenantId, { pageSize: 500 });
           employees = result.data;
-          queryClient.setQueryData(['employees', 'list', { pageSize: 500 }], result);
+          queryClient.setQueryData(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }], employees);
         }
         data = employees.filter((e) => {
           if (config.filters.status && e.status !== config.filters.status) return false;

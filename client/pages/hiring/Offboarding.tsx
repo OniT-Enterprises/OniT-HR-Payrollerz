@@ -34,6 +34,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -114,6 +115,7 @@ export default function Offboarding() {
   const [isOffline, setIsOffline] = useState(false);
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   // New offboarding form data
   const [newOffboarding, setNewOffboarding] = useState({
@@ -159,7 +161,7 @@ export default function Offboarding() {
       // Try to load employees with retry logic
       let employeesData = [];
       try {
-        employeesData = await employeeService.getAllEmployees();
+        employeesData = await employeeService.getAllEmployees(tenantId);
         setEmployees(employeesData);
       } catch (firebaseError) {
         console.warn(

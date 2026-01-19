@@ -23,5 +23,7 @@ __exportStar(require("./timeleave"), exports);
 __exportStar(require("./payroll"), exports);
 __exportStar(require("./tenant"), exports);
 __exportStar(require("./admin"), exports);
+__exportStar(require("./documentAlerts"), exports);
+__exportStar(require("./chat"), exports);
 // You can add more function modules here as they're created
 //# sourceMappingURL=index.js.map

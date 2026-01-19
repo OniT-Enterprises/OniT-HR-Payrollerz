@@ -26,5 +26,5 @@ firebase deploy --only firestore:indexes
 
 echo "✅ Deployment completed!"
 echo ""
-echo "📝 Note: The Firestore rules have been updated to allow unrestricted access for development."
-echo "🔒 For production, uncomment the authentication-based rules in firestore.rules"
+echo "📝 Note: Firestore rules are deployed from the config in firebase.json (currently: firestore.rules)."
+echo "🧪 For local emulators, use firebase.dev.json (firestore-dev.rules)."

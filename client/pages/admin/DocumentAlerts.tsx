@@ -71,7 +71,7 @@ export default function DocumentAlerts() {
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const result = await employeeService.getAllEmployees();
+        const result = await employeeService.getAllEmployees(tenantId);
         setEmployees(result);
       } catch (error) {
         console.error("Failed to load employees:", error);

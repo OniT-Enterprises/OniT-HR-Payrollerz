@@ -28,6 +28,7 @@ import DepartmentManager from "@/components/DepartmentManager";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
@@ -45,6 +46,7 @@ import {
 
 export default function Departments() {
   const navigate = useNavigate();
+  const tenantId = useTenantId();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,7 +69,7 @@ export default function Departments() {
     try {
       setLoading(true);
       const [employeesData, departmentsData] = await Promise.all([
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
         departmentService.getAllDepartments(),
       ]);
       setEmployees(employeesData);

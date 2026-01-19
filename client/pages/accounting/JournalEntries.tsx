@@ -63,6 +63,7 @@ import { accountingService } from "@/services/accountingService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 interface EntryLineForm {
   accountId: string;
@@ -75,6 +76,7 @@ interface EntryLineForm {
 
 export default function JournalEntries() {
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -109,10 +111,10 @@ export default function JournalEntries() {
     try {
       setLoading(true);
       const [entriesData, accountsData] = await Promise.all([
-        accountingService.journalEntries.getAllJournalEntries({
+        accountingService.journalEntries.getAllJournalEntries(tenantId, {
           fiscalYear: parseInt(yearFilter),
         }),
-        accountingService.accounts.getAllAccounts(),
+        accountingService.accounts.getAllAccounts(tenantId),
       ]);
       setEntries(entriesData);
       setAccounts(accountsData.filter((a) => a.isActive));
@@ -312,7 +314,7 @@ export default function JournalEntries() {
 
       const year = new Date(entryDate).getFullYear();
       const month = new Date(entryDate).getMonth() + 1;
-      const entryNumber = await accountingService.journalEntries.getNextEntryNumber(year);
+      const entryNumber = await accountingService.journalEntries.getNextEntryNumber(tenantId, year);
 
       const lines: JournalEntryLine[] = validLines.map((line, index) => ({
         lineNumber: index + 1,
@@ -343,7 +345,7 @@ export default function JournalEntries() {
         entry.postedBy = "current-user";
       }
 
-      await accountingService.journalEntries.createJournalEntry(entry);
+      await accountingService.journalEntries.createJournalEntry(tenantId, entry);
 
       toast({
         title: "Success",

@@ -93,7 +93,7 @@ service cloud.firestore {
     }
 
     // ============================================
-    // ADMIN AUDIT LOG
+    // ADMIN AUDIT LOG (superadmin actions)
     // ============================================
     match /adminAuditLog/{entryId} {
       // Only superadmins can read audit logs
@@ -103,6 +103,26 @@ service cloud.firestore {
       allow create: if isSuperAdmin();
 
       // Audit logs are immutable
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // AUDIT LOGS (tenant-level compliance trail)
+    // ============================================
+    match /audit_logs/{entryId} {
+      // Superadmins can read all audit logs
+      allow read: if isSuperAdmin();
+
+      // Tenant members can read their tenant's audit logs
+      allow read: if isAuthenticated() &&
+        resource.data.tenantId != null &&
+        isTenantMember(resource.data.tenantId);
+
+      // Any authenticated user can create audit entries
+      // (entries are created automatically by services)
+      allow create: if isAuthenticated();
+
+      // Audit logs are immutable - no updates or deletes
       allow update, delete: if false;
     }
 
@@ -273,6 +293,36 @@ service cloud.firestore {
       }
 
       // ============================================
+      // AUDIT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /auditLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Audit logs are immutable in-client
+        allow update, delete: if false;
+      }
+
+      // ============================================
+      // ARCHIVES SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /archives/{archiveId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Permanent deletion reserved for superadmins
+        allow delete: if isSuperAdmin();
+      }
+
+      // ============================================
+      // QUICKBOOKS EXPORT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /qbExportLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Export logs are immutable
+        allow update, delete: if false;
+      }
+
+      // ============================================
       // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
       // ============================================
       match /{collection}/{docId} {
@@ -295,7 +345,8 @@ service cloud.firestore {
     // TODO: Remove after full migration
     // ============================================
     match /employees/{employeeId} {
-      allow read, write: if isAuthenticated();
+      // Legacy global collection is no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
     }
 
     match /departments/{departmentId} {
@@ -311,7 +362,9 @@ service cloud.firestore {
     }
 
     match /tenant_settings/{docId} {
-      allow read, write: if isAuthenticated();
+      // Legacy (pre-tenant-scoped) settings were keyed by tenantId as the document id.
+      allow read: if isSuperAdmin() || isTenantMember(docId);
+      allow write: if isSuperAdmin() || isTenantAdmin(docId);
     }
 
     match /leave_requests/{docId} {
@@ -348,11 +401,31 @@ service cloud.firestore {
 
     // Payroll module collections
     match /payrollRuns/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /payrollRecords/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /benefitEnrollments/{docId} {
@@ -371,25 +444,41 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
+    // Tax filings (TL WIT + INSS tracking)
+    match /taxFilings/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
     // Accounting module collections
     match /accounts/{docId} {
-      allow read, write: if isAuthenticated();
+      // Legacy global accounting collections are no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
     }
 
     match /journalEntries/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /generalLedger/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /fiscalYears/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /fiscalPeriods/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /settings/{docId} {

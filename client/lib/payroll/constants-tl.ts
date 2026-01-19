@@ -7,6 +7,8 @@
  * - Labor Code: Law 4/2012
  */
 
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+
 // ============================================
 // WITHHOLDING INCOME TAX (WIT - Impostu Retidu)
 // ============================================
@@ -15,7 +17,7 @@
  * Timor-Leste Income Tax Rules
  * - Residents: 10% on income exceeding $500/month
  * - Non-residents: 10% on ALL income (no threshold)
- * - Per diem and travel allowances are NOT taxable
+ * - Wages generally include allowances and reimbursements unless specifically exempt
  */
 export const TL_INCOME_TAX = {
   // Tax rate for residents and non-residents
@@ -38,8 +40,9 @@ export const TL_INCOME_TAX = {
 /**
  * INSS Contribution Rates (Decree-Law 19/2016)
  * Total: 10% (4% employee + 6% employer)
- * Base: Gross salary - Absences - Food allowance
- * Excluded: Per diem, travel allowances
+ * Base: remuneracao contributiva (remuneração base + certain supplements per INSS guidance)
+ * Excluded (per INSS guidance): overtime; bonuses/gratuities/profit-sharing; food subsidies; subsistence subsidies
+ * (transport/board/lodging/travel); representation expenses; and other extraordinary allowances.
  */
 export const TL_INSS = {
   // Employee contribution
@@ -54,13 +57,57 @@ export const TL_INSS = {
   // Minimum salary for INSS
   minimumSalary: 115,  // Current minimum wage ~$115
 
-  // Items excluded from INSS calculation
+  // Items excluded from INSS contribution base (see INSS guidance)
   excludedItems: [
     'per_diem',
     'travel_allowance',
     'food_allowance',
+    'transport_allowance',
+    'housing_allowance',
+    'overtime',
+    'bonus',
+    'gratuity',
+    'profit_sharing',
     'reimbursement',
+    'representation_expense',
   ],
+};
+
+export const TL_SOCIAL_PENSION_USD = 60;
+
+/**
+ * Optional registration (voluntary) uses Social Pension (SP) multiples as contribution bands.
+ * Reference: INSS contributions guidance.
+ */
+export const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
+  2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 100, 200,
+] as const;
+
+export interface TLInssContributionBand {
+  band: number;
+  multiplier: number;
+  base: number;
+}
+
+export const getTLInssOptionalContributionBands = (
+  socialPensionUSD: number = TL_SOCIAL_PENSION_USD
+): TLInssContributionBand[] => {
+  return TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS.map((multiplier, index) => ({
+    band: index + 1,
+    multiplier,
+    base: Math.round(socialPensionUSD * multiplier * 100) / 100,
+  }));
+};
+
+export const getDefaultTLInssOptionalContributionBase = (
+  declaredMonthlyIncomeUSD: number,
+  socialPensionUSD: number = TL_SOCIAL_PENSION_USD
+): number => {
+  const amount = Math.max(0, declaredMonthlyIncomeUSD);
+  if (amount <= 0) return 0;
+
+  const bands = getTLInssOptionalContributionBands(socialPensionUSD);
+  return (bands.find(b => b.base >= amount) ?? bands[bands.length - 1]).base;
 };
 
 // ============================================
@@ -204,24 +251,11 @@ export const TL_ANNUAL_LEAVE = {
 // PUBLIC HOLIDAYS (Timor-Leste)
 // ============================================
 
-export const TL_PUBLIC_HOLIDAYS_2025 = [
-  { date: '2025-01-01', name: 'New Year\'s Day', nameTetun: 'Loron Tinan Foun' },
-  { date: '2025-04-18', name: 'Good Friday', nameTetun: 'Sesta-feira Santa' },
-  { date: '2025-05-01', name: 'Labor Day', nameTetun: 'Loron Trabalhador' },
-  { date: '2025-05-20', name: 'Independence Restoration Day', nameTetun: 'Loron Restaurasaun Independensia' },
-  { date: '2025-06-08', name: 'Corpus Christi', nameTetun: 'Corpus Christi' },
-  { date: '2025-08-30', name: 'Popular Consultation Day', nameTetun: 'Loron Konsulta Popular' },
-  { date: '2025-11-01', name: 'All Saints Day', nameTetun: 'Loron Santu Hotu' },
-  { date: '2025-11-02', name: 'All Souls Day', nameTetun: 'Loron Finadu' },
-  { date: '2025-11-12', name: 'National Youth Day', nameTetun: 'Loron Juventude Nasional' },
-  { date: '2025-11-28', name: 'Independence Proclamation Day', nameTetun: 'Loron Proklamasaun Independensia' },
-  { date: '2025-12-07', name: 'National Heroes Day', nameTetun: 'Loron Heroi Nasional' },
-  { date: '2025-12-08', name: 'Immaculate Conception', nameTetun: 'Loron Imakulada Konseisaun' },
-  { date: '2025-12-25', name: 'Christmas Day', nameTetun: 'Loron Natal' },
-  // Variable Islamic holidays - update annually
-  { date: '2025-03-30', name: 'Eid al-Fitr', nameTetun: 'Loron Hari Raya Idul Fitri', variable: true },
-  { date: '2025-06-06', name: 'Eid al-Adha', nameTetun: 'Loron Hari Raya Idul Adha', variable: true },
-];
+/**
+ * Keep a concrete year list for backwards compatibility in the codebase.
+ * Prefer `getTLPublicHolidays(year)` for new code.
+ */
+export const TL_PUBLIC_HOLIDAYS_2025 = getTLPublicHolidays(2025);
 
 // ============================================
 // CONTRACT TYPES
@@ -462,18 +496,23 @@ export const TL_MINIMUM_WAGE = {
  * Check if a date is a public holiday
  */
 export const isPublicHoliday = (date: Date | string, year: number = new Date().getFullYear()): boolean => {
-  const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-  const holidays = TL_PUBLIC_HOLIDAYS_2025.map(h => h.date.replace('2025', year.toString()));
-  return holidays.includes(dateStr);
+  const dateStr = typeof date === 'string'
+    ? date
+    : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const holidays = getTLPublicHolidays(year);
+  return holidays.some(h => h.date === dateStr);
 };
 
 /**
  * Get public holiday name if date is a holiday
  */
 export const getHolidayName = (date: Date | string): string | null => {
-  const dateStr = typeof date === 'string' ? date : date.toISOString().split('T')[0];
-  const holiday = TL_PUBLIC_HOLIDAYS_2025.find(h => h.date === dateStr);
-  return holiday ? holiday.name : null;
+  const dateStr = typeof date === 'string'
+    ? date
+    : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+  const year = parseInt(dateStr.substring(0, 4), 10);
+  const holiday = getTLPublicHolidays(year).find(h => h.date === dateStr);
+  return holiday?.name ?? null;
 };
 
 /**

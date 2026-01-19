@@ -67,7 +67,7 @@ describe('Tenant Isolation Security Rules', () => {
       firestore: {
         rules: await import('../../firestore.rules?raw').then(m => m.default),
         host: 'localhost',
-        port: 8080,
+        port: 8081,
       },
     });
   });
@@ -88,81 +88,148 @@ describe('Tenant Isolation Security Rules', () => {
   });
 
   async function setupTestData() {
-    const adminDb = testEnv.authenticatedContext('admin', {
-      admin: true,
-    }).firestore();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      const adminDb = context.firestore();
 
-    // Create tenant documents
-    await setDoc(doc(adminDb, 'tenants/tenant-a'), {
-      name: 'Company A',
-      createdAt: new Date(),
-    });
+      // Create tenant documents
+      await setDoc(doc(adminDb, 'tenants/tenant-a'), {
+        name: 'Company A',
+        createdAt: new Date(),
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-b'), {
-      name: 'Company B', 
-      createdAt: new Date(),
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-b'), {
+        name: 'Company B',
+        createdAt: new Date(),
+      });
 
-    // Create tenant member documents
-    await setDoc(doc(adminDb, 'tenants/tenant-a/members/owner-a'), {
-      uid: 'owner-a',
-      role: 'owner',
-      modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
-    });
+      // Create tenant member documents
+      await setDoc(doc(adminDb, 'tenants/tenant-a/members/owner-a'), {
+        uid: 'owner-a',
+        role: 'owner',
+        modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-a/members/hr-admin-a'), {
-      uid: 'hr-admin-a',
-      role: 'hr-admin', 
-      modules: ['hiring', 'staff', 'timeleave', 'payroll'],
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/members/hr-admin-a'), {
+        uid: 'hr-admin-a',
+        role: 'hr-admin',
+        modules: ['hiring', 'staff', 'timeleave', 'payroll'],
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-b/members/owner-b'), {
-      uid: 'owner-b',
-      role: 'owner',
-      modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-b/members/owner-b'), {
+        uid: 'owner-b',
+        role: 'owner',
+        modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-a/members/multi-user'), {
-      uid: 'multi-user',
-      role: 'viewer',
-      modules: ['staff'],
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/members/multi-user'), {
+        uid: 'multi-user',
+        role: 'viewer',
+        modules: ['staff'],
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-b/members/multi-user'), {
-      uid: 'multi-user', 
-      role: 'viewer',
-      modules: ['staff'],
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-b/members/multi-user'), {
+        uid: 'multi-user',
+        role: 'viewer',
+        modules: ['staff'],
+      });
 
-    // Create some test business data
-    await setDoc(doc(adminDb, 'tenants/tenant-a/departments/dept-a-1'), {
-      name: 'Engineering',
-      createdAt: new Date(),
-    });
+      // Create some test business data
+      await setDoc(doc(adminDb, 'tenants/tenant-a/departments/dept-a-1'), {
+        name: 'Engineering',
+        createdAt: new Date(),
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-a-1'), {
-      personalInfo: {
-        firstName: 'John',
-        lastName: 'Doe',
-        email: 'john@company-a.com',
-      },
-      departmentId: 'dept-a-1',
-      status: 'active',
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-a/employees/emp-a-1'), {
+        personalInfo: {
+          firstName: 'John',
+          lastName: 'Doe',
+          email: 'john@company-a.com',
+        },
+        departmentId: 'dept-a-1',
+        status: 'active',
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-b/departments/dept-b-1'), {
-      name: 'Sales',
-      createdAt: new Date(),
-    });
+      await setDoc(doc(adminDb, 'tenants/tenant-b/departments/dept-b-1'), {
+        name: 'Sales',
+        createdAt: new Date(),
+      });
 
-    await setDoc(doc(adminDb, 'tenants/tenant-b/employees/emp-b-1'), {
-      personalInfo: {
-        firstName: 'Jane',
-        lastName: 'Smith', 
-        email: 'jane@company-b.com',
-      },
-      departmentId: 'dept-b-1',
-      status: 'active',
+      await setDoc(doc(adminDb, 'tenants/tenant-b/employees/emp-b-1'), {
+        personalInfo: {
+          firstName: 'Jane',
+          lastName: 'Smith',
+          email: 'jane@company-b.com',
+        },
+        departmentId: 'dept-b-1',
+        status: 'active',
+      });
+
+      // Seed payroll runs/records and tax filings (root collections with tenantId)
+      await setDoc(doc(adminDb, 'payrollRuns/run-a-1'), {
+        tenantId: 'tenant-a',
+        periodStart: '2025-12-01',
+        periodEnd: '2025-12-31',
+        payDate: '2026-01-05',
+        payFrequency: 'monthly',
+        status: 'paid',
+        totalGrossPay: 1000,
+        totalNetPay: 900,
+        totalDeductions: 100,
+        totalEmployerTaxes: 60,
+        totalEmployerContributions: 0,
+        employeeCount: 1,
+        createdBy: 'owner-a',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await setDoc(doc(adminDb, 'payrollRuns/run-b-1'), {
+        tenantId: 'tenant-b',
+        periodStart: '2025-12-01',
+        periodEnd: '2025-12-31',
+        payDate: '2026-01-05',
+        payFrequency: 'monthly',
+        status: 'paid',
+        totalGrossPay: 2000,
+        totalNetPay: 1800,
+        totalDeductions: 200,
+        totalEmployerTaxes: 120,
+        totalEmployerContributions: 0,
+        employeeCount: 1,
+        createdBy: 'owner-b',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      });
+
+      await setDoc(doc(adminDb, 'taxFilings/filing-a-1'), {
+        tenantId: 'tenant-a',
+        type: 'monthly_wit',
+        period: '2025-12',
+        status: 'pending',
+        dueDate: '2026-01-15',
+        totalWages: 1000,
+        totalWITWithheld: 50,
+        employeeCount: 1,
+        dataSnapshot: { stub: true },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 'owner-a',
+      });
+
+      await setDoc(doc(adminDb, 'taxFilings/filing-b-1'), {
+        tenantId: 'tenant-b',
+        type: 'monthly_wit',
+        period: '2025-12',
+        status: 'pending',
+        dueDate: '2026-01-15',
+        totalWages: 2000,
+        totalWITWithheld: 100,
+        employeeCount: 1,
+        dataSnapshot: { stub: true },
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        createdBy: 'owner-b',
+      });
     });
   }
 
@@ -405,18 +472,15 @@ describe('Tenant Isolation Security Rules', () => {
   });
 
   describe('Reference Data Access', () => {
-    it('should allow all users to read reference data', async () => {
-      // Set up reference data
-      const adminDb = testEnv.authenticatedContext('admin', {
-        admin: true,
-      }).firestore();
-
-      await setDoc(doc(adminDb, 'reference/holidays/2024-01-01'), {
-        name: 'New Year Day',
-        type: 'public',
+    it('should allow authenticated users to read reference data', async () => {
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const adminDb = context.firestore();
+        await setDoc(doc(adminDb, 'reference/holidays/2024-01-01'), {
+          name: 'New Year Day',
+          type: 'public',
+        });
       });
 
-      // Test authenticated user
       const userDb = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
         tenants: testUsers.tenantAOwner.tenants,
       }).firestore();
@@ -425,11 +489,23 @@ describe('Tenant Isolation Security Rules', () => {
         getDoc(doc(userDb, 'reference/holidays/2024-01-01'))
       );
 
-      // Test unauthenticated user
       const anonDb = testEnv.unauthenticatedContext().firestore();
       
-      await assertSucceeds(
+      await assertFails(
         getDoc(doc(anonDb, 'reference/holidays/2024-01-01'))
+      );
+    });
+
+    it('should allow superadmins to write reference data', async () => {
+      const superDb = testEnv.authenticatedContext('superadmin', {
+        superadmin: true,
+      }).firestore();
+
+      await assertSucceeds(
+        setDoc(doc(superDb, 'reference/holidays/2024-12-25'), {
+          name: 'Christmas',
+          type: 'public',
+        })
       );
     });
 
@@ -449,15 +525,13 @@ describe('Tenant Isolation Security Rules', () => {
 
   describe('Settings and Configuration', () => {
     it('should allow tenant members to read settings', async () => {
-      // Set up settings data
-      const adminDb = testEnv.authenticatedContext('admin', {
-        admin: true,
-      }).firestore();
-
-      await setDoc(doc(adminDb, 'tenants/tenant-a/settings/config'), {
-        name: 'Company A',
-        timezone: 'UTC',
-        currency: 'USD',
+      await testEnv.withSecurityRulesDisabled(async (context) => {
+        const adminDb = context.firestore();
+        await setDoc(doc(adminDb, 'tenants/tenant-a/settings/config'), {
+          name: 'Company A',
+          timezone: 'UTC',
+          currency: 'USD',
+        });
       });
 
       const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
@@ -495,16 +569,77 @@ describe('Tenant Isolation Security Rules', () => {
     });
   });
 
-  describe('Root Collection Denial', () => {
-    it('should deny access to any root collections', async () => {
+  describe('Payroll + Tax (root collections) Isolation', () => {
+    it('should allow reading own payroll run but deny cross-tenant payroll runs', async () => {
       const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
         tenants: testUsers.tenantAOwner.tenants,
       }).firestore();
 
-      // Should not be able to access old root collections
-      await assertFails(
-        getDoc(doc(db, 'departments/old-dept'))
+      await assertSucceeds(getDoc(doc(db, 'payrollRuns/run-a-1')));
+      await assertFails(getDoc(doc(db, 'payrollRuns/run-b-1')));
+    });
+
+    it('should allow tenant admins to create payroll runs only for their tenant', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      await assertSucceeds(
+        setDoc(doc(db, 'payrollRuns/new-run-a'), {
+          tenantId: 'tenant-a',
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          payDate: '2026-02-05',
+          payFrequency: 'monthly',
+          status: 'draft',
+          totalGrossPay: 0,
+          totalNetPay: 0,
+          totalDeductions: 0,
+          totalEmployerTaxes: 0,
+          totalEmployerContributions: 0,
+          employeeCount: 0,
+          createdBy: 'owner-a',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
       );
+
+      await assertFails(
+        setDoc(doc(db, 'payrollRuns/new-run-b'), {
+          tenantId: 'tenant-b',
+          periodStart: '2026-01-01',
+          periodEnd: '2026-01-31',
+          payDate: '2026-02-05',
+          payFrequency: 'monthly',
+          status: 'draft',
+          totalGrossPay: 0,
+          totalNetPay: 0,
+          totalDeductions: 0,
+          totalEmployerTaxes: 0,
+          totalEmployerContributions: 0,
+          employeeCount: 0,
+          createdBy: 'owner-a',
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+      );
+    });
+
+    it('should allow reading own tax filing but deny cross-tenant tax filings', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
+
+      await assertSucceeds(getDoc(doc(db, 'taxFilings/filing-a-1')));
+      await assertFails(getDoc(doc(db, 'taxFilings/filing-b-1')));
+    });
+  });
+
+  describe('Legacy Root Collections', () => {
+    it('should deny access to legacy root employees for normal users', async () => {
+      const db = testEnv.authenticatedContext(testUsers.tenantAOwner.uid, {
+        tenants: testUsers.tenantAOwner.tenants,
+      }).firestore();
 
       await assertFails(
         getDoc(doc(db, 'employees/old-emp'))

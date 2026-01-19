@@ -13,6 +13,9 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
+import { auditLogService } from './auditLogService';
+import type { AuditContext } from './employeeService';
 import {
   TenantSettings,
   CompanyDetails,
@@ -25,7 +28,7 @@ import {
   TL_DEFAULT_LEAVE_POLICIES,
 } from '@/types/settings';
 
-const SETTINGS_COLLECTION = 'tenant_settings';
+const LEGACY_SETTINGS_COLLECTION = 'tenant_settings';
 const HR_ADMINS_COLLECTION = 'hr_admins';
 
 // ============================================
@@ -38,16 +41,38 @@ export const settingsService = {
    */
   async getSettings(tenantId: string): Promise<TenantSettings | null> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
         return {
           ...data,
-          id: docSnap.id,
+          id: tenantId,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
+        } as TenantSettings;
+      }
+
+      // Legacy fallback (single-tenant -> multi-tenant migration)
+      const legacyRef = doc(db, LEGACY_SETTINGS_COLLECTION, tenantId);
+      const legacySnap = await getDoc(legacyRef);
+      if (legacySnap.exists()) {
+        const legacy = legacySnap.data();
+
+        // Best-effort migration: copy legacy settings into tenant-scoped path.
+        await setDoc(docRef, {
+          ...legacy,
+          tenantId,
+          migratedFromLegacy: true,
+          migratedAt: serverTimestamp(),
+        }, { merge: true });
+
+        return {
+          ...legacy,
+          id: tenantId,
+          createdAt: legacy.createdAt?.toDate?.() || new Date(),
+          updatedAt: legacy.updatedAt?.toDate?.() || new Date(),
         } as TenantSettings;
       }
 
@@ -114,7 +139,7 @@ export const settingsService = {
     };
 
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await setDoc(docRef, {
         ...defaultSettings,
         createdAt: serverTimestamp(),
@@ -138,15 +163,29 @@ export const settingsService = {
    */
   async updateCompanyDetails(
     tenantId: string,
-    companyDetails: CompanyDetails
+    companyDetails: CompanyDetails,
+    audit?: AuditContext
   ): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         companyDetails,
         'setupProgress.companyDetails': true,
         updatedAt: serverTimestamp(),
       });
+
+      // Log to audit trail if context provided
+      if (audit) {
+        await auditLogService.log({
+          ...audit,
+          tenantId,
+          action: 'settings.company_update',
+          entityId: tenantId,
+          entityType: 'tenant_settings',
+          description: `Updated company details: ${companyDetails.legalName || 'Company'}`,
+          newValue: companyDetails as unknown as Record<string, unknown>,
+        }).catch(err => console.error('Audit log failed:', err));
+      }
     } catch (error) {
       console.error('Error updating company details:', error);
       throw error;
@@ -161,7 +200,7 @@ export const settingsService = {
     companyStructure: CompanyStructure
   ): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         companyStructure,
         'setupProgress.companyStructure': true,
@@ -181,7 +220,7 @@ export const settingsService = {
     paymentStructure: PaymentStructure
   ): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         paymentStructure,
         'setupProgress.paymentStructure': true,
@@ -201,7 +240,7 @@ export const settingsService = {
     timeOffPolicies: TimeOffPolicies
   ): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         timeOffPolicies,
         'setupProgress.timeOffPolicies': true,
@@ -218,15 +257,29 @@ export const settingsService = {
    */
   async updatePayrollConfig(
     tenantId: string,
-    payrollConfig: PayrollConfig
+    payrollConfig: PayrollConfig,
+    audit?: AuditContext
   ): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         payrollConfig,
         'setupProgress.payrollConfig': true,
         updatedAt: serverTimestamp(),
       });
+
+      // Log to audit trail if context provided
+      if (audit) {
+        await auditLogService.log({
+          ...audit,
+          tenantId,
+          action: 'settings.update',
+          entityId: tenantId,
+          entityType: 'tenant_settings',
+          description: 'Updated payroll configuration',
+          newValue: payrollConfig as unknown as Record<string, unknown>,
+        }).catch(err => console.error('Audit log failed:', err));
+      }
     } catch (error) {
       console.error('Error updating payroll config:', error);
       throw error;
@@ -238,7 +291,7 @@ export const settingsService = {
    */
   async completeSetup(tenantId: string): Promise<void> {
     try {
-      const docRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
         setupComplete: true,
         updatedAt: serverTimestamp(),
@@ -326,7 +379,7 @@ export const hrAdminService = {
       });
 
       // Add to tenant settings
-      const settingsRef = doc(db, SETTINGS_COLLECTION, tenantId);
+      const settingsRef = doc(db, paths.settings(tenantId));
       const settings = await settingsService.getSettings(tenantId);
       if (settings) {
         await updateDoc(settingsRef, {
@@ -366,7 +419,7 @@ export const hrAdminService = {
       // Update tenant settings to remove admin
       const settings = await settingsService.getSettings(tenantId);
       if (settings) {
-        const settingsRef = doc(db, SETTINGS_COLLECTION, tenantId);
+        const settingsRef = doc(db, paths.settings(tenantId));
         await updateDoc(settingsRef, {
           hrAdminIds: settings.hrAdminIds.filter((id) => id !== adminId),
           updatedAt: serverTimestamp(),

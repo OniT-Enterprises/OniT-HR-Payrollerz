@@ -79,6 +79,9 @@ export interface TLPayrollInput {
   // Tax info
   taxInfo: TLEmployeeTaxInfo;
 
+  // INSS
+  inssContributionBase?: number;
+
   // Deductions
   loanRepayment: number;
   advanceRepayment: number;
@@ -267,13 +270,20 @@ export function calculateSickPay(
 export function calculateIncomeTax(
   taxableIncome: number,
   isResident: boolean,
-  payFrequency: TLPayFrequency
+  payFrequency: TLPayFrequency,
+  totalPeriodsInMonth?: number
 ): number {
   if (taxableIncome <= 0) return 0;
 
-  // Convert threshold to period amount
+  // Convert the $500 monthly threshold to the current pay period.
+  // For weekly/biweekly runs we prefer the actual number of periods in the month when provided
+  // (prevents under/over-withholding in 4 vs 5-week months).
   const periods = TL_PAY_PERIODS[payFrequency];
-  const periodThreshold = divideMoney(TL_INCOME_TAX.residentThreshold, periods.periodsPerMonth);
+  const effectivePeriodsPerMonth =
+    (payFrequency === 'weekly' || payFrequency === 'biweekly') && totalPeriodsInMonth
+      ? totalPeriodsInMonth
+      : periods.periodsPerMonth;
+  const periodThreshold = divideMoney(TL_INCOME_TAX.residentThreshold, effectivePeriodsPerMonth);
 
   if (isResident) {
     // Only tax amount above threshold
@@ -418,7 +428,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       rate: hourlyRate * TL_OVERTIME_RATES.standard,
       amount: overtimePay.overtime,
       isTaxable: true,
-      isINSSBase: true,
+      isINSSBase: false,
     });
   }
 
@@ -444,7 +454,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       rate: hourlyRate * TL_OVERTIME_RATES.publicHoliday,
       amount: overtimePay.holiday,
       isTaxable: true,
-      isINSSBase: true,
+      // INSS excludes overtime/extraordinary pay; public holiday premiums are treated as overtime.
+      isINSSBase: false,
     });
   }
 
@@ -457,7 +468,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       rate: hourlyRate * TL_OVERTIME_RATES.restDay,
       amount: overtimePay.restDay,
       isTaxable: true,
-      isINSSBase: true,
+      // INSS excludes overtime/extraordinary pay; rest day premiums are treated as overtime.
+      isINSSBase: false,
     });
   }
 
@@ -488,7 +500,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       descriptionTL: 'Bónus',
       amount: input.bonus,
       isTaxable: true,
-      isINSSBase: true,
+      isINSSBase: false,
     });
   }
 
@@ -504,14 +516,14 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
-  // Per diem (NOT taxable, NOT INSS)
+  // Per diem / travel allowance (taxable wages per Taxes & Duties Act definition; excluded from INSS base)
   if (input.perDiem > 0) {
     earnings.push({
       type: 'per_diem',
       description: 'Per Diem / Travel',
       descriptionTL: 'Per Diem / Viajen',
       amount: input.perDiem,
-      isTaxable: false,
+      isTaxable: true,
       isINSSBase: false,
     });
   }
@@ -536,7 +548,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       descriptionTL: 'Subsidiu Transporte',
       amount: input.transportAllowance,
       isTaxable: true,
-      isINSSBase: true,
+      isINSSBase: false,
     });
   }
 
@@ -548,7 +560,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       descriptionTL: 'Rendimentu Seluk',
       amount: input.otherEarnings,
       isTaxable: true,
-      isINSSBase: true,
+      isINSSBase: false,
     });
   }
 
@@ -585,14 +597,16 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
-  // Adjust INSS base for absences (use decimal.js)
-  const adjustedInssBase = Math.max(0, subtractMoney(inssBase, absenceDeduction));
+  // INSS mandatory registration: contribution base is the contributable remuneration earned in the period.
+  const contributableRemuneration = Math.max(0, subtractMoney(inssBase, absenceDeduction, lateDeduction));
+  const inssContributionBase = input.inssContributionBase ?? contributableRemuneration;
 
   // Withholding Income Tax (WIT)
   const incomeTax = calculateIncomeTax(
     subtractMoney(taxableIncome, absenceDeduction, lateDeduction),
     input.taxInfo.isResident,
-    input.payFrequency
+    input.payFrequency,
+    input.totalPeriodsInMonth
   );
 
   if (incomeTax > 0) {
@@ -606,7 +620,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // INSS
-  const inss = calculateINSS(adjustedInssBase);
+  const inss = calculateINSS(inssContributionBase);
 
   if (inss.employee > 0) {
     deductions.push({
@@ -696,7 +710,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     // Totals
     grossPay,
     taxableIncome,
-    inssBase: adjustedInssBase,
+    inssBase: inssContributionBase,
 
     // Deductions
     incomeTax,

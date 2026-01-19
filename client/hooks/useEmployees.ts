@@ -5,6 +5,7 @@
 
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { DocumentSnapshot } from 'firebase/firestore';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   employeeService,
   type Employee,
@@ -14,12 +15,12 @@ import {
 
 // Query keys for cache management
 export const employeeKeys = {
-  all: ['employees'] as const,
-  lists: () => [...employeeKeys.all, 'list'] as const,
-  list: (filters: EmployeeFilters) => [...employeeKeys.lists(), filters] as const,
-  details: () => [...employeeKeys.all, 'detail'] as const,
-  detail: (id: string) => [...employeeKeys.details(), id] as const,
-  counts: () => [...employeeKeys.all, 'counts'] as const,
+  all: (tenantId: string) => ['tenants', tenantId, 'employees'] as const,
+  lists: (tenantId: string) => [...employeeKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, filters: EmployeeFilters) => [...employeeKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string) => [...employeeKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string, id: string) => [...employeeKeys.details(tenantId), id] as const,
+  counts: (tenantId: string) => [...employeeKeys.all(tenantId), 'counts'] as const,
 };
 
 /**
@@ -27,9 +28,10 @@ export const employeeKeys = {
  * Uses React Query for caching and background refetching
  */
 export function useEmployees(filters: EmployeeFilters = {}) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: employeeKeys.list(filters),
-    queryFn: () => employeeService.getEmployees(filters),
+    queryKey: employeeKeys.list(tenantId, filters),
+    queryFn: () => employeeService.getEmployees(tenantId, filters),
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
     gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
   });
@@ -40,9 +42,10 @@ export function useEmployees(filters: EmployeeFilters = {}) {
  * Fetches a large batch for client-side filtering
  */
 export function useAllEmployees(maxResults: number = 500) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: employeeKeys.list({ pageSize: maxResults }),
-    queryFn: () => employeeService.getEmployees({ pageSize: maxResults }),
+    queryKey: employeeKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: () => employeeService.getEmployees(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Employee>) => data.data, // Return just the array
@@ -53,9 +56,10 @@ export function useAllEmployees(maxResults: number = 500) {
  * Fetch a single employee by ID
  */
 export function useEmployee(id: string | undefined) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: employeeKeys.detail(id!),
-    queryFn: () => employeeService.getEmployeeById(id!),
+    queryKey: employeeKeys.detail(tenantId, id!),
+    queryFn: () => employeeService.getEmployeeById(tenantId, id!),
     enabled: !!id, // Only run query if ID is provided
     staleTime: 5 * 60 * 1000,
   });
@@ -65,9 +69,10 @@ export function useEmployee(id: string | undefined) {
  * Fetch employee counts by status
  */
 export function useEmployeeCounts() {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: employeeKeys.counts(),
-    queryFn: () => employeeService.getEmployeeCounts(),
+    queryKey: employeeKeys.counts(tenantId),
+    queryFn: () => employeeService.getEmployeeCounts(tenantId),
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -77,13 +82,14 @@ export function useEmployeeCounts() {
  */
 export function useAddEmployee() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: (employee: Omit<Employee, 'id'>) =>
-      employeeService.addEmployee(employee),
+      employeeService.addEmployee(tenantId, employee),
     onSuccess: () => {
       // Invalidate all employee queries to refetch
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) });
     },
   });
 }
@@ -93,14 +99,15 @@ export function useAddEmployee() {
  */
 export function useUpdateEmployee() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, updates }: { id: string; updates: Partial<Employee> }) =>
-      employeeService.updateEmployee(id, updates),
+      employeeService.updateEmployee(tenantId, id, updates),
     onSuccess: (_, { id }) => {
       // Invalidate specific employee and lists
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(tenantId, id) });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.lists(tenantId) });
     },
   });
 }
@@ -110,12 +117,13 @@ export function useUpdateEmployee() {
  */
 export function useDeleteEmployee() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (id: string) => employeeService.deleteEmployee(id),
+    mutationFn: (id: string) => employeeService.deleteEmployee(tenantId, id),
     onSuccess: () => {
       // Invalidate all employee queries
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all });
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) });
     },
   });
 }
@@ -124,10 +132,11 @@ export function useDeleteEmployee() {
  * Prefetch employees (useful for preloading data)
  */
 export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClient>) {
+  const tenantId = useTenantId();
   return (filters: EmployeeFilters = {}) => {
     queryClient.prefetchQuery({
-      queryKey: employeeKeys.list(filters),
-      queryFn: () => employeeService.getEmployees(filters),
+      queryKey: employeeKeys.list(tenantId, filters),
+      queryFn: () => employeeService.getEmployees(tenantId, filters),
       staleTime: 5 * 60 * 1000,
     });
   };
@@ -150,10 +159,11 @@ export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClie
 export function usePaginatedEmployees(
   filters: Omit<EmployeeFilters, 'startAfterDoc'> = {}
 ) {
+  const tenantId = useTenantId();
   return useInfiniteQuery({
-    queryKey: [...employeeKeys.lists(), 'paginated', filters] as const,
+    queryKey: [...employeeKeys.lists(tenantId), 'paginated', filters] as const,
     queryFn: async ({ pageParam }) => {
-      return employeeService.getEmployees({
+      return employeeService.getEmployees(tenantId, {
         ...filters,
         startAfterDoc: pageParam as DocumentSnapshot | undefined,
       });

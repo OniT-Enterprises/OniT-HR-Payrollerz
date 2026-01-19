@@ -35,15 +35,17 @@ Sources: [PWC Tax Summaries](https://taxsummaries.pwc.com/timor-leste/individual
 
 | Contribution | Rate |
 |-------------|------|
-| **Employer** | 6% of gross |
-| **Employee** | 4% of gross |
+| **Employer** | 6% of contribution base |
+| **Employee** | 4% of contribution base |
 | **Total** | 10% |
 
-**Exclusions from calculation**:
-- Food allowance
-- Per diem expenses
+**Contribution base (INSS guidance)**:
+- Includes: basic pay, 13th month, some supplements (e.g., night work/shift work)
+- Excludes: subsistence subsidies (transport/board/lodging/travel), overtime, bonuses/gratuities/profit-sharing, food subsidies, other extraordinary allowances
 
-**Payment**: Due by 10th of following month
+**Deadlines (following month)**:
+- Remuneration statement: **1st–10th**
+- Contributions payment: **10th–20th**
 
 **Small Business Reduction**: Employers with ≤10 workers (60% Timorese) get reduced rate until 2026
 
@@ -68,20 +70,17 @@ Sources: [Rivermate Working Hours](https://www.rivermate.com/guides/timor-leste/
 | Leave Type | Entitlement | Payment |
 |-----------|-------------|---------|
 | **Annual Leave** | 12 working days/year | 100% paid |
-| **Sick Leave** | 30 days/year (with medical cert) | Paid (see note) |
+| **Sick Leave** | 12 days/year (with medical cert) | 6 days @ 100%, 6 days @ 50% |
 | **Maternity Leave** | 12 weeks (10 after birth) | 100% (employer or SS) |
 | **Paternity Leave** | 5 consecutive working days | 100% paid |
 | **Child Sick Care** | 5 days/year (child <10) | Unpaid |
-
-**Sick Leave Note**: User spec states 12 days (6 @ 100%, 6 @ 50%) - need to verify against latest law
 
 Sources: [Rivermate Leave Rights](https://www.rivermate.com/guides/timor-leste/leave), [Papaya Global](https://www.papayaglobal.com/countrypedia/country/timor-leste/)
 
 ### 13th Month (Subsídio Anual)
 
-- **NOT mandatory** for private sector
-- Public sector receives by government decree
-- Many companies pay voluntarily by December 20th
+- **Mandatory annual allowance** (not less than one month of salary)
+- Paid by **December 20**
 - Pro-rata for employees with <12 months service
 
 Sources: [Neeyamo](https://www.neeyamo.com/global-guide/timor-leste), [Government of TL](https://timor-leste.gov.tl/?p=35577)

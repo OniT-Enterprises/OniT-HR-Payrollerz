@@ -48,6 +48,7 @@ import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
 import CSVColumnMapper from "@/components/CSVColumnMapper";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   UserPlus,
@@ -76,6 +77,7 @@ export default function AddEmployee() {
   const [searchParams] = useSearchParams();
   const editEmployeeId = searchParams.get("edit");
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   const WIZARD_STEPS: WizardStep[] = useMemo(
     () => [
@@ -194,7 +196,7 @@ export default function AddEmployee() {
   const loadEmployeeForEdit = async (employeeId: string) => {
     try {
       setLoading(true);
-      const employee = await employeeService.getEmployeeById(employeeId);
+      const employee = await employeeService.getEmployeeById(tenantId, employeeId);
       if (employee) {
         setIsEditMode(true);
         setEditingEmployee(employee);
@@ -254,7 +256,7 @@ export default function AddEmployee() {
     try {
       const [depts, employees] = await Promise.all([
         departmentService.getAllDepartments(),
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
       ]);
       setDepartments(depts);
       setManagers(employees.filter(emp => emp.id !== editEmployeeId));
@@ -398,7 +400,7 @@ export default function AddEmployee() {
 
       // Save to Firebase
       if (isEditMode && editingEmployee) {
-        await employeeService.updateEmployee(editingEmployee.id, newEmployee);
+        await employeeService.updateEmployee(tenantId, editingEmployee.id, newEmployee);
         toast({
           title: t("addEmployee.toast.updatedTitle"),
           description: t("addEmployee.toast.updatedDesc", {
@@ -406,7 +408,7 @@ export default function AddEmployee() {
           }),
         });
       } else {
-        const id = await employeeService.addEmployee(newEmployee);
+        const id = await employeeService.addEmployee(tenantId, newEmployee);
         if (!id) throw new Error("Failed to save");
         toast({
           title: t("addEmployee.toast.addedTitle"),

@@ -61,6 +61,7 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import {
   Calendar,
   Plus,
@@ -94,6 +95,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 export default function LeaveRequests() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
   const [activeTab, setActiveTab] = useState("all");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -126,7 +128,7 @@ export default function LeaveRequests() {
       setLoading(true);
       try {
         const [empData, deptData, requestsData, balancesData] = await Promise.all([
-          employeeService.getAllEmployees(),
+          employeeService.getAllEmployees(tenantId),
           departmentService.getAllDepartments(),
           leaveService.getLeaveRequests(),
           leaveService.getAllBalances(),

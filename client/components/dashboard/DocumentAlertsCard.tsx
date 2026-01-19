@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 
-export type DocumentType = "bi" | "passport" | "work_permit" | "electoral" | "inss";
+export type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss";
 export type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
 
 export interface DocumentAlert {
@@ -37,7 +37,9 @@ export interface DocumentAlert {
 const DOCUMENT_LABELS: Record<DocumentType, string> = {
   bi: "Bilhete de Identidade",
   passport: "Passport",
-  work_permit: "Work Permit/Visa",
+  work_permit: "Work Permit",
+  work_visa: "Work Visa (Type C)",
+  residence_permit: "Residence Permit",
   electoral: "Electoral Card",
   inss: "INSS Card",
 };
@@ -137,7 +139,7 @@ function extractAlerts(employees: Employee[]): DocumentAlert[] {
       }
     }
 
-    // Check Work Permit/Visa
+    // Check Work Permit/Visa (legacy field)
     if (employee.documents?.workingVisaResidency?.expiryDate) {
       const { days, severity } = calculateExpiryInfo(employee.documents.workingVisaResidency.expiryDate);
       if (days <= 60) {
@@ -151,6 +153,60 @@ function extractAlerts(employees: Employee[]): DocumentAlert[] {
           daysUntilExpiry: days,
           severity,
         });
+      }
+    }
+
+    // Check Foreign Worker Documents (new comprehensive tracking)
+    if (employee.isForeignWorker && employee.foreignWorker) {
+      // Work Visa
+      if (employee.foreignWorker.workVisa?.expiryDate) {
+        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.workVisa.expiryDate);
+        if (days <= 90) { // Extended window for visa renewals
+          alerts.push({
+            id: `${employee.id}-work_visa`,
+            employeeId: employee.id || "",
+            employeeName,
+            documentType: "work_visa",
+            documentLabel: DOCUMENT_LABELS.work_visa,
+            expiryDate: employee.foreignWorker.workVisa.expiryDate,
+            daysUntilExpiry: days,
+            severity,
+          });
+        }
+      }
+
+      // Residence Permit
+      if (employee.foreignWorker.residencePermit?.expiryDate) {
+        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.residencePermit.expiryDate);
+        if (days <= 90) {
+          alerts.push({
+            id: `${employee.id}-residence_permit`,
+            employeeId: employee.id || "",
+            employeeName,
+            documentType: "residence_permit",
+            documentLabel: DOCUMENT_LABELS.residence_permit,
+            expiryDate: employee.foreignWorker.residencePermit.expiryDate,
+            daysUntilExpiry: days,
+            severity,
+          });
+        }
+      }
+
+      // Work Permit (separate from visa)
+      if (employee.foreignWorker.workPermit?.expiryDate) {
+        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.workPermit.expiryDate);
+        if (days <= 90) {
+          alerts.push({
+            id: `${employee.id}-fw_work_permit`,
+            employeeId: employee.id || "",
+            employeeName,
+            documentType: "work_permit",
+            documentLabel: DOCUMENT_LABELS.work_permit,
+            expiryDate: employee.foreignWorker.workPermit.expiryDate,
+            daysUntilExpiry: days,
+            severity,
+          });
+        }
       }
     }
 
@@ -194,7 +250,7 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
   useEffect(() => {
     const loadEmployees = async () => {
       try {
-        const result = await employeeService.getAllEmployees();
+        const result = await employeeService.getAllEmployees(tenantId);
         setEmployees(result);
       } catch (error) {
         console.error("Failed to load employees:", error);

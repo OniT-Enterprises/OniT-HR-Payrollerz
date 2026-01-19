@@ -63,6 +63,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { accountingService } from "@/services/accountingService";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -74,6 +75,7 @@ const PAYROLL_LINKED_CODES = [
 
 export default function ChartOfAccounts() {
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
@@ -102,7 +104,7 @@ export default function ChartOfAccounts() {
   const loadAccounts = async () => {
     try {
       setLoading(true);
-      const data = await accountingService.accounts.getAllAccounts();
+      const data = await accountingService.accounts.getAllAccounts(tenantId);
       setAccounts(data);
     } catch (error) {
       console.error("Failed to load accounts:", error);
@@ -120,7 +122,7 @@ export default function ChartOfAccounts() {
   const handleInitialize = async () => {
     try {
       setInitializing(true);
-      await accountingService.accounts.initializeChartOfAccounts();
+      await accountingService.accounts.initializeChartOfAccounts(tenantId);
       await loadAccounts();
       toast({
         title: "Success",
@@ -233,7 +235,7 @@ export default function ChartOfAccounts() {
       setSubmitting(true);
 
       if (editingAccount) {
-        await accountingService.accounts.updateAccount(editingAccount.id!, {
+        await accountingService.accounts.updateAccount(tenantId, editingAccount.id!, {
           ...formData,
           level: formData.parentAccountId ? 2 : 1,
         });
@@ -242,7 +244,7 @@ export default function ChartOfAccounts() {
           description: "Account updated successfully.",
         });
       } else {
-        await accountingService.accounts.createAccount({
+        await accountingService.accounts.createAccount(tenantId, {
           ...formData,
           isSystem: false,
           isActive: true,

@@ -191,7 +191,8 @@ exports.createEmploymentSnapshot = (0, https_1.onCall)(async (request) => {
         if (contractsQuery.empty) {
             throw new https_1.HttpsError("not-found", "No existing contract found for employee");
         }
-        const currentContract = Object.assign({ id: contractsQuery.docs[0].id }, contractsQuery.docs[0].data());
+        const currentContractData = contractsQuery.docs[0].data();
+        const currentContract = Object.assign({ id: contractsQuery.docs[0].id }, currentContractData);
         // Create new contract with changes
         const contractId = generateULID();
         const newContractData = {
@@ -372,4 +373,5 @@ exports.validateJobApproval = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("internal", `Failed to ${action} job`);
     }
 });
+// Functions are exported inline with their declarations above
 //# sourceMappingURL=hiring.js.map

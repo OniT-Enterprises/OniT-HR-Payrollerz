@@ -14,7 +14,7 @@ echo "  • Emulator UI: http://127.0.0.1:4001"
 echo "  • Data folder: ./firebaseemulator_payroll/"
 echo ""
 
-firebase emulators:start --only auth,firestore --import=./firebaseemulator_payroll/ --export-on-exit
+firebase emulators:start --config firebase.dev.json --only auth,firestore --import=./firebaseemulator_payroll/ --export-on-exit
 
 echo ""
 echo "✅ Emulators stopped. Data saved to ./firebaseemulator_payroll/"

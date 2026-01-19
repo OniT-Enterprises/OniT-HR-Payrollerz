@@ -44,6 +44,7 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import {
   Calendar,
   Filter,
@@ -76,6 +77,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 export default function Attendance() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   // Today's date as default
   const today = new Date().toISOString().split("T")[0];
@@ -116,7 +118,7 @@ export default function Attendance() {
         setLoading(true);
 
         const [emps, depts, records] = await Promise.all([
-          employeeService.getAllEmployees(),
+          employeeService.getAllEmployees(tenantId),
           departmentService.getAllDepartments(),
           attendanceService.getAttendanceByDate(selectedDate),
         ]);

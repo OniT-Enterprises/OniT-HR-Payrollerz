@@ -42,6 +42,7 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -55,6 +56,7 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
 };
 
 export default function TrialBalance() {
+  const tenantId = useTenantId();
   // State
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
@@ -73,7 +75,7 @@ export default function TrialBalance() {
   useEffect(() => {
     const loadAccounts = async () => {
       try {
-        const accountsList = await accountingService.accounts.getAllAccounts();
+        const accountsList = await accountingService.accounts.getAllAccounts(tenantId);
         setAccounts(accountsList);
       } catch (error) {
         console.error('Error loading accounts:', error);
@@ -93,6 +95,7 @@ export default function TrialBalance() {
       const year = new Date(asOfDate).getFullYear();
 
       const trialBalance = await accountingService.trialBalance.generateTrialBalance(
+        tenantId,
         asOfDate,
         year
       );

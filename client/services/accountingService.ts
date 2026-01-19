@@ -20,6 +20,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type {
   Account,
   JournalEntry,
@@ -41,10 +42,15 @@ import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 // ============================================
 
 class AccountService {
-  private collectionRef = collection(db, 'accounts');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.accounts(tenantId));
+  }
 
-  async createAccount(account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
-    const docRef = await addDoc(this.collectionRef, {
+  async createAccount(
+    tenantId: string,
+    account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<string> {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...account,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -52,16 +58,16 @@ class AccountService {
     return docRef.id;
   }
 
-  async updateAccount(id: string, updates: Partial<Account>): Promise<void> {
-    const docRef = doc(db, 'accounts', id);
+  async updateAccount(tenantId: string, id: string, updates: Partial<Account>): Promise<void> {
+    const docRef = doc(db, paths.account(tenantId, id));
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     });
   }
 
-  async getAccount(id: string): Promise<Account | null> {
-    const docRef = doc(db, 'accounts', id);
+  async getAccount(tenantId: string, id: string): Promise<Account | null> {
+    const docRef = doc(db, paths.account(tenantId, id));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as Account;
@@ -69,23 +75,23 @@ class AccountService {
     return null;
   }
 
-  async getAccountByCode(code: string): Promise<Account | null> {
-    const q = query(this.collectionRef, where('code', '==', code), limit(1));
+  async getAccountByCode(tenantId: string, code: string): Promise<Account | null> {
+    const q = query(this.collectionRef(tenantId), where('code', '==', code), limit(1));
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     return { id: doc.id, ...doc.data() } as Account;
   }
 
-  async getAllAccounts(): Promise<Account[]> {
-    const q = query(this.collectionRef, orderBy('code'));
+  async getAllAccounts(tenantId: string): Promise<Account[]> {
+    const q = query(this.collectionRef(tenantId), orderBy('code'));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
   }
 
-  async getAccountsByType(type: Account['type']): Promise<Account[]> {
+  async getAccountsByType(tenantId: string, type: Account['type']): Promise<Account[]> {
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('type', '==', type),
       where('isActive', '==', true),
       orderBy('code')
@@ -94,8 +100,8 @@ class AccountService {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
   }
 
-  async deleteAccount(id: string): Promise<void> {
-    const docRef = doc(db, 'accounts', id);
+  async deleteAccount(tenantId: string, id: string): Promise<void> {
+    const docRef = doc(db, paths.account(tenantId, id));
     // Soft delete - just deactivate
     await updateDoc(docRef, {
       isActive: false,
@@ -106,8 +112,8 @@ class AccountService {
   /**
    * Initialize chart of accounts with defaults
    */
-  async initializeChartOfAccounts(): Promise<void> {
-    const existingAccounts = await this.getAllAccounts();
+  async initializeChartOfAccounts(tenantId: string): Promise<void> {
+    const existingAccounts = await this.getAllAccounts(tenantId);
     if (existingAccounts.length > 0) {
       console.log('Chart of accounts already exists');
       return;
@@ -117,7 +123,7 @@ class AccountService {
     const defaultAccounts = getDefaultAccounts();
 
     for (const account of defaultAccounts) {
-      const docRef = doc(this.collectionRef);
+      const docRef = doc(this.collectionRef(tenantId));
       batch.set(docRef, {
         ...account,
         createdAt: serverTimestamp(),
@@ -135,15 +141,20 @@ class AccountService {
 // ============================================
 
 class JournalEntryService {
-  private collectionRef = collection(db, 'journalEntries');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.journalEntries(tenantId));
+  }
 
-  async createJournalEntry(entry: Omit<JournalEntry, 'id' | 'createdAt'>): Promise<string> {
+  async createJournalEntry(
+    tenantId: string,
+    entry: Omit<JournalEntry, 'id' | 'createdAt'>
+  ): Promise<string> {
     // Validate that debits = credits
     if (Math.abs(entry.totalDebit - entry.totalCredit) > 0.01) {
       throw new Error('Journal entry must balance: debits must equal credits');
     }
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...entry,
       createdAt: serverTimestamp(),
     });
@@ -151,7 +162,7 @@ class JournalEntryService {
     // If the entry is already posted, immediately create GL rows so downstream
     // reports (GL/TB) stay in sync.
     if (entry.status === 'posted') {
-      await generalLedgerService.createEntriesFromJournal({
+      await generalLedgerService.createEntriesFromJournal(tenantId, {
         id: docRef.id,
         ...entry,
       } as JournalEntry);
@@ -160,8 +171,8 @@ class JournalEntryService {
     return docRef.id;
   }
 
-  async getJournalEntry(id: string): Promise<JournalEntry | null> {
-    const docRef = doc(db, 'journalEntries', id);
+  async getJournalEntry(tenantId: string, id: string): Promise<JournalEntry | null> {
+    const docRef = doc(db, paths.journalEntry(tenantId, id));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as JournalEntry;
@@ -169,13 +180,13 @@ class JournalEntryService {
     return null;
   }
 
-  async getAllJournalEntries(options?: {
+  async getAllJournalEntries(tenantId: string, options?: {
     status?: JournalEntry['status'];
     startDate?: string;
     endDate?: string;
     fiscalYear?: number;
   }): Promise<JournalEntry[]> {
-    let q = query(this.collectionRef, orderBy('date', 'desc'));
+    let q = query(this.collectionRef(tenantId), orderBy('date', 'desc'));
 
     if (options?.status) {
       q = query(q, where('status', '==', options.status));
@@ -198,8 +209,8 @@ class JournalEntryService {
     return entries;
   }
 
-  async postJournalEntry(id: string, postedBy: string): Promise<void> {
-    const docRef = doc(db, 'journalEntries', id);
+  async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
+    const docRef = doc(db, paths.journalEntry(tenantId, id));
     await updateDoc(docRef, {
       status: 'posted',
       postedAt: serverTimestamp(),
@@ -207,14 +218,14 @@ class JournalEntryService {
     });
 
     // Create general ledger entries
-    const entry = await this.getJournalEntry(id);
+    const entry = await this.getJournalEntry(tenantId, id);
     if (entry) {
-      await generalLedgerService.createEntriesFromJournal(entry);
+      await generalLedgerService.createEntriesFromJournal(tenantId, entry);
     }
   }
 
-  async voidJournalEntry(id: string, voidedBy: string, reason: string): Promise<void> {
-    const docRef = doc(db, 'journalEntries', id);
+  async voidJournalEntry(tenantId: string, id: string, voidedBy: string, reason: string): Promise<void> {
+    const docRef = doc(db, paths.journalEntry(tenantId, id));
     await updateDoc(docRef, {
       status: 'void',
       voidedAt: serverTimestamp(),
@@ -226,9 +237,9 @@ class JournalEntryService {
   /**
    * Generate next entry number
    */
-  async getNextEntryNumber(year: number): Promise<string> {
+  async getNextEntryNumber(tenantId: string, year: number): Promise<string> {
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('fiscalYear', '==', year),
       orderBy('entryNumber', 'desc'),
       limit(1)
@@ -251,19 +262,20 @@ class JournalEntryService {
    * Create journal entry from payroll run
    */
   async createFromPayroll(
+    tenantId: string,
     payrollRun: TLPayrollRun,
     records: TLPayrollRecord[]
   ): Promise<string> {
     const year = new Date(payrollRun.periodEnd).getFullYear();
     const month = new Date(payrollRun.periodEnd).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
 
     const lines: JournalEntryLine[] = [];
     let lineNumber = 1;
 
     // Get account IDs from codes
     const getAccountId = async (code: string) => {
-      const account = await accountService.getAccountByCode(code);
+      const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
       }
@@ -363,7 +375,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry);
   }
 
   /**
@@ -382,16 +394,16 @@ class JournalEntryService {
     employeeCount: number;
     approvedBy?: string;
     sourceId?: string;
-  }): Promise<string> {
+  }, tenantId: string): Promise<string> {
     const year = new Date(summary.periodEnd).getFullYear();
     const month = new Date(summary.periodEnd).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year);
 
     const lines: JournalEntryLine[] = [];
     let lineNumber = 1;
 
     const getAccountId = async (code: string) => {
-      const account = await accountService.getAccountByCode(code);
+      const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
       }
@@ -484,7 +496,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry);
   }
 }
 
@@ -493,13 +505,15 @@ class JournalEntryService {
 // ============================================
 
 class GeneralLedgerService {
-  private collectionRef = collection(db, 'generalLedger');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.generalLedger(tenantId));
+  }
 
-  async createEntriesFromJournal(journalEntry: JournalEntry): Promise<void> {
+  async createEntriesFromJournal(tenantId: string, journalEntry: JournalEntry): Promise<void> {
     const batch = writeBatch(db);
 
     for (const line of journalEntry.lines) {
-      const docRef = doc(this.collectionRef);
+      const docRef = doc(this.collectionRef(tenantId));
       batch.set(docRef, {
         accountId: line.accountId,
         accountCode: line.accountCode,
@@ -521,6 +535,7 @@ class GeneralLedgerService {
   }
 
   async getEntriesByAccount(
+    tenantId: string,
     accountKey: string,
     options?: {
       startDate?: string;
@@ -530,8 +545,8 @@ class GeneralLedgerService {
   ): Promise<GeneralLedgerEntry[]> {
     // Support legacy rows where accountId stored as accountCode by querying both.
     const queries = [
-      query(this.collectionRef, where('accountId', '==', accountKey), orderBy('entryDate')),
-      query(this.collectionRef, where('accountCode', '==', accountKey), orderBy('entryDate')),
+      query(this.collectionRef(tenantId), where('accountId', '==', accountKey), orderBy('entryDate')),
+      query(this.collectionRef(tenantId), where('accountCode', '==', accountKey), orderBy('entryDate')),
     ];
 
     if (options?.fiscalYear) {
@@ -571,12 +586,17 @@ class GeneralLedgerService {
     return entries;
   }
 
-  async getAccountBalance(accountId: string, accountCode?: string, asOfDate?: string): Promise<number> {
+  async getAccountBalance(
+    tenantId: string,
+    accountId: string,
+    accountCode?: string,
+    asOfDate?: string
+  ): Promise<number> {
     const queries = [
-      query(this.collectionRef, where('accountId', '==', accountId)),
+      query(this.collectionRef(tenantId), where('accountId', '==', accountId)),
     ];
     if (accountCode) {
-      queries.push(query(this.collectionRef, where('accountCode', '==', accountCode)));
+      queries.push(query(this.collectionRef(tenantId), where('accountCode', '==', accountCode)));
     }
 
     const snapshots = await Promise.all(queries.map(q => getDocs(q)));
@@ -604,14 +624,14 @@ class GeneralLedgerService {
 // ============================================
 
 class TrialBalanceService {
-  async generateTrialBalance(asOfDate: string, fiscalYear: number): Promise<TrialBalance> {
-    const accounts = await accountService.getAllAccounts();
+  async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number): Promise<TrialBalance> {
+    const accounts = await accountService.getAllAccounts(tenantId);
     const rows: TrialBalanceRow[] = [];
 
     for (const account of accounts) {
       if (!account.isActive) continue;
 
-      const balance = await generalLedgerService.getAccountBalance(account.id!, account.code, asOfDate);
+      const balance = await generalLedgerService.getAccountBalance(tenantId, account.id!, account.code, asOfDate);
 
       // Skip zero balances for cleaner report
       if (Math.abs(balance) < 0.01) continue;
@@ -657,14 +677,19 @@ class TrialBalanceService {
 // ============================================
 
 class FiscalPeriodService {
-  private yearCollection = collection(db, 'fiscalYears');
-  private periodCollection = collection(db, 'fiscalPeriods');
+  private yearCollection(tenantId: string) {
+    return collection(db, paths.fiscalYears(tenantId));
+  }
 
-  async createFiscalYear(year: number): Promise<string> {
+  private periodCollection(tenantId: string) {
+    return collection(db, paths.fiscalPeriods(tenantId));
+  }
+
+  async createFiscalYear(tenantId: string, year: number): Promise<string> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
-    const docRef = await addDoc(this.yearCollection, {
+    const docRef = await addDoc(this.yearCollection(tenantId), {
       year,
       startDate,
       endDate,
@@ -678,7 +703,7 @@ class FiscalPeriodService {
     const batch = writeBatch(db);
     for (let month = 1; month <= 12; month++) {
       const lastDay = new Date(year, month, 0).getDate();
-      const periodRef = doc(this.periodCollection);
+      const periodRef = doc(this.periodCollection(tenantId));
       batch.set(periodRef, {
         fiscalYearId: docRef.id,
         year,
@@ -694,21 +719,21 @@ class FiscalPeriodService {
     return docRef.id;
   }
 
-  async getFiscalYear(year: number): Promise<FiscalYear | null> {
-    const q = query(this.yearCollection, where('year', '==', year), limit(1));
+  async getFiscalYear(tenantId: string, year: number): Promise<FiscalYear | null> {
+    const q = query(this.yearCollection(tenantId), where('year', '==', year), limit(1));
     const snapshot = await getDocs(q);
     if (snapshot.empty) return null;
     const doc = snapshot.docs[0];
     return { id: doc.id, ...doc.data() } as FiscalYear;
   }
 
-  async getCurrentPeriod(): Promise<FiscalPeriod | null> {
+  async getCurrentPeriod(tenantId: string): Promise<FiscalPeriod | null> {
     const now = new Date();
     const year = now.getFullYear();
     const month = now.getMonth() + 1;
 
     const q = query(
-      this.periodCollection,
+      this.periodCollection(tenantId),
       where('year', '==', year),
       where('period', '==', month),
       limit(1)
@@ -719,8 +744,8 @@ class FiscalPeriodService {
     return { id: doc.id, ...doc.data() } as FiscalPeriod;
   }
 
-  async closePeriod(periodId: string, closedBy: string): Promise<void> {
-    const docRef = doc(db, 'fiscalPeriods', periodId);
+  async closePeriod(tenantId: string, periodId: string, closedBy: string): Promise<void> {
+    const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
     await updateDoc(docRef, {
       status: 'closed',
       closedAt: serverTimestamp(),
@@ -734,20 +759,22 @@ class FiscalPeriodService {
 // ============================================
 
 class AccountingSettingsService {
-  private docRef = doc(db, 'settings', 'accounting');
+  private docRef(tenantId: string) {
+    return doc(db, paths.accountingSettings(tenantId));
+  }
 
-  async getSettings(): Promise<AccountingSettings | null> {
-    const docSnap = await getDoc(this.docRef);
+  async getSettings(tenantId: string): Promise<AccountingSettings | null> {
+    const docSnap = await getDoc(this.docRef(tenantId));
     if (docSnap.exists()) {
       return docSnap.data() as AccountingSettings;
     }
     return null;
   }
 
-  async updateSettings(settings: Partial<AccountingSettings>, updatedBy: string): Promise<void> {
-    const existing = await this.getSettings();
+  async updateSettings(tenantId: string, settings: Partial<AccountingSettings>, updatedBy: string): Promise<void> {
+    const existing = await this.getSettings(tenantId);
     if (existing) {
-      await updateDoc(this.docRef, {
+      await updateDoc(this.docRef(tenantId), {
         ...settings,
         updatedAt: serverTimestamp(),
         updatedBy,
@@ -755,7 +782,7 @@ class AccountingSettingsService {
     } else {
       // Create default settings
       const { setDoc } = await import('firebase/firestore');
-      await setDoc(this.docRef, {
+      await setDoc(this.docRef(tenantId), {
         ...settings,
         journalEntryPrefix: 'JE',
         invoicePrefix: 'INV',

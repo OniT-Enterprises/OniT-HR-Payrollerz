@@ -60,6 +60,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { employeeService, Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency, DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
@@ -80,6 +81,7 @@ const FREQUENCY_OPTIONS: { value: PayFrequency | "per_paycheck"; label: string }
 
 export default function DeductionsAdvances() {
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [deductions, setDeductions] = useState<RecurringDeduction[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -108,7 +110,7 @@ export default function DeductionsAdvances() {
         setLoading(true);
         const [deductionData, employeeData] = await Promise.all([
           payrollService.deductions.getAllDeductions(),
-          employeeService.getAllEmployees(),
+          employeeService.getAllEmployees(tenantId),
         ]);
         setDeductions(deductionData);
         setEmployees(employeeData.filter((e) => e.status === "active"));

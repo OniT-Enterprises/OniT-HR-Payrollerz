@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -118,6 +119,7 @@ export default function TimeLeaveDashboard() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   useEffect(() => {
     loadEmployees();
@@ -126,7 +128,7 @@ export default function TimeLeaveDashboard() {
   const loadEmployees = async () => {
     try {
       setLoading(true);
-      const employeesData = await employeeService.getAllEmployees();
+      const employeesData = await employeeService.getAllEmployees(tenantId);
       setEmployees(employeesData);
     } catch (error) {
       console.error("Error loading employees:", error);

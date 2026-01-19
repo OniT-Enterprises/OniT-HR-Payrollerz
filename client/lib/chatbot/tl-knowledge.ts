@@ -1,6 +1,8 @@
 // Timor-Leste HR/Payroll Knowledge Base
 // All tax rates, labor laws, and regulations for the AI chatbot
 
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
+
 export const TL_TAX_RULES = {
   wit: {
     name: 'Withholding Income Tax (Impostu Retidu)',
@@ -8,7 +10,7 @@ export const TL_TAX_RULES = {
     residentThreshold: 500, // Monthly threshold in USD
     rate: 0.10, // 10%
     nonResidentThreshold: 0, // No threshold for non-residents
-    taxFreeItems: ['per diem', 'travel allowances'],
+    taxFreeItems: [],
   },
   inss: {
     name: 'Social Security (Instituto Nacional de Segurança Social)',
@@ -16,7 +18,14 @@ export const TL_TAX_RULES = {
     employeeRate: 0.04, // 4%
     employerRate: 0.06, // 6%
     totalRate: 0.10, // 10% combined
-    excludedFromBase: ['per diem', 'travel allowances', 'food allowance'],
+    excludedFromBase: [
+      'overtime',
+      'bonuses / gratuities / profit-sharing',
+      'food subsidy',
+      'subsistence subsidies (transport/board/lodging/travel)',
+      'representation expenses',
+      'other extraordinary allowances',
+    ],
   },
   minimumWage: 115, // USD per month (2023)
   currency: 'USD',
@@ -89,19 +98,12 @@ export const TL_LABOR_LAW = {
 };
 
 export const TL_PUBLIC_HOLIDAYS_2025 = [
-  { date: '2025-01-01', name: 'New Year\'s Day', tetun: 'Loron Tinan Foun' },
-  { date: '2025-04-18', name: 'Good Friday', tetun: 'Sesta-feira Santa' },
-  { date: '2025-05-01', name: 'Labor Day', tetun: 'Loron Trabalhador' },
-  { date: '2025-05-20', name: 'Independence Restoration Day', tetun: 'Loron Restaurasaun Independensia' },
-  { date: '2025-06-08', name: 'Corpus Christi', tetun: 'Corpus Christi' },
-  { date: '2025-08-30', name: 'Popular Consultation Day', tetun: 'Loron Konsulta Popular' },
-  { date: '2025-11-01', name: 'All Saints Day', tetun: 'Loron Santu Hotu' },
-  { date: '2025-11-02', name: 'All Souls Day', tetun: 'Loron Finadu' },
-  { date: '2025-11-12', name: 'National Youth Day', tetun: 'Loron Juventude Nasional' },
-  { date: '2025-11-28', name: 'Independence Proclamation Day', tetun: 'Loron Proklamasaun Independensia' },
-  { date: '2025-12-07', name: 'National Heroes Day', tetun: 'Loron Heroi Nasional' },
-  { date: '2025-12-08', name: 'Immaculate Conception', tetun: 'Loron Imakulada Konseisaun' },
-  { date: '2025-12-25', name: 'Christmas Day', tetun: 'Loron Natal' },
+  // Note: Variable holidays (e.g., Eid) are not included here and should be handled via admin overrides.
+  ...getTLPublicHolidays(2025).map(h => ({
+    date: h.date,
+    name: h.name,
+    tetun: h.nameTetun ?? '',
+  })),
 ];
 
 export const TL_REGULATORY_BODIES = {
@@ -202,8 +204,9 @@ export function calculateWIT(grossSalary: number, isResident: boolean): number {
 }
 
 export function calculateINSS(grossSalary: number): { employee: number; employer: number; total: number } {
-  const employee = grossSalary * TL_TAX_RULES.inss.employeeRate;
-  const employer = grossSalary * TL_TAX_RULES.inss.employerRate;
+  const base = grossSalary; // Use contributable remuneration when available
+  const employee = base * TL_TAX_RULES.inss.employeeRate;
+  const employer = base * TL_TAX_RULES.inss.employerRate;
   return { employee, employer, total: employee + employer };
 }
 

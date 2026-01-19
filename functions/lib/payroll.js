@@ -309,7 +309,19 @@ exports.validatePayrunInputs = (0, https_1.onCall)(async (request) => {
     // Validate tenant access
     await validateTenantAccess(auth.uid, tenantId);
     try {
-        const { inputs } = await exports.getPayrunInputs.handler({ auth, data });
+        // Get all input records for validation
+        const summaryDoc = await db
+            .doc(`tenants/${tenantId}/payrunInputs/${yyyymm}/_summary`)
+            .get();
+        if (!summaryDoc.exists) {
+            throw new https_1.HttpsError("not-found", "Payroll inputs not found for this month");
+        }
+        const inputsQuery = await db
+            .collection(`tenants/${tenantId}/payrunInputs/${yyyymm}`)
+            .get();
+        const inputs = inputsQuery.docs
+            .filter((doc) => doc.id !== "_summary")
+            .map((doc) => (Object.assign({ id: doc.id }, doc.data())));
         const validationErrors = [];
         const warnings = [];
         for (const input of inputs) {
@@ -373,4 +385,5 @@ exports.validatePayrunInputs = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("internal", "Failed to validate payroll inputs");
     }
 });
+// Functions are exported inline with their declarations above
 //# sourceMappingURL=payroll.js.map

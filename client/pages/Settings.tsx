@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,7 +28,9 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
+import { holidayService, type HolidayOverride } from "@/services/holidayService";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   TenantSettings,
@@ -204,6 +206,19 @@ export default function Settings() {
     TL_DEFAULT_PAYROLL_CONFIG
   );
 
+  // Holiday overrides (tenant-scoped)
+  const [holidayYear, setHolidayYear] = useState<number>(new Date().getFullYear());
+  const [holidayOverridesLoading, setHolidayOverridesLoading] = useState(false);
+  const [holidayOverrides, setHolidayOverrides] = useState<HolidayOverride[]>([]);
+  const [holidayOverrideSaving, setHolidayOverrideSaving] = useState(false);
+  const [holidayOverrideForm, setHolidayOverrideForm] = useState({
+    date: "",
+    name: "",
+    nameTetun: "",
+    isHoliday: true,
+    notes: "",
+  });
+
   // Load settings on mount
   useEffect(() => {
     loadSettings();
@@ -238,6 +253,148 @@ export default function Settings() {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Holiday overrides (tenant-scoped, used for variable holidays and government decrees)
+  const loadHolidayOverrides = async () => {
+    if (!tenantId) return;
+    try {
+      setHolidayOverridesLoading(true);
+      const overrides = await holidayService.listTenantHolidayOverrides(tenantId, holidayYear);
+      setHolidayOverrides(overrides);
+    } catch (error) {
+      console.error("Error loading holiday overrides:", error);
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: "Failed to load holiday overrides.",
+        variant: "destructive",
+      });
+    } finally {
+      setHolidayOverridesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadHolidayOverrides();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId, holidayYear]);
+
+  const holidayOverrideByDate = useMemo(() => {
+    const map = new Map<string, HolidayOverride>();
+    holidayOverrides.forEach((o) => map.set(o.date, o));
+    return map;
+  }, [holidayOverrides]);
+
+  const mergedHolidays = useMemo(() => {
+    const base = getTLPublicHolidays(holidayYear);
+    const map = new Map<string, { date: string; name: string; nameTetun?: string; source: "built_in" | "override" }>();
+
+    base.forEach((h) => {
+      map.set(h.date, { date: h.date, name: h.name, nameTetun: h.nameTetun, source: "built_in" });
+    });
+
+    holidayOverrides.forEach((o) => {
+      if (!o.date?.startsWith(`${holidayYear}-`)) return;
+      if (o.isHoliday === false) {
+        map.delete(o.date);
+        return;
+      }
+      map.set(o.date, {
+        date: o.date,
+        name: o.name || "Holiday",
+        nameTetun: o.nameTetun || undefined,
+        source: "override",
+      });
+    });
+
+    return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
+  }, [holidayYear, holidayOverrides]);
+
+  const saveHolidayOverride = async () => {
+    if (!tenantId) return;
+
+    const date = holidayOverrideForm.date;
+    if (!date) {
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: "Please choose a date.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (holidayOverrideForm.isHoliday && !holidayOverrideForm.name.trim()) {
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: "Please enter a holiday name.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setHolidayOverrideSaving(true);
+      await holidayService.upsertTenantHolidayOverride(
+        tenantId,
+        {
+          date,
+          name: holidayOverrideForm.name.trim(),
+          nameTetun: holidayOverrideForm.nameTetun.trim(),
+          isHoliday: holidayOverrideForm.isHoliday,
+          notes: holidayOverrideForm.notes.trim(),
+        },
+        user?.uid
+      );
+
+      // Keep the list year in sync with the saved date
+      const savedYear = parseInt(date.slice(0, 4), 10);
+      if (!Number.isNaN(savedYear) && savedYear !== holidayYear) {
+        setHolidayYear(savedYear);
+      } else {
+        await loadHolidayOverrides();
+      }
+
+      setHolidayOverrideForm({
+        date: "",
+        name: "",
+        nameTetun: "",
+        isHoliday: true,
+        notes: "",
+      });
+
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: "Holiday override saved.",
+      });
+    } catch (error) {
+      console.error("Error saving holiday override:", error);
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: "Failed to save holiday override.",
+        variant: "destructive",
+      });
+    } finally {
+      setHolidayOverrideSaving(false);
+    }
+  };
+
+  const removeHolidayOverride = async (date: string) => {
+    if (!tenantId) return;
+    try {
+      await holidayService.deleteTenantHolidayOverride(tenantId, date);
+      await loadHolidayOverrides();
+      toast({
+        title: t("settings.notifications.savedTitle"),
+        description: "Holiday override removed.",
+      });
+    } catch (error) {
+      console.error("Error removing holiday override:", error);
+      toast({
+        title: t("settings.notifications.errorTitle"),
+        description: "Failed to remove holiday override.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -1367,6 +1524,169 @@ export default function Settings() {
                           <Percent className="h-4 w-4 text-muted-foreground" />
                         </div>
                       </div>
+                    </div>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Public Holidays (Timor-Leste) + tenant overrides */}
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <h3 className="font-medium flex items-center gap-2">
+                        <Calendar className="h-5 w-5" />
+                        Public Holidays (Timor-Leste)
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        Built-in holidays include fixed dates plus Easter-based holidays (Good Friday, Corpus Christi).
+                        Add overrides for variable holidays (e.g., Eid) and government-declared days.
+                      </p>
+                    </div>
+                    <div className="w-32 space-y-2">
+                      <Label>Year</Label>
+                      <Input
+                        type="number"
+                        min={2000}
+                        max={2100}
+                        value={holidayYear}
+                        onChange={(e) => setHolidayYear(parseInt(e.target.value) || new Date().getFullYear())}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border rounded-lg divide-y">
+                    {holidayOverridesLoading ? (
+                      <div className="p-4">
+                        <Skeleton className="h-6 w-64" />
+                        <Skeleton className="h-6 w-72 mt-2" />
+                      </div>
+                    ) : mergedHolidays.length === 0 ? (
+                      <div className="p-4 text-sm text-muted-foreground">
+                        No holidays found for {holidayYear}.
+                      </div>
+                    ) : (
+                      mergedHolidays.map((h) => {
+                        const override = holidayOverrideByDate.get(h.date);
+                        return (
+                          <div key={h.date} className="p-3 flex items-center justify-between gap-3">
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono text-sm">{h.date}</span>
+                                <Badge variant={h.source === "override" ? "default" : "secondary"}>
+                                  {h.source === "override" ? "Override" : "Built-in"}
+                                </Badge>
+                              </div>
+                              <div className="text-sm font-medium truncate">{h.name}</div>
+                              {h.nameTetun ? (
+                                <div className="text-xs text-muted-foreground truncate">{h.nameTetun}</div>
+                              ) : null}
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  setHolidayOverrideForm({
+                                    date: h.date,
+                                    name: override?.name ?? h.name,
+                                    nameTetun: override?.nameTetun ?? (h.nameTetun ?? ""),
+                                    isHoliday: override?.isHoliday ?? true,
+                                    notes: override?.notes ?? "",
+                                  })
+                                }
+                              >
+                                {override ? "Edit" : "Override"}
+                              </Button>
+                              {override ? (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => removeHolidayOverride(h.date)}
+                                  title="Remove override"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  <div className="p-4 border rounded-lg space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">Add / override holiday</h4>
+                      <div className="flex items-center gap-2">
+                        <Switch
+                          checked={holidayOverrideForm.isHoliday}
+                          onCheckedChange={(checked) =>
+                            setHolidayOverrideForm((prev) => ({ ...prev, isHoliday: checked }))
+                          }
+                        />
+                        <Label>Holiday</Label>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                        <Label>Date</Label>
+                        <Input
+                          type="date"
+                          value={holidayOverrideForm.date}
+                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, date: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Name</Label>
+                        <Input
+                          value={holidayOverrideForm.name}
+                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, name: e.target.value }))}
+                          disabled={!holidayOverrideForm.isHoliday}
+                          placeholder={holidayOverrideForm.isHoliday ? "Holiday name" : "Optional"}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Name (Tetun)</Label>
+                        <Input
+                          value={holidayOverrideForm.nameTetun}
+                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, nameTetun: e.target.value }))}
+                          disabled={!holidayOverrideForm.isHoliday}
+                          placeholder="Optional"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Notes</Label>
+                      <Textarea
+                        value={holidayOverrideForm.notes}
+                        onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        placeholder="Optional (e.g., government decree reference)"
+                      />
+                    </div>
+
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() =>
+                          setHolidayOverrideForm({ date: "", name: "", nameTetun: "", isHoliday: true, notes: "" })
+                        }
+                      >
+                        Clear
+                      </Button>
+                      <Button type="button" onClick={saveHolidayOverride} disabled={holidayOverrideSaving}>
+                        {holidayOverrideSaving ? (
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <Save className="mr-2 h-4 w-4" />
+                        )}
+                        Save Override
+                      </Button>
                     </div>
                   </div>
                 </div>

@@ -3,6 +3,7 @@
  */
 
 import { FirestoreTimestamp } from './firebase';
+import type { ForeignWorkerData } from './tax-filing';
 
 // Tenant status for SaaS management
 export type TenantStatus = 'active' | 'suspended' | 'pending' | 'cancelled';
@@ -171,6 +172,9 @@ export interface Employee {
   // Tenant-specific fields
   departmentId: string;
   managerId?: string;
+  // Foreign worker tracking (optional - only for non-resident employees)
+  isForeignWorker?: boolean;
+  foreignWorker?: ForeignWorkerData;
 }
 
 // Position types

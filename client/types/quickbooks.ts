@@ -56,6 +56,7 @@ export interface QBJournalEntry {
 
 export interface QBExportLog {
   id?: string;
+  tenantId: string;
   payrollRunId: string;
   payrollPeriod: string;      // Display name (e.g., "January 2026")
   payDate: string;            // YYYY-MM-DD

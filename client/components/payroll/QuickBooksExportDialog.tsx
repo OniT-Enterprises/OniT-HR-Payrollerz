@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   Download,
   FileSpreadsheet,
@@ -65,6 +66,7 @@ export function QuickBooksExportDialog({
 }: QuickBooksExportDialogProps) {
   const { t } = useI18n();
   const { toast } = useToast();
+  const tenantId = useTenantId();
 
   const [format, setFormat] = useState<'csv' | 'iif'>('csv');
   const [includeEmployeeDetail, setIncludeEmployeeDetail] = useState(false);
@@ -112,6 +114,7 @@ export function QuickBooksExportDialog({
       };
 
       const result = await exportPayrollToQuickBooks(
+        tenantId,
         payrollRun,
         records,
         options,

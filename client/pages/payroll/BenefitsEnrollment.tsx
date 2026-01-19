@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { employeeService, Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency, BENEFIT_LIMITS } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
@@ -108,6 +109,7 @@ const SAMPLE_PLANS = {
 
 export default function BenefitsEnrollment() {
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [enrollments, setEnrollments] = useState<BenefitEnrollment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -134,7 +136,7 @@ export default function BenefitsEnrollment() {
         setLoading(true);
         const [enrollmentData, employeeData] = await Promise.all([
           payrollService.benefits.getAllEnrollments(),
-          employeeService.getAllEmployees(),
+          employeeService.getAllEmployees(tenantId),
         ]);
         setEnrollments(enrollmentData);
         setEmployees(employeeData.filter((e) => e.status === "active"));

@@ -1,6 +1,24 @@
 {
   "indexes": [
     {
+      "collectionGroup": "taxFilings",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "tenantId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "type",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "period",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
       "collectionGroup": "employees",
       "queryScope": "COLLECTION",
       "fields": [

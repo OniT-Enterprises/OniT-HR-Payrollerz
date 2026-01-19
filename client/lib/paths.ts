@@ -80,6 +80,16 @@ export const paths = {
   
   discipline: (tid: string) => `tenants/${tid}/discipline`,
   disciplineRecord: (tid: string, disciplineId: string) => `tenants/${tid}/discipline/${disciplineId}`,
+
+  // Compliance and audit
+  auditLogs: (tid: string) => `tenants/${tid}/auditLogs`,
+  auditLog: (tid: string, logId: string) => `tenants/${tid}/auditLogs/${logId}`,
+
+  archives: (tid: string) => `tenants/${tid}/archives`,
+  archive: (tid: string, archiveId: string) => `tenants/${tid}/archives/${archiveId}`,
+
+  qbExportLogs: (tid: string) => `tenants/${tid}/qbExportLogs`,
+  qbExportLog: (tid: string, logId: string) => `tenants/${tid}/qbExportLogs/${logId}`,
   
   promotionSignals: (tid: string, year_q: string) => `tenants/${tid}/promotionSignals/${year_q}`,
   promotionSignal: (tid: string, year_q: string, empId: string) => `tenants/${tid}/promotionSignals/${year_q}/${empId}`,
@@ -90,6 +100,24 @@ export const paths = {
   
   payslips: (tid: string, yyyymm: string) => `tenants/${tid}/payruns/${yyyymm}/payslips`,
   payslip: (tid: string, yyyymm: string, empId: string) => `tenants/${tid}/payruns/${yyyymm}/payslips/${empId}`,
+
+  // Accounting
+  accounts: (tid: string) => `tenants/${tid}/accounts`,
+  account: (tid: string, accountId: string) => `tenants/${tid}/accounts/${accountId}`,
+
+  journalEntries: (tid: string) => `tenants/${tid}/journalEntries`,
+  journalEntry: (tid: string, entryId: string) => `tenants/${tid}/journalEntries/${entryId}`,
+
+  generalLedger: (tid: string) => `tenants/${tid}/generalLedger`,
+  generalLedgerEntry: (tid: string, glId: string) => `tenants/${tid}/generalLedger/${glId}`,
+
+  fiscalYears: (tid: string) => `tenants/${tid}/fiscalYears`,
+  fiscalYear: (tid: string, yearId: string) => `tenants/${tid}/fiscalYears/${yearId}`,
+
+  fiscalPeriods: (tid: string) => `tenants/${tid}/fiscalPeriods`,
+  fiscalPeriod: (tid: string, periodId: string) => `tenants/${tid}/fiscalPeriods/${periodId}`,
+
+  accountingSettings: (tid: string) => `tenants/${tid}/settings/accounting`,
   
   // Analytics and reports
   analytics: (tid: string) => `tenants/${tid}/analytics`,
@@ -104,6 +132,13 @@ export const paths = {
   
   holidays: () => 'reference/holidays',
   holiday: (yyyymmdd: string) => `reference/holidays/${yyyymmdd}`,
+
+  // Tenant-level overrides
+  tenantHolidays: (tid: string) => `tenants/${tid}/holidays`,
+  tenantHoliday: (tid: string, yyyymmdd: string) => `tenants/${tid}/holidays/${yyyymmdd}`,
+
+  // Quickbooks integration settings
+  quickbooksExportSettings: (tid: string) => `tenants/${tid}/settings/quickbooks_export_settings`,
 } as const;
 
 // Helper functions for ID generation and validation

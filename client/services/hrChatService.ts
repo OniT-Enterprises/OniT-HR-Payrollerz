@@ -7,6 +7,7 @@ import {
   TL_REGULATORY_BODIES,
   HR_NAVIGATION_ROUTES,
 } from '../lib/chatbot/tl-knowledge';
+import { TL_INSS } from "@/lib/payroll/constants-tl";
 
 // Types for chatbot actions
 export interface HRChatAction {
@@ -482,15 +483,17 @@ export const quickCalculations = {
   },
 
   inss: (salary: number): string => {
-    const employee = salary * 0.04;
-    const employer = salary * 0.06;
-    return `INSS on $${salary}:\n- Employee (4%): **$${employee.toFixed(2)}**\n- Employer (6%): **$${employer.toFixed(2)}**`;
+    const base = salary;
+    const employee = base * TL_INSS.employeeRate;
+    const employer = base * TL_INSS.employerRate;
+    return `INSS on $${salary} (base $${base.toFixed(2)}):\n- Employee (4%): **$${employee.toFixed(2)}**\n- Employer (6%): **$${employer.toFixed(2)}**`;
   },
 
   netPay: (salary: number, isResident = true): string => {
     const taxable = isResident ? Math.max(0, salary - 500) : salary;
     const wit = taxable * 0.10;
-    const inss = salary * 0.04;
+    const base = salary;
+    const inss = base * TL_INSS.employeeRate;
     const net = salary - wit - inss;
     return `Net pay for $${salary}:\n- Gross: $${salary}\n- WIT: -$${wit.toFixed(2)}\n- INSS: -$${inss.toFixed(2)}\n- **Net: $${net.toFixed(2)}**`;
   },

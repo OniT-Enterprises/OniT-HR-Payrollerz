@@ -96,7 +96,7 @@ export function SendPayslipsDialog({
       setLoading(true);
       try {
         // Load employees to get emails
-        const allEmployees = await employeeService.getAllEmployees();
+        const allEmployees = await employeeService.getAllEmployees(tenantId);
         const employeeMap = new Map<string, Employee>();
         allEmployees.forEach((emp) => {
           if (emp.id) employeeMap.set(emp.id, emp);

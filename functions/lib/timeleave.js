@@ -232,7 +232,10 @@ const recomputeWeekTotals = async (tenantId, empId, weekIso) => {
     var _a, _b;
     try {
         // Get all shifts for this employee in this week
-        const weekStart = new Date(weekIso.split("-W")[0], 0, 1 + (parseInt(weekIso.split("-W")[1]) - 1) * 7);
+        const [yearStr, weekStr] = weekIso.split("-W");
+        const year = parseInt(yearStr);
+        const weekNum = parseInt(weekStr);
+        const weekStart = new Date(year, 0, 1 + (weekNum - 1) * 7);
         const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
         const startYM = getYearMonth(weekStart);
         const endYM = getYearMonth(weekEnd);
@@ -388,7 +391,6 @@ exports.approveLeaveRequest = (0, https_1.onCall)(async (request) => {
                 .doc(`tenants/${tenantId}/leaveBalances/${balanceId}`)
                 .get();
             if (balanceDoc.exists) {
-                const balance = balanceDoc.data();
                 const leaveDays = Math.ceil((leave.to.toDate().getTime() - leave.from.toDate().getTime()) /
                     (24 * 60 * 60 * 1000)) + 1;
                 const newMovement = {
@@ -545,4 +547,5 @@ exports.onLeaveStatusChange = (0, firestore_1.onDocumentUpdated)("tenants/{tenan
         }
     }
 });
+// Functions are exported inline with their declarations above
 //# sourceMappingURL=timeleave.js.map

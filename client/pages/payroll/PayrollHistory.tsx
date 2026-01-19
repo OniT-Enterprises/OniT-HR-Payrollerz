@@ -78,10 +78,12 @@ import { QuickBooksExportDialog } from "@/components/payroll/QuickBooksExportDia
 import { SendPayslipsDialog } from "@/components/payroll/SendPayslipsDialog";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
@@ -111,7 +113,7 @@ export default function PayrollHistory() {
     const loadPayrollRuns = async () => {
       try {
         setLoading(true);
-        const runs = await payrollService.runs.getAllPayrollRuns();
+        const runs = await payrollService.runs.getAllPayrollRuns({ tenantId });
         setPayrollRuns(runs);
       } catch (error) {
         console.error("Failed to load payroll runs:", error);
@@ -126,7 +128,7 @@ export default function PayrollHistory() {
     };
 
     loadPayrollRuns();
-  }, [toast]);
+  }, [toast, tenantId]);
 
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -216,7 +218,7 @@ export default function PayrollHistory() {
 
     try {
       if (run.id) {
-        const records = await payrollService.records.getPayrollRecordsByRunId(run.id);
+        const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
         setRunRecords(records);
       }
     } catch (error) {
@@ -258,7 +260,7 @@ export default function PayrollHistory() {
     // Load records for this run
     try {
       if (run.id) {
-        const records = await payrollService.records.getPayrollRecordsByRunId(run.id);
+        const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
         setQBExportRecords(records);
       }
     } catch (error) {
@@ -279,7 +281,7 @@ export default function PayrollHistory() {
     // Load records for this run
     try {
       if (run.id) {
-        const records = await payrollService.records.getPayrollRecordsByRunId(run.id);
+        const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
         setSendPayslipsRecords(records);
       }
     } catch (error) {

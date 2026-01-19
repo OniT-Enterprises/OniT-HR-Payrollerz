@@ -8,6 +8,8 @@ export default defineConfig({
     testTimeout: 30000,
     hookTimeout: 30000,
     setupFiles: ['./tests/setup.ts'],
+    include: ['tests/client/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['tests/rules/**', 'tests/functions/**', 'node_modules/**', 'dist/**'],
   },
   resolve: {
     alias: {

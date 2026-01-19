@@ -22,6 +22,7 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { departmentService } from "@/services/departmentService";
 import { leaveService } from "@/services/leaveService";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import {
@@ -159,6 +160,7 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -180,7 +182,7 @@ export default function Dashboard() {
       setLoading(true);
 
       const [employeesResult, leaveStatsResult] = await Promise.allSettled([
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
         leaveService.getLeaveStats(),
       ]);
 

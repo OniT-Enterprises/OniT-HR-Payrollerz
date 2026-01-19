@@ -114,7 +114,7 @@ export default function BankTransfers() {
         setLoading(true);
         const [transfersData, runsData] = await Promise.all([
           payrollService.transfers.getAllTransfers(),
-          payrollService.runs.getAllPayrollRuns(),
+          payrollService.runs.getAllPayrollRuns({ tenantId }),
         ]);
         setTransfers(transfersData);
         setPayrollRuns(runsData);
@@ -131,14 +131,14 @@ export default function BankTransfers() {
     };
 
     loadData();
-  }, [toast]);
+  }, [toast, tenantId]);
 
   // Load employees and company details for bank file generation
   useEffect(() => {
     const loadEmployeesAndSettings = async () => {
       try {
         // Load all employees
-        const result = await employeeService.getAllEmployees();
+        const result = await employeeService.getAllEmployees(tenantId);
         setEmployees(result);
 
         // Load company details

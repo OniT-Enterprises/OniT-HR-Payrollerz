@@ -16,6 +16,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type { PayrollRun, PayrollRecord } from '@/types/payroll';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 import type {
@@ -444,7 +445,32 @@ const SETTINGS_DOC_ID = 'quickbooks_export_settings';
  */
 export async function getExportSettings(): Promise<QBExportSettings> {
   try {
-    const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
+    console.warn('getExportSettings() called without tenantId; returning defaults.');
+    return {
+      defaultFormat: 'csv',
+      includeEmployeeDetail: false,
+      groupByDepartment: false,
+      accountMappings: getDefaultMappings(),
+    };
+  } catch {
+    // no-op
+  }
+
+  // Return defaults
+  return {
+    defaultFormat: 'csv',
+    includeEmployeeDetail: false,
+    groupByDepartment: false,
+    accountMappings: getDefaultMappings(),
+  };
+}
+
+/**
+ * Get QuickBooks export settings (tenant-scoped)
+ */
+export async function getExportSettingsForTenant(tenantId: string): Promise<QBExportSettings> {
+  try {
+    const docRef = doc(db, paths.quickbooksExportSettings(tenantId));
     const docSnap = await getDoc(docRef);
 
     if (docSnap.exists()) {
@@ -466,8 +492,8 @@ export async function getExportSettings(): Promise<QBExportSettings> {
 /**
  * Save QuickBooks export settings
  */
-export async function saveExportSettings(settings: QBExportSettings): Promise<void> {
-  const docRef = doc(db, 'settings', SETTINGS_DOC_ID);
+export async function saveExportSettingsForTenant(tenantId: string, settings: QBExportSettings): Promise<void> {
+  const docRef = doc(db, paths.quickbooksExportSettings(tenantId));
   await setDoc(docRef, {
     ...settings,
     updatedAt: serverTimestamp(),
@@ -570,7 +596,11 @@ export function getDefaultMappings(): QBAccountMapping[] {
  * Log an export for audit trail
  */
 export async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<string> {
-  const docRef = await addDoc(collection(db, 'qb_export_logs'), {
+  if (!log.tenantId) {
+    throw new Error('Missing tenantId for QB export log');
+  }
+
+  const docRef = await addDoc(collection(db, paths.qbExportLogs(log.tenantId)), {
     ...log,
     createdAt: serverTimestamp(),
   });
@@ -581,8 +611,20 @@ export async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Pro
  * Get export history for a payroll run
  */
 export async function getExportHistory(payrollRunId?: string, maxResults: number = 20): Promise<QBExportLog[]> {
+  console.warn('getExportHistory() called without tenantId; returning empty list.');
+  return [];
+}
+
+/**
+ * Get export history for a payroll run (tenant-scoped)
+ */
+export async function getExportHistoryForTenant(
+  tenantId: string,
+  payrollRunId?: string,
+  maxResults: number = 20
+): Promise<QBExportLog[]> {
   let q = query(
-    collection(db, 'qb_export_logs'),
+    collection(db, paths.qbExportLogs(tenantId)),
     orderBy('createdAt', 'desc'),
     limit(maxResults)
   );
@@ -658,13 +700,14 @@ export interface ExportResult {
  * Generate export file for a payroll run
  */
 export async function exportPayrollToQuickBooks(
+  tenantId: string,
   payrollRun: PayrollRun | TLPayrollRun,
   records: (PayrollRecord | TLPayrollRecord)[],
   options: QBExportOptions,
   exportedBy: string
 ): Promise<ExportResult> {
   // Get account mappings
-  const settings = await getExportSettings();
+  const settings = await getExportSettingsForTenant(tenantId);
   const mappings = options.useCustomMappings && options.customMappings
     ? options.customMappings
     : settings.accountMappings;
@@ -693,6 +736,7 @@ export async function exportPayrollToQuickBooks(
 
   // Log the export
   await logExport({
+    tenantId,
     payrollRunId: payrollRun.id || '',
     payrollPeriod: formatPeriodName(payrollRun.periodStart, payrollRun.periodEnd),
     payDate: payrollRun.payDate,

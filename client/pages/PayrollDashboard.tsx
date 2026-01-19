@@ -19,6 +19,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
+import { adjustToNextBusinessDayTL } from "@/lib/payroll/tl-holidays";
 import {
   Calculator,
   DollarSign,
@@ -44,6 +45,7 @@ import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
 
 const theme = sectionThemes.payroll;
 
@@ -65,6 +67,7 @@ export default function PayrollDashboard() {
   const navigate = useNavigate();
   const { t, locale } = useI18n();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
   const [stats, setStats] = useState({
@@ -139,19 +142,28 @@ export default function PayrollDashboard() {
   // Calculate compliance deadlines with urgency
   const getComplianceDeadlines = () => {
     const now = new Date();
+    const pad2 = (n: number) => String(n).padStart(2, "0");
 
     // WIT due 15th of following month
-    let witDate = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-    if (now.getDate() > 15) {
-      witDate = new Date(now.getFullYear(), now.getMonth() + 2, 15);
-    }
+    const witCandidate = new Date(now.getFullYear(), now.getMonth(), 15);
+    const witBase = now <= witCandidate
+      ? witCandidate
+      : new Date(now.getFullYear(), now.getMonth() + 1, 15);
+    const witIso = adjustToNextBusinessDayTL(
+      `${witBase.getFullYear()}-${pad2(witBase.getMonth() + 1)}-${pad2(witBase.getDate())}`
+    );
+    const witDate = new Date(`${witIso}T00:00:00`);
     const witDays = Math.ceil((witDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
-    // INSS due 10th of following month
-    let inssDate = new Date(now.getFullYear(), now.getMonth() + 1, 10);
-    if (now.getDate() > 10) {
-      inssDate = new Date(now.getFullYear(), now.getMonth() + 2, 10);
-    }
+    // INSS payment window starts 10th; use 20th as the “latest safe” due date
+    const inssCandidate = new Date(now.getFullYear(), now.getMonth(), 20);
+    const inssBase = now <= inssCandidate
+      ? inssCandidate
+      : new Date(now.getFullYear(), now.getMonth() + 1, 20);
+    const inssIso = adjustToNextBusinessDayTL(
+      `${inssBase.getFullYear()}-${pad2(inssBase.getMonth() + 1)}-${pad2(inssBase.getDate())}`
+    );
+    const inssDate = new Date(`${inssIso}T00:00:00`);
     const inssDays = Math.ceil((inssDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 
     return {
@@ -179,7 +191,7 @@ export default function PayrollDashboard() {
       const dateLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
 
       const [employees, leaveStats] = await Promise.all([
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
         leaveService.getLeaveStats(),
       ]);
 
@@ -190,8 +202,12 @@ export default function PayrollDashboard() {
       );
 
       // Calculate INSS contributions
-      const employerINSS = grossPayroll * TL_INSS.employerRate;
-      const employeeINSS = grossPayroll * TL_INSS.employeeRate;
+      const inssBaseTotal = activeEmployees.reduce(
+        (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
+        0
+      );
+      const employerINSS = inssBaseTotal * TL_INSS.employerRate;
+      const employeeINSS = inssBaseTotal * TL_INSS.employeeRate;
       const estimatedNet = grossPayroll - employeeINSS; // Simplified - actual would include WIT
 
       // Count employees with blocking issues

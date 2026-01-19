@@ -20,6 +20,8 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { auditLogService } from './auditLogService';
+import type { AuditContext } from './employeeService';
 import type {
   PayrollRun,
   PayrollRecord,
@@ -43,6 +45,10 @@ class PayrollRunService {
 
   async getAllPayrollRuns(options: ListPayrollRunsOptions = {}): Promise<PayrollRun[]> {
     let q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+
+    if (options.tenantId) {
+      q = query(q, where('tenantId', '==', options.tenantId));
+    }
 
     if (options.status) {
       q = query(q, where('status', '==', options.status));
@@ -89,7 +95,7 @@ class PayrollRunService {
   async createPayrollRun(payrollRun: Omit<PayrollRun, 'id'>): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...payrollRun,
-      status: 'draft',
+      status: payrollRun.status || 'draft',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -103,7 +109,8 @@ class PayrollRunService {
    */
   async createPayrollRunWithRecords(
     payrollRun: Omit<PayrollRun, 'id'>,
-    records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[]
+    records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[],
+    audit?: AuditContext
   ): Promise<{ runId: string; recordIds: string[] }> {
     const batch = writeBatch(db);
 
@@ -136,6 +143,25 @@ class PayrollRunService {
     // Atomic commit - all or nothing
     await batch.commit();
 
+    // Log to audit trail if context provided
+    if (audit) {
+      const tenantId = payrollRun.tenantId || audit.tenantId;
+      if (tenantId) {
+        await auditLogService.logPayrollAction({
+          ...audit,
+          tenantId,
+          action: 'payroll.run',
+          payrollRunId: runId,
+          period: `${payrollRun.periodStart} to ${payrollRun.periodEnd}`,
+          metadata: {
+            employeeCount: records.length,
+            totalGross: records.reduce((sum, r) => sum + (r.totalGrossPay || 0), 0),
+            totalNet: records.reduce((sum, r) => sum + (r.netPay || 0), 0),
+          },
+        }).catch(err => console.error('Audit log failed:', err));
+      }
+    }
+
     return { runId, recordIds };
   }
 
@@ -148,7 +174,14 @@ class PayrollRunService {
     return true;
   }
 
-  async approvePayrollRun(id: string, approvedBy: string): Promise<boolean> {
+  async approvePayrollRun(
+    id: string,
+    approvedBy: string,
+    audit?: AuditContext
+  ): Promise<boolean> {
+    // Get payroll info for audit
+    const payroll = audit ? await this.getPayrollRunById(id) : null;
+
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {
       status: 'approved',
@@ -156,6 +189,26 @@ class PayrollRunService {
       approvedAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // Log to audit trail if context provided
+    if (audit && payroll) {
+      const tenantId = payroll.tenantId || audit.tenantId;
+      if (tenantId) {
+        await auditLogService.logPayrollAction({
+          ...audit,
+          tenantId,
+          action: 'payroll.approve',
+          payrollRunId: id,
+          period: `${payroll.periodStart} to ${payroll.periodEnd}`,
+          metadata: {
+            totalGross: payroll.totalGrossPay,
+            totalNet: payroll.totalNetPay,
+            employeeCount: payroll.employeeCount,
+          },
+        }).catch(err => console.error('Audit log failed:', err));
+      }
+    }
+
     return true;
   }
 
@@ -225,10 +278,11 @@ class PayrollRecordService {
     return collection(db, 'payrollRecords');
   }
 
-  async getPayrollRecordsByRunId(payrollRunId: string): Promise<PayrollRecord[]> {
+  async getPayrollRecordsByRunId(payrollRunId: string, tenantId?: string): Promise<PayrollRecord[]> {
     const q = query(
       this.collectionRef,
       where('payrollRunId', '==', payrollRunId),
+      ...(tenantId ? [where('tenantId', '==', tenantId)] : []),
       orderBy('employeeName', 'asc')
     );
 

@@ -20,6 +20,7 @@ import {
 import DepartmentManager from "@/components/DepartmentManager";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   DragDropContext,
@@ -70,6 +71,7 @@ export default function OrganizationChart() {
   const [dragMode, setDragMode] = useState(false);
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   useEffect(() => {
     loadData();
@@ -87,7 +89,7 @@ export default function OrganizationChart() {
       try {
         console.log("📊 Loading organization data from Firebase...");
 
-        employeesData = await employeeService.getAllEmployees();
+        employeesData = await employeeService.getAllEmployees(tenantId);
         console.log("✅ Employees loaded:", employeesData.length);
 
         departmentsData = await departmentService.getAllDepartments();
@@ -893,4 +895,3 @@ export default function OrganizationChart() {
     </div>
   );
 }
-

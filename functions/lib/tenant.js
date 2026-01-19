@@ -208,6 +208,9 @@ async function createDefaultTenantData(db, tenantId) {
     await batch.commit();
     firebase_functions_1.logger.info(`Created default data for tenant: ${tenantId}`);
 }
+/**
+ * Cloud Function to add a user to an existing tenant
+ */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
     const { tenantId, userEmail, role, modules = [] } = request.data;
     // Validate caller permissions (should be owner or hr-admin of the tenant)

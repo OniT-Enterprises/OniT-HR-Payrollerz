@@ -53,12 +53,12 @@ import {
   DEFAULT_TL_ACCOUNT_MAPPINGS,
 } from '@/types/quickbooks';
 import {
-  getExportSettings,
-  saveExportSettings,
+  getExportSettingsForTenant,
+  saveExportSettingsForTenant,
 } from '@/services/quickbooksExportService';
 
 interface QuickBooksSettingsProps {
-  tenantId?: string;
+  tenantId: string;
 }
 
 export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
@@ -82,7 +82,7 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   const loadSettings = async () => {
     try {
       setLoading(true);
-      const existingSettings = await getExportSettings();
+      const existingSettings = await getExportSettingsForTenant(tenantId);
       if (existingSettings) {
         setSettings(existingSettings);
       }
@@ -96,7 +96,7 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      await saveExportSettings(settings);
+      await saveExportSettingsForTenant(tenantId, settings);
       toast({
         title: t('payroll.quickbooks.settings.savedTitle') || 'Settings Saved',
         description: t('payroll.quickbooks.settings.savedDesc') || 'QuickBooks export settings have been updated.',

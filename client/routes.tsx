@@ -98,6 +98,8 @@ const AttendanceReports = lazy(() => import("@/pages/reports/AttendanceReports")
 const CustomReports = lazy(() => import("@/pages/reports/CustomReports"));
 const DepartmentReports = lazy(() => import("@/pages/reports/DepartmentReports"));
 const SetupReports = lazy(() => import("@/pages/reports/SetupReports"));
+const ATTLMonthlyWIT = lazy(() => import("@/pages/reports/ATTLMonthlyWIT"));
+const INSSMonthly = lazy(() => import("@/pages/reports/INSSMonthly"));
 
 // Admin
 const SeedDatabase = lazy(() => import("@/pages/admin/SeedDatabase"));
@@ -108,6 +110,7 @@ const UserList = lazy(() => import("@/pages/admin/UserList"));
 const AuditLog = lazy(() => import("@/pages/admin/AuditLog"));
 const AdminSetup = lazy(() => import("@/pages/admin/AdminSetup"));
 const DocumentAlerts = lazy(() => import("@/pages/admin/DocumentAlerts"));
+const ForeignWorkers = lazy(() => import("@/pages/admin/ForeignWorkers"));
 
 // Export components for use in HomeRoute
 export { Login, Dashboard, Landing, NotFound, Settings, Signup, AdminSetup };
@@ -231,6 +234,10 @@ export const reportsRoutes = (
     <Route path="/reports/departments" element={<DepartmentReports />} />
     <Route path="/reports/department" element={<Navigate to="/reports/departments" replace />} />
     <Route path="/reports/setup" element={<SetupReports />} />
+
+    {/* Tax Filings (ATTL) */}
+    <Route path="/reports/attl-monthly-wit" element={<ATTLMonthlyWIT />} />
+    <Route path="/reports/inss-monthly" element={<INSSMonthly />} />
   </>
 );
 
@@ -280,6 +287,8 @@ export const adminRoutes = (
     <Route path="/admin/setup" element={<AdminSetup />} />
     {/* Document alerts - accessible to all HR users */}
     <Route path="/admin/document-alerts" element={<DocumentAlerts />} />
+    {/* Foreign workers - accessible to all HR users */}
+    <Route path="/admin/foreign-workers" element={<ForeignWorkers />} />
     <Route path="/admin" element={<Navigate to="/admin/tenants" replace />} />
     <Route
       path="/admin/tenants"

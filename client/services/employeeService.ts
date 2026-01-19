@@ -17,6 +17,20 @@ import {
   Timestamp,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
+import type { ForeignWorkerData } from "@/types/tax-filing";
+import { auditLogService } from "./auditLogService";
+
+/**
+ * Audit context for logging user actions
+ * Pass this to methods that modify data to enable audit trail
+ */
+export interface AuditContext {
+  userId: string;
+  userEmail: string;
+  userName?: string;
+  tenantId: string; // Required for tenant-scoped audit logging
+}
 
 // Timor-Leste specific residency status
 export type ResidencyStatus = 'timorese' | 'permanent_resident' | 'foreign_worker';
@@ -98,6 +112,9 @@ export interface Employee {
   status: "active" | "inactive" | "terminated";
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;
+  // Foreign worker tracking (optional - only for non-resident employees)
+  isForeignWorker?: boolean;
+  foreignWorker?: ForeignWorkerData;
 }
 
 /**
@@ -150,8 +167,8 @@ function mapEmployee(doc: DocumentSnapshot): Employee {
 }
 
 class EmployeeService {
-  private get collectionRef() {
-    return collection(db, "employees");
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.employees(tenantId));
   }
 
   /**
@@ -159,7 +176,7 @@ class EmployeeService {
    * Filters like department, status, employmentType are applied server-side
    * Filters like searchTerm, salary range are applied client-side
    */
-  async getEmployees(filters: EmployeeFilters = {}): Promise<PaginatedResult<Employee>> {
+  async getEmployees(tenantId: string, filters: EmployeeFilters = {}): Promise<PaginatedResult<Employee>> {
     const {
       department,
       status,
@@ -197,7 +214,7 @@ class EmployeeService {
     // Fetch one extra to check if there's more
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let employees = querySnapshot.docs.map(mapEmployee);
@@ -260,13 +277,13 @@ class EmployeeService {
    * Get all employees (convenience method, uses getEmployees internally)
    * @deprecated Use getEmployees() with filters for better performance
    */
-  async getAllEmployees(maxResults: number = 500): Promise<Employee[]> {
-    const result = await this.getEmployees({ pageSize: maxResults });
+  async getAllEmployees(tenantId: string, maxResults: number = 500): Promise<Employee[]> {
+    const result = await this.getEmployees(tenantId, { pageSize: maxResults });
     return result.data;
   }
 
-  async getEmployeeById(id: string): Promise<Employee | null> {
-    const docRef = doc(db, "employees", id);
+  async getEmployeeById(tenantId: string, id: string): Promise<Employee | null> {
+    const docRef = doc(db, paths.employee(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -276,46 +293,113 @@ class EmployeeService {
     return mapEmployee(docSnap);
   }
 
-  async addEmployee(employee: Omit<Employee, "id">): Promise<string> {
-    const docRef = await addDoc(this.collectionRef, {
+  async addEmployee(
+    tenantId: string,
+    employee: Omit<Employee, "id">,
+    audit?: AuditContext
+  ): Promise<string> {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...employee,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    // Log to audit trail if context provided
+    if (audit) {
+      const employeeName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
+      await auditLogService.logEmployeeAction({
+        ...audit,
+        tenantId,
+        action: "employee.create",
+        employeeId: docRef.id,
+        employeeName,
+      }).catch(err => console.error("Audit log failed:", err));
+    }
+
     return docRef.id;
   }
 
   async updateEmployee(
+    tenantId: string,
     id: string,
-    updates: Partial<Employee>
+    updates: Partial<Employee>,
+    audit?: AuditContext & { changes?: { field: string; from: unknown; to: unknown }[] }
   ): Promise<boolean> {
-    const docRef = doc(db, "employees", id);
+    // Get current employee for audit trail
+    let oldEmployee: Employee | null = null;
+    if (audit) {
+      oldEmployee = await this.getEmployeeById(tenantId, id);
+    }
+
+    const docRef = doc(db, paths.employee(tenantId, id));
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     });
+
+    // Log to audit trail if context provided
+    if (audit && oldEmployee) {
+      const employeeName = `${oldEmployee.personalInfo.firstName} ${oldEmployee.personalInfo.lastName}`;
+
+      // Determine action type based on status change
+      let action: "employee.update" | "employee.terminate" | "employee.reactivate" = "employee.update";
+      if (updates.status === "terminated" && oldEmployee.status !== "terminated") {
+        action = "employee.terminate";
+      } else if (updates.status === "active" && oldEmployee.status === "terminated") {
+        action = "employee.reactivate";
+      }
+
+      await auditLogService.logEmployeeAction({
+        ...audit,
+        tenantId,
+        action,
+        employeeId: id,
+        employeeName,
+        changes: audit.changes,
+      }).catch(err => console.error("Audit log failed:", err));
+    }
+
     return true;
   }
 
-  async deleteEmployee(id: string): Promise<boolean> {
-    const docRef = doc(db, "employees", id);
+  async deleteEmployee(tenantId: string, id: string, audit?: AuditContext): Promise<boolean> {
+    // Get employee info for audit trail before deletion
+    let employee: Employee | null = null;
+    if (audit) {
+      employee = await this.getEmployeeById(tenantId, id);
+    }
+
+    const docRef = doc(db, paths.employee(tenantId, id));
     await deleteDoc(docRef);
+
+    // Log to audit trail if context provided
+    if (audit && employee) {
+      const employeeName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
+      await auditLogService.logEmployeeAction({
+        ...audit,
+        tenantId,
+        action: "employee.delete",
+        employeeId: id,
+        employeeName,
+      }).catch(err => console.error("Audit log failed:", err));
+    }
+
     return true;
   }
 
   /**
    * Get employees by department (server-side filtered)
    */
-  async getEmployeesByDepartment(department: string): Promise<Employee[]> {
-    const result = await this.getEmployees({ department, pageSize: 500 });
+  async getEmployeesByDepartment(tenantId: string, department: string): Promise<Employee[]> {
+    const result = await this.getEmployees(tenantId, { department, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get active employees only (server-side filtered)
    */
-  async getActiveEmployees(): Promise<Employee[]> {
-    const result = await this.getEmployees({ status: "active", pageSize: 500 });
+  async getActiveEmployees(tenantId: string): Promise<Employee[]> {
+    const result = await this.getEmployees(tenantId, { status: "active", pageSize: 500 });
     return result.data;
   }
 
@@ -323,16 +407,16 @@ class EmployeeService {
    * Search employees by text (client-side filtering)
    * Note: For large datasets, consider implementing Algolia or similar
    */
-  async searchEmployees(searchTerm: string): Promise<Employee[]> {
-    const result = await this.getEmployees({ searchTerm, pageSize: 500 });
+  async searchEmployees(tenantId: string, searchTerm: string): Promise<Employee[]> {
+    const result = await this.getEmployees(tenantId, { searchTerm, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get count of employees by status (useful for dashboards)
    */
-  async getEmployeeCounts(): Promise<{ active: number; inactive: number; terminated: number; total: number }> {
-    const all = await this.getAllEmployees();
+  async getEmployeeCounts(tenantId: string): Promise<{ active: number; inactive: number; terminated: number; total: number }> {
+    const all = await this.getAllEmployees(tenantId);
     return {
       active: all.filter(e => e.status === "active").length,
       inactive: all.filter(e => e.status === "inactive").length,

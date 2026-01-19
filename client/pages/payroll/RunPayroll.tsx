@@ -88,6 +88,8 @@ import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { sumMoney } from "@/lib/currency";
+import { useAuth } from "@/contexts/AuthContext";
+import { useTenantId } from "@/contexts/TenantContext";
 
 interface EmployeePayrollData {
   employee: Employee;
@@ -116,6 +118,8 @@ interface EmployeePayrollData {
 export default function RunPayroll() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { user } = useAuth();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -160,7 +164,7 @@ export default function RunPayroll() {
     const loadEmployees = async () => {
       try {
         setLoading(true);
-        const data = await employeeService.getAllEmployees();
+        const data = await employeeService.getAllEmployees(tenantId);
         const activeEmployees = data.filter((e) => e.status === "active");
         setEmployees(activeEmployees);
 
@@ -423,7 +427,12 @@ export default function RunPayroll() {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
+      const includedData = employeePayrollData
+        .filter((d) => d.calculation)
+        .filter((d) => !excludedEmployees.has(d.employee.id || ""));
+
       const payrollRun: Omit<PayrollRun, "id"> = {
+        tenantId,
         periodStart,
         periodEnd,
         payDate,
@@ -434,18 +443,15 @@ export default function RunPayroll() {
         totalDeductions: totals.totalDeductions,
         totalEmployerTaxes: totals.inssEmployer,
         totalEmployerContributions: 0,
-        employeeCount: employeePayrollData.length,
-        createdBy: "current-user",
+        employeeCount: includedData.length,
+        createdBy: user?.uid || "current-user",
         notes: "",
       };
 
-      const runId = await payrollService.runs.createPayrollRun(payrollRun);
-
       // Create individual payroll records
-      const records: Omit<PayrollRecord, "id">[] = employeePayrollData
-        .filter((d) => d.calculation)
+      const records: Omit<PayrollRecord, "id" | "payrollRunId">[] = includedData
         .map((d) => ({
-          payrollRunId: runId,
+          tenantId,
           employeeId: d.employee.id || "",
           employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
           employeeNumber: d.employee.jobDetails.employeeId,
@@ -457,7 +463,9 @@ export default function RunPayroll() {
           holidayHours: d.holidayHours,
           ptoHoursUsed: 0,
           sickHoursUsed: d.sickDays * 8,
-          hourlyRate: d.calculation!.regularPay / d.regularHours,
+          hourlyRate:
+            (d.employee.compensation.monthlySalary || 0) /
+            ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
           overtimeRate: TL_OVERTIME_RATES.standard,
           earnings: [
             {
@@ -541,7 +549,7 @@ export default function RunPayroll() {
           ytdMedicare: 0,
         }));
 
-      await payrollService.records.createPayrollRecordsBatch(records);
+      await payrollService.runs.createPayrollRunWithRecords(payrollRun, records);
 
       toast({
         title: "Success",
@@ -574,8 +582,135 @@ export default function RunPayroll() {
         return;
       }
 
+      const includedData = employeePayrollData
+        .filter((d) => d.calculation)
+        .filter((d) => !excludedEmployees.has(d.employee.id || ""));
+
+      const payrollRun: Omit<PayrollRun, "id"> = {
+        tenantId,
+        periodStart,
+        periodEnd,
+        payDate,
+        payFrequency,
+        status: "draft",
+        totalGrossPay: totals.grossPay,
+        totalNetPay: totals.netPay,
+        totalDeductions: totals.totalDeductions,
+        totalEmployerTaxes: totals.inssEmployer,
+        totalEmployerContributions: 0,
+        employeeCount: includedData.length,
+        createdBy: user?.uid || "current-user",
+        notes: "",
+      };
+
+      const records: Omit<PayrollRecord, "id" | "payrollRunId">[] = includedData.map(
+        (d) => ({
+          tenantId,
+          employeeId: d.employee.id || "",
+          employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
+          employeeNumber: d.employee.jobDetails.employeeId,
+          department: d.employee.jobDetails.department,
+          position: d.employee.jobDetails.position,
+          regularHours: d.regularHours,
+          overtimeHours: d.overtimeHours,
+          doubleTimeHours: d.holidayHours,
+          holidayHours: d.holidayHours,
+          ptoHoursUsed: 0,
+          sickHoursUsed: d.sickDays * 8,
+          hourlyRate:
+            (d.employee.compensation.monthlySalary || 0) /
+            ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
+          overtimeRate: TL_OVERTIME_RATES.standard,
+          earnings: [
+            {
+              type: "regular" as const,
+              description: TL_EARNING_TYPE_LABELS.regular.en,
+              amount: d.calculation!.regularPay,
+            },
+            ...(d.calculation!.overtimePay > 0
+              ? [
+                  {
+                    type: "overtime" as const,
+                    description: TL_EARNING_TYPE_LABELS.overtime.en,
+                    hours: d.overtimeHours,
+                    amount: d.calculation!.overtimePay,
+                  },
+                ]
+              : []),
+            ...(d.calculation!.nightShiftPay > 0
+              ? [
+                  {
+                    type: "other" as const,
+                    description: TL_EARNING_TYPE_LABELS.night_shift.en,
+                    amount: d.calculation!.nightShiftPay,
+                  },
+                ]
+              : []),
+            ...(d.bonus > 0
+              ? [
+                  {
+                    type: "bonus" as const,
+                    description: TL_EARNING_TYPE_LABELS.bonus.en,
+                    amount: d.bonus,
+                  },
+                ]
+              : []),
+            ...(d.perDiem > 0
+              ? [
+                  {
+                    type: "other" as const,
+                    description: TL_EARNING_TYPE_LABELS.per_diem.en,
+                    amount: d.perDiem,
+                  },
+                ]
+              : []),
+          ],
+          totalGrossPay: d.calculation!.grossPay,
+          deductions: [
+            {
+              type: "federal_tax" as const,
+              description: TL_DEDUCTION_TYPE_LABELS.income_tax.en,
+              amount: d.calculation!.incomeTax,
+              isPreTax: false,
+              isPercentage: false,
+            },
+            {
+              type: "social_security" as const,
+              description: TL_DEDUCTION_TYPE_LABELS.inss_employee.en,
+              amount: d.calculation!.inssEmployee,
+              isPreTax: false,
+              isPercentage: false,
+            },
+          ],
+          totalDeductions: d.calculation!.totalDeductions,
+          employerContributions: [],
+          totalEmployerContributions: 0,
+          employerTaxes: [
+            {
+              type: "social_security" as const,
+              description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
+              amount: d.calculation!.inssEmployer,
+            },
+          ],
+          totalEmployerTaxes: d.calculation!.inssEmployer,
+          netPay: d.calculation!.netPay,
+          totalEmployerCost: d.calculation!.totalEmployerCost,
+          ytdGrossPay: 0,
+          ytdNetPay: 0,
+          ytdFederalTax: 0,
+          ytdStateTax: 0,
+          ytdSocialSecurity: 0,
+          ytdMedicare: 0,
+        })
+      );
+
+      const { runId } = await payrollService.runs.createPayrollRunWithRecords(
+        payrollRun,
+        records
+      );
+
       // Create and post accounting journal entry from totals
-      await accountingService.journalEntries.createFromPayrollSummary({
+      const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
         periodStart,
         periodEnd,
         payDate,
@@ -584,13 +719,18 @@ export default function RunPayroll() {
         totalIncomeTax: totals.incomeTax,
         totalINSSEmployee: totals.inssEmployee,
         totalNetPay: totals.netPay,
-        employeeCount: employees.length,
-        approvedBy: "current-user",
-      });
+        employeeCount: includedData.length,
+        approvedBy: user?.uid || "current-user",
+        sourceId: runId,
+      }, tenantId);
+
+      await payrollService.runs.approvePayrollRun(runId, user?.uid || "current-user");
+      await payrollService.runs.markPayrollRunAsPaid(runId);
+      await payrollService.runs.updatePayrollRun(runId, { journalEntryId });
 
       toast({
         title: "Payroll Processed",
-        description: `Payroll for ${employees.length} employees processed and journal posted.`,
+        description: `Payroll for ${includedData.length} employees processed and journal posted.`,
       });
 
       setShowFinalConfirmDialog(false);

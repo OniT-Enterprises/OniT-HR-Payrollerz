@@ -62,10 +62,12 @@ import {
   Pencil,
   Upload,
   Plus,
+  Globe,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 
 const theme = sectionThemes.people;
 
@@ -212,6 +214,7 @@ function PeopleDashboardSkeleton() {
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [departments, setDepartments] = useState<string[]>([]);
@@ -239,7 +242,7 @@ export default function PeopleDashboard() {
   const loadData = async () => {
     try {
       const [employeesData, departmentsData, leaveStats] = await Promise.all([
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
         departmentService.getAllDepartments(),
         leaveService.getLeaveStats(),
       ]);
@@ -835,7 +838,7 @@ export default function PeopleDashboard() {
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-1.5">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
                     {[
                       {
                         label: "Departments",
@@ -851,6 +854,11 @@ export default function PeopleDashboard() {
                         label: "All Employees",
                         path: "/people/employees",
                         icon: Users,
+                      },
+                      {
+                        label: "Foreign Workers",
+                        path: "/admin/foreign-workers",
+                        icon: Globe,
                       },
                     ].map((link) => (
                       <Button

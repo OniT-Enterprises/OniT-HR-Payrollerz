@@ -50,6 +50,7 @@ export type EarningType =
  */
 export interface PayrollRun {
   id?: string;
+  tenantId?: string;
 
   // Period information
   periodStart: string;  // YYYY-MM-DD
@@ -78,6 +79,9 @@ export interface PayrollRun {
   // Notes
   notes?: string;
 
+  // Accounting linkage (optional)
+  journalEntryId?: string;
+
   updatedAt?: FirestoreTimestamp;
 }
 
@@ -87,6 +91,7 @@ export interface PayrollRun {
 export interface PayrollRecord {
   id?: string;
   payrollRunId: string;
+  tenantId?: string;
   employeeId: string;
 
   // Employee snapshot (denormalized for historical reference)
@@ -389,6 +394,7 @@ export interface PayrollCalculationResult {
  * List/filter options
  */
 export interface ListPayrollRunsOptions {
+  tenantId?: string;
   status?: PayrollStatus;
   startDate?: string;
   endDate?: string;

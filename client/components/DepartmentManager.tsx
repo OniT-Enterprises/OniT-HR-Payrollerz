@@ -32,6 +32,7 @@ import {
   type DepartmentInput,
 } from "@/services/departmentService";
 import { employeeService, type Employee } from "@/services/employeeService";
+import { useTenantId } from "@/contexts/TenantContext";
 import {
   departmentIcons,
   departmentColors,
@@ -67,6 +68,7 @@ export default function DepartmentManager({
   onDepartmentChange,
 }: DepartmentManagerProps) {
   const { toast } = useToast();
+  const tenantId = useTenantId();
   const [departments, setDepartments] = useState<Department[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
@@ -111,7 +113,7 @@ export default function DepartmentManager({
       setLoading(true);
       const [deptData, empData] = await Promise.all([
         departmentService.getAllDepartments(),
-        employeeService.getAllEmployees(),
+        employeeService.getAllEmployees(tenantId),
       ]);
       setDepartments(deptData);
       setEmployees(empData);

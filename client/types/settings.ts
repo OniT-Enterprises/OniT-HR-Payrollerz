@@ -368,7 +368,7 @@ export const TL_DEFAULT_TAX_CONFIG: TaxConfig = {
 export const TL_DEFAULT_SS_CONFIG: SocialSecurityConfig = {
   employeeRate: 4,
   employerRate: 6,
-  paymentDueDay: 10,
+  paymentDueDay: 20,
   excludeFoodAllowance: true,
   excludePerDiem: true,
   smallBusinessReduction: true,
@@ -413,7 +413,7 @@ export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {
     id: 'sick',
     name: 'Sick Leave',
     code: 'SL',
-    daysPerYear: 30,
+    daysPerYear: 12,
     isPaid: true,
     paidPercentage: 100,
     requiresCertificate: true,
