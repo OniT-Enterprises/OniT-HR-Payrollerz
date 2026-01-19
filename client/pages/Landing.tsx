@@ -187,9 +187,9 @@ export default function Landing() {
 
             {/* Nav Links */}
             <div className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-sm text-zinc-400 hover:text-white transition-colors">
+              <Link to="/features" className="text-sm text-zinc-400 hover:text-white transition-colors">
                 {t("landing.nav.features")}
-              </a>
+              </Link>
               <a href="#labor-law" className="text-sm text-zinc-400 hover:text-white transition-colors">
                 {t("landing.nav.laborLaw")}
               </a>

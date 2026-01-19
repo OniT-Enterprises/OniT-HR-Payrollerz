@@ -29,6 +29,7 @@ import Sitemap from "@/pages/Sitemap";
 // Lazy loaded routes - code split by section
 const Settings = lazy(() => import("@/pages/Settings"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
+const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
 
 // Section Dashboards
 const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
@@ -128,6 +129,7 @@ export const authRoutes = (
     <Route path="/auth/signup" element={<Signup />} />
     <Route path="/dashboard" element={<Dashboard />} />
     <Route path="/landing" element={<Landing />} />
+    <Route path="/features" element={<ProductDetails />} />
     <Route path="/settings" element={<Settings />} />
     <Route path="/sitemap" element={<Sitemap />} />
   </>
