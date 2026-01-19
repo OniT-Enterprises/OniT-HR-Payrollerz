@@ -527,6 +527,36 @@ service cloud.firestore {
       );
     }
 
+    // Attendance tracking
+    match /attendance/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Attendance import batches
+    match /attendanceImports/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
     // Accounting module collections
     match /accounts/{docId} {
       // Legacy global accounting collections are no longer used by the app; restrict to superadmins.
