@@ -71,7 +71,7 @@ export default function TrialBalance() {
   // Options
   const [includeZeroBalances, setIncludeZeroBalances] = useState(false);
 
-  // Load accounts on mount
+  // Load accounts when tenantId is available
   useEffect(() => {
     const loadAccounts = async () => {
       try {
@@ -84,8 +84,10 @@ export default function TrialBalance() {
       }
     };
 
-    loadAccounts();
-  }, []);
+    if (tenantId && tenantId !== "local-dev-tenant") {
+      loadAccounts();
+    }
+  }, [tenantId]);
 
   // Generate trial balance
   const handleGenerateTrialBalance = async () => {

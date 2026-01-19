@@ -323,6 +323,34 @@ service cloud.firestore {
       }
 
       // ============================================
+      // ACCOUNTING MODULE SUBCOLLECTIONS
+      // ============================================
+      match /accounts/{accountId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /generalLedger/{glId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /fiscalYears/{yearId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /fiscalPeriods/{periodId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
       // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
       // ============================================
       match /{collection}/{docId} {

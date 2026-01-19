@@ -71,7 +71,7 @@ export default function GeneralLedger() {
   // Search
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Load accounts on mount
+  // Load accounts when tenantId is available
   useEffect(() => {
     const loadAccounts = async () => {
       try {
@@ -86,8 +86,10 @@ export default function GeneralLedger() {
       }
     };
 
-    loadAccounts();
-  }, []);
+    if (tenantId && tenantId !== "local-dev-tenant") {
+      loadAccounts();
+    }
+  }, [tenantId]);
 
   // Get selected account details
   const selectedAccount = useMemo(() => {

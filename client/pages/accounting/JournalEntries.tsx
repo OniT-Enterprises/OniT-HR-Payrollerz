@@ -102,10 +102,12 @@ export default function JournalEntries() {
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
   ]);
 
-  // Load data
+  // Load data when tenantId is available (not the fallback)
   useEffect(() => {
-    loadData();
-  }, []);
+    if (tenantId && tenantId !== "local-dev-tenant") {
+      loadData();
+    }
+  }, [tenantId]);
 
   const loadData = async () => {
     try {

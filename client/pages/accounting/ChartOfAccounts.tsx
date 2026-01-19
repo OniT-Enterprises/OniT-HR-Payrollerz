@@ -96,10 +96,12 @@ export default function ChartOfAccounts() {
     parentAccountId: "",
   });
 
-  // Load accounts
+  // Load accounts when tenantId is available
   useEffect(() => {
-    loadAccounts();
-  }, []);
+    if (tenantId && tenantId !== "local-dev-tenant") {
+      loadAccounts();
+    }
+  }, [tenantId]);
 
   const loadAccounts = async () => {
     try {
