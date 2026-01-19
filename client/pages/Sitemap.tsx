@@ -106,6 +106,18 @@ const sitemapData: SitemapSection[] = [
         path: '/people/org-chart',
         description: 'Visual hierarchy showing reporting relationships across your organization',
       },
+      {
+        name: 'Document Alerts',
+        path: '/admin/document-alerts',
+        description: 'Track expiring documents (passports, work permits, licenses)',
+        badge: 'Compliance',
+      },
+      {
+        name: 'Foreign Workers',
+        path: '/admin/foreign-workers',
+        description: 'Manage work permits and visa compliance for foreign employees',
+        badge: 'TL Compliance',
+      },
     ],
   },
   {
@@ -423,22 +435,11 @@ const sitemapData: SitemapSection[] = [
   },
   {
     title: 'Administration',
-    description: 'System configuration, user management, and compliance',
+    description: 'System configuration and superadmin tools',
     icon: Shield,
     color: 'text-slate-600',
     bgColor: 'bg-slate-100 dark:bg-slate-900',
     pages: [
-      {
-        name: 'Document Alerts',
-        path: '/admin/document-alerts',
-        description: 'Track expiring documents (passports, work permits, licenses)',
-      },
-      {
-        name: 'Foreign Workers',
-        path: '/admin/foreign-workers',
-        description: 'Manage work permits and visa compliance for foreign employees',
-        badge: 'TL Compliance',
-      },
       {
         name: 'Initial Setup',
         path: '/admin/setup',
