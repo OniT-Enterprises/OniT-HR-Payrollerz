@@ -21,6 +21,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type { Vendor, VendorFormData } from '@/types/money';
 
 /**
@@ -65,14 +66,17 @@ function mapVendor(docSnap: DocumentSnapshot): Vendor {
 }
 
 class VendorService {
-  private get collectionRef() {
-    return collection(db, 'vendors');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.vendors(tenantId));
   }
 
   /**
    * Get vendors with server-side filtering and pagination
    */
-  async getVendors(filters: VendorFilters = {}): Promise<PaginatedResult<Vendor>> {
+  async getVendors(
+    tenantId: string,
+    filters: VendorFilters = {}
+  ): Promise<PaginatedResult<Vendor>> {
     const {
       isActive,
       pageSize = 100,
@@ -96,7 +100,7 @@ class VendorService {
 
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let vendors = querySnapshot.docs.map(mapVendor);
@@ -133,24 +137,24 @@ class VendorService {
    * Get all vendors
    * @deprecated Use getVendors() with filters for better performance
    */
-  async getAllVendors(): Promise<Vendor[]> {
-    const result = await this.getVendors({ pageSize: 500 });
+  async getAllVendors(tenantId: string): Promise<Vendor[]> {
+    const result = await this.getVendors(tenantId, { pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get active vendors only (server-side filtered)
    */
-  async getActiveVendors(): Promise<Vendor[]> {
-    const result = await this.getVendors({ isActive: true, pageSize: 500 });
+  async getActiveVendors(tenantId: string): Promise<Vendor[]> {
+    const result = await this.getVendors(tenantId, { isActive: true, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get a single vendor by ID
    */
-  async getVendorById(id: string): Promise<Vendor | null> {
-    const docRef = doc(db, 'vendors', id);
+  async getVendorById(tenantId: string, id: string): Promise<Vendor | null> {
+    const docRef = doc(db, paths.vendor(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -163,7 +167,7 @@ class VendorService {
   /**
    * Create a new vendor
    */
-  async createVendor(data: VendorFormData): Promise<string> {
+  async createVendor(tenantId: string, data: VendorFormData): Promise<string> {
     const vendor: Omit<Vendor, 'id'> = {
       ...data,
       isActive: true,
@@ -171,7 +175,7 @@ class VendorService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...vendor,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -183,8 +187,12 @@ class VendorService {
   /**
    * Update an existing vendor
    */
-  async updateVendor(id: string, data: Partial<VendorFormData>): Promise<boolean> {
-    const docRef = doc(db, 'vendors', id);
+  async updateVendor(
+    tenantId: string,
+    id: string,
+    data: Partial<VendorFormData>
+  ): Promise<boolean> {
+    const docRef = doc(db, paths.vendor(tenantId, id));
     await updateDoc(docRef, {
       ...data,
       updatedAt: serverTimestamp(),
@@ -195,8 +203,8 @@ class VendorService {
   /**
    * Deactivate a vendor (soft delete)
    */
-  async deactivateVendor(id: string): Promise<boolean> {
-    const docRef = doc(db, 'vendors', id);
+  async deactivateVendor(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.vendor(tenantId, id));
     await updateDoc(docRef, {
       isActive: false,
       updatedAt: serverTimestamp(),
@@ -207,8 +215,8 @@ class VendorService {
   /**
    * Reactivate a vendor
    */
-  async reactivateVendor(id: string): Promise<boolean> {
-    const docRef = doc(db, 'vendors', id);
+  async reactivateVendor(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.vendor(tenantId, id));
     await updateDoc(docRef, {
       isActive: true,
       updatedAt: serverTimestamp(),
@@ -219,8 +227,8 @@ class VendorService {
   /**
    * Search vendors by name (client-side filtering)
    */
-  async searchVendors(searchTerm: string): Promise<Vendor[]> {
-    const result = await this.getVendors({ searchTerm, isActive: true, pageSize: 500 });
+  async searchVendors(tenantId: string, searchTerm: string): Promise<Vendor[]> {
+    const result = await this.getVendors(tenantId, { searchTerm, isActive: true, pageSize: 500 });
     return result.data;
   }
 }

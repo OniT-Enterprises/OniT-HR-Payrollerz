@@ -21,6 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import type { PaymentReceived } from '@/types/money';
@@ -56,20 +57,24 @@ export default function Payments() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentDisplay[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
 
   useEffect(() => {
-    loadPayments();
-  }, []);
+    if (session?.tid) {
+      loadPayments();
+    }
+  }, [session?.tid]);
 
   const loadPayments = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
       // Get all payments directly
-      const allPayments = await invoiceService.getAllPayments();
+      const allPayments = await invoiceService.getAllPayments(session.tid);
       setPayments(allPayments);
     } catch (error) {
       console.error('Error loading payments:', error);

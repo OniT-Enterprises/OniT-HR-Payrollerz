@@ -24,6 +24,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type {
   Invoice,
   InvoiceFormData,
@@ -110,16 +111,16 @@ function mapPayment(docSnap: DocumentSnapshot): PaymentReceived {
 // ============================================
 
 class InvoiceService {
-  private get collectionRef() {
-    return collection(db, 'invoices');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.invoices(tenantId));
   }
 
-  private get paymentsRef() {
-    return collection(db, 'payments_received');
+  private paymentsRef(tenantId: string) {
+    return collection(db, paths.paymentsReceived(tenantId));
   }
 
-  private get settingsRef() {
-    return doc(db, 'settings', 'invoice_settings');
+  private settingsRef(tenantId: string) {
+    return doc(db, paths.invoiceSettings(tenantId));
   }
 
   // ----------------------------------------
@@ -129,7 +130,10 @@ class InvoiceService {
   /**
    * Get invoices with server-side filtering and pagination
    */
-  async getInvoices(filters: InvoiceFilters = {}): Promise<PaginatedResult<Invoice>> {
+  async getInvoices(
+    tenantId: string,
+    filters: InvoiceFilters = {}
+  ): Promise<PaginatedResult<Invoice>> {
     const {
       status,
       customerId,
@@ -169,7 +173,7 @@ class InvoiceService {
 
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let invoices = querySnapshot.docs.map(mapInvoice);
@@ -213,33 +217,33 @@ class InvoiceService {
    * Get all invoices (convenience method)
    * @deprecated Use getInvoices() with filters for better performance
    */
-  async getAllInvoices(maxResults: number = 500): Promise<Invoice[]> {
-    const result = await this.getInvoices({ pageSize: maxResults });
+  async getAllInvoices(tenantId: string, maxResults: number = 500): Promise<Invoice[]> {
+    const result = await this.getInvoices(tenantId, { pageSize: maxResults });
     return result.data;
   }
 
   /**
    * Get invoices by status (server-side filtered)
    */
-  async getInvoicesByStatus(status: InvoiceStatus): Promise<Invoice[]> {
-    const result = await this.getInvoices({ status, pageSize: 500 });
+  async getInvoicesByStatus(tenantId: string, status: InvoiceStatus): Promise<Invoice[]> {
+    const result = await this.getInvoices(tenantId, { status, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get invoices for a customer (server-side filtered)
    */
-  async getInvoicesByCustomer(customerId: string): Promise<Invoice[]> {
-    const result = await this.getInvoices({ customerId, pageSize: 500 });
+  async getInvoicesByCustomer(tenantId: string, customerId: string): Promise<Invoice[]> {
+    const result = await this.getInvoices(tenantId, { customerId, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get overdue invoices (server-side filtered)
    */
-  async getOverdueInvoices(): Promise<Invoice[]> {
+  async getOverdueInvoices(tenantId: string): Promise<Invoice[]> {
     const today = new Date().toISOString().split('T')[0];
-    const result = await this.getInvoices({
+    const result = await this.getInvoices(tenantId, {
       status: ['sent', 'viewed', 'partial'],
       dueBefore: today,
       pageSize: 500,
@@ -250,8 +254,8 @@ class InvoiceService {
   /**
    * Get a single invoice by ID
    */
-  async getInvoiceById(id: string): Promise<Invoice | null> {
-    const docRef = doc(db, 'invoices', id);
+  async getInvoiceById(tenantId: string, id: string): Promise<Invoice | null> {
+    const docRef = doc(db, paths.invoice(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -264,9 +268,9 @@ class InvoiceService {
   /**
    * Get invoice by share token (for public viewing)
    */
-  async getInvoiceByShareToken(token: string): Promise<Invoice | null> {
+  async getInvoiceByShareToken(tenantId: string, token: string): Promise<Invoice | null> {
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('shareToken', '==', token),
       limit(1)
     );
@@ -282,15 +286,15 @@ class InvoiceService {
   /**
    * Create a new invoice
    */
-  async createInvoice(data: InvoiceFormData): Promise<string> {
+  async createInvoice(tenantId: string, data: InvoiceFormData): Promise<string> {
     // Get customer info
-    const customer = await customerService.getCustomerById(data.customerId);
+    const customer = await customerService.getCustomerById(tenantId, data.customerId);
     if (!customer) {
       throw new Error('Customer not found');
     }
 
     // Get next invoice number
-    const invoiceNumber = await this.getNextInvoiceNumber();
+    const invoiceNumber = await this.getNextInvoiceNumber(tenantId);
 
     // Calculate totals
     const items: InvoiceItem[] = data.items.map((item, index) => ({
@@ -331,7 +335,7 @@ class InvoiceService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...invoice,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -343,8 +347,12 @@ class InvoiceService {
   /**
    * Update an existing invoice (only if draft)
    */
-  async updateInvoice(id: string, data: Partial<InvoiceFormData>): Promise<boolean> {
-    const invoice = await this.getInvoiceById(id);
+  async updateInvoice(
+    tenantId: string,
+    id: string,
+    data: Partial<InvoiceFormData>
+  ): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error('Invoice not found');
     }
@@ -385,7 +393,7 @@ class InvoiceService {
 
     // If customer changed, update customer info
     if (data.customerId && data.customerId !== invoice.customerId) {
-      const customer = await customerService.getCustomerById(data.customerId);
+      const customer = await customerService.getCustomerById(tenantId, data.customerId);
       if (customer) {
         updates.customerName = customer.name;
         updates.customerEmail = customer.email;
@@ -394,7 +402,7 @@ class InvoiceService {
       }
     }
 
-    const docRef = doc(db, 'invoices', id);
+    const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp(),
@@ -406,8 +414,8 @@ class InvoiceService {
   /**
    * Mark invoice as sent
    */
-  async markAsSent(id: string): Promise<boolean> {
-    const docRef = doc(db, 'invoices', id);
+  async markAsSent(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       status: 'sent',
       sentAt: serverTimestamp(),
@@ -419,13 +427,13 @@ class InvoiceService {
   /**
    * Mark invoice as viewed (when customer opens share link)
    */
-  async markAsViewed(id: string): Promise<boolean> {
-    const invoice = await this.getInvoiceById(id);
+  async markAsViewed(tenantId: string, id: string): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice || invoice.status === 'draft' || invoice.viewedAt) {
       return false;
     }
 
-    const docRef = doc(db, 'invoices', id);
+    const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       status: invoice.status === 'sent' ? 'viewed' : invoice.status,
       viewedAt: serverTimestamp(),
@@ -437,8 +445,8 @@ class InvoiceService {
   /**
    * Cancel an invoice
    */
-  async cancelInvoice(id: string): Promise<boolean> {
-    const docRef = doc(db, 'invoices', id);
+  async cancelInvoice(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.invoice(tenantId, id));
     await updateDoc(docRef, {
       status: 'cancelled',
       updatedAt: serverTimestamp(),
@@ -449,8 +457,8 @@ class InvoiceService {
   /**
    * Delete a draft invoice
    */
-  async deleteInvoice(id: string): Promise<boolean> {
-    const invoice = await this.getInvoiceById(id);
+  async deleteInvoice(tenantId: string, id: string): Promise<boolean> {
+    const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error('Invoice not found');
     }
@@ -459,7 +467,7 @@ class InvoiceService {
       throw new Error('Cannot delete invoice that has been sent. Cancel it instead.');
     }
 
-    const docRef = doc(db, 'invoices', id);
+    const docRef = doc(db, paths.invoice(tenantId, id));
     await deleteDoc(docRef);
     return true;
   }
@@ -467,8 +475,8 @@ class InvoiceService {
   /**
    * Duplicate an invoice
    */
-  async duplicateInvoice(id: string): Promise<string> {
-    const invoice = await this.getInvoiceById(id);
+  async duplicateInvoice(tenantId: string, id: string): Promise<string> {
+    const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error('Invoice not found');
     }
@@ -492,7 +500,7 @@ class InvoiceService {
       terms: invoice.terms,
     };
 
-    return this.createInvoice(newInvoice);
+    return this.createInvoice(tenantId, newInvoice);
   }
 
   // ----------------------------------------
@@ -502,8 +510,12 @@ class InvoiceService {
   /**
    * Record a payment for an invoice
    */
-  async recordPayment(invoiceId: string, payment: PaymentFormData): Promise<string> {
-    const invoice = await this.getInvoiceById(invoiceId);
+  async recordPayment(
+    tenantId: string,
+    invoiceId: string,
+    payment: PaymentFormData
+  ): Promise<string> {
+    const invoice = await this.getInvoiceById(tenantId, invoiceId);
     if (!invoice) {
       throw new Error('Invoice not found');
     }
@@ -526,7 +538,7 @@ class InvoiceService {
       createdAt: new Date(),
     };
 
-    const paymentRef = await addDoc(this.paymentsRef, {
+    const paymentRef = await addDoc(this.paymentsRef(tenantId), {
       ...paymentRecord,
       createdAt: serverTimestamp(),
     });
@@ -537,7 +549,7 @@ class InvoiceService {
     const newStatus: InvoiceStatus =
       newBalanceDue <= 0 ? 'paid' : newBalanceDue < invoice.total ? 'partial' : invoice.status;
 
-    const invoiceRef = doc(db, 'invoices', invoiceId);
+    const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
     await updateDoc(invoiceRef, {
       amountPaid: newAmountPaid,
       balanceDue: Math.max(0, newBalanceDue),
@@ -552,9 +564,9 @@ class InvoiceService {
   /**
    * Get payments for an invoice
    */
-  async getPaymentsForInvoice(invoiceId: string): Promise<PaymentReceived[]> {
+  async getPaymentsForInvoice(tenantId: string, invoiceId: string): Promise<PaymentReceived[]> {
     const q = query(
-      this.paymentsRef,
+      this.paymentsRef(tenantId),
       where('invoiceId', '==', invoiceId),
       orderBy('date', 'desc')
     );
@@ -566,9 +578,9 @@ class InvoiceService {
   /**
    * Get all payments
    */
-  async getAllPayments(maxResults: number = 500): Promise<PaymentReceived[]> {
+  async getAllPayments(tenantId: string, maxResults: number = 500): Promise<PaymentReceived[]> {
     const querySnapshot = await getDocs(
-      query(this.paymentsRef, orderBy('date', 'desc'), limit(maxResults))
+      query(this.paymentsRef(tenantId), orderBy('date', 'desc'), limit(maxResults))
     );
 
     return querySnapshot.docs.map(mapPayment);
@@ -581,8 +593,8 @@ class InvoiceService {
   /**
    * Get invoice settings
    */
-  async getSettings(): Promise<InvoiceSettings> {
-    const docSnap = await getDoc(this.settingsRef);
+  async getSettings(tenantId: string): Promise<InvoiceSettings> {
+    const docSnap = await getDoc(this.settingsRef(tenantId));
 
     if (!docSnap.exists()) {
       // Return defaults
@@ -604,13 +616,14 @@ class InvoiceService {
   /**
    * Update invoice settings
    */
-  async updateSettings(settings: Partial<InvoiceSettings>): Promise<boolean> {
-    const docSnap = await getDoc(this.settingsRef);
+  async updateSettings(tenantId: string, settings: Partial<InvoiceSettings>): Promise<boolean> {
+    const settingsDocRef = this.settingsRef(tenantId);
+    const docSnap = await getDoc(settingsDocRef);
 
     if (!docSnap.exists()) {
       // Create settings document
       await runTransaction(db, async (transaction) => {
-        transaction.set(this.settingsRef, {
+        transaction.set(settingsDocRef, {
           prefix: 'INV',
           nextNumber: 1,
           defaultTaxRate: 0,
@@ -623,7 +636,7 @@ class InvoiceService {
         });
       });
     } else {
-      await updateDoc(this.settingsRef, settings);
+      await updateDoc(settingsDocRef, settings);
     }
 
     return true;
@@ -637,8 +650,8 @@ class InvoiceService {
    * Get money stats for dashboard
    * Note: For very large datasets, consider using Firestore aggregation queries
    */
-  async getStats(): Promise<MoneyStats> {
-    const invoices = await this.getAllInvoices();
+  async getStats(tenantId: string): Promise<MoneyStats> {
+    const invoices = await this.getAllInvoices(tenantId);
 
     const now = new Date();
     const thisMonth = now.toISOString().slice(0, 7); // YYYY-MM
@@ -666,8 +679,95 @@ class InvoiceService {
     );
 
     const today = now.toISOString().split('T')[0];
+    const todayDate = new Date(today);
     const overdueInvoices = outstandingInvoices.filter((inv) => inv.dueDate < today);
     const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
+
+    // Calculate AR Aging
+    const aging = { current: 0, days30to60: 0, days60to90: 0, over90: 0 };
+    outstandingInvoices.forEach((inv) => {
+      const dueDate = new Date(inv.dueDate);
+      const daysPastDue = Math.floor((todayDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+
+      if (daysPastDue <= 0) {
+        aging.current += inv.balanceDue;
+      } else if (daysPastDue <= 30) {
+        aging.current += inv.balanceDue; // 0-30 days = current
+      } else if (daysPastDue <= 60) {
+        aging.days30to60 += inv.balanceDue;
+      } else if (daysPastDue <= 90) {
+        aging.days60to90 += inv.balanceDue;
+      } else {
+        aging.over90 += inv.balanceDue;
+      }
+    });
+
+    // Calculate cash flow for last 6 months
+    const cashFlow: MoneyStats['cashFlow'] = [];
+    for (let i = 5; i >= 0; i--) {
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthKey = monthDate.toISOString().slice(0, 7);
+      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
+
+      const received = paidInvoices
+        .filter((inv) => inv.paidAt && inv.paidAt.toISOString().startsWith(monthKey))
+        .reduce((sum, inv) => sum + inv.total, 0);
+
+      cashFlow.push({
+        month: monthName,
+        received,
+        spent: 0, // Will be filled from expense service
+      });
+    }
+
+    // Top customers by outstanding balance
+    const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number }>();
+    outstandingInvoices.forEach((inv) => {
+      const existing = customerBalances.get(inv.customerId) || {
+        id: inv.customerId,
+        name: inv.customerName,
+        outstanding: 0,
+        invoiceCount: 0,
+      };
+      existing.outstanding += inv.balanceDue;
+      existing.invoiceCount += 1;
+      customerBalances.set(inv.customerId, existing);
+    });
+    const topCustomers = Array.from(customerBalances.values())
+      .sort((a, b) => b.outstanding - a.outstanding)
+      .slice(0, 5);
+
+    // Recent activity (from invoice updates)
+    const recentActivity: MoneyStats['recentActivity'] = invoices
+      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
+      .slice(0, 10)
+      .map((inv) => {
+        let type: 'invoice_created' | 'invoice_sent' | 'invoice_viewed' | 'payment_received' | 'invoice_overdue' = 'invoice_created';
+        let description = `Invoice ${inv.invoiceNumber} created`;
+
+        if (inv.status === 'paid') {
+          type = 'payment_received';
+          description = `Payment received from ${inv.customerName}`;
+        } else if (inv.status === 'viewed') {
+          type = 'invoice_viewed';
+          description = `${inv.customerName} viewed invoice`;
+        } else if (inv.status === 'sent') {
+          type = 'invoice_sent';
+          description = `Invoice sent to ${inv.customerName}`;
+        } else if (inv.dueDate < today && ['sent', 'viewed'].includes(inv.status)) {
+          type = 'invoice_overdue';
+          description = `Invoice to ${inv.customerName} is overdue`;
+        }
+
+        return {
+          id: inv.id!,
+          type,
+          description,
+          amount: inv.total,
+          timestamp: new Date(inv.updatedAt || inv.createdAt),
+          entityId: inv.id,
+        };
+      });
 
     return {
       totalRevenue,
@@ -684,6 +784,10 @@ class InvoiceService {
       expensesThisMonth: 0, // From expense service
       profitThisMonth: revenueThisMonth,
       profitPreviousMonth: revenuePreviousMonth,
+      aging,
+      cashFlow,
+      topCustomers,
+      recentActivity,
     };
   }
 
@@ -691,13 +795,13 @@ class InvoiceService {
   // Helpers
   // ----------------------------------------
 
-  private async getNextInvoiceNumber(): Promise<string> {
-    const settings = await this.getSettings();
+  private async getNextInvoiceNumber(tenantId: string): Promise<string> {
+    const settings = await this.getSettings(tenantId);
     const number = settings.nextNumber || 1;
     const year = new Date().getFullYear();
 
     // Increment for next time
-    await this.updateSettings({ nextNumber: number + 1 });
+    await this.updateSettings(tenantId, { nextNumber: number + 1 });
 
     // Format: INV-2026-001
     return `${settings.prefix || 'INV'}-${year}-${String(number).padStart(3, '0')}`;
@@ -717,16 +821,16 @@ class InvoiceService {
    */
   getShareUrl(invoice: Invoice): string {
     const baseUrl = window.location.origin;
-    return `${baseUrl}/invoice/${invoice.shareToken}`;
+    return `${baseUrl}/money/invoices/${invoice.id}`;
   }
 
   /**
    * Update overdue status for all invoices
    * Call this periodically (e.g., daily) or on dashboard load
    */
-  async updateOverdueStatuses(): Promise<number> {
+  async updateOverdueStatuses(tenantId: string): Promise<number> {
     const today = new Date().toISOString().split('T')[0];
-    const invoices = await this.getAllInvoices();
+    const invoices = await this.getAllInvoices(tenantId);
 
     let updated = 0;
     for (const invoice of invoices) {
@@ -734,7 +838,7 @@ class InvoiceService {
         ['sent', 'viewed', 'partial'].includes(invoice.status) &&
         invoice.dueDate < today
       ) {
-        const docRef = doc(db, 'invoices', invoice.id);
+        const docRef = doc(db, paths.invoice(tenantId, invoice.id));
         await updateDoc(docRef, {
           status: 'overdue',
           updatedAt: serverTimestamp(),

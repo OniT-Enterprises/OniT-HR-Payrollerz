@@ -71,10 +71,11 @@ export interface TLPayrollInput {
   // Additional earnings
   bonus: number;
   commission: number;
-  perDiem: number;               // NOT taxable
-  foodAllowance: number;         // NOT in INSS base
+  perDiem: number;               // Per diem / travel allowance (excluded from INSS base)
+  foodAllowance: number;         // Food subsidy (excluded from INSS base)
   transportAllowance: number;
   otherEarnings: number;
+  subsidioAnual?: number;        // 13th month salary / annual subsidy (paid in a specific run)
 
   // Tax info
   taxInfo: TLEmployeeTaxInfo;
@@ -131,6 +132,7 @@ export interface TLPayrollResult {
   foodAllowance: number;
   transportAllowance: number;
   otherEarnings: number;
+  subsidioAnual: number;
 
   // Totals
   grossPay: number;              // Total earnings
@@ -193,8 +195,8 @@ export function calculateRegularPay(
 
   const periods = TL_PAY_PERIODS[payFrequency];
 
-  // For weekly payroll in partial months, use actual days
-  if (payFrequency === 'weekly' && totalPeriodsInMonth) {
+  // For weekly/biweekly payroll in partial months, use actual pay periods in the pay month.
+  if ((payFrequency === 'weekly' || payFrequency === 'biweekly') && totalPeriodsInMonth) {
     return divideMoney(monthlySalary, totalPeriodsInMonth);
   }
 
@@ -323,17 +325,23 @@ export function calculateINSS(inssBase: number): {
 export function calculateSubsidioAnual(
   monthlySalary: number,
   monthsWorkedThisYear: number,
-  hireDate: string
+  hireDate: string,
+  asOfDate: Date = new Date()
 ): number {
-  const hireMonth = new Date(hireDate).getMonth();
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const hireYear = new Date(hireDate).getFullYear();
+  const hireDateObj = new Date(hireDate);
+  const hireMonth = hireDateObj.getMonth();
+  const hireYear = hireDateObj.getFullYear();
+
+  const currentMonth = asOfDate.getMonth();
+  const currentYear = asOfDate.getFullYear();
 
   // If hired this year, calculate months worked
   let effectiveMonths = monthsWorkedThisYear;
+  if (hireYear > currentYear) {
+    effectiveMonths = 0;
+  }
   if (hireYear === currentYear) {
-    effectiveMonths = currentMonth - hireMonth + 1;
+    effectiveMonths = Math.max(0, currentMonth - hireMonth + 1);
   }
 
   // Pro-rate if less than 12 months
@@ -512,7 +520,8 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       descriptionTL: 'Komisaun',
       amount: input.commission,
       isTaxable: true,
-      isINSSBase: true,
+      // INSS excludes commissions/gratuities per INSS contribution guidance.
+      isINSSBase: false,
     });
   }
 
@@ -561,6 +570,19 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
       amount: input.otherEarnings,
       isTaxable: true,
       isINSSBase: false,
+    });
+  }
+
+  // Subsidio Anual (13th month salary / annual subsidy)
+  const subsidioAnual = Math.max(0, input.subsidioAnual ?? 0);
+  if (subsidioAnual > 0) {
+    earnings.push({
+      type: 'subsidio_anual',
+      description: 'Annual Subsidy (13th Month)',
+      descriptionTL: 'Subsidiu Anual (13º Mês)',
+      amount: subsidioAnual,
+      isTaxable: true,
+      isINSSBase: true,
     });
   }
 
@@ -706,6 +728,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     foodAllowance: input.foodAllowance,
     transportAllowance: input.transportAllowance,
     otherEarnings: input.otherEarnings,
+    subsidioAnual,
 
     // Totals
     grossPay,

@@ -99,8 +99,24 @@ export function getTLHolidayName(date: Date | string): string | null {
   return getTLPublicHolidays(year).find((h) => h.date === iso)?.name ?? null;
 }
 
-export function adjustToNextBusinessDayTL(isoDate: string): string {
+export function adjustToNextBusinessDayTL(
+  isoDate: string,
+  overrides?: {
+    additionalHolidays?: Iterable<string>;
+    removedHolidays?: Iterable<string>;
+  }
+): string {
   let cursor = parseISODateUTC(normalizeISODate(isoDate));
+
+  const additionalHolidays = new Set<string>();
+  const removedHolidays = new Set<string>();
+
+  if (overrides?.additionalHolidays) {
+    for (const d of overrides.additionalHolidays) additionalHolidays.add(normalizeISODate(d));
+  }
+  if (overrides?.removedHolidays) {
+    for (const d of overrides.removedHolidays) removedHolidays.add(normalizeISODate(d));
+  }
 
   // Loop (safety capped) until weekday and not a TL public holiday.
   for (let i = 0; i < 14; i++) {
@@ -108,7 +124,9 @@ export function adjustToNextBusinessDayTL(isoDate: string): string {
     const weekday = cursor.getUTCDay(); // 0 Sun, 6 Sat
     const year = cursor.getUTCFullYear();
     const isWeekend = weekday === 0 || weekday === 6;
-    const isHoliday = getTLPublicHolidays(year).some((h) => h.date === cursorIso);
+    const baseHoliday = getTLPublicHolidays(year).some((h) => h.date === cursorIso);
+    const isHoliday =
+      (baseHoliday && !removedHolidays.has(cursorIso)) || additionalHolidays.has(cursorIso);
 
     if (!isWeekend && !isHoliday) return cursorIso;
     cursor = addDaysUTC(cursor, 1);

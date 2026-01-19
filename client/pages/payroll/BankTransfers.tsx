@@ -113,7 +113,7 @@ export default function BankTransfers() {
       try {
         setLoading(true);
         const [transfersData, runsData] = await Promise.all([
-          payrollService.transfers.getAllTransfers(),
+          payrollService.transfers.getAllTransfers(tenantId),
           payrollService.runs.getAllPayrollRuns({ tenantId }),
         ]);
         setTransfers(transfersData);
@@ -471,7 +471,7 @@ export default function BankTransfers() {
         notes: formData.notes || undefined,
       };
 
-      const transferId = await payrollService.transfers.createTransfer(newTransfer);
+      const transferId = await payrollService.transfers.createTransfer(tenantId, newTransfer);
 
       // Update local state with the new transfer including its ID
       const createdTransfer: BankTransfer = {

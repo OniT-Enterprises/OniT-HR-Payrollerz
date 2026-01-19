@@ -32,10 +32,13 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
-import type { Invoice, InvoiceItem, InvoiceFormData, Customer } from '@/types/money';
+import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
+import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
+import type { Invoice, InvoiceItem, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
 import {
   FileText,
   Plus,
@@ -47,7 +50,8 @@ import {
   Calendar,
   User,
   Share2,
-  Printer,
+  Download,
+  Loader2,
 } from 'lucide-react';
 
 const TAX_RATES = [
@@ -73,6 +77,7 @@ export default function InvoiceForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
 
   const isNew = !id || id === 'new';
   const isEditMode = searchParams.get('mode') === 'edit' || window.location.pathname.endsWith('/edit');
@@ -87,6 +92,8 @@ export default function InvoiceForm() {
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
+  const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
 
   const [formData, setFormData] = useState<InvoiceFormData>({
     customerId: '',
@@ -99,8 +106,10 @@ export default function InvoiceForm() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [id, duplicateId]);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [id, duplicateId, session?.tid]);
 
   useEffect(() => {
     // Check if we should show payment dialog
@@ -111,10 +120,16 @@ export default function InvoiceForm() {
   }, [searchParams, invoice]);
 
   const loadData = async () => {
+    if (!session?.tid) return;
+
     try {
-      // Load customers
-      const customerList = await customerService.getActiveCustomers();
+      // Load customers and settings in parallel
+      const [customerList, settings] = await Promise.all([
+        customerService.getActiveCustomers(session.tid),
+        invoiceService.getSettings(session.tid).catch(() => ({})),
+      ]);
       setCustomers(customerList);
+      setInvoiceSettings(settings);
 
       // Set preselected customer if provided
       if (preselectedCustomerId) {
@@ -124,7 +139,7 @@ export default function InvoiceForm() {
       // Load existing invoice
       if (!isNew && id) {
         setLoading(true);
-        const invoiceData = await invoiceService.getInvoiceById(id);
+        const invoiceData = await invoiceService.getInvoiceById(session.tid, id);
         if (invoiceData) {
           setInvoice(invoiceData);
           setFormData({
@@ -141,7 +156,7 @@ export default function InvoiceForm() {
 
       // Handle duplicate
       if (duplicateId) {
-        const sourceInvoice = await invoiceService.getInvoiceById(duplicateId);
+        const sourceInvoice = await invoiceService.getInvoiceById(session.tid, duplicateId);
         if (sourceInvoice) {
           setFormData({
             customerId: sourceInvoice.customerId,
@@ -229,13 +244,13 @@ export default function InvoiceForm() {
       let invoiceId: string;
 
       if (isNew || duplicateId) {
-        invoiceId = await invoiceService.createInvoice(dataToSave);
+        invoiceId = await invoiceService.createInvoice(session!.tid, dataToSave);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.created') || 'Invoice created',
         });
       } else if (invoice) {
-        await invoiceService.updateInvoice(invoice.id, dataToSave);
+        await invoiceService.updateInvoice(session!.tid, invoice.id, dataToSave);
         invoiceId = invoice.id;
         toast({
           title: t('common.success') || 'Success',
@@ -246,7 +261,7 @@ export default function InvoiceForm() {
       }
 
       if (sendAfter) {
-        await invoiceService.markAsSent(invoiceId);
+        await invoiceService.markAsSent(session!.tid, invoiceId);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.sentSuccess') || 'Invoice sent',
@@ -281,7 +296,7 @@ export default function InvoiceForm() {
 
     try {
       setSaving(true);
-      await invoiceService.recordPayment(invoice.id, {
+      await invoiceService.recordPayment(session!.tid, invoice.id, {
         date: new Date().toISOString().split('T')[0],
         amount,
         method: paymentMethod as 'cash' | 'bank_transfer' | 'check' | 'other',
@@ -321,6 +336,28 @@ export default function InvoiceForm() {
       });
     } catch (error) {
       console.error('Error sharing:', error);
+    }
+  };
+
+  const handleDownloadPDF = async () => {
+    if (!invoice) return;
+
+    try {
+      setDownloadingPdf(true);
+      await downloadInvoicePDF(invoice, invoiceSettings);
+      toast({
+        title: t('common.success') || 'Success',
+        description: t('money.invoices.pdfDownloaded') || 'Invoice PDF downloaded',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.pdfError') || 'Failed to generate PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingPdf(false);
     }
   };
 
@@ -364,6 +401,14 @@ export default function InvoiceForm() {
               {t('common.back') || 'Back'}
             </Button>
             <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
+                {downloadingPdf ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Download className="h-4 w-4 mr-2" />
+                )}
+                {t('money.invoices.downloadPdf') || 'Download PDF'}
+              </Button>
               <Button variant="outline" onClick={handleShare}>
                 <Share2 className="h-4 w-4 mr-2" />
                 {t('money.invoices.share') || 'Share'}
@@ -382,6 +427,13 @@ export default function InvoiceForm() {
               )}
             </div>
           </div>
+
+          {/* Status Timeline */}
+          <Card className="mb-6">
+            <CardContent className="py-2">
+              <InvoiceStatusTimeline invoice={invoice} />
+            </CardContent>
+          </Card>
 
           {/* Invoice Preview Card */}
           <Card>

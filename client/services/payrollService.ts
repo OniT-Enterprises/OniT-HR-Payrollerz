@@ -438,9 +438,10 @@ class BenefitEnrollmentService {
     return collection(db, 'benefitEnrollments');
   }
 
-  async getEnrollmentsByEmployeeId(employeeId: string): Promise<BenefitEnrollment[]> {
+  async getEnrollmentsByEmployeeId(tenantId: string, employeeId: string): Promise<BenefitEnrollment[]> {
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
       where('status', '==', 'active')
     );
@@ -458,8 +459,12 @@ class BenefitEnrollmentService {
     });
   }
 
-  async getAllEnrollments(): Promise<BenefitEnrollment[]> {
-    const q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+  async getAllEnrollments(tenantId: string): Promise<BenefitEnrollment[]> {
+    const q = query(
+      this.collectionRef,
+      where('tenantId', '==', tenantId),
+      orderBy('createdAt', 'desc')
+    );
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
@@ -473,9 +478,13 @@ class BenefitEnrollmentService {
     });
   }
 
-  async createEnrollment(enrollment: Omit<BenefitEnrollment, 'id'>): Promise<string> {
+  async createEnrollment(
+    tenantId: string,
+    enrollment: Omit<BenefitEnrollment, 'id' | 'tenantId'>
+  ): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...enrollment,
+      tenantId,
       status: 'active',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -512,9 +521,10 @@ class RecurringDeductionService {
     return collection(db, 'recurringDeductions');
   }
 
-  async getDeductionsByEmployeeId(employeeId: string): Promise<RecurringDeduction[]> {
+  async getDeductionsByEmployeeId(tenantId: string, employeeId: string): Promise<RecurringDeduction[]> {
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
       where('status', '==', 'active')
     );
@@ -532,8 +542,8 @@ class RecurringDeductionService {
     });
   }
 
-  async getAllDeductions(): Promise<RecurringDeduction[]> {
-    const q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+  async getAllDeductions(tenantId: string): Promise<RecurringDeduction[]> {
+    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
@@ -547,9 +557,13 @@ class RecurringDeductionService {
     });
   }
 
-  async createDeduction(deduction: Omit<RecurringDeduction, 'id'>): Promise<string> {
+  async createDeduction(
+    tenantId: string,
+    deduction: Omit<RecurringDeduction, 'id' | 'tenantId'>
+  ): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...deduction,
+      tenantId,
       status: 'active',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -590,8 +604,8 @@ class TaxReportService {
     return collection(db, 'taxReports');
   }
 
-  async getAllTaxReports(): Promise<TaxReport[]> {
-    const q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+  async getAllTaxReports(tenantId: string): Promise<TaxReport[]> {
+    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
@@ -605,9 +619,10 @@ class TaxReportService {
     });
   }
 
-  async getTaxReportsByYear(year: number): Promise<TaxReport[]> {
+  async getTaxReportsByYear(tenantId: string, year: number): Promise<TaxReport[]> {
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('year', '==', year),
       orderBy('createdAt', 'desc')
     );
@@ -625,9 +640,10 @@ class TaxReportService {
     });
   }
 
-  async createTaxReport(report: Omit<TaxReport, 'id'>): Promise<string> {
+  async createTaxReport(tenantId: string, report: Omit<TaxReport, 'id' | 'tenantId'>): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...report,
+      tenantId,
       status: 'draft',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -666,8 +682,8 @@ class BankTransferService {
     return collection(db, 'bankTransfers');
   }
 
-  async getAllTransfers(): Promise<BankTransfer[]> {
-    const q = query(this.collectionRef, orderBy('createdAt', 'desc'));
+  async getAllTransfers(tenantId: string): Promise<BankTransfer[]> {
+    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'));
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
@@ -682,9 +698,13 @@ class BankTransferService {
     });
   }
 
-  async createTransfer(transfer: Omit<BankTransfer, 'id'>): Promise<string> {
+  async createTransfer(
+    tenantId: string,
+    transfer: Omit<BankTransfer, 'id' | 'tenantId'>
+  ): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...transfer,
+      tenantId,
       status: 'pending',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),

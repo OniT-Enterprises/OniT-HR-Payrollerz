@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -45,6 +46,7 @@ interface BalanceSheetData {
 export default function BalanceSheet() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [asOfDate, setAsOfDate] = useState<string>('today');
   const [data, setData] = useState<BalanceSheetData>({
@@ -58,8 +60,10 @@ export default function BalanceSheet() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [asOfDate]);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [asOfDate, session?.tid]);
 
   const getAsOfDateValue = (): Date => {
     const now = new Date();
@@ -79,13 +83,14 @@ export default function BalanceSheet() {
   };
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
 
       // Get all invoices and bills to calculate balances
       const [invoices, bills] = await Promise.all([
-        invoiceService.getAllInvoices(),
-        billService.getAllBills(),
+        invoiceService.getAllInvoices(session.tid),
+        billService.getAllBills(session.tid),
       ]);
 
       const asOf = getAsOfDateValue();

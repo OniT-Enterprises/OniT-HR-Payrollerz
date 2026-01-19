@@ -22,6 +22,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
 
@@ -69,14 +70,17 @@ function mapExpense(docSnap: DocumentSnapshot): Expense {
 }
 
 class ExpenseService {
-  private get collectionRef() {
-    return collection(db, 'expenses');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.expenses(tenantId));
   }
 
   /**
    * Get expenses with server-side filtering and pagination
    */
-  async getExpenses(filters: ExpenseFilters = {}): Promise<PaginatedResult<Expense>> {
+  async getExpenses(
+    tenantId: string,
+    filters: ExpenseFilters = {}
+  ): Promise<PaginatedResult<Expense>> {
     const {
       category,
       vendorId,
@@ -114,7 +118,7 @@ class ExpenseService {
 
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let expenses = querySnapshot.docs.map(mapExpense);
@@ -158,39 +162,43 @@ class ExpenseService {
    * Get all expenses
    * @deprecated Use getExpenses() with filters for better performance
    */
-  async getAllExpenses(maxResults: number = 500): Promise<Expense[]> {
-    const result = await this.getExpenses({ pageSize: maxResults });
+  async getAllExpenses(tenantId: string, maxResults: number = 500): Promise<Expense[]> {
+    const result = await this.getExpenses(tenantId, { pageSize: maxResults });
     return result.data;
   }
 
   /**
    * Get expenses by category (server-side filtered)
    */
-  async getExpensesByCategory(category: ExpenseCategory): Promise<Expense[]> {
-    const result = await this.getExpenses({ category, pageSize: 500 });
+  async getExpensesByCategory(tenantId: string, category: ExpenseCategory): Promise<Expense[]> {
+    const result = await this.getExpenses(tenantId, { category, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get expenses by vendor (server-side filtered)
    */
-  async getExpensesByVendor(vendorId: string): Promise<Expense[]> {
-    const result = await this.getExpenses({ vendorId, pageSize: 500 });
+  async getExpensesByVendor(tenantId: string, vendorId: string): Promise<Expense[]> {
+    const result = await this.getExpenses(tenantId, { vendorId, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get expenses for a date range (server-side filtered)
    */
-  async getExpensesByDateRange(startDate: string, endDate: string): Promise<Expense[]> {
-    const result = await this.getExpenses({ startDate, endDate, pageSize: 500 });
+  async getExpensesByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<Expense[]> {
+    const result = await this.getExpenses(tenantId, { startDate, endDate, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get expenses for current month
    */
-  async getExpensesThisMonth(): Promise<Expense[]> {
+  async getExpensesThisMonth(tenantId: string): Promise<Expense[]> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
       .toISOString()
@@ -199,14 +207,14 @@ class ExpenseService {
       .toISOString()
       .split('T')[0];
 
-    return this.getExpensesByDateRange(startOfMonth, endOfMonth);
+    return this.getExpensesByDateRange(tenantId, startOfMonth, endOfMonth);
   }
 
   /**
    * Get a single expense by ID
    */
-  async getExpenseById(id: string): Promise<Expense | null> {
-    const docRef = doc(db, 'expenses', id);
+  async getExpenseById(tenantId: string, id: string): Promise<Expense | null> {
+    const docRef = doc(db, paths.expense(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -219,11 +227,14 @@ class ExpenseService {
   /**
    * Create a new expense
    */
-  async createExpense(data: ExpenseFormData & { receiptUrl?: string }): Promise<string> {
+  async createExpense(
+    tenantId: string,
+    data: ExpenseFormData & { receiptUrl?: string }
+  ): Promise<string> {
     // Get vendor name if vendorId provided
     let vendorName: string | undefined;
     if (data.vendorId) {
-      const vendor = await vendorService.getVendorById(data.vendorId);
+      const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
       vendorName = vendor?.name;
     }
 
@@ -233,7 +244,7 @@ class ExpenseService {
       createdAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...expense,
       createdAt: serverTimestamp(),
     });
@@ -244,19 +255,23 @@ class ExpenseService {
   /**
    * Update an existing expense
    */
-  async updateExpense(id: string, data: Partial<ExpenseFormData> & { receiptUrl?: string }): Promise<boolean> {
+  async updateExpense(
+    tenantId: string,
+    id: string,
+    data: Partial<ExpenseFormData> & { receiptUrl?: string }
+  ): Promise<boolean> {
     const updates: Partial<Expense> = { ...data };
 
     // Update vendor name if vendorId changed
     if (data.vendorId) {
-      const vendor = await vendorService.getVendorById(data.vendorId);
+      const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
       updates.vendorName = vendor?.name;
     } else if (data.vendorId === '') {
       updates.vendorId = undefined;
       updates.vendorName = undefined;
     }
 
-    const docRef = doc(db, 'expenses', id);
+    const docRef = doc(db, paths.expense(tenantId, id));
     await updateDoc(docRef, updates);
     return true;
   }
@@ -264,8 +279,8 @@ class ExpenseService {
   /**
    * Delete an expense
    */
-  async deleteExpense(id: string): Promise<boolean> {
-    const docRef = doc(db, 'expenses', id);
+  async deleteExpense(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.expense(tenantId, id));
     await deleteDoc(docRef);
     return true;
   }
@@ -274,10 +289,11 @@ class ExpenseService {
    * Get expense totals by category for a date range
    */
   async getExpenseTotalsByCategory(
+    tenantId: string,
     startDate: string,
     endDate: string
   ): Promise<Record<ExpenseCategory, number>> {
-    const expenses = await this.getExpensesByDateRange(startDate, endDate);
+    const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
 
     const totals: Record<string, number> = {};
     expenses.forEach((expense) => {
@@ -290,8 +306,8 @@ class ExpenseService {
   /**
    * Get total expenses for a period
    */
-  async getTotalExpenses(startDate: string, endDate: string): Promise<number> {
-    const expenses = await this.getExpensesByDateRange(startDate, endDate);
+  async getTotalExpenses(tenantId: string, startDate: string, endDate: string): Promise<number> {
+    const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
   }
 

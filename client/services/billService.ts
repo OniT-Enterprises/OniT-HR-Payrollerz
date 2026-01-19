@@ -22,6 +22,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type {
   Bill,
   BillFormData,
@@ -81,12 +82,12 @@ function mapBill(docSnap: DocumentSnapshot): Bill {
 }
 
 class BillService {
-  private get collectionRef() {
-    return collection(db, 'bills');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.bills(tenantId));
   }
 
-  private get paymentsRef() {
-    return collection(db, 'bill_payments');
+  private paymentsRef(tenantId: string) {
+    return collection(db, paths.billPayments(tenantId));
   }
 
   // ----------------------------------------
@@ -96,7 +97,10 @@ class BillService {
   /**
    * Get bills with server-side filtering and pagination
    */
-  async getBills(filters: BillFilters = {}): Promise<PaginatedResult<Bill>> {
+  async getBills(
+    tenantId: string,
+    filters: BillFilters = {}
+  ): Promise<PaginatedResult<Bill>> {
     const {
       status,
       vendorId,
@@ -130,7 +134,7 @@ class BillService {
 
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let bills = querySnapshot.docs.map(mapBill);
@@ -175,34 +179,34 @@ class BillService {
    * Get all bills
    * @deprecated Use getBills() with filters for better performance
    */
-  async getAllBills(maxResults: number = 500): Promise<Bill[]> {
-    const result = await this.getBills({ pageSize: maxResults });
+  async getAllBills(tenantId: string, maxResults: number = 500): Promise<Bill[]> {
+    const result = await this.getBills(tenantId, { pageSize: maxResults });
     return result.data;
   }
 
   /**
    * Get bills by status (server-side filtered)
    */
-  async getBillsByStatus(status: BillStatus): Promise<Bill[]> {
-    const result = await this.getBills({ status, pageSize: 500 });
+  async getBillsByStatus(tenantId: string, status: BillStatus): Promise<Bill[]> {
+    const result = await this.getBills(tenantId, { status, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get bills by vendor (server-side filtered)
    */
-  async getBillsByVendor(vendorId: string): Promise<Bill[]> {
-    const result = await this.getBills({ vendorId, pageSize: 500 });
+  async getBillsByVendor(tenantId: string, vendorId: string): Promise<Bill[]> {
+    const result = await this.getBills(tenantId, { vendorId, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get overdue bills
    */
-  async getOverdueBills(): Promise<Bill[]> {
+  async getOverdueBills(tenantId: string): Promise<Bill[]> {
     const today = new Date().toISOString().split('T')[0];
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('status', 'in', ['pending', 'partial']),
       where('dueDate', '<', today)
     );
@@ -214,9 +218,9 @@ class BillService {
   /**
    * Get unpaid bills (pending + partial)
    */
-  async getUnpaidBills(): Promise<Bill[]> {
+  async getUnpaidBills(tenantId: string): Promise<Bill[]> {
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('status', 'in', ['pending', 'partial', 'overdue']),
       orderBy('dueDate', 'asc')
     );
@@ -228,8 +232,8 @@ class BillService {
   /**
    * Get a single bill by ID
    */
-  async getBillById(id: string): Promise<Bill | null> {
-    const docRef = doc(db, 'bills', id);
+  async getBillById(tenantId: string, id: string): Promise<Bill | null> {
+    const docRef = doc(db, paths.bill(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -242,9 +246,9 @@ class BillService {
   /**
    * Create a new bill
    */
-  async createBill(data: BillFormData): Promise<string> {
+  async createBill(tenantId: string, data: BillFormData): Promise<string> {
     // Get vendor info
-    const vendor = await vendorService.getVendorById(data.vendorId);
+    const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
     if (!vendor) {
       throw new Error('Vendor not found');
     }
@@ -272,7 +276,7 @@ class BillService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...bill,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -284,8 +288,8 @@ class BillService {
   /**
    * Update an existing bill (only if pending)
    */
-  async updateBill(id: string, data: Partial<BillFormData>): Promise<boolean> {
-    const bill = await this.getBillById(id);
+  async updateBill(tenantId: string, id: string, data: Partial<BillFormData>): Promise<boolean> {
+    const bill = await this.getBillById(tenantId, id);
     if (!bill) {
       throw new Error('Bill not found');
     }
@@ -319,14 +323,14 @@ class BillService {
 
     // Update vendor if changed
     if (data.vendorId && data.vendorId !== bill.vendorId) {
-      const vendor = await vendorService.getVendorById(data.vendorId);
+      const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
       if (vendor) {
         updates.vendorId = data.vendorId;
         updates.vendorName = vendor.name;
       }
     }
 
-    const docRef = doc(db, 'bills', id);
+    const docRef = doc(db, paths.bill(tenantId, id));
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp(),
@@ -338,8 +342,8 @@ class BillService {
   /**
    * Cancel a bill
    */
-  async cancelBill(id: string): Promise<boolean> {
-    const docRef = doc(db, 'bills', id);
+  async cancelBill(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.bill(tenantId, id));
     await updateDoc(docRef, {
       status: 'cancelled',
       updatedAt: serverTimestamp(),
@@ -350,8 +354,8 @@ class BillService {
   /**
    * Delete a pending bill
    */
-  async deleteBill(id: string): Promise<boolean> {
-    const bill = await this.getBillById(id);
+  async deleteBill(tenantId: string, id: string): Promise<boolean> {
+    const bill = await this.getBillById(tenantId, id);
     if (!bill) {
       throw new Error('Bill not found');
     }
@@ -360,7 +364,7 @@ class BillService {
       throw new Error('Cannot delete bill that has payments. Cancel it instead.');
     }
 
-    const docRef = doc(db, 'bills', id);
+    const docRef = doc(db, paths.bill(tenantId, id));
     await deleteDoc(docRef);
     return true;
   }
@@ -372,8 +376,12 @@ class BillService {
   /**
    * Record a payment for a bill
    */
-  async recordPayment(billId: string, payment: BillPaymentFormData): Promise<string> {
-    const bill = await this.getBillById(billId);
+  async recordPayment(
+    tenantId: string,
+    billId: string,
+    payment: BillPaymentFormData
+  ): Promise<string> {
+    const bill = await this.getBillById(tenantId, billId);
     if (!bill) {
       throw new Error('Bill not found');
     }
@@ -392,7 +400,7 @@ class BillService {
       createdAt: new Date(),
     };
 
-    const paymentRef = await addDoc(this.paymentsRef, {
+    const paymentRef = await addDoc(this.paymentsRef(tenantId), {
       ...paymentRecord,
       billId,
       createdAt: serverTimestamp(),
@@ -404,7 +412,7 @@ class BillService {
     const newStatus: BillStatus =
       newBalanceDue <= 0 ? 'paid' : newBalanceDue < bill.total ? 'partial' : bill.status;
 
-    const billRef = doc(db, 'bills', billId);
+    const billRef = doc(db, paths.bill(tenantId, billId));
     await updateDoc(billRef, {
       amountPaid: newAmountPaid,
       balanceDue: Math.max(0, newBalanceDue),
@@ -419,9 +427,9 @@ class BillService {
   /**
    * Get payments for a bill
    */
-  async getPaymentsForBill(billId: string): Promise<BillPayment[]> {
+  async getPaymentsForBill(tenantId: string, billId: string): Promise<BillPayment[]> {
     const q = query(
-      this.paymentsRef,
+      this.paymentsRef(tenantId),
       where('billId', '==', billId),
       orderBy('date', 'desc')
     );
@@ -444,9 +452,12 @@ class BillService {
   /**
    * Get all bill payments
    */
-  async getAllPayments(maxResults: number = 500): Promise<(BillPayment & { billId: string })[]> {
+  async getAllPayments(
+    tenantId: string,
+    maxResults: number = 500
+  ): Promise<(BillPayment & { billId: string })[]> {
     const querySnapshot = await getDocs(
-      query(this.paymentsRef, orderBy('date', 'desc'), limit(maxResults))
+      query(this.paymentsRef(tenantId), orderBy('date', 'desc'), limit(maxResults))
     );
 
     return querySnapshot.docs.map((doc) => {
@@ -471,15 +482,15 @@ class BillService {
   /**
    * Get total payables
    */
-  async getTotalPayables(): Promise<number> {
-    const bills = await this.getUnpaidBills();
+  async getTotalPayables(tenantId: string): Promise<number> {
+    const bills = await this.getUnpaidBills(tenantId);
     return bills.reduce((sum, bill) => sum + bill.balanceDue, 0);
   }
 
   /**
    * Get bills due soon (next 7 days)
    */
-  async getBillsDueSoon(): Promise<Bill[]> {
+  async getBillsDueSoon(tenantId: string): Promise<Bill[]> {
     const today = new Date();
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
@@ -487,7 +498,7 @@ class BillService {
     const nextWeekStr = nextWeek.toISOString().split('T')[0];
 
     const q = query(
-      this.collectionRef,
+      this.collectionRef(tenantId),
       where('status', 'in', ['pending', 'partial']),
       where('dueDate', '>=', todayStr),
       where('dueDate', '<=', nextWeekStr),
@@ -501,9 +512,9 @@ class BillService {
   /**
    * Update overdue status for all bills
    */
-  async updateOverdueStatuses(): Promise<number> {
+  async updateOverdueStatuses(tenantId: string): Promise<number> {
     const today = new Date().toISOString().split('T')[0];
-    const bills = await this.getAllBills();
+    const bills = await this.getAllBills(tenantId);
 
     let updated = 0;
     for (const bill of bills) {
@@ -511,7 +522,7 @@ class BillService {
         ['pending', 'partial'].includes(bill.status) &&
         bill.dueDate < today
       ) {
-        const docRef = doc(db, 'bills', bill.id);
+        const docRef = doc(db, paths.bill(tenantId, bill.id));
         await updateDoc(docRef, {
           status: 'overdue',
           updatedAt: serverTimestamp(),

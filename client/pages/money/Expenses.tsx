@@ -37,6 +37,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { vendorService } from '@/services/vendorService';
@@ -90,6 +91,7 @@ export default function Expenses() {
   const preselectedVendorId = searchParams.get('vendor');
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [vendors, setVendors] = useState<Vendor[]>([]);
@@ -112,8 +114,10 @@ export default function Expenses() {
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [session?.tid]);
 
   useEffect(() => {
     // Open dialog if vendor preselected
@@ -124,11 +128,12 @@ export default function Expenses() {
   }, [preselectedVendorId, vendors]);
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
       const [expenseData, vendorData] = await Promise.all([
-        expenseService.getAllExpenses(),
-        vendorService.getActiveVendors(),
+        expenseService.getAllExpenses(session.tid),
+        vendorService.getActiveVendors(session.tid),
       ]);
       setExpenses(expenseData);
       setVendors(vendorData);
@@ -220,6 +225,7 @@ export default function Expenses() {
   };
 
   const handleSubmit = async () => {
+    if (!session?.tid) return;
     if (!formData.description.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -266,13 +272,13 @@ export default function Expenses() {
       };
 
       if (editingExpense) {
-        await expenseService.updateExpense(editingExpense.id, dataWithReceipt);
+        await expenseService.updateExpense(session.tid, editingExpense.id, dataWithReceipt);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.expenses.updated') || 'Expense updated successfully',
         });
       } else {
-        await expenseService.createExpense(dataWithReceipt);
+        await expenseService.createExpense(session.tid, dataWithReceipt);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.expenses.created') || 'Expense created successfully',
@@ -310,12 +316,13 @@ export default function Expenses() {
   };
 
   const handleDelete = async (expense: Expense) => {
+    if (!session?.tid) return;
     if (!confirm(t('money.expenses.confirmDelete') || 'Delete this expense?')) {
       return;
     }
 
     try {
-      await expenseService.deleteExpense(expense.id);
+      await expenseService.deleteExpense(session.tid, expense.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.expenses.deleted') || 'Expense deleted successfully',

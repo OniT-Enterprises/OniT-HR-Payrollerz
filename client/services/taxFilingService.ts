@@ -24,6 +24,7 @@ import { db } from '@/lib/firebase';
 import { employeeService, type Employee, type AuditContext } from './employeeService';
 import { auditLogService } from './auditLogService';
 import { payrollService } from './payrollService';
+import { holidayService } from './holidayService';
 import type {
   TaxFiling,
   TaxFilingType,
@@ -79,7 +80,7 @@ function calculateWIT(grossWages: number, isResident: boolean): { taxableWages: 
 /**
  * Calculate due date for monthly WIT return
  */
-function getMonthlyWITDueDate(period: string): string {
+function getMonthlyWITDueDateBase(period: string): string {
   const [year, month] = period.split('-').map(Number);
   // Due 15th of following month
   let dueMonth = month + 1;
@@ -88,12 +89,10 @@ function getMonthlyWITDueDate(period: string): string {
     dueMonth = 1;
     dueYear += 1;
   }
-  return adjustToNextBusinessDayTL(
-    `${dueYear}-${String(dueMonth).padStart(2, '0')}-${MONTHLY_WIT_DUE_DAY}`
-  );
+  return `${dueYear}-${String(dueMonth).padStart(2, '0')}-${String(MONTHLY_WIT_DUE_DAY).padStart(2, '0')}`;
 }
 
-function getMonthlyINSSStatementDueDate(period: string): string {
+function getMonthlyINSSStatementDueDateBase(period: string): string {
   const [year, month] = period.split('-').map(Number);
   let dueMonth = month + 1;
   let dueYear = year;
@@ -101,12 +100,10 @@ function getMonthlyINSSStatementDueDate(period: string): string {
     dueMonth = 1;
     dueYear += 1;
   }
-  return adjustToNextBusinessDayTL(
-    `${dueYear}-${String(dueMonth).padStart(2, '0')}-${MONTHLY_INSS_STATEMENT_DUE_DAY}`
-  );
+  return `${dueYear}-${String(dueMonth).padStart(2, '0')}-${String(MONTHLY_INSS_STATEMENT_DUE_DAY).padStart(2, '0')}`;
 }
 
-function getMonthlyINSSPaymentDueDate(period: string): string {
+function getMonthlyINSSPaymentDueDateBase(period: string): string {
   const [year, month] = period.split('-').map(Number);
   let dueMonth = month + 1;
   let dueYear = year;
@@ -114,19 +111,15 @@ function getMonthlyINSSPaymentDueDate(period: string): string {
     dueMonth = 1;
     dueYear += 1;
   }
-  return adjustToNextBusinessDayTL(
-    `${dueYear}-${String(dueMonth).padStart(2, '0')}-${MONTHLY_INSS_PAYMENT_DUE_DAY}`
-  );
+  return `${dueYear}-${String(dueMonth).padStart(2, '0')}-${String(MONTHLY_INSS_PAYMENT_DUE_DAY).padStart(2, '0')}`;
 }
 
 /**
  * Calculate due date for annual WIT return
  */
-function getAnnualWITDueDate(taxYear: number): string {
+function getAnnualWITDueDateBase(taxYear: number): string {
   // Due March 31st of following year
-  return adjustToNextBusinessDayTL(
-    `${taxYear + 1}-${String(ANNUAL_WIT_DUE_MONTH).padStart(2, '0')}-${ANNUAL_WIT_DUE_DAY}`
-  );
+  return `${taxYear + 1}-${String(ANNUAL_WIT_DUE_MONTH).padStart(2, '0')}-${String(ANNUAL_WIT_DUE_DAY).padStart(2, '0')}`;
 }
 
 /**
@@ -135,7 +128,7 @@ function getAnnualWITDueDate(taxYear: number): string {
 function getDaysUntilDue(dueDate: string): number {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const due = new Date(dueDate);
+  const due = new Date(`${dueDate}T00:00:00`);
   due.setHours(0, 0, 0, 0);
   return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -189,6 +182,58 @@ function getRecordINSSEmployer(record: any): number {
 // ============================================
 
 class TaxFilingService {
+  private holidayOverrideCache = new Map<
+    string,
+    Promise<{ additionalHolidays: Set<string>; removedHolidays: Set<string> }>
+  >();
+
+  private getHolidayOverridesForYear(tenantId: string, year: number) {
+    const key = `${tenantId}:${year}`;
+    const cached = this.holidayOverrideCache.get(key);
+    if (cached) return cached;
+
+    const load = holidayService.listTenantHolidayOverrides(tenantId, year).then((overrides) => {
+      const additionalHolidays = new Set<string>();
+      const removedHolidays = new Set<string>();
+
+      for (const o of overrides) {
+        const date = typeof o.date === 'string' ? o.date.slice(0, 10) : '';
+        if (!date) continue;
+        if (o.isHoliday) additionalHolidays.add(date);
+        else removedHolidays.add(date);
+      }
+
+      return { additionalHolidays, removedHolidays };
+    });
+
+    this.holidayOverrideCache.set(key, load);
+    return load;
+  }
+
+  private async adjustDueDateTL(isoDate: string, tenantId: string): Promise<string> {
+    const normalized = isoDate.trim().slice(0, 10);
+    if (!tenantId) return adjustToNextBusinessDayTL(normalized);
+    const year = parseInt(normalized.slice(0, 4), 10);
+    const overrides = await this.getHolidayOverridesForYear(tenantId, year);
+    return adjustToNextBusinessDayTL(normalized, overrides);
+  }
+
+  private async getMonthlyWITDueDate(period: string, tenantId: string): Promise<string> {
+    return this.adjustDueDateTL(getMonthlyWITDueDateBase(period), tenantId);
+  }
+
+  private async getMonthlyINSSStatementDueDate(period: string, tenantId: string): Promise<string> {
+    return this.adjustDueDateTL(getMonthlyINSSStatementDueDateBase(period), tenantId);
+  }
+
+  private async getMonthlyINSSPaymentDueDate(period: string, tenantId: string): Promise<string> {
+    return this.adjustDueDateTL(getMonthlyINSSPaymentDueDateBase(period), tenantId);
+  }
+
+  private async getAnnualWITDueDate(taxYear: number, tenantId: string): Promise<string> {
+    return this.adjustDueDateTL(getAnnualWITDueDateBase(taxYear), tenantId);
+  }
+
   private get collectionRef() {
     return collection(db, 'taxFilings');
   }
@@ -647,10 +692,10 @@ class TaxFilingService {
   ): Promise<string> {
     const dueDate =
       type === 'monthly_wit'
-        ? getMonthlyWITDueDate(period)
+        ? await this.getMonthlyWITDueDate(period, tenantId)
         : type === 'annual_wit'
-          ? getAnnualWITDueDate(parseInt(period))
-          : getMonthlyINSSStatementDueDate(period);
+          ? await this.getAnnualWITDueDate(parseInt(period), tenantId)
+          : await this.getMonthlyINSSStatementDueDate(period, tenantId);
 
     const daysUntilDue = getDaysUntilDue(dueDate);
     const status: TaxFilingStatus = daysUntilDue < 0 ? 'overdue' : 'pending';
@@ -802,7 +847,7 @@ class TaxFilingService {
       }
 
       const period = `${year}-${String(month).padStart(2, '0')}`;
-      const dueDate = getMonthlyWITDueDate(period);
+      const dueDate = await this.getMonthlyWITDueDate(period, tenantId);
       const daysUntilDue = getDaysUntilDue(dueDate);
 
       // Get existing filing if any
@@ -827,7 +872,7 @@ class TaxFilingService {
         filing: filing || undefined,
       });
 
-      const inssDueDate = getMonthlyINSSStatementDueDate(period);
+      const inssDueDate = await this.getMonthlyINSSStatementDueDate(period, tenantId);
       const inssDaysUntilDue = getDaysUntilDue(inssDueDate);
       const inssFiling = await this.getFilingByPeriod('inss_monthly', period, tenantId);
 
@@ -852,7 +897,7 @@ class TaxFilingService {
       });
 
       // INSS payment deadline (following month 10th–20th window ends on 20th)
-      const inssPaymentDueDate = getMonthlyINSSPaymentDueDate(period);
+      const inssPaymentDueDate = await this.getMonthlyINSSPaymentDueDate(period, tenantId);
       const inssPaymentDaysUntilDue = getDaysUntilDue(inssPaymentDueDate);
 
       let inssPaymentStatus: TaxFilingStatus;
@@ -879,7 +924,7 @@ class TaxFilingService {
     // Check annual WIT for previous year if we're in Q1
     if (currentMonth <= 3) {
       const period = String(currentYear - 1);
-      const dueDate = getAnnualWITDueDate(currentYear - 1);
+      const dueDate = await this.getAnnualWITDueDate(currentYear - 1, tenantId);
       const daysUntilDue = getDaysUntilDue(dueDate);
 
       const filing = await this.getFilingByPeriod('annual_wit', period, tenantId);

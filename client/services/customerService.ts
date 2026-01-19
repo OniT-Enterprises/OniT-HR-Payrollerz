@@ -22,6 +22,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import type { Customer, CustomerFormData } from '@/types/money';
 
 /**
@@ -66,14 +67,17 @@ function mapCustomer(docSnap: DocumentSnapshot): Customer {
 }
 
 class CustomerService {
-  private get collectionRef() {
-    return collection(db, 'customers');
+  private collectionRef(tenantId: string) {
+    return collection(db, paths.customers(tenantId));
   }
 
   /**
    * Get customers with server-side filtering and pagination
    */
-  async getCustomers(filters: CustomerFilters = {}): Promise<PaginatedResult<Customer>> {
+  async getCustomers(
+    tenantId: string,
+    filters: CustomerFilters = {}
+  ): Promise<PaginatedResult<Customer>> {
     const {
       isActive,
       pageSize = 100,
@@ -97,7 +101,7 @@ class CustomerService {
 
     constraints.push(limit(pageSize + 1));
 
-    const q = query(this.collectionRef, ...constraints);
+    const q = query(this.collectionRef(tenantId), ...constraints);
     const querySnapshot = await getDocs(q);
 
     let customers = querySnapshot.docs.map(mapCustomer);
@@ -134,24 +138,24 @@ class CustomerService {
    * Get all customers
    * @deprecated Use getCustomers() with filters for better performance
    */
-  async getAllCustomers(maxResults: number = 500): Promise<Customer[]> {
-    const result = await this.getCustomers({ pageSize: maxResults });
+  async getAllCustomers(tenantId: string, maxResults: number = 500): Promise<Customer[]> {
+    const result = await this.getCustomers(tenantId, { pageSize: maxResults });
     return result.data;
   }
 
   /**
    * Get active customers only (server-side filtered)
    */
-  async getActiveCustomers(): Promise<Customer[]> {
-    const result = await this.getCustomers({ isActive: true, pageSize: 500 });
+  async getActiveCustomers(tenantId: string): Promise<Customer[]> {
+    const result = await this.getCustomers(tenantId, { isActive: true, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get a single customer by ID
    */
-  async getCustomerById(id: string): Promise<Customer | null> {
-    const docRef = doc(db, 'customers', id);
+  async getCustomerById(tenantId: string, id: string): Promise<Customer | null> {
+    const docRef = doc(db, paths.customer(tenantId, id));
     const docSnap = await getDoc(docRef);
 
     if (!docSnap.exists()) {
@@ -164,7 +168,7 @@ class CustomerService {
   /**
    * Create a new customer
    */
-  async createCustomer(data: CustomerFormData): Promise<string> {
+  async createCustomer(tenantId: string, data: CustomerFormData): Promise<string> {
     const customer: Omit<Customer, 'id'> = {
       ...data,
       isActive: true,
@@ -172,7 +176,7 @@ class CustomerService {
       updatedAt: new Date(),
     };
 
-    const docRef = await addDoc(this.collectionRef, {
+    const docRef = await addDoc(this.collectionRef(tenantId), {
       ...customer,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -184,8 +188,12 @@ class CustomerService {
   /**
    * Update an existing customer
    */
-  async updateCustomer(id: string, data: Partial<CustomerFormData>): Promise<boolean> {
-    const docRef = doc(db, 'customers', id);
+  async updateCustomer(
+    tenantId: string,
+    id: string,
+    data: Partial<CustomerFormData>
+  ): Promise<boolean> {
+    const docRef = doc(db, paths.customer(tenantId, id));
     await updateDoc(docRef, {
       ...data,
       updatedAt: serverTimestamp(),
@@ -196,8 +204,8 @@ class CustomerService {
   /**
    * Soft delete a customer (set isActive to false)
    */
-  async deactivateCustomer(id: string): Promise<boolean> {
-    const docRef = doc(db, 'customers', id);
+  async deactivateCustomer(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.customer(tenantId, id));
     await updateDoc(docRef, {
       isActive: false,
       updatedAt: serverTimestamp(),
@@ -208,8 +216,8 @@ class CustomerService {
   /**
    * Hard delete a customer
    */
-  async deleteCustomer(id: string): Promise<boolean> {
-    const docRef = doc(db, 'customers', id);
+  async deleteCustomer(tenantId: string, id: string): Promise<boolean> {
+    const docRef = doc(db, paths.customer(tenantId, id));
     await deleteDoc(docRef);
     return true;
   }
@@ -217,8 +225,8 @@ class CustomerService {
   /**
    * Search customers by name (client-side filtering)
    */
-  async searchCustomers(searchTerm: string): Promise<Customer[]> {
-    const result = await this.getCustomers({ searchTerm, pageSize: 500 });
+  async searchCustomers(tenantId: string, searchTerm: string): Promise<Customer[]> {
+    const result = await this.getCustomers(tenantId, { searchTerm, pageSize: 500 });
     return result.data;
   }
 
@@ -226,10 +234,10 @@ class CustomerService {
    * Get customers with outstanding balance
    * Note: Balance is calculated from invoices, this is a helper
    */
-  async getCustomersWithBalance(): Promise<Customer[]> {
+  async getCustomersWithBalance(tenantId: string): Promise<Customer[]> {
     // For now, return all active customers
     // Balance will be calculated when we have invoices
-    return this.getActiveCustomers();
+    return this.getActiveCustomers(tenantId);
   }
 }
 

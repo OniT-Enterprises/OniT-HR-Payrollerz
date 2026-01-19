@@ -145,6 +145,7 @@ export default function BankReconciliation() {
   };
 
   const openMatchDialog = async (transaction: BankTransaction) => {
+    if (!session?.tid) return;
     setTransactionToMatch(transaction);
     setMatchDialogOpen(true);
     setLoadingMatches(true);
@@ -154,7 +155,7 @@ export default function BankReconciliation() {
 
       if (transaction.type === 'deposit') {
         // For deposits, suggest paid invoices
-        const invoices = await invoiceService.getAllInvoices();
+        const invoices = await invoiceService.getAllInvoices(session.tid);
         invoices
           .filter(inv => inv.status === 'paid' && inv.total > 0)
           .forEach(inv => {
@@ -169,8 +170,8 @@ export default function BankReconciliation() {
       } else {
         // For withdrawals, suggest bills and expenses
         const [bills, expenses] = await Promise.all([
-          billService.getAllBills(),
-          expenseService.getAllExpenses(50),
+          billService.getAllBills(session.tid),
+          expenseService.getAllExpenses(session.tid, 50),
         ]);
 
         bills

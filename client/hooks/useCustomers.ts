@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   customerService,
   type CustomerFilters,
@@ -11,26 +12,29 @@ import {
 import type { Customer, CustomerFormData } from '@/types/money';
 
 export const customerKeys = {
-  all: ['customers'] as const,
-  lists: () => [...customerKeys.all, 'list'] as const,
-  list: (filters: CustomerFilters) => [...customerKeys.lists(), filters] as const,
-  details: () => [...customerKeys.all, 'detail'] as const,
-  detail: (id: string) => [...customerKeys.details(), id] as const,
+  all: (tenantId: string) => ['customers', tenantId] as const,
+  lists: (tenantId: string) => [...customerKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, filters: CustomerFilters) =>
+    [...customerKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string) => [...customerKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string, id: string) => [...customerKeys.details(tenantId), id] as const,
 };
 
 export function useCustomers(filters: CustomerFilters = {}) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: customerKeys.list(filters),
-    queryFn: () => customerService.getCustomers(filters),
+    queryKey: customerKeys.list(tenantId, filters),
+    queryFn: () => customerService.getCustomers(tenantId, filters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
 
 export function useAllCustomers(maxResults: number = 500) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: customerKeys.list({ pageSize: maxResults }),
-    queryFn: () => customerService.getCustomers({ pageSize: maxResults }),
+    queryKey: customerKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: () => customerService.getCustomers(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Customer>) => data.data,
@@ -38,9 +42,10 @@ export function useAllCustomers(maxResults: number = 500) {
 }
 
 export function useActiveCustomers() {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: customerKeys.list({ isActive: true }),
-    queryFn: () => customerService.getCustomers({ isActive: true, pageSize: 500 }),
+    queryKey: customerKeys.list(tenantId, { isActive: true }),
+    queryFn: () => customerService.getCustomers(tenantId, { isActive: true, pageSize: 500 }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Customer>) => data.data,
@@ -48,9 +53,10 @@ export function useActiveCustomers() {
 }
 
 export function useCustomer(id: string | undefined) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: customerKeys.detail(id!),
-    queryFn: () => customerService.getCustomerById(id!),
+    queryKey: customerKeys.detail(tenantId, id!),
+    queryFn: () => customerService.getCustomerById(tenantId, id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -58,24 +64,26 @@ export function useCustomer(id: string | undefined) {
 
 export function useCreateCustomer() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (data: CustomerFormData) => customerService.createCustomer(data),
+    mutationFn: (data: CustomerFormData) => customerService.createCustomer(tenantId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: customerKeys.all });
+      queryClient.invalidateQueries({ queryKey: customerKeys.all(tenantId) });
     },
   });
 }
 
 export function useUpdateCustomer() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<CustomerFormData> }) =>
-      customerService.updateCustomer(id, data),
+      customerService.updateCustomer(tenantId, id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: customerKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: customerKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: customerKeys.detail(tenantId, id) });
+      queryClient.invalidateQueries({ queryKey: customerKeys.lists(tenantId) });
     },
   });
 }

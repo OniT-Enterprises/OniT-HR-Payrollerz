@@ -66,6 +66,7 @@ export const TL_INSS = {
     'housing_allowance',
     'overtime',
     'bonus',
+    'commission',
     'gratuity',
     'profit_sharing',
     'reimbursement',

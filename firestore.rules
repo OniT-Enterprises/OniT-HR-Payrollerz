@@ -482,36 +482,38 @@ service cloud.firestore {
     }
 
     match /settings/{docId} {
-      allow read, write: if isAuthenticated();
+      // Legacy global settings collection is no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
     }
 
     // Money module collections
     match /customers/{docId} {
-      allow read, write: if isAuthenticated();
+      // Legacy global money collections are no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
     }
 
     match /invoices/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /payments_received/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /vendors/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /bills/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /bill_payments/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
 
     match /expenses/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
     }
   }
 }

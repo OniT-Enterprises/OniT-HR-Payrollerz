@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   expenseService,
   type ExpenseFilters,
@@ -11,26 +12,28 @@ import {
 import type { Expense, ExpenseFormData } from '@/types/money';
 
 export const expenseKeys = {
-  all: ['expenses'] as const,
-  lists: () => [...expenseKeys.all, 'list'] as const,
-  list: (filters: ExpenseFilters) => [...expenseKeys.lists(), filters] as const,
-  details: () => [...expenseKeys.all, 'detail'] as const,
-  detail: (id: string) => [...expenseKeys.details(), id] as const,
+  all: (tenantId: string) => ['expenses', tenantId] as const,
+  lists: (tenantId: string) => [...expenseKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, filters: ExpenseFilters) => [...expenseKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string) => [...expenseKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string, id: string) => [...expenseKeys.details(tenantId), id] as const,
 };
 
 export function useExpenses(filters: ExpenseFilters = {}) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: expenseKeys.list(filters),
-    queryFn: () => expenseService.getExpenses(filters),
+    queryKey: expenseKeys.list(tenantId, filters),
+    queryFn: () => expenseService.getExpenses(tenantId, filters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
 
 export function useAllExpenses(maxResults: number = 500) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: expenseKeys.list({ pageSize: maxResults }),
-    queryFn: () => expenseService.getExpenses({ pageSize: maxResults }),
+    queryKey: expenseKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: () => expenseService.getExpenses(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Expense>) => data.data,
@@ -38,9 +41,10 @@ export function useAllExpenses(maxResults: number = 500) {
 }
 
 export function useExpense(id: string | undefined) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: expenseKeys.detail(id!),
-    queryFn: () => expenseService.getExpenseById(id!),
+    queryKey: expenseKeys.detail(tenantId, id!),
+    queryFn: () => expenseService.getExpenseById(tenantId, id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -48,36 +52,39 @@ export function useExpense(id: string | undefined) {
 
 export function useCreateExpense() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: (data: ExpenseFormData & { receiptUrl?: string }) =>
-      expenseService.createExpense(data),
+      expenseService.createExpense(tenantId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.all });
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
     },
   });
 }
 
 export function useUpdateExpense() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<ExpenseFormData> & { receiptUrl?: string } }) =>
-      expenseService.updateExpense(id, data),
+      expenseService.updateExpense(tenantId, id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: expenseKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: expenseKeys.detail(tenantId, id) });
+      queryClient.invalidateQueries({ queryKey: expenseKeys.lists(tenantId) });
     },
   });
 }
 
 export function useDeleteExpense() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (id: string) => expenseService.deleteExpense(id),
+    mutationFn: (id: string) => expenseService.deleteExpense(tenantId, id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.all });
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
     },
   });
 }

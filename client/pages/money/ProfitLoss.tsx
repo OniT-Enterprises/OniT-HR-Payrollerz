@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
@@ -59,6 +60,7 @@ const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 export default function ProfitLoss() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('this_month');
   const [data, setData] = useState<PeriodData>({
@@ -69,8 +71,10 @@ export default function ProfitLoss() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [period]);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [period, session?.tid]);
 
   const getDateRange = (periodValue: string): { start: string; end: string } => {
     const now = new Date();
@@ -111,12 +115,13 @@ export default function ProfitLoss() {
   };
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
       const { start, end } = getDateRange(period);
 
       // Get all paid invoices in the period
-      const invoices = await invoiceService.getAllInvoices();
+      const invoices = await invoiceService.getAllInvoices(session.tid);
       const paidInvoices = invoices.filter((inv) => {
         if (inv.status !== 'paid' || !inv.paidAt) return false;
         const paidDate = inv.paidAt.toISOString().split('T')[0];
@@ -126,7 +131,7 @@ export default function ProfitLoss() {
       const revenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
 
       // Get expenses in the period
-      const expenses = await expenseService.getExpensesByDateRange(start, end);
+      const expenses = await expenseService.getExpensesByDateRange(session.tid, start, end);
       const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
       // Group expenses by category

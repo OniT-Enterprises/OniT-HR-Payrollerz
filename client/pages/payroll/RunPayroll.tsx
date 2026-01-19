@@ -70,6 +70,7 @@ import { payrollService } from "@/services/payrollService";
 import { accountingService } from "@/services/accountingService";
 import {
   calculateTLPayroll,
+  calculateSubsidioAnual,
   type TLPayrollInput,
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
@@ -80,7 +81,6 @@ import {
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
   TL_DEDUCTION_TYPE_LABELS,
-  TL_EARNING_TYPE_LABELS,
   TL_INSS,
   TL_INCOME_TAX,
 } from "@/lib/payroll/constants-tl";
@@ -115,6 +115,86 @@ interface EmployeePayrollData {
   };
 }
 
+const mapTLEarningTypeToPayrollEarningType = (
+  type: string
+): PayrollRecord["earnings"][number]["type"] => {
+  switch (type) {
+    case "regular":
+      return "regular";
+    case "overtime":
+      return "overtime";
+    case "holiday":
+      return "holiday";
+    case "bonus":
+      return "bonus";
+    case "subsidio_anual":
+      return "subsidio_anual";
+    case "commission":
+      return "commission";
+    case "reimbursement":
+      return "reimbursement";
+    case "per_diem":
+    case "food_allowance":
+    case "transport_allowance":
+    case "housing_allowance":
+    case "travel_allowance":
+      return "allowance";
+    default:
+      return "other";
+  }
+};
+
+const mapTLDeductionTypeToPayrollDeductionType = (
+  type: string
+): PayrollRecord["deductions"][number]["type"] => {
+  switch (type) {
+    case "income_tax":
+      return "federal_tax";
+    case "inss_employee":
+      return "social_security";
+    case "advance_repayment":
+      return "advance";
+    case "court_order":
+      return "garnishment";
+    default:
+      return "other";
+  }
+};
+
+const getPayPeriodsInPayMonth = (
+  payDateIso: string,
+  payFrequency: TLPayFrequency
+): number | undefined => {
+  if (!payDateIso) return undefined;
+  if (payFrequency !== "weekly" && payFrequency !== "biweekly") return undefined;
+
+  const intervalDays = payFrequency === "weekly" ? 7 : 14;
+  const payDate = new Date(`${payDateIso}T00:00:00`);
+  if (Number.isNaN(payDate.getTime())) return undefined;
+
+  const targetYear = payDate.getFullYear();
+  const targetMonth = payDate.getMonth();
+
+  // Walk backwards to find the first pay date in the month for this cadence.
+  let cursor = new Date(payDate);
+  while (true) {
+    const previous = new Date(cursor);
+    previous.setDate(previous.getDate() - intervalDays);
+    if (previous.getFullYear() !== targetYear || previous.getMonth() !== targetMonth) break;
+    cursor = previous;
+  }
+
+  // Count pay dates forward within the same month.
+  let count = 0;
+  const iter = new Date(cursor);
+  while (iter.getFullYear() === targetYear && iter.getMonth() === targetMonth) {
+    count += 1;
+    iter.setDate(iter.getDate() + intervalDays);
+  }
+
+  return count > 0 ? count : undefined;
+};
+
 export default function RunPayroll() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -133,6 +213,7 @@ export default function RunPayroll() {
   const [periodStart, setPeriodStart] = useState("");
   const [periodEnd, setPeriodEnd] = useState("");
   const [payDate, setPayDate] = useState("");
+  const [includeSubsidioAnual, setIncludeSubsidioAnual] = useState(false);
 
   // Dialog states
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -171,7 +252,7 @@ export default function RunPayroll() {
         // Initialize payroll data for each employee
         // TL standard: 44 hours/week = ~190.67 hours/month (44 * 52/12)
         const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-        const defaultHours = payFrequency === "monthly" ? monthlyHours : monthlyHours / 2;
+        const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
 
         const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => ({
           employee: emp,
@@ -219,12 +300,25 @@ export default function RunPayroll() {
     const monthlySalary = data.employee.compensation.monthlySalary || 0;
     const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
     const hourlyRate = monthlySalary / monthlyHours;
+    const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+    const monthsWorkedThisYear = asOfDate.getMonth() + 1;
+	    const hireDate = data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0];
+	    const subsidioAnual = includeSubsidioAnual
+	      ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
+	      : 0;
+	    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
+	    const isResident =
+	      data.employee.compensation?.isResident ??
+	      (data.employee.documents?.residencyStatus
+        ? data.employee.documents.residencyStatus !== "foreign_worker"
+        : true);
 
-    const input: TLPayrollInput = {
-      employeeId: data.employee.id || "",
-      monthlySalary,
-      payFrequency,
-      isHourly: false,
+	    const input: TLPayrollInput = {
+	      employeeId: data.employee.id || "",
+	      monthlySalary,
+	      payFrequency,
+	      totalPeriodsInMonth,
+	      isHourly: false,
       hourlyRate,
       regularHours: data.regularHours,
       overtimeHours: data.overtimeHours,
@@ -241,8 +335,9 @@ export default function RunPayroll() {
       foodAllowance: 0,
       transportAllowance: data.allowances,
       otherEarnings: 0,
+      subsidioAnual,
       taxInfo: {
-        isResident: true,
+        isResident,
         hasTaxExemption: false,
       },
       loanRepayment: 0,
@@ -252,8 +347,8 @@ export default function RunPayroll() {
       ytdGrossPay: 0,
       ytdIncomeTax: 0,
       ytdINSSEmployee: 0,
-      monthsWorkedThisYear: new Date().getMonth() + 1,
-      hireDate: data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0],
+      monthsWorkedThisYear,
+      hireDate,
     };
 
     try {
@@ -262,7 +357,7 @@ export default function RunPayroll() {
       console.error("Calculation error for employee:", data.employee.id, error);
       return null;
     }
-  }, [payFrequency]);
+  }, [payFrequency, payDate, includeSubsidioAnual]);
 
   // Track if we need to recalculate (used by useEffect below)
   const calculationVersion = useRef(0);
@@ -286,13 +381,13 @@ export default function RunPayroll() {
     if (employeePayrollData.length === 0) return;
 
     calculationVersion.current++;
-    const updatedData = employeePayrollData.map((data) => ({
-      ...data,
-      calculation: calculateForEmployee(data),
-    }));
-    setEmployeePayrollData(updatedData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [payFrequency]);
+    setEmployeePayrollData((prev) =>
+      prev.map((data) => ({
+        ...data,
+        calculation: calculateForEmployee(data),
+      }))
+    );
+  }, [payFrequency, payDate, includeSubsidioAnual, calculateForEmployee, employeePayrollData.length]);
 
   // Detect employees with compliance issues (for NGO "run anyway" scenarios)
   const complianceIssues = useMemo(() => {
@@ -459,7 +554,7 @@ export default function RunPayroll() {
           position: d.employee.jobDetails.position,
           regularHours: d.regularHours,
           overtimeHours: d.overtimeHours,
-          doubleTimeHours: d.holidayHours,
+          doubleTimeHours: 0,
           holidayHours: d.holidayHours,
           ptoHoursUsed: 0,
           sickHoursUsed: d.sickDays * 8,
@@ -467,67 +562,21 @@ export default function RunPayroll() {
             (d.employee.compensation.monthlySalary || 0) /
             ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
           overtimeRate: TL_OVERTIME_RATES.standard,
-          earnings: [
-            {
-              type: "regular" as const,
-              description: TL_EARNING_TYPE_LABELS.regular.en,
-              amount: d.calculation!.regularPay,
-            },
-            ...(d.calculation!.overtimePay > 0
-              ? [
-                  {
-                    type: "overtime" as const,
-                    description: TL_EARNING_TYPE_LABELS.overtime.en,
-                    hours: d.overtimeHours,
-                    amount: d.calculation!.overtimePay,
-                  },
-                ]
-              : []),
-            ...(d.calculation!.nightShiftPay > 0
-              ? [
-                  {
-                    type: "other" as const,
-                    description: TL_EARNING_TYPE_LABELS.night_shift.en,
-                    amount: d.calculation!.nightShiftPay,
-                  },
-                ]
-              : []),
-            ...(d.bonus > 0
-              ? [
-                  {
-                    type: "bonus" as const,
-                    description: TL_EARNING_TYPE_LABELS.bonus.en,
-                    amount: d.bonus,
-                  },
-                ]
-              : []),
-            ...(d.perDiem > 0
-              ? [
-                  {
-                    type: "other" as const,
-                    description: TL_EARNING_TYPE_LABELS.per_diem.en,
-                    amount: d.perDiem,
-                  },
-                ]
-              : []),
-          ],
+          earnings: d.calculation!.earnings.map((earning) => ({
+            type: mapTLEarningTypeToPayrollEarningType(earning.type),
+            description: earning.description,
+            hours: earning.hours,
+            rate: earning.rate,
+            amount: earning.amount,
+          })),
           totalGrossPay: d.calculation!.grossPay,
-          deductions: [
-            {
-              type: "federal_tax" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.income_tax.en,
-              amount: d.calculation!.incomeTax,
-              isPreTax: false,
-              isPercentage: false,
-            },
-            {
-              type: "social_security" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.inss_employee.en,
-              amount: d.calculation!.inssEmployee,
-              isPreTax: false,
-              isPercentage: false,
-            },
-          ],
+          deductions: d.calculation!.deductions.map((deduction) => ({
+            type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
+            description: deduction.description,
+            amount: deduction.amount,
+            isPreTax: false,
+            isPercentage: false,
+          })),
           totalDeductions: d.calculation!.totalDeductions,
           employerContributions: [],
           totalEmployerContributions: 0,
@@ -613,7 +662,7 @@ export default function RunPayroll() {
           position: d.employee.jobDetails.position,
           regularHours: d.regularHours,
           overtimeHours: d.overtimeHours,
-          doubleTimeHours: d.holidayHours,
+          doubleTimeHours: 0,
           holidayHours: d.holidayHours,
           ptoHoursUsed: 0,
           sickHoursUsed: d.sickDays * 8,
@@ -621,67 +670,21 @@ export default function RunPayroll() {
             (d.employee.compensation.monthlySalary || 0) /
             ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
           overtimeRate: TL_OVERTIME_RATES.standard,
-          earnings: [
-            {
-              type: "regular" as const,
-              description: TL_EARNING_TYPE_LABELS.regular.en,
-              amount: d.calculation!.regularPay,
-            },
-            ...(d.calculation!.overtimePay > 0
-              ? [
-                  {
-                    type: "overtime" as const,
-                    description: TL_EARNING_TYPE_LABELS.overtime.en,
-                    hours: d.overtimeHours,
-                    amount: d.calculation!.overtimePay,
-                  },
-                ]
-              : []),
-            ...(d.calculation!.nightShiftPay > 0
-              ? [
-                  {
-                    type: "other" as const,
-                    description: TL_EARNING_TYPE_LABELS.night_shift.en,
-                    amount: d.calculation!.nightShiftPay,
-                  },
-                ]
-              : []),
-            ...(d.bonus > 0
-              ? [
-                  {
-                    type: "bonus" as const,
-                    description: TL_EARNING_TYPE_LABELS.bonus.en,
-                    amount: d.bonus,
-                  },
-                ]
-              : []),
-            ...(d.perDiem > 0
-              ? [
-                  {
-                    type: "other" as const,
-                    description: TL_EARNING_TYPE_LABELS.per_diem.en,
-                    amount: d.perDiem,
-                  },
-                ]
-              : []),
-          ],
+          earnings: d.calculation!.earnings.map((earning) => ({
+            type: mapTLEarningTypeToPayrollEarningType(earning.type),
+            description: earning.description,
+            hours: earning.hours,
+            rate: earning.rate,
+            amount: earning.amount,
+          })),
           totalGrossPay: d.calculation!.grossPay,
-          deductions: [
-            {
-              type: "federal_tax" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.income_tax.en,
-              amount: d.calculation!.incomeTax,
-              isPreTax: false,
-              isPercentage: false,
-            },
-            {
-              type: "social_security" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.inss_employee.en,
-              amount: d.calculation!.inssEmployee,
-              isPreTax: false,
-              isPercentage: false,
-            },
-          ],
+          deductions: d.calculation!.deductions.map((deduction) => ({
+            type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
+            description: deduction.description,
+            amount: deduction.amount,
+            isPreTax: false,
+            isPercentage: false,
+          })),
           totalDeductions: d.calculation!.totalDeductions,
           employerContributions: [],
           totalEmployerContributions: 0,
@@ -1092,6 +1095,22 @@ export default function RunPayroll() {
                   onChange={(e) => setPayDate(e.target.value)}
                 />
               </div>
+              <div className="md:col-span-4 pt-2">
+                <label className="flex items-start gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={includeSubsidioAnual}
+                    onChange={(e) => setIncludeSubsidioAnual(e.target.checked)}
+                    className="mt-1 h-4 w-4 rounded border-border"
+                  />
+                  <span className="text-sm">
+                    Include Subsidio Anual (13th month) in this run
+                    <span className="block text-xs text-muted-foreground">
+                      Adds a pro-rated 13th month salary and includes it in WIT and INSS.
+                    </span>
+                  </span>
+                </label>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -1494,6 +1513,16 @@ export default function RunPayroll() {
                                   {formatCurrencyTL(data.calculation.nightShiftPay)}
                                 </p>
                               </div>
+                              {data.calculation.subsidioAnual > 0 && (
+                                <div>
+                                  <p className="text-xs text-gray-500 uppercase tracking-wide">
+                                    13th Month
+                                  </p>
+                                  <p className="font-medium">
+                                    {formatCurrencyTL(data.calculation.subsidioAnual)}
+                                  </p>
+                                </div>
+                              )}
                               <div>
                                 <p className="text-xs text-gray-500 uppercase tracking-wide">
                                   Income Tax

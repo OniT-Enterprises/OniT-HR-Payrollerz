@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   invoiceService,
   type InvoiceFilters,
@@ -11,26 +12,28 @@ import {
 import type { Invoice, InvoiceFormData, InvoiceStatus } from '@/types/money';
 
 export const invoiceKeys = {
-  all: ['invoices'] as const,
-  lists: () => [...invoiceKeys.all, 'list'] as const,
-  list: (filters: InvoiceFilters) => [...invoiceKeys.lists(), filters] as const,
-  details: () => [...invoiceKeys.all, 'detail'] as const,
-  detail: (id: string) => [...invoiceKeys.details(), id] as const,
+  all: (tenantId: string) => ['invoices', tenantId] as const,
+  lists: (tenantId: string) => [...invoiceKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, filters: InvoiceFilters) => [...invoiceKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string) => [...invoiceKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string, id: string) => [...invoiceKeys.details(tenantId), id] as const,
 };
 
 export function useInvoices(filters: InvoiceFilters = {}) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: invoiceKeys.list(filters),
-    queryFn: () => invoiceService.getInvoices(filters),
+    queryKey: invoiceKeys.list(tenantId, filters),
+    queryFn: () => invoiceService.getInvoices(tenantId, filters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
 
 export function useAllInvoices(maxResults: number = 500) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: invoiceKeys.list({ pageSize: maxResults }),
-    queryFn: () => invoiceService.getInvoices({ pageSize: maxResults }),
+    queryKey: invoiceKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: () => invoiceService.getInvoices(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Invoice>) => data.data,
@@ -38,9 +41,10 @@ export function useAllInvoices(maxResults: number = 500) {
 }
 
 export function useInvoice(id: string | undefined) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: invoiceKeys.detail(id!),
-    queryFn: () => invoiceService.getInvoiceById(id!),
+    queryKey: invoiceKeys.detail(tenantId, id!),
+    queryFn: () => invoiceService.getInvoiceById(tenantId, id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -48,24 +52,26 @@ export function useInvoice(id: string | undefined) {
 
 export function useCreateInvoice() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (data: InvoiceFormData) => invoiceService.createInvoice(data),
+    mutationFn: (data: InvoiceFormData) => invoiceService.createInvoice(tenantId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.all });
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.all(tenantId) });
     },
   });
 }
 
 export function useUpdateInvoice() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<InvoiceFormData> }) =>
-      invoiceService.updateInvoice(id, data),
+      invoiceService.updateInvoice(tenantId, id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: invoiceKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, id) });
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.lists(tenantId) });
     },
   });
 }

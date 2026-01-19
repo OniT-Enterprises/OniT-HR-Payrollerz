@@ -285,6 +285,28 @@ export const PayslipDocument = ({
   const taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
   const nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
 
+  const isTimorLestePayslip = record.deductions.some((d) =>
+    /\b(inss|wit)\b/i.test(d.description || "")
+  );
+
+  const showYtd = [
+    record.ytdGrossPay,
+    record.ytdNetPay,
+    record.ytdFederalTax,
+    record.ytdStateTax,
+    record.ytdSocialSecurity,
+    record.ytdMedicare,
+  ].some((value) => Math.abs(value || 0) > 0.0001);
+
+  const hourItems = [
+    { label: "REGULAR", value: record.regularHours },
+    { label: "OVERTIME", value: record.overtimeHours },
+    { label: "DOUBLE TIME", value: record.doubleTimeHours },
+    { label: "HOLIDAY", value: record.holidayHours },
+    { label: "PTO USED", value: record.ptoHoursUsed },
+    { label: "SICK USED", value: record.sickHoursUsed },
+  ].filter((item) => item.label === "REGULAR" || item.value > 0);
+
   // Group deductions
   const taxDeductions = record.deductions.filter(d =>
     ['federal_tax', 'state_tax', 'local_tax', 'social_security', 'medicare'].includes(d.type)
@@ -358,30 +380,12 @@ export const PayslipDocument = ({
 
         {/* Hours Summary */}
         <View style={styles.hoursGrid}>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>REGULAR</Text>
-            <Text style={styles.hoursValue}>{record.regularHours.toFixed(2)} hrs</Text>
-          </View>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>OVERTIME</Text>
-            <Text style={styles.hoursValue}>{record.overtimeHours.toFixed(2)} hrs</Text>
-          </View>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>DOUBLE TIME</Text>
-            <Text style={styles.hoursValue}>{record.doubleTimeHours.toFixed(2)} hrs</Text>
-          </View>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>HOLIDAY</Text>
-            <Text style={styles.hoursValue}>{record.holidayHours.toFixed(2)} hrs</Text>
-          </View>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>PTO USED</Text>
-            <Text style={styles.hoursValue}>{record.ptoHoursUsed.toFixed(2)} hrs</Text>
-          </View>
-          <View style={styles.hoursItem}>
-            <Text style={styles.hoursLabel}>SICK USED</Text>
-            <Text style={styles.hoursValue}>{record.sickHoursUsed.toFixed(2)} hrs</Text>
-          </View>
+          {hourItems.map((item) => (
+            <View key={item.label} style={styles.hoursItem}>
+              <Text style={styles.hoursLabel}>{item.label}</Text>
+              <Text style={styles.hoursValue}>{item.value.toFixed(2)} hrs</Text>
+            </View>
+          ))}
         </View>
 
         {/* Two Column Layout for Earnings/Deductions */}
@@ -493,35 +497,53 @@ export const PayslipDocument = ({
         </View>
 
         {/* YTD Section */}
-        <View style={styles.ytdSection}>
-          <Text style={styles.ytdTitle}>Year-to-Date Summary</Text>
-          <View style={styles.ytdGrid}>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD Gross Pay</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdGrossPay)}</Text>
-            </View>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD Net Pay</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
-            </View>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD Federal Tax</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
-            </View>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD State Tax</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdStateTax)}</Text>
-            </View>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD Social Security</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
-            </View>
-            <View style={styles.ytdItem}>
-              <Text style={styles.ytdLabel}>YTD Medicare</Text>
-              <Text style={styles.ytdValue}>{formatCurrency(record.ytdMedicare)}</Text>
+        {showYtd && (
+          <View style={styles.ytdSection}>
+            <Text style={styles.ytdTitle}>Year-to-Date Summary</Text>
+            <View style={styles.ytdGrid}>
+              <View style={styles.ytdItem}>
+                <Text style={styles.ytdLabel}>YTD Gross Pay</Text>
+                <Text style={styles.ytdValue}>{formatCurrency(record.ytdGrossPay)}</Text>
+              </View>
+              <View style={styles.ytdItem}>
+                <Text style={styles.ytdLabel}>YTD Net Pay</Text>
+                <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
+              </View>
+
+              {isTimorLestePayslip ? (
+                <>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD WIT</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
+                  </View>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD INSS (Employee)</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
+                  </View>
+                </>
+              ) : (
+                <>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD Federal Tax</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
+                  </View>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD State Tax</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdStateTax)}</Text>
+                  </View>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD Social Security</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
+                  </View>
+                  <View style={styles.ytdItem}>
+                    <Text style={styles.ytdLabel}>YTD Medicare</Text>
+                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdMedicare)}</Text>
+                  </View>
+                </>
+              )}
             </View>
           </View>
-        </View>
+        )}
 
         {/* Footer */}
         <Text style={styles.footer}>

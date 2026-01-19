@@ -38,6 +38,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
+import { useTenant } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
@@ -60,6 +61,7 @@ export default function Vendors() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -77,13 +79,16 @@ export default function Vendors() {
   });
 
   useEffect(() => {
-    loadVendors();
-  }, []);
+    if (session?.tid) {
+      loadVendors();
+    }
+  }, [session?.tid]);
 
   const loadVendors = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
-      const data = await vendorService.getAllVendors();
+      const data = await vendorService.getAllVendors(session.tid);
       setVendors(data);
     } catch (error) {
       console.error('Error loading vendors:', error);
@@ -107,6 +112,7 @@ export default function Vendors() {
   });
 
   const handleSubmit = async () => {
+    if (!session?.tid) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -118,13 +124,13 @@ export default function Vendors() {
 
     try {
       if (editingVendor) {
-        await vendorService.updateVendor(editingVendor.id, formData);
+        await vendorService.updateVendor(session.tid, editingVendor.id, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.vendors.updated') || 'Vendor updated successfully',
         });
       } else {
-        await vendorService.createVendor(formData);
+        await vendorService.createVendor(session.tid, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.vendors.created') || 'Vendor created successfully',
@@ -160,12 +166,13 @@ export default function Vendors() {
   };
 
   const handleDelete = async (vendor: Vendor) => {
+    if (!session?.tid) return;
     if (!confirm(t('money.vendors.confirmDelete') || `Delete vendor "${vendor.name}"?`)) {
       return;
     }
 
     try {
-      await vendorService.deactivateVendor(vendor.id);
+      await vendorService.deactivateVendor(session.tid, vendor.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.vendors.deleted') || 'Vendor deleted successfully',

@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import type { Invoice } from '@/types/money';
@@ -45,19 +46,23 @@ export default function ARAgingReport() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [buckets, setBuckets] = useState<AgingBucket[]>([]);
   const [customerAging, setCustomerAging] = useState<CustomerAging[]>([]);
   const [totalOutstanding, setTotalOutstanding] = useState(0);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [session?.tid]);
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
-      const invoices = await invoiceService.getAllInvoices();
+      const invoices = await invoiceService.getAllInvoices(session.tid);
 
       // Filter to only unpaid invoices
       const unpaidInvoices = invoices.filter(

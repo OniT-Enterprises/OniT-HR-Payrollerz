@@ -118,6 +118,28 @@ export const paths = {
   fiscalPeriod: (tid: string, periodId: string) => `tenants/${tid}/fiscalPeriods/${periodId}`,
 
   accountingSettings: (tid: string) => `tenants/${tid}/settings/accounting`,
+
+  // Money (invoicing, AP/AR)
+  customers: (tid: string) => `tenants/${tid}/customers`,
+  customer: (tid: string, customerId: string) => `tenants/${tid}/customers/${customerId}`,
+
+  invoices: (tid: string) => `tenants/${tid}/invoices`,
+  invoice: (tid: string, invoiceId: string) => `tenants/${tid}/invoices/${invoiceId}`,
+
+  paymentsReceived: (tid: string) => `tenants/${tid}/payments_received`,
+  paymentReceived: (tid: string, paymentId: string) => `tenants/${tid}/payments_received/${paymentId}`,
+
+  vendors: (tid: string) => `tenants/${tid}/vendors`,
+  vendor: (tid: string, vendorId: string) => `tenants/${tid}/vendors/${vendorId}`,
+
+  bills: (tid: string) => `tenants/${tid}/bills`,
+  bill: (tid: string, billId: string) => `tenants/${tid}/bills/${billId}`,
+
+  billPayments: (tid: string) => `tenants/${tid}/bill_payments`,
+  billPayment: (tid: string, paymentId: string) => `tenants/${tid}/bill_payments/${paymentId}`,
+
+  expenses: (tid: string) => `tenants/${tid}/expenses`,
+  expense: (tid: string, expenseId: string) => `tenants/${tid}/expenses/${expenseId}`,
   
   // Analytics and reports
   analytics: (tid: string) => `tenants/${tid}/analytics`,
@@ -139,6 +161,9 @@ export const paths = {
 
   // Quickbooks integration settings
   quickbooksExportSettings: (tid: string) => `tenants/${tid}/settings/quickbooks_export_settings`,
+
+  // Money module settings
+  invoiceSettings: (tid: string) => `tenants/${tid}/settings/invoice_settings`,
 } as const;
 
 // Helper functions for ID generation and validation

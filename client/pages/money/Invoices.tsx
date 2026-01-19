@@ -28,9 +28,12 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import type { Invoice, InvoiceStatus } from '@/types/money';
+import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
+import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
+import type { Invoice, InvoiceStatus, InvoiceSettings } from '@/types/money';
 import {
   FileText,
   Plus,
@@ -46,6 +49,8 @@ import {
   Filter,
   Download,
   Share2,
+  Loader2,
+  Settings,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<InvoiceStatus, string> = {
@@ -62,20 +67,31 @@ export default function Invoices() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadInvoices();
-  }, []);
+    if (session?.tid) {
+      loadInvoices();
+    }
+  }, [session?.tid]);
 
   const loadInvoices = async () => {
+    if (!session?.tid) return;
+
     try {
       setLoading(true);
-      const data = await invoiceService.getAllInvoices();
+      const [data, settings] = await Promise.all([
+        invoiceService.getAllInvoices(session.tid),
+        invoiceService.getSettings(session.tid).catch(() => ({})),
+      ]);
       setInvoices(data);
+      setInvoiceSettings(settings);
     } catch (error) {
       console.error('Error loading invoices:', error);
       toast({
@@ -114,8 +130,9 @@ export default function Invoices() {
   };
 
   const handleSend = async (invoice: Invoice) => {
+    if (!session?.tid) return;
     try {
-      await invoiceService.markAsSent(invoice.id);
+      await invoiceService.markAsSent(session.tid, invoice.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.markedSent') || 'Invoice marked as sent',
@@ -159,6 +176,7 @@ export default function Invoices() {
   };
 
   const handleDelete = async (invoice: Invoice) => {
+    if (!session?.tid) return;
     if (
       !confirm(
         t('money.invoices.confirmDelete') || `Delete invoice ${invoice.invoiceNumber}?`
@@ -168,7 +186,7 @@ export default function Invoices() {
     }
 
     try {
-      await invoiceService.deleteInvoice(invoice.id);
+      await invoiceService.deleteInvoice(session.tid, invoice.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.deleted') || 'Invoice deleted',
@@ -181,6 +199,26 @@ export default function Invoices() {
         description: t('money.invoices.deleteError') || 'Failed to delete invoice',
         variant: 'destructive',
       });
+    }
+  };
+
+  const handleDownloadPDF = async (invoice: Invoice) => {
+    try {
+      setDownloadingId(invoice.id);
+      await downloadInvoicePDF(invoice, invoiceSettings);
+      toast({
+        title: t('common.success') || 'Success',
+        description: t('money.invoices.pdfDownloaded') || 'Invoice PDF downloaded',
+      });
+    } catch (error) {
+      console.error('Error downloading PDF:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.invoices.pdfError') || 'Failed to generate PDF',
+        variant: 'destructive',
+      });
+    } finally {
+      setDownloadingId(null);
     }
   };
 
@@ -222,13 +260,23 @@ export default function Invoices() {
               </p>
             </div>
           </div>
-          <Button
-            onClick={() => navigate('/money/invoices/new')}
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.invoices.new') || 'New Invoice'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => navigate('/money/invoices/settings')}
+              title={t('money.settings.title') || 'Invoice Settings'}
+            >
+              <Settings className="h-4 w-4" />
+            </Button>
+            <Button
+              onClick={() => navigate('/money/invoices/new')}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.invoices.new') || 'New Invoice'}
+            </Button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -302,6 +350,7 @@ export default function Invoices() {
                           </Badge>
                         </div>
                         <p className="text-sm text-muted-foreground">{invoice.customerName}</p>
+                        <InvoiceStatusTimeline invoice={invoice} compact className="mt-1" />
                       </div>
                     </div>
 
@@ -350,6 +399,17 @@ export default function Invoices() {
                           <DropdownMenuItem onClick={() => handleShare(invoice)}>
                             <Share2 className="h-4 w-4 mr-2" />
                             {t('money.invoices.share') || 'Share Link'}
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDownloadPDF(invoice)}
+                            disabled={downloadingId === invoice.id}
+                          >
+                            {downloadingId === invoice.id ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <Download className="h-4 w-4 mr-2" />
+                            )}
+                            {t('money.invoices.downloadPdf') || 'Download PDF'}
                           </DropdownMenuItem>
                           <DropdownMenuItem onClick={() => handleDuplicate(invoice)}>
                             <Copy className="h-4 w-4 mr-2" />

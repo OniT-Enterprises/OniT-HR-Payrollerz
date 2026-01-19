@@ -38,6 +38,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
+import { useTenant } from '@/contexts/TenantContext';
 import { customerService } from '@/services/customerService';
 import type { Customer, CustomerFormData } from '@/types/money';
 import {
@@ -59,6 +60,7 @@ export default function Customers() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
@@ -76,13 +78,16 @@ export default function Customers() {
   });
 
   useEffect(() => {
-    loadCustomers();
-  }, []);
+    if (session?.tid) {
+      loadCustomers();
+    }
+  }, [session?.tid]);
 
   const loadCustomers = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
-      const data = await customerService.getAllCustomers();
+      const data = await customerService.getAllCustomers(session.tid);
       setCustomers(data);
     } catch (error) {
       console.error('Error loading customers:', error);
@@ -106,6 +111,7 @@ export default function Customers() {
   });
 
   const handleSubmit = async () => {
+    if (!session?.tid) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -117,13 +123,13 @@ export default function Customers() {
 
     try {
       if (editingCustomer) {
-        await customerService.updateCustomer(editingCustomer.id, formData);
+        await customerService.updateCustomer(session.tid, editingCustomer.id, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.customers.updated') || 'Customer updated successfully',
         });
       } else {
-        await customerService.createCustomer(formData);
+        await customerService.createCustomer(session.tid, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.customers.created') || 'Customer created successfully',
@@ -159,12 +165,13 @@ export default function Customers() {
   };
 
   const handleDelete = async (customer: Customer) => {
+    if (!session?.tid) return;
     if (!confirm(t('money.customers.confirmDelete') || `Delete customer "${customer.name}"?`)) {
       return;
     }
 
     try {
-      await customerService.deactivateCustomer(customer.id);
+      await customerService.deactivateCustomer(session.tid, customer.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.customers.deleted') || 'Customer deleted successfully',

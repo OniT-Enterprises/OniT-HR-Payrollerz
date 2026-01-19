@@ -3,6 +3,7 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTenantId } from '@/contexts/TenantContext';
 import {
   vendorService,
   type VendorFilters,
@@ -11,26 +12,28 @@ import {
 import type { Vendor, VendorFormData } from '@/types/money';
 
 export const vendorKeys = {
-  all: ['vendors'] as const,
-  lists: () => [...vendorKeys.all, 'list'] as const,
-  list: (filters: VendorFilters) => [...vendorKeys.lists(), filters] as const,
-  details: () => [...vendorKeys.all, 'detail'] as const,
-  detail: (id: string) => [...vendorKeys.details(), id] as const,
+  all: (tenantId: string) => ['vendors', tenantId] as const,
+  lists: (tenantId: string) => [...vendorKeys.all(tenantId), 'list'] as const,
+  list: (tenantId: string, filters: VendorFilters) => [...vendorKeys.lists(tenantId), filters] as const,
+  details: (tenantId: string) => [...vendorKeys.all(tenantId), 'detail'] as const,
+  detail: (tenantId: string, id: string) => [...vendorKeys.details(tenantId), id] as const,
 };
 
 export function useVendors(filters: VendorFilters = {}) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: vendorKeys.list(filters),
-    queryFn: () => vendorService.getVendors(filters),
+    queryKey: vendorKeys.list(tenantId, filters),
+    queryFn: () => vendorService.getVendors(tenantId, filters),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
 
 export function useAllVendors(maxResults: number = 500) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: vendorKeys.list({ pageSize: maxResults }),
-    queryFn: () => vendorService.getVendors({ pageSize: maxResults }),
+    queryKey: vendorKeys.list(tenantId, { pageSize: maxResults }),
+    queryFn: () => vendorService.getVendors(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Vendor>) => data.data,
@@ -38,9 +41,10 @@ export function useAllVendors(maxResults: number = 500) {
 }
 
 export function useActiveVendors() {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: vendorKeys.list({ isActive: true }),
-    queryFn: () => vendorService.getVendors({ isActive: true, pageSize: 500 }),
+    queryKey: vendorKeys.list(tenantId, { isActive: true }),
+    queryFn: () => vendorService.getVendors(tenantId, { isActive: true, pageSize: 500 }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Vendor>) => data.data,
@@ -48,9 +52,10 @@ export function useActiveVendors() {
 }
 
 export function useVendor(id: string | undefined) {
+  const tenantId = useTenantId();
   return useQuery({
-    queryKey: vendorKeys.detail(id!),
-    queryFn: () => vendorService.getVendorById(id!),
+    queryKey: vendorKeys.detail(tenantId, id!),
+    queryFn: () => vendorService.getVendorById(tenantId, id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
@@ -58,24 +63,26 @@ export function useVendor(id: string | undefined) {
 
 export function useCreateVendor() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (data: VendorFormData) => vendorService.createVendor(data),
+    mutationFn: (data: VendorFormData) => vendorService.createVendor(tenantId, data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: vendorKeys.all });
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
     },
   });
 }
 
 export function useUpdateVendor() {
   const queryClient = useQueryClient();
+  const tenantId = useTenantId();
 
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: Partial<VendorFormData> }) =>
-      vendorService.updateVendor(id, data),
+      vendorService.updateVendor(tenantId, id, data),
     onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: vendorKeys.detail(id) });
-      queryClient.invalidateQueries({ queryKey: vendorKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: vendorKeys.detail(tenantId, id) });
+      queryClient.invalidateQueries({ queryKey: vendorKeys.lists(tenantId) });
     },
   });
 }

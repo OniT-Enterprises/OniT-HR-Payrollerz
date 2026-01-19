@@ -32,6 +32,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
@@ -83,6 +84,7 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
 
   const isNew = !id || id === 'new';
   const isEdit = searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit');
@@ -111,8 +113,10 @@ export default function BillForm() {
   });
 
   useEffect(() => {
-    loadData();
-  }, [id]);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [id, session?.tid]);
 
   useEffect(() => {
     if (searchParams.get('record') === 'payment' && bill) {
@@ -122,9 +126,10 @@ export default function BillForm() {
   }, [searchParams, bill]);
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       // Load vendors
-      const vendorList = await vendorService.getActiveVendors();
+      const vendorList = await vendorService.getActiveVendors(session.tid);
       setVendors(vendorList);
 
       // Set preselected vendor if provided
@@ -134,7 +139,7 @@ export default function BillForm() {
 
       // Load bill if editing/viewing
       if (!isNew && id) {
-        const billData = await billService.getBillById(id);
+        const billData = await billService.getBillById(session.tid, id);
         if (billData) {
           setBill(billData);
           setFormData({
@@ -150,7 +155,7 @@ export default function BillForm() {
           });
 
           // Load payments
-          const billPayments = await billService.getPaymentsForBill(id);
+          const billPayments = await billService.getPaymentsForBill(session.tid, id);
           setPayments(billPayments);
         }
       }
@@ -192,6 +197,7 @@ export default function BillForm() {
   };
 
   const handleSave = async () => {
+    if (!session?.tid) return;
     if (!formData.vendorId) {
       toast({
         title: t('common.error') || 'Error',
@@ -222,14 +228,14 @@ export default function BillForm() {
     try {
       setSaving(true);
       if (isNew) {
-        const newId = await billService.createBill(formData);
+        const newId = await billService.createBill(session.tid, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
         navigate(`/money/bills/${newId}`);
       } else if (id) {
-        await billService.updateBill(id, formData);
+        await billService.updateBill(session.tid, id, formData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.updated') || 'Bill updated',
@@ -249,6 +255,7 @@ export default function BillForm() {
   };
 
   const handleRecordPayment = async () => {
+    if (!session?.tid) return;
     if (!bill) return;
 
     const amount = parseFloat(paymentAmount);
@@ -263,7 +270,7 @@ export default function BillForm() {
 
     try {
       setSaving(true);
-      await billService.recordPayment(bill.id, {
+      await billService.recordPayment(session.tid, bill.id, {
         date: new Date().toISOString().split('T')[0],
         amount,
         method: paymentMethod as PaymentMethod,

@@ -39,6 +39,7 @@ export type EarningType =
   | 'double_time'
   | 'holiday'
   | 'bonus'
+  | 'subsidio_anual'
   | 'commission'
   | 'tip'
   | 'reimbursement'
@@ -208,6 +209,7 @@ export interface EmployeeTaxInfo {
  */
 export interface BenefitEnrollment {
   id?: string;
+  tenantId?: string;
   employeeId: string;
   benefitType: 'health' | 'dental' | 'vision' | 'life' | '401k' | 'hsa' | 'fsa' | 'other';
   planName: string;
@@ -228,6 +230,7 @@ export interface BenefitEnrollment {
  */
 export interface RecurringDeduction {
   id?: string;
+  tenantId?: string;
   employeeId: string;
   type: DeductionType;
   description: string;
@@ -250,6 +253,7 @@ export interface RecurringDeduction {
  */
 export interface TaxReport {
   id?: string;
+  tenantId?: string;
   reportType: 'quarterly_941' | 'annual_w2' | 'annual_940' | 'state_quarterly' | 'state_annual';
   period: string;  // e.g., "Q1 2024" or "2024"
   year: number;
@@ -284,6 +288,7 @@ export interface TaxReport {
  */
 export interface BankTransfer {
   id?: string;
+  tenantId?: string;
   payrollRunId: string;
   payrollPeriod: string;
   amount: number;

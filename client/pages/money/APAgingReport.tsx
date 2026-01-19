@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
@@ -45,21 +46,25 @@ export default function APAgingReport() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [buckets, setBuckets] = useState<AgingBucket[]>([]);
   const [vendorAging, setVendorAging] = useState<VendorAging[]>([]);
   const [totalPayable, setTotalPayable] = useState(0);
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (session?.tid) {
+      loadData();
+    }
+  }, [session?.tid]);
 
   const loadData = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
       const [bills, vendors] = await Promise.all([
-        billService.getAllBills(),
-        vendorService.getAllVendors(),
+        billService.getAllBills(session.tid),
+        vendorService.getAllVendors(session.tid),
       ]);
 
       // Create vendor lookup

@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import type { Bill, BillStatus } from '@/types/money';
@@ -58,19 +59,23 @@ export default function Bills() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [bills, setBills] = useState<Bill[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
-    loadBills();
-  }, []);
+    if (session?.tid) {
+      loadBills();
+    }
+  }, [session?.tid]);
 
   const loadBills = async () => {
+    if (!session?.tid) return;
     try {
       setLoading(true);
-      const data = await billService.getAllBills();
+      const data = await billService.getAllBills(session.tid);
       setBills(data);
     } catch (error) {
       console.error('Error loading bills:', error);
@@ -118,6 +123,7 @@ export default function Bills() {
   const overdueAmount = overdueBills.reduce((sum, b) => sum + b.balanceDue, 0);
 
   const handleDelete = async (bill: Bill) => {
+    if (!session?.tid) return;
     if (
       !confirm(
         t('money.bills.confirmDelete') || `Delete bill from ${bill.vendorName}?`
@@ -127,7 +133,7 @@ export default function Bills() {
     }
 
     try {
-      await billService.deleteBill(bill.id);
+      await billService.deleteBill(session.tid, bill.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.bills.deleted') || 'Bill deleted',

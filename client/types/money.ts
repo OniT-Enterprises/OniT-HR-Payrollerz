@@ -318,6 +318,39 @@ export interface MoneyStats {
   // Profit
   profitThisMonth: number;
   profitPreviousMonth: number;
+
+  // AR Aging breakdown
+  aging?: {
+    current: number;      // 0-30 days
+    days30to60: number;   // 31-60 days
+    days60to90: number;   // 61-90 days
+    over90: number;       // 90+ days
+  };
+
+  // Cash flow (last 6 months)
+  cashFlow?: {
+    month: string;
+    received: number;
+    spent: number;
+  }[];
+
+  // Top customers by outstanding
+  topCustomers?: {
+    id: string;
+    name: string;
+    outstanding: number;
+    invoiceCount: number;
+  }[];
+
+  // Recent activity
+  recentActivity?: {
+    id: string;
+    type: 'invoice_created' | 'invoice_sent' | 'invoice_viewed' | 'payment_received' | 'invoice_overdue';
+    description: string;
+    amount?: number;
+    timestamp: Date;
+    entityId?: string;
+  }[];
 }
 
 // ============================================

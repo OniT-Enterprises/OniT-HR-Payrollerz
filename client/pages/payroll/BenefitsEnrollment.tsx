@@ -133,11 +133,11 @@ export default function BenefitsEnrollment() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
-        const [enrollmentData, employeeData] = await Promise.all([
-          payrollService.benefits.getAllEnrollments(),
-          employeeService.getAllEmployees(tenantId),
-        ]);
+	        setLoading(true);
+	        const [enrollmentData, employeeData] = await Promise.all([
+	          payrollService.benefits.getAllEnrollments(tenantId),
+	          employeeService.getAllEmployees(tenantId),
+	        ]);
         setEnrollments(enrollmentData);
         setEmployees(employeeData.filter((e) => e.status === "active"));
       } catch (error) {
@@ -153,7 +153,7 @@ export default function BenefitsEnrollment() {
     };
 
     loadData();
-  }, [toast]);
+	  }, [toast, tenantId]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -274,7 +274,7 @@ export default function BenefitsEnrollment() {
         status: "active",
       };
 
-      await payrollService.benefits.createEnrollment(enrollment);
+      await payrollService.benefits.createEnrollment(tenantId, enrollment);
 
       toast({
         title: "Success",
@@ -282,7 +282,7 @@ export default function BenefitsEnrollment() {
       });
 
       // Reload enrollments
-      const data = await payrollService.benefits.getAllEnrollments();
+      const data = await payrollService.benefits.getAllEnrollments(tenantId);
       setEnrollments(data);
 
       setShowAddDialog(false);

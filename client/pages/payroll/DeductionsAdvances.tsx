@@ -107,11 +107,11 @@ export default function DeductionsAdvances() {
   useEffect(() => {
     const loadData = async () => {
       try {
-        setLoading(true);
-        const [deductionData, employeeData] = await Promise.all([
-          payrollService.deductions.getAllDeductions(),
-          employeeService.getAllEmployees(tenantId),
-        ]);
+	        setLoading(true);
+	        const [deductionData, employeeData] = await Promise.all([
+	          payrollService.deductions.getAllDeductions(tenantId),
+	          employeeService.getAllEmployees(tenantId),
+	        ]);
         setDeductions(deductionData);
         setEmployees(employeeData.filter((e) => e.status === "active"));
       } catch (error) {
@@ -127,7 +127,7 @@ export default function DeductionsAdvances() {
     };
 
     loadData();
-  }, [toast]);
+	  }, [toast, tenantId]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -252,7 +252,7 @@ export default function DeductionsAdvances() {
         status: "active",
       };
 
-      await payrollService.deductions.createDeduction(deduction);
+      await payrollService.deductions.createDeduction(tenantId, deduction);
 
       toast({
         title: "Success",
@@ -260,7 +260,7 @@ export default function DeductionsAdvances() {
       });
 
       // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions();
+      const data = await payrollService.deductions.getAllDeductions(tenantId);
       setDeductions(data);
 
       setShowAddDialog(false);
@@ -287,7 +287,7 @@ export default function DeductionsAdvances() {
       }
 
       // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions();
+      const data = await payrollService.deductions.getAllDeductions(tenantId);
       setDeductions(data);
 
       toast({
@@ -310,7 +310,7 @@ export default function DeductionsAdvances() {
       await payrollService.deductions.deleteDeduction(id);
 
       // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions();
+      const data = await payrollService.deductions.getAllDeductions(tenantId);
       setDeductions(data);
 
       toast({
