@@ -81,6 +81,14 @@ createdAt: data.createdAt instanceof Timestamp
   : data.createdAt || new Date()
 ```
 
+## Page Patterns
+All pages follow consistent patterns:
+- `useTenantId()` - tenant isolation for multi-tenant support
+- `useToast()` - user feedback for success/error states
+- `Skeleton` loading states during data fetches
+- Proper error handling with try/catch and toast notifications
+- `Dialog` for forms, `AlertDialog` for confirmations
+
 ## Git
 - Main branch: `main`
 - Auto-deploys on push to main (Firebase + Hetzner)
