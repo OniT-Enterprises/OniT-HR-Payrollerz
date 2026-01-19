@@ -303,11 +303,22 @@ export default function MoneyDashboard() {
           {/* Action Required Today */}
           <Card className="lg:col-span-2">
             <CardHeader className="pb-3">
-              <div className="flex items-center gap-2">
-                <AlertCircle className="h-5 w-5 text-indigo-600" />
-                <CardTitle className="text-lg">Action Required</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="h-5 w-5 text-indigo-600" />
+                  <CardTitle className="text-lg">Action Required</CardTitle>
+                </div>
+                {actionItems.length > 0 && (
+                  <Badge variant="secondary" className="text-sm">
+                    {actionItems.length} thing{actionItems.length !== 1 ? 's' : ''} to do
+                  </Badge>
+                )}
               </div>
-              <CardDescription>Things that need your attention</CardDescription>
+              <CardDescription>
+                {actionItems.length > 0
+                  ? `You need to do ${actionItems.length} thing${actionItems.length !== 1 ? 's' : ''}`
+                  : 'Things that need your attention'}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {actionItems.length > 0 ? (
@@ -653,31 +664,92 @@ export default function MoneyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stats.topCustomers.slice(0, 6).map((customer) => (
-                  <div
-                    key={customer.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-                        <span className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
-                          {customer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm truncate max-w-[140px]">{customer.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {customer.invoiceCount} unpaid invoice{customer.invoiceCount !== 1 ? 's' : ''}
+                {stats.topCustomers.slice(0, 6).map((customer) => {
+                  // Determine aging and action based on oldest invoice days
+                  const oldestDays = customer.oldestInvoiceDays || 0;
+                  const isOverdue = oldestDays > 30;
+                  const needsReminder = oldestDays > 14;
+
+                  return (
+                    <div
+                      key={customer.id}
+                      className={`p-4 rounded-lg border transition-colors ${
+                        isOverdue
+                          ? 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20'
+                          : 'hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                            isOverdue
+                              ? 'bg-red-100 dark:bg-red-900'
+                              : 'bg-indigo-100 dark:bg-indigo-900'
+                          }`}>
+                            <span className={`text-sm font-medium ${
+                              isOverdue
+                                ? 'text-red-600 dark:text-red-400'
+                                : 'text-indigo-600 dark:text-indigo-400'
+                            }`}>
+                              {customer.name.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                            </span>
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm truncate max-w-[120px]">{customer.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {customer.invoiceCount} invoice{customer.invoiceCount !== 1 ? 's' : ''}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="font-semibold text-green-600 dark:text-green-400">
+                          {formatCurrency(customer.outstanding)}
                         </p>
                       </div>
+
+                      {/* Aging info */}
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
+                          <Clock className={`h-3 w-3 ${
+                            isOverdue ? 'text-red-500' : needsReminder ? 'text-amber-500' : 'text-muted-foreground'
+                          }`} />
+                          <span className={`text-xs ${
+                            isOverdue ? 'text-red-600 dark:text-red-400' : needsReminder ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
+                          }`}>
+                            {oldestDays > 0 ? `${oldestDays} days old` : 'Recent'}
+                          </span>
+                        </div>
+
+                        {/* Action button */}
+                        {isOverdue ? (
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="h-7 text-xs px-2"
+                            onClick={() => navigate(`/money/invoices?customer=${customer.id}`)}
+                          >
+                            <Bell className="h-3 w-3 mr-1" />
+                            Send reminder
+                          </Button>
+                        ) : needsReminder ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 text-xs px-2 border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-700 dark:text-amber-400 dark:hover:bg-amber-950"
+                            onClick={() => navigate(`/money/invoices?customer=${customer.id}`)}
+                          >
+                            <Bell className="h-3 w-3 mr-1" />
+                            Follow up
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
+                            <CheckCircle2 className="h-3 w-3" />
+                            Wait
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-green-600 dark:text-green-400">
-                        {formatCurrency(customer.outstanding)}
-                      </p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

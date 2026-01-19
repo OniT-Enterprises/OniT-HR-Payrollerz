@@ -346,6 +346,7 @@ export interface MoneyStats {
     name: string;
     outstanding: number;
     invoiceCount: number;
+    oldestInvoiceDays?: number;  // Days since oldest unpaid invoice
   }[];
 
   // Recent activity

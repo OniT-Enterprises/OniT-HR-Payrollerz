@@ -807,16 +807,21 @@ class InvoiceService {
     }
 
     // Top customers by outstanding balance
-    const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number }>();
+    const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number; oldestInvoiceDays: number }>();
     outstandingInvoices.forEach((inv) => {
+      const invoiceDate = new Date(inv.issueDate);
+      const daysSinceIssue = Math.floor((now.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
+
       const existing = customerBalances.get(inv.customerId) || {
         id: inv.customerId,
         name: inv.customerName,
         outstanding: 0,
         invoiceCount: 0,
+        oldestInvoiceDays: 0,
       };
       existing.outstanding += inv.balanceDue;
       existing.invoiceCount += 1;
+      existing.oldestInvoiceDays = Math.max(existing.oldestInvoiceDays, daysSinceIssue);
       customerBalances.set(inv.customerId, existing);
     });
     const topCustomers = Array.from(customerBalances.values())
