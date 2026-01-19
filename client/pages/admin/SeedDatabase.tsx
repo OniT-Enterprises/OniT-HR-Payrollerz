@@ -8,9 +8,10 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import {
   Database, Users, Building, CheckCircle, Loader2, AlertCircle,
   Briefcase, UserCheck, Calendar, Clock, Target, GraduationCap,
-  DollarSign, FileText, Star, Calculator
+  DollarSign, FileText, Star, Calculator, ClipboardCheck, Copy, Download,
+  Wallet, Trash2
 } from "lucide-react";
-import { collection, doc, setDoc, serverTimestamp, Timestamp } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -258,6 +259,61 @@ const CHART_OF_ACCOUNTS = [
   { code: "5900", name: "Other Expenses", nameTL: "Kustu Seluk", type: "expense", subType: "other_expense", level: 2, isSystem: false },
 ];
 
+// Money Module Data - Timorese businesses
+const CUSTOMERS = [
+  { name: "Hotel Timor", email: "finance@hoteltimor.tl", phone: "+670-331-2345", address: "Av. Presidente Nicolau Lobato, Dili", taxId: "TL-100234567", contactPerson: "João Amaral", paymentTerms: 30 },
+  { name: "Kmanek Trading", email: "accounts@kmanek.tl", phone: "+670-331-3456", address: "Rua de Colmera, Dili", taxId: "TL-100345678", contactPerson: "Maria Soares", paymentTerms: 15 },
+  { name: "Timor Plaza", email: "procurement@timorplaza.tl", phone: "+670-331-4567", address: "Comoro, Dili", taxId: "TL-100456789", contactPerson: "António Guterres", paymentTerms: 30 },
+  { name: "Ministério das Finanças", email: "procurement@mof.gov.tl", phone: "+670-331-5678", address: "Palácio do Governo, Dili", taxId: "GOV-001", contactPerson: "Rosa Ximenes", paymentTerms: 45 },
+  { name: "UNTL (Universidade Nacional)", email: "finance@untl.edu.tl", phone: "+670-331-6789", address: "Hera Campus, Dili", taxId: "EDU-001", contactPerson: "Dr. Manuel Tilman", paymentTerms: 30 },
+  { name: "Cruz Vermelha Timor-Leste", email: "admin@redcross.tl", phone: "+670-331-7890", address: "Farol, Dili", taxId: "NGO-001", contactPerson: "Filomena Costa", paymentTerms: 30 },
+  { name: "Banco Nacional Ultramarino", email: "operations@bnu.tl", phone: "+670-331-8901", address: "Av. Marginal, Dili", taxId: "TL-100567890", contactPerson: "Pedro Fernandes", paymentTerms: 15 },
+  { name: "Dili Beach Hotel", email: "accounts@dilibeach.tl", phone: "+670-331-9012", address: "Areia Branca, Dili", taxId: "TL-100678901", contactPerson: "Lucia Correia", paymentTerms: 30 },
+];
+
+const VENDORS = [
+  { name: "EDTL (Eletricidade de Timor-Leste)", email: "billing@edtl.tl", phone: "+670-331-1111", address: "Caicoli, Dili", taxId: "GOV-EDTL-001", contactPerson: "Billing Dept", paymentTerms: 15 },
+  { name: "Timor Telecom", email: "corporate@timortelecom.tl", phone: "+670-331-2222", address: "Colmera, Dili", taxId: "TL-200123456", contactPerson: "Corporate Sales", paymentTerms: 30 },
+  { name: "Lita Store Wholesale", email: "orders@litastore.tl", phone: "+670-331-3333", address: "Becora, Dili", taxId: "TL-200234567", contactPerson: "Domingos Lita", paymentTerms: 15 },
+  { name: "Dili Office Supplies", email: "sales@dilisupplies.tl", phone: "+670-331-4444", address: "Audian, Dili", taxId: "TL-200345678", contactPerson: "Ana Martins", paymentTerms: 30 },
+  { name: "Timor Fuels", email: "accounts@timorfuels.tl", phone: "+670-331-5555", address: "Comoro, Dili", taxId: "TL-200456789", contactPerson: "José Pereira", paymentTerms: 7 },
+  { name: "Naroman IT Solutions", email: "invoices@naroman.tl", phone: "+670-331-6666", address: "Farol, Dili", taxId: "TL-200567890", contactPerson: "Tony Franklin", paymentTerms: 30 },
+  { name: "Mega Cleaning Services", email: "billing@megaclean.tl", phone: "+670-331-7777", address: "Taibesi, Dili", taxId: "TL-200678901", contactPerson: "Rosa Soares", paymentTerms: 15 },
+  { name: "Tiger Security TL", email: "accounts@tigersecurity.tl", phone: "+670-331-8888", address: "Bidau, Dili", taxId: "TL-200789012", contactPerson: "Carlos Mendes", paymentTerms: 30 },
+];
+
+const INVOICES = [
+  { invoiceNumber: "INV-2026-001", customerIdx: 0, items: [{ description: "IT Consulting Services - January", quantity: 1, unitPrice: 5000 }], status: "paid", issueDate: "2026-01-05", dueDate: "2026-02-04", paidAmount: 5000 },
+  { invoiceNumber: "INV-2026-002", customerIdx: 1, items: [{ description: "Software Development - Phase 1", quantity: 1, unitPrice: 12000 }, { description: "Project Management", quantity: 20, unitPrice: 150 }], status: "paid", issueDate: "2026-01-08", dueDate: "2026-01-23", paidAmount: 15000 },
+  { invoiceNumber: "INV-2026-003", customerIdx: 2, items: [{ description: "POS System Installation", quantity: 5, unitPrice: 800 }, { description: "Training Sessions", quantity: 3, unitPrice: 500 }], status: "partial", issueDate: "2026-01-10", dueDate: "2026-02-09", paidAmount: 3000 },
+  { invoiceNumber: "INV-2026-004", customerIdx: 3, items: [{ description: "Government Portal Development", quantity: 1, unitPrice: 45000 }], status: "sent", issueDate: "2026-01-12", dueDate: "2026-02-26", paidAmount: 0 },
+  { invoiceNumber: "INV-2026-005", customerIdx: 4, items: [{ description: "Student Management System", quantity: 1, unitPrice: 25000 }, { description: "Annual Maintenance", quantity: 1, unitPrice: 5000 }], status: "sent", issueDate: "2026-01-14", dueDate: "2026-02-13", paidAmount: 0 },
+  { invoiceNumber: "INV-2026-006", customerIdx: 5, items: [{ description: "Volunteer Management App", quantity: 1, unitPrice: 8000 }], status: "draft", issueDate: "2026-01-15", dueDate: "2026-02-14", paidAmount: 0 },
+  { invoiceNumber: "INV-2026-007", customerIdx: 6, items: [{ description: "Security Audit Services", quantity: 1, unitPrice: 15000 }, { description: "Compliance Report", quantity: 1, unitPrice: 3000 }], status: "overdue", issueDate: "2025-12-01", dueDate: "2025-12-16", paidAmount: 0 },
+  { invoiceNumber: "INV-2026-008", customerIdx: 7, items: [{ description: "Booking System Integration", quantity: 1, unitPrice: 7500 }], status: "sent", issueDate: "2026-01-16", dueDate: "2026-02-15", paidAmount: 0 },
+];
+
+const BILLS = [
+  { billNumber: "EDTL-JAN-2026", vendorIdx: 0, items: [{ description: "Electricity - January 2026", quantity: 1, unitPrice: 2400 }], status: "paid", issueDate: "2026-01-02", dueDate: "2026-01-17", paidAmount: 2400 },
+  { billNumber: "TT-2026-0015", vendorIdx: 1, items: [{ description: "Internet & Phone - January", quantity: 1, unitPrice: 850 }], status: "paid", issueDate: "2026-01-05", dueDate: "2026-02-04", paidAmount: 850 },
+  { billNumber: "LITA-INV-4521", vendorIdx: 2, items: [{ description: "Office Supplies Q1", quantity: 1, unitPrice: 1200 }, { description: "Cleaning Supplies", quantity: 1, unitPrice: 350 }], status: "pending", issueDate: "2026-01-08", dueDate: "2026-01-23", paidAmount: 0 },
+  { billNumber: "DOS-2026-089", vendorIdx: 3, items: [{ description: "Printer Cartridges", quantity: 10, unitPrice: 45 }, { description: "Paper A4 (boxes)", quantity: 20, unitPrice: 25 }], status: "pending", issueDate: "2026-01-10", dueDate: "2026-02-09", paidAmount: 0 },
+  { billNumber: "TF-2026-0234", vendorIdx: 4, items: [{ description: "Vehicle Fuel - January", quantity: 500, unitPrice: 1.45 }], status: "paid", issueDate: "2026-01-15", dueDate: "2026-01-22", paidAmount: 725 },
+  { billNumber: "NIT-2026-012", vendorIdx: 5, items: [{ description: "Cloud Hosting - Q1 2026", quantity: 3, unitPrice: 500 }, { description: "Domain Renewals", quantity: 5, unitPrice: 30 }], status: "pending", issueDate: "2026-01-12", dueDate: "2026-02-11", paidAmount: 0 },
+  { billNumber: "MCS-JAN-2026", vendorIdx: 6, items: [{ description: "Office Cleaning - January", quantity: 1, unitPrice: 800 }], status: "pending", issueDate: "2026-01-31", dueDate: "2026-02-15", paidAmount: 0 },
+  { billNumber: "TSG-2026-0089", vendorIdx: 7, items: [{ description: "Security Services - January", quantity: 1, unitPrice: 2500 }], status: "overdue", issueDate: "2025-12-31", dueDate: "2026-01-30", paidAmount: 0 },
+];
+
+const EXPENSES = [
+  { date: "2026-01-05", category: "Travel", description: "Taxi to client meeting - Hotel Timor", amount: 15, paymentMethod: "Cash", reference: "EXP-001" },
+  { date: "2026-01-08", category: "Meals", description: "Team lunch - project kickoff", amount: 85, paymentMethod: "Company Card", reference: "EXP-002" },
+  { date: "2026-01-10", category: "Office Supplies", description: "Whiteboard markers and sticky notes", amount: 25, paymentMethod: "Petty Cash", reference: "EXP-003" },
+  { date: "2026-01-12", category: "Travel", description: "Flight to Baucau - client site visit", amount: 120, paymentMethod: "Bank Transfer", reference: "EXP-004" },
+  { date: "2026-01-12", category: "Accommodation", description: "Hotel in Baucau - 2 nights", amount: 180, paymentMethod: "Company Card", reference: "EXP-005" },
+  { date: "2026-01-15", category: "Software", description: "Annual subscription - design tools", amount: 299, paymentMethod: "Company Card", reference: "EXP-006" },
+  { date: "2026-01-16", category: "Training", description: "Online course - cloud certification", amount: 450, paymentMethod: "Bank Transfer", reference: "EXP-007" },
+];
+
 // ============================================
 // COMPONENT
 // ============================================
@@ -271,6 +327,21 @@ export default function SeedDatabase() {
   const [results, setResults] = useState<Record<string, { success: number; failed: number }> | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [logs, setLogs] = useState<string[]>([]);
+
+  // Audit state
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditReport, setAuditReport] = useState<string | null>(null);
+  const [auditSummary, setAuditSummary] = useState<{
+    passed: boolean;
+    totalInvoiced: number;
+    totalCollected: number;
+    outstandingAR: number;
+    totalBilled: number;
+    totalPaidBills: number;
+    outstandingAP: number;
+    totalExpenses: number;
+    issues: string[];
+  } | null>(null);
 
   // Seeding options
   const [options, setOptions] = useState({
@@ -286,7 +357,10 @@ export default function SeedDatabase() {
     training: true,
     payroll: true,
     accounting: true,
+    money: true,
   });
+
+  const [clearing, setClearing] = useState(false);
 
   const addLog = (message: string) => {
     setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${message}`]);
@@ -295,6 +369,57 @@ export default function SeedDatabase() {
   const getCollectionPath = (collectionName: string) => {
     if (!tenantId) return collectionName; // Fallback to root collection
     return `tenants/${tenantId}/${collectionName}`;
+  };
+
+  // Clear all data function
+  const clearAllData = async () => {
+    if (!tenantId) return;
+    if (!confirm("⚠️ This will DELETE ALL DATA for this tenant. Are you sure?")) return;
+
+    setClearing(true);
+    setLogs([]);
+    addLog("🗑️ Starting data cleanup...");
+
+    const tenantCollections = [
+      "departments", "positions", "employees", "jobs", "candidates",
+      "leaveRequests", "timesheets", "goals", "reviews", "trainings",
+      "payruns", "customers", "vendors", "invoices", "bills", "expenses",
+      "payments_received", "bill_payments"
+    ];
+
+    const rootCollections = ["accounts", "journalEntries", "generalLedger", "fiscalPeriods"];
+
+    try {
+      // Clear tenant-scoped collections
+      for (const collName of tenantCollections) {
+        const collRef = collection(db!, getCollectionPath(collName));
+        const snapshot = await getDocs(collRef);
+        let deleted = 0;
+        for (const docSnap of snapshot.docs) {
+          await deleteDoc(doc(db!, getCollectionPath(collName), docSnap.id));
+          deleted++;
+        }
+        if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
+      }
+
+      // Clear root collections (accounting)
+      for (const collName of rootCollections) {
+        const collRef = collection(db!, collName);
+        const snapshot = await getDocs(collRef);
+        let deleted = 0;
+        for (const docSnap of snapshot.docs) {
+          await deleteDoc(doc(db!, collName, docSnap.id));
+          deleted++;
+        }
+        if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
+      }
+
+      addLog("✅ All data cleared successfully!");
+    } catch (err) {
+      addLog(`❌ Error clearing data: ${err}`);
+    } finally {
+      setClearing(false);
+    }
   };
 
   // Seed functions
@@ -872,6 +997,581 @@ export default function SeedDatabase() {
     return { success, failed };
   };
 
+  const seedMoney = async () => {
+    let success = 0, failed = 0;
+    const customerIds: string[] = [];
+    const vendorIds: string[] = [];
+
+    // Seed Customers
+    addLog("Creating Customers...");
+    for (const cust of CUSTOMERS) {
+      try {
+        const docRef = doc(collection(db!, getCollectionPath("customers")));
+        await setDoc(docRef, {
+          id: docRef.id,
+          ...cust,
+          isActive: true,
+          totalInvoiced: 0,
+          totalPaid: 0,
+          outstandingBalance: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        customerIds.push(docRef.id);
+        success++;
+        addLog(`✓ Customer: ${cust.name}`);
+      } catch (err) {
+        failed++;
+        customerIds.push(""); // placeholder
+        addLog(`✗ Customer ${cust.name}: ${err}`);
+      }
+    }
+
+    // Seed Vendors
+    addLog("Creating Vendors...");
+    for (const vendor of VENDORS) {
+      try {
+        const docRef = doc(collection(db!, getCollectionPath("vendors")));
+        await setDoc(docRef, {
+          id: docRef.id,
+          ...vendor,
+          isActive: true,
+          totalBilled: 0,
+          totalPaid: 0,
+          outstandingBalance: 0,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        vendorIds.push(docRef.id);
+        success++;
+        addLog(`✓ Vendor: ${vendor.name}`);
+      } catch (err) {
+        failed++;
+        vendorIds.push(""); // placeholder
+        addLog(`✗ Vendor ${vendor.name}: ${err}`);
+      }
+    }
+
+    // Seed Invoices
+    addLog("Creating Invoices...");
+    for (const inv of INVOICES) {
+      try {
+        const customer = CUSTOMERS[inv.customerIdx];
+        const customerId = customerIds[inv.customerIdx];
+        const subtotal = inv.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        const total = subtotal; // No tax for simplicity
+
+        const docRef = doc(collection(db!, getCollectionPath("invoices")));
+        await setDoc(docRef, {
+          id: docRef.id,
+          invoiceNumber: inv.invoiceNumber,
+          customerId,
+          customerName: customer.name,
+          customerEmail: customer.email,
+          items: inv.items.map(item => ({
+            ...item,
+            amount: item.quantity * item.unitPrice,
+          })),
+          subtotal,
+          taxRate: 0,
+          taxAmount: 0,
+          total,
+          amountPaid: inv.paidAmount,
+          balanceDue: total - inv.paidAmount,
+          status: inv.status,
+          issueDate: inv.issueDate,
+          dueDate: inv.dueDate,
+          notes: "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        success++;
+        addLog(`✓ Invoice: ${inv.invoiceNumber} - $${total}`);
+
+        // Create payment record if paid
+        if (inv.paidAmount > 0) {
+          const payRef = doc(collection(db!, getCollectionPath("payments_received")));
+          await setDoc(payRef, {
+            id: payRef.id,
+            invoiceId: docRef.id,
+            invoiceNumber: inv.invoiceNumber,
+            customerId,
+            customerName: customer.name,
+            amount: inv.paidAmount,
+            paymentMethod: "Bank Transfer",
+            date: inv.issueDate,
+            reference: `PAY-${inv.invoiceNumber}`,
+            notes: "",
+            createdAt: serverTimestamp(),
+          });
+          success++;
+        }
+      } catch (err) {
+        failed++;
+        addLog(`✗ Invoice ${inv.invoiceNumber}: ${err}`);
+      }
+    }
+
+    // Seed Bills
+    addLog("Creating Bills...");
+    for (const bill of BILLS) {
+      try {
+        const vendor = VENDORS[bill.vendorIdx];
+        const vendorId = vendorIds[bill.vendorIdx];
+        const subtotal = bill.items.reduce((sum, item) => sum + (item.quantity * item.unitPrice), 0);
+        const total = subtotal;
+
+        const docRef = doc(collection(db!, getCollectionPath("bills")));
+        await setDoc(docRef, {
+          id: docRef.id,
+          billNumber: bill.billNumber,
+          vendorId,
+          vendorName: vendor.name,
+          items: bill.items.map(item => ({
+            ...item,
+            amount: item.quantity * item.unitPrice,
+          })),
+          subtotal,
+          taxRate: 0,
+          taxAmount: 0,
+          total,
+          amountPaid: bill.paidAmount,
+          balanceDue: total - bill.paidAmount,
+          status: bill.status,
+          issueDate: bill.issueDate,
+          dueDate: bill.dueDate,
+          notes: "",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        success++;
+        addLog(`✓ Bill: ${bill.billNumber} - $${total}`);
+
+        // Create payment record if paid
+        if (bill.paidAmount > 0) {
+          const payRef = doc(collection(db!, getCollectionPath("bill_payments")));
+          await setDoc(payRef, {
+            id: payRef.id,
+            billId: docRef.id,
+            billNumber: bill.billNumber,
+            vendorId,
+            vendorName: vendor.name,
+            amount: bill.paidAmount,
+            paymentMethod: "Bank Transfer",
+            date: bill.issueDate,
+            reference: `BPAY-${bill.billNumber}`,
+            notes: "",
+            createdAt: serverTimestamp(),
+          });
+          success++;
+        }
+      } catch (err) {
+        failed++;
+        addLog(`✗ Bill ${bill.billNumber}: ${err}`);
+      }
+    }
+
+    // Seed Expenses
+    addLog("Creating Expenses...");
+    for (const exp of EXPENSES) {
+      try {
+        const docRef = doc(collection(db!, getCollectionPath("expenses")));
+        await setDoc(docRef, {
+          id: docRef.id,
+          ...exp,
+          status: "approved",
+          approvedBy: "System",
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+        success++;
+        addLog(`✓ Expense: ${exp.reference} - $${exp.amount}`);
+      } catch (err) {
+        failed++;
+        addLog(`✗ Expense ${exp.reference}: ${err}`);
+      }
+    }
+
+    addLog(`✓ Money module seeded: ${CUSTOMERS.length} customers, ${VENDORS.length} vendors, ${INVOICES.length} invoices, ${BILLS.length} bills, ${EXPENSES.length} expenses`);
+    return { success, failed };
+  };
+
+  // Data Audit Function
+  const runDataAudit = async () => {
+    if (!tenantId) return;
+
+    setAuditLoading(true);
+    setAuditReport(null);
+    setAuditSummary(null);
+
+    try {
+      const fmt = (n: number) => `$${(n || 0).toFixed(2).padStart(12)}`;
+      const fmtPct = (n: number) => `${(n * 100).toFixed(1)}%`;
+
+      // Fetch all data
+      const [invoicesSnap, paymentsSnap, billsSnap, billPaymentsSnap, expensesSnap, customersSnap, vendorsSnap, employeesSnap] = await Promise.all([
+        getDocs(collection(db!, `tenants/${tenantId}/invoices`)),
+        getDocs(collection(db!, `tenants/${tenantId}/payments_received`)),
+        getDocs(collection(db!, `tenants/${tenantId}/bills`)),
+        getDocs(collection(db!, `tenants/${tenantId}/bill_payments`)),
+        getDocs(collection(db!, `tenants/${tenantId}/expenses`)),
+        getDocs(collection(db!, `tenants/${tenantId}/customers`)),
+        getDocs(collection(db!, `tenants/${tenantId}/vendors`)),
+        getDocs(collection(db!, `tenants/${tenantId}/employees`)),
+      ]);
+
+      const invoices = invoicesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const paymentsReceived = paymentsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const bills = billsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const billPayments = billPaymentsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const customers = customersSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const vendors = vendorsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      const employees = employeesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+
+      let report = '';
+      report += '═'.repeat(100) + '\n';
+      report += '  ONIT HR/PAYROLL SYSTEM - COMPREHENSIVE DATA AUDIT REPORT\n';
+      report += `  Generated: ${new Date().toISOString()}\n`;
+      report += `  Tenant: ${tenantId}\n`;
+      report += '═'.repeat(100) + '\n\n';
+
+      // CALCULATION RULES
+      report += '┌' + '─'.repeat(98) + '┐\n';
+      report += '│  CALCULATION RULES & FORMULAS                                                                    │\n';
+      report += '├' + '─'.repeat(98) + '┤\n';
+      report += '│  INVOICE CALCULATIONS:                                                                           │\n';
+      report += '│    • Subtotal = SUM(item.quantity × item.unitPrice) for all line items                           │\n';
+      report += '│    • Tax Amount = Subtotal × Tax Rate (currently 0% for TL)                                      │\n';
+      report += '│    • Total = Subtotal + Tax Amount                                                               │\n';
+      report += '│    • Balance Due = Total - Amount Paid                                                           │\n';
+      report += '│    • Status: draft→sent→partial(if paid<total)→paid(if paid=total)→overdue(if past due)         │\n';
+      report += '├' + '─'.repeat(98) + '┤\n';
+      report += '│  BILL CALCULATIONS:                                                                              │\n';
+      report += '│    • Subtotal = SUM(item.quantity × item.unitPrice) for all line items                           │\n';
+      report += '│    • Total = Subtotal (no tax on bills typically)                                                │\n';
+      report += '│    • Balance Due = Total - Amount Paid                                                           │\n';
+      report += '│    • Status: pending→partial(if paid<total)→paid(if paid=total)→overdue(if past due)            │\n';
+      report += '├' + '─'.repeat(98) + '┤\n';
+      report += '│  PAYROLL CALCULATIONS (Timor-Leste):                                                             │\n';
+      report += '│    • IRPS Tax = (Gross - $500) × 10% if Gross > $500, else $0                                    │\n';
+      report += '│    • INSS Employee = Gross × 4%                                                                  │\n';
+      report += '│    • INSS Employer = Gross × 6%                                                                  │\n';
+      report += '│    • Net Pay = Gross - IRPS - INSS Employee                                                      │\n';
+      report += '│    • 13th Month (Subsidio Anual) = Monthly Salary (paid in December)                             │\n';
+      report += '├' + '─'.repeat(98) + '┤\n';
+      report += '│  VERIFICATION RULES:                                                                             │\n';
+      report += '│    • Outstanding AR = Total Invoiced - Total Collected (excl. drafts, must match balances)       │\n';
+      report += '│    • Outstanding AP = Total Billed - Total Paid (must match sum of bill balances)                │\n';
+      report += '│    • Invoice amountPaid must equal sum of related payments_received                              │\n';
+      report += '│    • Bill amountPaid must equal sum of related bill_payments                                     │\n';
+      report += '└' + '─'.repeat(98) + '┘\n\n';
+
+      // INVOICES SECTION
+      let totalInvoiced = 0, totalPaidInvoices = 0, totalOutstandingAR = 0;
+      const invoiceIssues: string[] = [];
+
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 1: INVOICES (ACCOUNTS RECEIVABLE) - DETAILED BREAKDOWN\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      invoices.sort((a, b) => (a.invoiceNumber || '').localeCompare(b.invoiceNumber || ''));
+
+      for (const inv of invoices) {
+        const items = inv.items || [];
+        const calcSubtotal = items.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+        const storedSubtotal = inv.subtotal || 0;
+        const storedTotal = inv.total || 0;
+        const storedPaid = inv.amountPaid || 0;
+        const storedBalance = inv.balanceDue || 0;
+        const calcBalance = storedTotal - storedPaid;
+
+        // Get payments for this invoice
+        const invPayments = paymentsReceived.filter((p: any) => p.invoiceId === inv.id);
+        const sumPayments = invPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+
+        report += `  ┌─ ${inv.invoiceNumber || 'NO NUMBER'} ─────────────────────────────────────────────────────────────────\n`;
+        report += `  │ Customer:    ${inv.customerName || 'Unknown'}\n`;
+        report += `  │ Issue Date:  ${inv.issueDate || 'N/A'}    Due Date: ${inv.dueDate || 'N/A'}    Status: ${inv.status || 'N/A'}\n`;
+        report += `  │\n`;
+        report += `  │ LINE ITEMS:\n`;
+
+        for (const item of items) {
+          const lineTotal = (item.quantity || 0) * (item.unitPrice || 0);
+          report += `  │   • ${(item.description || 'Item').substring(0, 40).padEnd(42)} ${String(item.quantity || 0).padStart(4)} × $${(item.unitPrice || 0).toFixed(2).padStart(10)} = ${fmt(lineTotal)}\n`;
+        }
+
+        report += `  │\n`;
+        report += `  │ CALCULATIONS:\n`;
+        report += `  │   Calculated Subtotal (Σ qty×price):   ${fmt(calcSubtotal)}\n`;
+        report += `  │   Stored Subtotal:                     ${fmt(storedSubtotal)} ${Math.abs(calcSubtotal - storedSubtotal) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  │   Tax (${fmtPct(inv.taxRate || 0)}):                            ${fmt(inv.taxAmount || 0)}\n`;
+        report += `  │   Stored Total:                        ${fmt(storedTotal)}\n`;
+        report += `  │   Amount Paid:                         ${fmt(storedPaid)}\n`;
+        report += `  │   Stored Balance Due:                  ${fmt(storedBalance)}\n`;
+        report += `  │   Calculated Balance (Total-Paid):     ${fmt(calcBalance)} ${Math.abs(storedBalance - calcBalance) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  │\n`;
+        report += `  │ PAYMENT VERIFICATION:\n`;
+        report += `  │   Payments recorded: ${invPayments.length}\n`;
+        for (const pay of invPayments) {
+          report += `  │     • ${pay.date || 'N/A'} - ${pay.paymentMethod || 'Unknown'} - ${fmt(pay.amount || 0)} (ref: ${pay.reference || 'N/A'})\n`;
+        }
+        report += `  │   Sum of payments:                     ${fmt(sumPayments)} ${Math.abs(sumPayments - storedPaid) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  └${'─'.repeat(95)}\n\n`;
+
+        // Only count non-draft invoices in AR totals (drafts not yet sent to customer)
+        if (inv.status !== 'draft') {
+          totalInvoiced += storedTotal;
+          totalPaidInvoices += storedPaid;
+          totalOutstandingAR += storedBalance;
+        }
+
+        // Track issues
+        if (Math.abs(calcSubtotal - storedSubtotal) > 0.01) invoiceIssues.push(`${inv.invoiceNumber}: subtotal mismatch`);
+        if (Math.abs(storedBalance - calcBalance) > 0.01) invoiceIssues.push(`${inv.invoiceNumber}: balance mismatch`);
+        if (Math.abs(sumPayments - storedPaid) > 0.01) invoiceIssues.push(`${inv.invoiceNumber}: payment sum mismatch`);
+      }
+
+      const draftCount = invoices.filter((i: any) => i.status === 'draft').length;
+      const postedCount = invoices.length - draftCount;
+      report += '  ╔' + '═'.repeat(98) + '╗\n';
+      report += `  ║  AR SUMMARY (excludes ${draftCount} draft invoice${draftCount !== 1 ? 's' : ''})                                                                 ║\n`;
+      report += '  ╠' + '═'.repeat(98) + '╣\n';
+      report += `  ║  Posted Invoices:${String(postedCount).padEnd(5)}    Total Invoiced: ${fmt(totalInvoiced).padEnd(15)}                                       ║\n`;
+      report += `  ║  Paid Invoices:  ${String(invoices.filter((i: any) => i.status === 'paid').length).padEnd(5)}    Total Collected: ${fmt(totalPaidInvoices).padEnd(15)}                                      ║\n`;
+      report += `  ║  Outstanding:    ${String(invoices.filter((i: any) => (i.balanceDue || 0) > 0 && i.status !== 'draft').length).padEnd(5)}    Outstanding AR:  ${fmt(totalOutstandingAR).padEnd(15)}                                       ║\n`;
+      report += `  ║  Overdue:        ${String(invoices.filter((i: any) => i.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
+      report += '  ╚' + '═'.repeat(98) + '╝\n\n';
+
+      // BILLS SECTION
+      let totalBilled = 0, totalPaidBills = 0, totalOutstandingAP = 0;
+      const billIssues: string[] = [];
+
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 2: BILLS (ACCOUNTS PAYABLE) - DETAILED BREAKDOWN\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      bills.sort((a, b) => (a.billNumber || '').localeCompare(b.billNumber || ''));
+
+      for (const bill of bills) {
+        const items = bill.items || [];
+        const calcSubtotal = items.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+        const storedSubtotal = bill.subtotal || 0;
+        const storedTotal = bill.total || 0;
+        const storedPaid = bill.amountPaid || 0;
+        const storedBalance = bill.balanceDue || 0;
+        const calcBalance = storedTotal - storedPaid;
+
+        const billPays = billPayments.filter((p: any) => p.billId === bill.id);
+        const sumPayments = billPays.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+
+        report += `  ┌─ ${bill.billNumber || 'NO NUMBER'} ─────────────────────────────────────────────────────────────\n`;
+        report += `  │ Vendor:      ${bill.vendorName || 'Unknown'}\n`;
+        report += `  │ Issue Date:  ${bill.issueDate || 'N/A'}    Due Date: ${bill.dueDate || 'N/A'}    Status: ${bill.status || 'N/A'}\n`;
+        report += `  │\n`;
+        report += `  │ LINE ITEMS:\n`;
+
+        for (const item of items) {
+          const lineTotal = (item.quantity || 0) * (item.unitPrice || 0);
+          report += `  │   • ${(item.description || 'Item').substring(0, 40).padEnd(42)} ${String(item.quantity || 0).padStart(4)} × $${(item.unitPrice || 0).toFixed(2).padStart(10)} = ${fmt(lineTotal)}\n`;
+        }
+
+        report += `  │\n`;
+        report += `  │ CALCULATIONS:\n`;
+        report += `  │   Calculated Subtotal:                 ${fmt(calcSubtotal)}\n`;
+        report += `  │   Stored Subtotal:                     ${fmt(storedSubtotal)} ${Math.abs(calcSubtotal - storedSubtotal) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  │   Stored Total:                        ${fmt(storedTotal)}\n`;
+        report += `  │   Amount Paid:                         ${fmt(storedPaid)}\n`;
+        report += `  │   Stored Balance:                      ${fmt(storedBalance)}\n`;
+        report += `  │   Calculated Balance:                  ${fmt(calcBalance)} ${Math.abs(storedBalance - calcBalance) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  │   Sum of payments:                     ${fmt(sumPayments)} ${Math.abs(sumPayments - storedPaid) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n`;
+        report += `  └${'─'.repeat(95)}\n\n`;
+
+        totalBilled += storedTotal;
+        totalPaidBills += storedPaid;
+        totalOutstandingAP += storedBalance;
+
+        if (Math.abs(calcSubtotal - storedSubtotal) > 0.01) billIssues.push(`${bill.billNumber}: subtotal mismatch`);
+        if (Math.abs(storedBalance - calcBalance) > 0.01) billIssues.push(`${bill.billNumber}: balance mismatch`);
+        if (Math.abs(sumPayments - storedPaid) > 0.01) billIssues.push(`${bill.billNumber}: payment sum mismatch`);
+      }
+
+      report += '  ╔' + '═'.repeat(98) + '╗\n';
+      report += `  ║  AP SUMMARY                                                                                      ║\n`;
+      report += '  ╠' + '═'.repeat(98) + '╣\n';
+      report += `  ║  Total Bills:    ${String(bills.length).padEnd(5)}    Total Billed:    ${fmt(totalBilled).padEnd(15)}                                       ║\n`;
+      report += `  ║  Paid Bills:     ${String(bills.filter((b: any) => b.status === 'paid').length).padEnd(5)}    Total Paid:      ${fmt(totalPaidBills).padEnd(15)}                                       ║\n`;
+      report += `  ║  Outstanding:    ${String(bills.filter((b: any) => ['pending', 'partial', 'overdue'].includes(b.status)).length).padEnd(5)}    Outstanding AP:  ${fmt(totalOutstandingAP).padEnd(15)}                                       ║\n`;
+      report += `  ║  Overdue:        ${String(bills.filter((b: any) => b.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
+      report += '  ╚' + '═'.repeat(98) + '╝\n\n';
+
+      // EXPENSES
+      let totalExpenses = 0;
+      const expensesByCategory: Record<string, number> = {};
+
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 3: EXPENSES\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      for (const exp of expenses) {
+        const amt = exp.amount || 0;
+        totalExpenses += amt;
+        expensesByCategory[exp.category || 'Uncategorized'] = (expensesByCategory[exp.category || 'Uncategorized'] || 0) + amt;
+        report += `  ${(exp.date || '').padEnd(12)} ${(exp.category || '').padEnd(15)} ${(exp.description || '').substring(0, 40).padEnd(42)} ${fmt(amt)}\n`;
+      }
+
+      report += '\n  BY CATEGORY:\n';
+      for (const [cat, amt] of Object.entries(expensesByCategory).sort((a, b) => b[1] - a[1])) {
+        report += `    ${cat.padEnd(20)} ${fmt(amt)} (${fmtPct(amt / totalExpenses)})\n`;
+      }
+      report += `\n  TOTAL EXPENSES: ${fmt(totalExpenses)}\n\n`;
+
+      // EMPLOYEE PAYROLL
+      let totalMonthlySalary = 0, totalIRPS = 0, totalINSSEmp = 0, totalINSSEr = 0, totalNetPay = 0;
+
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 4: EMPLOYEE PAYROLL CALCULATIONS\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      report += `  ${'Employee'.padEnd(30)} ${'Gross'.padStart(12)} ${'IRPS'.padStart(12)} ${'INSS(4%)'.padStart(12)} ${'Net Pay'.padStart(12)} ${'INSS ER(6%)'.padStart(12)}\n`;
+      report += '  ' + '-'.repeat(90) + '\n';
+
+      for (const emp of employees) {
+        const gross = emp.compensation?.monthlySalary || 0;
+        const irps = gross > 500 ? (gross - 500) * 0.1 : 0;
+        const inssEmp = gross * 0.04;
+        const inssEr = gross * 0.06;
+        const net = gross - irps - inssEmp;
+
+        totalMonthlySalary += gross;
+        totalIRPS += irps;
+        totalINSSEmp += inssEmp;
+        totalINSSEr += inssEr;
+        totalNetPay += net;
+
+        const name = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim();
+        report += `  ${name.padEnd(30)} ${fmt(gross)} ${fmt(irps)} ${fmt(inssEmp)} ${fmt(net)} ${fmt(inssEr)}\n`;
+      }
+
+      report += '  ' + '-'.repeat(90) + '\n';
+      report += `  ${'MONTHLY TOTALS'.padEnd(30)} ${fmt(totalMonthlySalary)} ${fmt(totalIRPS)} ${fmt(totalINSSEmp)} ${fmt(totalNetPay)} ${fmt(totalINSSEr)}\n`;
+      report += `  ${'ANNUAL (×12)'.padEnd(30)} ${fmt(totalMonthlySalary * 12)} ${fmt(totalIRPS * 12)} ${fmt(totalINSSEmp * 12)} ${fmt(totalNetPay * 12)} ${fmt(totalINSSEr * 12)}\n`;
+      report += `  ${'ANNUAL (×13 w/ 13th month)'.padEnd(30)} ${fmt(totalMonthlySalary * 13)} ${fmt(totalIRPS * 13)} ${fmt(totalINSSEmp * 13)} ${fmt(totalNetPay * 13)} ${fmt(totalINSSEr * 13)}\n\n`;
+
+      // ENTITY COUNTS
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 5: ENTITY COUNTS & SUMMARY\n';
+      report += '═'.repeat(100) + '\n\n';
+      report += `  Customers:             ${String(customers.length).padStart(5)}\n`;
+      report += `  Vendors:               ${String(vendors.length).padStart(5)}\n`;
+      report += `  Employees:             ${String(employees.length).padStart(5)}\n`;
+      report += `  Invoices:              ${String(invoices.length).padStart(5)}\n`;
+      report += `  Bills:                 ${String(bills.length).padStart(5)}\n`;
+      report += `  Expenses:              ${String(expenses.length).padStart(5)}\n`;
+      report += `  Payments Received:     ${String(paymentsReceived.length).padStart(5)}\n`;
+      report += `  Bill Payments:         ${String(billPayments.length).padStart(5)}\n\n`;
+
+      // FINANCIAL SUMMARY
+      report += '═'.repeat(100) + '\n';
+      report += '  SECTION 6: FINANCIAL POSITION SUMMARY\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      const calcOutstandingAR = totalInvoiced - totalPaidInvoices;
+      const calcOutstandingAP = totalBilled - totalPaidBills;
+
+      report += '  ACCOUNTS RECEIVABLE:\n';
+      report += `    Total Invoiced:                      ${fmt(totalInvoiced)}\n`;
+      report += `    Total Collected:                     ${fmt(totalPaidInvoices)}\n`;
+      report += `    Outstanding AR (stored sum):         ${fmt(totalOutstandingAR)}\n`;
+      report += `    Outstanding AR (calculated):         ${fmt(calcOutstandingAR)} ${Math.abs(totalOutstandingAR - calcOutstandingAR) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n\n`;
+
+      report += '  ACCOUNTS PAYABLE:\n';
+      report += `    Total Billed:                        ${fmt(totalBilled)}\n`;
+      report += `    Total Paid:                          ${fmt(totalPaidBills)}\n`;
+      report += `    Outstanding AP (stored sum):         ${fmt(totalOutstandingAP)}\n`;
+      report += `    Outstanding AP (calculated):         ${fmt(calcOutstandingAP)} ${Math.abs(totalOutstandingAP - calcOutstandingAP) > 0.01 ? '⚠️ MISMATCH' : '✓'}\n\n`;
+
+      report += '  NET POSITION:\n';
+      report += `    Outstanding AR - Outstanding AP:     ${fmt(totalOutstandingAR - totalOutstandingAP)}\n`;
+      report += `    Monthly Payroll Obligation:          ${fmt(totalMonthlySalary)}\n`;
+      report += `    Monthly Net After Payroll:           ${fmt((totalOutstandingAR - totalOutstandingAP) - totalMonthlySalary)}\n\n`;
+
+      // VERIFICATION RESULTS
+      const issues: string[] = [...invoiceIssues, ...billIssues];
+
+      if (Math.abs(totalOutstandingAR - calcOutstandingAR) > 0.01) {
+        issues.push(`AR mismatch: stored ${totalOutstandingAR.toFixed(2)} vs calc ${calcOutstandingAR.toFixed(2)}`);
+      }
+      if (Math.abs(totalOutstandingAP - calcOutstandingAP) > 0.01) {
+        issues.push(`AP mismatch: stored ${totalOutstandingAP.toFixed(2)} vs calc ${calcOutstandingAP.toFixed(2)}`);
+      }
+
+      report += '═'.repeat(100) + '\n';
+      report += '  AUDIT VERIFICATION RESULTS\n';
+      report += '═'.repeat(100) + '\n\n';
+
+      if (issues.length === 0) {
+        report += '  ╔' + '═'.repeat(98) + '╗\n';
+        report += '  ║  ✅ ALL CHECKS PASSED                                                                           ║\n';
+        report += '  ║                                                                                                  ║\n';
+        report += '  ║  • All invoice subtotals match calculated values                                                 ║\n';
+        report += '  ║  • All invoice balances match (total - paid)                                                     ║\n';
+        report += '  ║  • All invoice payment sums match stored amounts                                                 ║\n';
+        report += '  ║  • All bill calculations verified                                                                ║\n';
+        report += '  ║  • AR/AP totals consistent                                                                       ║\n';
+        report += '  ╚' + '═'.repeat(98) + '╝\n';
+      } else {
+        report += '  ╔' + '═'.repeat(98) + '╗\n';
+        report += `  ║  ⚠️  ${String(issues.length).padEnd(3)} ISSUES FOUND                                                                          ║\n`;
+        report += '  ╠' + '═'.repeat(98) + '╣\n';
+        for (const issue of issues) {
+          report += `  ║  • ${issue.padEnd(94)}║\n`;
+        }
+        report += '  ╚' + '═'.repeat(98) + '╝\n';
+      }
+
+      report += '\n' + '═'.repeat(100) + '\n';
+      report += '  END OF AUDIT REPORT\n';
+      report += '═'.repeat(100) + '\n';
+
+      setAuditReport(report);
+      setAuditSummary({
+        passed: issues.length === 0,
+        totalInvoiced,
+        totalCollected: totalPaidInvoices,
+        outstandingAR: totalOutstandingAR,
+        totalBilled,
+        totalPaidBills,
+        outstandingAP: totalOutstandingAP,
+        totalExpenses,
+        issues,
+      });
+
+    } catch (err) {
+      setAuditReport(`Error running audit: ${err}`);
+    } finally {
+      setAuditLoading(false);
+    }
+  };
+
+  const copyAuditReport = () => {
+    if (auditReport) {
+      navigator.clipboard.writeText(auditReport);
+    }
+  };
+
+  const downloadAuditReport = () => {
+    if (auditReport) {
+      const blob = new Blob([auditReport], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `audit-report-${new Date().toISOString().split('T')[0]}.txt`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
+
   // Main seed function
   const handleSeedAll = async () => {
     if (!tenantId) {
@@ -978,6 +1678,13 @@ export default function SeedDatabase() {
         setProgress((completedSteps / totalSteps) * 100);
       }
 
+      if (options.money) {
+        setCurrentTask("Seeding money module (customers, vendors, invoices, bills, expenses)...");
+        newResults.money = await seedMoney();
+        completedSteps++;
+        setProgress((completedSteps / totalSteps) * 100);
+      }
+
       setResults(newResults);
       setCurrentTask("");
       addLog("✅ Database seeding complete!");
@@ -1014,6 +1721,7 @@ export default function SeedDatabase() {
     { key: "training" as const, label: "Training Courses", icon: GraduationCap, count: TRAINING_COURSES.length },
     { key: "payroll" as const, label: "Payroll Run", icon: DollarSign, count: EMPLOYEES.length },
     { key: "accounting" as const, label: "Accounting", icon: Calculator, count: `${CHART_OF_ACCOUNTS.length} + 8 + 12` },
+    { key: "money" as const, label: "Money (AR/AP)", icon: Wallet, count: `${CUSTOMERS.length}+${VENDORS.length}+${INVOICES.length}+${BILLS.length}` },
   ];
 
   return (
@@ -1028,6 +1736,20 @@ export default function SeedDatabase() {
             <p className="text-muted-foreground">
               Populate Firestore with comprehensive sample data for Timor-Leste
             </p>
+          </div>
+        </div>
+
+        {/* DEV WARNING BANNER */}
+        <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/30 rounded-lg">
+          <div className="flex items-start gap-3">
+            <AlertCircle className="h-5 w-5 text-amber-500 mt-0.5" />
+            <div>
+              <p className="font-semibold text-amber-600 dark:text-amber-400">Development Tool Only</p>
+              <p className="text-sm text-muted-foreground">
+                This page is only available in development mode. It will not appear in production builds.
+                Use with caution - clearing data is irreversible and seeding will add test data to the selected tenant.
+              </p>
+            </div>
           </div>
         </div>
 
@@ -1079,34 +1801,56 @@ export default function SeedDatabase() {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {loading && (
+              {(loading || clearing) && (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
-                    <span>{currentTask}</span>
-                    <span>{Math.round(progress)}%</span>
+                    <span>{clearing ? "Clearing data..." : currentTask}</span>
+                    {!clearing && <span>{Math.round(progress)}%</span>}
                   </div>
-                  <Progress value={progress} />
+                  {!clearing && <Progress value={progress} />}
                 </div>
               )}
 
-              <Button
-                onClick={handleSeedAll}
-                disabled={loading || !tenantId || !Object.values(options).some(Boolean)}
-                className="w-full"
-                size="lg"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Seeding Database...
-                  </>
-                ) : (
-                  <>
-                    <Database className="mr-2 h-4 w-4" />
-                    Seed Selected Data
-                  </>
-                )}
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  onClick={clearAllData}
+                  disabled={loading || clearing || !tenantId}
+                  variant="destructive"
+                  className="flex-1"
+                  size="lg"
+                >
+                  {clearing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Clear All Data
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleSeedAll}
+                  disabled={loading || clearing || !tenantId || !Object.values(options).some(Boolean)}
+                  className="flex-1"
+                  size="lg"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Seeding...
+                    </>
+                  ) : (
+                    <>
+                      <Database className="mr-2 h-4 w-4" />
+                      Seed Selected Data
+                    </>
+                  )}
+                </Button>
+              </div>
 
               {error && (
                 <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg flex items-center gap-2">
@@ -1157,6 +1901,124 @@ export default function SeedDatabase() {
               </CardContent>
             </Card>
           )}
+
+          {/* Data Audit */}
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <ClipboardCheck className="h-5 w-5" />
+                    Data Audit
+                  </CardTitle>
+                  <CardDescription>
+                    Verify all financial numbers add up correctly
+                  </CardDescription>
+                </div>
+                {auditReport && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={copyAuditReport}>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={downloadAuditReport}>
+                      <Download className="h-4 w-4 mr-1" />
+                      Download
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <Button
+                onClick={runDataAudit}
+                disabled={auditLoading || !tenantId}
+                variant="secondary"
+              >
+                {auditLoading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Running Audit...
+                  </>
+                ) : (
+                  <>
+                    <ClipboardCheck className="mr-2 h-4 w-4" />
+                    Run Data Audit
+                  </>
+                )}
+              </Button>
+
+              {auditSummary && (
+                <div className="space-y-4">
+                  {/* Summary Badge */}
+                  <div className={`p-4 rounded-lg border ${auditSummary.passed ? 'bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800' : 'bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-800'}`}>
+                    <div className="flex items-center gap-2">
+                      {auditSummary.passed ? (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      ) : (
+                        <AlertCircle className="h-5 w-5 text-yellow-600" />
+                      )}
+                      <span className="font-semibold">
+                        {auditSummary.passed ? 'All Checks Passed' : `${auditSummary.issues.length} Issues Found`}
+                      </span>
+                    </div>
+                    {auditSummary.issues.length > 0 && (
+                      <ul className="mt-2 text-sm text-yellow-700 dark:text-yellow-300 list-disc list-inside">
+                        {auditSummary.issues.map((issue, i) => (
+                          <li key={i}>{issue}</li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+
+                  {/* Summary Metrics */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Total Invoiced</p>
+                      <p className="text-xl font-bold text-blue-600">${auditSummary.totalInvoiced.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Collected (AR)</p>
+                      <p className="text-xl font-bold text-green-600">${auditSummary.totalCollected.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-orange-50 dark:bg-orange-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Outstanding AR</p>
+                      <p className="text-xl font-bold text-orange-600">${auditSummary.outstandingAR.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Total Expenses</p>
+                      <p className="text-xl font-bold text-purple-600">${auditSummary.totalExpenses.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Total Billed</p>
+                      <p className="text-xl font-bold text-red-600">${auditSummary.totalBilled.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-teal-50 dark:bg-teal-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Paid (AP)</p>
+                      <p className="text-xl font-bold text-teal-600">${auditSummary.totalPaidBills.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-amber-50 dark:bg-amber-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Outstanding AP</p>
+                      <p className="text-xl font-bold text-amber-600">${auditSummary.outstandingAP.toLocaleString()}</p>
+                    </div>
+                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg">
+                      <p className="text-xs text-muted-foreground uppercase">Net Position</p>
+                      <p className={`text-xl font-bold ${(auditSummary.outstandingAR - auditSummary.outstandingAP) >= 0 ? 'text-indigo-600' : 'text-red-600'}`}>
+                        ${(auditSummary.outstandingAR - auditSummary.outstandingAP).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Full Report */}
+              {auditReport && (
+                <div className="bg-zinc-900 text-zinc-100 p-4 rounded-lg font-mono text-xs max-h-96 overflow-auto whitespace-pre">
+                  {auditReport}
+                </div>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

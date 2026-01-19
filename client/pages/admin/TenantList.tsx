@@ -33,6 +33,7 @@ import {
   Sparkles,
   Users,
   Calendar,
+  Database,
 } from "lucide-react";
 import { adminService } from "@/services/adminService";
 import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
@@ -161,6 +162,17 @@ export default function TenantList() {
             </div>
 
             <div className="flex items-center gap-3 animate-fade-up stagger-2">
+              {/* DEV ONLY: Seed & Audit button */}
+              {import.meta.env.DEV && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate("/admin/seed")}
+                  className="gap-2"
+                >
+                  <Database className="h-4 w-4" />
+                  Seed & Audit
+                </Button>
+              )}
               <Button
                 onClick={() => navigate("/admin/tenants/new")}
                 className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
