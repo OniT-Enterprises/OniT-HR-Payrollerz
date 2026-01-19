@@ -399,7 +399,7 @@ export default function Landing() {
             <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/10">
               <div className="text-3xl mb-3">📋</div>
               <h3 className="font-semibold text-white mb-2">Still using paper?</h3>
-              <p className="text-sm text-zinc-400">Manual calculations lead to IRPS errors that cost you money. One wrong deduction = audit risk.</p>
+              <p className="text-sm text-zinc-400">Manual calculations lead to WIT errors that cost you money. One wrong deduction = audit risk.</p>
             </div>
             <div className="p-6 rounded-xl bg-amber-500/5 border border-amber-500/10">
               <div className="text-3xl mb-3">📊</div>
@@ -409,7 +409,7 @@ export default function Landing() {
             <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <div className="text-3xl mb-3">✅</div>
               <h3 className="font-semibold text-white mb-2">OniT solves this</h3>
-              <p className="text-sm text-zinc-400">Automatic IRPS/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface.</p>
+              <p className="text-sm text-zinc-400">Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface.</p>
             </div>
           </div>
         </div>

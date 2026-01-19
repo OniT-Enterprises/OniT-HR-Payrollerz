@@ -247,7 +247,7 @@ const modules = [
         items: [
           "Monthly and bi-weekly cycles",
           "Automatic INSS calculation (4% + 6%)",
-          "Withholding tax (progressive rates)",
+          "Withholding tax (10% above $500 threshold)",
           "Overtime (1.5x and 2x per TL law)",
           "Allowances, bonuses, commissions",
           "Payroll preview and approval",
@@ -422,13 +422,13 @@ const tlFeatures = [
   },
   {
     icon: FileText,
-    title: "Withholding Tax (IRPS)",
-    description: "Progressive tax rate calculation",
+    title: "Wage Income Tax (WIT)",
+    description: "10% above $500 threshold for residents",
     details: [
-      "$0-500: 0% tax",
-      "$501-750: 5% tax",
-      "$751-1,000: 10% tax",
-      "$1,001+: 15% tax",
+      "Residents: $0-$500 = No tax",
+      "Residents: Above $500 = 10% of excess",
+      "Non-residents: 10% on all income",
+      "Monthly filing due by 15th",
       "ATTL monthly report generation",
     ],
   },
@@ -781,19 +781,29 @@ export default function ProductDetails() {
             {/* Tax Reference */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-                <h3 className="text-lg font-bold text-white mb-4">Withholding Tax Rates</h3>
-                <div className="space-y-2">
-                  {[
-                    { range: "$0 - $500", rate: "0%" },
-                    { range: "$501 - $750", rate: "5%" },
-                    { range: "$751 - $1,000", rate: "10%" },
-                    { range: "$1,001+", rate: "15%" },
-                  ].map((tier, i) => (
-                    <div key={i} className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03]">
-                      <span className="text-zinc-400">{tier.range}</span>
-                      <span className="font-mono text-blue-400">{tier.rate}</span>
+                <h3 className="text-lg font-bold text-white mb-4">Wage Income Tax (WIT)</h3>
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Residents (Monthly)</p>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-white/[0.03]">
+                        <span className="text-zinc-400">$0 - $500</span>
+                        <span className="font-mono text-emerald-400">0%</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                        <span className="text-zinc-300">Above $500</span>
+                        <span className="font-mono text-blue-400 font-medium">10% of excess</span>
+                      </div>
                     </div>
-                  ))}
+                  </div>
+                  <div>
+                    <p className="text-xs text-zinc-500 uppercase tracking-wider mb-2">Non-Residents (Monthly)</p>
+                    <div className="flex justify-between items-center p-3 rounded-lg bg-amber-500/10 border border-amber-500/20">
+                      <span className="text-zinc-300">All income</span>
+                      <span className="font-mono text-amber-400 font-medium">10%</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-zinc-500">Due by 15th of following month via e-Tax</p>
                 </div>
               </div>
 
