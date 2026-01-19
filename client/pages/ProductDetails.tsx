@@ -778,6 +778,36 @@ export default function ProductDetails() {
               </div>
             </div>
 
+            {/* Mobile Payments */}
+            <div className="p-6 rounded-2xl bg-gradient-to-r from-red-500/5 via-amber-500/5 to-red-500/5 border border-amber-500/20">
+              <div className="flex flex-col md:flex-row items-center gap-6">
+                <div className="flex items-center gap-4">
+                  <img
+                    src="/images/tpay-logo.png"
+                    alt="T-PAY Mobile Money"
+                    className="h-16 w-16 rounded-full"
+                  />
+                  <div>
+                    <h4 className="font-bold text-white text-lg">Mobile Money Ready</h4>
+                    <p className="text-sm text-zinc-400">Pay employees without bank accounts</p>
+                  </div>
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-3 w-full md:w-auto">
+                  <div className="p-3 rounded-lg bg-white/5 text-center">
+                    <span className="text-sm font-medium text-white">T-PAY</span>
+                    <p className="text-xs text-zinc-500">Telkomcel</p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-white/5 text-center">
+                    <span className="text-sm font-medium text-white">Telemor</span>
+                    <p className="text-xs text-zinc-500">Coming Soon</p>
+                  </div>
+                </div>
+              </div>
+              <p className="mt-4 text-xs text-zinc-500 text-center md:text-left">
+                Disbursement directly to employee mobile wallets. No bank account required.
+              </p>
+            </div>
+
             {/* Tax Reference */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
