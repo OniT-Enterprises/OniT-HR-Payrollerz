@@ -20,7 +20,6 @@ import {
   ChevronRight,
   FileText,
   Calendar,
-  DollarSign,
   Scale,
   Landmark,
   Banknote,
@@ -540,74 +539,6 @@ const benefits = [
   },
 ];
 
-// Pricing tiers
-const pricingTiers = [
-  {
-    name: "Starter",
-    price: "$29",
-    period: "/month",
-    employees: "1-10 employees",
-    features: [
-      "Core HR & employee profiles",
-      "Basic payroll processing",
-      "INSS & tax calculations",
-      "Payslip generation",
-      "Email support",
-    ],
-    cta: "Start Free Trial",
-    popular: false,
-  },
-  {
-    name: "Professional",
-    price: "$99",
-    period: "/month",
-    employees: "11-50 employees",
-    features: [
-      "Everything in Starter",
-      "Full compliance reporting",
-      "Bank file generation",
-      "Leave management",
-      "Time tracking",
-      "Custom reports",
-      "Priority support",
-    ],
-    cta: "Start Free Trial",
-    popular: true,
-  },
-  {
-    name: "Business",
-    price: "$249",
-    period: "/month",
-    employees: "51-200 employees",
-    features: [
-      "Everything in Professional",
-      "Multi-department",
-      "Performance management",
-      "Invoicing & accounting",
-      "API access",
-      "Dedicated support",
-    ],
-    cta: "Start Free Trial",
-    popular: false,
-  },
-  {
-    name: "Enterprise",
-    price: "Custom",
-    period: "",
-    employees: "200+ employees",
-    features: [
-      "Everything in Business",
-      "Unlimited employees",
-      "Multiple locations",
-      "Custom integrations",
-      "On-premise option",
-      "SLA guarantee",
-      "Account manager",
-    ],
-    cta: "Contact Sales",
-    popular: false,
-  },
-];
 
 // Expandable module section component
 function ModuleSection({ module, index }: { module: typeof modules[0]; index: number }) {
@@ -673,7 +604,7 @@ function ModuleSection({ module, index }: { module: typeof modules[0]; index: nu
 }
 
 export default function ProductDetails() {
-  const [activeTab, setActiveTab] = useState<"modules" | "tl" | "benefits" | "pricing">("modules");
+  const [activeTab, setActiveTab] = useState<"modules" | "tl" | "benefits">("modules");
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
@@ -763,7 +694,6 @@ export default function ProductDetails() {
               { id: "modules", label: "All Modules", icon: Settings },
               { id: "tl", label: "TL-Specific", icon: MapPin },
               { id: "benefits", label: "Benefits", icon: Zap },
-              { id: "pricing", label: "Pricing", icon: DollarSign },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -945,77 +875,6 @@ export default function ProductDetails() {
           </div>
         )}
 
-        {/* Pricing Section */}
-        {activeTab === "pricing" && (
-          <div className="space-y-8">
-            <div className="text-center mb-12">
-              <h2 className="text-2xl font-bold text-white mb-2">Simple, Transparent Pricing</h2>
-              <p className="text-zinc-400">All plans include 30-day free trial. No credit card required.</p>
-            </div>
-
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {pricingTiers.map((tier, i) => (
-                <div
-                  key={i}
-                  className={`relative p-6 rounded-2xl border ${
-                    tier.popular
-                      ? "bg-gradient-to-b from-red-500/10 to-amber-500/5 border-red-500/30"
-                      : "bg-white/[0.02] border-white/5"
-                  }`}
-                >
-                  {tier.popular && (
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white text-xs font-bold">
-                      Most Popular
-                    </div>
-                  )}
-
-                  <div className="mb-4">
-                    <h3 className="text-xl font-bold text-white">{tier.name}</h3>
-                    <p className="text-sm text-zinc-500">{tier.employees}</p>
-                  </div>
-
-                  <div className="mb-6">
-                    <span className="text-4xl font-black text-white">{tier.price}</span>
-                    <span className="text-zinc-500">{tier.period}</span>
-                  </div>
-
-                  <ul className="space-y-2 mb-6">
-                    {tier.features.map((feature, j) => (
-                      <li key={j} className="flex items-center gap-2 text-sm text-zinc-300">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-
-                  <Button
-                    asChild
-                    className={`w-full ${
-                      tier.popular
-                        ? "bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400"
-                        : "bg-white/5 hover:bg-white/10 border border-white/10"
-                    }`}
-                  >
-                    <Link to="/auth/signup">{tier.cta}</Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            {/* Enterprise note */}
-            <div className="mt-12 p-6 rounded-2xl bg-white/[0.02] border border-white/5 text-center">
-              <h3 className="text-lg font-bold text-white mb-2">Need a Custom Solution?</h3>
-              <p className="text-zinc-400 mb-4">
-                Special pricing for NGOs, government agencies, and large organizations.
-                On-premise deployment available.
-              </p>
-              <Button variant="outline" className="border-white/10 hover:bg-white/5">
-                <Mail className="h-4 w-4 mr-2" />
-                Contact Sales
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* CTA Section */}

@@ -15,7 +15,6 @@ import {
   Globe,
   Sparkles,
   ChevronRight,
-  Play,
   FileText,
   Calendar,
   DollarSign,
@@ -120,49 +119,6 @@ export default function Landing() {
     { name: "BNCTL", full: "Banco Nacional de Comercio" },
   ];
 
-  const plans = [
-    {
-      name: t("landing.pricing.plans.starter.name"),
-      price: "$29",
-      period: t("landing.pricing.perMonth"),
-      description: t("landing.pricing.plans.starter.description"),
-      features: [
-        t("landing.pricing.plans.starter.features.employees"),
-        t("landing.pricing.plans.starter.features.calculations"),
-        t("landing.pricing.plans.starter.features.payroll"),
-        t("landing.pricing.plans.starter.features.languages"),
-      ],
-      popular: false,
-    },
-    {
-      name: t("landing.pricing.plans.professional.name"),
-      price: "$79",
-      period: t("landing.pricing.perMonth"),
-      description: t("landing.pricing.plans.professional.description"),
-      features: [
-        t("landing.pricing.plans.professional.features.employees"),
-        t("landing.pricing.plans.professional.features.compliance"),
-        t("landing.pricing.plans.professional.features.thirteenth"),
-        t("landing.pricing.plans.professional.features.sefope"),
-        t("landing.pricing.plans.professional.features.transfers"),
-      ],
-      popular: true,
-    },
-    {
-      name: t("landing.pricing.plans.enterprise.name"),
-      price: t("landing.pricing.plans.enterprise.price"),
-      period: "",
-      description: t("landing.pricing.plans.enterprise.description"),
-      features: [
-        t("landing.pricing.plans.enterprise.features.employees"),
-        t("landing.pricing.plans.enterprise.features.locations"),
-        t("landing.pricing.plans.enterprise.features.api"),
-        t("landing.pricing.plans.enterprise.features.support"),
-        t("landing.pricing.plans.enterprise.features.integrations"),
-      ],
-      popular: false,
-    },
-  ];
 
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white overflow-hidden">
@@ -196,9 +152,6 @@ export default function Landing() {
               </Link>
               <a href="#labor-law" className="text-sm text-zinc-400 hover:text-white transition-colors">
                 {t("landing.nav.laborLaw")}
-              </a>
-              <a href="#pricing" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                {t("landing.nav.pricing")}
               </a>
             </div>
 
@@ -312,9 +265,11 @@ export default function Landing() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button size="lg" variant="outline" className="h-14 px-8 text-base border-white/10 bg-white/5 hover:bg-white/10 text-white">
-                <Play className="mr-2 h-5 w-5" />
-                {t("landing.hero.ctaSecondary")}
+              <Button size="lg" variant="outline" asChild className="h-14 px-8 text-base border-white/10 bg-white/5 hover:bg-white/10 text-white">
+                <Link to="/features">
+                  <BarChart3 className="mr-2 h-5 w-5" />
+                  {t("landing.nav.features")}
+                </Link>
               </Button>
             </div>
 
@@ -519,6 +474,36 @@ export default function Landing() {
                 </div>
               ))}
             </div>
+          </div>
+
+          {/* Mobile Payments */}
+          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-red-500/5 via-amber-500/5 to-red-500/5 border border-amber-500/20">
+            <div className="flex flex-col md:flex-row items-center gap-6">
+              <div className="flex items-center gap-4">
+                <img
+                  src="/images/tpay-logo.png"
+                  alt="T-PAY Mobile Money"
+                  className="h-16 w-16 rounded-full"
+                />
+                <div>
+                  <h4 className="font-bold text-white text-lg">Mobile Money Ready</h4>
+                  <p className="text-sm text-zinc-400">Pay employees without bank accounts</p>
+                </div>
+              </div>
+              <div className="flex-1 grid grid-cols-2 gap-3 w-full md:w-auto">
+                <div className="p-3 rounded-lg bg-white/5 text-center">
+                  <span className="text-sm font-medium text-white">T-PAY</span>
+                  <p className="text-xs text-zinc-500">Telkomcel</p>
+                </div>
+                <div className="p-3 rounded-lg bg-white/5 text-center">
+                  <span className="text-sm font-medium text-white">Telemor</span>
+                  <p className="text-xs text-zinc-500">Coming Soon</p>
+                </div>
+              </div>
+            </div>
+            <p className="mt-4 text-xs text-zinc-500 text-center md:text-left">
+              Disbursement directly to employee mobile wallets. No bank account required.
+            </p>
           </div>
         </div>
       </section>
@@ -759,82 +744,6 @@ export default function Landing() {
               </div>
             </div>
           </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 lg:py-32 bg-white/[0.01]">
-        <div className="max-w-7xl mx-auto px-6 lg:px-8">
-          {/* Free Trial Banner */}
-          <div className="mb-12 p-6 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-emerald-500/5 to-teal-500/10 border border-emerald-500/20 text-center">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-sm font-medium mb-3">
-              <Sparkles className="h-4 w-4" />
-              Limited Time Offer
-            </div>
-            <h3 className="text-2xl font-bold text-white mb-2">Start with 30 days free</h3>
-            <p className="text-zinc-400 max-w-xl mx-auto">No credit card required. Full access to all features. Cancel anytime. Special rates for registered NGOs and government agencies.</p>
-          </div>
-
-          <div className="text-center max-w-2xl mx-auto mb-16">
-            <h2 className="text-3xl lg:text-4xl font-black mb-4">
-              {t("landing.pricing.title")}
-              <span className="block bg-gradient-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">
-                {t("landing.pricing.titleAccent")}
-              </span>
-            </h2>
-            <p className="text-zinc-400">
-              {t("landing.pricing.description")}
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-6 lg:gap-8">
-            {plans.map((plan, i) => (
-              <div
-                key={i}
-                className={`relative p-8 rounded-2xl border transition-all ${
-                  plan.popular
-                    ? "bg-gradient-to-b from-red-500/10 to-amber-500/5 border-red-500/30 scale-105"
-                    : "bg-white/[0.02] border-white/5 hover:border-white/10"
-                }`}
-              >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-red-500 to-amber-500 text-white text-xs font-bold">
-                    {t("landing.pricing.popular")}
-                  </div>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-xl font-bold text-white mb-2">{plan.name}</h3>
-                  <p className="text-sm text-zinc-500">{plan.description}</p>
-                </div>
-                <div className="mb-6">
-                  <span className="text-4xl font-black text-white">{plan.price}</span>
-                  <span className="text-zinc-500">{plan.period}</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-3 text-sm text-zinc-300">
-                      <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button
-                  asChild
-                  className={`w-full ${
-                    plan.popular
-                      ? "bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold"
-                      : "bg-white/5 hover:bg-white/10 text-white border border-white/10"
-                  }`}
-                >
-                  <Link to="/auth/signup">{t("landing.pricing.cta")}</Link>
-                </Button>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-center text-sm text-zinc-500 mt-8">
-            {t("landing.pricing.footer")}
-          </p>
         </div>
       </section>
 
