@@ -4,6 +4,8 @@
  */
 
 import React, { useMemo, useState, useEffect } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -50,6 +52,7 @@ import CSVColumnMapper from "@/components/CSVColumnMapper";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
+import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
 import {
   UserPlus,
   User,
@@ -113,28 +116,43 @@ export default function AddEmployee() {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0);
 
-  // Form data
-  const [formData, setFormData] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    phoneApp: "",
-    appEligible: false,
-    emergencyContactName: "",
-    emergencyContactPhone: "",
-    department: "",
-    jobTitle: "",
-    manager: "",
-    startDate: "",
-    employmentType: "Full-time",
-    sefopeNumber: "",
-    sefopeRegistrationDate: "",
-    salary: "",
-    leaveDays: "25",
-    benefits: "standard",
-    isResident: true,
+  // Form with react-hook-form + zod validation
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    trigger,
+    formState: { errors },
+  } = useForm<AddEmployeeFormData>({
+    resolver: zodResolver(addEmployeeFormSchema),
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      phoneApp: "",
+      appEligible: false,
+      emergencyContactName: "",
+      emergencyContactPhone: "",
+      department: "",
+      jobTitle: "",
+      manager: "",
+      startDate: "",
+      employmentType: "Full-time",
+      sefopeNumber: "",
+      sefopeRegistrationDate: "",
+      salary: "",
+      leaveDays: "25",
+      benefits: "standard",
+      isResident: true,
+    },
+    mode: "onChange", // Validate on change for better UX
   });
+
+  // Watch form values for canProceed logic
+  const formValues = watch();
 
   // TL-specific documents
   const [documents, setDocuments] = useState([
@@ -201,11 +219,12 @@ export default function AddEmployee() {
         setIsEditMode(true);
         setEditingEmployee(employee);
 
-        setFormData({
+        // Reset form with employee data
+        reset({
           firstName: employee.personalInfo.firstName,
           lastName: employee.personalInfo.lastName,
           email: employee.personalInfo.email,
-          phone: employee.personalInfo.phone,
+          phone: employee.personalInfo.phone || "",
           phoneApp: (employee.personalInfo as any).phoneApp || "",
           appEligible: (employee.personalInfo as any).appEligible || false,
           emergencyContactName: employee.personalInfo.emergencyContactName || "",
@@ -214,12 +233,12 @@ export default function AddEmployee() {
           jobTitle: employee.jobDetails.position,
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
-          employmentType: employee.jobDetails.employmentType,
+          employmentType: employee.jobDetails.employmentType as "Full-time" | "Part-time" | "Contractor",
           sefopeNumber: (employee.jobDetails as any).sefopeNumber || "",
           sefopeRegistrationDate: (employee.jobDetails as any).sefopeRegistrationDate || "",
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
-          benefits: employee.compensation.benefitsPackage || "standard",
+          benefits: (employee.compensation.benefitsPackage || "standard") as "basic" | "standard" | "premium" | "executive",
           isResident: (employee.compensation as any).isResident ?? true,
         });
 
@@ -272,10 +291,6 @@ export default function AddEmployee() {
     }
   };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
   const handleDocumentChange = (id: number, field: string, value: string) => {
     setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, [field]: value } : doc));
   };
@@ -302,14 +317,14 @@ export default function AddEmployee() {
     return { status: "valid", message: t("addEmployee.documents.status.valid"), variant: "default" as const };
   };
 
-  // Validate current step
+  // Validate current step using form state
   const canProceed = () => {
     const step = WIZARD_STEPS[currentStep].id;
     switch (step) {
       case "basic":
-        return !!(formData.firstName && formData.lastName && formData.email);
+        return !!(formValues.firstName && formValues.lastName && formValues.email && !errors.email);
       case "job":
-        return !!(formData.department && formData.jobTitle && formData.startDate);
+        return !!(formValues.department && formValues.jobTitle && formValues.startDate);
       case "compensation":
         return true; // Optional fields
       case "documents":
@@ -319,7 +334,8 @@ export default function AddEmployee() {
     }
   };
 
-  const handleSubmit = async () => {
+  // Form submission handler - called by react-hook-form's handleSubmit
+  const onFormSubmit = async (data: AddEmployeeFormData) => {
     if (isSubmitting) return;
     setIsSubmitting(true);
 
@@ -329,34 +345,34 @@ export default function AddEmployee() {
 
       const newEmployee: Omit<Employee, "id"> = {
         personalInfo: {
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          email: formData.email,
-          phone: formData.phone,
-          phoneApp: formData.phoneApp,
-          appEligible: formData.appEligible,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          email: data.email,
+          phone: data.phone || "",
+          phoneApp: data.phoneApp || "",
+          appEligible: data.appEligible,
           address: "",
           dateOfBirth: "",
           socialSecurityNumber: documents[1]?.number || "",
-          emergencyContactName: formData.emergencyContactName,
-          emergencyContactPhone: formData.emergencyContactPhone,
+          emergencyContactName: data.emergencyContactName || "",
+          emergencyContactPhone: data.emergencyContactPhone || "",
         },
         jobDetails: {
           employeeId,
-          department: formData.department,
-          position: formData.jobTitle,
-          hireDate: formData.startDate || currentDate.toISOString().split("T")[0],
-          employmentType: formData.employmentType,
+          department: data.department,
+          position: data.jobTitle,
+          hireDate: data.startDate || currentDate.toISOString().split("T")[0],
+          employmentType: data.employmentType,
           workLocation: "Office",
-          manager: formData.manager,
-          sefopeNumber: formData.sefopeNumber || undefined,
-          sefopeRegistrationDate: formData.sefopeRegistrationDate || undefined,
+          manager: data.manager || "",
+          sefopeNumber: data.sefopeNumber || undefined,
+          sefopeRegistrationDate: data.sefopeRegistrationDate || undefined,
         },
         compensation: {
-          monthlySalary: parseInt(formData.salary) || 0,
-          annualLeaveDays: parseInt(formData.leaveDays) || 25,
-          benefitsPackage: formData.benefits || "standard",
-          isResident: formData.isResident,
+          monthlySalary: parseInt(data.salary || "0") || 0,
+          annualLeaveDays: parseInt(data.leaveDays) || 25,
+          benefitsPackage: data.benefits || "standard",
+          isResident: data.isResident,
         },
         documents: {
           bilheteIdentidade: { number: documents[0]?.number || "", expiryDate: documents[0]?.expiryDate || "", required: true },
@@ -404,7 +420,7 @@ export default function AddEmployee() {
         toast({
           title: t("addEmployee.toast.updatedTitle"),
           description: t("addEmployee.toast.updatedDesc", {
-            name: `${formData.firstName} ${formData.lastName}`,
+            name: `${data.firstName} ${data.lastName}`,
           }),
         });
       } else {
@@ -413,7 +429,7 @@ export default function AddEmployee() {
         toast({
           title: t("addEmployee.toast.addedTitle"),
           description: t("addEmployee.toast.addedDesc", {
-            name: `${formData.firstName} ${formData.lastName}`,
+            name: `${data.firstName} ${data.lastName}`,
           }),
         });
       }
@@ -569,7 +585,7 @@ export default function AddEmployee() {
           steps={WIZARD_STEPS}
           currentStep={currentStep}
           onStepChange={setCurrentStep}
-          onComplete={handleSubmit}
+          onComplete={handleSubmit(onFormSubmit)}
           onCancel={() => navigate("/people/employees")}
           isSubmitting={isSubmitting}
           submitLabel={isEditMode ? t("addEmployee.buttons.updateEmployee") : t("addEmployee.buttons.addEmployee")}
@@ -584,20 +600,22 @@ export default function AddEmployee() {
                   <Label htmlFor="firstName">{t("addEmployee.fields.firstName")}</Label>
                   <Input
                     id="firstName"
-                    value={formData.firstName}
-                    onChange={e => handleInputChange("firstName", e.target.value)}
+                    {...register("firstName")}
                     placeholder={t("addEmployee.fields.firstName")}
                     autoFocus
+                    className={errors.firstName ? "border-red-500" : ""}
                   />
+                  {errors.firstName && <p className="text-sm text-red-500">{errors.firstName.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="lastName">{t("addEmployee.fields.lastName")}</Label>
                   <Input
                     id="lastName"
-                    value={formData.lastName}
-                    onChange={e => handleInputChange("lastName", e.target.value)}
+                    {...register("lastName")}
                     placeholder={t("addEmployee.fields.lastName")}
+                    className={errors.lastName ? "border-red-500" : ""}
                   />
+                  {errors.lastName && <p className="text-sm text-red-500">{errors.lastName.message}</p>}
                 </div>
               </div>
 
@@ -611,10 +629,11 @@ export default function AddEmployee() {
                   <Input
                     id="email"
                     type="email"
-                    value={formData.email}
-                    onChange={e => handleInputChange("email", e.target.value)}
+                    {...register("email")}
                     placeholder="employee@company.com"
+                    className={errors.email ? "border-red-500" : ""}
                   />
+                  {errors.email && <p className="text-sm text-red-500">{errors.email.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="phone" className="flex items-center gap-2">
@@ -624,8 +643,7 @@ export default function AddEmployee() {
                   <Input
                     id="phone"
                     type="tel"
-                    value={formData.phone}
-                    onChange={e => handleInputChange("phone", e.target.value)}
+                    {...register("phone")}
                     placeholder="+670 123 4567"
                   />
                 </div>
@@ -647,8 +665,7 @@ export default function AddEmployee() {
                   <Input
                     id="phoneApp"
                     type="tel"
-                    value={formData.phoneApp}
-                    onChange={e => handleInputChange("phoneApp", e.target.value)}
+                    {...register("phoneApp")}
                     placeholder="+670 987 6543"
                   />
                   <div className="flex items-center gap-2 mt-1">
@@ -656,8 +673,7 @@ export default function AddEmployee() {
                       type="checkbox"
                       id="appEligible"
                       className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
-                      checked={formData.appEligible}
-                      onChange={e => handleInputChange("appEligible", e.target.checked)}
+                      {...register("appEligible")}
                     />
                     <Label htmlFor="appEligible" className="text-sm text-muted-foreground cursor-pointer">
                       {t("addEmployee.fields.appEligible")}
@@ -676,8 +692,7 @@ export default function AddEmployee() {
                     <Label htmlFor="emergencyContactName">{t("addEmployee.fields.emergencyName")}</Label>
                     <Input
                       id="emergencyContactName"
-                      value={formData.emergencyContactName}
-                      onChange={e => handleInputChange("emergencyContactName", e.target.value)}
+                      {...register("emergencyContactName")}
                       placeholder={t("addEmployee.fields.emergencyName")}
                     />
                   </div>
@@ -686,8 +701,7 @@ export default function AddEmployee() {
                     <Input
                       id="emergencyContactPhone"
                       type="tel"
-                      value={formData.emergencyContactPhone}
-                      onChange={e => handleInputChange("emergencyContactPhone", e.target.value)}
+                      {...register("emergencyContactPhone")}
                       placeholder={t("addEmployee.fields.emergencyPhone")}
                     />
                   </div>
@@ -703,25 +717,33 @@ export default function AddEmployee() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="department">{t("addEmployee.fields.department")}</Label>
-                  <Select value={formData.department} onValueChange={v => handleInputChange("department", v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {departments.map(d => (
-                        <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="department"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className={errors.department ? "border-red-500" : ""}>
+                          <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {departments.map(d => (
+                            <SelectItem key={d.id} value={d.name}>{d.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.department && <p className="text-sm text-red-500">{errors.department.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="jobTitle">{t("addEmployee.fields.jobTitle")}</Label>
                   <Input
                     id="jobTitle"
-                    value={formData.jobTitle}
-                    onChange={e => handleInputChange("jobTitle", e.target.value)}
+                    {...register("jobTitle")}
                     placeholder={t("addEmployee.fields.jobTitlePlaceholder")}
+                    className={errors.jobTitle ? "border-red-500" : ""}
                   />
+                  {errors.jobTitle && <p className="text-sm text-red-500">{errors.jobTitle.message}</p>}
                 </div>
               </div>
 
@@ -729,40 +751,53 @@ export default function AddEmployee() {
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="manager">{t("addEmployee.fields.manager")}</Label>
-                  <Select value={formData.manager} onValueChange={v => handleInputChange("manager", v)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("addEmployee.fields.managerPlaceholder")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {managers.map(m => (
-                        <SelectItem key={m.id} value={`${m.personalInfo.firstName} ${m.personalInfo.lastName}`}>
-                          {m.personalInfo.firstName} {m.personalInfo.lastName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="manager"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("addEmployee.fields.managerPlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {managers.map(m => (
+                            <SelectItem key={m.id} value={`${m.personalInfo.firstName} ${m.personalInfo.lastName}`}>
+                              {m.personalInfo.firstName} {m.personalInfo.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="startDate">{t("addEmployee.fields.startDate")}</Label>
                   <Input
                     id="startDate"
                     type="date"
-                    value={formData.startDate}
-                    onChange={e => handleInputChange("startDate", e.target.value)}
+                    {...register("startDate")}
+                    className={errors.startDate ? "border-red-500" : ""}
                   />
+                  {errors.startDate && <p className="text-sm text-red-500">{errors.startDate.message}</p>}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="employmentType">{t("addEmployee.fields.employmentType")}</Label>
-                  <Select value={formData.employmentType} onValueChange={v => handleInputChange("employmentType", v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Full-time">{t("addEmployee.fields.employmentTypes.fullTime")}</SelectItem>
-                      <SelectItem value="Part-time">{t("addEmployee.fields.employmentTypes.partTime")}</SelectItem>
-                      <SelectItem value="Contractor">{t("addEmployee.fields.employmentTypes.contractor")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="employmentType"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Full-time">{t("addEmployee.fields.employmentTypes.fullTime")}</SelectItem>
+                          <SelectItem value="Part-time">{t("addEmployee.fields.employmentTypes.partTime")}</SelectItem>
+                          <SelectItem value="Contractor">{t("addEmployee.fields.employmentTypes.contractor")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -787,8 +822,7 @@ export default function AddEmployee() {
                     <Label htmlFor="sefopeNumber">{t("addEmployee.fields.sefopeNumber")}</Label>
                     <Input
                       id="sefopeNumber"
-                      value={formData.sefopeNumber}
-                      onChange={e => handleInputChange("sefopeNumber", e.target.value)}
+                      {...register("sefopeNumber")}
                       placeholder={t("addEmployee.fields.sefopeNumberPlaceholder")}
                     />
                   </div>
@@ -797,8 +831,7 @@ export default function AddEmployee() {
                     <Input
                       id="sefopeRegistrationDate"
                       type="date"
-                      value={formData.sefopeRegistrationDate}
-                      onChange={e => handleInputChange("sefopeRegistrationDate", e.target.value)}
+                      {...register("sefopeRegistrationDate")}
                     />
                   </div>
                 </div>
@@ -827,8 +860,7 @@ export default function AddEmployee() {
                   <Input
                     id="salary"
                     type="number"
-                    value={formData.salary}
-                    onChange={e => handleInputChange("salary", e.target.value)}
+                    {...register("salary")}
                     placeholder={t("addEmployee.compensation.salaryPlaceholder")}
                   />
                   <p className="text-xs text-muted-foreground">{t("addEmployee.compensation.minWageHint")}</p>
@@ -838,24 +870,29 @@ export default function AddEmployee() {
                   <Input
                     id="leaveDays"
                     type="number"
-                    value={formData.leaveDays}
-                    onChange={e => handleInputChange("leaveDays", e.target.value)}
+                    {...register("leaveDays")}
                     placeholder={t("addEmployee.compensation.leaveDaysPlaceholder")}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="benefits">{t("addEmployee.compensation.benefits")}</Label>
-                  <Select value={formData.benefits} onValueChange={v => handleInputChange("benefits", v)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="basic">{t("addEmployee.compensation.benefitsOptions.basic")}</SelectItem>
-                      <SelectItem value="standard">{t("addEmployee.compensation.benefitsOptions.standard")}</SelectItem>
-                      <SelectItem value="premium">{t("addEmployee.compensation.benefitsOptions.premium")}</SelectItem>
-                      <SelectItem value="executive">{t("addEmployee.compensation.benefitsOptions.executive")}</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="benefits"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="basic">{t("addEmployee.compensation.benefitsOptions.basic")}</SelectItem>
+                          <SelectItem value="standard">{t("addEmployee.compensation.benefitsOptions.standard")}</SelectItem>
+                          <SelectItem value="premium">{t("addEmployee.compensation.benefitsOptions.premium")}</SelectItem>
+                          <SelectItem value="executive">{t("addEmployee.compensation.benefitsOptions.executive")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -869,8 +906,7 @@ export default function AddEmployee() {
                     type="checkbox"
                     id="isResident"
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
-                    checked={formData.isResident}
-                    onChange={e => handleInputChange("isResident", e.target.checked)}
+                    {...register("isResident")}
                   />
                   <Label htmlFor="isResident" className="cursor-pointer">
                     {t("addEmployee.compensation.taxResidentLabel")}

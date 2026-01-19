@@ -62,6 +62,65 @@ export const employeeSchema = z.object({
 
 export type EmployeeFormData = z.infer<typeof employeeSchema>;
 
+/**
+ * AddEmployee wizard form schema - comprehensive validation for the multi-step form
+ */
+export const addEmployeeFormSchema = z.object({
+  // Step 1: Basic Info
+  firstName: z.string().min(1, 'First name is required').max(50),
+  lastName: z.string().min(1, 'Last name is required').max(50),
+  email: z.string().email('Invalid email address').min(1, 'Email is required'),
+  phone: z.string().optional().or(z.literal('')),
+  phoneApp: z.string().optional().or(z.literal('')),
+  appEligible: z.boolean().default(false),
+  emergencyContactName: z.string().optional().or(z.literal('')),
+  emergencyContactPhone: z.string().optional().or(z.literal('')),
+
+  // Step 2: Job Details
+  department: z.string().min(1, 'Department is required'),
+  jobTitle: z.string().min(1, 'Job title is required'),
+  manager: z.string().optional().or(z.literal('')),
+  startDate: z.string().min(1, 'Start date is required'),
+  employmentType: z.enum(['Full-time', 'Part-time', 'Contractor']).default('Full-time'),
+  sefopeNumber: z.string().optional().or(z.literal('')),
+  sefopeRegistrationDate: z.string().optional().or(z.literal('')),
+
+  // Step 3: Compensation
+  salary: z.string().optional().or(z.literal('')),
+  leaveDays: z.string().default('25'),
+  benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
+  isResident: z.boolean().default(true),
+});
+
+export type AddEmployeeFormData = z.infer<typeof addEmployeeFormSchema>;
+
+/**
+ * Schema for additional employee info (nationality, visa)
+ */
+export const employeeAdditionalInfoSchema = z.object({
+  nationality: z.string().default('Timor-Leste'),
+  residencyStatus: z.enum(['timorese', 'permanent_resident', 'work_permit', 'temporary']).default('timorese'),
+  workingVisaNumber: z.string().optional().or(z.literal('')),
+  workingVisaExpiry: z.string().optional().or(z.literal('')),
+});
+
+export type EmployeeAdditionalInfoData = z.infer<typeof employeeAdditionalInfoSchema>;
+
+/**
+ * Schema for individual document entry
+ */
+export const employeeDocumentSchema = z.object({
+  id: z.number(),
+  type: z.string(),
+  fieldKey: z.string(),
+  number: z.string().optional().or(z.literal('')),
+  expiryDate: z.string().optional().or(z.literal('')),
+  required: z.boolean(),
+  description: z.string(),
+});
+
+export type EmployeeDocumentData = z.infer<typeof employeeDocumentSchema>;
+
 // ============================================
 // INVOICE SCHEMAS
 // ============================================
