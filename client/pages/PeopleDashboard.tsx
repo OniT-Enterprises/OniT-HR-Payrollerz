@@ -243,8 +243,8 @@ export default function PeopleDashboard() {
     try {
       const [employeesData, departmentsData, leaveStats] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
-        departmentService.getAllDepartments(),
-        leaveService.getLeaveStats(),
+        departmentService.getAllDepartments(tenantId),
+        leaveService.getLeaveStats(tenantId),
       ]);
 
       setEmployees(employeesData);

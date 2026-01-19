@@ -22,6 +22,7 @@ export type JobStatus = "draft" | "open" | "closed" | "filled";
 
 export interface Job {
   id?: string;
+  tenantId: string;
   title: string;
   description?: string;
   department: string;
@@ -92,7 +93,7 @@ class JobService {
   /**
    * Get jobs with server-side filtering and pagination
    */
-  async getJobs(filters: JobFilters = {}): Promise<PaginatedResult<Job>> {
+  async getJobs(tenantId: string, filters: JobFilters = {}): Promise<PaginatedResult<Job>> {
     const {
       status,
       department,
@@ -103,7 +104,9 @@ class JobService {
       location,
     } = filters;
 
-    const constraints: QueryConstraint[] = [];
+    const constraints: QueryConstraint[] = [
+      where("tenantId", "==", tenantId),
+    ];
 
     // Server-side filters
     if (status) {
@@ -163,15 +166,14 @@ class JobService {
   }
 
   /**
-   * Get all jobs
-   * @deprecated Use getJobs() with filters for better performance
+   * Get all jobs for a tenant
    */
-  async getAllJobs(): Promise<Job[]> {
-    const result = await this.getJobs({ pageSize: 500 });
+  async getAllJobs(tenantId: string): Promise<Job[]> {
+    const result = await this.getJobs(tenantId, { pageSize: 500 });
     return result.data;
   }
 
-  async getJobById(id: string): Promise<Job | null> {
+  async getJobById(tenantId: string, id: string): Promise<Job | null> {
     const docRef = doc(db, "jobs", id);
     const docSnap = await getDoc(docRef);
 
@@ -179,12 +181,20 @@ class JobService {
       return null;
     }
 
-    return mapJob(docSnap);
+    const job = mapJob(docSnap);
+
+    // Verify tenant ownership
+    if (job.tenantId !== tenantId) {
+      return null;
+    }
+
+    return job;
   }
 
-  async createJob(job: Omit<Job, "id">): Promise<string> {
+  async createJob(tenantId: string, job: Omit<Job, "id" | "tenantId">): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...job,
+      tenantId,
       postedDate: new Date().toISOString(),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
@@ -192,7 +202,13 @@ class JobService {
     return docRef.id;
   }
 
-  async updateJob(id: string, updates: Partial<Job>): Promise<boolean> {
+  async updateJob(tenantId: string, id: string, updates: Partial<Job>): Promise<boolean> {
+    // Verify ownership first
+    const existing = await this.getJobById(tenantId, id);
+    if (!existing) {
+      throw new Error("Job not found or access denied");
+    }
+
     const docRef = doc(db, "jobs", id);
     await updateDoc(docRef, {
       ...updates,
@@ -201,7 +217,13 @@ class JobService {
     return true;
   }
 
-  async deleteJob(id: string): Promise<boolean> {
+  async deleteJob(tenantId: string, id: string): Promise<boolean> {
+    // Verify ownership first
+    const existing = await this.getJobById(tenantId, id);
+    if (!existing) {
+      throw new Error("Job not found or access denied");
+    }
+
     const docRef = doc(db, "jobs", id);
     await deleteDoc(docRef);
     return true;
@@ -210,23 +232,23 @@ class JobService {
   /**
    * Get jobs by status (server-side filtered)
    */
-  async getJobsByStatus(status: JobStatus): Promise<Job[]> {
-    const result = await this.getJobs({ status, pageSize: 500 });
+  async getJobsByStatus(tenantId: string, status: JobStatus): Promise<Job[]> {
+    const result = await this.getJobs(tenantId, { status, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get open jobs only (server-side filtered)
    */
-  async getOpenJobs(): Promise<Job[]> {
-    return this.getJobsByStatus("open");
+  async getOpenJobs(tenantId: string): Promise<Job[]> {
+    return this.getJobsByStatus(tenantId, "open");
   }
 
   /**
    * Search jobs by text (client-side filtering)
    */
-  async searchJobs(searchTerm: string): Promise<Job[]> {
-    const result = await this.getJobs({ searchTerm, pageSize: 500 });
+  async searchJobs(tenantId: string, searchTerm: string): Promise<Job[]> {
+    const result = await this.getJobs(tenantId, { searchTerm, pageSize: 500 });
     return result.data;
   }
 }

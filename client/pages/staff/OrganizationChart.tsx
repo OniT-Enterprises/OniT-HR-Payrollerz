@@ -92,7 +92,7 @@ export default function OrganizationChart() {
         employeesData = await employeeService.getAllEmployees(tenantId);
         console.log("✅ Employees loaded:", employeesData.length);
 
-        departmentsData = await departmentService.getAllDepartments();
+        departmentsData = await departmentService.getAllDepartments(tenantId);
         console.log("✅ Departments loaded:", departmentsData.length);
         console.log(
           "📋 Department names:",
@@ -172,7 +172,7 @@ export default function OrganizationChart() {
         // Add departments one by one with individual error handling
         for (const deptName of validDepartments) {
           try {
-            await departmentService.addDepartment({
+            await departmentService.addDepartment(tenantId, {
               name: deptName,
               icon: "building",
               shape: "circle",
@@ -188,7 +188,7 @@ export default function OrganizationChart() {
         // Try to reload departments after migration
         try {
           const updatedDepartments =
-            await departmentService.getAllDepartments();
+            await departmentService.getAllDepartments(tenantId);
           setDepartments(updatedDepartments);
           buildAppleOrgChart(employees, updatedDepartments);
           console.log("✅ Migration completed successfully");

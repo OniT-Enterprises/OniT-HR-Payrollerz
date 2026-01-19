@@ -70,7 +70,7 @@ export default function Departments() {
       setLoading(true);
       const [employeesData, departmentsData] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
-        departmentService.getAllDepartments(),
+        departmentService.getAllDepartments(tenantId),
       ]);
       setEmployees(employeesData);
       setDepartments(departmentsData);
@@ -121,7 +121,7 @@ export default function Departments() {
       // Create missing departments only if we have employees but no departments
       if (validDepartments.length > 0 && existingDepartments.length === 0) {
         for (const deptName of validDepartments) {
-          await departmentService.addDepartment({
+          await departmentService.addDepartment(tenantId, {
             name: deptName,
             icon: "building",
             shape: "circle",
@@ -130,7 +130,7 @@ export default function Departments() {
         }
 
         // Reload the data after initial migration
-        const updatedDepartments = await departmentService.getAllDepartments();
+        const updatedDepartments = await departmentService.getAllDepartments(tenantId);
         setDepartments(updatedDepartments);
 
         toast({

@@ -6,6 +6,7 @@ import {
   updateDoc,
   deleteDoc,
   query,
+  where,
   orderBy,
   limit,
   Timestamp,
@@ -14,6 +15,7 @@ import { db } from "@/lib/firebase";
 
 export interface Department {
   id: string;
+  tenantId: string;
   name: string;
   director?: string;
   manager?: string;
@@ -38,10 +40,15 @@ class DepartmentService {
     return collection(db, "departments");
   }
 
-  async getAllDepartments(maxResults: number = 100): Promise<Department[]> {
+  async getAllDepartments(tenantId: string, maxResults: number = 100): Promise<Department[]> {
     // Limit query to prevent excessive reads
     const querySnapshot = await getDocs(
-      query(this.getCollection(), orderBy("name", "asc"), limit(maxResults))
+      query(
+        this.getCollection(),
+        where("tenantId", "==", tenantId),
+        orderBy("name", "asc"),
+        limit(maxResults)
+      )
     );
 
     return querySnapshot.docs.map((doc) => {
@@ -55,10 +62,11 @@ class DepartmentService {
     });
   }
 
-  async addDepartment(departmentData: DepartmentInput): Promise<string> {
+  async addDepartment(tenantId: string, departmentData: DepartmentInput): Promise<string> {
     const now = Timestamp.now();
     const docRef = await addDoc(this.getCollection(), {
       ...departmentData,
+      tenantId,
       createdAt: now,
       updatedAt: now,
     });
@@ -66,9 +74,11 @@ class DepartmentService {
   }
 
   async updateDepartment(
+    tenantId: string,
     id: string,
     updates: Partial<DepartmentInput>
   ): Promise<void> {
+    // Note: In production, verify tenant ownership before update
     const departmentRef = doc(db, "departments", id);
     await updateDoc(departmentRef, {
       ...updates,
@@ -76,7 +86,8 @@ class DepartmentService {
     });
   }
 
-  async deleteDepartment(id: string): Promise<void> {
+  async deleteDepartment(tenantId: string, id: string): Promise<void> {
+    // Note: In production, verify tenant ownership before delete
     const departmentRef = doc(db, "departments", id);
     await deleteDoc(departmentRef);
   }

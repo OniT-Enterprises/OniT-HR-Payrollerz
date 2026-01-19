@@ -32,6 +32,7 @@ export type AttendanceSource = 'manual' | 'fingerprint' | 'mobile_app' | 'qr_cod
 
 export interface AttendanceRecord {
   id?: string;
+  tenantId: string;
   employeeId: string;
   employeeName: string;
   department: string;
@@ -76,6 +77,7 @@ export interface AttendanceRecord {
 
 export interface AttendanceImportBatch {
   id?: string;
+  tenantId: string;
   fileName: string;
   deviceType: 'zkteco' | 'anviz' | 'hikvision' | 'suprema' | 'other';
   importDate: FirestoreTimestamp;
@@ -230,12 +232,14 @@ class AttendanceService {
    * Get attendance records for a date range
    */
   async getAttendanceByDateRange(
+    tenantId: string,
     startDate: string,
     endDate: string,
     department?: string
   ): Promise<AttendanceRecord[]> {
     let q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('date', '>=', startDate),
       where('date', '<=', endDate),
       orderBy('date', 'desc'),
@@ -261,14 +265,15 @@ class AttendanceService {
   /**
    * Get attendance for a specific date
    */
-  async getAttendanceByDate(date: string): Promise<AttendanceRecord[]> {
-    return this.getAttendanceByDateRange(date, date);
+  async getAttendanceByDate(tenantId: string, date: string): Promise<AttendanceRecord[]> {
+    return this.getAttendanceByDateRange(tenantId, date, date);
   }
 
   /**
    * Get employee's attendance for a month
    */
   async getEmployeeAttendance(
+    tenantId: string,
     employeeId: string,
     year: number,
     month: number
@@ -279,6 +284,7 @@ class AttendanceService {
 
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
       where('date', '>=', startDate),
       where('date', '<=', endDate),
@@ -298,7 +304,7 @@ class AttendanceService {
   /**
    * Create or update attendance record
    */
-  async markAttendance(data: {
+  async markAttendance(tenantId: string, data: {
     employeeId: string;
     employeeName: string;
     department: string;
@@ -311,7 +317,7 @@ class AttendanceService {
     notes?: string;
   }): Promise<string> {
     // Check if record already exists for this employee/date
-    const existing = await this.getExistingRecord(data.employeeId, data.date);
+    const existing = await this.getExistingRecord(tenantId, data.employeeId, data.date);
 
     // Calculate hours
     const breakMinutes = data.breakStart && data.breakEnd
@@ -328,6 +334,7 @@ class AttendanceService {
     const status = determineStatus(data.clockIn, data.clockOut, lateMinutes, totalHours);
 
     const record: Omit<AttendanceRecord, 'id'> = {
+      tenantId,
       employeeId: data.employeeId,
       employeeName: data.employeeName,
       department: data.department,
@@ -369,9 +376,10 @@ class AttendanceService {
   /**
    * Get existing record for employee/date
    */
-  private async getExistingRecord(employeeId: string, date: string): Promise<AttendanceRecord | null> {
+  private async getExistingRecord(tenantId: string, employeeId: string, date: string): Promise<AttendanceRecord | null> {
     const q = query(
       this.collectionRef,
+      where('tenantId', '==', tenantId),
       where('employeeId', '==', employeeId),
       where('date', '==', date),
       limit(1)
@@ -392,6 +400,7 @@ class AttendanceService {
    * Adjust attendance record
    */
   async adjustAttendance(
+    tenantId: string,
     recordId: string,
     adjustments: {
       clockIn?: string;
@@ -409,6 +418,11 @@ class AttendanceService {
     }
 
     const current = docSnap.data() as AttendanceRecord;
+
+    // Verify tenant ownership
+    if (current.tenantId !== tenantId) {
+      throw new Error('Access denied');
+    }
 
     // Calculate new hours if times changed
     const newClockIn = adjustments.clockIn || current.clockIn;
@@ -441,8 +455,18 @@ class AttendanceService {
   /**
    * Delete attendance record
    */
-  async deleteAttendance(recordId: string): Promise<boolean> {
-    await deleteDoc(doc(db, 'attendance', recordId));
+  async deleteAttendance(tenantId: string, recordId: string): Promise<boolean> {
+    const docRef = doc(db, 'attendance', recordId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.tenantId !== tenantId) {
+        throw new Error('Access denied');
+      }
+    }
+
+    await deleteDoc(docRef);
     return true;
   }
 
@@ -450,6 +474,7 @@ class AttendanceService {
    * Import attendance from fingerprint device
    */
   async importFromDevice(
+    tenantId: string,
     records: {
       employeeId: string;
       employeeName: string;
@@ -478,7 +503,7 @@ class AttendanceService {
     for (const record of records) {
       try {
         // Check for duplicate
-        const existing = await this.getExistingRecord(record.employeeId, record.date);
+        const existing = await this.getExistingRecord(tenantId, record.employeeId, record.date);
 
         if (existing) {
           duplicateCount++;
@@ -495,6 +520,7 @@ class AttendanceService {
         const attendanceRef = doc(this.collectionRef);
         batch.set(attendanceRef, {
           ...record,
+          tenantId,
           regularHours: regular,
           overtimeHours: overtime,
           lateMinutes,
@@ -519,6 +545,7 @@ class AttendanceService {
     // Save import batch record
     batch.set(importRef, {
       ...metadata,
+      tenantId,
       recordCount: records.length,
       successCount,
       errorCount,
@@ -541,13 +568,14 @@ class AttendanceService {
    * Get attendance summary for an employee
    */
   async getEmployeeSummary(
+    tenantId: string,
     employeeId: string,
     employeeName: string,
     department: string,
     startDate: string,
     endDate: string
   ): Promise<AttendanceSummary> {
-    const records = await this.getAttendanceByDateRange(startDate, endDate);
+    const records = await this.getAttendanceByDateRange(tenantId, startDate, endDate);
     const employeeRecords = records.filter(r => r.employeeId === employeeId);
 
     // Calculate working days (excluding weekends)
@@ -586,8 +614,8 @@ class AttendanceService {
   /**
    * Get daily attendance report
    */
-  async getDailyReport(date: string, totalEmployees: number): Promise<DailyAttendanceReport> {
-    const records = await this.getAttendanceByDate(date);
+  async getDailyReport(tenantId: string, date: string, totalEmployees: number): Promise<DailyAttendanceReport> {
+    const records = await this.getAttendanceByDate(tenantId, date);
 
     const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
     const absent = records.filter(r => r.status === 'absent').length;
@@ -608,9 +636,10 @@ class AttendanceService {
   /**
    * Get import history
    */
-  async getImportHistory(limitCount: number = 20): Promise<AttendanceImportBatch[]> {
+  async getImportHistory(tenantId: string, limitCount: number = 20): Promise<AttendanceImportBatch[]> {
     const q = query(
       this.importsRef,
+      where('tenantId', '==', tenantId),
       orderBy('createdAt', 'desc'),
       limit(limitCount)
     );

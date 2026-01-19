@@ -34,6 +34,7 @@ import {
   PieChart,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 interface DepartmentStats {
   department: Department;
@@ -45,7 +46,8 @@ interface DepartmentStats {
 }
 
 export default function DepartmentReports() {
-  const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(100);
+  const tenantId = useTenantId();
+  const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(tenantId, 100);
   const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();

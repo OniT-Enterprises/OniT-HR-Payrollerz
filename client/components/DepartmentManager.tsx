@@ -112,7 +112,7 @@ export default function DepartmentManager({
     try {
       setLoading(true);
       const [deptData, empData] = await Promise.all([
-        departmentService.getAllDepartments(),
+        departmentService.getAllDepartments(tenantId),
         employeeService.getAllEmployees(tenantId),
       ]);
       setDepartments(deptData);
@@ -167,14 +167,14 @@ export default function DepartmentManager({
       };
 
       if (editingDept) {
-        await departmentService.updateDepartment(editingDept.id, dataToSave);
+        await departmentService.updateDepartment(tenantId, editingDept.id, dataToSave);
         toast({
           title: "Department Updated",
           description:
             "Changes will be reflected in both the Organization Chart and Departments page",
         });
       } else {
-        await departmentService.addDepartment(dataToSave);
+        await departmentService.addDepartment(tenantId, dataToSave);
         toast({
           title: "Department Added",
           description:
@@ -224,7 +224,7 @@ export default function DepartmentManager({
     }
 
     try {
-      await departmentService.deleteDepartment(department.id);
+      await departmentService.deleteDepartment(tenantId, department.id);
       toast({
         title: "Department Deleted",
         description:

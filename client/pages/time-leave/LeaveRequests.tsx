@@ -129,9 +129,9 @@ export default function LeaveRequests() {
       try {
         const [empData, deptData, requestsData, balancesData] = await Promise.all([
           employeeService.getAllEmployees(tenantId),
-          departmentService.getAllDepartments(),
-          leaveService.getLeaveRequests(),
-          leaveService.getAllBalances(),
+          departmentService.getAllDepartments(tenantId),
+          leaveService.getLeaveRequests(tenantId),
+          leaveService.getAllBalances(tenantId),
         ]);
 
         setEmployees(empData);
@@ -234,7 +234,7 @@ export default function LeaveRequests() {
         (d) => d.name === employee.jobDetails?.department
       );
 
-      await leaveService.createLeaveRequest({
+      await leaveService.createLeaveRequest(tenantId, {
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department:
@@ -260,8 +260,8 @@ export default function LeaveRequests() {
 
       // Refresh data
       const [requestsData, balancesData] = await Promise.all([
-        leaveService.getLeaveRequests(),
-        leaveService.getAllBalances(),
+        leaveService.getLeaveRequests(tenantId),
+        leaveService.getAllBalances(tenantId),
       ]);
       setLeaveRequests(requestsData);
       setLeaveBalances(balancesData);
@@ -296,6 +296,7 @@ export default function LeaveRequests() {
     try {
       // TODO: Get actual approver from auth context
       await leaveService.approveLeaveRequest(
+        tenantId,
         request.id!,
         "admin",
         "HR Admin"
@@ -309,7 +310,7 @@ export default function LeaveRequests() {
       });
 
       // Refresh data
-      const requestsData = await leaveService.getLeaveRequests();
+      const requestsData = await leaveService.getLeaveRequests(tenantId);
       setLeaveRequests(requestsData);
     } catch (error) {
       console.error("Error approving request:", error);
@@ -337,6 +338,7 @@ export default function LeaveRequests() {
     setSaving(true);
     try {
       await leaveService.rejectLeaveRequest(
+        tenantId,
         selectedRequest.id!,
         "admin",
         "HR Admin",
@@ -351,7 +353,7 @@ export default function LeaveRequests() {
       });
 
       // Refresh data
-      const requestsData = await leaveService.getLeaveRequests();
+      const requestsData = await leaveService.getLeaveRequests(tenantId);
       setLeaveRequests(requestsData);
 
       setShowRejectDialog(false);

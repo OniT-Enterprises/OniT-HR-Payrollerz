@@ -24,6 +24,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 import { departmentService, Department } from "@/services/departmentService";
 import { jobService } from "@/services/jobService";
 import {
@@ -54,6 +55,7 @@ export default function CreateJobLocal() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -80,7 +82,7 @@ export default function CreateJobLocal() {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const depts = await departmentService.getAllDepartments();
+        const depts = await departmentService.getAllDepartments(tenantId);
         setDepartments(depts);
         setError(null);
       } catch (err) {
@@ -143,7 +145,7 @@ export default function CreateJobLocal() {
         salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
       };
 
-      await jobService.createJob(jobData);
+      await jobService.createJob(tenantId, jobData);
 
       toast({
         title: t("hiring.createJob.errors.createdTitle"),

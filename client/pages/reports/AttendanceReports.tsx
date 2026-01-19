@@ -35,11 +35,13 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenantId } from "@/contexts/TenantContext";
 
 export default function AttendanceReports() {
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   // Calculate date range for queries
   const dateParams = useMemo(() => {
@@ -58,21 +60,21 @@ export default function AttendanceReports() {
   // Fetch attendance data with React Query
   const { data: attendanceRecords = [], isLoading: attendanceLoading } = useQuery({
     queryKey: ['attendance', dateParams.startDate, dateParams.endDate],
-    queryFn: () => attendanceService.getAttendanceByDateRange(dateParams.startDate, dateParams.endDate),
+    queryFn: () => attendanceService.getAttendanceByDateRange(tenantId, dateParams.startDate, dateParams.endDate),
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch leave requests with React Query
   const { data: leaveRequests = [], isLoading: leaveLoading } = useQuery({
     queryKey: ['leaveRequests'],
-    queryFn: () => leaveService.getLeaveRequests(),
+    queryFn: () => leaveService.getLeaveRequests(tenantId),
     staleTime: 5 * 60 * 1000,
   });
 
   // Fetch leave balances with React Query
   const { data: leaveBalances = [], isLoading: balancesLoading } = useQuery({
     queryKey: ['leaveBalances'],
-    queryFn: () => leaveService.getAllBalances(),
+    queryFn: () => leaveService.getAllBalances(tenantId),
     staleTime: 5 * 60 * 1000,
   });
 

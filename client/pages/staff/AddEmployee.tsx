@@ -255,7 +255,7 @@ export default function AddEmployee() {
   const loadDepartmentsAndManagers = async () => {
     try {
       const [depts, employees] = await Promise.all([
-        departmentService.getAllDepartments(),
+        departmentService.getAllDepartments(tenantId),
         employeeService.getAllEmployees(tenantId),
       ]);
       setDepartments(depts);

@@ -45,6 +45,7 @@ export type LeaveStatus =
 
 export interface LeaveRequest {
   id?: string;
+  tenantId: string;
   employeeId: string;
   employeeName: string;
   department: string;
@@ -82,6 +83,7 @@ export interface LeaveRequest {
 
 export interface LeaveBalance {
   id?: string;
+  tenantId: string;
   employeeId: string;
   employeeName: string;
   year: number;
@@ -257,7 +259,8 @@ class LeaveService {
    * Create a new leave request
    */
   async createLeaveRequest(
-    request: Omit<LeaveRequest, 'id' | 'status' | 'requestDate' | 'createdAt' | 'updatedAt'>
+    tenantId: string,
+    request: Omit<LeaveRequest, 'id' | 'tenantId' | 'status' | 'requestDate' | 'createdAt' | 'updatedAt'>
   ): Promise<string> {
     try {
       // Calculate duration if not provided
@@ -265,6 +268,7 @@ class LeaveService {
 
       const docRef = await addDoc(collection(db, LEAVE_REQUESTS_COLLECTION), {
         ...request,
+        tenantId,
         duration,
         status: 'pending' as LeaveStatus,
         requestDate: new Date().toISOString().split('T')[0],
@@ -273,7 +277,7 @@ class LeaveService {
       });
 
       // Update pending balance
-      await this.updatePendingBalance(request.employeeId, request.leaveType, duration);
+      await this.updatePendingBalance(tenantId, request.employeeId, request.leaveType, duration);
 
       return docRef.id;
     } catch (error) {
@@ -285,13 +289,17 @@ class LeaveService {
   /**
    * Get leave request by ID
    */
-  async getLeaveRequest(requestId: string): Promise<LeaveRequest | null> {
+  async getLeaveRequest(tenantId: string, requestId: string): Promise<LeaveRequest | null> {
     try {
       const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
       const docSnap = await getDoc(docRef);
 
       if (docSnap.exists()) {
         const data = docSnap.data();
+        // Verify tenant ownership
+        if (data.tenantId !== tenantId) {
+          return null;
+        }
         return {
           ...data,
           id: docSnap.id,
@@ -310,7 +318,7 @@ class LeaveService {
   /**
    * Get all leave requests with optional filters
    */
-  async getLeaveRequests(filters?: {
+  async getLeaveRequests(tenantId: string, filters?: {
     status?: LeaveStatus;
     employeeId?: string;
     departmentId?: string;
@@ -320,6 +328,7 @@ class LeaveService {
     try {
       let q = query(
         collection(db, LEAVE_REQUESTS_COLLECTION),
+        where('tenantId', '==', tenantId),
         orderBy('requestDate', 'desc')
       );
 
@@ -368,12 +377,13 @@ class LeaveService {
    * Approve a leave request
    */
   async approveLeaveRequest(
+    tenantId: string,
     requestId: string,
     approverId: string,
     approverName: string
   ): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(requestId);
+      const request = await this.getLeaveRequest(tenantId, requestId);
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Request is not pending');
 
@@ -388,6 +398,7 @@ class LeaveService {
 
       // Move from pending to used in balance
       await this.updateBalanceOnApproval(
+        tenantId,
         request.employeeId,
         request.leaveType,
         request.duration
@@ -402,13 +413,14 @@ class LeaveService {
    * Reject a leave request
    */
   async rejectLeaveRequest(
+    tenantId: string,
     requestId: string,
     approverId: string,
     approverName: string,
     rejectionReason: string
   ): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(requestId);
+      const request = await this.getLeaveRequest(tenantId, requestId);
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Request is not pending');
 
@@ -423,6 +435,7 @@ class LeaveService {
 
       // Remove from pending balance
       await this.updatePendingBalance(
+        tenantId,
         request.employeeId,
         request.leaveType,
         -request.duration
@@ -436,9 +449,9 @@ class LeaveService {
   /**
    * Cancel a leave request (by employee before approval)
    */
-  async cancelLeaveRequest(requestId: string): Promise<void> {
+  async cancelLeaveRequest(tenantId: string, requestId: string): Promise<void> {
     try {
-      const request = await this.getLeaveRequest(requestId);
+      const request = await this.getLeaveRequest(tenantId, requestId);
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Only pending requests can be cancelled');
 
@@ -450,6 +463,7 @@ class LeaveService {
 
       // Remove from pending balance
       await this.updatePendingBalance(
+        tenantId,
         request.employeeId,
         request.leaveType,
         -request.duration
@@ -463,8 +477,8 @@ class LeaveService {
   /**
    * Get pending requests for approval (for managers)
    */
-  async getPendingRequests(departmentId?: string): Promise<LeaveRequest[]> {
-    return this.getLeaveRequests({
+  async getPendingRequests(tenantId: string, departmentId?: string): Promise<LeaveRequest[]> {
+    return this.getLeaveRequests(tenantId, {
       status: 'pending',
       departmentId
     });
@@ -473,8 +487,8 @@ class LeaveService {
   /**
    * Get requests by employee
    */
-  async getEmployeeRequests(employeeId: string): Promise<LeaveRequest[]> {
-    return this.getLeaveRequests({ employeeId });
+  async getEmployeeRequests(tenantId: string, employeeId: string): Promise<LeaveRequest[]> {
+    return this.getLeaveRequests(tenantId, { employeeId });
   }
 
   // ----------------------------------------
@@ -484,12 +498,13 @@ class LeaveService {
   /**
    * Get or initialize leave balance for an employee
    */
-  async getLeaveBalance(employeeId: string, year?: number): Promise<LeaveBalance | null> {
+  async getLeaveBalance(tenantId: string, employeeId: string, year?: number): Promise<LeaveBalance | null> {
     const targetYear = year || new Date().getFullYear();
 
     try {
       const q = query(
         collection(db, LEAVE_BALANCES_COLLECTION),
+        where('tenantId', '==', tenantId),
         where('employeeId', '==', employeeId),
         where('year', '==', targetYear)
       );
@@ -517,6 +532,7 @@ class LeaveService {
    * Initialize leave balance for a new employee or new year
    */
   async initializeLeaveBalance(
+    tenantId: string,
     employeeId: string,
     employeeName: string,
     year?: number,
@@ -526,6 +542,7 @@ class LeaveService {
 
     // Default TL entitlements
     const defaultBalance: Omit<LeaveBalance, 'id'> = {
+      tenantId,
       employeeId,
       employeeName,
       year: targetYear,
@@ -563,11 +580,12 @@ class LeaveService {
    * Update pending balance when request is created/cancelled
    */
   private async updatePendingBalance(
+    tenantId: string,
     employeeId: string,
     leaveType: LeaveType,
     days: number
   ): Promise<void> {
-    const balance = await this.getLeaveBalance(employeeId);
+    const balance = await this.getLeaveBalance(tenantId, employeeId);
     if (!balance) return;
 
     const typeKey = leaveType as keyof LeaveBalance;
@@ -594,11 +612,12 @@ class LeaveService {
    * Update balance when request is approved
    */
   private async updateBalanceOnApproval(
+    tenantId: string,
     employeeId: string,
     leaveType: LeaveType,
     days: number
   ): Promise<void> {
-    const balance = await this.getLeaveBalance(employeeId);
+    const balance = await this.getLeaveBalance(tenantId, employeeId);
     if (!balance) return;
 
     const typeKey = leaveType as keyof LeaveBalance;
@@ -626,12 +645,13 @@ class LeaveService {
   /**
    * Get all employee balances (for admin view)
    */
-  async getAllBalances(year?: number): Promise<LeaveBalance[]> {
+  async getAllBalances(tenantId: string, year?: number): Promise<LeaveBalance[]> {
     const targetYear = year || new Date().getFullYear();
 
     try {
       const q = query(
         collection(db, LEAVE_BALANCES_COLLECTION),
+        where('tenantId', '==', tenantId),
         where('year', '==', targetYear)
       );
 
@@ -661,9 +681,9 @@ class LeaveService {
   /**
    * Get leave statistics
    */
-  async getLeaveStats(): Promise<LeaveStats> {
+  async getLeaveStats(tenantId: string): Promise<LeaveStats> {
     try {
-      const allRequests = await this.getLeaveRequests();
+      const allRequests = await this.getLeaveRequests(tenantId);
       const today = new Date().toISOString().split('T')[0];
 
       const pendingRequests = allRequests.filter(r => r.status === 'pending').length;
@@ -691,9 +711,9 @@ class LeaveService {
   /**
    * Get employees on leave for a date range
    */
-  async getEmployeesOnLeave(startDate: string, endDate: string): Promise<LeaveRequest[]> {
+  async getEmployeesOnLeave(tenantId: string, startDate: string, endDate: string): Promise<LeaveRequest[]> {
     try {
-      const approvedRequests = await this.getLeaveRequests({ status: 'approved' });
+      const approvedRequests = await this.getLeaveRequests(tenantId, { status: 'approved' });
 
       return approvedRequests.filter(req => {
         // Check if leave period overlaps with query period
@@ -709,6 +729,7 @@ class LeaveService {
    * Get leave summary by department
    */
   async getLeaveSummaryByDepartment(
+    tenantId: string,
     departmentId: string,
     year?: number
   ): Promise<{
@@ -721,7 +742,7 @@ class LeaveService {
     const yearEnd = `${targetYear}-12-31`;
 
     try {
-      const requests = await this.getLeaveRequests({
+      const requests = await this.getLeaveRequests(tenantId, {
         departmentId,
         status: 'approved',
         startDate: yearStart,

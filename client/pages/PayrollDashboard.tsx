@@ -192,7 +192,7 @@ export default function PayrollDashboard() {
 
       const [employees, leaveStats] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
-        leaveService.getLeaveStats(),
+        leaveService.getLeaveStats(tenantId),
       ]);
 
       const activeEmployees = employees.filter((e) => e.status === "active");

@@ -22,6 +22,7 @@ export type CandidateStatus = "New" | "Under Review" | "Shortlisted" | "Rejected
 
 export interface Candidate {
   id?: string;
+  tenantId: string;
   name: string;
   email: string;
   phone: string;
@@ -94,7 +95,7 @@ class CandidateService {
   /**
    * Get candidates with server-side filtering and pagination
    */
-  async getCandidates(filters: CandidateFilters = {}): Promise<PaginatedResult<Candidate>> {
+  async getCandidates(tenantId: string, filters: CandidateFilters = {}): Promise<PaginatedResult<Candidate>> {
     const {
       status,
       position,
@@ -105,7 +106,9 @@ class CandidateService {
       maxScore,
     } = filters;
 
-    const constraints: QueryConstraint[] = [];
+    const constraints: QueryConstraint[] = [
+      where("tenantId", "==", tenantId),
+    ];
 
     // Server-side filters
     if (status) {
@@ -166,15 +169,14 @@ class CandidateService {
   }
 
   /**
-   * Get all candidates
-   * @deprecated Use getCandidates() with filters for better performance
+   * Get all candidates for a tenant
    */
-  async getAllCandidates(): Promise<Candidate[]> {
-    const result = await this.getCandidates({ pageSize: 500 });
+  async getAllCandidates(tenantId: string): Promise<Candidate[]> {
+    const result = await this.getCandidates(tenantId, { pageSize: 500 });
     return result.data;
   }
 
-  async getCandidateById(id: string): Promise<Candidate | null> {
+  async getCandidateById(tenantId: string, id: string): Promise<Candidate | null> {
     const docRef = doc(db, "candidates", id);
     const docSnap = await getDoc(docRef);
 
@@ -182,12 +184,20 @@ class CandidateService {
       return null;
     }
 
-    return mapCandidate(docSnap);
+    const candidate = mapCandidate(docSnap);
+
+    // Verify tenant ownership
+    if (candidate.tenantId !== tenantId) {
+      return null;
+    }
+
+    return candidate;
   }
 
-  async addCandidate(candidate: Omit<Candidate, "id">): Promise<string> {
+  async addCandidate(tenantId: string, candidate: Omit<Candidate, "id" | "tenantId">): Promise<string> {
     const docRef = await addDoc(this.collectionRef, {
       ...candidate,
+      tenantId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
@@ -195,9 +205,16 @@ class CandidateService {
   }
 
   async updateCandidate(
+    tenantId: string,
     id: string,
     updates: Partial<Candidate>
   ): Promise<boolean> {
+    // Verify ownership first
+    const existing = await this.getCandidateById(tenantId, id);
+    if (!existing) {
+      throw new Error("Candidate not found or access denied");
+    }
+
     const docRef = doc(db, "candidates", id);
     await updateDoc(docRef, {
       ...updates,
@@ -206,7 +223,13 @@ class CandidateService {
     return true;
   }
 
-  async deleteCandidate(id: string): Promise<boolean> {
+  async deleteCandidate(tenantId: string, id: string): Promise<boolean> {
+    // Verify ownership first
+    const existing = await this.getCandidateById(tenantId, id);
+    if (!existing) {
+      throw new Error("Candidate not found or access denied");
+    }
+
     const docRef = doc(db, "candidates", id);
     await deleteDoc(docRef);
     return true;
@@ -215,24 +238,24 @@ class CandidateService {
   /**
    * Get candidates by status (server-side filtered)
    */
-  async getCandidatesByStatus(status: CandidateStatus): Promise<Candidate[]> {
-    const result = await this.getCandidates({ status, pageSize: 500 });
+  async getCandidatesByStatus(tenantId: string, status: CandidateStatus): Promise<Candidate[]> {
+    const result = await this.getCandidates(tenantId, { status, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Get candidates by position (server-side filtered)
    */
-  async getCandidatesByPosition(position: string): Promise<Candidate[]> {
-    const result = await this.getCandidates({ position, pageSize: 500 });
+  async getCandidatesByPosition(tenantId: string, position: string): Promise<Candidate[]> {
+    const result = await this.getCandidates(tenantId, { position, pageSize: 500 });
     return result.data;
   }
 
   /**
    * Search candidates by text (client-side filtering)
    */
-  async searchCandidates(searchTerm: string): Promise<Candidate[]> {
-    const result = await this.getCandidates({ searchTerm, pageSize: 500 });
+  async searchCandidates(tenantId: string, searchTerm: string): Promise<Candidate[]> {
+    const result = await this.getCandidates(tenantId, { searchTerm, pageSize: 500 });
     return result.data;
   }
 }

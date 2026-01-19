@@ -142,6 +142,11 @@ const SAMPLE_REPORTS: ReportConfig[] = [
 ];
 
 export default function CustomReports() {
+  const { toast } = useToast();
+  const { t } = useI18n();
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+
   const [savedReports, setSavedReports] = useState<ReportConfig[]>(SAMPLE_REPORTS);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
   const [previewData, setPreviewData] = useState<any[] | null>(null);
@@ -149,8 +154,7 @@ export default function CustomReports() {
   const [loading, setLoading] = useState(false);
 
   // Fetch departments with React Query hook
-  const { data: departments = [] } = useAllDepartments(100);
-  const queryClient = useQueryClient();
+  const { data: departments = [] } = useAllDepartments(tenantId, 100);
 
   // Builder state
   const [reportName, setReportName] = useState("");
@@ -160,10 +164,6 @@ export default function CustomReports() {
   const [filterDepartment, setFilterDepartment] = useState<string>("");
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterDateRange, setFilterDateRange] = useState<string>("30");
-
-  const { toast } = useToast();
-  const { t } = useI18n();
-  const tenantId = useTenantId();
 
   const availableColumns = COLUMN_OPTIONS.filter((c) => c.dataSource === dataSource);
 
@@ -216,6 +216,7 @@ export default function CustomReports() {
         let attendance = queryClient.getQueryData<AttendanceRecord[]>(['attendance', startDateStr, endDateStr]);
         if (!attendance) {
           attendance = await attendanceService.getAttendanceByDateRange(
+            tenantId,
             startDateStr,
             endDateStr,
             config.filters.department || undefined
@@ -229,7 +230,7 @@ export default function CustomReports() {
         // Try React Query cache first
         let depts = queryClient.getQueryData<Department[]>(['departments', 'list', { maxResults: 100 }]);
         if (!depts) {
-          depts = await departmentService.getAllDepartments();
+          depts = await departmentService.getAllDepartments(tenantId);
           queryClient.setQueryData(['departments', 'list', { maxResults: 100 }], depts);
         }
         data = depts;

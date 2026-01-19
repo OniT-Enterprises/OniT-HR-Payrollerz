@@ -25,6 +25,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
@@ -106,6 +107,7 @@ export default function CandidateSelection() {
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
 
   // Load candidates from Firebase on component mount
   useEffect(() => {
@@ -115,7 +117,7 @@ export default function CandidateSelection() {
   const loadCandidates = async () => {
     try {
       setLoading(true);
-      const candidatesData = await candidateService.getAllCandidates();
+      const candidatesData = await candidateService.getAllCandidates(tenantId);
       setCandidates(candidatesData);
     } catch (error) {
       console.error("Error loading candidates:", error);
@@ -175,6 +177,7 @@ export default function CandidateSelection() {
 
     try {
       const newCandidate: Omit<Candidate, "id"> = {
+        tenantId,
         name: importedData.name,
         email: importedData.email,
         phone: importedData.phone,
@@ -196,7 +199,7 @@ export default function CandidateSelection() {
         totalScore: Math.floor(Math.random() * 2) + 7.5, // Random score 7.5-8.5
       };
 
-      const candidateId = await candidateService.addCandidate(newCandidate);
+      const candidateId = await candidateService.addCandidate(tenantId, newCandidate);
 
       if (candidateId) {
         toast({

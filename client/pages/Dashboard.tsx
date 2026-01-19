@@ -183,7 +183,7 @@ export default function Dashboard() {
 
       const [employeesResult, leaveStatsResult] = await Promise.allSettled([
         employeeService.getAllEmployees(tenantId),
-        leaveService.getLeaveStats(),
+        leaveService.getLeaveStats(tenantId),
       ]);
 
       if (employeesResult.status === 'fulfilled') {

@@ -12,26 +12,28 @@ import {
 export const departmentKeys = {
   all: ['departments'] as const,
   lists: () => [...departmentKeys.all, 'list'] as const,
-  list: (maxResults?: number) => [...departmentKeys.lists(), { maxResults }] as const,
+  list: (tenantId: string, maxResults?: number) => [...departmentKeys.lists(), { tenantId, maxResults }] as const,
   details: () => [...departmentKeys.all, 'detail'] as const,
   detail: (id: string) => [...departmentKeys.details(), id] as const,
 };
 
-export function useDepartments(maxResults: number = 100) {
+export function useDepartments(tenantId: string, maxResults: number = 100) {
   return useQuery({
-    queryKey: departmentKeys.list(maxResults),
-    queryFn: () => departmentService.getAllDepartments(maxResults),
+    queryKey: departmentKeys.list(tenantId, maxResults),
+    queryFn: () => departmentService.getAllDepartments(tenantId, maxResults),
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 30 * 60 * 1000, // 30 minutes
+    enabled: !!tenantId,
   });
 }
 
-export function useAllDepartments(maxResults: number = 100) {
+export function useAllDepartments(tenantId: string, maxResults: number = 100) {
   return useQuery({
-    queryKey: departmentKeys.list(maxResults),
-    queryFn: () => departmentService.getAllDepartments(maxResults),
+    queryKey: departmentKeys.list(tenantId, maxResults),
+    queryFn: () => departmentService.getAllDepartments(tenantId, maxResults),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
   });
 }
 
@@ -39,7 +41,8 @@ export function useCreateDepartment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: DepartmentInput) => departmentService.addDepartment(data),
+    mutationFn: ({ tenantId, data }: { tenantId: string; data: DepartmentInput }) =>
+      departmentService.addDepartment(tenantId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.all });
     },
@@ -50,8 +53,8 @@ export function useUpdateDepartment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<DepartmentInput> }) =>
-      departmentService.updateDepartment(id, data),
+    mutationFn: ({ tenantId, id, data }: { tenantId: string; id: string; data: Partial<DepartmentInput> }) =>
+      departmentService.updateDepartment(tenantId, id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.all });
     },
@@ -62,7 +65,8 @@ export function useDeleteDepartment() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => departmentService.deleteDepartment(id),
+    mutationFn: ({ tenantId, id }: { tenantId: string; id: string }) =>
+      departmentService.deleteDepartment(tenantId, id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: departmentKeys.all });
     },

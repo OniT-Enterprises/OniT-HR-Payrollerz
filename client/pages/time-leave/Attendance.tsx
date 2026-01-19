@@ -119,8 +119,8 @@ export default function Attendance() {
 
         const [emps, depts, records] = await Promise.all([
           employeeService.getAllEmployees(tenantId),
-          departmentService.getAllDepartments(),
-          attendanceService.getAttendanceByDate(selectedDate),
+          departmentService.getAllDepartments(tenantId),
+          attendanceService.getAttendanceByDate(tenantId, selectedDate),
         ]);
 
         setEmployees(emps.filter(e => e.status === 'active'));
@@ -268,7 +268,7 @@ export default function Attendance() {
     try {
       setSaving(true);
 
-      await attendanceService.markAttendance({
+      await attendanceService.markAttendance(tenantId, {
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department: employee.jobDetails.department,
@@ -285,7 +285,7 @@ export default function Attendance() {
       });
 
       // Reload records
-      const records = await attendanceService.getAttendanceByDate(selectedDate);
+      const records = await attendanceService.getAttendanceByDate(tenantId, selectedDate);
       setAttendanceRecords(records);
 
       setFormData({
@@ -419,7 +419,7 @@ export default function Attendance() {
         return;
       }
 
-      const result = await attendanceService.importFromDevice(records, {
+      const result = await attendanceService.importFromDevice(tenantId, records, {
         fileName: importFile.name,
         deviceType: "other",
         importedBy: "current_user", // Would get from auth context
@@ -435,7 +435,7 @@ export default function Attendance() {
       });
 
       // Reload records
-      const updatedRecords = await attendanceService.getAttendanceByDate(selectedDate);
+      const updatedRecords = await attendanceService.getAttendanceByDate(tenantId, selectedDate);
       setAttendanceRecords(updatedRecords);
 
       setImportFile(null);
