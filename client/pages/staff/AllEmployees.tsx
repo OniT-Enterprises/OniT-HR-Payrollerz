@@ -126,7 +126,19 @@ export default function AllEmployees() {
       // Show the filter banner when coming from a link
       setShowFilters(true);
     }
-  }, [searchParams]);
+
+    // Handle direct employee link (e.g., ?id=xxx&tab=documents)
+    const employeeId = searchParams.get("id");
+    if (employeeId && employees.length > 0) {
+      const employee = employees.find(e => e.id === employeeId);
+      if (employee) {
+        setSelectedEmployee(employee);
+        setShowProfileView(true);
+        // Clear the URL params after opening
+        setSearchParams({});
+      }
+    }
+  }, [searchParams, employees]);
 
   // Filter employees using useMemo for performance
   const filteredEmployees = useMemo(() => {
