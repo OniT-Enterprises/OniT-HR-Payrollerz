@@ -274,6 +274,43 @@ export const journalEntrySchema = z.object({
 export type JournalEntryFormData = z.infer<typeof journalEntrySchema>;
 
 // ============================================
+// SETTINGS SCHEMAS
+// ============================================
+
+/**
+ * Company Details form schema (Settings page)
+ */
+export const companyDetailsFormSchema = z.object({
+  legalName: z.string().min(1, 'Legal name is required').max(200),
+  tradingName: z.string().optional().or(z.literal('')),
+  businessType: z.enum(['SA', 'Lda', 'Unipessoal', 'ENIN', 'NGO', 'Government', 'Other']).default('Lda'),
+  tinNumber: z.string().max(50).optional().or(z.literal('')),
+  registeredAddress: z.string().max(500).optional().or(z.literal('')),
+  city: z.string().max(100).default('Dili'),
+  country: z.string().max(100).default('Timor-Leste'),
+  phone: z.string().max(30).optional().or(z.literal('')),
+  email: z.string().email('Invalid email address').optional().or(z.literal('')),
+});
+
+export type CompanyDetailsFormData = z.infer<typeof companyDetailsFormSchema>;
+
+/**
+ * Holiday Override form schema (Settings page - Time Off tab)
+ */
+export const holidayOverrideFormSchema = z.object({
+  date: z.string().min(1, 'Date is required'),
+  name: z.string().max(200).optional().or(z.literal('')),
+  nameTetun: z.string().max(200).optional().or(z.literal('')),
+  isHoliday: z.boolean().default(true),
+  notes: z.string().max(500).optional().or(z.literal('')),
+}).refine(
+  (data) => !data.isHoliday || data.name?.trim(),
+  { message: 'Holiday name is required when adding a holiday', path: ['name'] }
+);
+
+export type HolidayOverrideFormData = z.infer<typeof holidayOverrideFormSchema>;
+
+// ============================================
 // HELPER FUNCTIONS
 // ============================================
 

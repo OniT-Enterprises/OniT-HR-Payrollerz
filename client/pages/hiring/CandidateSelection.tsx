@@ -58,6 +58,12 @@ export default function CandidateSelection() {
     coverLetter: null as File | null,
   });
 
+  // Search and filter state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [positionFilter, setPositionFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [showFilterPanel, setShowFilterPanel] = useState(false);
+
   // Sample realistic candidate data for AI extraction
   const sampleCandidates = [
     {
@@ -129,6 +135,46 @@ export default function CandidateSelection() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Filter candidates based on search and filters
+  const getFilteredCandidates = () => {
+    let filtered = [...candidates];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (c) =>
+          c.name.toLowerCase().includes(query) ||
+          c.email.toLowerCase().includes(query) ||
+          (c.phone && c.phone.toLowerCase().includes(query)) ||
+          (c.position && c.position.toLowerCase().includes(query))
+      );
+    }
+
+    // Position filter
+    if (positionFilter) {
+      filtered = filtered.filter(
+        (c) => c.position && c.position.toLowerCase().includes(positionFilter.toLowerCase())
+      );
+    }
+
+    // Status filter
+    if (statusFilter) {
+      filtered = filtered.filter((c) => c.status === statusFilter);
+    }
+
+    return filtered;
+  };
+
+  const filteredCandidates = getFilteredCandidates();
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSearchQuery("");
+    setPositionFilter("");
+    setStatusFilter("");
   };
 
   // AI extraction function - simulates real AI processing with realistic data
@@ -389,31 +435,53 @@ export default function CandidateSelection() {
               <Input
                 placeholder={t("hiring.candidates.controls.searchPlaceholder")}
                 className="pl-9 w-64"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button size="sm">{t("hiring.candidates.controls.search")}</Button>
+            {(searchQuery || positionFilter || statusFilter) && (
+              <Button size="sm" variant="ghost" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
-            <select className="px-4 py-2 border rounded-md bg-background min-w-[200px] h-9">
+            <select
+              className="px-4 py-2 border rounded-md bg-background min-w-[200px] h-9"
+              value={positionFilter}
+              onChange={(e) => setPositionFilter(e.target.value)}
+            >
               <option value="">
                 {t("hiring.candidates.controls.selectPosition")}
               </option>
-              <option value="senior-software-engineer">
+              <option value="Senior Software Engineer">
                 {t("hiring.candidates.positions.seniorSoftwareEngineer")}
               </option>
-              <option value="marketing-manager">
+              <option value="Marketing Manager">
                 {t("hiring.candidates.positions.marketingManager")}
               </option>
-              <option value="hr-specialist">
+              <option value="HR Specialist">
                 {t("hiring.candidates.positions.hrSpecialist")}
               </option>
-              <option value="data-analyst">
+              <option value="Data Analyst">
                 {t("hiring.candidates.positions.dataAnalyst")}
               </option>
-              <option value="product-manager">
+              <option value="Product Manager">
                 {t("hiring.candidates.positions.productManager")}
               </option>
+            </select>
+
+            <select
+              className="px-4 py-2 border rounded-md bg-background min-w-[150px] h-9"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Statuses</option>
+              <option value="New">New</option>
+              <option value="Under Review">Under Review</option>
+              <option value="Shortlisted">Shortlisted</option>
+              <option value="Rejected">Rejected</option>
             </select>
 
             <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
@@ -583,12 +651,39 @@ export default function CandidateSelection() {
               <Download className="mr-2 h-4 w-4" />
               {t("hiring.candidates.controls.export")}
             </Button>
-            <Button variant="outline" size="sm">
-              <Filter className="mr-2 h-4 w-4" />
-              {t("hiring.candidates.controls.filter")}
-            </Button>
           </div>
         </div>
+
+        {/* Active filters display */}
+        {(searchQuery || positionFilter || statusFilter) && (
+          <div className="flex items-center gap-2 mb-4">
+            <span className="text-sm text-muted-foreground">Showing {filteredCandidates.length} of {candidates.length} candidates</span>
+            {searchQuery && (
+              <Badge variant="secondary" className="gap-1">
+                Search: "{searchQuery}"
+                <button onClick={() => setSearchQuery("")} className="ml-1 hover:text-destructive">
+                  <XCircle className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {positionFilter && (
+              <Badge variant="secondary" className="gap-1">
+                Position: {positionFilter}
+                <button onClick={() => setPositionFilter("")} className="ml-1 hover:text-destructive">
+                  <XCircle className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+            {statusFilter && (
+              <Badge variant="secondary" className="gap-1">
+                Status: {statusFilter}
+                <button onClick={() => setStatusFilter("")} className="ml-1 hover:text-destructive">
+                  <XCircle className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
+          </div>
+        )}
 
         {/* Candidates List */}
         <Card className="border-border/50 animate-fade-up stagger-1">
@@ -627,6 +722,23 @@ export default function CandidateSelection() {
                     </div>
                   </div>
                 ))}
+              </div>
+            ) : filteredCandidates.length === 0 ? (
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <h3 className="text-lg font-medium mb-2">
+                  {candidates.length === 0 ? "No candidates yet" : "No candidates match your filters"}
+                </h3>
+                <p className="text-muted-foreground mb-4">
+                  {candidates.length === 0
+                    ? "Import your first candidate to get started"
+                    : "Try adjusting your search or filter criteria"}
+                </p>
+                {(searchQuery || positionFilter || statusFilter) && (
+                  <Button variant="outline" onClick={clearFilters}>
+                    Clear all filters
+                  </Button>
+                )}
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -703,7 +815,7 @@ export default function CandidateSelection() {
                     </tr>
                   </thead>
                   <tbody>
-                    {candidates.map((candidate) => (
+                    {filteredCandidates.map((candidate) => (
                       <tr
                         key={candidate.id}
                         className="border-b hover:bg-muted/50 transition-colors"

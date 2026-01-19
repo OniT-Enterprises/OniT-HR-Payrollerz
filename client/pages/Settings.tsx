@@ -1,4 +1,12 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useForm, Controller } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  companyDetailsFormSchema,
+  holidayOverrideFormSchema,
+  type CompanyDetailsFormData,
+  type HolidayOverrideFormData,
+} from "@/lib/validations";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -172,15 +180,24 @@ export default function Settings() {
   const [activeTab, setActiveTab] = useState("company");
   const [settings, setSettings] = useState<TenantSettings | null>(null);
 
-  // Form states
-  const [companyDetails, setCompanyDetails] = useState<CompanyDetails>({
-    legalName: "",
-    registeredAddress: "",
-    city: "Dili",
-    country: "Timor-Leste",
-    tinNumber: "",
-    businessType: "Lda",
+  // Company Details form (react-hook-form)
+  const companyDetailsForm = useForm<CompanyDetailsFormData>({
+    resolver: zodResolver(companyDetailsFormSchema),
+    defaultValues: {
+      legalName: "",
+      tradingName: "",
+      businessType: "Lda",
+      tinNumber: "",
+      registeredAddress: "",
+      city: "Dili",
+      country: "Timor-Leste",
+      phone: "",
+      email: "",
+    },
+    mode: "onChange",
   });
+
+  // Other form states (kept as useState for complex nested structures)
 
   const [companyStructure, setCompanyStructure] = useState<CompanyStructure>({
     businessSector: "other",
@@ -211,13 +228,20 @@ export default function Settings() {
   const [holidayOverridesLoading, setHolidayOverridesLoading] = useState(false);
   const [holidayOverrides, setHolidayOverrides] = useState<HolidayOverride[]>([]);
   const [holidayOverrideSaving, setHolidayOverrideSaving] = useState(false);
-  const [holidayOverrideForm, setHolidayOverrideForm] = useState({
-    date: "",
-    name: "",
-    nameTetun: "",
-    isHoliday: true,
-    notes: "",
+
+  // Holiday Override form (react-hook-form)
+  const holidayOverrideForm = useForm<HolidayOverrideFormData>({
+    resolver: zodResolver(holidayOverrideFormSchema),
+    defaultValues: {
+      date: "",
+      name: "",
+      nameTetun: "",
+      isHoliday: true,
+      notes: "",
+    },
+    mode: "onChange",
   });
+  const holidayFormValues = holidayOverrideForm.watch();
 
   // Load settings on mount
   useEffect(() => {
@@ -239,7 +263,18 @@ export default function Settings() {
       }
 
       setSettings(existingSettings);
-      setCompanyDetails(existingSettings.companyDetails);
+      // Reset company details form with loaded data
+      companyDetailsForm.reset({
+        legalName: existingSettings.companyDetails.legalName || "",
+        tradingName: existingSettings.companyDetails.tradingName || "",
+        businessType: existingSettings.companyDetails.businessType || "Lda",
+        tinNumber: existingSettings.companyDetails.tinNumber || "",
+        registeredAddress: existingSettings.companyDetails.registeredAddress || "",
+        city: existingSettings.companyDetails.city || "Dili",
+        country: existingSettings.companyDetails.country || "Timor-Leste",
+        phone: existingSettings.companyDetails.phone || "",
+        email: existingSettings.companyDetails.email || "",
+      });
       setCompanyStructure(existingSettings.companyStructure);
       setPaymentStructure(existingSettings.paymentStructure);
       setTimeOffPolicies(existingSettings.timeOffPolicies);
@@ -311,73 +346,58 @@ export default function Settings() {
     return Array.from(map.values()).sort((a, b) => a.date.localeCompare(b.date));
   }, [holidayYear, holidayOverrides]);
 
-  const saveHolidayOverride = async () => {
-    if (!tenantId) return;
+  const onSaveHolidayOverride = useCallback(
+    async (data: HolidayOverrideFormData) => {
+      if (!tenantId) return;
 
-    const date = holidayOverrideForm.date;
-    if (!date) {
-      toast({
-        title: t("settings.notifications.errorTitle"),
-        description: "Please choose a date.",
-        variant: "destructive",
-      });
-      return;
-    }
+      try {
+        setHolidayOverrideSaving(true);
+        await holidayService.upsertTenantHolidayOverride(
+          tenantId,
+          {
+            date: data.date,
+            name: data.name?.trim() || "",
+            nameTetun: data.nameTetun?.trim() || "",
+            isHoliday: data.isHoliday,
+            notes: data.notes?.trim() || "",
+          },
+          user?.uid
+        );
 
-    if (holidayOverrideForm.isHoliday && !holidayOverrideForm.name.trim()) {
-      toast({
-        title: t("settings.notifications.errorTitle"),
-        description: "Please enter a holiday name.",
-        variant: "destructive",
-      });
-      return;
-    }
+        // Keep the list year in sync with the saved date
+        const savedYear = parseInt(data.date.slice(0, 4), 10);
+        if (!Number.isNaN(savedYear) && savedYear !== holidayYear) {
+          setHolidayYear(savedYear);
+        } else {
+          await loadHolidayOverrides();
+        }
 
-    try {
-      setHolidayOverrideSaving(true);
-      await holidayService.upsertTenantHolidayOverride(
-        tenantId,
-        {
-          date,
-          name: holidayOverrideForm.name.trim(),
-          nameTetun: holidayOverrideForm.nameTetun.trim(),
-          isHoliday: holidayOverrideForm.isHoliday,
-          notes: holidayOverrideForm.notes.trim(),
-        },
-        user?.uid
-      );
+        // Reset form
+        holidayOverrideForm.reset({
+          date: "",
+          name: "",
+          nameTetun: "",
+          isHoliday: true,
+          notes: "",
+        });
 
-      // Keep the list year in sync with the saved date
-      const savedYear = parseInt(date.slice(0, 4), 10);
-      if (!Number.isNaN(savedYear) && savedYear !== holidayYear) {
-        setHolidayYear(savedYear);
-      } else {
-        await loadHolidayOverrides();
+        toast({
+          title: t("settings.notifications.savedTitle"),
+          description: "Holiday override saved.",
+        });
+      } catch (error) {
+        console.error("Error saving holiday override:", error);
+        toast({
+          title: t("settings.notifications.errorTitle"),
+          description: "Failed to save holiday override.",
+          variant: "destructive",
+        });
+      } finally {
+        setHolidayOverrideSaving(false);
       }
-
-      setHolidayOverrideForm({
-        date: "",
-        name: "",
-        nameTetun: "",
-        isHoliday: true,
-        notes: "",
-      });
-
-      toast({
-        title: t("settings.notifications.savedTitle"),
-        description: "Holiday override saved.",
-      });
-    } catch (error) {
-      console.error("Error saving holiday override:", error);
-      toast({
-        title: t("settings.notifications.errorTitle"),
-        description: "Failed to save holiday override.",
-        variant: "destructive",
-      });
-    } finally {
-      setHolidayOverrideSaving(false);
-    }
-  };
+    },
+    [tenantId, user?.uid, holidayYear, holidayOverrideForm, toast, t]
+  );
 
   const removeHolidayOverride = async (date: string) => {
     if (!tenantId) return;
@@ -399,26 +419,41 @@ export default function Settings() {
   };
 
   // Save handlers
-  const saveCompanyDetails = async () => {
-    if (!tenantId) return;
-    setSaving(true);
-    try {
-      await settingsService.updateCompanyDetails(tenantId, companyDetails);
-      toast({
-        title: t("settings.notifications.savedTitle"),
-        description: t("settings.notifications.companySaved"),
-      });
-      loadSettings();
-    } catch (error) {
-      toast({
-        title: t("settings.notifications.errorTitle"),
-        description: t("settings.notifications.saveFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
-  };
+  const onSaveCompanyDetails = useCallback(
+    async (data: CompanyDetailsFormData) => {
+      if (!tenantId) return;
+      setSaving(true);
+      try {
+        // Convert form data to CompanyDetails type
+        const companyDetails: CompanyDetails = {
+          legalName: data.legalName,
+          tradingName: data.tradingName || undefined,
+          businessType: data.businessType,
+          tinNumber: data.tinNumber || "",
+          registeredAddress: data.registeredAddress || "",
+          city: data.city,
+          country: data.country,
+          phone: data.phone || undefined,
+          email: data.email || undefined,
+        };
+        await settingsService.updateCompanyDetails(tenantId, companyDetails);
+        toast({
+          title: t("settings.notifications.savedTitle"),
+          description: t("settings.notifications.companySaved"),
+        });
+        loadSettings();
+      } catch (error) {
+        toast({
+          title: t("settings.notifications.errorTitle"),
+          description: t("settings.notifications.saveFailed"),
+          variant: "destructive",
+        });
+      } finally {
+        setSaving(false);
+      }
+    },
+    [tenantId, toast, t]
+  );
 
   const saveCompanyStructure = async () => {
     if (!tenantId) return;
@@ -629,150 +664,139 @@ export default function Settings() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="legalName">{t("settings.company.legalName")}</Label>
-                    <Input
-                      id="legalName"
-                      value={companyDetails.legalName}
-                      onChange={(e) =>
-                        setCompanyDetails({ ...companyDetails, legalName: e.target.value })
-                      }
-                      placeholder={t("settings.company.legalNamePlaceholder")}
-                    />
+                <form onSubmit={companyDetailsForm.handleSubmit(onSaveCompanyDetails)}>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label htmlFor="legalName">{t("settings.company.legalName")}</Label>
+                      <Input
+                        id="legalName"
+                        {...companyDetailsForm.register("legalName")}
+                        placeholder={t("settings.company.legalNamePlaceholder")}
+                      />
+                      {companyDetailsForm.formState.errors.legalName && (
+                        <p className="text-sm text-destructive">
+                          {companyDetailsForm.formState.errors.legalName.message}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tradingName">{t("settings.company.tradingName")}</Label>
+                      <Input
+                        id="tradingName"
+                        {...companyDetailsForm.register("tradingName")}
+                        placeholder={t("settings.company.tradingNamePlaceholder")}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="businessType">{t("settings.company.businessType")}</Label>
+                      <Controller
+                        name="businessType"
+                        control={companyDetailsForm.control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="SA">{t("settings.company.businessTypes.sa")}</SelectItem>
+                              <SelectItem value="Lda">{t("settings.company.businessTypes.lda")}</SelectItem>
+                              <SelectItem value="Unipessoal">{t("settings.company.businessTypes.unipessoal")}</SelectItem>
+                              <SelectItem value="ENIN">{t("settings.company.businessTypes.enin")}</SelectItem>
+                              <SelectItem value="NGO">{t("settings.company.businessTypes.ngo")}</SelectItem>
+                              <SelectItem value="Government">{t("settings.company.businessTypes.government")}</SelectItem>
+                              <SelectItem value="Other">{t("settings.company.businessTypes.other")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="tinNumber">{t("settings.company.tinNumber")}</Label>
+                      <Input
+                        id="tinNumber"
+                        {...companyDetailsForm.register("tinNumber")}
+                        placeholder={t("settings.company.tinPlaceholder")}
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="tradingName">{t("settings.company.tradingName")}</Label>
-                    <Input
-                      id="tradingName"
-                      value={companyDetails.tradingName || ""}
-                      onChange={(e) =>
-                        setCompanyDetails({ ...companyDetails, tradingName: e.target.value })
-                      }
-                      placeholder={t("settings.company.tradingNamePlaceholder")}
-                    />
+                  <Separator className="my-6" />
+
+                  <div className="space-y-4">
+                    <h3 className="font-medium">{t("settings.company.addressTitle")}</h3>
+                    <div className="space-y-2">
+                      <Label htmlFor="address">{t("settings.company.registeredAddress")}</Label>
+                      <Textarea
+                        id="address"
+                        {...companyDetailsForm.register("registeredAddress")}
+                        placeholder={t("settings.company.registeredAddressPlaceholder")}
+                        rows={2}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-2">
+                        <Label htmlFor="city">{t("settings.company.city")}</Label>
+                        <Input
+                          id="city"
+                          {...companyDetailsForm.register("city")}
+                          placeholder={t("settings.company.cityPlaceholder")}
+                        />
+                      </div>
+
+                      <div className="space-y-2">
+                        <Label htmlFor="country">{t("settings.company.country")}</Label>
+                        <Input
+                          id="country"
+                          {...companyDetailsForm.register("country")}
+                          disabled
+                        />
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label htmlFor="businessType">{t("settings.company.businessType")}</Label>
-                    <Select
-                      value={companyDetails.businessType}
-                      onValueChange={(value: BusinessType) =>
-                        setCompanyDetails({ ...companyDetails, businessType: value })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="SA">{t("settings.company.businessTypes.sa")}</SelectItem>
-                        <SelectItem value="Lda">{t("settings.company.businessTypes.lda")}</SelectItem>
-                        <SelectItem value="Unipessoal">{t("settings.company.businessTypes.unipessoal")}</SelectItem>
-                        <SelectItem value="ENIN">{t("settings.company.businessTypes.enin")}</SelectItem>
-                        <SelectItem value="NGO">{t("settings.company.businessTypes.ngo")}</SelectItem>
-                        <SelectItem value="Government">{t("settings.company.businessTypes.government")}</SelectItem>
-                        <SelectItem value="Other">{t("settings.company.businessTypes.other")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="tinNumber">{t("settings.company.tinNumber")}</Label>
-                    <Input
-                      id="tinNumber"
-                      value={companyDetails.tinNumber}
-                      onChange={(e) =>
-                        setCompanyDetails({ ...companyDetails, tinNumber: e.target.value })
-                      }
-                      placeholder={t("settings.company.tinPlaceholder")}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <h3 className="font-medium">{t("settings.company.addressTitle")}</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="address">{t("settings.company.registeredAddress")}</Label>
-                    <Textarea
-                      id="address"
-                      value={companyDetails.registeredAddress}
-                      onChange={(e) =>
-                        setCompanyDetails({
-                          ...companyDetails,
-                          registeredAddress: e.target.value,
-                        })
-                      }
-                      placeholder={t("settings.company.registeredAddressPlaceholder")}
-                      rows={2}
-                    />
-                  </div>
+                  <Separator className="my-6" />
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-2">
-                      <Label htmlFor="city">{t("settings.company.city")}</Label>
+                      <Label htmlFor="phone">{t("settings.company.phone")}</Label>
                       <Input
-                        id="city"
-                        value={companyDetails.city}
-                        onChange={(e) =>
-                          setCompanyDetails({ ...companyDetails, city: e.target.value })
-                        }
-                        placeholder={t("settings.company.cityPlaceholder")}
+                        id="phone"
+                        {...companyDetailsForm.register("phone")}
+                        placeholder={t("settings.company.phonePlaceholder")}
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label htmlFor="country">{t("settings.company.country")}</Label>
+                      <Label htmlFor="email">{t("settings.company.email")}</Label>
                       <Input
-                        id="country"
-                        value={companyDetails.country}
-                        disabled
+                        id="email"
+                        type="email"
+                        {...companyDetailsForm.register("email")}
+                        placeholder={t("settings.company.emailPlaceholder")}
                       />
+                      {companyDetailsForm.formState.errors.email && (
+                        <p className="text-sm text-destructive">
+                          {companyDetailsForm.formState.errors.email.message}
+                        </p>
+                      )}
                     </div>
                   </div>
-                </div>
 
-                <Separator />
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">{t("settings.company.phone")}</Label>
-                    <Input
-                      id="phone"
-                      value={companyDetails.phone || ""}
-                      onChange={(e) =>
-                        setCompanyDetails({ ...companyDetails, phone: e.target.value })
-                      }
-                      placeholder={t("settings.company.phonePlaceholder")}
-                    />
+                  <div className="flex justify-end pt-6">
+                    <Button type="submit" disabled={saving}>
+                      {saving ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="mr-2 h-4 w-4" />
+                      )}
+                      {t("settings.company.save")}
+                    </Button>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">{t("settings.company.email")}</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={companyDetails.email || ""}
-                      onChange={(e) =>
-                        setCompanyDetails({ ...companyDetails, email: e.target.value })
-                      }
-                      placeholder={t("settings.company.emailPlaceholder")}
-                    />
-                  </div>
-                </div>
-
-                <div className="flex justify-end pt-4">
-                  <Button onClick={saveCompanyDetails} disabled={saving}>
-                    {saving ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Save className="mr-2 h-4 w-4" />
-                    )}
-                    {t("settings.company.save")}
-                  </Button>
-                </div>
+                </form>
               </CardContent>
             </Card>
           </TabsContent>
@@ -1588,7 +1612,7 @@ export default function Settings() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() =>
-                                  setHolidayOverrideForm({
+                                  holidayOverrideForm.reset({
                                     date: h.date,
                                     name: override?.name ?? h.name,
                                     nameTetun: override?.nameTetun ?? (h.nameTetun ?? ""),
@@ -1617,15 +1641,22 @@ export default function Settings() {
                     )}
                   </div>
 
-                  <div className="p-4 border rounded-lg space-y-4">
+                  <form
+                    className="p-4 border rounded-lg space-y-4"
+                    onSubmit={holidayOverrideForm.handleSubmit(onSaveHolidayOverride)}
+                  >
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium">Add / override holiday</h4>
                       <div className="flex items-center gap-2">
-                        <Switch
-                          checked={holidayOverrideForm.isHoliday}
-                          onCheckedChange={(checked) =>
-                            setHolidayOverrideForm((prev) => ({ ...prev, isHoliday: checked }))
-                          }
+                        <Controller
+                          name="isHoliday"
+                          control={holidayOverrideForm.control}
+                          render={({ field }) => (
+                            <Switch
+                              checked={field.value}
+                              onCheckedChange={field.onChange}
+                            />
+                          )}
                         />
                         <Label>Holiday</Label>
                       </div>
@@ -1636,25 +1667,32 @@ export default function Settings() {
                         <Label>Date</Label>
                         <Input
                           type="date"
-                          value={holidayOverrideForm.date}
-                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, date: e.target.value }))}
+                          {...holidayOverrideForm.register("date")}
                         />
+                        {holidayOverrideForm.formState.errors.date && (
+                          <p className="text-sm text-destructive">
+                            {holidayOverrideForm.formState.errors.date.message}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Name</Label>
                         <Input
-                          value={holidayOverrideForm.name}
-                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, name: e.target.value }))}
-                          disabled={!holidayOverrideForm.isHoliday}
-                          placeholder={holidayOverrideForm.isHoliday ? "Holiday name" : "Optional"}
+                          {...holidayOverrideForm.register("name")}
+                          disabled={!holidayFormValues.isHoliday}
+                          placeholder={holidayFormValues.isHoliday ? "Holiday name" : "Optional"}
                         />
+                        {holidayOverrideForm.formState.errors.name && (
+                          <p className="text-sm text-destructive">
+                            {holidayOverrideForm.formState.errors.name.message}
+                          </p>
+                        )}
                       </div>
                       <div className="space-y-2">
                         <Label>Name (Tetun)</Label>
                         <Input
-                          value={holidayOverrideForm.nameTetun}
-                          onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, nameTetun: e.target.value }))}
-                          disabled={!holidayOverrideForm.isHoliday}
+                          {...holidayOverrideForm.register("nameTetun")}
+                          disabled={!holidayFormValues.isHoliday}
                           placeholder="Optional"
                         />
                       </div>
@@ -1663,8 +1701,7 @@ export default function Settings() {
                     <div className="space-y-2">
                       <Label>Notes</Label>
                       <Textarea
-                        value={holidayOverrideForm.notes}
-                        onChange={(e) => setHolidayOverrideForm((prev) => ({ ...prev, notes: e.target.value }))}
+                        {...holidayOverrideForm.register("notes")}
                         placeholder="Optional (e.g., government decree reference)"
                       />
                     </div>
@@ -1674,12 +1711,12 @@ export default function Settings() {
                         type="button"
                         variant="outline"
                         onClick={() =>
-                          setHolidayOverrideForm({ date: "", name: "", nameTetun: "", isHoliday: true, notes: "" })
+                          holidayOverrideForm.reset({ date: "", name: "", nameTetun: "", isHoliday: true, notes: "" })
                         }
                       >
                         Clear
                       </Button>
-                      <Button type="button" onClick={saveHolidayOverride} disabled={holidayOverrideSaving}>
+                      <Button type="submit" disabled={holidayOverrideSaving}>
                         {holidayOverrideSaving ? (
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         ) : (
@@ -1688,7 +1725,7 @@ export default function Settings() {
                         Save Override
                       </Button>
                     </div>
-                  </div>
+                  </form>
                 </div>
 
                 <div className="flex justify-end pt-4">

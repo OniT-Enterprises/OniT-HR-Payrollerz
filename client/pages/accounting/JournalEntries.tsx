@@ -481,7 +481,7 @@ export default function JournalEntries() {
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
                 <DialogTrigger asChild>
                   <div className="flex flex-col items-end gap-1">
-                    <Button onClick={resetForm} variant="outline" size="sm" className="border-orange-300 hover:border-orange-400 hover:bg-orange-50">
+                    <Button onClick={resetForm} variant="outline" size="sm" className="border-orange-400 dark:border-orange-500 hover:border-orange-500 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                       <Plus className="h-4 w-4 mr-2" />
                       Manual Entry
                     </Button>
@@ -605,22 +605,22 @@ export default function JournalEntries() {
                               </TableRow>
                             ))}
                             {/* Totals row */}
-                            <TableRow className="bg-gray-50 font-semibold">
-                              <TableCell>Totals</TableCell>
-                              <TableCell className="text-right">
+                            <TableRow className="bg-card border-t font-semibold">
+                              <TableCell className="text-foreground">Totals</TableCell>
+                              <TableCell className="text-right text-foreground">
                                 {formatCurrencyTL(formTotals.totalDebit)}
                               </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-right text-foreground">
                                 {formatCurrencyTL(formTotals.totalCredit)}
                               </TableCell>
                               <TableCell colSpan={2}>
                                 {formTotals.isBalanced ? (
-                                  <span className="text-green-600 flex items-center gap-1">
+                                  <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                                     <CheckCircle className="h-4 w-4" />
                                     Balanced
                                   </span>
                                 ) : (
-                                  <span className="text-red-600">
+                                  <span className="text-red-600 dark:text-red-400">
                                     Difference: {formatCurrencyTL(formTotals.difference)}
                                   </span>
                                 )}
