@@ -412,7 +412,8 @@ export default function AllEmployees() {
 
   const handleEditEmployee = (employee: Employee) => {
     // Navigate to edit employee page with employee ID
-    navigate(`/staff/add?edit=${employee.id}`);
+    // Use /people/add directly (not /staff/add) to preserve query params
+    navigate(`/people/add?edit=${employee.id}`);
   };
 
   const handleDeleteEmployee = async (employee: Employee) => {
