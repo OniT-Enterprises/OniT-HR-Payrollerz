@@ -771,6 +771,9 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
  * Calculate weekly sub-payroll as portion of monthly
  * Used when company pays some workers weekly but tracks monthly
  * Uses decimal.js for precise currency calculations
+ *
+ * NOTE: For guaranteed reconciliation (sum of weeks = monthly salary),
+ * use calculateMonthlyWeeklyPayrolls() instead.
  */
 export function calculateWeeklySubPayroll(
   monthlySalary: number,
@@ -780,6 +783,102 @@ export function calculateWeeklySubPayroll(
 ): number {
   // Pro-rate based on actual working days
   return proRata(monthlySalary, daysInWeek, totalWorkingDaysInMonth);
+}
+
+/**
+ * Weekly payroll breakdown with reconciliation
+ */
+export interface WeeklyPayrollBreakdown {
+  weekNumber: number;
+  workingDays: number;
+  amount: number;
+  isReconciled: boolean;  // true for final week (adjusted to ensure sum = monthly)
+}
+
+/**
+ * Calculate all weekly payrolls for a month with guaranteed reconciliation
+ * The final week is calculated as (monthly salary - sum of previous weeks)
+ * to ensure the total exactly equals the monthly salary.
+ *
+ * @param monthlySalary - The employee's monthly salary
+ * @param weeklyWorkingDays - Array of working days per week [5, 5, 5, 5, 3] for a 23-day month
+ * @returns Array of weekly payroll breakdowns that sum exactly to monthly salary
+ *
+ * @example
+ * // Month with 23 working days (5+5+5+5+3)
+ * const breakdown = calculateMonthlyWeeklyPayrolls(1000, [5, 5, 5, 5, 3]);
+ * // Returns:
+ * // [
+ * //   { weekNumber: 1, workingDays: 5, amount: 217.39, isReconciled: false },
+ * //   { weekNumber: 2, workingDays: 5, amount: 217.39, isReconciled: false },
+ * //   { weekNumber: 3, workingDays: 5, amount: 217.39, isReconciled: false },
+ * //   { weekNumber: 4, workingDays: 5, amount: 217.39, isReconciled: false },
+ * //   { weekNumber: 5, workingDays: 3, amount: 130.44, isReconciled: true }  // adjusted!
+ * // ]
+ * // Total: $1000.00 (exact)
+ */
+export function calculateMonthlyWeeklyPayrolls(
+  monthlySalary: number,
+  weeklyWorkingDays: number[]
+): WeeklyPayrollBreakdown[] {
+  if (weeklyWorkingDays.length === 0) {
+    return [];
+  }
+
+  const totalWorkingDays = weeklyWorkingDays.reduce((sum, days) => sum + days, 0);
+
+  if (totalWorkingDays === 0) {
+    return weeklyWorkingDays.map((days, index) => ({
+      weekNumber: index + 1,
+      workingDays: days,
+      amount: 0,
+      isReconciled: index === weeklyWorkingDays.length - 1,
+    }));
+  }
+
+  const result: WeeklyPayrollBreakdown[] = [];
+  let paidSoFar = 0;
+
+  for (let i = 0; i < weeklyWorkingDays.length; i++) {
+    const weekNumber = i + 1;
+    const workingDays = weeklyWorkingDays[i];
+    const isLastWeek = i === weeklyWorkingDays.length - 1;
+
+    let amount: number;
+
+    if (isLastWeek) {
+      // Final week: calculate as remainder to ensure exact reconciliation
+      amount = subtractMoney(monthlySalary, paidSoFar);
+    } else {
+      // Regular weeks: pro-rata based on working days
+      amount = proRata(monthlySalary, workingDays, totalWorkingDays);
+      paidSoFar = addMoney(paidSoFar, amount);
+    }
+
+    result.push({
+      weekNumber,
+      workingDays,
+      amount,
+      isReconciled: isLastWeek,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Calculate the final week's payment to reconcile with monthly salary
+ * Use this when you've already paid some weeks and need to calculate the remainder
+ *
+ * @param monthlySalary - The employee's monthly salary
+ * @param alreadyPaid - Sum of payments already made for previous weeks
+ * @returns The amount to pay for the final week
+ */
+export function calculateFinalWeekReconciliation(
+  monthlySalary: number,
+  alreadyPaid: number
+): number {
+  return subtractMoney(monthlySalary, alreadyPaid);
 }
 
 /**
