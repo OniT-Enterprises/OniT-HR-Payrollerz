@@ -15,8 +15,6 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
-import { HRChatProvider } from "@/contexts/HRChatContext";
-import HRChatWidget from "@/components/chat/HRChatWidget";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -88,42 +86,39 @@ const App = () => (
                 <FirebaseProvider>
                   <AuthProvider>
                     <TenantProvider>
-                      <HRChatProvider>
-                        <Suspense fallback={<PageLoader />}>
-                          <Routes>
-                            {/* Home route */}
-                            <Route path="/" element={<HomeRoute />} />
+                      <Suspense fallback={<PageLoader />}>
+                        <Routes>
+                          {/* Home route */}
+                          <Route path="/" element={<HomeRoute />} />
 
-                            {/* Auth & Core */}
-                            {authRoutes}
+                          {/* Auth & Core */}
+                          {authRoutes}
 
-                            {/* People Module (Staff, Hiring, Time, Performance) */}
-                            {peopleRoutes}
+                          {/* People Module (Staff, Hiring, Time, Performance) */}
+                          {peopleRoutes}
 
-                            {/* Payroll Module */}
-                            {payrollRoutes}
+                          {/* Payroll Module */}
+                          {payrollRoutes}
 
-                            {/* Money Module (Invoicing) */}
-                            {moneyRoutes}
+                          {/* Money Module (Invoicing) */}
+                          {moneyRoutes}
 
-                            {/* Accounting Module */}
-                            {accountingRoutes}
+                          {/* Accounting Module */}
+                          {accountingRoutes}
 
-                            {/* Reports Module */}
-                            {reportsRoutes}
+                          {/* Reports Module */}
+                          {reportsRoutes}
 
-                            {/* Legacy Redirects */}
-                            {legacyRedirects}
+                          {/* Legacy Redirects */}
+                          {legacyRedirects}
 
-                            {/* Admin Routes */}
-                            {adminRoutes}
+                          {/* Admin Routes */}
+                          {adminRoutes}
 
-                            {/* Catch-all 404 */}
-                            {notFoundRoute}
-                          </Routes>
-                        </Suspense>
-                        <HRChatWidget />
-                      </HRChatProvider>
+                          {/* Catch-all 404 */}
+                          {notFoundRoute}
+                        </Routes>
+                      </Suspense>
                     </TenantProvider>
                   </AuthProvider>
                 </FirebaseProvider>
