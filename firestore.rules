@@ -369,8 +369,9 @@ service cloud.firestore {
 
     // ============================================
     // LEGACY COLLECTIONS (for migration)
-    // Keep these temporarily while migrating to tenant-scoped paths
-    // TODO: Remove after full migration
+    // These collections store tenantId on each document.
+    // SECURITY: Enforce tenant isolation via tenantId field checks.
+    // TODO: Migrate to tenant-scoped paths under /tenants/{tenantId}/
     // ============================================
     match /employees/{employeeId} {
       // Legacy global collection is no longer used by the app; restrict to superadmins.
@@ -378,15 +379,39 @@ service cloud.firestore {
     }
 
     match /departments/{departmentId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /candidates/{candidateId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /jobs/{jobId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /tenant_settings/{docId} {
@@ -396,34 +421,95 @@ service cloud.firestore {
     }
 
     match /leave_requests/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /leave_balances/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /timesheets/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /goals/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /reviews/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /trainings/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     match /payruns/{docId} {
-      allow read, write: if isAuthenticated();
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
 
       match /payslips/{payslipId} {
-        allow read, write: if isAuthenticated();
+        allow read: if isSuperAdmin() ||
+          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
+           isTenantMember(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
+        allow write: if isSuperAdmin() ||
+          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
+           isTenantAdmin(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
       }
     }
 

@@ -1,20 +1,22 @@
 /**
  * Query Cache Persistence
- * Saves React Query cache to localStorage for instant loading on page refresh
+ * Saves React Query cache to sessionStorage for instant loading during session.
+ * Data is automatically cleared when the browser tab/window closes.
  *
- * SECURITY: Uses ALLOW-LIST approach - only explicitly safe data is persisted.
- * This prevents PII/financial data leakage even if new queries are added
- * without considering caching implications.
+ * SECURITY:
+ * 1. Uses sessionStorage instead of localStorage - data cleared on tab close
+ * 2. Uses ALLOW-LIST approach - only explicitly safe data is persisted
+ * 3. Prevents PII/financial data leakage by secure-by-default design
  */
 
 import { QueryClient } from '@tanstack/react-query';
 
 const CACHE_KEY = 'onit-query-cache';
-const CACHE_VERSION = 3; // Bumped version to clear old caches (switched to allow-list)
+const CACHE_VERSION = 4; // Bumped: v3 allow-list, v4 switched to sessionStorage
 const MAX_AGE = 1000 * 60 * 30; // 30 minutes
 
 /**
- * ALLOW-LIST: Only these query key patterns are safe to persist to localStorage.
+ * ALLOW-LIST: Only these query key patterns are safe to persist to sessionStorage.
  * Everything else is excluded by default.
  *
  * This is safer than a deny-list because:
@@ -63,7 +65,7 @@ function isSafeToPersist(queryKey: string): boolean {
 }
 
 /**
- * Save specific query data to localStorage
+ * Save specific query data to sessionStorage
  * SECURITY: Only persists data that matches the allow-list
  */
 export function persistQueryData(queryKey: string, data: unknown): void {
@@ -79,7 +81,7 @@ export function persistQueryData(queryKey: string, data: unknown): void {
       timestamp: Date.now(),
       queryKey,
     };
-    localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+    sessionStorage.setItem(CACHE_KEY, JSON.stringify(store));
   } catch (e) {
     // Storage full or other error - silently ignore
     console.warn('Failed to persist query cache:', e);
@@ -87,12 +89,12 @@ export function persistQueryData(queryKey: string, data: unknown): void {
 }
 
 /**
- * Load cache store from localStorage
+ * Load cache store from sessionStorage
  * Cleans up expired entries and any that no longer match the allow-list
  */
 function loadCacheStore(): CacheStore {
   try {
-    const raw = localStorage.getItem(CACHE_KEY);
+    const raw = sessionStorage.getItem(CACHE_KEY);
     if (raw) {
       const store = JSON.parse(raw) as CacheStore;
       if (store.version === CACHE_VERSION) {
@@ -108,9 +110,9 @@ function loadCacheStore(): CacheStore {
             needsUpdate = true;
           }
         });
-        // Save cleaned store back to localStorage
+        // Save cleaned store back to sessionStorage
         if (needsUpdate) {
-          localStorage.setItem(CACHE_KEY, JSON.stringify(store));
+          sessionStorage.setItem(CACHE_KEY, JSON.stringify(store));
         }
         return store;
       }

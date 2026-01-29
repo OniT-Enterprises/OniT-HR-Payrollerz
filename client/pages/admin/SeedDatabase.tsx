@@ -318,7 +318,49 @@ const EXPENSES = [
 // COMPONENT
 // ============================================
 
+// Production safety check - NEVER allow seeding/clearing in production
+const PRODUCTION_HOSTNAMES = ['payroll.naroman.tl', 'app.onithr.com', 'onithr.com'];
+const PRODUCTION_PROJECT_IDS = ['onit-hr-payroll']; // Add production project IDs here
+
+function isProductionEnvironment(): boolean {
+  // Check hostname
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (PRODUCTION_HOSTNAMES.some(h => hostname.includes(h))) {
+      return true;
+    }
+  }
+  // Check Firebase project ID from config
+  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+  if (projectId && PRODUCTION_PROJECT_IDS.includes(projectId)) {
+    return true;
+  }
+  return false;
+}
+
 export default function SeedDatabase() {
+  // CRITICAL: Block access in production environment
+  if (isProductionEnvironment()) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Access Blocked
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              The Seed Database feature is disabled in production environments
+              for data safety. This page is only available in development.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   const { session } = useTenant();
   const tenantId = session?.tid;
   const [loading, setLoading] = useState(false);
