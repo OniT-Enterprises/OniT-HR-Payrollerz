@@ -5,6 +5,12 @@
 
 import { Timestamp } from 'firebase/firestore';
 
+// Denormalized tenant access info for quick loading
+export interface TenantAccessInfo {
+  name: string;
+  role: 'owner' | 'hr-admin' | 'manager' | 'viewer';
+}
+
 // Platform-level user profile stored in /users/{uid}
 export interface UserProfile {
   uid: string;
@@ -17,6 +23,11 @@ export interface UserProfile {
 
   // List of tenant IDs user belongs to (denormalized for quick access)
   tenantIds: string[];
+
+  // Denormalized tenant access data - reduces N×2 Firestore reads to 1
+  // Key: tenantId, Value: { name, role }
+  // Updated by membership management functions
+  tenantAccess?: Record<string, TenantAccessInfo>;
 
   // Audit fields
   createdAt: Timestamp;

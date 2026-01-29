@@ -168,8 +168,80 @@ async getEmployees(filters: EmployeeFilters): Promise<Employee[]> {
 | React Query migration | ✅ | Jan 17, 2026 | 7 hooks created, AllEmployees migrated |
 | Route extraction | ✅ | Jan 17, 2026 | App.tsx reduced 366→139 lines |
 | CacheService removal | ✅ | Jan 17, 2026 | All 6 report pages migrated to React Query, cacheService.ts deleted |
+| Zod validation for Firestore | ✅ | Jan 29, 2026 | Added schemas in `lib/validations/index.ts`, integrated in 4 core services |
+| TenantContext optimization | ✅ | Jan 29, 2026 | Added `tenantAccess` denormalization (40 reads → 1 read) |
+| Component extraction | ✅ | Jan 29, 2026 | RunPayroll: 1809→1723 lines, Settings: 2099→2016 lines |
+| Date utilities | ✅ | Jan 29, 2026 | Added `lib/dateUtils.ts` with TL timezone support |
+| Code prune | ✅ | Jan 29, 2026 | Removed chatbot, ~9k lines, 61 npm packages |
+
+---
+
+## January 29, 2026 Update
+
+### Zod Validation for Firestore Data
+
+Added runtime validation schemas for data coming from Firestore to catch data integrity issues early.
+
+**Files created/modified:**
+- `lib/validations/index.ts` - Added Firestore-specific schemas:
+  - `firestoreEmployeeSchema`
+  - `firestoreInvoiceSchema`
+  - `firestoreCustomerSchema`
+  - `firestoreBillSchema`
+  - `parseFirestoreDoc()` helper function
+
+**Services updated:**
+- `employeeService.ts` - Mapper now validates with Zod
+- `invoiceService.ts` - Mapper now validates with Zod
+- `customerService.ts` - Mapper now validates with Zod
+- `billService.ts` - Mapper now validates with Zod
+
+### TenantContext Optimization
+
+Reduced Firestore reads when loading available tenants from N×2 to 1.
+
+**Changes:**
+- Added `tenantAccess` field to `UserProfile` type (`types/user.ts`)
+- Updated `TenantContext.tsx` to use denormalized `tenantAccess` when available
+- Updated `adminService.ts` and `tenantSetup.ts` to populate `tenantAccess`
+
+**Impact:**
+- Before: User with 20 tenants = 40 Firestore reads on login
+- After: 1 read (from userProfile), falls back to old behavior if `tenantAccess` not populated
+
+### Component Extraction
+
+Extracted reusable components from large page files:
+
+**Payroll components (`components/payroll/`):**
+- `PayrollLoadingSkeleton.tsx` - Loading state for RunPayroll page
+- `TaxInfoBanner.tsx` - TL tax rates display banner
+
+**Settings components (`components/settings/`):**
+- `SettingsSkeleton.tsx` - Loading state for Settings page
+- `SetupProgress.tsx` - Setup completion progress indicator
+
+### Date Utilities
+
+Added `lib/dateUtils.ts` with TL timezone-aware date functions:
+- `formatDateTL()` - Format date in DD/MM/YYYY for TL display
+- `formatDateTimeTL()` - Format date and time for TL display
+- `formatDateISO()` - Format as YYYY-MM-DD for form inputs
+- `parseDateISO()` - Parse ISO string to Date
+- `toUTCStartOfDay()` / `toUTCEndOfDay()` - UTC normalization
+- `getTodayTL()` - Current date in TL timezone
+- `formatRelativeTime()` - "2 hours ago" style formatting
+
+### Code Prune (Earlier in Session)
+
+Removed unused code and dependencies:
+- Removed chatbot feature entirely (HRChatWidget, HRChatContext, tl-knowledge.ts)
+- Removed 431 unused i18n translation keys (9,445→5,021 lines)
+- Removed 61 unused npm packages
+- Removed 5 orphaned component files
+- Total: ~9,146 lines of dead code removed
 
 ---
 
 *Review conducted: January 2026*
-*Last updated: January 2026*
+*Last updated: January 29, 2026*

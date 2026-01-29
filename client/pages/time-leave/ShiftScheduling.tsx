@@ -179,7 +179,7 @@ export default function ShiftScheduling() {
     department: "",
   });
 
-  const dateLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
+  const dateLocale = locale === "tet" ? "pt-PT" : "en-US";
 
   const departmentLabels: Record<string, string> = {
     Operations: t("timeLeave.shiftScheduling.data.departments.operations"),

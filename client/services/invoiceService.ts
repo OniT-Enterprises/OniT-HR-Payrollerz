@@ -37,6 +37,7 @@ import type {
 } from '@/types/money';
 import { customerService } from './customerService';
 import { journalEntryService, accountService } from './accountingService';
+import { firestoreInvoiceSchema } from '@/lib/validations';
 
 // ============================================
 // FILTER INTERFACES
@@ -73,15 +74,19 @@ function mapInvoice(docSnap: DocumentSnapshot): Invoice {
   const data = docSnap.data();
   if (!data) throw new Error('Document data is undefined');
 
+  // Validate with Zod schema
+  const validated = firestoreInvoiceSchema.safeParse(data);
+
+  if (!validated.success) {
+    console.warn(`Invoice validation warning (${docSnap.id}):`, validated.error.flatten().fieldErrors);
+  }
+
+  const parsed = validated.success ? validated.data : data;
+
   return {
     id: docSnap.id,
-    ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate()
-      : data.updatedAt || new Date(),
+    ...parsed,
+    // Handle additional date fields not in base schema
     sentAt: data.sentAt instanceof Timestamp
       ? data.sentAt.toDate()
       : data.sentAt || undefined,

@@ -123,6 +123,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
   };
 
   // Load available tenants for current user
+  // Optimized: Uses denormalized tenantAccess when available (1 read vs N×2 reads)
   const loadAvailableTenants = async (
     firebaseUser: User,
   ): Promise<Array<{ id: string; name: string; role: TenantRole }>> => {
@@ -132,16 +133,29 @@ export function TenantProvider({ children }: TenantProviderProps) {
     }
 
     try {
-      // Method 1: Try to get tenants from custom claims first
+      // OPTIMIZED: Use denormalized tenantAccess from userProfile (1 read total)
+      if (userProfile?.tenantAccess && Object.keys(userProfile.tenantAccess).length > 0) {
+        const tenants = Object.entries(userProfile.tenantAccess).map(([tid, info]) => ({
+          id: tid,
+          name: info.name || tid,
+          role: info.role as TenantRole,
+        }));
+        if (tenants.length > 0) {
+          return tenants;
+        }
+      }
+
+      // FALLBACK: Use custom claims + individual fetches (N×2 reads)
+      // This path is for backwards compatibility until tenantAccess is populated
       const { claims } = await getCurrentUserAndClaims();
       if (claims?.tenants && Array.isArray(claims.tenants)) {
         const tenantPromises = claims.tenants.map(async (tid: string) => {
           try {
-            // Get tenant config
-            const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
-            const memberDoc = await getDoc(
-              doc(db, paths.member(tid, firebaseUser.uid)),
-            );
+            // Get tenant config and member doc in parallel
+            const [tenantDoc, memberDoc] = await Promise.all([
+              getDoc(doc(db, paths.tenant(tid))),
+              getDoc(doc(db, paths.member(tid, firebaseUser.uid))),
+            ]);
 
             if (tenantDoc.exists() && memberDoc.exists()) {
               const tenantData = tenantDoc.data() as TenantConfig;
@@ -168,14 +182,14 @@ export function TenantProvider({ children }: TenantProviderProps) {
         }
       }
 
-      // Method 2: Check user profile for tenantIds
+      // FALLBACK 2: Check user profile tenantIds (N×2 reads)
       if (userProfile?.tenantIds && userProfile.tenantIds.length > 0) {
         const tenantPromises = userProfile.tenantIds.map(async (tid: string) => {
           try {
-            const tenantDoc = await getDoc(doc(db, paths.tenant(tid)));
-            const memberDoc = await getDoc(
-              doc(db, paths.member(tid, firebaseUser.uid)),
-            );
+            const [tenantDoc, memberDoc] = await Promise.all([
+              getDoc(doc(db, paths.tenant(tid))),
+              getDoc(doc(db, paths.member(tid, firebaseUser.uid))),
+            ]);
 
             if (tenantDoc.exists() && memberDoc.exists()) {
               const tenantData = tenantDoc.data() as TenantConfig;

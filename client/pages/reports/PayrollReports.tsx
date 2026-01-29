@@ -70,7 +70,7 @@ export default function PayrollReports() {
       ? Math.round(totalMonthlySalary / employees.length)
       : 0, [employees.length, totalMonthlySalary]);
   const formatCurrency = (amount: number) => {
-    const formatLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
+    const formatLocale = locale === "tet" ? "pt-PT" : "en-US";
     return new Intl.NumberFormat(formatLocale, {
       style: "currency",
       currency: "USD",

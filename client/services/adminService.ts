@@ -133,15 +133,21 @@ class AdminService {
         lastActiveAt: serverTimestamp(),
       });
 
-      // Update user's tenantIds
+      // Update user's tenantIds and tenantAccess (denormalized for faster loading)
       const userRef = doc(db, paths.user(ownerUid));
       const userSnap = await getDoc(userRef);
       if (userSnap.exists()) {
         const userData = userSnap.data();
         const tenantIds = userData.tenantIds || [];
+        const tenantAccess = userData.tenantAccess || {};
+
         if (!tenantIds.includes(tenantId)) {
           await updateDoc(userRef, {
             tenantIds: [...tenantIds, tenantId],
+            tenantAccess: {
+              ...tenantAccess,
+              [tenantId]: { name, role: 'owner' },
+            },
             updatedAt: serverTimestamp(),
           });
         }

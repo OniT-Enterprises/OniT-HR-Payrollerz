@@ -1,5 +1,5 @@
 import { db } from "./firebase";
-import { doc, setDoc, collection, addDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc, collection, addDoc } from "firebase/firestore";
 import { paths } from "./paths";
 
 /**
@@ -149,6 +149,24 @@ export const autoSetupTenantForUser = async (
     if (success) {
       // Store the tenant ID in localStorage for quick access
       localStorage.setItem("currentTenantId", tenantId);
+
+      // Update userProfile with denormalized tenantAccess for faster loading
+      try {
+        const userRef = doc(db!, `users/${userId}`);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+          const existingAccess = userData.tenantAccess || {};
+          await setDoc(userRef, {
+            tenantAccess: {
+              ...existingAccess,
+              [tenantId]: { name: tenantName, role: 'owner' },
+            },
+          }, { merge: true });
+        }
+      } catch {
+        // Non-critical - tenantAccess is an optimization
+      }
     }
 
     return success;

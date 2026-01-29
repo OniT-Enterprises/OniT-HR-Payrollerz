@@ -15,9 +15,8 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 const LOCALE_STORAGE_KEY = "onit:locale";
 
 const localeLabels: Record<Locale, string> = {
-  en: translations.en.locale.en,
-  pt: translations.pt.locale.pt,
-  tet: translations.tet.locale.tet,
+  en: (translations.en as unknown as Record<string, Record<string, string>>).locale?.en || 'English',
+  tet: (translations.tet as unknown as Record<string, Record<string, string>>).locale?.tet || 'Tetun',
 };
 
 const resolvePath = (obj: unknown, path: string): unknown =>
@@ -45,13 +44,10 @@ const getInitialLocale = (): Locale => {
     return "en";
   }
   const stored = window.localStorage.getItem(LOCALE_STORAGE_KEY);
-  if (stored === "en" || stored === "pt" || stored === "tet") {
+  if (stored === "en" || stored === "tet") {
     return stored;
   }
   const preferred = navigator.languages?.[0] || navigator.language || "en";
-  if (preferred.toLowerCase().startsWith("pt")) {
-    return "pt";
-  }
   if (preferred.toLowerCase().startsWith("tet")) {
     return "tet";
   }

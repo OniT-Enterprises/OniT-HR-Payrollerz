@@ -24,6 +24,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import type { Customer, CustomerFormData } from '@/types/money';
+import { firestoreCustomerSchema } from '@/lib/validations';
 
 /**
  * Filter options for customer queries
@@ -48,21 +49,24 @@ export interface PaginatedResult<T> {
 }
 
 /**
- * Maps Firestore document to Customer
+ * Maps Firestore document to Customer with Zod validation
  */
 function mapCustomer(docSnap: DocumentSnapshot): Customer {
   const data = docSnap.data();
   if (!data) throw new Error('Document data is undefined');
 
+  // Validate with Zod schema
+  const validated = firestoreCustomerSchema.safeParse(data);
+
+  if (!validated.success) {
+    console.warn(`Customer validation warning (${docSnap.id}):`, validated.error.flatten().fieldErrors);
+  }
+
+  const parsed = validated.success ? validated.data : data;
+
   return {
     id: docSnap.id,
-    ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate()
-      : data.updatedAt || new Date(),
+    ...parsed,
   } as Customer;
 }
 

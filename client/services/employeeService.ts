@@ -20,6 +20,7 @@ import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import type { ForeignWorkerData } from "@/types/tax-filing";
 import { auditLogService } from "./auditLogService";
+import { firestoreEmployeeSchema } from "@/lib/validations";
 
 /**
  * Audit context for logging user actions
@@ -148,21 +149,26 @@ export interface PaginatedResult<T> {
 }
 
 /**
- * Maps Firestore document to Employee, converting timestamps to Dates
+ * Maps Firestore document to Employee with Zod validation
+ * Validates data structure and converts timestamps to Dates
  */
 function mapEmployee(doc: DocumentSnapshot): Employee {
   const data = doc.data();
   if (!data) throw new Error("Document data is undefined");
 
+  // Validate and transform with Zod schema
+  const validated = firestoreEmployeeSchema.safeParse(data);
+
+  if (!validated.success) {
+    // Log validation issues but continue with best-effort parsing
+    console.warn(`Employee validation warning (${doc.id}):`, validated.error.flatten().fieldErrors);
+  }
+
+  const parsed = validated.success ? validated.data : firestoreEmployeeSchema.parse(data);
+
   return {
     id: doc.id,
-    ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate()
-      : data.updatedAt || new Date(),
+    ...parsed,
   } as Employee;
 }
 

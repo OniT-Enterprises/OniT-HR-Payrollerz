@@ -171,12 +171,12 @@ export default function PayrollDashboard() {
       wit: {
         days: witDays,
         status: witDays > 7 ? 'ok' : witDays > 3 ? 'warning' : 'urgent',
-        date: witDate.toLocaleDateString(locale === "pt" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
+        date: witDate.toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
       },
       inss: {
         days: inssDays,
         status: inssDays > 7 ? 'ok' : inssDays > 3 ? 'warning' : 'urgent',
-        date: inssDate.toLocaleDateString(locale === "pt" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
+        date: inssDate.toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
       },
     };
   };
@@ -189,7 +189,7 @@ export default function PayrollDashboard() {
 
   const loadStats = async () => {
     try {
-      const dateLocale = locale === "pt" || locale === "tet" ? "pt-PT" : "en-US";
+      const dateLocale = locale === "tet" ? "pt-PT" : "en-US";
 
       const [employees, leaveStats] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
@@ -1001,7 +1001,7 @@ export default function PayrollDashboard() {
         {/* ===================== */}
         <div className="mt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            Last reviewed by {user?.displayName || "Admin"} &bull; {new Date().toLocaleDateString(locale === "pt" ? "pt-PT" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
+            Last reviewed by {user?.displayName || "Admin"} &bull; {new Date().toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>

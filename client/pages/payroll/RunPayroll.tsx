@@ -90,6 +90,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { sumMoney } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
+import { PayrollLoadingSkeleton, TaxInfoBanner } from "@/components/payroll";
 
 interface EmployeePayrollData {
   employee: Employee;
@@ -754,77 +755,7 @@ export default function RunPayroll() {
   };
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            {/* Header Skeleton */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-8 w-8 rounded" />
-                <div>
-                  <Skeleton className="h-8 w-48 mb-2" />
-                  <Skeleton className="h-4 w-64" />
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Skeleton className="h-10 w-32" />
-                <Skeleton className="h-10 w-40" />
-              </div>
-            </div>
-
-            {/* Period Banner Skeleton */}
-            <Skeleton className="h-20 w-full mb-6 rounded-lg" />
-
-            {/* Summary Cards Skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Skeleton className="h-4 w-24 mb-2" />
-                        <Skeleton className="h-8 w-28" />
-                      </div>
-                      <Skeleton className="h-8 w-8 rounded" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Tax Summary Skeleton */}
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-48 mb-2" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[1, 2, 3, 4].map((i) => (
-                    <Skeleton key={i} className="h-20" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Employee Table Skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-44 mb-2" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Skeleton key={i} className="h-12 w-full" />
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
+    return <PayrollLoadingSkeleton />;
   }
 
   return (
@@ -909,24 +840,7 @@ export default function RunPayroll() {
         </Card>
 
         {/* TL Tax Info Banner */}
-        <Card className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <Building className="h-5 w-5 text-amber-600 mt-0.5" />
-              <div className="text-sm">
-                <p className="font-medium text-amber-800 dark:text-amber-200">
-                  Timor-Leste Tax Rates
-                </p>
-                <p className="text-amber-700 dark:text-amber-300">
-                  Income Tax: {(TL_INCOME_TAX.rate * 100).toFixed(0)}% (above $
-                  {TL_INCOME_TAX.residentThreshold}/month for residents) • INSS Employee:{" "}
-                  {(TL_INSS.employeeRate * 100).toFixed(0)}% • INSS Employer:{" "}
-                  {(TL_INSS.employerRate * 100).toFixed(0)}%
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <TaxInfoBanner />
 
         {/* Compliance Notice - Shows when employees need documents */}
         {hasComplianceIssues && (

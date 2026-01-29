@@ -33,6 +33,7 @@ import type {
 } from '@/types/money';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService } from './accountingService';
+import { firestoreBillSchema } from '@/lib/validations';
 
 /**
  * Filter options for bill queries
@@ -61,21 +62,25 @@ export interface PaginatedResult<T> {
 }
 
 /**
- * Maps Firestore document to Bill
+ * Maps Firestore document to Bill with Zod validation
  */
 function mapBill(docSnap: DocumentSnapshot): Bill {
   const data = docSnap.data();
   if (!data) throw new Error('Document data is undefined');
 
+  // Validate with Zod schema
+  const validated = firestoreBillSchema.safeParse(data);
+
+  if (!validated.success) {
+    console.warn(`Bill validation warning (${docSnap.id}):`, validated.error.flatten().fieldErrors);
+  }
+
+  const parsed = validated.success ? validated.data : data;
+
   return {
     id: docSnap.id,
-    ...data,
-    createdAt: data.createdAt instanceof Timestamp
-      ? data.createdAt.toDate()
-      : data.createdAt || new Date(),
-    updatedAt: data.updatedAt instanceof Timestamp
-      ? data.updatedAt.toDate()
-      : data.updatedAt || new Date(),
+    ...parsed,
+    // Handle additional date field not in base schema
     paidAt: data.paidAt instanceof Timestamp
       ? data.paidAt.toDate()
       : data.paidAt || undefined,

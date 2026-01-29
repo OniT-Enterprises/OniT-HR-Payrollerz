@@ -4,6 +4,203 @@
  */
 
 import { z } from 'zod';
+import { Timestamp } from 'firebase/firestore';
+
+// ============================================
+// FIRESTORE DATA SCHEMAS (for incoming data)
+// ============================================
+
+/**
+ * Convert Firestore Timestamp or Date to Date
+ */
+const firestoreDateSchema = z.union([
+  z.instanceof(Date),
+  z.custom<Timestamp>((val) => val instanceof Timestamp).transform((ts) => ts.toDate()),
+  z.string().transform((s) => new Date(s)),
+]).optional().default(() => new Date());
+
+/**
+ * Firestore Employee document schema
+ * Validates and transforms data from Firestore
+ */
+export const firestoreEmployeeSchema = z.object({
+  personalInfo: z.object({
+    firstName: z.string().default(''),
+    lastName: z.string().default(''),
+    email: z.string().default(''),
+    phone: z.string().default(''),
+    phoneApp: z.string().default(''),
+    appEligible: z.boolean().default(false),
+    address: z.string().default(''),
+    dateOfBirth: z.string().default(''),
+    socialSecurityNumber: z.string().default(''),
+    emergencyContactName: z.string().default(''),
+    emergencyContactPhone: z.string().default(''),
+  }).default({}),
+  jobDetails: z.object({
+    employeeId: z.string().default(''),
+    department: z.string().default(''),
+    position: z.string().default(''),
+    hireDate: z.string().default(''),
+    employmentType: z.string().default('Full-time'),
+    workLocation: z.string().default(''),
+    manager: z.string().default(''),
+    sefopeNumber: z.string().optional(),
+    sefopeRegistrationDate: z.string().optional(),
+    fundingSource: z.string().optional(),
+    projectCode: z.string().optional(),
+  }).default({}),
+  compensation: z.object({
+    monthlySalary: z.number().default(0),
+    annualLeaveDays: z.number().default(25),
+    benefitsPackage: z.string().default('standard'),
+    isResident: z.boolean().default(true),
+  }).default({}),
+  documents: z.object({
+    bilheteIdentidade: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).optional(),
+    employeeIdCard: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).default({ number: '', expiryDate: '', required: false }),
+    socialSecurityNumber: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(true),
+    }).default({ number: '', expiryDate: '', required: true }),
+    electoralCard: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).default({ number: '', expiryDate: '', required: false }),
+    idCard: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).default({ number: '', expiryDate: '', required: false }),
+    passport: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      required: z.boolean().default(false),
+    }).default({ number: '', expiryDate: '', required: false }),
+    workContract: z.object({
+      fileUrl: z.string().default(''),
+      uploadDate: z.string().default(''),
+    }).default({ fileUrl: '', uploadDate: '' }),
+    nationality: z.string().default('Timor-Leste'),
+    residencyStatus: z.string().default('timorese'),
+    workingVisaNumber: z.string().optional(),
+    workingVisaExpiry: z.string().optional(),
+  }).default({}),
+  status: z.string().default('active'),
+  createdAt: firestoreDateSchema,
+  updatedAt: firestoreDateSchema,
+}).passthrough(); // Allow additional fields
+
+export type FirestoreEmployee = z.infer<typeof firestoreEmployeeSchema>;
+
+/**
+ * Firestore Invoice document schema
+ */
+export const firestoreInvoiceSchema = z.object({
+  invoiceNumber: z.string(),
+  customerId: z.string(),
+  customerName: z.string().default(''),
+  status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']).default('draft'),
+  issueDate: z.string(),
+  dueDate: z.string(),
+  items: z.array(z.object({
+    description: z.string(),
+    quantity: z.number(),
+    unitPrice: z.number(),
+    amount: z.number().optional(),
+  })).default([]),
+  subtotal: z.number().default(0),
+  taxRate: z.number().default(0),
+  taxAmount: z.number().default(0),
+  total: z.number().default(0),
+  amountPaid: z.number().default(0),
+  notes: z.string().optional(),
+  terms: z.string().optional(),
+  createdAt: firestoreDateSchema,
+  updatedAt: firestoreDateSchema,
+}).passthrough();
+
+export type FirestoreInvoice = z.infer<typeof firestoreInvoiceSchema>;
+
+/**
+ * Firestore Customer document schema
+ */
+export const firestoreCustomerSchema = z.object({
+  name: z.string(),
+  email: z.string().default(''),
+  phone: z.string().default(''),
+  address: z.string().default(''),
+  city: z.string().default(''),
+  country: z.string().default(''),
+  taxId: z.string().optional(),
+  notes: z.string().optional(),
+  totalRevenue: z.number().default(0),
+  outstandingBalance: z.number().default(0),
+  createdAt: firestoreDateSchema,
+  updatedAt: firestoreDateSchema,
+}).passthrough();
+
+export type FirestoreCustomer = z.infer<typeof firestoreCustomerSchema>;
+
+/**
+ * Firestore Bill document schema
+ */
+export const firestoreBillSchema = z.object({
+  vendorName: z.string(),
+  billNumber: z.string().optional(),
+  billDate: z.string(),
+  dueDate: z.string(),
+  amount: z.number(),
+  amountPaid: z.number().default(0),
+  status: z.enum(['pending', 'paid', 'overdue', 'cancelled']).default('pending'),
+  category: z.string(),
+  description: z.string().optional(),
+  notes: z.string().optional(),
+  createdAt: firestoreDateSchema,
+  updatedAt: firestoreDateSchema,
+}).passthrough();
+
+export type FirestoreBill = z.infer<typeof firestoreBillSchema>;
+
+/**
+ * Safe parser for Firestore documents
+ * Returns validated data or throws with detailed error
+ */
+export function parseFirestoreDoc<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown,
+  docId?: string
+): T {
+  const result = schema.safeParse(data);
+  if (result.success) {
+    return result.data;
+  }
+  const context = docId ? ` (doc: ${docId})` : '';
+  console.warn(`Firestore validation warning${context}:`, result.error.flatten());
+  // Return parsed with defaults for partial data
+  return schema.parse(data);
+}
+
+/**
+ * Safe parser that doesn't throw - returns null on failure
+ */
+export function safeParseFirestoreDoc<T>(
+  schema: z.ZodSchema<T>,
+  data: unknown
+): T | null {
+  const result = schema.safeParse(data);
+  return result.success ? result.data : null;
+}
 
 // ============================================
 // COMMON SCHEMAS
