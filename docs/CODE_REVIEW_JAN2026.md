@@ -305,7 +305,10 @@ const loadInvoices = async () => {
 
 **Fix**: Standardize on `react-hook-form` for all complex forms.
 
-**Status**: [ ] Pending
+**Status**: [~] In Progress - Jan 29, 2026
+- BillForm.tsx converted to react-hook-form with Zod validation
+- InvoiceForm.tsx pending (complex: dynamic line items with useFieldArray)
+- RecurringInvoiceForm.tsx pending
 
 ### 🟡 Medium Issues
 
@@ -339,7 +342,7 @@ const loadInvoices = async () => {
 |------|--------|------|-------|
 | Tenant isolation security | ✅ | Jan 29, 2026 | DEV-only fallback, throws in production |
 | React Query anti-patterns | ✅ | Jan 29, 2026 | 5 main pages migrated (Invoices, Bills, Customers, Vendors, Expenses) |
-| Form standardization | ⏳ | Jan 29, 2026 | Pending |
+| Form standardization | 🔄 | Jan 29, 2026 | BillForm.tsx done; InvoiceForm pending (complex) |
 | Weekly payroll reconciliation | ⏳ | Jan 29, 2026 | Pending |
 | i18n hardcoded strings | ⏳ | Jan 29, 2026 | Pending |
 
