@@ -332,7 +332,12 @@ const loadInvoices = async () => {
 
 **Fix**: Move to translation files.
 
-**Status**: [ ] Pending
+**Status**: [x] Fixed - Jan 29, 2026 (BenefitsEnrollment.tsx migrated to i18n)
+
+**Changes**:
+- Added `allowances` section to `translations.ts` (English + Tetun)
+- Migrated BenefitsEnrollment.tsx to use `t()` translation function
+- Allowance types, labels, and descriptions now translatable
 
 #### F. Type Overlap
 
@@ -350,7 +355,7 @@ const loadInvoices = async () => {
 | React Query anti-patterns | ✅ | Jan 29, 2026 | 5 main pages migrated (Invoices, Bills, Customers, Vendors, Expenses) |
 | Form standardization | 🔄 | Jan 29, 2026 | BillForm.tsx done; InvoiceForm pending (complex) |
 | Weekly payroll reconciliation | ✅ | Jan 29, 2026 | Added `calculateMonthlyWeeklyPayrolls()` with final-week reconciliation |
-| i18n hardcoded strings | ⏳ | Jan 29, 2026 | Pending |
+| i18n hardcoded strings | ✅ | Jan 29, 2026 | BenefitsEnrollment.tsx migrated to i18n (allowance types in EN/TET) |
 
 ---
 

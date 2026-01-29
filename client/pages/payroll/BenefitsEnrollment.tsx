@@ -71,19 +71,33 @@ import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 
-// TL-relevant allowance types
-const ALLOWANCE_TYPES = [
-  { value: "transport", label: "Transport", icon: Car, description: "Daily commute costs" },
-  { value: "fuel", label: "Fuel", icon: Fuel, description: "Vehicle fuel allowance" },
-  { value: "housing", label: "Housing", icon: Home, description: "Rent or accommodation" },
-  { value: "meal", label: "Meal", icon: Utensils, description: "Daily meal subsidy" },
-  { value: "phone", label: "Phone/Data", icon: Phone, description: "Mobile & internet" },
-  { value: "hardship", label: "Hardship", icon: MapPin, description: "Remote area posting" },
-  { value: "education", label: "Education", icon: GraduationCap, description: "Training & courses" },
-  { value: "uniform", label: "Uniform", icon: Shirt, description: "Work clothing" },
-  { value: "other", label: "Other", icon: Briefcase, description: "Other allowances" },
-];
+// Allowance type icons mapping
+const ALLOWANCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  transport: Car,
+  fuel: Fuel,
+  housing: Home,
+  meal: Utensils,
+  phone: Phone,
+  hardship: MapPin,
+  education: GraduationCap,
+  uniform: Shirt,
+  other: Briefcase,
+};
+
+// Allowance type values (keys for i18n lookup)
+const ALLOWANCE_TYPE_VALUES = [
+  "transport",
+  "fuel",
+  "housing",
+  "meal",
+  "phone",
+  "hardship",
+  "education",
+  "uniform",
+  "other",
+] as const;
 
 // Common allowance amounts in TL (in USD)
 const SUGGESTED_AMOUNTS: Record<string, { low: number; typical: number; high: number }> = {
@@ -101,6 +115,15 @@ const SUGGESTED_AMOUNTS: Record<string, { low: number; typical: number; high: nu
 export default function EmployeeAllowances() {
   const { toast } = useToast();
   const tenantId = useTenantId();
+  const { t } = useI18n();
+
+  // Build allowance types with translated labels
+  const ALLOWANCE_TYPES = ALLOWANCE_TYPE_VALUES.map((value) => ({
+    value,
+    label: t(`allowances.types.${value}`),
+    icon: ALLOWANCE_ICONS[value],
+    description: t(`allowances.types.${value}Desc`),
+  }));
   const [loading, setLoading] = useState(true);
   const [allowances, setAllowances] = useState<BenefitEnrollment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -133,8 +156,8 @@ export default function EmployeeAllowances() {
       } catch (error) {
         console.error("Failed to load data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load allowances data. Please refresh the page.",
+          title: t("common.error"),
+          description: t("allowances.loadError"),
           variant: "destructive",
         });
       } finally {
@@ -224,8 +247,8 @@ export default function EmployeeAllowances() {
   const handleAddAllowance = async () => {
     if (!selectedEmployee || !allowanceType || amount <= 0) {
       toast({
-        title: "Missing Information",
-        description: "Please select an employee, allowance type, and enter an amount.",
+        title: t("allowances.missingInfo"),
+        description: t("allowances.missingInfoDesc"),
         variant: "destructive",
       });
       return;
@@ -251,8 +274,8 @@ export default function EmployeeAllowances() {
       await payrollService.benefits.createEnrollment(tenantId, enrollment);
 
       toast({
-        title: "Allowance Added",
-        description: `${config.label} allowance of ${formatCurrency(amount)}/month added.`,
+        title: t("allowances.allowanceAdded"),
+        description: t("allowances.allowanceAddedDesc", { type: config.label, amount: formatCurrency(amount) }),
       });
 
       // Reload allowances
@@ -264,8 +287,8 @@ export default function EmployeeAllowances() {
     } catch (error) {
       console.error("Failed to create allowance:", error);
       toast({
-        title: "Error",
-        description: "Failed to add allowance. Please try again.",
+        title: t("common.error"),
+        description: t("allowances.addError"),
         variant: "destructive",
       });
     } finally {
@@ -335,16 +358,16 @@ export default function EmployeeAllowances() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Employee Allowances
+                  {t("allowances.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Transport, housing, meals, and other monthly allowances
+                  {t("allowances.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600">
               <Plus className="h-4 w-4 mr-2" />
-              Add Allowance
+              {t("allowances.add")}
             </Button>
           </div>
         </div>
@@ -358,13 +381,13 @@ export default function EmployeeAllowances() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Active Allowances
+                    {t("allowances.activeAllowances")}
                   </p>
                   <p className="text-2xl font-bold">
                     {stats.totalAllowances}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    for {stats.employeesWithAllowances} employees
+                    {t("allowances.forEmployees", { count: stats.employeesWithAllowances })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
@@ -379,13 +402,13 @@ export default function EmployeeAllowances() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Monthly Total
+                    {t("allowances.monthlyTotal")}
                   </p>
                   <p className="text-2xl font-bold">
                     {formatCurrency(stats.totalMonthly)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    all allowances combined
+                    {t("allowances.allCombined")}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
@@ -400,7 +423,7 @@ export default function EmployeeAllowances() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Avg per Employee
+                    {t("allowances.avgPerEmployee")}
                   </p>
                   <p className="text-2xl font-bold">
                     {stats.employeesWithAllowances > 0
@@ -408,7 +431,7 @@ export default function EmployeeAllowances() {
                       : formatCurrency(0)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    monthly average
+                    {t("allowances.monthlyAverage")}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
@@ -424,9 +447,9 @@ export default function EmployeeAllowances() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Wallet className="h-4 w-4 text-teal-600 dark:text-teal-400" />
-              Allowance Types
+              {t("allowances.allowanceTypes")}
             </CardTitle>
-            <CardDescription>Click to filter by type</CardDescription>
+            <CardDescription>{t("allowances.clickToFilter")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-9 gap-3">
@@ -453,7 +476,7 @@ export default function EmployeeAllowances() {
                       filterType === type.value ? "text-teal-600" : "text-muted-foreground"
                     }`} />
                     <p className="text-xs font-medium truncate">{type.label}</p>
-                    <p className="text-xs text-muted-foreground">{count} active</p>
+                    <p className="text-xs text-muted-foreground">{count} {t("allowances.active")}</p>
                   </button>
                 );
               })}
@@ -468,17 +491,17 @@ export default function EmployeeAllowances() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
-                  Allowances
+                  {t("allowances.title")}
                 </CardTitle>
                 <CardDescription>
-                  {filteredAllowances.length} allowance{filteredAllowances.length !== 1 ? "s" : ""}
+                  {filteredAllowances.length} {filteredAllowances.length !== 1 ? t("allowances.title").toLowerCase() : t("allowances.title").toLowerCase().replace(/s$/, "")}
                   {filterType !== "all" && ` (${getAllowanceConfig(filterType).label})`}
                 </CardDescription>
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search employees..."
+                  placeholder={t("allowances.searchPlaceholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -490,10 +513,10 @@ export default function EmployeeAllowances() {
             {filteredAllowances.length === 0 ? (
               <div className="text-center py-12">
                 <Wallet className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-4">No allowances found</p>
+                <p className="text-muted-foreground mb-4">{t("allowances.noResults")}</p>
                 <Button onClick={() => setShowAddDialog(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add First Allowance
+                  {t("allowances.addFirst")}
                 </Button>
               </div>
             ) : (
@@ -501,12 +524,12 @@ export default function EmployeeAllowances() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead className="text-right">Amount/Month</TableHead>
-                      <TableHead>Start Date</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead>{t("allowances.employee")}</TableHead>
+                      <TableHead>{t("allowances.type")}</TableHead>
+                      <TableHead className="text-right">{t("allowances.amountPerMonth")}</TableHead>
+                      <TableHead>{t("allowances.startDate")}</TableHead>
+                      <TableHead>{t("allowances.status")}</TableHead>
+                      <TableHead className="text-right">{t("allowances.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -559,18 +582,18 @@ export default function EmployeeAllowances() {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Add Employee Allowance</DialogTitle>
+            <DialogTitle>{t("allowances.add")}</DialogTitle>
             <DialogDescription>
-              Set up a monthly allowance for an employee
+              {t("allowances.setMonthlyAllowance")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="employee">Employee *</Label>
+              <Label htmlFor="employee">{t("allowances.employee")} *</Label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select employee" />
+                  <SelectValue placeholder={t("allowances.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.map((emp) => (
@@ -583,7 +606,7 @@ export default function EmployeeAllowances() {
             </div>
 
             <div>
-              <Label htmlFor="allowance-type">Allowance Type *</Label>
+              <Label htmlFor="allowance-type">{t("allowances.type")} *</Label>
               <Select
                 value={allowanceType}
                 onValueChange={(v) => {
@@ -595,7 +618,7 @@ export default function EmployeeAllowances() {
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select type" />
+                  <SelectValue placeholder={t("allowances.selectType")} />
                 </SelectTrigger>
                 <SelectContent>
                   {ALLOWANCE_TYPES.map((type) => {
@@ -615,7 +638,7 @@ export default function EmployeeAllowances() {
             </div>
 
             <div>
-              <Label htmlFor="amount">Amount per Month (USD) *</Label>
+              <Label htmlFor="amount">{t("allowances.amountLabel")} *</Label>
               <Input
                 id="amount"
                 type="number"
@@ -627,7 +650,7 @@ export default function EmployeeAllowances() {
               />
               {allowanceType && SUGGESTED_AMOUNTS[allowanceType] && (
                 <div className="flex gap-2 mt-2">
-                  <span className="text-xs text-muted-foreground">Suggested:</span>
+                  <span className="text-xs text-muted-foreground">{t("allowances.suggested")}</span>
                   <button
                     type="button"
                     className="text-xs text-teal-600 hover:underline"
@@ -654,7 +677,7 @@ export default function EmployeeAllowances() {
             </div>
 
             <div>
-              <Label htmlFor="effective-date">Start Date</Label>
+              <Label htmlFor="effective-date">{t("allowances.startDate")}</Label>
               <Input
                 id="effective-date"
                 type="date"
@@ -666,7 +689,7 @@ export default function EmployeeAllowances() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleAddAllowance}
@@ -676,12 +699,12 @@ export default function EmployeeAllowances() {
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Adding...
+                  {t("common.saving")}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Allowance
+                  {t("allowances.add")}
                 </>
               )}
             </Button>
