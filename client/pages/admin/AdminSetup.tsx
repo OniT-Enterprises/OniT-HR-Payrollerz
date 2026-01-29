@@ -40,8 +40,8 @@ export default function AdminSetup() {
         if (bootstrapSnap.exists()) {
           setAlreadySetup(true);
         }
-      } catch (err) {
-        console.log("Bootstrap check error:", err);
+      } catch {
+        // Ignore bootstrap check errors
       } finally {
         setChecking(false);
       }

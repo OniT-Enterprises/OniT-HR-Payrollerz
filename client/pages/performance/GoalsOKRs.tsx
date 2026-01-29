@@ -259,8 +259,6 @@ export default function GoalsOKRs() {
     }
 
     try {
-      console.log("Creating OKR:", { ...formData, keyResults });
-
       toast({
         title: "Success",
         description: "OKR created successfully.",

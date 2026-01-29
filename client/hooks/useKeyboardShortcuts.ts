@@ -73,7 +73,6 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
         case "k":
           event.preventDefault();
           // Future: Open command palette
-          console.log("Command palette - coming soon");
           return;
       }
     }

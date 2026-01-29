@@ -164,7 +164,6 @@ export default function Onboarding() {
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Saving to Firestore:", formData);
     setCurrentStep(2);
   };
 
@@ -176,7 +175,6 @@ export default function Onboarding() {
       alert(t("hiring.onboarding.policies.alert"));
       return;
     }
-    console.log("Saving acknowledgements:", acknowledgements);
     setCurrentStep(3);
   };
 

@@ -22,12 +22,10 @@ export const createDefaultTenant = async (
   config: TenantSetupConfig,
 ): Promise<boolean> => {
   if (!db) {
-    console.error("❌ Database not available");
     return false;
   }
 
   try {
-    console.log("🏢 Creating default tenant for user:", config.userEmail);
 
     // 1. Create tenant document
     const tenantData = {
@@ -50,7 +48,6 @@ export const createDefaultTenant = async (
     };
 
     await setDoc(doc(db, paths.tenant(config.tenantId)), tenantData);
-    console.log("✅ Tenant document created");
 
     // 2. Create member document
     const memberData = {
@@ -75,7 +72,6 @@ export const createDefaultTenant = async (
       doc(db, paths.member(config.tenantId, config.userId)),
       memberData,
     );
-    console.log("✅ Member document created");
 
     // 3. Create some sample departments
     const departments = [
@@ -103,12 +99,9 @@ export const createDefaultTenant = async (
         updatedAt: new Date(),
       });
     }
-    console.log("✅ Sample departments created");
 
-    console.log("🎉 Default tenant setup completed successfully!");
     return true;
-  } catch (error) {
-    console.error("❌ Failed to create default tenant:", error);
+  } catch {
     return false;
   }
 };
@@ -154,16 +147,12 @@ export const autoSetupTenantForUser = async (
     const success = await createDefaultTenant(config);
 
     if (success) {
-      console.log(
-        "✅ Auto-setup completed. User should now have tenant access.",
-      );
       // Store the tenant ID in localStorage for quick access
       localStorage.setItem("currentTenantId", tenantId);
     }
 
     return success;
-  } catch (error) {
-    console.error("❌ Auto-setup failed:", error);
+  } catch {
     return false;
   }
 };

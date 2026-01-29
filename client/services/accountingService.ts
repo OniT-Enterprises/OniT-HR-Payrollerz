@@ -121,7 +121,6 @@ class AccountService {
   async initializeChartOfAccounts(tenantId: string): Promise<void> {
     const existingAccounts = await this.getAllAccounts(tenantId);
     if (existingAccounts.length > 0) {
-      console.log('Chart of accounts already exists');
       return;
     }
 
@@ -138,7 +137,6 @@ class AccountService {
     }
 
     await batch.commit();
-    console.log(`Initialized ${defaultAccounts.length} accounts`);
   }
 }
 

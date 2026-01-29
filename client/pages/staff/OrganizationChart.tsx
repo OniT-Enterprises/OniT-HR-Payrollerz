@@ -87,19 +87,9 @@ export default function OrganizationChart() {
 
       // Load from Firebase services
       try {
-        console.log("📊 Loading organization data from Firebase...");
-
         employeesData = await employeeService.getAllEmployees(tenantId);
-        console.log("✅ Employees loaded:", employeesData.length);
-
         departmentsData = await departmentService.getAllDepartments(tenantId);
-        console.log("✅ Departments loaded:", departmentsData.length);
-        console.log(
-          "📋 Department names:",
-          departmentsData.map((d) => d.name),
-        );
-      } catch (error) {
-        console.warn("⚠️ Failed to load data from Firebase:", error);
+      } catch {
         employeesData = [];
         departmentsData = [];
       }
@@ -111,14 +101,13 @@ export default function OrganizationChart() {
       if (employeesData.length > 0 || departmentsData.length > 0) {
         try {
           await migrateMissingDepartments(employeesData, departmentsData);
-        } catch (error) {
-          console.warn("⚠️ Migration failed, continuing without it:", error);
+        } catch {
+          // Migration failed, continue without it
         }
       }
 
       buildAppleOrgChart(employeesData, departmentsData);
     } catch (error) {
-      console.error("❌ Critical error loading organization data:", error);
 
       // Provide user-friendly error message
       const errorMessage =
@@ -151,13 +140,8 @@ export default function OrganizationChart() {
     try {
       // Only run migration if NO departments exist but we have employees with department assignments
       if (existingDepartments.length > 0 || employees.length === 0) {
-        console.log(
-          `📊 Using existing ${existingDepartments.length} departments`,
-        );
         return;
       }
-
-      console.log("🔄 Attempting to migrate missing departments...");
 
       const employeeDepartments = [
         ...new Set(employees.map((emp) => emp.jobDetails.department)),
@@ -167,8 +151,6 @@ export default function OrganizationChart() {
       );
 
       if (validDepartments.length > 0) {
-        console.log(`📝 Creating ${validDepartments.length} departments...`);
-
         // Add departments one by one with individual error handling
         for (const deptName of validDepartments) {
           try {
@@ -178,9 +160,7 @@ export default function OrganizationChart() {
               shape: "circle",
               color: "#3B82F6",
             });
-            console.log(`✅ Created department: ${deptName}`);
-          } catch (error) {
-            console.warn(`⚠️ Failed to create department ${deptName}:`, error);
+          } catch {
             // Continue with other departments even if one fails
           }
         }
@@ -191,32 +171,18 @@ export default function OrganizationChart() {
             await departmentService.getAllDepartments(tenantId);
           setDepartments(updatedDepartments);
           buildAppleOrgChart(employees, updatedDepartments);
-          console.log("✅ Migration completed successfully");
-        } catch (error) {
-          console.warn(
-            "⚠️ Failed to reload departments after migration:",
-            error,
-          );
+        } catch {
           // Continue with existing data
         }
       }
-    } catch (error) {
-      console.error("❌ Error during department migration:", error);
-      // Don't throw the error - just log it and continue
+    } catch {
+      // Don't throw the error - just continue
     }
   };
 
 
   const buildAppleOrgChart = useCallback(
     (employeesData: Employee[], departmentsData: Department[]) => {
-      console.log(
-        "🏗����� Building org chart with:",
-        employeesData.length,
-        "employees and",
-        departmentsData.length,
-        "departments",
-      );
-
       const employeesByDept = employeesData.reduce(
         (acc, emp) => {
           const deptName = emp.jobDetails.department;
@@ -301,9 +267,6 @@ export default function OrganizationChart() {
 
       departmentsData.slice(0, 5).forEach((dept) => {
         const deptEmployees = employeesByDept[dept.name] || [];
-        console.log(
-          `🏢 Processing department: ${dept.name} with ${deptEmployees.length} employees`,
-        );
 
         // Find department head
         const head = deptEmployees.find(
@@ -322,9 +285,6 @@ export default function OrganizationChart() {
         let headPerson: OrgPerson;
 
         if (head) {
-          console.log(
-            `👤 Found department head for ${dept.name}: ${head.personalInfo.firstName} ${head.personalInfo.lastName}`,
-          );
           usedIds.add(head.id);
           headPerson = {
             id: `head-${head.id}`,
@@ -337,9 +297,6 @@ export default function OrganizationChart() {
           // Create a placeholder head using department's assigned director/manager or a generic placeholder
           const assignedHead =
             dept.director || dept.manager || t("orgChart.labels.noHeadAssigned");
-          console.log(
-            `📋 No employee head found for ${dept.name}, using assigned: ${assignedHead}`,
-          );
           headPerson = {
             id: `head-placeholder-${dept.id}`,
             name: assignedHead,
@@ -367,9 +324,6 @@ export default function OrganizationChart() {
             };
           });
 
-        console.log(
-          `➕ Adding department group: ${dept.name} with ${members.length} members`,
-        );
         deptGroups.push({
           id: dept.id,
           name: dept.name,
@@ -378,9 +332,6 @@ export default function OrganizationChart() {
         });
       });
 
-      console.log(
-        `✅ Org chart built: ${execChain.length} executives, ${deptGroups.length} department groups`,
-      );
       setDepartmentGroups(deptGroups);
     },
     [t],

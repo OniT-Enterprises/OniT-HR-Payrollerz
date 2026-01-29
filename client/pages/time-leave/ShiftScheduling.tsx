@@ -734,12 +734,6 @@ export default function ShiftScheduling() {
     const hours = calculateHours(formData.startTime, formData.endTime);
 
     try {
-      console.log("Creating shift:", {
-        ...formData,
-        employeeName: employee?.name,
-        hours,
-      });
-
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.createSuccessDesc"),
@@ -775,13 +769,6 @@ export default function ShiftScheduling() {
     e.preventDefault();
 
     try {
-      const hours = calculateHours(formData.startTime, formData.endTime);
-      console.log("Updating shift:", {
-        id: selectedShift?.id,
-        ...formData,
-        hours,
-      });
-
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.updateSuccessDesc"),
@@ -801,8 +788,6 @@ export default function ShiftScheduling() {
 
   const handleDeleteShift = async (shiftId: string) => {
     try {
-      console.log("Deleting shift:", shiftId);
-
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.deleteSuccessDesc"),
@@ -817,14 +802,6 @@ export default function ShiftScheduling() {
   };
 
   const handleLoad = () => {
-    console.log(
-      "Loading shifts for week:",
-      selectedWeek,
-      "department:",
-      selectedDepartment,
-      "location:",
-      selectedLocation,
-    );
     toast({
       title: t("timeLeave.shiftScheduling.toast.scheduleLoadedTitle"),
       description: t("timeLeave.shiftScheduling.toast.scheduleLoadedDesc", {
@@ -837,13 +814,6 @@ export default function ShiftScheduling() {
     const weekShifts = getWeekShifts();
     const draftShifts = weekShifts.filter((shift) => shift.status === "draft");
 
-    console.log(
-      "Publishing schedule for week:",
-      selectedWeek,
-      "shifts:",
-      draftShifts.length,
-    );
-
     toast({
       title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
       description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", {
@@ -853,9 +823,6 @@ export default function ShiftScheduling() {
   };
 
   const handleExportPDF = () => {
-    const weekShifts = getWeekShifts();
-    console.log("Exporting PDF for week:", selectedWeek);
-
     toast({
       title: t("timeLeave.shiftScheduling.toast.exportTitle"),
       description: t("timeLeave.shiftScheduling.toast.exportDesc"),
@@ -864,8 +831,6 @@ export default function ShiftScheduling() {
 
   const handleCopyWeek = () => {
     const weekShifts = getWeekShifts();
-    console.log("Copying week shifts:", weekShifts.length);
-
     toast({
       title: t("timeLeave.shiftScheduling.toast.copyTitle"),
       description: t("timeLeave.shiftScheduling.toast.copyDesc", {
@@ -875,7 +840,6 @@ export default function ShiftScheduling() {
   };
 
   const handleApplyTemplate = (template: ShiftTemplate) => {
-    console.log("Applying template:", template.name);
     toast({
       title: t("timeLeave.shiftScheduling.toast.templateTitle"),
       description: t("timeLeave.shiftScheduling.toast.templateDesc", {

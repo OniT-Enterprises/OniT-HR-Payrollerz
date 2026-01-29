@@ -64,11 +64,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       } else {
         // No profile exists - user needs to complete setup
         // Don't auto-create, let /admin/setup or /auth/signup handle it
-        console.log("User has no profile, needs setup");
         return null;
       }
-    } catch (error) {
-      console.warn("Could not fetch user profile:", error);
+    } catch {
       return null;
     }
   }, []);
@@ -81,8 +79,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       if (tokenResult.claims.superadmin === true) {
         return true;
       }
-    } catch (error) {
-      console.warn("Could not get ID token claims:", error);
+    } catch {
+      // Ignore token claim errors
     }
 
     // Fall back to Firestore profile
@@ -101,11 +99,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [user, fetchUserProfile, checkSuperAdmin]);
 
   useEffect(() => {
-    console.log("AuthProvider initializing with Firebase authentication");
-
     try {
       if (!auth) {
-        console.log("Firebase auth disabled, using fallback mode");
         setUser(null);
         setUserProfile(null);
         setIsSuperAdmin(false);
@@ -119,11 +114,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(firebaseUser);
 
           if (firebaseUser) {
-            console.log(
-              "User authenticated:",
-              firebaseUser.email || firebaseUser.uid,
-            );
-
             // Load user profile from Firestore
             const profile = await fetchUserProfile(firebaseUser);
             setUserProfile(profile);
@@ -131,17 +121,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
             // Check superadmin status
             const isAdmin = await checkSuperAdmin(firebaseUser, profile);
             setIsSuperAdmin(isAdmin);
-
-            if (isAdmin) {
-              console.log("User is a superadmin");
-            }
           } else {
-            console.log("User not authenticated");
             setUserProfile(null);
             setIsSuperAdmin(false);
           }
-        } catch (error) {
-          console.error("Auth state change error:", error);
+        } catch {
           setUserProfile(null);
           setIsSuperAdmin(false);
         } finally {
@@ -150,11 +134,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
       });
 
       return () => {
-        console.log("Cleaning up auth listener");
         unsubscribe();
       };
-    } catch (error) {
-      console.warn("Firebase auth listener setup failed, using fallback:", error);
+    } catch {
 
       setUser(null);
       setUserProfile(null);

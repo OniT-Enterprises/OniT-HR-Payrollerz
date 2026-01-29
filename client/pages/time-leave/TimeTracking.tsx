@@ -555,12 +555,6 @@ export default function TimeTracking() {
         formData.breakMinutes,
       );
 
-      console.log("Creating security time entry:", {
-        ...formData,
-        totalHours,
-        entryType,
-      });
-
       toast({
         title: t("timeLeave.timeTracking.toast.successTitle"),
         description: t("timeLeave.timeTracking.toast.successDesc"),
@@ -590,13 +584,6 @@ export default function TimeTracking() {
   };
 
   const handleFilter = () => {
-    console.log("Filtering time entries:", {
-      startDate,
-      endDate,
-      selectedEmployee: selectedEmployee === "all" ? "" : selectedEmployee,
-      selectedSite: selectedSite === "all" ? "" : selectedSite,
-      selectedClient: selectedClient === "all" ? "" : selectedClient,
-    });
     toast({
       title: t("timeLeave.timeTracking.toast.filterTitle"),
       description: t("timeLeave.timeTracking.toast.filterDesc", {
@@ -633,7 +620,6 @@ export default function TimeTracking() {
               : entry.status,
     }));
 
-    console.log("Exporting CSV data:", csvData);
     toast({
       title: t("timeLeave.timeTracking.toast.exportTitle"),
       description: t("timeLeave.timeTracking.toast.exportDesc"),

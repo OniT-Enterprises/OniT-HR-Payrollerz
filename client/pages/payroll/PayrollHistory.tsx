@@ -245,7 +245,6 @@ export default function PayrollHistory() {
       status: run.status,
     };
 
-    console.log("Exporting payroll run:", data);
     toast({
       title: "Export Started",
       description: "CSV file will be downloaded shortly.",
