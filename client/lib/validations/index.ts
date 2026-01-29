@@ -362,7 +362,28 @@ export const billSchema = z.object({
   { message: 'Due date must be on or after bill date', path: ['dueDate'] }
 );
 
-export type BillFormData = z.infer<typeof billSchema>;
+export type BillSchemaData = z.infer<typeof billSchema>;
+
+/**
+ * Bill form schema - for react-hook-form validation
+ * Matches the BillFormData interface in types/money.ts
+ */
+export const billFormSchema = z.object({
+  billNumber: z.string().optional().or(z.literal('')),
+  vendorId: z.string().min(1, 'Please select a vendor'),
+  billDate: z.string().min(1, 'Bill date is required'),
+  dueDate: z.string().min(1, 'Due date is required'),
+  description: z.string().min(1, 'Description is required').max(500),
+  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
+  category: z.string().min(1, 'Category is required'),
+  notes: z.string().max(1000).optional().or(z.literal('')),
+}).refine(
+  (data) => new Date(data.dueDate) >= new Date(data.billDate),
+  { message: 'Due date must be on or after bill date', path: ['dueDate'] }
+);
+
+export type BillFormSchemaData = z.infer<typeof billFormSchema>;
 
 // ============================================
 // CUSTOMER SCHEMAS

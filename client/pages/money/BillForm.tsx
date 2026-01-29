@@ -5,6 +5,8 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,6 +39,7 @@ import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { Bill, BillFormData, BillPayment, Vendor, ExpenseCategory, PaymentMethod } from '@/types/money';
 import {
   FileText,
@@ -101,17 +104,31 @@ export default function BillForm() {
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
 
-  const [formData, setFormData] = useState<BillFormData>({
-    billNumber: '',
-    vendorId: '',
-    billDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    description: '',
-    amount: 0,
-    taxRate: 0,
-    category: 'other',
-    notes: '',
+  // React Hook Form for better performance (no re-render on every keystroke)
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<BillFormSchemaData>({
+    resolver: zodResolver(billFormSchema),
+    defaultValues: {
+      billNumber: '',
+      vendorId: preselectedVendorId || '',
+      billDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      description: '',
+      amount: 0,
+      taxRate: 0,
+      category: 'other',
+      notes: '',
+    },
   });
+
+  // Watch form values for summary calculation
+  const formData = watch();
 
   useEffect(() => {
     if (session?.tid) {
@@ -135,7 +152,7 @@ export default function BillForm() {
 
       // Set preselected vendor if provided
       if (preselectedVendorId) {
-        setFormData((prev) => ({ ...prev, vendorId: preselectedVendorId }));
+        reset((prev) => ({ ...prev, vendorId: preselectedVendorId }));
       }
 
       // Load bill if editing/viewing
@@ -143,7 +160,7 @@ export default function BillForm() {
         const billData = await billService.getBillById(session.tid, id);
         if (billData) {
           setBill(billData);
-          setFormData({
+          reset({
             billNumber: billData.billNumber || '',
             vendorId: billData.vendorId,
             billDate: billData.billDate,
@@ -197,46 +214,33 @@ export default function BillForm() {
     });
   };
 
-  const handleSave = async () => {
+  const onSubmit = async (data: BillFormSchemaData) => {
     if (!session?.tid) return;
-    if (!formData.vendorId) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bills.vendorRequired') || 'Please select a vendor',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (!formData.description.trim()) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bills.descriptionRequired') || 'Description is required',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    if (formData.amount <= 0) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bills.amountRequired') || 'Enter a valid amount',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     try {
       setSaving(true);
+      // Convert to BillFormData for service
+      const billData: BillFormData = {
+        billNumber: data.billNumber || '',
+        vendorId: data.vendorId,
+        billDate: data.billDate,
+        dueDate: data.dueDate,
+        description: data.description,
+        amount: Number(data.amount),
+        taxRate: Number(data.taxRate),
+        category: data.category as ExpenseCategory,
+        notes: data.notes || '',
+      };
+
       if (isNew) {
-        const newId = await billService.createBill(session.tid, formData);
+        const newId = await billService.createBill(session.tid, billData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
         navigate(`/money/bills/${newId}`);
       } else if (id) {
-        await billService.updateBill(session.tid, id, formData);
+        await billService.updateBill(session.tid, id, billData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.updated') || 'Bill updated',
@@ -254,6 +258,8 @@ export default function BillForm() {
       setSaving(false);
     }
   };
+
+  const handleSave = handleSubmit(onSubmit);
 
   const handleRecordPayment = async () => {
     if (!session?.tid) return;
@@ -600,62 +606,71 @@ export default function BillForm() {
                   {t('money.bills.vendor') || 'Vendor'} *
                   <InfoTooltip content={MoneyTooltips.bills.vendor} />
                 </Label>
-                <Select
-                  value={formData.vendorId}
-                  onValueChange={(value) => setFormData({ ...formData, vendorId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={t('money.bills.selectVendor') || 'Select vendor'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vendors.map((vendor) => (
-                      <SelectItem key={vendor.id} value={vendor.id}>
-                        {vendor.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="vendorId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={errors.vendorId ? 'border-red-500' : ''}>
+                        <SelectValue placeholder={t('money.bills.selectVendor') || 'Select vendor'} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {vendors.map((vendor) => (
+                          <SelectItem key={vendor.id} value={vendor.id}>
+                            {vendor.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.vendorId && (
+                  <p className="text-sm text-red-500">{errors.vendorId.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>{t('money.bills.billNumber') || 'Bill Number'}</Label>
                   <Input
-                    value={formData.billNumber}
-                    onChange={(e) => setFormData({ ...formData, billNumber: e.target.value })}
+                    {...register('billNumber')}
                     placeholder={t('money.bills.billNumberPlaceholder') || "Vendor's invoice number"}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{t('money.bills.category') || 'Category'}</Label>
-                  <Select
-                    value={formData.category}
-                    onValueChange={(value: ExpenseCategory) =>
-                      setFormData({ ...formData, category: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {EXPENSE_CATEGORIES.map((cat) => (
-                        <SelectItem key={cat.value} value={cat.value}>
-                          {t(`money.expenses.categories.${cat.value}`) || cat.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="category"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {EXPENSE_CATEGORIES.map((cat) => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                              {t(`money.expenses.categories.${cat.value}`) || cat.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>{t('common.description') || 'Description'} *</Label>
                 <Textarea
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  {...register('description')}
                   placeholder={t('money.bills.descriptionPlaceholder') || 'What is this bill for?'}
                   rows={2}
+                  className={errors.description ? 'border-red-500' : ''}
                 />
+                {errors.description && (
+                  <p className="text-sm text-red-500">{errors.description.message}</p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -663,8 +678,7 @@ export default function BillForm() {
                   <Label>{t('money.bills.billDate') || 'Bill Date'}</Label>
                   <Input
                     type="date"
-                    value={formData.billDate}
-                    onChange={(e) => setFormData({ ...formData, billDate: e.target.value })}
+                    {...register('billDate')}
                   />
                 </div>
                 <div className="space-y-2">
@@ -674,9 +688,12 @@ export default function BillForm() {
                   </Label>
                   <Input
                     type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    {...register('dueDate')}
+                    className={errors.dueDate ? 'border-red-500' : ''}
                   />
+                  {errors.dueDate && (
+                    <p className="text-sm text-red-500">{errors.dueDate.message}</p>
+                  )}
                 </div>
               </div>
 
@@ -687,39 +704,43 @@ export default function BillForm() {
                     type="number"
                     step="0.01"
                     min="0"
-                    value={formData.amount || ''}
-                    onChange={(e) =>
-                      setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })
-                    }
+                    {...register('amount', { valueAsNumber: true })}
                     placeholder="0.00"
+                    className={errors.amount ? 'border-red-500' : ''}
                   />
+                  {errors.amount && (
+                    <p className="text-sm text-red-500">{errors.amount.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>{t('money.invoices.taxRate') || 'Tax Rate'} (%)</Label>
-                  <Select
-                    value={formData.taxRate.toString()}
-                    onValueChange={(value) =>
-                      setFormData({ ...formData, taxRate: parseFloat(value) })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="0">0%</SelectItem>
-                      <SelectItem value="2.5">2.5%</SelectItem>
-                      <SelectItem value="5">5%</SelectItem>
-                      <SelectItem value="10">10%</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="taxRate"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(parseFloat(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="0">0%</SelectItem>
+                          <SelectItem value="2.5">2.5%</SelectItem>
+                          <SelectItem value="5">5%</SelectItem>
+                          <SelectItem value="10">10%</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label>{t('common.notes') || 'Notes'}</Label>
                 <Textarea
-                  value={formData.notes}
-                  onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                  {...register('notes')}
                   placeholder={t('money.bills.notesPlaceholder') || 'Additional notes'}
                   rows={2}
                 />
