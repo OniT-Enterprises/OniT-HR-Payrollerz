@@ -3,8 +3,9 @@
  * List, search, and manage vendors (suppliers)
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,8 +39,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
+import { useAllVendors, vendorKeys } from '@/hooks/useVendors';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
@@ -63,8 +65,8 @@ export default function Vendors() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
@@ -79,29 +81,8 @@ export default function Vendors() {
     notes: '',
   });
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadVendors();
-    }
-  }, [session?.tid]);
-
-  const loadVendors = async () => {
-    if (!session?.tid) return;
-    try {
-      setLoading(true);
-      const data = await vendorService.getAllVendors(session.tid);
-      setVendors(data);
-    } catch (error) {
-      console.error('Error loading vendors:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.vendors.loadError') || 'Failed to load vendors',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query for data fetching
+  const { data: vendors = [], isLoading: loading } = useAllVendors();
 
   const filteredVendors = vendors.filter((vendor) => {
     const term = searchTerm.toLowerCase();
@@ -140,7 +121,7 @@ export default function Vendors() {
       setShowAddDialog(false);
       setEditingVendor(null);
       resetForm();
-      loadVendors();
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
     } catch (error) {
       console.error('Error saving vendor:', error);
       toast({
@@ -178,7 +159,7 @@ export default function Vendors() {
         title: t('common.success') || 'Success',
         description: t('money.vendors.deleted') || 'Vendor deleted successfully',
       });
-      loadVendors();
+      queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
     } catch (error) {
       console.error('Error deleting vendor:', error);
       toast({

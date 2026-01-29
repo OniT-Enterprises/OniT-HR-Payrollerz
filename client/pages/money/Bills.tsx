@@ -3,8 +3,9 @@
  * List, filter, and manage bills (accounts payable)
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,9 +29,10 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
+import { useAllBills, billKeys } from '@/hooks/useBills';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, BillStatus } from '@/types/money';
 import {
@@ -61,34 +63,13 @@ export default function Bills() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [bills, setBills] = useState<Bill[]>([]);
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadBills();
-    }
-  }, [session?.tid]);
-
-  const loadBills = async () => {
-    if (!session?.tid) return;
-    try {
-      setLoading(true);
-      const data = await billService.getAllBills(session.tid);
-      setBills(data);
-    } catch (error) {
-      console.error('Error loading bills:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bills.loadError') || 'Failed to load bills',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query for data fetching
+  const { data: bills = [], isLoading: loading } = useAllBills();
 
   const filteredBills = bills.filter((bill) => {
     const matchesSearch =
@@ -139,7 +120,8 @@ export default function Bills() {
         title: t('common.success') || 'Success',
         description: t('money.bills.deleted') || 'Bill deleted',
       });
-      loadBills();
+      // Invalidate React Query cache to refetch
+      queryClient.invalidateQueries({ queryKey: billKeys.all(tenantId) });
     } catch (error) {
       console.error('Error deleting bill:', error);
       toast({

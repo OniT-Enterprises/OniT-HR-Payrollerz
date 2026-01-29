@@ -3,7 +3,7 @@
  * List, filter, and manage invoices
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -31,13 +31,15 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { useAllInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
+import { useQueryClient } from '@tanstack/react-query';
 import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
 import { SendReminderDialog } from '@/components/money/SendReminderDialog';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
-import type { Invoice, InvoiceStatus, InvoiceSettings } from '@/types/money';
+import type { Invoice, InvoiceStatus } from '@/types/money';
 import {
   FileText,
   Plus,
@@ -75,44 +77,17 @@ export default function Invoices() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadInvoices();
-    }
-  }, [session?.tid]);
-
-  const loadInvoices = async () => {
-    if (!session?.tid) return;
-
-    try {
-      setLoading(true);
-      const [data, settings] = await Promise.all([
-        invoiceService.getAllInvoices(session.tid),
-        invoiceService.getSettings(session.tid).catch(() => ({})),
-      ]);
-      setInvoices(data);
-      setInvoiceSettings(settings);
-    } catch (error) {
-      console.error('Error loading invoices:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.loadError') || 'Failed to load invoices',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query hooks instead of manual state management
+  const { data: invoices = [], isLoading: loading, refetch: loadInvoices } = useAllInvoices();
+  const { data: invoiceSettings = {} } = useInvoiceSettings();
 
   const filteredInvoices = invoices.filter((invoice) => {
     const matchesSearch =

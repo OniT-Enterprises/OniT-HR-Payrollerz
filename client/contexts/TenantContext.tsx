@@ -78,8 +78,13 @@ export function useTenantId(): string {
   }
 
   if (!context.session?.tid) {
-    // For local development mode, return a fallback tenant ID
-    return "local-dev-tenant";
+    // Only allow fallback in development mode - throw in production
+    if (import.meta.env.DEV) {
+      console.warn("No tenant session - using local-dev-tenant fallback (DEV only)");
+      return "local-dev-tenant";
+    }
+    // In production, throw an error to prevent data leaks
+    throw new Error("No tenant session available. Please log in again.");
   }
 
   return context.session.tid;

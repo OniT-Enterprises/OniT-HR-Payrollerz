@@ -3,8 +3,9 @@
  * List, search, and manage customers for invoicing
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,8 +39,9 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { customerService } from '@/services/customerService';
+import { useAllCustomers, customerKeys } from '@/hooks/useCustomers';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { Customer, CustomerFormData } from '@/types/money';
 import {
@@ -62,8 +64,8 @@ export default function Customers() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [customers, setCustomers] = useState<Customer[]>([]);
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -78,29 +80,8 @@ export default function Customers() {
     notes: '',
   });
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadCustomers();
-    }
-  }, [session?.tid]);
-
-  const loadCustomers = async () => {
-    if (!session?.tid) return;
-    try {
-      setLoading(true);
-      const data = await customerService.getAllCustomers(session.tid);
-      setCustomers(data);
-    } catch (error) {
-      console.error('Error loading customers:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.customers.loadError') || 'Failed to load customers',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Use React Query for data fetching
+  const { data: customers = [], isLoading: loading } = useAllCustomers();
 
   const filteredCustomers = customers.filter((customer) => {
     const term = searchTerm.toLowerCase();
@@ -139,7 +120,7 @@ export default function Customers() {
       setShowAddDialog(false);
       setEditingCustomer(null);
       resetForm();
-      loadCustomers();
+      queryClient.invalidateQueries({ queryKey: customerKeys.all(tenantId) });
     } catch (error) {
       console.error('Error saving customer:', error);
       toast({
@@ -177,7 +158,7 @@ export default function Customers() {
         title: t('common.success') || 'Success',
         description: t('money.customers.deleted') || 'Customer deleted successfully',
       });
-      loadCustomers();
+      queryClient.invalidateQueries({ queryKey: customerKeys.all(tenantId) });
     } catch (error) {
       console.error('Error deleting customer:', error);
       toast({

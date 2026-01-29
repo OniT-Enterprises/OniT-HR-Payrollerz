@@ -243,5 +243,107 @@ Removed unused code and dependencies:
 
 ---
 
+## Comprehensive Review - January 29, 2026 (Part 2)
+
+### 🏆 Verified Strengths
+
+| Area | Implementation | Verdict |
+|------|---------------|---------|
+| **Financial Precision** | `decimal.js` wrapped in `lib/currency.ts` | Excellent - avoids floating-point errors |
+| **Atomic Operations** | `writeBatch` in `payrollService.ts` | Excellent - data integrity guaranteed |
+| **Lazy Loading** | `React.lazy` in `routes.tsx`, dynamic PDF imports | Good - reduces initial bundle |
+| **Audit Logging** | `auditLogService.ts` captures context & changes | Robust - critical for HR/Finance |
+| **Type Safety** | Comprehensive interfaces in `types/` | Strong |
+| **TL Compliance** | WIT (10% > $500), INSS (4%/6%), Subsidio Anual | All correct per TL law |
+
+### 🔴 Critical Issues to Fix
+
+#### A. Tenant Isolation Security
+
+**Issue**: `useTenantId()` has a dangerous fallback:
+```typescript
+// contexts/TenantContext.tsx
+if (!context.session?.tid) {
+  return "local-dev-tenant";  // DANGEROUS in production!
+}
+```
+
+**Risk**: If a production user loses session (race condition, bug), they could read/write to shared `local-dev-tenant` data.
+
+**Fix**: Remove fallback in production or throw error.
+
+**Status**: [x] Fixed - Jan 29, 2026 - Fallback now only works in DEV mode, throws error in production
+
+#### B. React Query Anti-Patterns
+
+**Issue**: Many pages manually manage loading states instead of using React Query hooks.
+
+**Example** (`pages/money/Invoices.tsx`):
+```typescript
+const [loading, setLoading] = useState(true);
+const loadInvoices = async () => {
+  setLoading(true);
+  const data = await invoiceService.getAllInvoices...
+  setLoading(false);
+}
+```
+
+**Fix**: Use `useQuery` hooks that already exist in `hooks/`.
+
+**Status**: [x] Fixed for main list pages - Jan 29, 2026
+- Invoices.tsx migrated to useAllInvoices
+- Bills.tsx migrated to useAllBills
+- Customers.tsx migrated to useAllCustomers
+- Vendors.tsx migrated to useAllVendors
+- Expenses.tsx migrated to useAllExpenses + useActiveVendors
+
+#### C. Form Management Inconsistency
+
+**Issue**: `AddEmployee.tsx` uses `react-hook-form` + Zod (correct), but `BillForm.tsx`, `InvoiceForm.tsx`, `RecurringInvoiceForm.tsx` use raw `useState`.
+
+**Impact**: Every keystroke causes re-render; 50+ line items = typing lag.
+
+**Fix**: Standardize on `react-hook-form` for all complex forms.
+
+**Status**: [ ] Pending
+
+### 🟡 Medium Issues
+
+#### D. Weekly Sub-Payroll Edge Case
+
+**Issue**: `calculateWeeklySubPayroll()` uses pro-rata based on working days, but total of 4 weeks may not equal monthly salary if month has 23 working days.
+
+**Fix**: Add reconciliation logic for final week of month.
+
+**Status**: [ ] Pending
+
+#### E. Hardcoded Strings (i18n)
+
+**Issue**: Many strings in const arrays (e.g., `ALLOWANCE_TYPES` in `BenefitsEnrollment.tsx`) are hardcoded in English.
+
+**Fix**: Move to translation files.
+
+**Status**: [ ] Pending
+
+#### F. Type Overlap
+
+**Issue**: Some overlap between `types/money.ts` and `types/accounting.ts` for Invoice/Expense types.
+
+**Fix**: Consider shared base interfaces.
+
+**Status**: [ ] Low priority
+
+### Implementation Progress (Part 2)
+
+| Task | Status | Date | Notes |
+|------|--------|------|-------|
+| Tenant isolation security | ✅ | Jan 29, 2026 | DEV-only fallback, throws in production |
+| React Query anti-patterns | ✅ | Jan 29, 2026 | 5 main pages migrated (Invoices, Bills, Customers, Vendors, Expenses) |
+| Form standardization | ⏳ | Jan 29, 2026 | Pending |
+| Weekly payroll reconciliation | ⏳ | Jan 29, 2026 | Pending |
+| i18n hardcoded strings | ⏳ | Jan 29, 2026 | Pending |
+
+---
+
 *Review conducted: January 2026*
 *Last updated: January 29, 2026*

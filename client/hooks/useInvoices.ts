@@ -75,3 +75,13 @@ export function useUpdateInvoice() {
     },
   });
 }
+
+export function useInvoiceSettings() {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: ['invoiceSettings', tenantId],
+    queryFn: () => invoiceService.getSettings(tenantId).catch(() => ({})),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+  });
+}

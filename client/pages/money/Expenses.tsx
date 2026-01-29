@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
@@ -37,11 +38,12 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
-import { vendorService } from '@/services/vendorService';
 import { fileUploadService } from '@/services/fileUploadService';
+import { useAllExpenses, expenseKeys } from '@/hooks/useExpenses';
+import { useActiveVendors } from '@/hooks/useVendors';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Expense, ExpenseFormData, ExpenseCategory, Vendor, PaymentMethod } from '@/types/money';
 import {
@@ -93,9 +95,8 @@ export default function Expenses() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const [loading, setLoading] = useState(true);
-  const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
@@ -114,11 +115,10 @@ export default function Expenses() {
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadData();
-    }
-  }, [session?.tid]);
+  // Use React Query for data fetching
+  const { data: expenses = [], isLoading: expensesLoading } = useAllExpenses();
+  const { data: vendors = [], isLoading: vendorsLoading } = useActiveVendors();
+  const loading = expensesLoading || vendorsLoading;
 
   useEffect(() => {
     // Open dialog if vendor preselected
@@ -127,28 +127,6 @@ export default function Expenses() {
       setShowAddDialog(true);
     }
   }, [preselectedVendorId, vendors]);
-
-  const loadData = async () => {
-    if (!session?.tid) return;
-    try {
-      setLoading(true);
-      const [expenseData, vendorData] = await Promise.all([
-        expenseService.getAllExpenses(session.tid),
-        vendorService.getActiveVendors(session.tid),
-      ]);
-      setExpenses(expenseData);
-      setVendors(vendorData);
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.expenses.loadError') || 'Failed to load expenses',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredExpenses = expenses.filter((expense) => {
     const matchesSearch =
@@ -288,7 +266,7 @@ export default function Expenses() {
       setShowAddDialog(false);
       setEditingExpense(null);
       resetForm();
-      loadData();
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
     } catch (error) {
       console.error('Error saving expense:', error);
       toast({
@@ -328,7 +306,7 @@ export default function Expenses() {
         title: t('common.success') || 'Success',
         description: t('money.expenses.deleted') || 'Expense deleted successfully',
       });
-      loadData();
+      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
     } catch (error) {
       console.error('Error deleting expense:', error);
       toast({
