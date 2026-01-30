@@ -1,10 +1,13 @@
 /**
  * Recurring Invoice Form
  * Create and edit recurring invoice templates
+ * Uses react-hook-form + Zod for form management and validation
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,6 +32,7 @@ import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import { customerService } from '@/services/customerService';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
 import type { RecurringInvoice, RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
 import {
   Repeat,
@@ -41,14 +45,6 @@ import {
   Calendar,
   FileText,
 } from 'lucide-react';
-
-interface LineItem {
-  id: string;
-  description: string;
-  quantity: number;
-  unitPrice: number;
-  amount: number;
-}
 
 const FREQUENCY_OPTIONS: { value: RecurringFrequency; label: string }[] = [
   { value: 'weekly', label: 'Weekly' },
@@ -80,21 +76,41 @@ export default function RecurringInvoiceForm() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>({});
 
-  // Form state
-  const [customerId, setCustomerId] = useState('');
-  const [frequency, setFrequency] = useState<RecurringFrequency>('monthly');
-  const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-  const [endDate, setEndDate] = useState('');
-  const [endAfterOccurrences, setEndAfterOccurrences] = useState<number | undefined>();
-  const [endType, setEndType] = useState<'never' | 'date' | 'occurrences'>('never');
-  const [items, setItems] = useState<LineItem[]>([
-    { id: '1', description: '', quantity: 1, unitPrice: 0, amount: 0 },
-  ]);
-  const [taxRate, setTaxRate] = useState(0);
-  const [notes, setNotes] = useState('');
-  const [terms, setTerms] = useState('');
-  const [dueDays, setDueDays] = useState(30);
-  const [autoSend, setAutoSend] = useState(false);
+  // React Hook Form for better performance
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<RecurringInvoiceFormSchemaData>({
+    resolver: zodResolver(recurringInvoiceFormSchema),
+    defaultValues: {
+      customerId: '',
+      frequency: 'monthly',
+      startDate: new Date().toISOString().split('T')[0],
+      endType: 'never',
+      endDate: '',
+      endAfterOccurrences: undefined,
+      items: [{ id: '1', description: '', quantity: 1, unitPrice: 0, amount: 0 }],
+      taxRate: 0,
+      notes: '',
+      terms: '',
+      dueDays: 30,
+      autoSend: false,
+    },
+  });
+
+  // useFieldArray for dynamic line items
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'items',
+  });
+
+  // Watch form values
+  const formData = watch();
+  const endType = watch('endType');
 
   useEffect(() => {
     if (session?.tid) {
@@ -119,36 +135,43 @@ export default function RecurringInvoiceForm() {
       // Set defaults from settings
       if (!isEditMode && invoiceSettings) {
         const s = invoiceSettings as Partial<InvoiceSettings>;
-        setTaxRate(s.defaultTaxRate || 0);
-        setNotes(s.defaultNotes || '');
-        setTerms(s.defaultTerms || '');
-        setDueDays(s.defaultDueDays || 30);
+        reset((prev) => ({
+          ...prev,
+          taxRate: s.defaultTaxRate || 0,
+          notes: s.defaultNotes || '',
+          terms: s.defaultTerms || '',
+          dueDays: s.defaultDueDays || 30,
+        }));
       }
 
       // Load existing recurring invoice if editing
       if (isEditMode && id) {
         const recurring = await recurringInvoiceService.getById(session.tid, id);
         if (recurring) {
-          setCustomerId(recurring.customerId);
-          setFrequency(recurring.frequency);
-          setStartDate(recurring.startDate);
-          setItems(recurring.items.map((item, index) => ({
-            ...item,
-            id: item.id || `item-${index}`,
-          })));
-          setTaxRate(recurring.taxRate);
-          setNotes(recurring.notes || '');
-          setTerms(recurring.terms || '');
-          setDueDays(recurring.dueDays);
-          setAutoSend(recurring.autoSend);
-
+          let endTypeValue: 'never' | 'date' | 'occurrences' = 'never';
           if (recurring.endDate) {
-            setEndType('date');
-            setEndDate(recurring.endDate);
+            endTypeValue = 'date';
           } else if (recurring.endAfterOccurrences) {
-            setEndType('occurrences');
-            setEndAfterOccurrences(recurring.endAfterOccurrences);
+            endTypeValue = 'occurrences';
           }
+
+          reset({
+            customerId: recurring.customerId,
+            frequency: recurring.frequency,
+            startDate: recurring.startDate,
+            endType: endTypeValue,
+            endDate: recurring.endDate || '',
+            endAfterOccurrences: recurring.endAfterOccurrences,
+            items: recurring.items.map((item, index) => ({
+              ...item,
+              id: item.id || `item-${index}`,
+            })),
+            taxRate: recurring.taxRate,
+            notes: recurring.notes || '',
+            terms: recurring.terms || '',
+            dueDays: recurring.dueDays,
+            autoSend: recurring.autoSend,
+          });
         }
       }
     } catch (error) {
@@ -163,39 +186,25 @@ export default function RecurringInvoiceForm() {
     }
   };
 
-  const handleItemChange = (index: number, field: keyof LineItem, value: string | number) => {
-    const newItems = [...items];
-    const item = { ...newItems[index] };
-
-    if (field === 'description') {
-      item.description = value as string;
-    } else if (field === 'quantity') {
-      item.quantity = parseFloat(value as string) || 0;
-      item.amount = item.quantity * item.unitPrice;
-    } else if (field === 'unitPrice') {
-      item.unitPrice = parseFloat(value as string) || 0;
-      item.amount = item.quantity * item.unitPrice;
-    }
-
-    newItems[index] = item;
-    setItems(newItems);
-  };
-
   const addItem = () => {
-    setItems([
-      ...items,
-      { id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 },
-    ]);
+    append({ id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 });
   };
 
   const removeItem = (index: number) => {
-    if (items.length > 1) {
-      setItems(items.filter((_, i) => i !== index));
+    if (fields.length > 1) {
+      remove(index);
     }
   };
 
-  const calculateSubtotal = () => items.reduce((sum, item) => sum + item.amount, 0);
-  const calculateTax = () => calculateSubtotal() * (taxRate / 100);
+  const calculateSubtotal = () => {
+    const items = formData.items || [];
+    return items.reduce((sum, item) => {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.unitPrice) || 0;
+      return sum + (qty * price);
+    }, 0);
+  };
+  const calculateTax = () => calculateSubtotal() * ((Number(formData.taxRate) || 0) / 100);
   const calculateTotal = () => calculateSubtotal() + calculateTax();
 
   const formatCurrency = (amount: number) => {
@@ -206,36 +215,34 @@ export default function RecurringInvoiceForm() {
     }).format(amount);
   };
 
-  const handleSave = async () => {
+  const onSubmit = async (formValues: RecurringInvoiceFormSchemaData) => {
     if (!session?.tid) return;
-
-    // Validation
-    if (!customerId) {
-      toast({ title: 'Error', description: 'Please select a customer', variant: 'destructive' });
-      return;
-    }
-
-    const validItems = items.filter((item) => item.description && item.amount > 0);
-    if (validItems.length === 0) {
-      toast({ title: 'Error', description: 'Please add at least one line item', variant: 'destructive' });
-      return;
-    }
 
     try {
       setSaving(true);
 
+      // Filter valid items and prepare data
+      const validItems = formValues.items
+        .filter((item) => item.description && (Number(item.quantity) * Number(item.unitPrice)) > 0)
+        .map(({ id, ...item }) => ({
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          amount: Number(item.quantity) * Number(item.unitPrice),
+        }));
+
       const data = {
-        customerId,
-        frequency,
-        startDate,
-        endDate: endType === 'date' ? endDate : undefined,
-        endAfterOccurrences: endType === 'occurrences' ? endAfterOccurrences : undefined,
-        items: validItems.map(({ id, ...item }) => item),
-        taxRate,
-        notes: notes || undefined,
-        terms: terms || undefined,
-        dueDays,
-        autoSend,
+        customerId: formValues.customerId,
+        frequency: formValues.frequency,
+        startDate: formValues.startDate,
+        endDate: formValues.endType === 'date' ? formValues.endDate : undefined,
+        endAfterOccurrences: formValues.endType === 'occurrences' ? formValues.endAfterOccurrences : undefined,
+        items: validItems,
+        taxRate: Number(formValues.taxRate),
+        notes: formValues.notes || undefined,
+        terms: formValues.terms || undefined,
+        dueDays: Number(formValues.dueDays),
+        autoSend: formValues.autoSend,
       };
 
       if (isEditMode && id) {
@@ -258,6 +265,8 @@ export default function RecurringInvoiceForm() {
       setSaving(false);
     }
   };
+
+  const handleSave = handleSubmit(onSubmit);
 
   if (loading) {
     return (
@@ -331,22 +340,32 @@ export default function RecurringInvoiceForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Customer *</Label>
-                  <Select value={customerId} onValueChange={setCustomerId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a customer" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {customers.map((customer) => (
-                        <SelectItem key={customer.id} value={customer.id}>
-                          {customer.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="customerId"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
+                          <SelectValue placeholder="Select a customer" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {customers.map((customer) => (
+                            <SelectItem key={customer.id} value={customer.id}>
+                              {customer.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                  {errors.customerId && (
+                    <p className="text-xs text-red-500">{errors.customerId.message}</p>
+                  )}
                   {customers.length === 0 && (
                     <p className="text-xs text-muted-foreground">
                       No customers yet.{' '}
                       <button
+                        type="button"
                         onClick={() => navigate('/money/customers')}
                         className="text-purple-600 hover:underline"
                       >
@@ -361,18 +380,24 @@ export default function RecurringInvoiceForm() {
                     Frequency *
                     <InfoTooltip content={MoneyTooltips.recurring.frequency} />
                   </Label>
-                  <Select value={frequency} onValueChange={(v) => setFrequency(v as RecurringFrequency)}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {FREQUENCY_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="frequency"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {FREQUENCY_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -384,9 +409,12 @@ export default function RecurringInvoiceForm() {
                   </Label>
                   <Input
                     type="date"
-                    value={startDate}
-                    onChange={(e) => setStartDate(e.target.value)}
+                    {...register('startDate')}
+                    className={errors.startDate ? 'border-red-500' : ''}
                   />
+                  {errors.startDate && (
+                    <p className="text-xs text-red-500">{errors.startDate.message}</p>
+                  )}
                   <p className="text-xs text-muted-foreground">
                     First invoice will be generated on this date
                   </p>
@@ -397,16 +425,22 @@ export default function RecurringInvoiceForm() {
                     End Condition
                     <InfoTooltip content={MoneyTooltips.recurring.endCondition} />
                   </Label>
-                  <Select value={endType} onValueChange={(v) => setEndType(v as 'never' | 'date' | 'occurrences')}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="never">Never (continues indefinitely)</SelectItem>
-                      <SelectItem value="date">On a specific date</SelectItem>
-                      <SelectItem value="occurrences">After X invoices</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="endType"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="never">Never (continues indefinitely)</SelectItem>
+                          <SelectItem value="date">On a specific date</SelectItem>
+                          <SelectItem value="occurrences">After X invoices</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
               </div>
 
@@ -415,10 +449,13 @@ export default function RecurringInvoiceForm() {
                   <Label>End Date</Label>
                   <Input
                     type="date"
-                    value={endDate}
-                    onChange={(e) => setEndDate(e.target.value)}
-                    min={startDate}
+                    {...register('endDate')}
+                    min={formData.startDate}
+                    className={errors.endDate ? 'border-red-500' : ''}
                   />
+                  {errors.endDate && (
+                    <p className="text-xs text-red-500">{errors.endDate.message}</p>
+                  )}
                 </div>
               )}
 
@@ -428,10 +465,13 @@ export default function RecurringInvoiceForm() {
                   <Input
                     type="number"
                     min={1}
-                    value={endAfterOccurrences || ''}
-                    onChange={(e) => setEndAfterOccurrences(parseInt(e.target.value) || undefined)}
+                    {...register('endAfterOccurrences', { valueAsNumber: true })}
                     placeholder="e.g., 12"
+                    className={errors.endAfterOccurrences ? 'border-red-500' : ''}
                   />
+                  {errors.endAfterOccurrences && (
+                    <p className="text-xs text-red-500">{errors.endAfterOccurrences.message}</p>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -462,58 +502,64 @@ export default function RecurringInvoiceForm() {
                     </tr>
                   </thead>
                   <tbody>
-                    {items.map((item, index) => (
-                      <tr key={item.id} className="border-t">
-                        <td className="p-2">
-                          <Input
-                            value={item.description}
-                            onChange={(e) => handleItemChange(index, 'description', e.target.value)}
-                            placeholder="Service or product description"
-                            className="border-0 focus-visible:ring-0"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={item.quantity || ''}
-                            onChange={(e) => handleItemChange(index, 'quantity', e.target.value)}
-                            className="text-right border-0 focus-visible:ring-0"
-                          />
-                        </td>
-                        <td className="p-2">
-                          <Input
-                            type="number"
-                            min={0}
-                            step={0.01}
-                            value={item.unitPrice || ''}
-                            onChange={(e) => handleItemChange(index, 'unitPrice', e.target.value)}
-                            className="text-right border-0 focus-visible:ring-0"
-                          />
-                        </td>
-                        <td className="p-2 text-right font-medium">
-                          {formatCurrency(item.amount)}
-                        </td>
-                        <td className="p-2">
-                          {items.length > 1 && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => removeItem(index)}
-                              className="h-8 w-8 text-muted-foreground hover:text-red-500"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
+                    {fields.map((field, index) => {
+                      const itemValues = formData.items?.[index];
+                      const itemAmount = (Number(itemValues?.quantity) || 0) * (Number(itemValues?.unitPrice) || 0);
+                      return (
+                        <tr key={field.id} className="border-t">
+                          <td className="p-2">
+                            <Input
+                              {...register(`items.${index}.description`)}
+                              placeholder="Service or product description"
+                              className={`border-0 focus-visible:ring-0 ${errors.items?.[index]?.description ? 'border border-red-500' : ''}`}
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              step={0.01}
+                              {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                              className="text-right border-0 focus-visible:ring-0"
+                            />
+                          </td>
+                          <td className="p-2">
+                            <Input
+                              type="number"
+                              min={0}
+                              step={0.01}
+                              {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                              className="text-right border-0 focus-visible:ring-0"
+                            />
+                          </td>
+                          <td className="p-2 text-right font-medium">
+                            {formatCurrency(itemAmount)}
+                          </td>
+                          <td className="p-2">
+                            {fields.length > 1 && (
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => removeItem(index)}
+                                className="h-8 w-8 text-muted-foreground hover:text-red-500"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
 
-              <Button variant="outline" onClick={addItem}>
+              {errors.items && typeof errors.items.message === 'string' && (
+                <p className="text-sm text-red-500">{errors.items.message}</p>
+              )}
+
+              <Button type="button" variant="outline" onClick={addItem}>
                 <Plus className="h-4 w-4 mr-2" />
                 Add Line Item
               </Button>
@@ -533,8 +579,7 @@ export default function RecurringInvoiceForm() {
                         min={0}
                         max={100}
                         step={0.5}
-                        value={taxRate}
-                        onChange={(e) => setTaxRate(parseFloat(e.target.value) || 0)}
+                        {...register('taxRate', { valueAsNumber: true })}
                         className="w-16 h-7 text-right text-sm"
                       />
                       <span className="text-muted-foreground">%</span>
@@ -552,25 +597,37 @@ export default function RecurringInvoiceForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                 <div className="space-y-2">
                   <Label>Payment Due</Label>
-                  <Select value={String(dueDays)} onValueChange={(v) => setDueDays(parseInt(v))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {DUE_DAYS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={String(opt.value)}>
-                          {opt.label} after invoice date
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Controller
+                    name="dueDays"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseInt(v))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {DUE_DAYS_OPTIONS.map((opt) => (
+                            <SelectItem key={opt.value} value={String(opt.value)}>
+                              {opt.label} after invoice date
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
                 </div>
 
                 <div className="flex items-center space-x-2 pt-6">
-                  <Checkbox
-                    id="autoSend"
-                    checked={autoSend}
-                    onCheckedChange={(checked) => setAutoSend(checked as boolean)}
+                  <Controller
+                    name="autoSend"
+                    control={control}
+                    render={({ field }) => (
+                      <Checkbox
+                        id="autoSend"
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    )}
                   />
                   <label htmlFor="autoSend" className="text-sm cursor-pointer flex items-center gap-1.5">
                     Auto-send invoice when generated
@@ -584,8 +641,7 @@ export default function RecurringInvoiceForm() {
                 <div className="space-y-2">
                   <Label>Notes</Label>
                   <Textarea
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
+                    {...register('notes')}
                     placeholder="Notes to appear on invoice"
                     rows={3}
                   />
@@ -593,8 +649,7 @@ export default function RecurringInvoiceForm() {
                 <div className="space-y-2">
                   <Label>Terms & Conditions</Label>
                   <Textarea
-                    value={terms}
-                    onChange={(e) => setTerms(e.target.value)}
+                    {...register('terms')}
                     placeholder="Payment terms"
                     rows={3}
                   />

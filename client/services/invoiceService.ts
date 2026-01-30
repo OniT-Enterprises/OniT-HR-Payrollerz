@@ -575,6 +575,7 @@ class InvoiceService {
 
   /**
    * Record a payment for an invoice
+   * Uses transaction to ensure atomicity of payment + invoice update
    * Also creates a journal entry (Debit Cash, Credit AR)
    */
   async recordPayment(
@@ -583,73 +584,82 @@ class InvoiceService {
     payment: PaymentFormData,
     userId?: string
   ): Promise<string> {
-    const invoice = await this.getInvoiceById(tenantId, invoiceId);
-    if (!invoice) {
-      throw new Error('Invoice not found');
-    }
-
-    if (invoice.status === 'cancelled') {
-      throw new Error('Cannot record payment for cancelled invoice');
-    }
-
-    // Create payment record
-    const paymentRecord: Omit<PaymentReceived, 'id'> = {
-      date: payment.date,
-      customerId: invoice.customerId,
-      customerName: invoice.customerName,
-      invoiceId: invoice.id,
-      invoiceNumber: invoice.invoiceNumber,
-      amount: payment.amount,
-      method: payment.method,
-      reference: payment.reference,
-      notes: payment.notes,
-      createdAt: new Date(),
-    };
-
-    const paymentRef = await addDoc(this.paymentsRef(tenantId), {
-      ...paymentRecord,
-      createdAt: serverTimestamp(),
-    });
-
-    // Update invoice
-    const newAmountPaid = invoice.amountPaid + payment.amount;
-    const newBalanceDue = invoice.total - newAmountPaid;
-    const newStatus: InvoiceStatus =
-      newBalanceDue <= 0 ? 'paid' : newBalanceDue < invoice.total ? 'partial' : invoice.status;
-
     const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
-    await updateDoc(invoiceRef, {
-      amountPaid: newAmountPaid,
-      balanceDue: Math.max(0, newBalanceDue),
-      status: newStatus,
-      paidAt: newStatus === 'paid' ? serverTimestamp() : null,
-      updatedAt: serverTimestamp(),
+
+    // Use transaction to ensure atomicity of payment creation and invoice update
+    const paymentId = await runTransaction(db, async (transaction) => {
+      // Read invoice within transaction
+      const invoiceDoc = await transaction.get(invoiceRef);
+      if (!invoiceDoc.exists()) {
+        throw new Error('Invoice not found');
+      }
+
+      const invoice = { id: invoiceDoc.id, ...invoiceDoc.data() } as Invoice;
+
+      if (invoice.status === 'cancelled') {
+        throw new Error('Cannot record payment for cancelled invoice');
+      }
+
+      // Calculate new values
+      const newAmountPaid = invoice.amountPaid + payment.amount;
+      const newBalanceDue = invoice.total - newAmountPaid;
+      const newStatus: InvoiceStatus =
+        newBalanceDue <= 0 ? 'paid' : newBalanceDue < invoice.total ? 'partial' : invoice.status;
+
+      // Create payment record within transaction
+      const paymentDocRef = doc(this.paymentsRef(tenantId));
+      transaction.set(paymentDocRef, {
+        date: payment.date,
+        customerId: invoice.customerId,
+        customerName: invoice.customerName,
+        invoiceId: invoice.id,
+        invoiceNumber: invoice.invoiceNumber,
+        amount: payment.amount,
+        method: payment.method,
+        reference: payment.reference,
+        notes: payment.notes,
+        createdAt: serverTimestamp(),
+      });
+
+      // Update invoice within same transaction
+      transaction.update(invoiceRef, {
+        amountPaid: newAmountPaid,
+        balanceDue: Math.max(0, newBalanceDue),
+        status: newStatus,
+        paidAt: newStatus === 'paid' ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
+      });
+
+      return paymentDocRef.id;
     });
 
-    // Create accounting journal entry (if chart of accounts is set up)
+    // Create accounting journal entry outside transaction (optional, non-critical)
     try {
-      const accounts = await accountService.getAllAccounts(tenantId);
-      if (accounts.length > 0) {
-        await journalEntryService.createFromInvoicePayment(
-          tenantId,
-          {
-            invoiceId: invoice.id,
-            invoiceNumber: invoice.invoiceNumber,
-            customerName: invoice.customerName,
-            date: payment.date,
-            amount: payment.amount,
-            method: payment.method,
-            reference: payment.reference,
-          },
-          userId || 'system'
-        );
+      const invoice = await this.getInvoiceById(tenantId, invoiceId);
+      if (invoice) {
+        const accounts = await accountService.getAllAccounts(tenantId);
+        if (accounts.length > 0) {
+          await journalEntryService.createFromInvoicePayment(
+            tenantId,
+            {
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              customerName: invoice.customerName,
+              date: payment.date,
+              amount: payment.amount,
+              method: payment.method,
+              reference: payment.reference,
+            },
+            userId || 'system'
+          );
+        }
       }
     } catch (error) {
       // Log but don't fail - accounting integration is optional
       console.warn('Could not create journal entry for payment:', error);
     }
 
-    return paymentRef.id;
+    return paymentId;
   }
 
   /**

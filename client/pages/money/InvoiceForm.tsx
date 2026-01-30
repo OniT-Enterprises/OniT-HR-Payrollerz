@@ -1,10 +1,13 @@
 /**
  * Invoice Form
  * Create, edit, and view invoices
+ * Uses react-hook-form + Zod for form management and validation
  */
 
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,6 +42,7 @@ import { customerService } from '@/services/customerService';
 import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { Invoice, InvoiceItem, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
 import {
   FileText,
@@ -96,15 +100,35 @@ export default function InvoiceForm() {
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
 
-  const [formData, setFormData] = useState<InvoiceFormData>({
-    customerId: '',
-    issueDate: new Date().toISOString().split('T')[0],
-    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
-    items: [{ description: '', quantity: 1, unitPrice: 0, amount: 0 }],
-    taxRate: 0,
-    notes: '',
-    terms: 'Payment due within 30 days.',
+  // React Hook Form for better performance (no re-render on every keystroke)
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<InvoiceFormSchemaData>({
+    resolver: zodResolver(invoiceFormSchema),
+    defaultValues: {
+      customerId: preselectedCustomerId || '',
+      issueDate: new Date().toISOString().split('T')[0],
+      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      items: [{ description: '', quantity: 1, unitPrice: 0, amount: 0 }],
+      taxRate: 0,
+      notes: '',
+      terms: 'Payment due within 30 days.',
+    },
   });
+
+  // useFieldArray for dynamic line items management
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: 'items',
+  });
+
+  // Watch form values for summary calculation
+  const formData = watch();
 
   useEffect(() => {
     if (session?.tid) {
@@ -134,7 +158,7 @@ export default function InvoiceForm() {
 
       // Set preselected customer if provided
       if (preselectedCustomerId) {
-        setFormData((prev) => ({ ...prev, customerId: preselectedCustomerId }));
+        reset((prev) => ({ ...prev, customerId: preselectedCustomerId }));
       }
 
       // Load existing invoice
@@ -143,7 +167,7 @@ export default function InvoiceForm() {
         const invoiceData = await invoiceService.getInvoiceById(session.tid, id);
         if (invoiceData) {
           setInvoice(invoiceData);
-          setFormData({
+          reset({
             customerId: invoiceData.customerId,
             issueDate: invoiceData.issueDate,
             dueDate: invoiceData.dueDate,
@@ -159,7 +183,7 @@ export default function InvoiceForm() {
       if (duplicateId) {
         const sourceInvoice = await invoiceService.getInvoiceById(session.tid, duplicateId);
         if (sourceInvoice) {
-          setFormData({
+          reset({
             customerId: sourceInvoice.customerId,
             issueDate: new Date().toISOString().split('T')[0],
             dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
@@ -183,11 +207,13 @@ export default function InvoiceForm() {
   };
 
   const calculateTotals = () => {
-    const subtotal = formData.items.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
+    const items = formData.items || [];
+    const subtotal = items.reduce(
+      (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
       0
     );
-    const taxAmount = (subtotal * formData.taxRate) / 100;
+    const taxRate = Number(formData.taxRate) || 0;
+    const taxAmount = (subtotal * taxRate) / 100;
     const total = subtotal + taxAmount;
     return { subtotal, taxAmount, total };
   };
@@ -195,63 +221,47 @@ export default function InvoiceForm() {
   const { subtotal, taxAmount, total } = calculateTotals();
 
   const addLineItem = () => {
-    setFormData({
-      ...formData,
-      items: [...formData.items, { description: '', quantity: 1, unitPrice: 0, amount: 0 }],
-    });
-  };
-
-  const updateLineItem = (index: number, field: keyof InvoiceItem, value: string | number) => {
-    const newItems = [...formData.items];
-    newItems[index] = { ...newItems[index], [field]: value };
-    setFormData({ ...formData, items: newItems });
+    append({ description: '', quantity: 1, unitPrice: 0, amount: 0 });
   };
 
   const removeLineItem = (index: number) => {
-    if (formData.items.length === 1) return;
-    const newItems = formData.items.filter((_, i) => i !== index);
-    setFormData({ ...formData, items: newItems });
+    if (fields.length === 1) return;
+    remove(index);
   };
 
-  const handleSave = async (sendAfter = false) => {
-    // Validation
-    if (!formData.customerId) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.customerRequired') || 'Please select a customer',
-        variant: 'destructive',
-      });
-      return;
-    }
-
-    const validItems = formData.items.filter((item) => item.description.trim() !== '');
-    if (validItems.length === 0) {
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.itemsRequired') || 'Add at least one line item',
-        variant: 'destructive',
-      });
-      return;
-    }
+  const onSubmit = async (data: InvoiceFormSchemaData, sendAfter = false) => {
+    if (!session?.tid) return;
 
     try {
       setSaving(true);
 
-      const dataToSave = {
-        ...formData,
-        items: validItems,
+      // Filter out empty items and convert to InvoiceFormData
+      const validItems = data.items.filter((item) => item.description.trim() !== '');
+      const dataToSave: InvoiceFormData = {
+        customerId: data.customerId,
+        issueDate: data.issueDate,
+        dueDate: data.dueDate,
+        items: validItems.map((item) => ({
+          description: item.description,
+          quantity: Number(item.quantity),
+          unitPrice: Number(item.unitPrice),
+          amount: Number(item.quantity) * Number(item.unitPrice),
+        })),
+        taxRate: Number(data.taxRate),
+        notes: data.notes || '',
+        terms: data.terms || '',
       };
 
       let invoiceId: string;
 
       if (isNew || duplicateId) {
-        invoiceId = await invoiceService.createInvoice(session!.tid, dataToSave);
+        invoiceId = await invoiceService.createInvoice(session.tid, dataToSave);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.created') || 'Invoice created',
         });
       } else if (invoice) {
-        await invoiceService.updateInvoice(session!.tid, invoice.id, dataToSave);
+        await invoiceService.updateInvoice(session.tid, invoice.id, dataToSave);
         invoiceId = invoice.id;
         toast({
           title: t('common.success') || 'Success',
@@ -262,7 +272,7 @@ export default function InvoiceForm() {
       }
 
       if (sendAfter) {
-        await invoiceService.markAsSent(session!.tid, invoiceId);
+        await invoiceService.markAsSent(session.tid, invoiceId);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.sentSuccess') || 'Invoice sent',
@@ -280,6 +290,10 @@ export default function InvoiceForm() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const handleSave = (sendAfter = false) => {
+    handleSubmit((data) => onSubmit(data, sendAfter))();
   };
 
   const handleRecordPayment = async () => {
@@ -709,23 +723,29 @@ export default function InvoiceForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Select
-                  value={formData.customerId}
-                  onValueChange={(value) => setFormData({ ...formData, customerId: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue
-                      placeholder={t('money.invoices.selectCustomer') || 'Select a customer'}
-                    />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {customers.map((customer) => (
-                      <SelectItem key={customer.id} value={customer.id}>
-                        {customer.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="customerId"
+                  control={control}
+                  render={({ field }) => (
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
+                        <SelectValue
+                          placeholder={t('money.invoices.selectCustomer') || 'Select a customer'}
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {customers.map((customer) => (
+                          <SelectItem key={customer.id} value={customer.id}>
+                            {customer.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
+                {errors.customerId && (
+                  <p className="text-sm text-red-500 mt-1">{errors.customerId.message}</p>
+                )}
                 {customers.length === 0 && (
                   <Button
                     variant="link"
@@ -748,63 +768,71 @@ export default function InvoiceForm() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {formData.items.map((item, index) => (
-                    <div key={index} className="flex gap-3 items-start">
-                      <div className="flex-1">
-                        <Input
-                          placeholder={
-                            t('money.invoices.itemDescription') || 'Description of service or product'
-                          }
-                          value={item.description}
-                          onChange={(e) => updateLineItem(index, 'description', e.target.value)}
-                        />
-                      </div>
-                      <div className="w-20">
-                        <Input
-                          type="number"
-                          placeholder={t('money.invoices.qty') || 'Qty'}
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateLineItem(index, 'quantity', parseFloat(e.target.value) || 0)
-                          }
-                          min="0"
-                          step="1"
-                        />
-                      </div>
-                      <div className="w-28">
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
-                            $
-                          </span>
+                  {fields.map((field, index) => {
+                    const itemValues = formData.items?.[index];
+                    const lineTotal = (itemValues?.quantity || 0) * (itemValues?.unitPrice || 0);
+                    return (
+                      <div key={field.id} className="flex gap-3 items-start">
+                        <div className="flex-1">
+                          <Input
+                            {...register(`items.${index}.description`)}
+                            placeholder={
+                              t('money.invoices.itemDescription') || 'Description of service or product'
+                            }
+                            className={errors.items?.[index]?.description ? 'border-red-500' : ''}
+                          />
+                          {errors.items?.[index]?.description && (
+                            <p className="text-xs text-red-500 mt-1">
+                              {errors.items[index]?.description?.message}
+                            </p>
+                          )}
+                        </div>
+                        <div className="w-20">
                           <Input
                             type="number"
-                            placeholder={t('money.invoices.price') || 'Price'}
-                            value={item.unitPrice || ''}
-                            onChange={(e) =>
-                              updateLineItem(index, 'unitPrice', parseFloat(e.target.value) || 0)
-                            }
+                            {...register(`items.${index}.quantity`, { valueAsNumber: true })}
+                            placeholder={t('money.invoices.qty') || 'Qty'}
                             min="0"
-                            step="0.01"
-                            className="pl-7"
+                            step="1"
+                            className={errors.items?.[index]?.quantity ? 'border-red-500' : ''}
                           />
                         </div>
+                        <div className="w-28">
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">
+                              $
+                            </span>
+                            <Input
+                              type="number"
+                              {...register(`items.${index}.unitPrice`, { valueAsNumber: true })}
+                              placeholder={t('money.invoices.price') || 'Price'}
+                              min="0"
+                              step="0.01"
+                              className={`pl-7 ${errors.items?.[index]?.unitPrice ? 'border-red-500' : ''}`}
+                            />
+                          </div>
+                        </div>
+                        <div className="w-28 text-right pt-2 font-medium">
+                          {formatCurrency(lineTotal)}
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeLineItem(index)}
+                          disabled={fields.length === 1}
+                          className="shrink-0"
+                        >
+                          <Trash2 className="h-4 w-4 text-muted-foreground" />
+                        </Button>
                       </div>
-                      <div className="w-28 text-right pt-2 font-medium">
-                        {formatCurrency(item.quantity * item.unitPrice)}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeLineItem(index)}
-                        disabled={formData.items.length === 1}
-                        className="shrink-0"
-                      >
-                        <Trash2 className="h-4 w-4 text-muted-foreground" />
-                      </Button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-                <Button variant="outline" onClick={addLineItem} className="mt-4">
+                {errors.items && typeof errors.items.message === 'string' && (
+                  <p className="text-sm text-red-500 mt-2">{errors.items.message}</p>
+                )}
+                <Button type="button" variant="outline" onClick={addLineItem} className="mt-4">
                   <Plus className="h-4 w-4 mr-2" />
                   {t('money.invoices.addItem') || 'Add Item'}
                 </Button>
@@ -822,18 +850,16 @@ export default function InvoiceForm() {
                 <div className="space-y-2">
                   <Label>{t('money.invoices.notes') || 'Notes'}</Label>
                   <Textarea
+                    {...register('notes')}
                     placeholder={t('money.invoices.notesPlaceholder') || 'Notes visible to customer'}
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                     rows={2}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label>{t('money.invoices.terms') || 'Terms & Conditions'}</Label>
                   <Textarea
+                    {...register('terms')}
                     placeholder={t('money.invoices.termsPlaceholder') || 'Payment terms'}
-                    value={formData.terms}
-                    onChange={(e) => setFormData({ ...formData, terms: e.target.value })}
                     rows={2}
                   />
                 </div>
@@ -856,9 +882,12 @@ export default function InvoiceForm() {
                   <Label>{t('money.invoices.issueDate') || 'Issue Date'}</Label>
                   <Input
                     type="date"
-                    value={formData.issueDate}
-                    onChange={(e) => setFormData({ ...formData, issueDate: e.target.value })}
+                    {...register('issueDate')}
+                    className={errors.issueDate ? 'border-red-500' : ''}
                   />
+                  {errors.issueDate && (
+                    <p className="text-sm text-red-500">{errors.issueDate.message}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
@@ -867,9 +896,12 @@ export default function InvoiceForm() {
                   </Label>
                   <Input
                     type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    {...register('dueDate')}
+                    className={errors.dueDate ? 'border-red-500' : ''}
                   />
+                  {errors.dueDate && (
+                    <p className="text-sm text-red-500">{errors.dueDate.message}</p>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -883,23 +915,27 @@ export default function InvoiceForm() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Select
-                  value={formData.taxRate.toString()}
-                  onValueChange={(value) =>
-                    setFormData({ ...formData, taxRate: parseFloat(value) })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {TAX_RATES.map((rate) => (
-                      <SelectItem key={rate.value} value={rate.value.toString()}>
-                        {rate.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Controller
+                  name="taxRate"
+                  control={control}
+                  render={({ field }) => (
+                    <Select
+                      value={String(field.value)}
+                      onValueChange={(v) => field.onChange(parseFloat(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {TAX_RATES.map((rate) => (
+                          <SelectItem key={rate.value} value={rate.value.toString()}>
+                            {rate.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                />
               </CardContent>
             </Card>
 

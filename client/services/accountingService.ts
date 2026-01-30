@@ -17,6 +17,7 @@ import {
   limit,
   serverTimestamp,
   writeBatch,
+  runTransaction,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -214,18 +215,48 @@ class JournalEntryService {
   }
 
   async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
-    const docRef = doc(db, paths.journalEntry(tenantId, id));
-    await updateDoc(docRef, {
-      status: 'posted',
-      postedAt: serverTimestamp(),
-      postedBy,
-    });
+    const journalDocRef = doc(db, paths.journalEntry(tenantId, id));
 
-    // Create general ledger entries
-    const entry = await this.getJournalEntry(tenantId, id);
-    if (entry) {
-      await generalLedgerService.createEntriesFromJournal(tenantId, entry);
-    }
+    // Use transaction to ensure atomicity: journal status update + GL entries creation
+    await runTransaction(db, async (transaction) => {
+      // Read the journal entry within the transaction
+      const journalDoc = await transaction.get(journalDocRef);
+      if (!journalDoc.exists()) {
+        throw new Error('Journal entry not found');
+      }
+
+      const entry = { id: journalDoc.id, ...journalDoc.data() } as JournalEntry;
+      if (entry.status === 'posted') {
+        throw new Error('Journal entry is already posted');
+      }
+
+      // Update journal entry status
+      transaction.update(journalDocRef, {
+        status: 'posted',
+        postedAt: serverTimestamp(),
+        postedBy,
+      });
+
+      // Create general ledger entries within the same transaction
+      for (const line of entry.lines) {
+        const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
+        transaction.set(glDocRef, {
+          accountId: line.accountId,
+          accountCode: line.accountCode,
+          accountName: line.accountName,
+          journalEntryId: entry.id,
+          entryNumber: entry.entryNumber,
+          entryDate: entry.date,
+          description: line.description || entry.description,
+          debit: line.debit,
+          credit: line.credit,
+          balance: 0, // Will be calculated when retrieved
+          fiscalYear: entry.fiscalYear,
+          fiscalPeriod: entry.fiscalPeriod,
+          createdAt: serverTimestamp(),
+        });
+      }
+    });
   }
 
   async voidJournalEntry(tenantId: string, id: string, voidedBy: string, reason: string): Promise<void> {

@@ -17,6 +17,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  runTransaction,
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
@@ -397,6 +398,7 @@ class BillService {
 
   /**
    * Record a payment for a bill
+   * Uses transaction to ensure atomicity of payment + bill update
    * Also creates a journal entry (Debit AP, Credit Cash)
    */
   async recordPayment(
@@ -405,70 +407,79 @@ class BillService {
     payment: BillPaymentFormData,
     userId?: string
   ): Promise<string> {
-    const bill = await this.getBillById(tenantId, billId);
-    if (!bill) {
-      throw new Error('Bill not found');
-    }
-
-    if (bill.status === 'cancelled') {
-      throw new Error('Cannot record payment for cancelled bill');
-    }
-
-    // Create payment record
-    const paymentRecord: Omit<BillPayment, 'id'> = {
-      date: payment.date,
-      amount: payment.amount,
-      method: payment.method,
-      reference: payment.reference,
-      notes: payment.notes,
-      createdAt: new Date(),
-    };
-
-    const paymentRef = await addDoc(this.paymentsRef(tenantId), {
-      ...paymentRecord,
-      billId,
-      createdAt: serverTimestamp(),
-    });
-
-    // Update bill
-    const newAmountPaid = bill.amountPaid + payment.amount;
-    const newBalanceDue = bill.total - newAmountPaid;
-    const newStatus: BillStatus =
-      newBalanceDue <= 0 ? 'paid' : newBalanceDue < bill.total ? 'partial' : bill.status;
-
     const billRef = doc(db, paths.bill(tenantId, billId));
-    await updateDoc(billRef, {
-      amountPaid: newAmountPaid,
-      balanceDue: Math.max(0, newBalanceDue),
-      status: newStatus,
-      paidAt: newStatus === 'paid' ? serverTimestamp() : null,
-      updatedAt: serverTimestamp(),
+
+    // Use transaction to ensure atomicity of payment creation and bill update
+    const paymentId = await runTransaction(db, async (transaction) => {
+      // Read bill within transaction
+      const billDoc = await transaction.get(billRef);
+      if (!billDoc.exists()) {
+        throw new Error('Bill not found');
+      }
+
+      const bill = { id: billDoc.id, ...billDoc.data() } as Bill;
+
+      if (bill.status === 'cancelled') {
+        throw new Error('Cannot record payment for cancelled bill');
+      }
+
+      // Calculate new values
+      const newAmountPaid = bill.amountPaid + payment.amount;
+      const newBalanceDue = bill.total - newAmountPaid;
+      const newStatus: BillStatus =
+        newBalanceDue <= 0 ? 'paid' : newBalanceDue < bill.total ? 'partial' : bill.status;
+
+      // Create payment record within transaction
+      const paymentDocRef = doc(this.paymentsRef(tenantId));
+      transaction.set(paymentDocRef, {
+        date: payment.date,
+        amount: payment.amount,
+        method: payment.method,
+        reference: payment.reference,
+        notes: payment.notes,
+        billId,
+        createdAt: serverTimestamp(),
+      });
+
+      // Update bill within same transaction
+      transaction.update(billRef, {
+        amountPaid: newAmountPaid,
+        balanceDue: Math.max(0, newBalanceDue),
+        status: newStatus,
+        paidAt: newStatus === 'paid' ? serverTimestamp() : null,
+        updatedAt: serverTimestamp(),
+      });
+
+      return paymentDocRef.id;
     });
 
-    // Create accounting journal entry (if chart of accounts is set up)
+    // Create accounting journal entry outside transaction (optional, non-critical)
     try {
-      const accounts = await accountService.getAllAccounts(tenantId);
-      if (accounts.length > 0) {
-        await journalEntryService.createFromBillPayment(
-          tenantId,
-          {
-            billId: bill.id,
-            billNumber: bill.billNumber,
-            vendorName: bill.vendorName,
-            date: payment.date,
-            amount: payment.amount,
-            method: payment.method,
-            reference: payment.reference,
-          },
-          userId || 'system'
-        );
+      const bill = await this.getBillById(tenantId, billId);
+      if (bill) {
+        const accounts = await accountService.getAllAccounts(tenantId);
+        if (accounts.length > 0) {
+          await journalEntryService.createFromBillPayment(
+            tenantId,
+            {
+              billId: bill.id,
+              billNumber: bill.billNumber,
+              vendorName: bill.vendorName,
+              date: payment.date,
+              amount: payment.amount,
+              method: payment.method,
+              reference: payment.reference,
+            },
+            userId || 'system'
+          );
+        }
       }
     } catch (error) {
       // Log but don't fail - accounting integration is optional
       console.warn('Could not create journal entry for bill payment:', error);
     }
 
-    return paymentRef.id;
+    return paymentId;
   }
 
   /**

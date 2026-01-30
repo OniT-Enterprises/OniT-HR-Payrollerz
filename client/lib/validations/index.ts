@@ -344,6 +344,72 @@ export const invoiceSchema = z.object({
 
 export type InvoiceFormData = z.infer<typeof invoiceSchema>;
 
+/**
+ * Invoice form schema - for react-hook-form validation
+ * Uses useFieldArray for dynamic line items
+ */
+export const invoiceFormSchema = z.object({
+  customerId: z.string().min(1, 'Please select a customer'),
+  issueDate: z.string().min(1, 'Issue date is required'),
+  dueDate: z.string().min(1, 'Due date is required'),
+  items: z.array(z.object({
+    description: z.string().min(1, 'Description is required').max(500),
+    quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
+    unitPrice: z.coerce.number().min(0, 'Price cannot be negative'),
+    amount: z.number().optional(),
+  })).min(1, 'At least one item is required'),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
+  notes: z.string().max(1000).optional().or(z.literal('')),
+  terms: z.string().max(1000).optional().or(z.literal('')),
+}).refine(
+  (data) => new Date(data.dueDate) >= new Date(data.issueDate),
+  { message: 'Due date must be on or after issue date', path: ['dueDate'] }
+);
+
+export type InvoiceFormSchemaData = z.infer<typeof invoiceFormSchema>;
+
+/**
+ * Recurring invoice form schema - for react-hook-form validation
+ */
+export const recurringInvoiceFormSchema = z.object({
+  customerId: z.string().min(1, 'Please select a customer'),
+  frequency: z.enum(['weekly', 'monthly', 'quarterly', 'yearly']),
+  startDate: z.string().min(1, 'Start date is required'),
+  endType: z.enum(['never', 'date', 'occurrences']),
+  endDate: z.string().optional().or(z.literal('')),
+  endAfterOccurrences: z.coerce.number().min(1).optional(),
+  items: z.array(z.object({
+    id: z.string().optional(),
+    description: z.string().min(1, 'Description is required'),
+    quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
+    unitPrice: z.coerce.number().min(0, 'Price cannot be negative'),
+    amount: z.number().optional(),
+  })).min(1, 'At least one item is required'),
+  taxRate: z.coerce.number().min(0).max(100).default(0),
+  notes: z.string().max(1000).optional().or(z.literal('')),
+  terms: z.string().max(1000).optional().or(z.literal('')),
+  dueDays: z.coerce.number().min(1).default(30),
+  autoSend: z.boolean().default(false),
+}).refine(
+  (data) => {
+    if (data.endType === 'date' && data.endDate) {
+      return new Date(data.endDate) >= new Date(data.startDate);
+    }
+    return true;
+  },
+  { message: 'End date must be on or after start date', path: ['endDate'] }
+).refine(
+  (data) => {
+    if (data.endType === 'occurrences') {
+      return data.endAfterOccurrences && data.endAfterOccurrences >= 1;
+    }
+    return true;
+  },
+  { message: 'Number of occurrences is required', path: ['endAfterOccurrences'] }
+);
+
+export type RecurringInvoiceFormSchemaData = z.infer<typeof recurringInvoiceFormSchema>;
+
 // ============================================
 // BILL SCHEMAS
 // ============================================
