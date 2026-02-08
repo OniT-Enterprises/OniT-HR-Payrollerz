@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import Papa from 'papaparse';
 import { db } from '@/lib/firebase';
+import { formatDateISO } from '@/lib/dateUtils';
 import type {
   BankTransaction,
   ReconciliationStatus,
@@ -129,32 +130,56 @@ class BankReconciliationService {
   private parseDate(value: string): string {
     const cleaned = value.trim().replace(/['"]/g, '');
 
-    // Try various date formats
-    const formats = [
-      /^(\d{4})-(\d{2})-(\d{2})$/,           // YYYY-MM-DD
-      /^(\d{2})\/(\d{2})\/(\d{4})$/,         // MM/DD/YYYY
-      /^(\d{2})-(\d{2})-(\d{4})$/,           // MM-DD-YYYY
-      /^(\d{2})\/(\d{2})\/(\d{2})$/,         // MM/DD/YY
-    ];
+    const toISODate = (year: number, month: number, day: number): string => {
+      if (!Number.isFinite(year) || !Number.isFinite(month) || !Number.isFinite(day)) return '';
+      if (month < 1 || month > 12 || day < 1) return '';
+      const maxDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+      if (day > maxDay) return '';
+      return `${String(year).padStart(4, '0')}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    };
 
-    for (const format of formats) {
-      const match = cleaned.match(format);
-      if (match) {
-        if (format === formats[0]) {
-          return cleaned; // Already YYYY-MM-DD
-        } else if (format === formats[1] || format === formats[2]) {
-          return `${match[3]}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
-        } else if (format === formats[3]) {
-          const year = parseInt(match[3]) > 50 ? `19${match[3]}` : `20${match[3]}`;
-          return `${year}-${match[1].padStart(2, '0')}-${match[2].padStart(2, '0')}`;
-        }
-      }
+    const toMonthDay = (first: number, second: number): { month: number; day: number } => {
+      // Most TL banking statements use DD/MM/YYYY; use that as default when ambiguous.
+      if (first > 12 && second <= 12) return { month: second, day: first };
+      if (second > 12 && first <= 12) return { month: first, day: second };
+      return { month: second, day: first };
+    };
+
+    // YYYY-MM-DD
+    const iso = cleaned.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (iso) {
+      return toISODate(
+        parseInt(iso[1], 10),
+        parseInt(iso[2], 10),
+        parseInt(iso[3], 10)
+      );
+    }
+
+    // DD/MM/YYYY or MM/DD/YYYY (and dash variants)
+    const fourDigitYear = cleaned.match(/^(\d{1,2})[/-](\d{1,2})[/-](\d{4})$/);
+    if (fourDigitYear) {
+      const first = parseInt(fourDigitYear[1], 10);
+      const second = parseInt(fourDigitYear[2], 10);
+      const year = parseInt(fourDigitYear[3], 10);
+      const { month, day } = toMonthDay(first, second);
+      return toISODate(year, month, day);
+    }
+
+    // DD/MM/YY or MM/DD/YY (slash variants)
+    const twoDigitYear = cleaned.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2})$/);
+    if (twoDigitYear) {
+      const first = parseInt(twoDigitYear[1], 10);
+      const second = parseInt(twoDigitYear[2], 10);
+      const year2 = parseInt(twoDigitYear[3], 10);
+      const year = year2 > 50 ? 1900 + year2 : 2000 + year2;
+      const { month, day } = toMonthDay(first, second);
+      return toISODate(year, month, day);
     }
 
     // Fallback: try Date.parse
-    const parsed = Date.parse(cleaned);
-    if (!isNaN(parsed)) {
-      return new Date(parsed).toISOString().split('T')[0];
+    const parsed = new Date(cleaned);
+    if (!isNaN(parsed.getTime())) {
+      return formatDateISO(parsed);
     }
 
     return '';

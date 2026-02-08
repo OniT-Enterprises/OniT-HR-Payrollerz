@@ -42,6 +42,7 @@ import type {
 import type { CompanyDetails } from '@/types/settings';
 import { TL_INCOME_TAX, TL_INSS } from '@/lib/payroll/constants-tl';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
+import { getTodayTL, parseDateISO } from '@/lib/dateUtils';
 
 // ============================================
 // CONSTANTS
@@ -126,10 +127,8 @@ function getAnnualWITDueDateBase(taxYear: number): string {
  * Calculate days until due date
  */
 function getDaysUntilDue(dueDate: string): number {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const due = new Date(`${dueDate}T00:00:00`);
-  due.setHours(0, 0, 0, 0);
+  const today = parseDateISO(getTodayTL());
+  const due = parseDateISO(dueDate);
   return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
@@ -291,8 +290,6 @@ class TaxFilingService {
     let nonResidentCount = 0;
 
     for (const employee of employees) {
-      if (employee.status !== 'active') continue;
-
       const totals = employee.id ? totalsByEmployee.get(employee.id) : null;
       const grossWages = totals?.grossWages || 0;
       const witWithheld = totals?.witWithheld || 0;
@@ -408,7 +405,6 @@ class TaxFilingService {
     let totalEmployerContributions = 0;
 
     for (const employee of employees) {
-      if (employee.status !== 'active') continue;
       if (!employee.id) continue;
 
       const totals = totalsByEmployee.get(employee.id);
@@ -598,7 +594,7 @@ class TaxFilingService {
       employmentEndDate: employeeRecord.endDate,
       totalGrossWages: employeeRecord.totalGrossWages,
       totalWITWithheld: employeeRecord.totalWITWithheld,
-      certificationDate: new Date().toISOString().split('T')[0],
+      certificationDate: getTodayTL(),
       authorizedSignatory: signatory.name,
       signatoryPosition: signatory.position,
     };
@@ -786,7 +782,7 @@ class TaxFilingService {
 
     await updateDoc(doc(db, 'taxFilings', filingId), {
       status: 'filed',
-      filedDate: new Date().toISOString().split('T')[0],
+      filedDate: getTodayTL(),
       submissionMethod: method,
       receiptNumber,
       notes,

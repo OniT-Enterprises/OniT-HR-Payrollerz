@@ -10,6 +10,8 @@ export default defineConfig({
   },
   build: {
     outDir: "dist/spa",
+    // SEC-4: Strip console.log/warn in production to prevent PII leaks
+    minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks(id) {
@@ -37,6 +39,10 @@ export default defineConfig({
         },
       },
     },
+  },
+  esbuild: {
+    // SEC-4: Drop console.log and console.warn in production builds to prevent PII leaks
+    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
   },
   plugins: [react()],
   resolve: {

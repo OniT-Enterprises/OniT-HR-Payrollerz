@@ -118,9 +118,11 @@ service cloud.firestore {
         resource.data.tenantId != null &&
         isTenantMember(resource.data.tenantId);
 
-      // Any authenticated user can create audit entries
-      // (entries are created automatically by services)
-      allow create: if isAuthenticated();
+      // Limit creates to superadmins or valid tenant members writing for their own tenant.
+      allow create: if isSuperAdmin() ||
+        (isAuthenticated() &&
+         request.resource.data.tenantId != null &&
+         isTenantMember(request.resource.data.tenantId));
 
       // Audit logs are immutable - no updates or deletes
       allow update, delete: if false;
@@ -332,12 +334,24 @@ service cloud.firestore {
 
       match /journalEntries/{entryId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Draft entries can be edited and posted, but posted/void entries are immutable.
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          resource.data.status == 'draft' &&
+          request.resource.data.status in ['draft', 'posted']
+        );
+        allow delete: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          resource.data.status == 'draft'
+        );
       }
 
       match /generalLedger/{glId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Ledger rows are append-only.
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow update, delete: if false;
       }
 
       match /fiscalYears/{yearId} {
@@ -354,8 +368,23 @@ service cloud.firestore {
       // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
       // ============================================
       match /{collection}/{docId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow write: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Catch-all must not override explicit rules above.
+        allow read: if (isSuperAdmin() || isTenantMember(tenantId)) &&
+          ![
+            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
+            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
+            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
+            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
+            'fiscalYears', 'fiscalPeriods'
+          ].hasAny([collection]);
+        allow write: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
+          ![
+            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
+            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
+            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
+            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
+            'fiscalYears', 'fiscalPeriods'
+          ].hasAny([collection]);
       }
     }
 

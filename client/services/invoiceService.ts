@@ -25,6 +25,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
 import type {
   Invoice,
   InvoiceFormData,
@@ -65,6 +66,8 @@ export interface PaginatedResult<T> {
   hasMore: boolean;
   totalFetched: number;
 }
+
+const PAYMENT_EPSILON = 0.00001;
 
 // ============================================
 // MAPPER FUNCTION
@@ -110,6 +113,12 @@ function mapPayment(docSnap: DocumentSnapshot): PaymentReceived {
       ? data.createdAt.toDate()
       : data.createdAt || new Date(),
   } as PaymentReceived;
+}
+
+function addDaysISO(dateISO: string, days: number): string {
+  const date = parseDateISO(dateISO);
+  date.setUTCDate(date.getUTCDate() + days);
+  return formatDateISO(date);
 }
 
 // ============================================
@@ -248,7 +257,7 @@ class InvoiceService {
    * Get overdue invoices (server-side filtered)
    */
   async getOverdueInvoices(tenantId: string): Promise<Invoice[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const result = await this.getInvoices(tenantId, {
       status: ['sent', 'viewed', 'partial'],
       dueBefore: today,
@@ -395,6 +404,10 @@ class InvoiceService {
       updates.taxAmount = taxAmount;
       updates.total = total;
       updates.balanceDue = total - invoice.amountPaid;
+
+      if (updates.balanceDue < -PAYMENT_EPSILON) {
+        throw new Error('Cannot reduce invoice total below amount already paid');
+      }
     }
 
     // If customer changed, update customer info
@@ -427,26 +440,42 @@ class InvoiceService {
       throw new Error('Invoice not found');
     }
 
-    const docRef = doc(db, paths.invoice(tenantId, id));
-    await updateDoc(docRef, {
-      status: 'sent',
-      sentAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    if (invoice.status === 'cancelled') {
+      throw new Error('Cannot send a cancelled invoice');
+    }
 
     // Create accounting journal entry (if chart of accounts is set up)
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const shouldCreateJournal = accounts.length > 0;
+
     try {
-      const accounts = await accountService.getAllAccounts(tenantId);
-      if (accounts.length > 0) {
-        await journalEntryService.createFromInvoice(
+      if (shouldCreateJournal) {
+        const existing = await journalEntryService.getJournalEntryBySource(
           tenantId,
-          invoice,
-          userId || 'system'
+          'invoice',
+          id
         );
+        if (!existing) {
+          await journalEntryService.createFromInvoice(
+            tenantId,
+            invoice,
+            userId || 'system'
+          );
+        }
       }
     } catch (error) {
-      // Log but don't fail - accounting integration is optional
-      console.warn('Could not create journal entry for invoice:', error);
+      throw new Error(`Could not create journal entry for invoice: ${
+        error instanceof Error ? error.message : 'Unknown error'
+      }`);
+    }
+
+    if (invoice.status === 'draft') {
+      const docRef = doc(db, paths.invoice(tenantId, id));
+      await updateDoc(docRef, {
+        status: 'sent',
+        sentAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
     }
 
     return true;
@@ -481,6 +510,9 @@ class InvoiceService {
 
     if (invoice.status === 'paid') {
       throw new Error('Cannot void a fully paid invoice');
+    }
+    if ((invoice.amountPaid || 0) > PAYMENT_EPSILON) {
+      throw new Error('Cannot cancel an invoice with recorded payments');
     }
 
     const docRef = doc(db, paths.invoice(tenantId, id));
@@ -547,14 +579,13 @@ class InvoiceService {
       throw new Error('Invoice not found');
     }
 
-    const today = new Date().toISOString().split('T')[0];
-    const dueDate = new Date();
-    dueDate.setDate(dueDate.getDate() + 30);
+    const today = getTodayTL();
+    const dueDate = addDaysISO(today, 30);
 
     const newInvoice: InvoiceFormData = {
       customerId: invoice.customerId,
       issueDate: today,
-      dueDate: dueDate.toISOString().split('T')[0],
+      dueDate,
       items: invoice.items.map(({ description, quantity, unitPrice }) => ({
         description,
         quantity,
@@ -599,12 +630,32 @@ class InvoiceService {
       if (invoice.status === 'cancelled') {
         throw new Error('Cannot record payment for cancelled invoice');
       }
+      if (invoice.status === 'paid') {
+        throw new Error('Cannot record payment for a fully paid invoice');
+      }
+      if (payment.amount <= 0) {
+        throw new Error('Payment amount must be greater than zero');
+      }
+
+      if (payment.amount - invoice.balanceDue > PAYMENT_EPSILON) {
+        throw new Error('Payment exceeds remaining invoice balance');
+      }
 
       // Calculate new values
-      const newAmountPaid = invoice.amountPaid + payment.amount;
-      const newBalanceDue = invoice.total - newAmountPaid;
+      const currentPaidCents = Math.round((invoice.amountPaid || 0) * 100);
+      const paymentCents = Math.round(payment.amount * 100);
+      const totalCents = Math.round((invoice.total || 0) * 100);
+      const newAmountPaidCents = currentPaidCents + paymentCents;
+      const newBalanceDueCents = totalCents - newAmountPaidCents;
+
+      if (newBalanceDueCents < 0) {
+        throw new Error('Payment exceeds remaining invoice balance');
+      }
+
+      const newAmountPaid = newAmountPaidCents / 100;
+      const newBalanceDue = newBalanceDueCents / 100;
       const newStatus: InvoiceStatus =
-        newBalanceDue <= 0 ? 'paid' : newBalanceDue < invoice.total ? 'partial' : invoice.status;
+        newBalanceDueCents === 0 ? 'paid' : 'partial';
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
@@ -624,7 +675,7 @@ class InvoiceService {
       // Update invoice within same transaction
       transaction.update(invoiceRef, {
         amountPaid: newAmountPaid,
-        balanceDue: Math.max(0, newBalanceDue),
+        balanceDue: newBalanceDue,
         status: newStatus,
         paidAt: newStatus === 'paid' ? serverTimestamp() : null,
         updatedAt: serverTimestamp(),
@@ -755,10 +806,8 @@ class InvoiceService {
     const invoices = await this.getAllInvoices(tenantId);
 
     const now = new Date();
-    const thisMonth = now.toISOString().slice(0, 7); // YYYY-MM
-    const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1)
-      .toISOString()
-      .slice(0, 7);
+    const thisMonth = formatDateISO(now).slice(0, 7); // YYYY-MM
+    const lastMonth = formatDateISO(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
 
     // Calculate stats
     const paidInvoices = invoices.filter((inv) => inv.status === 'paid');
@@ -768,10 +817,10 @@ class InvoiceService {
 
     const totalRevenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
     const revenueThisMonth = paidInvoices
-      .filter((inv) => inv.paidAt && inv.paidAt.toISOString().startsWith(thisMonth))
+      .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(thisMonth))
       .reduce((sum, inv) => sum + inv.total, 0);
     const revenuePreviousMonth = paidInvoices
-      .filter((inv) => inv.paidAt && inv.paidAt.toISOString().startsWith(lastMonth))
+      .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(lastMonth))
       .reduce((sum, inv) => sum + inv.total, 0);
 
     const totalOutstanding = outstandingInvoices.reduce(
@@ -779,15 +828,15 @@ class InvoiceService {
       0
     );
 
-    const today = now.toISOString().split('T')[0];
-    const todayDate = new Date(today);
+    const today = getTodayTL();
+    const todayDate = parseDateISO(today);
     const overdueInvoices = outstandingInvoices.filter((inv) => inv.dueDate < today);
     const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
 
     // Calculate AR Aging
     const aging = { current: 0, days30to60: 0, days60to90: 0, over90: 0 };
     outstandingInvoices.forEach((inv) => {
-      const dueDate = new Date(inv.dueDate);
+      const dueDate = parseDateISO(inv.dueDate);
       const daysPastDue = Math.floor((todayDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysPastDue <= 0) {
@@ -807,11 +856,11 @@ class InvoiceService {
     const cashFlow: MoneyStats['cashFlow'] = [];
     for (let i = 5; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = monthDate.toISOString().slice(0, 7);
+      const monthKey = formatDateISO(monthDate).slice(0, 7);
       const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
 
       const received = paidInvoices
-        .filter((inv) => inv.paidAt && inv.paidAt.toISOString().startsWith(monthKey))
+        .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(monthKey))
         .reduce((sum, inv) => sum + inv.total, 0);
 
       cashFlow.push({
@@ -824,7 +873,7 @@ class InvoiceService {
     // Top customers by outstanding balance
     const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number; oldestInvoiceDays: number }>();
     outstandingInvoices.forEach((inv) => {
-      const invoiceDate = new Date(inv.issueDate);
+      const invoiceDate = parseDateISO(inv.issueDate);
       const daysSinceIssue = Math.floor((now.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
 
       const existing = customerBalances.get(inv.customerId) || {
@@ -902,24 +951,48 @@ class InvoiceService {
   // ----------------------------------------
 
   private async getNextInvoiceNumber(tenantId: string): Promise<string> {
-    const settings = await this.getSettings(tenantId);
-    const number = settings.nextNumber || 1;
-    const year = new Date().getFullYear();
+    const settingsDocRef = this.settingsRef(tenantId);
+    const year = parseInt(getTodayTL().slice(0, 4), 10);
+    return runTransaction(db, async (transaction) => {
+      const settingsDoc = await transaction.get(settingsDocRef);
 
-    // Increment for next time
-    await this.updateSettings(tenantId, { nextNumber: number + 1 });
+      let prefix = 'INV';
+      let number = 1;
 
-    // Format: INV-2026-001
-    return `${settings.prefix || 'INV'}-${year}-${String(number).padStart(3, '0')}`;
+      if (!settingsDoc.exists()) {
+        transaction.set(settingsDocRef, {
+          prefix: 'INV',
+          nextNumber: 2,
+          defaultTaxRate: 0,
+          defaultTerms: 'Payment due within 30 days',
+          defaultNotes: 'Thank you for your business',
+          defaultDueDays: 30,
+          companyName: '',
+          companyAddress: '',
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } else {
+        const data = settingsDoc.data() as Partial<InvoiceSettings>;
+        prefix = data.prefix || 'INV';
+        number = (typeof data.nextNumber === 'number' && data.nextNumber > 0)
+          ? Math.floor(data.nextNumber)
+          : 1;
+
+        transaction.update(settingsDocRef, {
+          nextNumber: number + 1,
+          updatedAt: serverTimestamp(),
+        });
+      }
+
+      return `${prefix}-${year}-${String(number).padStart(3, '0')}`;
+    });
   }
 
   private generateShareToken(): string {
+    const bytes = new Uint8Array(24);
+    crypto.getRandomValues(bytes);
     const chars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let token = '';
-    for (let i = 0; i < 24; i++) {
-      token += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return token;
+    return Array.from(bytes, b => chars[b % chars.length]).join('');
   }
 
   /**
@@ -935,7 +1008,7 @@ class InvoiceService {
    * Call this periodically (e.g., daily) or on dashboard load
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const invoices = await this.getAllInvoices(tenantId);
 
     let updated = 0;

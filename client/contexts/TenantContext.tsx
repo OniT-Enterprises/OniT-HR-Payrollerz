@@ -323,9 +323,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setImpersonatedTenantId(tenantId);
         setImpersonatedTenantName(tenantName);
 
-        // Store in localStorage for page refresh persistence
-        localStorage.setItem("impersonatingTenantId", tenantId);
-        localStorage.setItem("impersonatingTenantName", tenantName);
+        // Store in sessionStorage (expires on browser close — SEC-8 safety)
+        sessionStorage.setItem("impersonatingTenantId", tenantId);
+        sessionStorage.setItem("impersonatingTenantName", tenantName);
       }
     } catch (error: any) {
       console.error("Failed to start impersonation:", error);
@@ -359,8 +359,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setSession(null);
 
       // Clear localStorage
-      localStorage.removeItem("impersonatingTenantId");
-      localStorage.removeItem("impersonatingTenantName");
+      sessionStorage.removeItem("impersonatingTenantId");
+      sessionStorage.removeItem("impersonatingTenantName");
 
       // Reload user's actual tenants
       const tenants = await loadAvailableTenants(user);
@@ -463,7 +463,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setLoading(true);
         setError(null);
 
-        // Check if superadmin is impersonating (from user profile or localStorage)
+        // Check if superadmin is impersonating (from user profile or sessionStorage)
         if (isSuperAdmin && userProfile?.impersonating) {
           const { tenantId, tenantName } = userProfile.impersonating;
           const impersonatedSession = await loadTenantSession(tenantId, user, true);
@@ -478,9 +478,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
           }
         }
 
-        // Check localStorage for persisted impersonation
-        const savedImpersonatingId = localStorage.getItem("impersonatingTenantId");
-        const savedImpersonatingName = localStorage.getItem("impersonatingTenantName");
+        // Check sessionStorage for persisted impersonation
+        const savedImpersonatingId = sessionStorage.getItem("impersonatingTenantId");
+        const savedImpersonatingName = sessionStorage.getItem("impersonatingTenantName");
 
         if (isSuperAdmin && savedImpersonatingId) {
           try {
@@ -496,8 +496,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
             }
           } catch (error) {
             // Clear invalid impersonation data
-            localStorage.removeItem("impersonatingTenantId");
-            localStorage.removeItem("impersonatingTenantName");
+            sessionStorage.removeItem("impersonatingTenantId");
+            sessionStorage.removeItem("impersonatingTenantName");
           }
         }
 

@@ -41,6 +41,7 @@ import {
   EXPENSE_CATEGORY_TO_ACCOUNT,
   MONEY_JOURNAL_MAPPINGS,
 } from '@/lib/accounting/chart-of-accounts';
+import { getTodayTL } from '@/lib/dateUtils';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
 import type { Invoice, Expense, Bill, PaymentMethod, ExpenseCategory } from '@/types/money';
 
@@ -150,30 +151,93 @@ class JournalEntryService {
     return collection(db, paths.journalEntries(tenantId));
   }
 
+  async getJournalEntryBySource(
+    tenantId: string,
+    source: JournalEntry['source'],
+    sourceId: string
+  ): Promise<JournalEntry | null> {
+    const q = query(
+      this.collectionRef(tenantId),
+      where('source', '==', source),
+      where('sourceId', '==', sourceId),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    const first = snapshot.docs[0];
+    return { id: first.id, ...first.data() } as JournalEntry;
+  }
+
   async createJournalEntry(
     tenantId: string,
     entry: Omit<JournalEntry, 'id' | 'createdAt'>
   ): Promise<string> {
+    if (!Array.isArray(entry.lines) || entry.lines.length === 0) {
+      throw new Error('Journal entry must include at least one line');
+    }
+
+    let lineDebitTotal = 0;
+    let lineCreditTotal = 0;
+
+    for (const line of entry.lines) {
+      if (line.debit < 0 || line.credit < 0) {
+        throw new Error('Journal entry line amounts cannot be negative');
+      }
+
+      const hasDebit = line.debit > 0;
+      const hasCredit = line.credit > 0;
+      if (hasDebit === hasCredit) {
+        throw new Error('Each journal entry line must contain either a debit or a credit amount');
+      }
+
+      lineDebitTotal += line.debit;
+      lineCreditTotal += line.credit;
+    }
+
+    if (
+      Math.abs(lineDebitTotal - entry.totalDebit) > 0.01 ||
+      Math.abs(lineCreditTotal - entry.totalCredit) > 0.01
+    ) {
+      throw new Error('Journal entry totals do not match line amounts');
+    }
+
     // Validate that debits = credits
     if (Math.abs(entry.totalDebit - entry.totalCredit) > 0.01) {
       throw new Error('Journal entry must balance: debits must equal credits');
     }
 
-    const docRef = await addDoc(this.collectionRef(tenantId), {
-      ...entry,
-      createdAt: serverTimestamp(),
+    const journalDocRef = doc(this.collectionRef(tenantId));
+
+    // Write journal + GL entries atomically so books cannot drift.
+    await runTransaction(db, async (transaction) => {
+      transaction.set(journalDocRef, {
+        ...entry,
+        createdAt: serverTimestamp(),
+      });
+
+      if (entry.status === 'posted') {
+        for (const line of entry.lines) {
+          const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
+          transaction.set(glDocRef, {
+            accountId: line.accountId,
+            accountCode: line.accountCode,
+            accountName: line.accountName,
+            journalEntryId: journalDocRef.id,
+            entryNumber: entry.entryNumber,
+            entryDate: entry.date,
+            description: line.description || entry.description,
+            debit: line.debit,
+            credit: line.credit,
+            balance: 0,
+            fiscalYear: entry.fiscalYear,
+            fiscalPeriod: entry.fiscalPeriod,
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
     });
 
-    // If the entry is already posted, immediately create GL rows so downstream
-    // reports (GL/TB) stay in sync.
-    if (entry.status === 'posted') {
-      await generalLedgerService.createEntriesFromJournal(tenantId, {
-        id: docRef.id,
-        ...entry,
-      } as JournalEntry);
-    }
-
-    return docRef.id;
+    return journalDocRef.id;
   }
 
   async getJournalEntry(tenantId: string, id: string): Promise<JournalEntry | null> {
@@ -229,6 +293,9 @@ class JournalEntryService {
       if (entry.status === 'posted') {
         throw new Error('Journal entry is already posted');
       }
+      if (entry.status !== 'draft') {
+        throw new Error(`Only draft journal entries can be posted (current: ${entry.status})`);
+      }
 
       // Update journal entry status
       transaction.update(journalDocRef, {
@@ -261,6 +328,14 @@ class JournalEntryService {
 
   async voidJournalEntry(tenantId: string, id: string, voidedBy: string, reason: string): Promise<void> {
     const docRef = doc(db, paths.journalEntry(tenantId, id));
+    const existing = await getDoc(docRef);
+    if (!existing.exists()) {
+      throw new Error('Journal entry not found');
+    }
+    const entry = existing.data() as JournalEntry;
+    if (entry.status !== 'posted') {
+      throw new Error('Only posted journal entries can be voided');
+    }
     await updateDoc(docRef, {
       status: 'void',
       voidedAt: serverTimestamp(),
@@ -281,16 +356,66 @@ class JournalEntryService {
     );
     const snapshot = await getDocs(q);
 
-    let nextNum = 1;
+    let maxFromLedger = 0;
     if (!snapshot.empty) {
       const lastEntry = snapshot.docs[0].data() as JournalEntry;
-      const match = lastEntry.entryNumber.match(/JE-\d{4}-(\d+)/);
+      const match = lastEntry.entryNumber.match(/^[A-Z]+-\d{4}-(\d+)$/);
       if (match) {
-        nextNum = parseInt(match[1]) + 1;
+        maxFromLedger = parseInt(match[1], 10) || 0;
       }
     }
 
-    return `JE-${year}-${String(nextNum).padStart(4, '0')}`;
+    const settingsRef = doc(db, paths.accountingSettings(tenantId));
+    const currentYear = parseInt(getTodayTL().slice(0, 4), 10);
+
+    return runTransaction(db, async (transaction) => {
+      const settingsSnap = await transaction.get(settingsRef);
+
+      let prefix = 'JE';
+      let nextNum = maxFromLedger + 1;
+
+      if (settingsSnap.exists()) {
+        const settings = settingsSnap.data() as Partial<AccountingSettings> & {
+          nextJournalNumberByYear?: Record<string, number>;
+        };
+        prefix = settings.journalEntryPrefix || 'JE';
+
+        const byYear = settings.nextJournalNumberByYear || {};
+        const yearKey = String(year);
+        const fromYearCounter = byYear[yearKey];
+
+        if (typeof fromYearCounter === 'number' && fromYearCounter > 0) {
+          nextNum = Math.floor(fromYearCounter);
+        } else if (
+          year === currentYear &&
+          typeof settings.nextJournalNumber === 'number' &&
+          settings.nextJournalNumber > nextNum
+        ) {
+          nextNum = Math.floor(settings.nextJournalNumber);
+        }
+
+        transaction.set(settingsRef, {
+          journalEntryPrefix: prefix,
+          nextJournalNumber: year === currentYear ? nextNum + 1 : settings.nextJournalNumber || 1,
+          nextJournalNumberByYear: {
+            ...byYear,
+            [yearKey]: nextNum + 1,
+          },
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } else {
+        transaction.set(settingsRef, {
+          journalEntryPrefix: 'JE',
+          nextJournalNumber: year === currentYear ? nextNum + 1 : 1,
+          nextJournalNumberByYear: {
+            [String(year)]: nextNum + 1,
+          },
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      return `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
+    });
   }
 
   /**
@@ -734,7 +859,7 @@ class JournalEntryService {
       entryNumber,
       date: bill.billDate,
       description: `Bill from ${bill.vendorName} - ${bill.description}`,
-      source: 'invoice', // Using 'invoice' for bills too (vendor invoice)
+      source: 'bill',
       sourceId: bill.id,
       sourceRef: bill.billNumber || `Bill-${bill.id.slice(0, 8)}`,
       lines,
@@ -968,6 +1093,14 @@ class GeneralLedgerService {
       });
     });
 
+    entries.sort((a, b) => {
+      const dateCmp = a.entryDate.localeCompare(b.entryDate);
+      if (dateCmp !== 0) return dateCmp;
+      const numberCmp = (a.entryNumber || '').localeCompare(b.entryNumber || '');
+      if (numberCmp !== 0) return numberCmp;
+      return (a.id || '').localeCompare(b.id || '');
+    });
+
     // Calculate running balance
     let runningBalance = 0;
     entries = entries.map(entry => {
@@ -1036,7 +1169,8 @@ class TrialBalanceService {
       // Skip zero balances for cleaner report
       if (Math.abs(balance) < 0.01) continue;
 
-      const isDebitAccount = ['asset', 'expense'].includes(account.type);
+      const debitBalance = balance > 0 ? balance : 0;
+      const creditBalance = balance < 0 ? Math.abs(balance) : 0;
 
       rows.push({
         accountId: account.id!,
@@ -1045,10 +1179,10 @@ class TrialBalanceService {
         accountType: account.type,
         openingDebit: 0,  // Would need prior period data
         openingCredit: 0,
-        periodDebit: isDebitAccount && balance > 0 ? balance : 0,
-        periodCredit: !isDebitAccount || balance < 0 ? Math.abs(balance) : 0,
-        closingDebit: isDebitAccount && balance > 0 ? balance : 0,
-        closingCredit: !isDebitAccount || balance < 0 ? Math.abs(balance) : 0,
+        periodDebit: debitBalance,
+        periodCredit: creditBalance,
+        closingDebit: debitBalance,
+        closingCredit: creditBalance,
       });
     }
 

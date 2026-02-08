@@ -99,6 +99,15 @@ export function parseDateISO(dateString: string): Date {
 }
 
 /**
+ * Add days to a date value and return a new Date instance
+ */
+export function addDays(date: Date | string, days: number): Date {
+  const base = typeof date === 'string' ? parseDateISO(date) : new Date(date.getTime());
+  base.setUTCDate(base.getUTCDate() + days);
+  return base;
+}
+
+/**
  * Get start of day in UTC for a given date
  * Use this when storing date-only values
  */

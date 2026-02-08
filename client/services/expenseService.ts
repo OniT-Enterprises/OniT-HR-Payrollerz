@@ -17,12 +17,14 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  deleteField,
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { getTodayTL } from '@/lib/dateUtils';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService } from './accountingService';
@@ -200,13 +202,12 @@ class ExpenseService {
    * Get expenses for current month
    */
   async getExpensesThisMonth(tenantId: string): Promise<Expense[]> {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
-      .toISOString()
-      .split('T')[0];
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
-      .toISOString()
-      .split('T')[0];
+    const [yearStr, monthStr] = getTodayTL().split('-');
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+    const startOfMonth = `${yearStr}-${monthStr}-01`;
+    const lastDay = new Date(Date.UTC(year, month, 0)).getUTCDate();
+    const endOfMonth = `${yearStr}-${monthStr}-${String(lastDay).padStart(2, '0')}`;
 
     return this.getExpensesByDateRange(tenantId, startOfMonth, endOfMonth);
   }
@@ -234,6 +235,10 @@ class ExpenseService {
     data: ExpenseFormData & { receiptUrl?: string },
     userId?: string
   ): Promise<string> {
+    if (data.amount <= 0) {
+      throw new Error('Expense amount must be greater than zero');
+    }
+
     // Get vendor name if vendorId provided
     let vendorName: string | undefined;
     if (data.vendorId) {
@@ -278,19 +283,26 @@ class ExpenseService {
     id: string,
     data: Partial<ExpenseFormData> & { receiptUrl?: string }
   ): Promise<boolean> {
-    const updates: Partial<Expense> = { ...data };
+    if (data.amount !== undefined && data.amount <= 0) {
+      throw new Error('Expense amount must be greater than zero');
+    }
+
+    const updates: Record<string, unknown> = { ...data };
 
     // Update vendor name if vendorId changed
     if (data.vendorId) {
       const vendor = await vendorService.getVendorById(tenantId, data.vendorId);
       updates.vendorName = vendor?.name;
     } else if (data.vendorId === '') {
-      updates.vendorId = undefined;
-      updates.vendorName = undefined;
+      updates.vendorId = deleteField();
+      updates.vendorName = deleteField();
     }
 
     const docRef = doc(db, paths.expense(tenantId, id));
-    await updateDoc(docRef, updates);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    });
     return true;
   }
 

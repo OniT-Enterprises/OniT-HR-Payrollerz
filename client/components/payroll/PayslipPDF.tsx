@@ -14,8 +14,99 @@ import {
 } from '@react-pdf/renderer';
 import { PayrollRecord, PayrollRun, PayrollEarning, PayrollDeduction } from '@/types/payroll';
 
-// Register a standard font (optional, uses default if not specified)
-// Font.register({ family: 'Helvetica' });
+// ============================================================
+// I18N-1: Payslip translations (self-contained, no React context needed)
+// Tetum translations for payslip labels so TL workers can read their payslips
+// ============================================================
+
+type PayslipLocale = 'en' | 'tet';
+
+const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
+  en: {
+    title: 'EARNINGS STATEMENT',
+    payDate: 'Pay Date:',
+    period: 'Period:',
+    employeeInfo: 'Employee Information',
+    name: 'Name:',
+    employeeId: 'Employee ID:',
+    department: 'Department:',
+    position: 'Position:',
+    payInfo: 'Pay Information',
+    payFrequency: 'Pay Frequency:',
+    hourlyRate: 'Hourly Rate:',
+    overtimeRate: 'Overtime Rate:',
+    regular: 'REGULAR',
+    overtime: 'OVERTIME',
+    doubleTime: 'DOUBLE TIME',
+    holiday: 'HOLIDAY',
+    ptoUsed: 'PTO USED',
+    sickUsed: 'SICK USED',
+    hrs: 'hrs',
+    earnings: 'Earnings',
+    description: 'Description',
+    hours: 'Hours',
+    rate: 'Rate',
+    amount: 'Amount',
+    grossPay: 'Gross Pay',
+    deductions: 'Deductions',
+    preTax: '(Pre-tax)',
+    totalDeductions: 'Total Deductions',
+    netPay: 'Net Pay',
+    ytdSummary: 'Year-to-Date Summary',
+    ytdGrossPay: 'YTD Gross Pay',
+    ytdNetPay: 'YTD Net Pay',
+    ytdWIT: 'YTD WIT',
+    ytdINSS: 'YTD INSS (Employee)',
+    ytdFederalTax: 'YTD Federal Tax',
+    ytdStateTax: 'YTD State Tax',
+    ytdSocialSecurity: 'YTD Social Security',
+    ytdMedicare: 'YTD Medicare',
+    footer: 'This is a computer-generated document. No signature is required.',
+    footerContact: 'For questions about your pay, please contact HR at',
+  },
+  tet: {
+    title: 'DEKLARASAUN RENDIMENTU',
+    payDate: 'Data Pagamentu:',
+    period: 'Períodu:',
+    employeeInfo: 'Informasaun Trabalhador',
+    name: 'Naran:',
+    employeeId: 'ID Trabalhador:',
+    department: 'Departamentu:',
+    position: 'Pozisaun:',
+    payInfo: 'Informasaun Pagamentu',
+    payFrequency: 'Frequénsia Pagamentu:',
+    hourlyRate: 'Taxa Oras:',
+    overtimeRate: 'Taxa Hora Extra:',
+    regular: 'REGULÁR',
+    overtime: 'HORA EXTRA',
+    doubleTime: 'DOBRU',
+    holiday: 'FERIADU',
+    ptoUsed: 'LISENSA',
+    sickUsed: 'MORAS',
+    hrs: 'oras',
+    earnings: 'Rendimentu',
+    description: 'Deskrisaun',
+    hours: 'Oras',
+    rate: 'Taxa',
+    amount: 'Montante',
+    grossPay: 'Saláriu Brutu',
+    deductions: 'Dedusaun',
+    preTax: '(Molok impostu)',
+    totalDeductions: 'Dedusaun Totál',
+    netPay: 'Saláriu Líkidu',
+    ytdSummary: 'Rezumu Tinan Tomak',
+    ytdGrossPay: 'Brutu Tinan Tomak',
+    ytdNetPay: 'Líkidu Tinan Tomak',
+    ytdWIT: 'WIT Tinan Tomak',
+    ytdINSS: 'INSS Tinan Tomak (Trabalhador)',
+    ytdFederalTax: 'Impostu Federal Tinan Tomak',
+    ytdStateTax: 'Impostu Estadu Tinan Tomak',
+    ytdSocialSecurity: 'Seguransa Sosiál Tinan Tomak',
+    ytdMedicare: 'Medicare Tinan Tomak',
+    footer: 'Dokumentu ne\'e halo husi komputador. La presiza asinatura.',
+    footerContact: 'Se iha dúvida kona-ba ita-nia pagamentu, kontaktu RH iha',
+  },
+};
 
 // Styles for the PDF
 const styles = StyleSheet.create({
@@ -247,10 +338,10 @@ const formatCurrency = (amount: number): string => {
   return `$${amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 };
 
-// Format date
+// Format date — I18N-2: Use dd/mm/yyyy convention (TL standard)
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
 };
 
 // Format pay period
@@ -258,7 +349,7 @@ const formatPayPeriod = (startDate: string, endDate: string): string => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  return `${start.toLocaleDateString('en-US', options)} - ${end.toLocaleDateString('en-US', { ...options, year: 'numeric' })}`;
+  return `${start.toLocaleDateString('en-GB', options)} - ${end.toLocaleDateString('en-GB', { ...options, year: 'numeric' })}`;
 };
 
 interface PayslipPDFProps {
@@ -268,6 +359,7 @@ interface PayslipPDFProps {
   companyAddress?: string;
   companyPhone?: string;
   companyEmail?: string;
+  language?: PayslipLocale;
 }
 
 /**
@@ -280,7 +372,10 @@ export const PayslipDocument = ({
   companyAddress = '123 Business Park, Suite 100, San Francisco, CA 94107',
   companyPhone = '(555) 123-4567',
   companyEmail = 'payroll@onit.com',
+  language = 'en',
 }: PayslipPDFProps) => {
+  const s = payslipStrings[language];
+
   // Group earnings
   const taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
   const nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
@@ -299,13 +394,13 @@ export const PayslipDocument = ({
   ].some((value) => Math.abs(value || 0) > 0.0001);
 
   const hourItems = [
-    { label: "REGULAR", value: record.regularHours },
-    { label: "OVERTIME", value: record.overtimeHours },
-    { label: "DOUBLE TIME", value: record.doubleTimeHours },
-    { label: "HOLIDAY", value: record.holidayHours },
-    { label: "PTO USED", value: record.ptoHoursUsed },
-    { label: "SICK USED", value: record.sickHoursUsed },
-  ].filter((item) => item.label === "REGULAR" || item.value > 0);
+    { label: s.regular, value: record.regularHours },
+    { label: s.overtime, value: record.overtimeHours },
+    { label: s.doubleTime, value: record.doubleTimeHours },
+    { label: s.holiday, value: record.holidayHours },
+    { label: s.ptoUsed, value: record.ptoHoursUsed },
+    { label: s.sickUsed, value: record.sickHoursUsed },
+  ].filter((item) => item.label === s.regular || item.value > 0);
 
   // Group deductions
   const taxDeductions = record.deductions.filter(d =>
@@ -329,9 +424,9 @@ export const PayslipDocument = ({
             <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
           </View>
           <View>
-            <Text style={styles.payslipTitle}>EARNINGS STATEMENT</Text>
-            <Text style={styles.payslipSubtitle}>Pay Date: {formatDate(payrollRun.payDate)}</Text>
-            <Text style={styles.payslipSubtitle}>Period: {formatPayPeriod(payrollRun.periodStart, payrollRun.periodEnd)}</Text>
+            <Text style={styles.payslipTitle}>{s.title}</Text>
+            <Text style={styles.payslipSubtitle}>{s.payDate} {formatDate(payrollRun.payDate)}</Text>
+            <Text style={styles.payslipSubtitle}>{s.period} {formatPayPeriod(payrollRun.periodStart, payrollRun.periodEnd)}</Text>
           </View>
         </View>
 
@@ -339,21 +434,21 @@ export const PayslipDocument = ({
         <View style={styles.twoColumn}>
           <View style={styles.column}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Employee Information</Text>
+              <Text style={styles.sectionTitle}>{s.employeeInfo}</Text>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Name:</Text>
+                <Text style={styles.infoLabel}>{s.name}</Text>
                 <Text style={styles.infoValue}>{record.employeeName}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Employee ID:</Text>
+                <Text style={styles.infoLabel}>{s.employeeId}</Text>
                 <Text style={styles.infoValue}>{record.employeeNumber}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Department:</Text>
+                <Text style={styles.infoLabel}>{s.department}</Text>
                 <Text style={styles.infoValue}>{record.department}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Position:</Text>
+                <Text style={styles.infoLabel}>{s.position}</Text>
                 <Text style={styles.infoValue}>{record.position}</Text>
               </View>
             </View>
@@ -361,17 +456,17 @@ export const PayslipDocument = ({
 
           <View style={styles.column}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Pay Information</Text>
+              <Text style={styles.sectionTitle}>{s.payInfo}</Text>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Pay Frequency:</Text>
+                <Text style={styles.infoLabel}>{s.payFrequency}</Text>
                 <Text style={styles.infoValue}>{payrollRun.payFrequency.charAt(0).toUpperCase() + payrollRun.payFrequency.slice(1)}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Hourly Rate:</Text>
+                <Text style={styles.infoLabel}>{s.hourlyRate}</Text>
                 <Text style={styles.infoValue}>{formatCurrency(record.hourlyRate)}</Text>
               </View>
               <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Overtime Rate:</Text>
+                <Text style={styles.infoLabel}>{s.overtimeRate}</Text>
                 <Text style={styles.infoValue}>{record.overtimeRate}x</Text>
               </View>
             </View>
@@ -383,7 +478,7 @@ export const PayslipDocument = ({
           {hourItems.map((item) => (
             <View key={item.label} style={styles.hoursItem}>
               <Text style={styles.hoursLabel}>{item.label}</Text>
-              <Text style={styles.hoursValue}>{item.value.toFixed(2)} hrs</Text>
+              <Text style={styles.hoursValue}>{item.value.toFixed(2)} {s.hrs}</Text>
             </View>
           ))}
         </View>
@@ -393,13 +488,13 @@ export const PayslipDocument = ({
           {/* Earnings Column */}
           <View style={styles.column}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Earnings</Text>
+              <Text style={styles.sectionTitle}>{s.earnings}</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: '50%' }]}>Description</Text>
-                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'center' }]}>Hours</Text>
-                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'right' }]}>Rate</Text>
-                  <Text style={[styles.tableHeaderText, { width: '20%', textAlign: 'right' }]}>Amount</Text>
+                  <Text style={[styles.tableHeaderText, { width: '50%' }]}>{s.description}</Text>
+                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'center' }]}>{s.hours}</Text>
+                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'right' }]}>{s.rate}</Text>
+                  <Text style={[styles.tableHeaderText, { width: '20%', textAlign: 'right' }]}>{s.amount}</Text>
                 </View>
                 {record.earnings.map((earning, index) => (
                   <View key={index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
@@ -416,7 +511,7 @@ export const PayslipDocument = ({
                   </View>
                 ))}
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Gross Pay</Text>
+                  <Text style={styles.totalLabel}>{s.grossPay}</Text>
                   <Text style={styles.totalValue}>{formatCurrency(record.totalGrossPay)}</Text>
                 </View>
               </View>
@@ -426,11 +521,11 @@ export const PayslipDocument = ({
           {/* Deductions Column */}
           <View style={styles.column}>
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Deductions</Text>
+              <Text style={styles.sectionTitle}>{s.deductions}</Text>
               <View style={styles.table}>
                 <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: '70%' }]}>Description</Text>
-                  <Text style={[styles.tableHeaderText, { width: '30%', textAlign: 'right' }]}>Amount</Text>
+                  <Text style={[styles.tableHeaderText, { width: '70%' }]}>{s.description}</Text>
+                  <Text style={[styles.tableHeaderText, { width: '30%', textAlign: 'right' }]}>{s.amount}</Text>
                 </View>
 
                 {/* Tax Deductions */}
@@ -448,7 +543,7 @@ export const PayslipDocument = ({
                   <>
                     {preTaxDeductions.map((deduction, index) => (
                       <View key={`pre-${index}`} style={styles.tableRow}>
-                        <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description} (Pre-tax)</Text>
+                        <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description} {s.preTax}</Text>
                         <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
                           {formatCurrency(deduction.amount)}
                         </Text>
@@ -472,7 +567,7 @@ export const PayslipDocument = ({
                 )}
 
                 <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>Total Deductions</Text>
+                  <Text style={styles.totalLabel}>{s.totalDeductions}</Text>
                   <Text style={styles.totalValue}>{formatCurrency(record.totalDeductions)}</Text>
                 </View>
               </View>
@@ -483,15 +578,15 @@ export const PayslipDocument = ({
         {/* Net Pay Summary */}
         <View style={styles.summaryBox}>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Gross Pay</Text>
+            <Text style={styles.summaryLabel}>{s.grossPay}</Text>
             <Text style={styles.summaryValue}>{formatCurrency(record.totalGrossPay)}</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Total Deductions</Text>
+            <Text style={styles.summaryLabel}>{s.totalDeductions}</Text>
             <Text style={styles.summaryValue}>{formatCurrency(record.totalDeductions)}</Text>
           </View>
           <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>Net Pay</Text>
+            <Text style={styles.summaryLabel}>{s.netPay}</Text>
             <Text style={styles.summaryValue}>{formatCurrency(record.netPay)}</Text>
           </View>
         </View>
@@ -499,44 +594,44 @@ export const PayslipDocument = ({
         {/* YTD Section */}
         {showYtd && (
           <View style={styles.ytdSection}>
-            <Text style={styles.ytdTitle}>Year-to-Date Summary</Text>
+            <Text style={styles.ytdTitle}>{s.ytdSummary}</Text>
             <View style={styles.ytdGrid}>
               <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>YTD Gross Pay</Text>
+                <Text style={styles.ytdLabel}>{s.ytdGrossPay}</Text>
                 <Text style={styles.ytdValue}>{formatCurrency(record.ytdGrossPay)}</Text>
               </View>
               <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>YTD Net Pay</Text>
+                <Text style={styles.ytdLabel}>{s.ytdNetPay}</Text>
                 <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
               </View>
 
               {isTimorLestePayslip ? (
                 <>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD WIT</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdWIT}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
                   </View>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD INSS (Employee)</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
                   </View>
                 </>
               ) : (
                 <>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD Federal Tax</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdFederalTax}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
                   </View>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD State Tax</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdStateTax}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdStateTax)}</Text>
                   </View>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD Social Security</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdSocialSecurity}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
                   </View>
                   <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>YTD Medicare</Text>
+                    <Text style={styles.ytdLabel}>{s.ytdMedicare}</Text>
                     <Text style={styles.ytdValue}>{formatCurrency(record.ytdMedicare)}</Text>
                   </View>
                 </>
@@ -547,9 +642,9 @@ export const PayslipDocument = ({
 
         {/* Footer */}
         <Text style={styles.footer}>
-          This is a computer-generated document. No signature is required.
+          {s.footer}
           {'\n'}
-          For questions about your pay, please contact HR at {companyEmail}
+          {s.footerContact} {companyEmail}
         </Text>
       </Page>
     </Document>
@@ -567,7 +662,8 @@ export const downloadPayslip = async (
     address?: string;
     phone?: string;
     email?: string;
-  }
+  },
+  language?: PayslipLocale
 ): Promise<void> => {
   const doc = (
     <PayslipDocument
@@ -577,6 +673,7 @@ export const downloadPayslip = async (
       companyAddress={companyInfo?.address}
       companyPhone={companyInfo?.phone}
       companyEmail={companyInfo?.email}
+      language={language}
     />
   );
 
@@ -608,7 +705,8 @@ export const generatePayslipBlob = async (
     address?: string;
     phone?: string;
     email?: string;
-  }
+  },
+  language?: PayslipLocale
 ): Promise<Blob> => {
   const doc = (
     <PayslipDocument
@@ -618,10 +716,12 @@ export const generatePayslipBlob = async (
       companyAddress={companyInfo?.address}
       companyPhone={companyInfo?.phone}
       companyEmail={companyInfo?.email}
+      language={language}
     />
   );
 
   return await pdf(doc).toBlob();
 };
 
+export type { PayslipLocale };
 export default PayslipDocument;

@@ -97,6 +97,7 @@ export type JournalEntrySource =
   | 'manual'
   | 'payroll'
   | 'invoice'
+  | 'bill'
   | 'payment'
   | 'receipt'
   | 'adjustment'

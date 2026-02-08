@@ -24,6 +24,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
 import type {
   Bill,
   BillFormData,
@@ -61,6 +62,8 @@ export interface PaginatedResult<T> {
   hasMore: boolean;
   totalFetched: number;
 }
+
+const PAYMENT_EPSILON = 0.00001;
 
 /**
  * Maps Firestore document to Bill with Zod validation
@@ -211,7 +214,7 @@ class BillService {
    * Get overdue bills
    */
   async getOverdueBills(tenantId: string): Promise<Bill[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const q = query(
       this.collectionRef(tenantId),
       where('status', 'in', ['pending', 'partial']),
@@ -334,7 +337,8 @@ class BillService {
     // Recalculate totals if amount or tax changed
     if (data.amount !== undefined || data.taxRate !== undefined) {
       const amount = data.amount ?? bill.amount;
-      const taxRate = data.taxRate ?? 0;
+      const existingTaxRate = bill.amount > 0 ? (bill.taxAmount / bill.amount) * 100 : 0;
+      const taxRate = data.taxRate ?? existingTaxRate;
       const taxAmount = amount * (taxRate / 100);
       const total = amount + taxAmount;
 
@@ -342,6 +346,10 @@ class BillService {
       updates.taxAmount = taxAmount;
       updates.total = total;
       updates.balanceDue = total - bill.amountPaid;
+
+      if (updates.balanceDue < -PAYMENT_EPSILON) {
+        throw new Error('Cannot reduce bill total below amount already paid');
+      }
     }
 
     // Update vendor if changed
@@ -366,6 +374,17 @@ class BillService {
    * Cancel a bill
    */
   async cancelBill(tenantId: string, id: string): Promise<boolean> {
+    const bill = await this.getBillById(tenantId, id);
+    if (!bill) {
+      throw new Error('Bill not found');
+    }
+    if (bill.status === 'paid') {
+      throw new Error('Cannot cancel a fully paid bill');
+    }
+    if ((bill.amountPaid || 0) > PAYMENT_EPSILON) {
+      throw new Error('Cannot cancel a bill with recorded payments');
+    }
+
     const docRef = doc(db, paths.bill(tenantId, id));
     await updateDoc(docRef, {
       status: 'cancelled',
@@ -422,12 +441,32 @@ class BillService {
       if (bill.status === 'cancelled') {
         throw new Error('Cannot record payment for cancelled bill');
       }
+      if (bill.status === 'paid') {
+        throw new Error('Cannot record payment for a fully paid bill');
+      }
+      if (payment.amount <= 0) {
+        throw new Error('Payment amount must be greater than zero');
+      }
+
+      if (payment.amount - bill.balanceDue > PAYMENT_EPSILON) {
+        throw new Error('Payment exceeds remaining bill balance');
+      }
 
       // Calculate new values
-      const newAmountPaid = bill.amountPaid + payment.amount;
-      const newBalanceDue = bill.total - newAmountPaid;
+      const currentPaidCents = Math.round((bill.amountPaid || 0) * 100);
+      const paymentCents = Math.round(payment.amount * 100);
+      const totalCents = Math.round((bill.total || 0) * 100);
+      const newAmountPaidCents = currentPaidCents + paymentCents;
+      const newBalanceDueCents = totalCents - newAmountPaidCents;
+
+      if (newBalanceDueCents < 0) {
+        throw new Error('Payment exceeds remaining bill balance');
+      }
+
+      const newAmountPaid = newAmountPaidCents / 100;
+      const newBalanceDue = newBalanceDueCents / 100;
       const newStatus: BillStatus =
-        newBalanceDue <= 0 ? 'paid' : newBalanceDue < bill.total ? 'partial' : bill.status;
+        newBalanceDueCents === 0 ? 'paid' : 'partial';
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
@@ -444,7 +483,7 @@ class BillService {
       // Update bill within same transaction
       transaction.update(billRef, {
         amountPaid: newAmountPaid,
-        balanceDue: Math.max(0, newBalanceDue),
+        balanceDue: newBalanceDue,
         status: newStatus,
         paidAt: newStatus === 'paid' ? serverTimestamp() : null,
         updatedAt: serverTimestamp(),
@@ -549,11 +588,8 @@ class BillService {
    * Get bills due soon (next 7 days)
    */
   async getBillsDueSoon(tenantId: string): Promise<Bill[]> {
-    const today = new Date();
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    const todayStr = today.toISOString().split('T')[0];
-    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    const todayStr = getTodayTL();
+    const nextWeekStr = formatDateISO(addDays(parseDateISO(todayStr), 7));
 
     const q = query(
       this.collectionRef(tenantId),
@@ -579,10 +615,8 @@ class BillService {
     dueLaterCount: number;
   }> {
     const unpaidBills = await this.getUnpaidBills(tenantId);
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-    const nextWeekStr = nextWeek.toISOString().split('T')[0];
+    const todayStr = getTodayTL();
+    const nextWeekStr = formatDateISO(addDays(parseDateISO(todayStr), 7));
 
     const result = {
       overdue: 0,
@@ -613,7 +647,7 @@ class BillService {
    * Update overdue status for all bills
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const bills = await this.getAllBills(tenantId);
 
     let updated = 0;

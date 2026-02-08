@@ -25,11 +25,16 @@ async function validateTenantAccess(uid, tenantId) {
  * Gets the ISO week string for a given date
  */
 function getISOWeek(date) {
-    const year = date.getFullYear();
-    const start = new Date(year, 0, 1);
-    const days = Math.floor((date.getTime() - start.getTime()) / (24 * 60 * 60 * 1000));
-    const week = Math.ceil((days + start.getDay() + 1) / 7);
-    return `${year}-W${week.toString().padStart(2, "0")}`;
+    // ISO-8601 week number (Monday-based, week 1 contains first Thursday).
+    const target = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    const dayNr = (target.getUTCDay() + 6) % 7; // Monday=0 ... Sunday=6
+    target.setUTCDate(target.getUTCDate() - dayNr + 3); // Thursday
+    const isoYear = target.getUTCFullYear();
+    const firstThursday = new Date(Date.UTC(isoYear, 0, 4));
+    const firstDayNr = (firstThursday.getUTCDay() + 6) % 7;
+    firstThursday.setUTCDate(firstThursday.getUTCDate() - firstDayNr + 3);
+    const week = 1 + Math.round((target.getTime() - firstThursday.getTime()) / (7 * 24 * 60 * 60 * 1000));
+    return `${isoYear}-W${week.toString().padStart(2, "0")}`;
 }
 /**
  * Gets the year-month string for roster organization

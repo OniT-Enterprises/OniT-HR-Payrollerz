@@ -20,6 +20,7 @@ import {
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getTodayTL } from '@/lib/dateUtils';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -112,6 +113,11 @@ class PayrollRunService {
     records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[],
     audit?: AuditContext
   ): Promise<{ runId: string; recordIds: string[] }> {
+    // SEC-3: Firestore batch limit is 500 operations (1 run doc + N records)
+    if (records.length > 499) {
+      throw new Error(`Too many payroll records (${records.length}). Maximum is 499 per batch.`);
+    }
+
     const batch = writeBatch(db);
 
     // Create the payroll run document
@@ -179,8 +185,16 @@ class PayrollRunService {
     approvedBy: string,
     audit?: AuditContext
   ): Promise<boolean> {
-    // Get payroll info for audit
-    const payroll = audit ? await this.getPayrollRunById(id) : null;
+    const payroll = await this.getPayrollRunById(id);
+    if (!payroll) {
+      throw new Error('Payroll run not found');
+    }
+    if (payroll.status === 'approved' || payroll.status === 'paid' || payroll.status === 'cancelled') {
+      throw new Error(`Cannot approve payroll run in status "${payroll.status}"`);
+    }
+    if (payroll.status !== 'draft' && payroll.status !== 'processing') {
+      throw new Error(`Payroll run must be draft/processing before approval (current: ${payroll.status})`);
+    }
 
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {
@@ -191,7 +205,7 @@ class PayrollRunService {
     });
 
     // Log to audit trail if context provided
-    if (audit && payroll) {
+    if (audit) {
       const tenantId = payroll.tenantId || audit.tenantId;
       if (tenantId) {
         await auditLogService.logPayrollAction({
@@ -213,6 +227,14 @@ class PayrollRunService {
   }
 
   async markPayrollRunAsPaid(id: string): Promise<boolean> {
+    const payroll = await this.getPayrollRunById(id);
+    if (!payroll) {
+      throw new Error('Payroll run not found');
+    }
+    if (payroll.status !== 'approved') {
+      throw new Error(`Only approved payroll runs can be marked paid (current: ${payroll.status})`);
+    }
+
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {
       status: 'paid',
@@ -223,6 +245,17 @@ class PayrollRunService {
   }
 
   async cancelPayrollRun(id: string): Promise<boolean> {
+    const payroll = await this.getPayrollRunById(id);
+    if (!payroll) {
+      throw new Error('Payroll run not found');
+    }
+    if (payroll.status === 'paid') {
+      throw new Error('Cannot cancel a paid payroll run');
+    }
+    if (payroll.status === 'cancelled') {
+      return true;
+    }
+
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {
       status: 'cancelled',
@@ -395,15 +428,26 @@ class PayrollRecordService {
     ytdSocialSecurity: number;
     ytdMedicare: number;
   }> {
-    const startOfYear = `${year}-01-01`;
-    const endOfYear = `${year}-12-31`;
+    const records = await this.getEmployeePayrollHistory(employeeId, 500);
+    const runIds = Array.from(new Set(records.map((r) => r.payrollRunId).filter(Boolean)));
+    const runYears = new Map<string, number>();
 
-    const records = await this.getEmployeePayrollHistory(employeeId, 100);
+    await Promise.all(
+      runIds.map(async (runId) => {
+        const run = await payrollRunService.getPayrollRunById(runId);
+        if (run?.payDate) {
+          runYears.set(runId, parseInt(run.payDate.substring(0, 4), 10));
+        }
+      })
+    );
 
-    // Filter to current year and sum up totals
-    const ytdRecords = records.filter((r) => {
-      // Assuming we have the payroll run period info
-      return true; // Simplified - would check against period dates
+    const ytdRecords = records.filter((record) => {
+      const fromRun = record.payrollRunId ? runYears.get(record.payrollRunId) : undefined;
+      if (typeof fromRun === 'number') {
+        return fromRun === year;
+      }
+      const createdAt = record.createdAt instanceof Date ? record.createdAt : new Date(record.createdAt as any);
+      return createdAt.getFullYear() === year;
     });
 
     const totals = ytdRecords.reduce(
@@ -677,7 +721,7 @@ class TaxReportService {
   async markAsFiled(id: string, confirmationNumber: string): Promise<boolean> {
     return this.updateTaxReport(id, {
       status: 'filed',
-      filedDate: new Date().toISOString().split('T')[0],
+      filedDate: getTodayTL(),
       confirmationNumber,
     });
   }

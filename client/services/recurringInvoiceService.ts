@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
 import type {
   RecurringInvoice,
   RecurringInvoiceFormData,
@@ -56,24 +57,38 @@ function mapRecurringInvoice(docSnap: DocumentSnapshot): RecurringInvoice {
  * Calculate next run date based on frequency
  */
 function calculateNextRunDate(currentDate: string, frequency: RecurringFrequency): string {
-  const date = new Date(currentDate);
+  const source = parseDateISO(currentDate);
+  const sourceYear = source.getUTCFullYear();
+  const sourceMonth = source.getUTCMonth();
+  const sourceDay = source.getUTCDate();
+  const sourceMonthLastDay = new Date(Date.UTC(sourceYear, sourceMonth + 1, 0)).getUTCDate();
+  const keepEndOfMonth = sourceDay === sourceMonthLastDay;
+
+  if (frequency === 'weekly') {
+    return formatDateISO(addDays(source, 7));
+  }
+
+  const target = new Date(source.getTime());
 
   switch (frequency) {
-    case 'weekly':
-      date.setDate(date.getDate() + 7);
-      break;
     case 'monthly':
-      date.setMonth(date.getMonth() + 1);
+      target.setUTCMonth(target.getUTCMonth() + 1);
       break;
     case 'quarterly':
-      date.setMonth(date.getMonth() + 3);
+      target.setUTCMonth(target.getUTCMonth() + 3);
       break;
     case 'yearly':
-      date.setFullYear(date.getFullYear() + 1);
+      target.setUTCFullYear(target.getUTCFullYear() + 1);
       break;
   }
 
-  return date.toISOString().split('T')[0];
+  const targetYear = target.getUTCFullYear();
+  const targetMonth = target.getUTCMonth();
+  const targetMonthLastDay = new Date(Date.UTC(targetYear, targetMonth + 1, 0)).getUTCDate();
+  const day = keepEndOfMonth ? targetMonthLastDay : Math.min(sourceDay, targetMonthLastDay);
+
+  const normalized = new Date(Date.UTC(targetYear, targetMonth, day, 12, 0, 0));
+  return formatDateISO(normalized);
 }
 
 class RecurringInvoiceService {
@@ -114,7 +129,7 @@ class RecurringInvoiceService {
    * Get recurring invoices due to run
    */
   async getDueForGeneration(tenantId: string): Promise<RecurringInvoice[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const q = query(
       this.collectionRef(tenantId),
       where('status', '==', 'active'),
@@ -255,7 +270,7 @@ class RecurringInvoiceService {
     }
 
     // If next run date is in the past, set it to today
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const nextRunDate = recurring.nextRunDate < today ? today : recurring.nextRunDate;
 
     const docRef = doc(db, paths.recurringInvoice(tenantId, id));
@@ -306,14 +321,13 @@ class RecurringInvoiceService {
 
     // Calculate due date
     const issueDate = recurring.nextRunDate;
-    const dueDate = new Date(issueDate);
-    dueDate.setDate(dueDate.getDate() + recurring.dueDays);
+    const dueDate = formatDateISO(addDays(parseDateISO(issueDate), recurring.dueDays));
 
     // Create the invoice
     const invoiceId = await invoiceService.createInvoice(tenantId, {
       customerId: recurring.customerId,
       issueDate,
-      dueDate: dueDate.toISOString().split('T')[0],
+      dueDate,
       items: recurring.items.map(({ id, ...item }) => item),
       taxRate: recurring.taxRate,
       notes: recurring.notes,

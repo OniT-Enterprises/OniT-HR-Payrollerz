@@ -3,23 +3,23 @@
  * Import bank transactions and match against records
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,17 +28,18 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { bankReconciliationService } from '@/services/bankReconciliationService';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
-import type { BankTransaction, Invoice, Bill, Expense } from '@/types/money';
+import type { BankTransaction } from '@/types/money';
+import { BankReconciliationSummary } from '@/components/money/BankReconciliationSummary';
+import { BankMatchDialog, type MatchOption } from '@/components/money/BankMatchDialog';
 import {
   Upload,
   CheckCircle2,
-  XCircle,
   Link2,
   Link2Off,
   Trash2,
@@ -47,14 +48,16 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   Search,
-  Check,
   Building2,
+  Loader2,
 } from 'lucide-react';
+
+const MAX_FILE_SIZE_MB = 5;
 
 export default function BankReconciliation() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -73,23 +76,10 @@ export default function BankReconciliation() {
   // Match dialog state
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
   const [transactionToMatch, setTransactionToMatch] = useState<BankTransaction | null>(null);
-  const [matchOptions, setMatchOptions] = useState<Array<{
-    type: 'invoice_payment' | 'bill_payment' | 'expense';
-    id: string;
-    description: string;
-    amount: number;
-    date: string;
-  }>>([]);
+  const [matchOptions, setMatchOptions] = useState<MatchOption[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
-  useEffect(() => {
-    if (session?.tid) {
-      bankReconciliationService.setTenantId(session.tid);
-      loadData();
-    }
-  }, [session?.tid]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [txns, sum] = await Promise.all([
@@ -108,11 +98,27 @@ export default function BankReconciliation() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [toast, t]);
+
+  useEffect(() => {
+    bankReconciliationService.setTenantId(tenantId);
+    loadData();
+  }, [tenantId, loadData]);
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      toast({
+        title: t('common.error') || 'Error',
+        description: `File too large. Maximum size is ${MAX_FILE_SIZE_MB}MB.`,
+        variant: 'destructive',
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     setImporting(true);
     try {
@@ -145,17 +151,17 @@ export default function BankReconciliation() {
   };
 
   const openMatchDialog = async (transaction: BankTransaction) => {
-    if (!session?.tid) return;
     setTransactionToMatch(transaction);
     setMatchDialogOpen(true);
     setLoadingMatches(true);
+    setMatchOptions([]);
 
     try {
-      const options: typeof matchOptions = [];
+      const options: MatchOption[] = [];
 
       if (transaction.type === 'deposit') {
         // For deposits, suggest paid invoices
-        const invoices = await invoiceService.getAllInvoices(session.tid);
+        const invoices = await invoiceService.getAllInvoices(tenantId);
         invoices
           .filter(inv => inv.status === 'paid' && inv.total > 0)
           .forEach(inv => {
@@ -170,8 +176,8 @@ export default function BankReconciliation() {
       } else {
         // For withdrawals, suggest bills and expenses
         const [bills, expenses] = await Promise.all([
-          billService.getAllBills(session.tid),
-          expenseService.getAllExpenses(session.tid, 50),
+          billService.getAllBills(tenantId),
+          expenseService.getAllExpenses(tenantId, 50),
         ]);
 
         bills
@@ -207,12 +213,17 @@ export default function BankReconciliation() {
       setMatchOptions(options.slice(0, 10)); // Show top 10
     } catch (error) {
       console.error('Error loading match options:', error);
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.bankRecon.matchError') || 'Failed to load match options',
+        variant: 'destructive',
+      });
     } finally {
       setLoadingMatches(false);
     }
   };
 
-  const handleMatch = async (option: typeof matchOptions[0]) => {
+  const handleMatch = async (option: MatchOption) => {
     if (!transactionToMatch) return;
 
     try {
@@ -309,17 +320,18 @@ export default function BankReconciliation() {
       style: 'currency',
       currency: 'USD',
       minimumFractionDigits: 2,
+      signDisplay: 'never',
     }).format(Math.abs(amount));
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'matched':
-        return <Badge className="bg-blue-100 text-blue-700">Matched</Badge>;
+        return <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Matched</Badge>;
       case 'reconciled':
-        return <Badge className="bg-green-100 text-green-700">Reconciled</Badge>;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Reconciled</Badge>;
       default:
-        return <Badge variant="outline">Unmatched</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Unmatched</Badge>;
     }
   };
 
@@ -332,15 +344,78 @@ export default function BankReconciliation() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-6xl mx-auto">
-          <Skeleton className="h-8 w-48 mb-2" />
-          <Skeleton className="h-5 w-72 mb-8" />
-          <div className="grid grid-cols-3 gap-4 mb-8">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24" />
+        <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
+          <div className="max-w-6xl mx-auto px-6 py-8">
+            <Skeleton className="h-4 w-48 mb-4" />
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Skeleton className="h-14 w-14 rounded-2xl" />
+                <div>
+                  <Skeleton className="h-8 w-56 mb-2" />
+                  <Skeleton className="h-4 w-72" />
+                </div>
+              </div>
+              <Skeleton className="h-10 w-32 rounded-md" />
+            </div>
+          </div>
+        </div>
+        <div className="max-w-6xl mx-auto px-6 py-6">
+          {/* Summary cards skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 animate-fade-up stagger-1">
+            {[
+              "from-amber-500/5 to-orange-500/5",
+              "from-blue-500/5 to-indigo-500/5",
+              "from-emerald-500/5 to-green-500/5",
+              "from-green-500/5 to-teal-500/5",
+              "from-red-500/5 to-rose-500/5",
+            ].map((gradient, i) => (
+              <Card key={i} className="relative overflow-hidden border-border/50">
+                <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
+                <CardContent className="relative pt-5 pb-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <Skeleton className="h-3 w-16 mb-2" />
+                      <Skeleton className="h-7 w-20" />
+                    </div>
+                    <Skeleton className="h-8 w-8 rounded-lg" />
+                  </div>
+                </CardContent>
+              </Card>
             ))}
           </div>
-          <Skeleton className="h-96 w-full" />
+          {/* Table skeleton */}
+          <Card className="border-border/50 animate-fade-up stagger-2">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-7 w-7 rounded-lg" />
+                  <Skeleton className="h-5 w-40" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-9 w-36 rounded-md" />
+                  <Skeleton className="h-9 w-48 rounded-md" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {[1, 2, 3, 4, 5, 6].map((i) => (
+                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/20 last:border-0">
+                    <Skeleton className="h-4 w-4" />
+                    <Skeleton className="h-4 w-20" />
+                    <div className="flex items-center gap-2 flex-1">
+                      <Skeleton className="h-4 w-4 rounded" />
+                      <Skeleton className="h-4 w-40" />
+                    </div>
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
@@ -351,103 +426,95 @@ export default function BankReconciliation() {
       <SEO title="Bank Reconciliation - OniT" description="Reconcile bank transactions" />
       <MainNavigation />
 
-      <div className="p-6 max-w-6xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Building2 className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+      {/* Hero Section */}
+      <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
+        <div className="max-w-6xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-up">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/25">
+                <Building2 className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
+                  {t('money.bankRecon.title') || 'Bank Reconciliation'}
+                </h1>
+                <p className="text-muted-foreground mt-1">
+                  {t('money.bankRecon.subtitle') || 'Import and match bank transactions'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold">{t('money.bankRecon.title') || 'Bank Reconciliation'}</h1>
-              <p className="text-muted-foreground">
-                {t('money.bankRecon.subtitle') || 'Import and match bank transactions'}
-              </p>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                ref={fileInputRef}
+                accept=".csv"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={importing}
+                className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/25"
+              >
+                {importing ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Upload className="h-4 w-4 mr-2" />
+                )}
+                {importing
+                  ? t('money.bankRecon.importing') || 'Importing...'
+                  : t('money.bankRecon.importCSV') || 'Import CSV'}
+              </Button>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept=".csv"
-              className="hidden"
-              onChange={handleFileUpload}
-            />
-            <Button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={importing}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              {importing
-                ? t('money.bankRecon.importing') || 'Importing...'
-                : t('money.bankRecon.importCSV') || 'Import CSV'}
-            </Button>
           </div>
         </div>
+      </div>
 
+      <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{t('money.bankRecon.unmatched') || 'Unmatched'}</p>
-              <p className="text-xl font-bold text-amber-600">{summary.unmatchedCount}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{t('money.bankRecon.matched') || 'Matched'}</p>
-              <p className="text-xl font-bold text-blue-600">{summary.matchedCount}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{t('money.bankRecon.reconciled') || 'Reconciled'}</p>
-              <p className="text-xl font-bold text-green-600">{summary.reconciledCount}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{t('money.bankRecon.deposits') || 'Deposits'}</p>
-              <p className="text-xl font-bold text-green-600">{formatCurrency(summary.totalDeposits)}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-4 pb-3">
-              <p className="text-xs text-muted-foreground">{t('money.bankRecon.withdrawals') || 'Withdrawals'}</p>
-              <p className="text-xl font-bold text-red-600">{formatCurrency(summary.totalWithdrawals)}</p>
-            </CardContent>
-          </Card>
+        <div className="animate-fade-up stagger-1">
+          <BankReconciliationSummary summary={summary} formatCurrency={formatCurrency} />
         </div>
 
         {/* Actions Bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-4 mb-4 p-3 bg-muted rounded-lg">
-            <span className="text-sm">
-              {selectedIds.size} {t('money.bankRecon.selected') || 'selected'}
+          <div className="flex items-center gap-3 mb-4 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50 animate-fade-up">
+            <Badge className="bg-indigo-500 text-white text-xs tabular-nums">
+              {selectedIds.size}
+            </Badge>
+            <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
+              transaction{selectedIds.size !== 1 ? 's' : ''} {t('money.bankRecon.selected') || 'selected'}
             </span>
-            <Button size="sm" onClick={handleReconcile}>
+            <div className="flex-1" />
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300">
+              {t('common.cancel') || 'Clear'}
+            </Button>
+            <Button size="sm" onClick={handleReconcile} className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-sm">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               {t('money.bankRecon.markReconciled') || 'Mark Reconciled'}
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())}>
-              {t('common.cancel') || 'Cancel'}
             </Button>
           </div>
         )}
 
         {/* Transactions Table */}
-        <Card>
+        <Card className="border-border/50 animate-fade-up stagger-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5" />
+                <div className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-500/10 to-indigo-600/10">
+                  <FileSpreadsheet className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                </div>
                 {t('money.bankRecon.transactions') || 'Bank Transactions'}
+                {transactions.length > 0 && (
+                  <Badge variant="outline" className="ml-1 text-xs font-normal tabular-nums">
+                    {filteredTransactions.length}{filteredTransactions.length !== transactions.length ? ` / ${transactions.length}` : ''}
+                  </Badge>
+                )}
               </CardTitle>
               <div className="flex items-center gap-2">
-                <Button size="sm" variant="outline" onClick={selectAllMatched}>
+                <Button size="sm" variant="outline" onClick={selectAllMatched} className="border-border/50">
+                  <CheckCircle2 className="h-3.5 w-3.5 mr-1.5" />
                   {t('money.bankRecon.selectMatched') || 'Select All Matched'}
                 </Button>
                 <div className="relative">
@@ -456,7 +523,7 @@ export default function BankReconciliation() {
                     placeholder={t('money.bankRecon.search') || 'Search...'}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-9 w-[200px]"
+                    className="pl-9 w-[200px] border-border/50"
                   />
                 </div>
               </div>
@@ -464,43 +531,57 @@ export default function BankReconciliation() {
           </CardHeader>
           <CardContent>
             {filteredTransactions.length === 0 ? (
-              <div className="text-center py-12">
-                <FileSpreadsheet className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                <p className="text-muted-foreground mb-4">
+              <div className="text-center py-16">
+                <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-950/10 flex items-center justify-center mb-4">
+                  <FileSpreadsheet className="h-8 w-8 text-indigo-400" />
+                </div>
+                <p className="font-medium text-foreground mb-1">
                   {t('money.bankRecon.noTransactions') || 'No transactions yet'}
                 </p>
-                <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
+                <p className="text-sm text-muted-foreground mb-5">
+                  Upload a CSV export from your bank to get started
+                </p>
+                <Button onClick={() => fileInputRef.current?.click()} className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-sm">
                   <Upload className="h-4 w-4 mr-2" />
                   {t('money.bankRecon.importFirst') || 'Import your first CSV'}
                 </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b text-sm">
-                      <th className="w-10 py-3"></th>
-                      <th className="text-left py-3 font-medium">{t('money.bankRecon.date') || 'Date'}</th>
-                      <th className="text-left py-3 font-medium">{t('money.bankRecon.description') || 'Description'}</th>
-                      <th className="text-right py-3 font-medium">{t('money.bankRecon.amount') || 'Amount'}</th>
-                      <th className="text-center py-3 font-medium">{t('money.bankRecon.status') || 'Status'}</th>
-                      <th className="text-left py-3 font-medium">{t('money.bankRecon.matchedTo') || 'Matched To'}</th>
-                      <th className="w-10"></th>
-                    </tr>
-                  </thead>
-                  <tbody>
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/30 hover:bg-muted/30">
+                      <TableHead className="w-10"></TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider">{t('money.bankRecon.date') || 'Date'}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider">{t('money.bankRecon.description') || 'Description'}</TableHead>
+                      <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t('money.bankRecon.amount') || 'Amount'}</TableHead>
+                      <TableHead className="text-center text-xs font-semibold uppercase tracking-wider">{t('money.bankRecon.status') || 'Status'}</TableHead>
+                      <TableHead className="text-xs font-semibold uppercase tracking-wider">{t('money.bankRecon.matchedTo') || 'Matched To'}</TableHead>
+                      <TableHead className="w-10"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
                     {filteredTransactions.map((tx) => (
-                      <tr key={tx.id} className="border-b hover:bg-muted/50">
-                        <td className="py-3">
+                      <TableRow
+                        key={tx.id}
+                        className={`group transition-colors ${
+                          tx.status === 'reconciled'
+                            ? 'bg-emerald-50/30 dark:bg-emerald-950/5 hover:bg-emerald-50/50 dark:hover:bg-emerald-950/10'
+                            : tx.type === 'deposit'
+                              ? 'hover:bg-green-50/30 dark:hover:bg-green-950/10'
+                              : 'hover:bg-red-50/20 dark:hover:bg-red-950/10'
+                        }`}
+                      >
+                        <TableCell>
                           {tx.status !== 'reconciled' && (
                             <Checkbox
                               checked={selectedIds.has(tx.id)}
                               onCheckedChange={() => toggleSelect(tx.id)}
                             />
                           )}
-                        </td>
-                        <td className="py-3 text-sm">{tx.date}</td>
-                        <td className="py-3">
+                        </TableCell>
+                        <TableCell className="text-sm">{tx.date}</TableCell>
+                        <TableCell>
                           <div className="flex items-center gap-2">
                             {tx.type === 'deposit' ? (
                               <ArrowDownLeft className="h-4 w-4 text-green-500" />
@@ -514,38 +595,38 @@ export default function BankReconciliation() {
                               )}
                             </div>
                           </div>
-                        </td>
-                        <td className={`py-3 text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
-                        </td>
-                        <td className="py-3 text-center">{getStatusBadge(tx.status)}</td>
-                        <td className="py-3 text-sm text-muted-foreground">
+                        </TableCell>
+                        <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {tx.amount >= 0 ? '+' : '-'}{formatCurrency(tx.amount)}
+                        </TableCell>
+                        <TableCell className="text-center">{getStatusBadge(tx.status)}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">
                           {tx.matchedTo?.description || '-'}
-                        </td>
-                        <td className="py-3">
+                        </TableCell>
+                        <TableCell>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Button variant="ghost" size="icon" className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity" aria-label={`Actions for ${tx.description}`}>
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               {tx.status === 'unmatched' && (
-                                <DropdownMenuItem onClick={() => openMatchDialog(tx)}>
-                                  <Link2 className="h-4 w-4 mr-2" />
+                                <DropdownMenuItem onClick={() => openMatchDialog(tx)} className="cursor-pointer">
+                                  <Link2 className="h-4 w-4 mr-2 text-blue-500" />
                                   {t('money.bankRecon.match') || 'Match'}
                                 </DropdownMenuItem>
                               )}
                               {tx.status === 'matched' && (
-                                <DropdownMenuItem onClick={() => handleUnmatch(tx.id)}>
-                                  <Link2Off className="h-4 w-4 mr-2" />
+                                <DropdownMenuItem onClick={() => handleUnmatch(tx.id)} className="cursor-pointer">
+                                  <Link2Off className="h-4 w-4 mr-2 text-amber-500" />
                                   {t('money.bankRecon.unmatch') || 'Unmatch'}
                                 </DropdownMenuItem>
                               )}
                               {tx.status !== 'reconciled' && (
                                 <DropdownMenuItem
                                   onClick={() => handleDelete(tx.id)}
-                                  className="text-red-600"
+                                  className="text-red-600 focus:text-red-600 focus:bg-red-50 dark:focus:bg-red-950/20 cursor-pointer"
                                 >
                                   <Trash2 className="h-4 w-4 mr-2" />
                                   {t('common.delete') || 'Delete'}
@@ -553,71 +634,29 @@ export default function BankReconciliation() {
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     ))}
-                  </tbody>
-                </table>
+                  </TableBody>
+                </Table>
               </div>
             )}
           </CardContent>
         </Card>
 
         {/* Match Dialog */}
-        <Dialog open={matchDialogOpen} onOpenChange={setMatchDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{t('money.bankRecon.matchTransaction') || 'Match Transaction'}</DialogTitle>
-              <DialogDescription>
-                {transactionToMatch && (
-                  <div className="mt-2 p-3 bg-muted rounded-lg">
-                    <p className="font-medium">{transactionToMatch.description}</p>
-                    <p className={`text-lg font-bold ${transactionToMatch.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {formatCurrency(transactionToMatch.amount)}
-                    </p>
-                    <p className="text-sm">{transactionToMatch.date}</p>
-                  </div>
-                )}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[300px] overflow-y-auto">
-              {loadingMatches ? (
-                <div className="space-y-2">
-                  {[1, 2, 3].map(i => <Skeleton key={i} className="h-16" />)}
-                </div>
-              ) : matchOptions.length === 0 ? (
-                <p className="text-center text-muted-foreground py-8">
-                  {t('money.bankRecon.noMatches') || 'No matching records found'}
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {matchOptions.map((option) => (
-                    <button
-                      key={`${option.type}-${option.id}`}
-                      onClick={() => handleMatch(option)}
-                      className="w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-medium text-sm">{option.description}</p>
-                          <p className="text-xs text-muted-foreground">{option.date}</p>
-                        </div>
-                        <p className={`font-medium ${option.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(option.amount)}
-                        </p>
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setMatchDialogOpen(false)}>
-                {t('common.cancel') || 'Cancel'}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <BankMatchDialog
+          open={matchDialogOpen}
+          onOpenChange={setMatchDialogOpen}
+          transaction={transactionToMatch}
+          matchOptions={matchOptions}
+          loading={loadingMatches}
+          onMatch={handleMatch}
+          formatCurrency={formatCurrency}
+        />
+
+        {/* Bottom spacing */}
+        <div className="h-8" />
       </div>
     </div>
   );

@@ -110,7 +110,7 @@ export const firestoreInvoiceSchema = z.object({
   invoiceNumber: z.string(),
   customerId: z.string(),
   customerName: z.string().default(''),
-  status: z.enum(['draft', 'sent', 'paid', 'overdue', 'cancelled']).default('draft'),
+  status: z.enum(['draft', 'sent', 'viewed', 'paid', 'partial', 'overdue', 'cancelled']).default('draft'),
   issueDate: z.string(),
   dueDate: z.string(),
   items: z.array(z.object({
@@ -162,7 +162,7 @@ export const firestoreBillSchema = z.object({
   dueDate: z.string(),
   amount: z.number(),
   amountPaid: z.number().default(0),
-  status: z.enum(['pending', 'paid', 'overdue', 'cancelled']).default('pending'),
+  status: z.enum(['pending', 'paid', 'partial', 'overdue', 'cancelled']).default('pending'),
   category: z.string(),
   description: z.string().optional(),
   notes: z.string().optional(),

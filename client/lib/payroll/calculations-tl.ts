@@ -698,6 +698,29 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
     });
   }
 
+  // ========== DEDUCTION CAP (CALC-3) ==========
+  // Based on Portuguese Labour Code Art. 279 (TL Law 4/2012 precedent):
+  // - Statutory deductions (WIT, INSS) and court orders: no cap
+  // - Voluntary deductions (loans, advances, other): capped at 1/6 of gross pay
+  const VOLUNTARY_DEDUCTION_CAP_RATIO = 1 / 6; // ~16.67%
+
+  const statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
+  const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
+  const voluntaryTotal = sumMoney(voluntaryDeductions.map(d => d.amount));
+  const voluntaryCap = multiplyMoney(grossPay, VOLUNTARY_DEDUCTION_CAP_RATIO);
+
+  if (voluntaryTotal > voluntaryCap && voluntaryDeductions.length > 0) {
+    warnings.push(
+      `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 1/6 cap ($${voluntaryCap.toFixed(2)}). ` +
+      `Excess deductions have been reduced proportionally.`
+    );
+    // Proportionally reduce each voluntary deduction to fit within cap
+    const reductionRatio = voluntaryCap / voluntaryTotal;
+    for (const d of voluntaryDeductions) {
+      d.amount = multiplyMoney(d.amount, reductionRatio);
+    }
+  }
+
   // ========== FINAL CALCULATIONS ==========
   // Use decimal.js for precise final totals
 
@@ -887,7 +910,9 @@ export function calculateFinalWeekReconciliation(
 export function validateTLPayrollInput(input: TLPayrollInput): string[] {
   const errors: string[] = [];
 
-  if (input.monthlySalary < TL_INSS.minimumSalary) {
+  if (input.monthlySalary < 0) {
+    errors.push('Monthly salary cannot be negative.');
+  } else if (input.monthlySalary < TL_INSS.minimumSalary) {
     errors.push(`Monthly salary ($${input.monthlySalary}) is below minimum wage ($${TL_INSS.minimumSalary}).`);
   }
 

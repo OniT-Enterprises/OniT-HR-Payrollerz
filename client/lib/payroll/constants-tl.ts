@@ -14,10 +14,17 @@ import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
 // ============================================
 
 /**
- * Timor-Leste Income Tax Rules
- * - Residents: 10% on income exceeding $500/month
- * - Non-residents: 10% on ALL income (no threshold)
+ * Timor-Leste Wage Income Tax (WIT / Impostu Retidu)
+ * Legal basis: Decree Law No. 8/2008 (Taxes and Duties Act), Part VI, Schedule V
+ * Confirmed by ATTL (attl.gov.tl/wage-income-tax/)
+ *
+ * - Residents: 10% on income exceeding $500/month ($6,000/year)
+ * - Non-residents: 10% on ALL income (no threshold, from first dollar)
  * - Wages generally include allowances and reimbursements unless specifically exempt
+ *
+ * Note: Some older references cite "20% flat" for non-residents — this traces back to
+ * UNTAET Regulation 2000/32 (general income tax, pre-independence) which was superseded
+ * by Decree Law 8/2008. The current correct rate is 10%.
  */
 export const TL_INCOME_TAX = {
   // Tax rate for residents and non-residents

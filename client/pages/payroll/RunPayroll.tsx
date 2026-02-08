@@ -18,6 +18,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -44,10 +45,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
   Calculator,
-  DollarSign,
   Users,
   FileText,
   Save,
@@ -55,13 +54,10 @@ import {
   AlertTriangle,
   Loader2,
   ChevronDown,
-  ChevronUp,
   Search,
-  Building,
   Lock,
   Calendar,
   Eye,
-  RotateCcw,
   Pencil,
   AlertCircle,
 } from "lucide-react";
@@ -71,18 +67,17 @@ import { accountingService } from "@/services/accountingService";
 import {
   calculateTLPayroll,
   calculateSubsidioAnual,
+  validateTLPayrollInput,
   type TLPayrollInput,
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
 import {
   formatCurrencyTL,
   TL_PAY_PERIODS,
-  TL_PAYROLL_STATUS_CONFIG,
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
   TL_DEDUCTION_TYPE_LABELS,
-  TL_INSS,
-  TL_INCOME_TAX,
+  TL_MINIMUM_WAGE,
 } from "@/lib/payroll/constants-tl";
 import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
@@ -90,7 +85,13 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { sumMoney } from "@/lib/currency";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
-import { PayrollLoadingSkeleton, TaxInfoBanner } from "@/components/payroll";
+import {
+  PayrollLoadingSkeleton,
+  TaxInfoBanner,
+  PayrollSummaryCards,
+  PayrollEmployeeRow,
+  TaxSummaryCard,
+} from "@/components/payroll";
 
 interface EmployeePayrollData {
   employee: Employee;
@@ -225,6 +226,7 @@ export default function RunPayroll() {
   const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
   const [complianceAcknowledged, setComplianceAcknowledged] = useState(false);
   const [complianceOverrideReason, setComplianceOverrideReason] = useState("");
+  const [showAllCompliance, setShowAllCompliance] = useState(false);
 
   // Initialize dates to current month
   useEffect(() => {
@@ -291,7 +293,7 @@ export default function RunPayroll() {
     };
 
     loadEmployees();
-  }, [toast, payFrequency]);
+  }, [toast, payFrequency, tenantId]);
 
   /**
    * Calculate payroll for a single employee data object.
@@ -367,7 +369,7 @@ export default function RunPayroll() {
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
     // Only run initial calculation if no calculations exist yet
-    if (employeePayrollData.some(d => d.calculation !== null)) return;
+    if (employeePayrollData.every(d => d.calculation !== null)) return;
 
     calculationVersion.current++;
     const updatedData = employeePayrollData.map((data) => ({
@@ -424,6 +426,171 @@ export default function RunPayroll() {
     return employeePayrollData.filter((d) => d.isEdited).length;
   }, [employeePayrollData]);
 
+  // Inline warnings for minimum wage and excessive hours
+  const payrollWarnings = useMemo(() => {
+    const warnings: { employeeName: string; message: string; type: "wage" | "hours" }[] = [];
+    const maxMonthlyOT = TL_WORKING_HOURS.maxOvertimePerWeek * 4;
+    for (const d of employeePayrollData) {
+      if (excludedEmployees.has(d.employee.id || "")) continue;
+      const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
+      const salary = d.employee.compensation.monthlySalary || 0;
+      if (salary > 0 && salary < TL_MINIMUM_WAGE.monthly) {
+        warnings.push({ employeeName: name, message: `Salary $${salary} is below minimum wage ($${TL_MINIMUM_WAGE.monthly}/month)`, type: "wage" });
+      }
+      if (d.overtimeHours > maxMonthlyOT) {
+        warnings.push({ employeeName: name, message: `${d.overtimeHours} OT hours exceeds max ${maxMonthlyOT}/month (${TL_WORKING_HOURS.maxOvertimePerWeek}/week)`, type: "hours" });
+      }
+      const totalDailyHoursEquiv = (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22; // ~22 working days
+      if (totalDailyHoursEquiv > 12) {
+        warnings.push({ employeeName: name, message: `Averaging ${totalDailyHoursEquiv.toFixed(1)} hours/day — exceeds safe limits`, type: "hours" });
+      }
+    }
+    return warnings;
+  }, [employeePayrollData, excludedEmployees]);
+
+  // Helper: get employees included in the payroll run
+  const getIncludedData = useCallback(() =>
+    employeePayrollData
+      .filter((d) => d.calculation)
+      .filter((d) => !excludedEmployees.has(d.employee.id || "")),
+    [employeePayrollData, excludedEmployees]
+  );
+
+  // Validate all included employee payroll inputs using TL tax law rules
+  const validateAllEmployees = useCallback((includedData: EmployeePayrollData[]): string[] => {
+    const allErrors: string[] = [];
+    for (const data of includedData) {
+      const monthlySalary = data.employee.compensation.monthlySalary || 0;
+      const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
+      const hourlyRate = monthlySalary / monthlyHours;
+      const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
+      const monthsWorkedThisYear = asOfDate.getMonth() + 1;
+      const hireDate = data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0];
+      const subsidioAnual = includeSubsidioAnual
+        ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
+        : 0;
+      const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
+      const isResident =
+        data.employee.compensation?.isResident ??
+        (data.employee.documents?.residencyStatus
+          ? data.employee.documents.residencyStatus !== "foreign_worker"
+          : true);
+
+      const input: TLPayrollInput = {
+        employeeId: data.employee.id || "",
+        monthlySalary,
+        payFrequency,
+        totalPeriodsInMonth,
+        isHourly: false,
+        hourlyRate,
+        regularHours: data.regularHours,
+        overtimeHours: data.overtimeHours,
+        nightShiftHours: data.nightShiftHours,
+        holidayHours: data.holidayHours,
+        restDayHours: 0,
+        absenceHours: 0,
+        lateArrivalMinutes: 0,
+        sickDaysUsed: data.sickDays,
+        ytdSickDaysUsed: 0,
+        bonus: data.bonus,
+        commission: 0,
+        perDiem: data.perDiem,
+        foodAllowance: 0,
+        transportAllowance: data.allowances,
+        otherEarnings: 0,
+        subsidioAnual,
+        taxInfo: { isResident, hasTaxExemption: false },
+        loanRepayment: 0,
+        advanceRepayment: 0,
+        courtOrders: 0,
+        otherDeductions: 0,
+        ytdGrossPay: 0,
+        ytdIncomeTax: 0,
+        ytdINSSEmployee: 0,
+        monthsWorkedThisYear,
+        hireDate,
+      };
+
+      const errors = validateTLPayrollInput(input);
+      if (errors.length > 0) {
+        const name = `${data.employee.personalInfo.firstName} ${data.employee.personalInfo.lastName}`;
+        allErrors.push(...errors.map(e => `${name}: ${e}`));
+      }
+    }
+    return allErrors;
+  }, [payDate, payFrequency, includeSubsidioAnual]);
+
+  // Helper: build PayrollRun object (avoids duplication between save/process)
+  const buildPayrollRun = useCallback((includedData: EmployeePayrollData[]): Omit<PayrollRun, "id"> => ({
+    tenantId,
+    periodStart,
+    periodEnd,
+    payDate,
+    payFrequency,
+    status: "draft",
+    totalGrossPay: totals.grossPay,
+    totalNetPay: totals.netPay,
+    totalDeductions: totals.totalDeductions,
+    totalEmployerTaxes: totals.inssEmployer,
+    totalEmployerContributions: 0,
+    employeeCount: includedData.length,
+    createdBy: user?.uid || "current-user",
+    notes: "",
+  }), [tenantId, periodStart, periodEnd, payDate, payFrequency, totals, user?.uid]);
+
+  // Helper: build PayrollRecord array from employee data
+  const buildPayrollRecords = useCallback((includedData: EmployeePayrollData[]): Omit<PayrollRecord, "id" | "payrollRunId">[] =>
+    includedData.map((d) => ({
+      tenantId,
+      employeeId: d.employee.id || "",
+      employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
+      employeeNumber: d.employee.jobDetails.employeeId,
+      department: d.employee.jobDetails.department,
+      position: d.employee.jobDetails.position,
+      regularHours: d.regularHours,
+      overtimeHours: d.overtimeHours,
+      doubleTimeHours: 0,
+      holidayHours: d.holidayHours,
+      ptoHoursUsed: 0,
+      sickHoursUsed: d.sickDays * 8,
+      hourlyRate: (d.employee.compensation.monthlySalary || 0) / ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
+      overtimeRate: TL_OVERTIME_RATES.standard,
+      earnings: d.calculation!.earnings.map((earning) => ({
+        type: mapTLEarningTypeToPayrollEarningType(earning.type),
+        description: earning.description,
+        hours: earning.hours,
+        rate: earning.rate,
+        amount: earning.amount,
+      })),
+      totalGrossPay: d.calculation!.grossPay,
+      deductions: d.calculation!.deductions.map((deduction) => ({
+        type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
+        description: deduction.description,
+        amount: deduction.amount,
+        isPreTax: false,
+        isPercentage: false,
+      })),
+      totalDeductions: d.calculation!.totalDeductions,
+      employerContributions: [],
+      totalEmployerContributions: 0,
+      employerTaxes: [{
+        type: "social_security" as const,
+        description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
+        amount: d.calculation!.inssEmployer,
+      }],
+      totalEmployerTaxes: d.calculation!.inssEmployer,
+      netPay: d.calculation!.netPay,
+      totalEmployerCost: d.calculation!.totalEmployerCost,
+      ytdGrossPay: 0,
+      ytdNetPay: 0,
+      ytdFederalTax: 0,
+      ytdStateTax: 0,
+      ytdSocialSecurity: 0,
+      ytdMedicare: 0,
+    })),
+    [tenantId]
+  );
+
   // Filter employees by search
   const filteredData = useMemo(() => {
     if (!searchTerm) return employeePayrollData;
@@ -437,12 +604,26 @@ export default function RunPayroll() {
     );
   }, [employeePayrollData, searchTerm]);
 
-  // Handle input changes with edit tracking
+  // Handle input changes with edit tracking, validation, and inline recalculation
   const handleInputChange = (
     employeeId: string,
     field: keyof EmployeePayrollData,
     value: number
   ) => {
+    // Reject non-finite values (NaN, Infinity)
+    if (!Number.isFinite(value)) return;
+
+    // Field-specific range validation
+    const hourFields = ["regularHours", "overtimeHours", "nightShiftHours", "holidayHours"];
+    const moneyFields = ["bonus", "perDiem", "allowances"];
+
+    if (hourFields.includes(field)) {
+      if (value < 0 || value > 744) return; // Max hours in a month (31 * 24)
+    }
+    if (moneyFields.includes(field)) {
+      if (value < 0 || value > 100000) return; // Reasonable cap
+    }
+
     setEmployeePayrollData((prev) =>
       prev.map((d) => {
         if (d.employee.id !== employeeId) return d;
@@ -458,17 +639,18 @@ export default function RunPayroll() {
           updated.perDiem !== d.originalValues.perDiem ||
           updated.allowances !== d.originalValues.allowances;
 
-        return { ...updated, isEdited };
+        const withEdit = { ...updated, isEdited };
+        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
       })
     );
   };
 
-  // Reset row to original values
+  // Reset row to original values and recalculate
   const handleResetRow = (employeeId: string) => {
     setEmployeePayrollData((prev) =>
       prev.map((d) => {
         if (d.employee.id !== employeeId) return d;
-        return {
+        const reset = {
           ...d,
           regularHours: d.originalValues.regularHours,
           overtimeHours: d.originalValues.overtimeHours,
@@ -478,6 +660,7 @@ export default function RunPayroll() {
           allowances: d.originalValues.allowances,
           isEdited: false,
         };
+        return { ...reset, calculation: calculateForEmployee(reset) };
       })
     );
   };
@@ -523,81 +706,22 @@ export default function RunPayroll() {
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
-      const includedData = employeePayrollData
-        .filter((d) => d.calculation)
-        .filter((d) => !excludedEmployees.has(d.employee.id || ""));
+      const includedData = getIncludedData();
 
-      const payrollRun: Omit<PayrollRun, "id"> = {
-        tenantId,
-        periodStart,
-        periodEnd,
-        payDate,
-        payFrequency,
-        status: "draft",
-        totalGrossPay: totals.grossPay,
-        totalNetPay: totals.netPay,
-        totalDeductions: totals.totalDeductions,
-        totalEmployerTaxes: totals.inssEmployer,
-        totalEmployerContributions: 0,
-        employeeCount: includedData.length,
-        createdBy: user?.uid || "current-user",
-        notes: "",
-      };
+      // Validate all employees before saving
+      const validationErrors = validateAllEmployees(includedData);
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Validation errors",
+          description: validationErrors.slice(0, 3).join("\n") +
+            (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
+          variant: "destructive",
+        });
+        return;
+      }
 
-      // Create individual payroll records
-      const records: Omit<PayrollRecord, "id" | "payrollRunId">[] = includedData
-        .map((d) => ({
-          tenantId,
-          employeeId: d.employee.id || "",
-          employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
-          employeeNumber: d.employee.jobDetails.employeeId,
-          department: d.employee.jobDetails.department,
-          position: d.employee.jobDetails.position,
-          regularHours: d.regularHours,
-          overtimeHours: d.overtimeHours,
-          doubleTimeHours: 0,
-          holidayHours: d.holidayHours,
-          ptoHoursUsed: 0,
-          sickHoursUsed: d.sickDays * 8,
-          hourlyRate:
-            (d.employee.compensation.monthlySalary || 0) /
-            ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
-          overtimeRate: TL_OVERTIME_RATES.standard,
-          earnings: d.calculation!.earnings.map((earning) => ({
-            type: mapTLEarningTypeToPayrollEarningType(earning.type),
-            description: earning.description,
-            hours: earning.hours,
-            rate: earning.rate,
-            amount: earning.amount,
-          })),
-          totalGrossPay: d.calculation!.grossPay,
-          deductions: d.calculation!.deductions.map((deduction) => ({
-            type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
-            description: deduction.description,
-            amount: deduction.amount,
-            isPreTax: false,
-            isPercentage: false,
-          })),
-          totalDeductions: d.calculation!.totalDeductions,
-          employerContributions: [],
-          totalEmployerContributions: 0,
-          employerTaxes: [
-            {
-              type: "social_security" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
-              amount: d.calculation!.inssEmployer,
-            },
-          ],
-          totalEmployerTaxes: d.calculation!.inssEmployer,
-          netPay: d.calculation!.netPay,
-          totalEmployerCost: d.calculation!.totalEmployerCost,
-          ytdGrossPay: 0,
-          ytdNetPay: 0,
-          ytdFederalTax: 0,
-          ytdStateTax: 0,
-          ytdSocialSecurity: 0,
-          ytdMedicare: 0,
-        }));
+      const payrollRun = buildPayrollRun(includedData);
+      const records = buildPayrollRecords(includedData);
 
       await payrollService.runs.createPayrollRunWithRecords(payrollRun, records);
 
@@ -632,81 +756,73 @@ export default function RunPayroll() {
         return;
       }
 
-      const includedData = employeePayrollData
-        .filter((d) => d.calculation)
-        .filter((d) => !excludedEmployees.has(d.employee.id || ""));
+      if (periodStart >= periodEnd) {
+        toast({
+          title: "Invalid period",
+          description: "Period start must be before period end.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const payrollRun: Omit<PayrollRun, "id"> = {
-        tenantId,
-        periodStart,
-        periodEnd,
-        payDate,
-        payFrequency,
-        status: "draft",
-        totalGrossPay: totals.grossPay,
-        totalNetPay: totals.netPay,
-        totalDeductions: totals.totalDeductions,
-        totalEmployerTaxes: totals.inssEmployer,
-        totalEmployerContributions: 0,
-        employeeCount: includedData.length,
-        createdBy: user?.uid || "current-user",
-        notes: "",
-      };
+      if (payDate < periodEnd) {
+        toast({
+          title: "Invalid pay date",
+          description: "Pay date should be on or after the period end date.",
+          variant: "destructive",
+        });
+        return;
+      }
 
-      const records: Omit<PayrollRecord, "id" | "payrollRunId">[] = includedData.map(
-        (d) => ({
-          tenantId,
-          employeeId: d.employee.id || "",
-          employeeName: `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`,
-          employeeNumber: d.employee.jobDetails.employeeId,
-          department: d.employee.jobDetails.department,
-          position: d.employee.jobDetails.position,
-          regularHours: d.regularHours,
-          overtimeHours: d.overtimeHours,
-          doubleTimeHours: 0,
-          holidayHours: d.holidayHours,
-          ptoHoursUsed: 0,
-          sickHoursUsed: d.sickDays * 8,
-          hourlyRate:
-            (d.employee.compensation.monthlySalary || 0) /
-            ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
-          overtimeRate: TL_OVERTIME_RATES.standard,
-          earnings: d.calculation!.earnings.map((earning) => ({
-            type: mapTLEarningTypeToPayrollEarningType(earning.type),
-            description: earning.description,
-            hours: earning.hours,
-            rate: earning.rate,
-            amount: earning.amount,
-          })),
-          totalGrossPay: d.calculation!.grossPay,
-          deductions: d.calculation!.deductions.map((deduction) => ({
-            type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
-            description: deduction.description,
-            amount: deduction.amount,
-            isPreTax: false,
-            isPercentage: false,
-          })),
-          totalDeductions: d.calculation!.totalDeductions,
-          employerContributions: [],
-          totalEmployerContributions: 0,
-          employerTaxes: [
-            {
-              type: "social_security" as const,
-              description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
-              amount: d.calculation!.inssEmployer,
-            },
-          ],
-          totalEmployerTaxes: d.calculation!.inssEmployer,
-          netPay: d.calculation!.netPay,
-          totalEmployerCost: d.calculation!.totalEmployerCost,
-          ytdGrossPay: 0,
-          ytdNetPay: 0,
-          ytdFederalTax: 0,
-          ytdStateTax: 0,
-          ytdSocialSecurity: 0,
-          ytdMedicare: 0,
-        })
-      );
+      // SEC-6: Date range validation — limit to reasonable bounds
+      const now = new Date();
+      const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), 1).toISOString().split("T")[0];
+      const oneMonthAhead = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split("T")[0];
+      if (periodStart < twoYearsAgo || periodEnd > oneMonthAhead) {
+        toast({
+          title: "Date range out of bounds",
+          description: "Pay period must be within the past 2 years and no more than 1 month in the future.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // SEC-7: Compliance override reason validation
+      if (hasComplianceIssues && excludedEmployees.size < complianceIssues.length) {
+        if (!complianceAcknowledged) {
+          toast({
+            title: "Compliance acknowledgment required",
+            description: "Please acknowledge the compliance issues before proceeding.",
+            variant: "destructive",
+          });
+          return;
+        }
+        if (complianceOverrideReason.trim().length < 10) {
+          toast({
+            title: "Override reason too short",
+            description: "Please provide at least 10 characters explaining why you are proceeding without full compliance.",
+            variant: "destructive",
+          });
+          return;
+        }
+      }
+
+      const includedData = getIncludedData();
+
+      // CALC-5: Validate all employee inputs before processing
+      const validationErrors = validateAllEmployees(includedData);
+      if (validationErrors.length > 0) {
+        toast({
+          title: "Validation errors",
+          description: validationErrors.slice(0, 3).join("\n") +
+            (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
+          variant: "destructive",
+        });
+        return;
+      }
+
+      const payrollRun = buildPayrollRun(includedData);
+      const records = buildPayrollRecords(includedData);
 
       const { runId } = await payrollService.runs.createPayrollRunWithRecords(
         payrollRun,
@@ -727,6 +843,10 @@ export default function RunPayroll() {
         approvedBy: user?.uid || "current-user",
         sourceId: runId,
       }, tenantId);
+
+      if (!journalEntryId) {
+        throw new Error("Failed to create journal entry");
+      }
 
       await payrollService.runs.approvePayrollRun(runId, user?.uid || "current-user");
       await payrollService.runs.markPayrollRunAsPaid(runId);
@@ -767,13 +887,13 @@ export default function RunPayroll() {
       <div className="border-b bg-green-50 dark:bg-green-950/30">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between animate-fade-up">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
                 <Calculator className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">
+                <h1 className="text-3xl font-bold tracking-tight text-foreground">
                   Run Payroll
                 </h1>
                 <p className="text-muted-foreground mt-1">
@@ -781,19 +901,19 @@ export default function RunPayroll() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant="outline"
                 onClick={() => navigate("/payroll")}
-                className="text-muted-foreground"
+                className="text-muted-foreground shadow-sm"
               >
                 Cancel
               </Button>
-              <Button variant="outline" onClick={() => setShowSaveDialog(true)}>
+              <Button variant="outline" onClick={() => setShowSaveDialog(true)} className="shadow-sm">
                 <Save className="h-4 w-4 mr-2" />
                 Save Draft
               </Button>
-              <Button onClick={() => setShowApproveDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+              <Button onClick={() => setShowApproveDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25">
                 <CheckCircle className="h-4 w-4 mr-2" />
                 Approve & Process
               </Button>
@@ -807,7 +927,7 @@ export default function RunPayroll() {
         {/* ════════════════════════════════════════════════════════════════
             PAY PERIOD BANNER - Critical info, must be prominent
         ════════════════════════════════════════════════════════════════ */}
-        <Card className="mb-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30">
+        <Card className="mb-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 animate-fade-up stagger-1">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -818,6 +938,9 @@ export default function RunPayroll() {
                   <div className="flex items-center gap-2">
                     <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 text-sm px-3 py-1">
                       Pay Period
+                    </Badge>
+                    <Badge variant="outline" className="text-xs font-normal capitalize">
+                      {payFrequency}
                     </Badge>
                     {editedCount > 0 && (
                       <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-xs">
@@ -844,10 +967,12 @@ export default function RunPayroll() {
 
         {/* Compliance Notice - Shows when employees need documents */}
         {hasComplianceIssues && (
-          <Card className="mb-6 border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20">
+          <Card className="mb-6 border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10 animate-fade-up">
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <div className="p-1.5 rounded-lg bg-amber-500/10">
+                  <AlertTriangle className="h-4 w-4 text-amber-600" />
+                </div>
                 {complianceIssues.length} Employee{complianceIssues.length > 1 ? "s" : ""} Need Documents
               </CardTitle>
               <CardDescription className="text-amber-700 dark:text-amber-400">
@@ -857,26 +982,30 @@ export default function RunPayroll() {
             <CardContent className="space-y-4">
               {/* Issue List */}
               <div className="space-y-2">
-                {complianceIssues.slice(0, 5).map(({ employee, issues }) => (
+                {complianceIssues.slice(0, showAllCompliance ? undefined : 5).map(({ employee, issues }) => (
                   <div
                     key={employee.id}
                     className="flex items-center justify-between p-2 rounded-lg bg-background border border-amber-200 dark:border-amber-800"
                   >
                     <div className="flex items-center gap-3">
-                      <input
-                        type="checkbox"
+                      <Checkbox
                         checked={excludedEmployees.has(employee.id || "")}
-                        onChange={(e) => {
+                        onCheckedChange={(checked) => {
                           const newExcluded = new Set(excludedEmployees);
-                          if (e.target.checked) {
+                          if (checked) {
                             newExcluded.add(employee.id || "");
                           } else {
                             newExcluded.delete(employee.id || "");
                           }
                           setExcludedEmployees(newExcluded);
                         }}
-                        className="h-4 w-4 rounded border-amber-400"
+                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                       />
+                      <div className="h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
+                          {employee.personalInfo.firstName[0]}{employee.personalInfo.lastName[0]}
+                        </span>
+                      </div>
                       <div>
                         <p className="text-sm font-medium">
                           {employee.personalInfo.firstName} {employee.personalInfo.lastName}
@@ -886,43 +1015,63 @@ export default function RunPayroll() {
                         </p>
                       </div>
                     </div>
-                    <Badge variant="outline" className="text-amber-700 border-amber-400">
+                    <Badge className={
+                      excludedEmployees.has(employee.id || "")
+                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 text-xs"
+                        : "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 text-xs"
+                    }>
                       {excludedEmployees.has(employee.id || "") ? "Excluded" : "Included"}
                     </Badge>
                   </div>
                 ))}
-                {complianceIssues.length > 5 && (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    ... and {complianceIssues.length - 5} more
-                  </p>
+                {complianceIssues.length > 5 && !showAllCompliance && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCompliance(true)}
+                    className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
+                  >
+                    Show {complianceIssues.length - 5} more employee{complianceIssues.length - 5 > 1 ? "s" : ""}
+                    <ChevronDown className="h-3 w-3 ml-1" />
+                  </Button>
+                )}
+                {showAllCompliance && complianceIssues.length > 5 && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowAllCompliance(false)}
+                    className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
+                  >
+                    Show less
+                    <ChevronDown className="h-3 w-3 ml-1 rotate-180" />
+                  </Button>
                 )}
               </div>
 
               {/* Override Acknowledgment */}
               {excludedEmployees.size < complianceIssues.length && (
                 <div className="p-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-100/50 dark:bg-amber-900/20">
-                  <label className="flex items-start gap-2 cursor-pointer">
-                    <input
-                      type="checkbox"
+                  <div className="flex items-start gap-3 cursor-pointer" onClick={() => setComplianceAcknowledged(!complianceAcknowledged)}>
+                    <Checkbox
                       checked={complianceAcknowledged}
-                      onChange={(e) => setComplianceAcknowledged(e.target.checked)}
-                      className="mt-1 h-4 w-4 rounded border-amber-400"
+                      onCheckedChange={(checked) => setComplianceAcknowledged(!!checked)}
+                      className="mt-0.5 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
                     />
                     <span className="text-sm text-amber-800 dark:text-amber-200">
                       I understand these employees need documents for full compliance.
                       I will add the missing contracts/INSS numbers within 30 days.
                     </span>
-                  </label>
+                  </div>
                   {complianceAcknowledged && (
                     <div className="mt-3">
-                      <label className="text-xs font-medium text-amber-700 dark:text-amber-300">
+                      <Label className="text-xs font-medium text-amber-700 dark:text-amber-300">
                         Reason for proceeding (required for audit trail)
-                      </label>
+                      </Label>
                       <Input
                         value={complianceOverrideReason}
                         onChange={(e) => setComplianceOverrideReason(e.target.value)}
                         placeholder="e.g., INSS office closed, waiting for contract from legal..."
-                        className="mt-1 text-sm border-amber-300"
+                        className="mt-1 text-sm border-amber-300 border-border/50"
                       />
                     </div>
                   )}
@@ -935,12 +1084,14 @@ export default function RunPayroll() {
                   {employees.length - excludedEmployees.size} of {employees.length} employees will be included in payroll
                 </span>
                 {excludedEmployees.size > 0 && (
-                  <button
+                  <Button
+                    variant="link"
+                    size="sm"
                     onClick={() => setExcludedEmployees(new Set())}
-                    className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-200 underline"
+                    className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-200 h-auto p-0"
                   >
                     Include all
-                  </button>
+                  </Button>
                 )}
               </div>
             </CardContent>
@@ -948,10 +1099,12 @@ export default function RunPayroll() {
         )}
 
         {/* Period Settings */}
-        <Card className="mb-6 border-border/50">
+        <Card className="mb-6 border-border/50 animate-fade-up stagger-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Calculator className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                <Calculator className="h-4 w-4 text-green-600 dark:text-green-400" />
+              </div>
               Pay Period Configuration
             </CardTitle>
             <CardDescription>
@@ -960,13 +1113,16 @@ export default function RunPayroll() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <Label htmlFor="pay-frequency">Pay Frequency</Label>
+              <div className="space-y-2">
+                <Label htmlFor="pay-frequency" className="flex items-center gap-1.5 text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  Pay Frequency
+                </Label>
                 <Select
                   value={payFrequency}
                   onValueChange={(v) => setPayFrequency(v as TLPayFrequency)}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="border-border/50">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -982,221 +1138,117 @@ export default function RunPayroll() {
                   </SelectContent>
                 </Select>
               </div>
-              <div>
-                <Label htmlFor="period-start">Period Start</Label>
+              <div className="space-y-2">
+                <Label htmlFor="period-start" className="flex items-center gap-1.5 text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  Period Start
+                </Label>
                 <Input
                   id="period-start"
                   type="date"
                   value={periodStart}
                   onChange={(e) => setPeriodStart(e.target.value)}
+                  className="border-border/50"
                 />
               </div>
-              <div>
-                <Label htmlFor="period-end">Period End</Label>
+              <div className="space-y-2">
+                <Label htmlFor="period-end" className="flex items-center gap-1.5 text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  Period End
+                </Label>
                 <Input
                   id="period-end"
                   type="date"
                   value={periodEnd}
                   onChange={(e) => setPeriodEnd(e.target.value)}
+                  className="border-border/50"
                 />
               </div>
-              <div>
-                <Label htmlFor="pay-date">Pay Date</Label>
+              <div className="space-y-2">
+                <Label htmlFor="pay-date" className="flex items-center gap-1.5 text-sm">
+                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
+                  Pay Date
+                </Label>
                 <Input
                   id="pay-date"
                   type="date"
                   value={payDate}
                   onChange={(e) => setPayDate(e.target.value)}
+                  className="border-border/50"
                 />
               </div>
               <div className="md:col-span-4 pt-2">
-                <label className="flex items-start gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
+                <div className="flex items-start gap-3 cursor-pointer" onClick={() => setIncludeSubsidioAnual(!includeSubsidioAnual)}>
+                  <Checkbox
                     checked={includeSubsidioAnual}
-                    onChange={(e) => setIncludeSubsidioAnual(e.target.checked)}
-                    className="mt-1 h-4 w-4 rounded border-border"
+                    onCheckedChange={(checked) => setIncludeSubsidioAnual(!!checked)}
+                    className="mt-0.5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                   />
-                  <span className="text-sm">
+                  <div className="text-sm">
                     Include Subsidio Anual (13th month) in this run
-                    <span className="block text-xs text-muted-foreground">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                       Adds a pro-rated 13th month salary and includes it in WIT and INSS.
-                    </span>
-                  </span>
-                </label>
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* ════════════════════════════════════════════════════════════════
-            SUMMARY CARDS - With micro-labels for clarity
-        ════════════════════════════════════════════════════════════════ */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Total Gross
-                  </p>
-                  <p className="text-xs text-muted-foreground/70">
-                    Before tax & INSS
-                  </p>
-                  <p className="text-2xl font-bold mt-1">
-                    {formatCurrencyTL(totals.grossPay)}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Employee Deductions
-                  </p>
-                  <p className="text-xs text-muted-foreground/70">
-                    Tax + INSS (4%)
-                  </p>
-                  <p className="text-2xl font-bold text-red-600 mt-1">
-                    {formatCurrencyTL(totals.totalDeductions)}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                  <FileText className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Net Pay to Employees
-                  </p>
-                  <p className="text-xs text-muted-foreground/70">
-                    Take-home pay
-                  </p>
-                  <p className="text-2xl font-bold text-emerald-600 mt-1">
-                    {formatCurrencyTL(totals.netPay)}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Employees
-                  </p>
-                  <p className="text-xs text-muted-foreground/70">
-                    Active in payroll
-                  </p>
-                  <p className="text-2xl font-bold mt-1">
-                    {employees.length}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Summary Cards */}
+        <div className="animate-fade-up stagger-2">
+          <PayrollSummaryCards totals={totals} employeeCount={employees.length} />
         </div>
 
-        {/* ════════════════════════════════════════════════════════════════
-            TAX SUMMARY - With lock indicators (system-calculated)
-        ════════════════════════════════════════════════════════════════ */}
-        <Card className="mb-6 border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
-              Tax & INSS Summary
-              <Badge variant="outline" className="ml-2 text-xs font-normal">
-                <Lock className="h-3 w-3 mr-1" />
-                System calculated
-              </Badge>
-            </CardTitle>
-            <CardDescription>Income tax and social security contributions (read-only)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
-                <Lock className="h-3 w-3 text-muted-foreground/50 absolute top-3 right-3" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {TL_DEDUCTION_TYPE_LABELS.income_tax.tl}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  Income Tax (10%)
-                </p>
-                <p className="text-lg font-semibold">
-                  {formatCurrencyTL(totals.incomeTax)}
-                </p>
+        {/* Tax Summary Card */}
+        <div className="animate-fade-up stagger-3">
+          <TaxSummaryCard totals={totals} />
+        </div>
+
+        {/* Payroll Warnings - Minimum wage and hours violations */}
+        {payrollWarnings.length > 0 && (
+          <Card className="mb-6 border-red-500/30 bg-red-50/30 dark:bg-red-950/10 animate-fade-up">
+            <CardHeader className="pb-3">
+              <CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200 text-base">
+                <div className="p-1.5 rounded-lg bg-red-500/10">
+                  <AlertTriangle className="h-4 w-4 text-red-600" />
+                </div>
+                {payrollWarnings.length} Payroll Warning{payrollWarnings.length > 1 ? "s" : ""}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="space-y-1.5">
+                {payrollWarnings.map((w, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300 p-2 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30">
+                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                    <span className="font-medium">{w.employeeName}:</span>
+                    <span>{w.message}</span>
+                  </div>
+                ))}
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
-                <Lock className="h-3 w-3 text-muted-foreground/50 absolute top-3 right-3" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {TL_DEDUCTION_TYPE_LABELS.inss_employee.tl}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  INSS Employee (4%)
-                </p>
-                <p className="text-lg font-semibold">
-                  {formatCurrencyTL(totals.inssEmployee)}
-                </p>
-              </div>
-              <div className="p-4 bg-gray-50 dark:bg-gray-800 rounded-lg relative">
-                <Lock className="h-3 w-3 text-muted-foreground/50 absolute top-3 right-3" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  {TL_DEDUCTION_TYPE_LABELS.inss_employer.tl}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  INSS Employer (6%)
-                </p>
-                <p className="text-lg font-semibold">
-                  {formatCurrencyTL(totals.inssEmployer)}
-                </p>
-              </div>
-              <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-lg relative">
-                <Lock className="h-3 w-3 text-muted-foreground/50 absolute top-3 right-3" />
-                <p className="text-sm text-gray-600 dark:text-gray-400">
-                  Total Employer Cost
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-500">
-                  Gross + INSS Employer
-                </p>
-                <p className="text-lg font-semibold text-emerald-600">
-                  {formatCurrencyTL(totals.totalEmployerCost)}
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ════════════════════════════════════════════════════════════════
             EMPLOYEE PAYROLL TABLE - With edit indicators
         ════════════════════════════════════════════════════════════════ */}
-        <Card className="border-border/50">
+        <Card className="border-border/50 animate-fade-up stagger-4">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
                   Employee Payroll
+                  <Badge variant="outline" className="text-xs font-normal tabular-nums ml-1">
+                    {filteredData.length}{filteredData.length !== employeePayrollData.length ? ` / ${employeePayrollData.length}` : ''}
+                  </Badge>
                   {editedCount > 0 && (
-                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs ml-2">
-                      {editedCount} row{editedCount > 1 ? "s" : ""} modified
+                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
+                      {editedCount} modified
                     </Badge>
                   )}
                 </CardTitle>
@@ -1208,21 +1260,20 @@ export default function RunPayroll() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => toast({
-                    title: "Preview Payslips",
-                    description: "Payslip preview coming soon.",
-                  })}
+                  disabled
+                  className="text-muted-foreground"
+                  title="Coming soon"
                 >
                   <Eye className="h-4 w-4 mr-2" />
                   Preview Payslips
                 </Button>
                 <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Search employees..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9"
+                    className="pl-9 border-border/50"
                   />
                 </div>
               </div>
@@ -1232,308 +1283,88 @@ export default function RunPayroll() {
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-8"></TableHead>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead className="text-right">Hours</TableHead>
-                    <TableHead className="text-right">OT</TableHead>
-                    <TableHead className="text-right">Night</TableHead>
-                    <TableHead className="text-right">Bonus</TableHead>
-                    <TableHead className="text-right">Gross</TableHead>
-                    <TableHead className="text-right">Deductions</TableHead>
-                    <TableHead className="text-right">Net Pay</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider">Employee</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider">Department</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Hours</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">OT</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Night</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Bonus</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Gross</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Deductions</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Net Pay</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredData.map((data) => (
-                    <React.Fragment key={data.employee.id}>
-                      <TableRow
-                        className={`cursor-pointer transition-colors ${
-                          data.isEdited
-                            ? "bg-amber-50/50 dark:bg-amber-950/20 hover:bg-amber-50 dark:hover:bg-amber-950/30"
-                            : "hover:bg-gray-50 dark:hover:bg-gray-800"
-                        }`}
-                        onClick={() => toggleRowExpansion(data.employee.id || "")}
-                      >
-                        <TableCell>
-                          {expandedRows.has(data.employee.id || "") ? (
-                            <ChevronUp className="h-4 w-4 text-gray-400" />
-                          ) : (
-                            <ChevronDown className="h-4 w-4 text-gray-400" />
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {data.isEdited && (
-                              <div className="h-2 w-2 rounded-full bg-amber-500" title="Modified" />
-                            )}
-                            <div>
-                              <p className="font-medium">
-                                {data.employee.personalInfo.firstName}{" "}
-                                {data.employee.personalInfo.lastName}
-                              </p>
-                              <p className="text-sm text-gray-500">
-                                {data.employee.jobDetails.employeeId}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>{data.employee.jobDetails.department}</TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={data.regularHours}
-                            onChange={(e) =>
-                              handleInputChange(
-                                data.employee.id || "",
-                                "regularHours",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-20 text-right ${
-                              data.regularHours !== data.originalValues.regularHours
-                                ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
-                                : ""
-                            }`}
-                            min={0}
-                            step={0.5}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={data.overtimeHours}
-                            onChange={(e) =>
-                              handleInputChange(
-                                data.employee.id || "",
-                                "overtimeHours",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-16 text-right ${
-                              data.overtimeHours !== data.originalValues.overtimeHours
-                                ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
-                                : ""
-                            }`}
-                            min={0}
-                            step={0.5}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={data.nightShiftHours}
-                            onChange={(e) =>
-                              handleInputChange(
-                                data.employee.id || "",
-                                "nightShiftHours",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-16 text-right ${
-                              data.nightShiftHours !== data.originalValues.nightShiftHours
-                                ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
-                                : ""
-                            }`}
-                            min={0}
-                            step={0.5}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Input
-                            type="number"
-                            value={data.bonus}
-                            onChange={(e) =>
-                              handleInputChange(
-                                data.employee.id || "",
-                                "bonus",
-                                parseFloat(e.target.value) || 0
-                              )
-                            }
-                            onClick={(e) => e.stopPropagation()}
-                            className={`w-24 text-right ${
-                              data.bonus !== data.originalValues.bonus
-                                ? "border-amber-400 bg-amber-50/50 dark:bg-amber-950/30"
-                                : ""
-                            }`}
-                            min={0}
-                            step={50}
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {data.calculation
-                            ? formatCurrencyTL(data.calculation.grossPay)
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right text-red-600">
-                          {data.calculation
-                            ? formatCurrencyTL(data.calculation.totalDeductions)
-                            : "-"}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold text-emerald-600">
-                          {data.calculation
-                            ? formatCurrencyTL(data.calculation.netPay)
-                            : "-"}
-                        </TableCell>
-                        <TableCell>
-                          {data.isEdited && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title="Reset to original"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleResetRow(data.employee.id || "");
-                              }}
-                            >
-                              <RotateCcw className="h-4 w-4 text-muted-foreground" />
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-
-                      {/* Expanded details row */}
-                      {expandedRows.has(data.employee.id || "") && data.calculation && (
-                        <TableRow className="bg-gray-50 dark:bg-gray-800">
-                          <TableCell colSpan={11}>
-                            <div className="p-4 grid grid-cols-2 md:grid-cols-5 gap-4">
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Regular Pay
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.regularPay)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Overtime Pay
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.overtimePay)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Night Shift
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.nightShiftPay)}
-                                </p>
-                              </div>
-                              {data.calculation.subsidioAnual > 0 && (
-                                <div>
-                                  <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                    13th Month
-                                  </p>
-                                  <p className="font-medium">
-                                    {formatCurrencyTL(data.calculation.subsidioAnual)}
-                                  </p>
-                                </div>
-                              )}
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Income Tax
-                                </p>
-                                <p className="font-medium text-red-600">
-                                  -{formatCurrencyTL(data.calculation.incomeTax)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  INSS (4%)
-                                </p>
-                                <p className="font-medium text-red-600">
-                                  -{formatCurrencyTL(data.calculation.inssEmployee)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  INSS Employer (6%)
-                                </p>
-                                <p className="font-medium text-amber-600">
-                                  {formatCurrencyTL(data.calculation.inssEmployer)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Employer Cost
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.totalEmployerCost)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  Taxable Income
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.taxableIncome)}
-                                </p>
-                              </div>
-                              <div>
-                                <p className="text-xs text-gray-500 uppercase tracking-wide">
-                                  INSS Base
-                                </p>
-                                <p className="font-medium">
-                                  {formatCurrencyTL(data.calculation.inssBase)}
-                                </p>
-                              </div>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </React.Fragment>
+                    <PayrollEmployeeRow
+                      key={data.employee.id}
+                      data={data}
+                      isExpanded={expandedRows.has(data.employee.id || "")}
+                      onToggleExpand={toggleRowExpansion}
+                      onInputChange={handleInputChange}
+                      onReset={handleResetRow}
+                    />
                   ))}
                 </TableBody>
               </Table>
             </div>
 
             {filteredData.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No employees found matching your search.
+              <div className="text-center py-16">
+                <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/20 dark:to-emerald-950/10 flex items-center justify-center mb-4">
+                  <Search className="h-7 w-7 text-green-400" />
+                </div>
+                <p className="font-medium text-foreground mb-1">No employees found</p>
+                <p className="text-sm text-muted-foreground">
+                  Try adjusting your search term or clear the filter
+                </p>
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Bottom spacing */}
+        <div className="h-8" />
       </div>
 
       {/* Save Draft Dialog */}
       <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Save Payroll Draft</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                <Save className="h-4 w-4 text-green-600" />
+              </div>
+              Save Payroll Draft
+            </DialogTitle>
             <DialogDescription>
               Save the current payroll as a draft. You can edit and process it later.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm text-gray-500">Period</p>
-                <p className="font-medium">
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
+                <p className="text-xs text-muted-foreground">Period</p>
+                <p className="font-semibold text-sm mt-0.5">
                   {periodStart && periodEnd
                     ? formatPayPeriod(periodStart, periodEnd)
                     : "Not set"}
                 </p>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Employees</p>
-                <p className="font-medium">{employees.length}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
+                <p className="text-xs text-muted-foreground">Employees</p>
+                <p className="font-semibold text-sm mt-0.5">{employees.length}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Gross</p>
-                <p className="font-medium">{formatCurrencyTL(totals.grossPay)}</p>
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
+                <p className="text-xs text-muted-foreground">Total Gross</p>
+                <p className="font-semibold text-sm mt-0.5">{formatCurrencyTL(totals.grossPay)}</p>
               </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Net</p>
-                <p className="font-medium">{formatCurrencyTL(totals.netPay)}</p>
+              <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
+                <p className="text-xs text-muted-foreground">Total Net</p>
+                <p className="font-semibold text-sm text-emerald-600 mt-0.5">{formatCurrencyTL(totals.netPay)}</p>
               </div>
             </div>
           </div>
@@ -1565,7 +1396,9 @@ export default function RunPayroll() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+              </div>
               Review Payroll
             </DialogTitle>
             <DialogDescription>
@@ -1589,21 +1422,32 @@ export default function RunPayroll() {
 
             {/* Summary */}
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-muted/50">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
                 <p className="text-xs text-muted-foreground">Employees</p>
-                <p className="text-lg font-semibold">{employees.length}</p>
+                <p className="text-lg font-bold tracking-tight">{employees.length}</p>
               </div>
-              <div className="p-3 rounded-lg bg-muted/50">
+              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
                 <p className="text-xs text-muted-foreground">Total Gross</p>
-                <p className="text-lg font-semibold">{formatCurrencyTL(totals.grossPay)}</p>
+                <p className="text-lg font-bold tracking-tight">{formatCurrencyTL(totals.grossPay)}</p>
               </div>
-              <div className="p-3 rounded-lg bg-muted/50">
+              <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
                 <p className="text-xs text-muted-foreground">Total Deductions</p>
-                <p className="text-lg font-semibold text-red-600">{formatCurrencyTL(totals.totalDeductions)}</p>
+                <p className="text-lg font-bold tracking-tight text-red-600">{formatCurrencyTL(totals.totalDeductions)}</p>
               </div>
-              <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30">
+              <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
                 <p className="text-xs text-muted-foreground">Net to Employees</p>
-                <p className="text-lg font-semibold text-emerald-600">{formatCurrencyTL(totals.netPay)}</p>
+                <p className="text-lg font-bold tracking-tight text-emerald-600">{formatCurrencyTL(totals.netPay)}</p>
+              </div>
+            </div>
+
+            {/* Total employer cost */}
+            <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10 border border-amber-500/10">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">Total Employer Cost</p>
+                  <p className="text-[10px] text-muted-foreground/60">Gross + INSS Employer (6%)</p>
+                </div>
+                <p className="text-lg font-bold tracking-tight text-amber-600">{formatCurrencyTL(totals.totalEmployerCost)}</p>
               </div>
             </div>
 
@@ -1625,7 +1469,7 @@ export default function RunPayroll() {
                 setShowApproveDialog(false);
                 setShowFinalConfirmDialog(true);
               }}
-              className="bg-green-600 hover:bg-green-700"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
             >
               Continue to Confirm
               <ChevronDown className="h-4 w-4 ml-2 rotate-[-90deg]" />
@@ -1640,9 +1484,11 @@ export default function RunPayroll() {
       <Dialog open={showFinalConfirmDialog} onOpenChange={setShowFinalConfirmDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-600">
-              <AlertCircle className="h-5 w-5" />
-              Confirm Payroll Processing
+            <DialogTitle className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-500/10">
+                <AlertCircle className="h-4 w-4 text-amber-600" />
+              </div>
+              <span className="text-amber-700 dark:text-amber-400">Confirm Payroll Processing</span>
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -1701,7 +1547,7 @@ export default function RunPayroll() {
             <Button
               onClick={handleProcessPayroll}
               disabled={processing}
-              className="bg-red-600 hover:bg-red-700 text-white"
+              className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/25"
             >
               {processing ? (
                 <>
