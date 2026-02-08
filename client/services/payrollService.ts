@@ -70,6 +70,7 @@ class PayrollRunService {
         updatedAt: data.updatedAt?.toDate() || new Date(),
         approvedAt: data.approvedAt?.toDate() || null,
         paidAt: data.paidAt?.toDate() || null,
+        rejectedAt: data.rejectedAt?.toDate() || null,
       } as PayrollRun;
     });
   }
@@ -90,6 +91,7 @@ class PayrollRunService {
       updatedAt: data.updatedAt?.toDate() || new Date(),
       approvedAt: data.approvedAt?.toDate() || null,
       paidAt: data.paidAt?.toDate() || null,
+      rejectedAt: data.rejectedAt?.toDate() || null,
     } as PayrollRun;
   }
 
@@ -196,6 +198,11 @@ class PayrollRunService {
       throw new Error(`Payroll run must be draft/processing before approval (current: ${payroll.status})`);
     }
 
+    // Two-person rule: approver must differ from creator
+    if (payroll.createdBy === approvedBy) {
+      throw new Error('Payroll cannot be approved by the same person who created it');
+    }
+
     const docRef = doc(db, 'payrollRuns', id);
     await updateDoc(docRef, {
       status: 'approved',
@@ -218,6 +225,49 @@ class PayrollRunService {
             totalGross: payroll.totalGrossPay,
             totalNet: payroll.totalNetPay,
             employeeCount: payroll.employeeCount,
+          },
+        }).catch(err => console.error('Audit log failed:', err));
+      }
+    }
+
+    return true;
+  }
+
+  async rejectPayrollRun(
+    id: string,
+    rejectedBy: string,
+    reason: string,
+    audit?: AuditContext
+  ): Promise<boolean> {
+    const payroll = await this.getPayrollRunById(id);
+    if (!payroll) {
+      throw new Error('Payroll run not found');
+    }
+    if (payroll.status !== 'processing') {
+      throw new Error(`Only processing payroll runs can be rejected (current: ${payroll.status})`);
+    }
+
+    const docRef = doc(db, 'payrollRuns', id);
+    await updateDoc(docRef, {
+      status: 'rejected',
+      rejectedBy,
+      rejectedAt: serverTimestamp(),
+      rejectionReason: reason,
+      updatedAt: serverTimestamp(),
+    });
+
+    if (audit) {
+      const tenantId = payroll.tenantId || audit.tenantId;
+      if (tenantId) {
+        await auditLogService.logPayrollAction({
+          ...audit,
+          tenantId,
+          action: 'payroll.reject',
+          payrollRunId: id,
+          period: `${payroll.periodStart} to ${payroll.periodEnd}`,
+          metadata: {
+            rejectedBy,
+            reason,
           },
         }).catch(err => console.error('Audit log failed:', err));
       }

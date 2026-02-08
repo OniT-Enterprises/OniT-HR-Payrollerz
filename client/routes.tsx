@@ -106,6 +106,9 @@ const SetupReports = lazy(() => import("@/pages/reports/SetupReports"));
 const ATTLMonthlyWIT = lazy(() => import("@/pages/reports/ATTLMonthlyWIT"));
 const INSSMonthly = lazy(() => import("@/pages/reports/INSSMonthly"));
 
+// Settings
+const SetupWizard = lazy(() => import("@/pages/settings/SetupWizard"));
+
 // Admin
 const SeedDatabase = lazy(() => import("@/pages/admin/SeedDatabase"));
 const TenantList = lazy(() => import("@/pages/admin/TenantList"));
@@ -131,6 +134,7 @@ export const authRoutes = (
     <Route path="/landing" element={<Landing />} />
     <Route path="/features" element={<ProductDetails />} />
     <Route path="/settings" element={<Settings />} />
+    <Route path="/setup" element={<SetupWizard />} />
     <Route path="/sitemap" element={<Sitemap />} />
   </>
 );

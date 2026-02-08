@@ -34,11 +34,23 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
@@ -60,9 +72,13 @@ import {
   TrendingDown,
   FileDown,
   Mail,
+  ShieldCheck,
+  Ban,
+  AlertTriangle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService } from "@/services/payrollService";
+import { accountingService } from "@/services/accountingService";
 import {
   formatCurrency,
   formatPayPeriod,
@@ -79,11 +95,13 @@ import { SendPayslipsDialog } from "@/components/payroll/SendPayslipsDialog";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const tenantId = useTenantId();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
@@ -100,6 +118,16 @@ export default function PayrollHistory() {
   const [showSendPayslipsDialog, setShowSendPayslipsDialog] = useState(false);
   const [sendPayslipsRun, setSendPayslipsRun] = useState<PayrollRun | null>(null);
   const [sendPayslipsRecords, setSendPayslipsRecords] = useState<PayrollRecord[]>([]);
+
+  // Approval/Rejection
+  const [approveRun, setApproveRun] = useState<PayrollRun | null>(null);
+  const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [rejectRun, setRejectRun] = useState<PayrollRun | null>(null);
+  const [showRejectDialog, setShowRejectDialog] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [approving, setApproving] = useState(false);
+  const [rejecting, setRejecting] = useState(false);
+  const [activeTab, setActiveTab] = useState("pending");
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -158,6 +186,7 @@ export default function PayrollHistory() {
       totalPaid,
       averagePer,
       pendingCount: thisYearRuns.filter((r) => r.status === "draft" || r.status === "approved").length,
+      pendingApprovalCount: payrollRuns.filter((r) => r.status === "processing").length,
       trend,
     };
   }, [payrollRuns]);
@@ -196,10 +225,11 @@ export default function PayrollHistory() {
     const config = PAYROLL_STATUS_CONFIG[status];
     const icons: Record<PayrollStatus, React.ReactNode> = {
       draft: <FileText className="h-3 w-3 mr-1" />,
-      processing: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
-      approved: <Clock className="h-3 w-3 mr-1" />,
+      processing: <Clock className="h-3 w-3 mr-1" />,
+      approved: <CheckCircle className="h-3 w-3 mr-1" />,
       paid: <CheckCircle className="h-3 w-3 mr-1" />,
       cancelled: <XCircle className="h-3 w-3 mr-1" />,
+      rejected: <Ban className="h-3 w-3 mr-1" />,
     };
 
     return (
@@ -208,6 +238,120 @@ export default function PayrollHistory() {
         {config.label}
       </Badge>
     );
+  };
+
+  // Pending approval runs
+  const pendingRuns = useMemo(() => {
+    return payrollRuns.filter((run) => run.status === "processing");
+  }, [payrollRuns]);
+
+  // Handle approve payroll
+  const handleApprovePayroll = async () => {
+    if (!approveRun?.id || !user?.uid) return;
+
+    setApproving(true);
+    try {
+      // Approve the run (service enforces two-person rule)
+      await payrollService.runs.approvePayrollRun(
+        approveRun.id,
+        user.uid,
+        { tenantId, userId: user.uid, userEmail: user.email || "" }
+      );
+
+      // Create accounting journal entry
+      const records = await payrollService.records.getPayrollRecordsByRunId(approveRun.id, tenantId);
+      const totalINSSEmployee = records.reduce((sum, r) =>
+        sum + (r.deductions?.find(d => d.type === 'social_security')?.amount || 0), 0);
+      const totalINSSEmployer = records.reduce((sum, r) =>
+        sum + (r.employerTaxes?.find(t => t.type === 'social_security')?.amount || 0), 0);
+      const totalIncomeTax = records.reduce((sum, r) =>
+        sum + (r.deductions?.find(d => d.type === 'federal_tax')?.amount || 0), 0);
+
+      const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
+        periodStart: approveRun.periodStart,
+        periodEnd: approveRun.periodEnd,
+        payDate: approveRun.payDate,
+        totalGrossPay: approveRun.totalGrossPay,
+        totalINSSEmployer: totalINSSEmployer,
+        totalIncomeTax: totalIncomeTax,
+        totalINSSEmployee: totalINSSEmployee,
+        totalNetPay: approveRun.totalNetPay,
+        employeeCount: approveRun.employeeCount,
+        approvedBy: user.uid,
+        sourceId: approveRun.id,
+      }, tenantId);
+
+      // Mark as paid and link journal entry
+      await payrollService.runs.markPayrollRunAsPaid(approveRun.id);
+      await payrollService.runs.updatePayrollRun(approveRun.id, { journalEntryId });
+
+      // Update local state
+      setPayrollRuns((prev) =>
+        prev.map((r) =>
+          r.id === approveRun.id
+            ? { ...r, status: "paid" as PayrollStatus, approvedBy: user.uid }
+            : r
+        )
+      );
+
+      toast({
+        title: "Payroll Approved",
+        description: `Payroll approved and journal entry posted.`,
+      });
+
+      setShowApproveDialog(false);
+      setApproveRun(null);
+    } catch (error: any) {
+      toast({
+        title: "Approval Failed",
+        description: error.message || "Failed to approve payroll run.",
+        variant: "destructive",
+      });
+    } finally {
+      setApproving(false);
+    }
+  };
+
+  // Handle reject payroll
+  const handleRejectPayroll = async () => {
+    if (!rejectRun?.id || !user?.uid) return;
+    if (rejectionReason.trim().length < 10) return;
+
+    setRejecting(true);
+    try {
+      await payrollService.runs.rejectPayrollRun(
+        rejectRun.id,
+        user.uid,
+        rejectionReason.trim(),
+        { tenantId, userId: user.uid, userEmail: user.email || "" }
+      );
+
+      // Update local state
+      setPayrollRuns((prev) =>
+        prev.map((r) =>
+          r.id === rejectRun.id
+            ? { ...r, status: "rejected" as PayrollStatus, rejectedBy: user.uid, rejectionReason: rejectionReason.trim() }
+            : r
+        )
+      );
+
+      toast({
+        title: "Payroll Rejected",
+        description: "Payroll run has been rejected and sent back for revision.",
+      });
+
+      setShowRejectDialog(false);
+      setRejectRun(null);
+      setRejectionReason("");
+    } catch (error: any) {
+      toast({
+        title: "Rejection Failed",
+        description: error.message || "Failed to reject payroll run.",
+        variant: "destructive",
+      });
+    } finally {
+      setRejecting(false);
+    }
   };
 
   // View payroll run details
@@ -524,8 +668,10 @@ export default function PayrollHistory() {
                     <SelectContent>
                       <SelectItem value="all">All statuses</SelectItem>
                       <SelectItem value="draft">Draft</SelectItem>
+                      <SelectItem value="processing">Pending Approval</SelectItem>
                       <SelectItem value="approved">Approved</SelectItem>
                       <SelectItem value="paid">Paid</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
                       <SelectItem value="cancelled">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
@@ -563,111 +709,268 @@ export default function PayrollHistory() {
             </CardContent>
           </Card>
 
-          {/* Payroll Runs Table */}
-          <Card className="border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Payroll Runs
-              </CardTitle>
-              <CardDescription>
-                Showing {filteredRuns.length} payroll runs
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {filteredRuns.length === 0 ? (
-                <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No payroll runs found</p>
-                  <Button onClick={() => navigate("/payroll/run")}>
-                    Run Your First Payroll
-                  </Button>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Period</TableHead>
-                        <TableHead>Pay Date</TableHead>
-                        <TableHead className="text-right">Employees</TableHead>
-                        <TableHead className="text-right">Gross Pay</TableHead>
-                        <TableHead className="text-right">Net Pay</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredRuns.map((run) => (
-                        <TableRow key={run.id}>
-                          <TableCell>
-                            <div>
-                              <p className="font-medium">
-                                {getPayPeriodLabel(run.periodStart, run.periodEnd)}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {formatPayPeriod(run.periodStart, run.periodEnd)}
-                              </p>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {new Date(run.payDate).toLocaleDateString()}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {run.employeeCount}
-                          </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(run.totalGrossPay)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold text-emerald-600">
-                            {formatCurrency(run.totalNetPay)}
-                          </TableCell>
-                          <TableCell>{getStatusBadge(run.status)}</TableCell>
-                          <TableCell className="text-right">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleViewDetails(run)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View Details
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleExportCSV(run)}
-                                >
-                                  <Download className="h-4 w-4 mr-2" />
-                                  Export CSV
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleExportToQuickBooks(run)}
-                                >
-                                  <FileText className="h-4 w-4 mr-2" />
-                                  Export to QuickBooks
-                                </DropdownMenuItem>
-                                {(run.status === "approved" || run.status === "paid") && (
-                                  <DropdownMenuItem
-                                    onClick={() => handleSendPayslips(run)}
-                                  >
-                                    <Mail className="h-4 w-4 mr-2" />
-                                    Send Payslips
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+          {/* Tabs: Pending Approval | All Runs */}
+          <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="mb-4">
+              <TabsTrigger value="pending" className="relative">
+                Pending Approval
+                {stats.pendingApprovalCount > 0 && (
+                  <Badge className="ml-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 min-w-[20px] h-5">
+                    {stats.pendingApprovalCount}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="all">All Runs</TabsTrigger>
+            </TabsList>
+
+            {/* Pending Approval Tab */}
+            <TabsContent value="pending">
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                    Pending Approval
+                  </CardTitle>
+                  <CardDescription>
+                    Payroll runs awaiting second-person review and approval
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pendingRuns.length === 0 ? (
+                    <div className="text-center py-12">
+                      <CheckCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-muted-foreground">No payroll runs pending approval</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Period</TableHead>
+                            <TableHead>Pay Date</TableHead>
+                            <TableHead className="text-right">Employees</TableHead>
+                            <TableHead className="text-right">Gross Pay</TableHead>
+                            <TableHead className="text-right">Net Pay</TableHead>
+                            <TableHead>Submitted By</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {pendingRuns.map((run) => {
+                            const isSameUser = run.createdBy === user?.uid;
+                            return (
+                              <TableRow key={run.id} className="bg-amber-50/50 dark:bg-amber-950/10">
+                                <TableCell>
+                                  <div>
+                                    <p className="font-medium">
+                                      {getPayPeriodLabel(run.periodStart, run.periodEnd)}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {formatPayPeriod(run.periodStart, run.periodEnd)}
+                                    </p>
+                                  </div>
+                                </TableCell>
+                                <TableCell>
+                                  {new Date(run.payDate).toLocaleDateString()}
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  {run.employeeCount}
+                                </TableCell>
+                                <TableCell className="text-right font-medium">
+                                  {formatCurrency(run.totalGrossPay)}
+                                </TableCell>
+                                <TableCell className="text-right font-semibold text-emerald-600">
+                                  {formatCurrency(run.totalNetPay)}
+                                </TableCell>
+                                <TableCell>
+                                  <span className="text-sm text-muted-foreground">
+                                    {run.createdBy === user?.uid ? "You" : run.createdBy?.slice(0, 8) + "..."}
+                                  </span>
+                                </TableCell>
+                                <TableCell className="text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleViewDetails(run)}
+                                    >
+                                      <Eye className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      disabled={isSameUser}
+                                      onClick={() => {
+                                        setApproveRun(run);
+                                        setShowApproveDialog(true);
+                                      }}
+                                      className="bg-green-600 hover:bg-green-700 text-white"
+                                      title={isSameUser ? "Cannot approve your own payroll submission" : "Approve payroll"}
+                                    >
+                                      <CheckCircle className="h-4 w-4 mr-1" />
+                                      Approve
+                                    </Button>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={() => {
+                                        setRejectRun(run);
+                                        setRejectionReason("");
+                                        setShowRejectDialog(true);
+                                      }}
+                                      className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                                    >
+                                      <XCircle className="h-4 w-4 mr-1" />
+                                      Reject
+                                    </Button>
+                                  </div>
+                                  {isSameUser && (
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                      Two-person rule: another admin must approve
+                                    </p>
+                                  )}
+                                </TableCell>
+                              </TableRow>
+                            );
+                          })}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* All Runs Tab */}
+            <TabsContent value="all">
+              <Card className="border-border/50">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    Payroll Runs
+                  </CardTitle>
+                  <CardDescription>
+                    Showing {filteredRuns.length} payroll runs
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {filteredRuns.length === 0 ? (
+                    <div className="text-center py-12">
+                      <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <p className="text-muted-foreground mb-4">No payroll runs found</p>
+                      <Button onClick={() => navigate("/payroll/run")}>
+                        Run Your First Payroll
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Period</TableHead>
+                            <TableHead>Pay Date</TableHead>
+                            <TableHead className="text-right">Employees</TableHead>
+                            <TableHead className="text-right">Gross Pay</TableHead>
+                            <TableHead className="text-right">Net Pay</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredRuns.map((run) => (
+                            <TableRow key={run.id}>
+                              <TableCell>
+                                <div>
+                                  <p className="font-medium">
+                                    {getPayPeriodLabel(run.periodStart, run.periodEnd)}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatPayPeriod(run.periodStart, run.periodEnd)}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                {new Date(run.payDate).toLocaleDateString()}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                {run.employeeCount}
+                              </TableCell>
+                              <TableCell className="text-right font-medium">
+                                {formatCurrency(run.totalGrossPay)}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold text-emerald-600">
+                                {formatCurrency(run.totalNetPay)}
+                              </TableCell>
+                              <TableCell>{getStatusBadge(run.status)}</TableCell>
+                              <TableCell className="text-right">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem
+                                      onClick={() => handleViewDetails(run)}
+                                    >
+                                      <Eye className="h-4 w-4 mr-2" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    {run.status === "processing" && run.createdBy !== user?.uid && (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setApproveRun(run);
+                                          setShowApproveDialog(true);
+                                        }}
+                                      >
+                                        <CheckCircle className="h-4 w-4 mr-2" />
+                                        Approve
+                                      </DropdownMenuItem>
+                                    )}
+                                    {run.status === "processing" && (
+                                      <DropdownMenuItem
+                                        onClick={() => {
+                                          setRejectRun(run);
+                                          setRejectionReason("");
+                                          setShowRejectDialog(true);
+                                        }}
+                                      >
+                                        <XCircle className="h-4 w-4 mr-2" />
+                                        Reject
+                                      </DropdownMenuItem>
+                                    )}
+                                    <DropdownMenuItem
+                                      onClick={() => handleExportCSV(run)}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Export CSV
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem
+                                      onClick={() => handleExportToQuickBooks(run)}
+                                    >
+                                      <FileText className="h-4 w-4 mr-2" />
+                                      Export to QuickBooks
+                                    </DropdownMenuItem>
+                                    {(run.status === "approved" || run.status === "paid") && (
+                                      <DropdownMenuItem
+                                        onClick={() => handleSendPayslips(run)}
+                                      >
+                                        <Mail className="h-4 w-4 mr-2" />
+                                        Send Payslips
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
         </div>
 
       {/* QuickBooks Export Dialog */}
@@ -677,7 +980,7 @@ export default function PayrollHistory() {
           onOpenChange={setShowQBExportDialog}
           payrollRun={qbExportRun}
           records={qbExportRecords}
-          currentUser="Current User" // TODO: Get from auth context
+          currentUser={user?.displayName || user?.email || "Current User"}
         />
       )}
 
@@ -690,6 +993,134 @@ export default function PayrollHistory() {
           records={sendPayslipsRecords}
         />
       )}
+
+      {/* Approve Confirmation Dialog */}
+      <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-green-600" />
+              Approve Payroll Run
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-4">
+                <p>You are about to approve this payroll run. This will:</p>
+                {approveRun && (
+                  <div className="p-4 bg-muted rounded-lg space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span>Period</span>
+                      <span className="font-medium">
+                        {formatPayPeriod(approveRun.periodStart, approveRun.periodEnd)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Employees</span>
+                      <span className="font-medium">{approveRun.employeeCount}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Gross Pay</span>
+                      <span className="font-medium">{formatCurrency(approveRun.totalGrossPay)}</span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span>Net Pay</span>
+                      <span className="font-semibold text-emerald-600">{formatCurrency(approveRun.totalNetPay)}</span>
+                    </div>
+                  </div>
+                )}
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>- Mark payroll as approved and paid</li>
+                  <li>- Create accounting journal entries</li>
+                  <li>- Generate payslips for all employees</li>
+                </ul>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={approving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleApprovePayroll}
+              disabled={approving}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              {approving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Approving...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve & Process
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Reject Dialog */}
+      <Dialog open={showRejectDialog} onOpenChange={setShowRejectDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Reject Payroll Run
+            </DialogTitle>
+            <DialogDescription>
+              Provide a reason for rejecting this payroll run. The submitter will be able to revise and resubmit.
+            </DialogDescription>
+          </DialogHeader>
+          {rejectRun && (
+            <div className="space-y-4">
+              <div className="p-3 bg-muted rounded-lg text-sm">
+                <span className="font-medium">
+                  {getPayPeriodLabel(rejectRun.periodStart, rejectRun.periodEnd)}
+                </span>
+                {" - "}
+                {rejectRun.employeeCount} employees, {formatCurrency(rejectRun.totalNetPay)} net
+              </div>
+              <div>
+                <Label htmlFor="rejection-reason">Rejection Reason</Label>
+                <Textarea
+                  id="rejection-reason"
+                  placeholder="Explain why this payroll run is being rejected (minimum 10 characters)..."
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  rows={3}
+                  className="mt-1"
+                />
+                {rejectionReason.length > 0 && rejectionReason.trim().length < 10 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    Reason must be at least 10 characters ({rejectionReason.trim().length}/10)
+                  </p>
+                )}
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={rejecting}>
+                  Cancel
+                </Button>
+                <Button
+                  onClick={handleRejectPayroll}
+                  disabled={rejecting || rejectionReason.trim().length < 10}
+                  className="bg-red-600 hover:bg-red-700 text-white"
+                >
+                  {rejecting ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Rejecting...
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="h-4 w-4 mr-2" />
+                      Reject Payroll
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Details Dialog */}
       <Dialog open={showDetailsDialog} onOpenChange={setShowDetailsDialog}>

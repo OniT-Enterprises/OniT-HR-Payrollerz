@@ -91,6 +91,8 @@ export interface TenantMember {
   modules?: ModulePermission[];
   email?: string;
   displayName?: string;
+  employeeId?: string;
+  departmentId?: string;
   joinedAt?: FirestoreTimestamp;
   lastActiveAt?: FirestoreTimestamp;
   permissions?: {

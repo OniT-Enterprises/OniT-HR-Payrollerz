@@ -22,7 +22,8 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { departmentService } from "@/services/departmentService";
 import { leaveService } from "@/services/leaveService";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import {
@@ -161,6 +162,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const tenantId = useTenantId();
+  const { session } = useTenant();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -172,6 +174,26 @@ export default function Dashboard() {
     enabled: true,
     onShowHelp: () => setShowShortcuts(true),
   });
+
+  // Redirect to setup wizard if setup is incomplete (owner/hr-admin only)
+  useEffect(() => {
+    const checkSetup = async () => {
+      const role = session?.role;
+      if (role !== "owner" && role !== "hr-admin") return;
+      try {
+        const progress = await settingsService.getSetupProgress(tenantId);
+        if (!progress.isComplete) {
+          navigate("/setup", { replace: true });
+        }
+      } catch {
+        // Settings don't exist - redirect to setup
+        navigate("/setup", { replace: true });
+      }
+    };
+    if (tenantId && tenantId !== "local-dev-tenant") {
+      checkSetup();
+    }
+  }, [tenantId, session?.role, navigate]);
 
   useEffect(() => {
     loadData();

@@ -63,7 +63,7 @@ import {
 } from "lucide-react";
 import { employeeService, Employee } from "@/services/employeeService";
 import { payrollService } from "@/services/payrollService";
-import { accountingService } from "@/services/accountingService";
+
 import {
   calculateTLPayroll,
   calculateSubsidioAnual,
@@ -821,40 +821,21 @@ export default function RunPayroll() {
         return;
       }
 
-      const payrollRun = buildPayrollRun(includedData);
+      const payrollRun = {
+        ...buildPayrollRun(includedData),
+        status: 'processing' as const,
+      };
       const records = buildPayrollRecords(includedData);
 
-      const { runId } = await payrollService.runs.createPayrollRunWithRecords(
+      await payrollService.runs.createPayrollRunWithRecords(
         payrollRun,
-        records
+        records,
+        { tenantId, userId: user?.uid || "current-user", userEmail: user?.email || "" }
       );
 
-      // Create and post accounting journal entry from totals
-      const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
-        periodStart,
-        periodEnd,
-        payDate,
-        totalGrossPay: totals.grossPay,
-        totalINSSEmployer: totals.inssEmployer,
-        totalIncomeTax: totals.incomeTax,
-        totalINSSEmployee: totals.inssEmployee,
-        totalNetPay: totals.netPay,
-        employeeCount: includedData.length,
-        approvedBy: user?.uid || "current-user",
-        sourceId: runId,
-      }, tenantId);
-
-      if (!journalEntryId) {
-        throw new Error("Failed to create journal entry");
-      }
-
-      await payrollService.runs.approvePayrollRun(runId, user?.uid || "current-user");
-      await payrollService.runs.markPayrollRunAsPaid(runId);
-      await payrollService.runs.updatePayrollRun(runId, { journalEntryId });
-
       toast({
-        title: "Payroll Processed",
-        description: `Payroll for ${includedData.length} employees processed and journal posted.`,
+        title: "Payroll Submitted",
+        description: `Payroll for ${includedData.length} employees submitted for approval.`,
       });
 
       setShowFinalConfirmDialog(false);
@@ -915,7 +896,7 @@ export default function RunPayroll() {
               </Button>
               <Button onClick={() => setShowApproveDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Approve & Process
+                Submit for Approval
               </Button>
             </div>
           </div>
@@ -1488,14 +1469,14 @@ export default function RunPayroll() {
               <div className="p-1.5 rounded-lg bg-amber-500/10">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
               </div>
-              <span className="text-amber-700 dark:text-amber-400">Confirm Payroll Processing</span>
+              <span className="text-amber-700 dark:text-amber-400">Submit Payroll for Approval</span>
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
             {/* Warning banner */}
             <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border-2 border-amber-300 dark:border-amber-700">
               <p className="font-semibold text-amber-800 dark:text-amber-200 mb-3">
-                You are about to process payroll for {employees.length} employees
+                You are about to submit payroll for {employees.length} employees for approval
               </p>
               <div className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
                 <div className="flex justify-between">
@@ -1511,25 +1492,21 @@ export default function RunPayroll() {
 
             {/* Consequences */}
             <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-              <p className="font-medium text-red-800 dark:text-red-200 mb-2">
+              <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">
                 This action will:
               </p>
-              <ul className="space-y-1.5 text-sm text-red-700 dark:text-red-300">
+              <ul className="space-y-1.5 text-sm text-amber-700 dark:text-amber-300">
                 <li className="flex items-start gap-2">
                   <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  Lock payroll data for this period
+                  Submit payroll for second-person review
                 </li>
                 <li className="flex items-start gap-2">
                   <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  Generate payslips for all employees
+                  A different admin must approve before processing
                 </li>
                 <li className="flex items-start gap-2">
                   <Calculator className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  Create accounting journal entries
-                </li>
-                <li className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  <span className="font-semibold">Cannot be undone</span>
+                  Journal entries created upon approval
                 </li>
               </ul>
             </div>
@@ -1547,17 +1524,17 @@ export default function RunPayroll() {
             <Button
               onClick={handleProcessPayroll}
               disabled={processing}
-              className="bg-red-600 hover:bg-red-700 text-white shadow-lg shadow-red-500/25"
+              className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/25"
             >
               {processing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
+                  Submitting...
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Confirm & Run Payroll
+                  Submit for Approval
                 </>
               )}
             </Button>

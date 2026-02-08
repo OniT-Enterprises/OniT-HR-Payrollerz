@@ -170,6 +170,12 @@ export const PAYROLL_STATUS_CONFIG = {
     bgClass: 'bg-red-100',
     textClass: 'text-red-800',
   },
+  rejected: {
+    label: 'Rejected',
+    color: 'orange',
+    bgClass: 'bg-orange-100',
+    textClass: 'text-orange-800',
+  },
 };
 
 // ============================================

@@ -90,6 +90,14 @@ export function useTenantId(): string {
   return context.session.tid;
 }
 
+export function useCurrentEmployeeId(): string | null {
+  const context = useContext(TenantContext);
+  if (context === undefined) {
+    throw new Error("useCurrentEmployeeId must be used within a TenantProvider");
+  }
+  return context.session?.member?.employeeId || null;
+}
+
 interface TenantProviderProps {
   children: ReactNode;
 }

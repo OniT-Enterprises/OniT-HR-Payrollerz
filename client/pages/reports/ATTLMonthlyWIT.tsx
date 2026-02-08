@@ -305,6 +305,15 @@ export default function ATTLMonthlyWIT() {
   const handleExportPDF = async () => {
     if (!selectedReturn) return;
 
+    if (!company.tinNumber) {
+      toast({
+        title: "Company TIN Required",
+        description: "Please update your company TIN in Settings before generating tax documents.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       await downloadWITReturnPDF(
         selectedReturn,
@@ -328,6 +337,15 @@ export default function ATTLMonthlyWIT() {
 
   const handleExportOfficialForm = () => {
     if (!selectedReturn) return;
+
+    if (!company.tinNumber) {
+      toast({
+        title: "Company TIN Required",
+        description: "Please update your company TIN in Settings before generating official ATTL forms.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     try {
       downloadATTLExcel(

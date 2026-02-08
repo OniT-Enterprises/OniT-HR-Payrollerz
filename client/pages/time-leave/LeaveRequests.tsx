@@ -61,7 +61,6 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useTenantId } from "@/contexts/TenantContext";
 import {
   Calendar,
   Plus,
@@ -91,11 +90,31 @@ import {
   calculateWorkingDays,
 } from "@/services/leaveService";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useTenant, useTenantId, useCurrentEmployeeId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
+
+type ViewRole = "admin" | "manager" | "employee";
 
 export default function LeaveRequests() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { user } = useAuth();
+  const { session } = useTenant();
+  const currentEmployeeId = useCurrentEmployeeId();
+
+  // Determine view role based on tenant member role
+  const viewRole: ViewRole = useMemo(() => {
+    const role = session?.role;
+    if (role === "owner" || role === "hr-admin") return "admin";
+    if (role === "manager") return "manager";
+    return "employee";
+  }, [session?.role]);
+
+  const isAdmin = viewRole === "admin";
+  const isManager = viewRole === "manager";
+  const isEmployee = viewRole === "employee";
+
   const [activeTab, setActiveTab] = useState("all");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
@@ -122,22 +141,56 @@ export default function LeaveRequests() {
     hasCertificate: false,
   });
 
-  // Load initial data
+  // Employee's own leave balance (for employee/manager self-service view)
+  const [myBalance, setMyBalance] = useState<LeaveBalance | null>(null);
+
+  // Load initial data - role-aware
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
       try {
-        const [empData, deptData, requestsData, balancesData] = await Promise.all([
-          employeeService.getAllEmployees(tenantId),
-          departmentService.getAllDepartments(tenantId),
-          leaveService.getLeaveRequests(tenantId),
-          leaveService.getAllBalances(tenantId),
-        ]);
-
-        setEmployees(empData);
-        setDepartments(deptData);
-        setLeaveRequests(requestsData);
-        setLeaveBalances(balancesData);
+        if (isEmployee && currentEmployeeId) {
+          // Employee view: only their own data
+          const [requestsData, balance] = await Promise.all([
+            leaveService.getEmployeeRequests(tenantId, currentEmployeeId),
+            leaveService.getLeaveBalance(tenantId, currentEmployeeId),
+          ]);
+          setLeaveRequests(requestsData);
+          setMyBalance(balance);
+          setEmployees([]);
+          setDepartments([]);
+        } else if (isManager) {
+          // Manager view: department requests + own requests
+          const departmentId = session?.member?.departmentId;
+          const [empData, deptData, requestsData, balancesData] = await Promise.all([
+            employeeService.getAllEmployees(tenantId),
+            departmentService.getAllDepartments(tenantId),
+            departmentId
+              ? leaveService.getLeaveRequests(tenantId, { departmentId })
+              : leaveService.getLeaveRequests(tenantId),
+            leaveService.getAllBalances(tenantId),
+          ]);
+          setEmployees(empData);
+          setDepartments(deptData);
+          setLeaveRequests(requestsData);
+          setLeaveBalances(balancesData);
+          if (currentEmployeeId) {
+            const balance = await leaveService.getLeaveBalance(tenantId, currentEmployeeId);
+            setMyBalance(balance);
+          }
+        } else {
+          // Admin view: all data
+          const [empData, deptData, requestsData, balancesData] = await Promise.all([
+            employeeService.getAllEmployees(tenantId),
+            departmentService.getAllDepartments(tenantId),
+            leaveService.getLeaveRequests(tenantId),
+            leaveService.getAllBalances(tenantId),
+          ]);
+          setEmployees(empData);
+          setDepartments(deptData);
+          setLeaveRequests(requestsData);
+          setLeaveBalances(balancesData);
+        }
       } catch (error) {
         console.error("Error loading data:", error);
         toast({
@@ -151,7 +204,7 @@ export default function LeaveRequests() {
     };
 
     loadData();
-  }, []);
+  }, [tenantId, viewRole, currentEmployeeId]);
 
   // Calculate duration when dates change
   const calculatedDuration = useMemo(() => {
@@ -160,15 +213,19 @@ export default function LeaveRequests() {
     return formData.halfDay ? 0.5 : days;
   }, [formData.startDate, formData.endDate, formData.halfDay]);
 
+  // Auto-set employeeId for employee self-service
+  const effectiveEmployeeId = isEmployee && currentEmployeeId ? currentEmployeeId : formData.employeeId;
+
   // Get selected employee details
   const selectedEmployee = useMemo(() => {
-    return employees.find((e) => e.id === formData.employeeId);
-  }, [employees, formData.employeeId]);
+    return employees.find((e) => e.id === effectiveEmployeeId);
+  }, [employees, effectiveEmployeeId]);
 
   // Get employee's leave balance
   const selectedEmployeeBalance = useMemo(() => {
-    return leaveBalances.find((b) => b.employeeId === formData.employeeId);
-  }, [leaveBalances, formData.employeeId]);
+    if (isEmployee && myBalance) return myBalance;
+    return leaveBalances.find((b) => b.employeeId === effectiveEmployeeId);
+  }, [leaveBalances, effectiveEmployeeId, isEmployee, myBalance]);
 
   // Get selected leave type details
   const selectedLeaveType = useMemo(() => {
@@ -199,7 +256,7 @@ export default function LeaveRequests() {
     e.preventDefault();
 
     if (
-      !formData.employeeId ||
+      !effectiveEmployeeId ||
       !formData.leaveType ||
       !formData.startDate ||
       !formData.endDate ||
@@ -224,23 +281,27 @@ export default function LeaveRequests() {
 
     setSaving(true);
     try {
-      const employee = employees.find((e) => e.id === formData.employeeId);
-      if (!employee) throw new Error("Employee not found");
+      const employee = employees.find((e) => e.id === effectiveEmployeeId);
+      // For employee self-service, employee record may not be in local state
+      const employeeName = employee
+        ? `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`
+        : user?.displayName || user?.email || "Employee";
 
       const leaveType = TL_LEAVE_TYPES.find((t) => t.id === formData.leaveType);
 
-      // Find department ID from department name
-      const dept = departments.find(
-        (d) => d.name === employee.jobDetails?.department
-      );
+      // Find department ID from department name or session
+      const dept = employee
+        ? departments.find((d) => d.name === employee.jobDetails?.department)
+        : null;
+      const departmentName = employee?.jobDetails?.department
+        || session?.member?.departmentId
+        || t("timeLeave.leaveRequests.dialog.unassigned");
 
       await leaveService.createLeaveRequest(tenantId, {
-        employeeId: formData.employeeId,
-        employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-        department:
-          employee.jobDetails?.department ||
-          t("timeLeave.leaveRequests.dialog.unassigned"),
-        departmentId: dept?.id || "",
+        employeeId: effectiveEmployeeId,
+        employeeName,
+        department: departmentName,
+        departmentId: dept?.id || session?.member?.departmentId || "",
         leaveType: formData.leaveType as LeaveType,
         leaveTypeLabel: getLeaveTypeLabel(formData.leaveType as LeaveType),
         startDate: formData.startDate,
@@ -258,13 +319,22 @@ export default function LeaveRequests() {
         description: t("timeLeave.leaveRequests.toast.successDesc"),
       });
 
-      // Refresh data
-      const [requestsData, balancesData] = await Promise.all([
-        leaveService.getLeaveRequests(tenantId),
-        leaveService.getAllBalances(tenantId),
-      ]);
-      setLeaveRequests(requestsData);
-      setLeaveBalances(balancesData);
+      // Refresh data (role-aware)
+      if (isEmployee && currentEmployeeId) {
+        const [requestsData, balance] = await Promise.all([
+          leaveService.getEmployeeRequests(tenantId, currentEmployeeId),
+          leaveService.getLeaveBalance(tenantId, currentEmployeeId),
+        ]);
+        setLeaveRequests(requestsData);
+        setMyBalance(balance);
+      } else {
+        const [requestsData, balancesData] = await Promise.all([
+          leaveService.getLeaveRequests(tenantId),
+          leaveService.getAllBalances(tenantId),
+        ]);
+        setLeaveRequests(requestsData);
+        setLeaveBalances(balancesData);
+      }
 
       // Reset form
       setFormData({
@@ -294,12 +364,11 @@ export default function LeaveRequests() {
   const handleApprove = async (request: LeaveRequest) => {
     setSaving(true);
     try {
-      // TODO: Get actual approver from auth context
       await leaveService.approveLeaveRequest(
         tenantId,
         request.id!,
-        "admin",
-        "HR Admin"
+        user?.uid || "admin",
+        user?.displayName || user?.email || "HR Admin"
       );
 
       toast({
@@ -340,8 +409,8 @@ export default function LeaveRequests() {
       await leaveService.rejectLeaveRequest(
         tenantId,
         selectedRequest.id!,
-        "admin",
-        "HR Admin",
+        user?.uid || "admin",
+        user?.displayName || user?.email || "HR Admin",
         rejectionReason
       );
 
@@ -583,30 +652,34 @@ export default function LeaveRequests() {
                   </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Employee Select */}
-                  <div className="space-y-2">
-                    <Label>{t("timeLeave.leaveRequests.dialog.employee")}</Label>
-                    <Select
-                      value={formData.employeeId}
-                      onValueChange={(value) =>
-                        handleInputChange("employeeId", value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue
-                          placeholder={t("timeLeave.leaveRequests.dialog.employeePlaceholder")}
-                        />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {employees.map((emp) => (
-                          <SelectItem key={emp.id} value={emp.id!}>
-                            {emp.personalInfo.firstName}{" "}
-                            {emp.personalInfo.lastName}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  {/* Employee Select - hidden for employee self-service */}
+                  {isEmployee && currentEmployeeId ? (
+                    <input type="hidden" value={currentEmployeeId} />
+                  ) : (
+                    <div className="space-y-2">
+                      <Label>{t("timeLeave.leaveRequests.dialog.employee")}</Label>
+                      <Select
+                        value={formData.employeeId}
+                        onValueChange={(value) =>
+                          handleInputChange("employeeId", value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={t("timeLeave.leaveRequests.dialog.employeePlaceholder")}
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id!}>
+                              {emp.personalInfo.firstName}{" "}
+                              {emp.personalInfo.lastName}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
 
                   {/* Leave Type */}
                   <div className="space-y-2">
@@ -880,6 +953,41 @@ export default function LeaveRequests() {
             </Card>
           </div>
 
+          {/* Employee Self-Service: Leave Balance Cards */}
+          {(isEmployee || isManager) && myBalance && (
+            <Card className="border-border/50 shadow-lg">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg">My Leave Balance</CardTitle>
+                <CardDescription>Your current leave entitlements and usage</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {[
+                    { key: "annual" as const, label: "Annual", icon: <Umbrella className="h-4 w-4" />, color: "cyan" },
+                    { key: "sick" as const, label: "Sick", icon: <Heart className="h-4 w-4" />, color: "red" },
+                    { key: "maternity" as const, label: "Maternity", icon: <Baby className="h-4 w-4" />, color: "pink" },
+                    { key: "paternity" as const, label: "Paternity", icon: <Baby className="h-4 w-4" />, color: "blue" },
+                  ].map(({ key, label, icon, color }) => {
+                    const bal = myBalance[key];
+                    if (typeof bal !== "object" || !("remaining" in bal)) return null;
+                    return (
+                      <div key={key} className="p-3 bg-muted rounded-lg">
+                        <div className="flex items-center gap-2 mb-1">
+                          {icon}
+                          <span className="text-sm font-medium">{label}</span>
+                        </div>
+                        <p className="text-2xl font-bold">{bal.remaining}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {bal.used} used, {bal.pending} pending
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Requests Table */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
@@ -981,7 +1089,7 @@ export default function LeaveRequests() {
                               {getStatusBadge(request.status)}
                             </TableCell>
                             <TableCell>
-                              {request.status === "pending" && (
+                              {request.status === "pending" && !isEmployee && (
                                 <div className="flex gap-1">
                                   <Button
                                     size="sm"
@@ -1005,6 +1113,28 @@ export default function LeaveRequests() {
                                     <X className="h-4 w-4" />
                                   </Button>
                                 </div>
+                              )}
+                              {request.status === "pending" && isEmployee && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="text-xs text-muted-foreground"
+                                  onClick={async () => {
+                                    try {
+                                      await leaveService.cancelLeaveRequest(tenantId, request.id!);
+                                      const requestsData = currentEmployeeId
+                                        ? await leaveService.getEmployeeRequests(tenantId, currentEmployeeId)
+                                        : await leaveService.getLeaveRequests(tenantId);
+                                      setLeaveRequests(requestsData);
+                                      toast({ title: "Leave request cancelled" });
+                                    } catch {
+                                      toast({ title: "Failed to cancel", variant: "destructive" });
+                                    }
+                                  }}
+                                  disabled={saving}
+                                >
+                                  Cancel
+                                </Button>
                               )}
                               {request.status === "rejected" &&
                                 request.rejectionReason && (

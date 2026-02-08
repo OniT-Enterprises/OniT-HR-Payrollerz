@@ -100,12 +100,8 @@ export default function BankTransfers() {
     notes: "",
   });
 
-  // Bank accounts (could be fetched from settings in future)
-  const bankAccounts = [
-    { id: "main", name: "Main Business Account - ****1234" },
-    { id: "payroll", name: "Payroll Account - ****5678" },
-    { id: "backup", name: "Backup Account - ****9012" },
-  ];
+  // Bank accounts from settings
+  const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; name: string; accountNumber: string; purpose: string }>>([]);
 
   // Load transfers and payroll runs
   useEffect(() => {
@@ -141,14 +137,27 @@ export default function BankTransfers() {
         const result = await employeeService.getAllEmployees(tenantId);
         setEmployees(result);
 
-        // Load company details
+        // Load company details and bank accounts from settings
         if (tenantId && tenantId !== "local-dev-tenant") {
           const settings = await settingsService.getSettings(tenantId);
           if (settings?.companyDetails) {
             setCompanyName(settings.companyDetails.legalName || settings.companyDetails.tradingName || "Company");
           }
-          if (settings?.paymentStructure?.bankAccounts?.[0]) {
-            setCompanyAccount(settings.paymentStructure.bankAccounts[0].accountNumber || "");
+          if (settings?.paymentStructure?.bankAccounts) {
+            const accounts = settings.paymentStructure.bankAccounts
+              .filter((a: any) => a.isActive)
+              .map((a: any) => ({
+                id: a.id,
+                name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
+                accountNumber: a.accountNumber || "",
+                purpose: a.purpose || "general",
+              }));
+            setBankAccounts(accounts);
+            // Use the first payroll account (or first available) as company debit account
+            const payrollAccount = accounts.find((a: any) => a.purpose === "payroll") || accounts[0];
+            if (payrollAccount) {
+              setCompanyAccount(payrollAccount.accountNumber);
+            }
           }
         }
       } catch (error) {
@@ -158,65 +167,41 @@ export default function BankTransfers() {
     loadEmployeesAndSettings();
   }, [tenantId]);
 
-  // Calculate bank file summary when payroll run is selected
+  // Payroll records for the selected bank file run
+  const [bankFileRecords, setBankFileRecords] = useState<any[]>([]);
+
+  // Load real payroll records and calculate bank file summary when payroll run is selected
   useEffect(() => {
     if (!selectedBankFileRun || employees.length === 0) {
       setBankFileSummary(null);
+      setBankFileRecords([]);
       return;
     }
 
-    // Create mock payroll records from employees for summary calculation
-    const mockRecords = employees.map(emp => ({
-      employeeId: emp.id || "",
-      employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-      employeeNumber: emp.jobDetails.employeeId,
-      department: emp.jobDetails.department,
-      position: emp.jobDetails.position,
-      isResident: emp.compensation?.isResident ?? true,
-      netPay: emp.compensation.monthlySalary * 0.85, // Approximate after deductions
-      payrollRunId: selectedBankFileRun,
-      regularHours: 0,
-      overtimeHours: 0,
-      nightShiftHours: 0,
-      holidayHours: 0,
-      restDayHours: 0,
-      absenceHours: 0,
-      lateArrivalMinutes: 0,
-      sickDaysUsed: 0,
-      hourlyRate: 0,
-      dailyRate: 0,
-      monthlySalary: emp.compensation.monthlySalary,
-      earnings: [],
-      grossPay: emp.compensation.monthlySalary,
-      taxableIncome: emp.compensation.monthlySalary,
-      inssBase: emp.compensation.monthlySalary,
-      deductions: [],
-      incomeTax: 0,
-      inssEmployee: 0,
-      totalDeductions: 0,
-      inssEmployer: 0,
-      totalEmployerCost: emp.compensation.monthlySalary,
-      ytdGrossPay: 0,
-      ytdNetPay: 0,
-      ytdIncomeTax: 0,
-      ytdINSSEmployee: 0,
-      ytdSickDaysUsed: 0,
-      paymentMethod: 'bank_transfer' as const,
-    }));
+    const loadRecords = async () => {
+      try {
+        const records = await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
+        setBankFileRecords(records);
 
-    const grouped = groupRecordsByBank(mockRecords as any, employees);
-    const summary: Record<BankCode, number> = {
-      BNU: grouped.BNU.length,
-      MANDIRI: grouped.MANDIRI.length,
-      ANZ: grouped.ANZ.length,
-      BNCTL: grouped.BNCTL.length,
+        const grouped = groupRecordsByBank(records as any, employees);
+        const summary: Record<BankCode, number> = {
+          BNU: grouped.BNU.length,
+          MANDIRI: grouped.MANDIRI.length,
+          ANZ: grouped.ANZ.length,
+          BNCTL: grouped.BNCTL.length,
+        };
+        setBankFileSummary(summary);
+
+        // Pre-select banks that have employees
+        const availableBanks = (Object.keys(summary) as BankCode[]).filter(bank => summary[bank] > 0);
+        setSelectedBanks(availableBanks);
+      } catch (error) {
+        console.error("Failed to load payroll records:", error);
+        setBankFileSummary(null);
+      }
     };
-    setBankFileSummary(summary);
-
-    // Pre-select banks that have employees
-    const availableBanks = (Object.keys(summary) as BankCode[]).filter(bank => summary[bank] > 0);
-    setSelectedBanks(availableBanks);
-  }, [selectedBankFileRun, employees]);
+    loadRecords();
+  }, [selectedBankFileRun, employees, tenantId]);
 
   // Handle bank file generation
   const handleGenerateBankFiles = async () => {
@@ -241,51 +226,17 @@ export default function BankTransfers() {
 
     setGeneratingFiles(true);
     try {
-      // Create mock payroll records (in real implementation, fetch from payroll service)
-      const mockRecords = employees.map(emp => ({
-        employeeId: emp.id || "",
-        employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-        employeeNumber: emp.jobDetails.employeeId,
-        department: emp.jobDetails.department,
-        position: emp.jobDetails.position,
-        isResident: emp.compensation?.isResident ?? true,
-        netPay: emp.compensation.monthlySalary * 0.85,
-        payrollRunId: selectedBankFileRun,
-        regularHours: 0,
-        overtimeHours: 0,
-        nightShiftHours: 0,
-        holidayHours: 0,
-        restDayHours: 0,
-        absenceHours: 0,
-        lateArrivalMinutes: 0,
-        sickDaysUsed: 0,
-        hourlyRate: 0,
-        dailyRate: 0,
-        monthlySalary: emp.compensation.monthlySalary,
-        earnings: [],
-        grossPay: emp.compensation.monthlySalary,
-        taxableIncome: emp.compensation.monthlySalary,
-        inssBase: emp.compensation.monthlySalary,
-        deductions: [],
-        incomeTax: 0,
-        inssEmployee: 0,
-        totalDeductions: 0,
-        inssEmployer: 0,
-        totalEmployerCost: emp.compensation.monthlySalary,
-        ytdGrossPay: 0,
-        ytdNetPay: 0,
-        ytdIncomeTax: 0,
-        ytdINSSEmployee: 0,
-        ytdSickDaysUsed: 0,
-        paymentMethod: 'bank_transfer' as const,
-      }));
+      // Use real payroll records (already loaded when run was selected)
+      const records = bankFileRecords.length > 0
+        ? bankFileRecords
+        : await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
 
       const today = new Date().toISOString().split('T')[0];
 
       for (const bankCode of selectedBanks) {
         const result = generateBankFile(bankCode, {
           payrollRun: selectedRun as any,
-          records: mockRecords as any,
+          records: records as any,
           employees,
           valueDate: today,
           companyName,

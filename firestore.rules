@@ -550,9 +550,17 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
 
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId) &&
+        // Two-person rule: approver must differ from creator
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy != resource.data.createdBy)
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }

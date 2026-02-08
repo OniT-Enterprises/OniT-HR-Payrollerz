@@ -6,7 +6,7 @@
 import { FirestoreTimestamp } from './firebase';
 
 // Payroll Run Status
-export type PayrollStatus = 'draft' | 'processing' | 'approved' | 'paid' | 'cancelled';
+export type PayrollStatus = 'draft' | 'processing' | 'approved' | 'paid' | 'cancelled' | 'rejected';
 
 // Pay frequency
 export type PayFrequency = 'weekly' | 'biweekly' | 'semimonthly' | 'monthly';
@@ -76,6 +76,11 @@ export interface PayrollRun {
   approvedBy?: string;
   approvedAt?: FirestoreTimestamp;
   paidAt?: FirestoreTimestamp;
+
+  // Rejection tracking
+  rejectedBy?: string;
+  rejectedAt?: FirestoreTimestamp;
+  rejectionReason?: string;
 
   // Notes
   notes?: string;
