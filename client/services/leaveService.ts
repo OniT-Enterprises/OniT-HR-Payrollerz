@@ -11,14 +11,10 @@ import {
   getDocs,
   addDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
-  Timestamp,
   serverTimestamp,
-  onSnapshot,
-  limit,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 

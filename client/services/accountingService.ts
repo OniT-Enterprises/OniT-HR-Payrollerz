@@ -8,7 +8,6 @@ import {
   doc,
   addDoc,
   updateDoc,
-  deleteDoc,
   getDoc,
   getDocs,
   query,
@@ -18,7 +17,6 @@ import {
   serverTimestamp,
   writeBatch,
   runTransaction,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -28,8 +26,6 @@ import type {
   JournalEntryLine,
   FiscalYear,
   FiscalPeriod,
-  BankAccount,
-  BankReconciliation,
   AccountingSettings,
   TrialBalance,
   TrialBalanceRow,
@@ -37,13 +33,12 @@ import type {
 } from '@/types/accounting';
 import {
   getDefaultAccounts,
-  PAYROLL_JOURNAL_MAPPINGS,
   EXPENSE_CATEGORY_TO_ACCOUNT,
   MONEY_JOURNAL_MAPPINGS,
 } from '@/lib/accounting/chart-of-accounts';
 import { getTodayTL } from '@/lib/dateUtils';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
-import type { Invoice, Expense, Bill, PaymentMethod, ExpenseCategory } from '@/types/money';
+import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
 
 // ============================================
 // ACCOUNTS SERVICE

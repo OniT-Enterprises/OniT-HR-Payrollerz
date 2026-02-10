@@ -46,12 +46,8 @@ import {
   goalsService,
   OKR,
   Goal,
-  KeyResult,
-  Milestone,
   OKRStats,
   GoalStats,
-  OKRStatus,
-  GoalStatus,
   GoalPriority,
   KeyResultStatus,
   MilestoneStatus,
@@ -63,23 +59,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import {
   Target,
-  Users,
   CheckSquare,
   BarChart3,
   TrendingUp,
-  AlertCircle,
-  ChevronRight,
   Edit,
   Trash2,
   CheckCircle,
   XCircle,
-  Bell,
-  MessageSquare,
   Plus,
   Clock,
-  Star,
-  Activity,
-  Eye,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 

@@ -47,7 +47,6 @@ import {
   Calendar,
   Filter,
   AlertTriangle,
-  CheckCircle,
 } from 'lucide-react';
 
 const STATUS_STYLES: Record<BillStatus, string> = {

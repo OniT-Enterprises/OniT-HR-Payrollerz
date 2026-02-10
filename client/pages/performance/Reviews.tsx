@@ -51,7 +51,6 @@ import {
   CompetencyRating,
   REVIEW_TYPES,
   DEFAULT_COMPETENCIES,
-  RATING_LABELS,
   getRatingLabel,
   getReviewTypeName,
 } from "@/services/reviewService";
@@ -65,17 +64,12 @@ import {
   AlertCircle,
   User,
   Plus,
-  Filter,
-  Download,
   FileText,
-  Clock,
   CheckCircle,
   Edit,
   Trash2,
   Eye,
   Send,
-  ChevronRight,
-  X,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 

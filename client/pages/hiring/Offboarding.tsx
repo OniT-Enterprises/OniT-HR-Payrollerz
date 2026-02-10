@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,14 +41,12 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   UserMinus,
-  Calendar,
   FileText,
   Mail,
   Key,
   CreditCard,
   Building,
   CheckCircle,
-  AlertTriangle,
   Clock,
   DollarSign,
   Archive,

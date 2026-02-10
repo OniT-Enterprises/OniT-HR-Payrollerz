@@ -51,7 +51,6 @@ import {
   Clock,
   Users,
   Building,
-  Calendar,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 

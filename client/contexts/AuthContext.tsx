@@ -3,7 +3,7 @@ import { User, getIdTokenResult } from "firebase/auth";
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { authService } from "@/services/authService";
-import { UserProfile, createUserProfile } from "@/types/user";
+import { UserProfile } from "@/types/user";
 import { paths } from "@/lib/paths";
 
 interface AuthContextType {
@@ -148,12 +148,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, [fetchUserProfile, checkSuperAdmin]);
 
   const signIn = async (email: string, password: string) => {
-    try {
-      const user = await authService.signIn(email, password);
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    const user = await authService.signIn(email, password);
+    return user;
   };
 
   const signUp = async (
@@ -161,28 +157,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     password: string,
     displayName?: string,
   ) => {
-    try {
-      const user = await authService.signUp(email, password, displayName);
-      return user;
-    } catch (error) {
-      throw error;
-    }
+    const user = await authService.signUp(email, password, displayName);
+    return user;
   };
 
   const signOut = async () => {
-    try {
-      await authService.signOut();
-    } catch (error) {
-      throw error;
-    }
+    await authService.signOut();
   };
 
   const resetPassword = async (email: string) => {
-    try {
-      await authService.resetPassword(email);
-    } catch (error) {
-      throw error;
-    }
+    await authService.resetPassword(email);
   };
 
   const value: AuthContextType = {

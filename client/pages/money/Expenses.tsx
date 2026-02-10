@@ -45,7 +45,7 @@ import { fileUploadService } from '@/services/fileUploadService';
 import { useAllExpenses, expenseKeys } from '@/hooks/useExpenses';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
-import type { Expense, ExpenseFormData, ExpenseCategory, Vendor, PaymentMethod } from '@/types/money';
+import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import {
   Receipt,
   Plus,

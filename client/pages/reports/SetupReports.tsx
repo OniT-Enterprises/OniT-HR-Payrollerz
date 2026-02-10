@@ -24,18 +24,14 @@ import {
   Download,
   Shield,
   Activity,
-  FileText,
   Users,
   CheckCircle2,
   XCircle,
   Clock,
   Building,
-  AlertTriangle,
   Database,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import type { TenantSettings } from "@/types/settings";
-import type { UserProfile, AdminAuditEntry } from "@/types/user";
 
 export default function SetupReports() {
   const { session } = useTenant();

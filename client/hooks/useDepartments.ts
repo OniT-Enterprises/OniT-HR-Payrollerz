@@ -5,7 +5,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   departmentService,
-  type Department,
   type DepartmentInput,
 } from '@/services/departmentService';
 

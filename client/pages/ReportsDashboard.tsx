@@ -38,7 +38,6 @@ import {
   Settings2,
   History,
   Landmark,
-  AlertCircle,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";

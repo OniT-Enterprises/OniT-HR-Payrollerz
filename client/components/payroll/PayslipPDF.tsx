@@ -9,10 +9,9 @@ import {
   Text,
   View,
   StyleSheet,
-  Font,
   pdf,
 } from '@react-pdf/renderer';
-import { PayrollRecord, PayrollRun, PayrollEarning, PayrollDeduction } from '@/types/payroll';
+import { PayrollRecord, PayrollRun } from '@/types/payroll';
 
 // ============================================================
 // I18N-1: Payslip translations (self-contained, no React context needed)

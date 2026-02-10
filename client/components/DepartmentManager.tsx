@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Select,
@@ -33,25 +32,15 @@ import {
 } from "@/services/departmentService";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
-import {
-  departmentIcons,
-  departmentColors,
-  departmentShapes,
-  type DepartmentIcon,
-} from "@/lib/departmentIcons";
+
+
 import {
   Building,
   Plus,
   Edit,
   Trash2,
-  Users,
-  User,
   Save,
   X,
-  Palette,
-  Shapes,
-  ChevronDown,
-  Check,
 } from "lucide-react";
 
 interface DepartmentManagerProps {

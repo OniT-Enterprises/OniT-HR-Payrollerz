@@ -54,8 +54,6 @@ import {
   ChevronDown,
   Search,
   AlertTriangle,
-  FileText,
-  ArrowRight,
   CheckCircle,
   AlertCircle,
   Eye,

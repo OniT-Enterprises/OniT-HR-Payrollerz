@@ -9,7 +9,7 @@ import {
   type InvoiceFilters,
   type PaginatedResult,
 } from '@/services/invoiceService';
-import type { Invoice, InvoiceFormData, InvoiceStatus } from '@/types/money';
+import type { Invoice, InvoiceFormData } from '@/types/money';
 
 export const invoiceKeys = {
   all: (tenantId: string) => ['invoices', tenantId] as const,

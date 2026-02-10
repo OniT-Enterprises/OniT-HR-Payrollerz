@@ -49,7 +49,6 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
-  Calendar,
   Filter,
   Plus,
   Download,
@@ -59,12 +58,8 @@ import {
   User,
   Building,
   AlertTriangle,
-  CheckCircle,
   Timer,
-  Users,
   FileText,
-  Camera,
-  Phone,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 

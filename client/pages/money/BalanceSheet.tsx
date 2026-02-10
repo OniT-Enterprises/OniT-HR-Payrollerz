@@ -72,9 +72,10 @@ export default function BalanceSheet() {
         return now;
       case 'month_end':
         return new Date(now.getFullYear(), now.getMonth(), 0);
-      case 'quarter_end':
+      case 'quarter_end': {
         const quarter = Math.floor(now.getMonth() / 3);
         return new Date(now.getFullYear(), quarter * 3, 0);
+      }
       case 'year_end':
         return new Date(now.getFullYear() - 1, 11, 31);
       default:

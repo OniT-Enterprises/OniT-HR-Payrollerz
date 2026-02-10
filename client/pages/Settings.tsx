@@ -47,7 +47,6 @@ import {
   PaymentStructure,
   TimeOffPolicies,
   PayrollConfig,
-  BusinessType,
   BusinessSector,
   PaymentMethod,
   PayrollFrequency,

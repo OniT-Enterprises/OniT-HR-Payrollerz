@@ -83,11 +83,12 @@ export default function Cashflow() {
         start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         end = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'this_quarter':
+      case 'this_quarter': {
         const quarter = Math.floor(now.getMonth() / 3);
         start = new Date(now.getFullYear(), quarter * 3, 1);
         end = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
         break;
+      }
       case 'this_year':
         start = new Date(now.getFullYear(), 0, 1);
         end = new Date(now.getFullYear(), 11, 31);

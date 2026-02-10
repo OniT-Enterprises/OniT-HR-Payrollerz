@@ -11,7 +11,6 @@
 import { describe, expect, it } from "vitest";
 import {
   calculateTLPayroll,
-  calculateIncomeTax,
   calculateINSS,
   calculateSubsidioAnual,
   type TLPayrollInput,

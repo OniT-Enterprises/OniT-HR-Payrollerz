@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -11,7 +10,7 @@ import {
   DollarSign, FileText, Star, Calculator, ClipboardCheck, Copy, Download,
   Wallet, Trash2
 } from "lucide-react";
-import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, writeBatch, deleteDoc, type DocumentData } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, deleteDoc, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -339,28 +338,6 @@ function isProductionEnvironment(): boolean {
 }
 
 export default function SeedDatabase() {
-  // CRITICAL: Block access in production environment
-  if (isProductionEnvironment()) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <Card className="max-w-md">
-          <CardHeader>
-            <CardTitle className="text-red-600 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5" />
-              Access Blocked
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-muted-foreground">
-              The Seed Database feature is disabled in production environments
-              for data safety. This page is only available in development.
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   const { session } = useTenant();
   const tenantId = session?.tid;
   const [loading, setLoading] = useState(false);
@@ -403,6 +380,28 @@ export default function SeedDatabase() {
   });
 
   const [clearing, setClearing] = useState(false);
+
+  // CRITICAL: Block access in production environment
+  if (isProductionEnvironment()) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle className="text-red-600 flex items-center gap-2">
+              <AlertCircle className="h-5 w-5" />
+              Access Blocked
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">
+              The Seed Database feature is disabled in production environments
+              for data safety. This page is only available in development.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   const addLog = (message: string) => {
     setLogs((prev) => [...prev, `${new Date().toLocaleTimeString()} - ${message}`]);

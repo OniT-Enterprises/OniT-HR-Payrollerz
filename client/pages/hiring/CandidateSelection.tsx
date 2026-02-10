@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -30,7 +29,6 @@ import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
   Search,
-  Filter,
   Download,
   Mail,
   Phone,
@@ -38,8 +36,6 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  Eye,
-  FileText,
   Upload,
   File,
   ChevronDown,

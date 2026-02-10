@@ -7,7 +7,6 @@ import { useState, useEffect } from 'react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -30,7 +29,6 @@ import {
   TrendingDown,
   DollarSign,
   Calendar,
-  Download,
   ChevronRight,
 } from 'lucide-react';
 
@@ -91,11 +89,12 @@ export default function ProfitLoss() {
         start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
         end = new Date(now.getFullYear(), now.getMonth(), 0);
         break;
-      case 'this_quarter':
+      case 'this_quarter': {
         const quarter = Math.floor(now.getMonth() / 3);
         start = new Date(now.getFullYear(), quarter * 3, 1);
         end = new Date(now.getFullYear(), (quarter + 1) * 3, 0);
         break;
+      }
       case 'this_year':
         start = new Date(now.getFullYear(), 0, 1);
         end = new Date(now.getFullYear(), 11, 31);

@@ -26,7 +26,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { InvoiceSettings } from '@/types/money';
 import {
   Settings,

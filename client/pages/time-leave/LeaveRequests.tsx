@@ -54,7 +54,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
@@ -76,7 +75,6 @@ import {
   Umbrella,
   Baby,
   Heart,
-  Briefcase,
 } from "lucide-react";
 import { employeeService, Employee } from "@/services/employeeService";
 import { departmentService, Department } from "@/services/departmentService";

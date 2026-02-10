@@ -16,7 +16,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -32,50 +31,37 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+
+
 import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Globe,
   Users,
-  FileCheck,
   AlertTriangle,
   Calendar,
   Search,
-  ChevronRight,
   Clock,
   CheckCircle,
   XCircle,
   RefreshCw,
-  Building,
-  Briefcase,
   FileText,
   Eye,
-  Edit,
-  Filter,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
 import { employeeService, Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
-import type { ForeignWorkerData, WorkPermitStatus } from "@/types/tax-filing";
+import type { WorkPermitStatus } from "@/types/tax-filing";
 
 // ============================================
 // TYPES

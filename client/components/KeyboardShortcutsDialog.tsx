@@ -9,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { KEYBOARD_SHORTCUTS } from "@/hooks/useKeyboardShortcuts";
 import { Keyboard } from "lucide-react";
 

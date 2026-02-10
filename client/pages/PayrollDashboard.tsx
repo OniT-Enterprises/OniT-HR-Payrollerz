@@ -26,7 +26,6 @@ import {
   FileText,
   Banknote,
   FileSpreadsheet,
-  Heart,
   ChevronRight,
   ChevronDown,
   Calendar,

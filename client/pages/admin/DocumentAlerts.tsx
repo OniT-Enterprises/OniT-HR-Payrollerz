@@ -41,7 +41,6 @@ import {
   Search,
   Filter,
   Download,
-  Mail,
   User,
   Calendar,
   FileText,
@@ -50,11 +49,7 @@ import { useToast } from "@/hooks/use-toast";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
-  type DocumentAlert,
-  type AlertSeverity,
-  type DocumentType,
   extractAlerts,
-  DOCUMENT_LABELS,
   SEVERITY_CONFIG,
 } from "@/components/dashboard/DocumentAlertsCard";
 import { SEO } from "@/components/SEO";

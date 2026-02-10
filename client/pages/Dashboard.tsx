@@ -15,11 +15,9 @@ import {
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { employeeService, type Employee } from "@/services/employeeService";
-import { departmentService } from "@/services/departmentService";
 import { leaveService } from "@/services/leaveService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";

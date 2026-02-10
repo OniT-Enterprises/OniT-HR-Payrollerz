@@ -3,9 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -62,7 +59,6 @@ import {
   getDecisionDisplay,
   getPreCheckProgress,
   formatInterviewDateTime,
-  calculateAverageFeedbackRating,
 } from "@/services/interviewService";
 import { toast } from "sonner";
 import {
@@ -75,10 +71,6 @@ import {
   Plus,
   CheckCircle,
   X,
-  UserCheck,
-  Shield,
-  FileText,
-  Send,
   Star,
   AlertTriangle,
   CalendarDays,

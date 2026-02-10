@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck, Building2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { db, auth } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS } from "@/types/tenant";
 import { useAuth } from "@/contexts/AuthContext";

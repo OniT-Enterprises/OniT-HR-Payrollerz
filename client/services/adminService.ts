@@ -10,18 +10,16 @@ import {
   getDocs,
   setDoc,
   updateDoc,
-  deleteDoc,
   query,
   orderBy,
   limit,
-  where,
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { TenantConfig, TenantStatus, TenantPlan, PLAN_LIMITS } from '@/types/tenant';
-import { UserProfile, AdminAuditEntry, AdminAuditAction, AuditLogEntry } from '@/types/user';
+import { UserProfile, AdminAuditEntry, AuditLogEntry } from '@/types/user';
 
 export type { AuditLogEntry };
 

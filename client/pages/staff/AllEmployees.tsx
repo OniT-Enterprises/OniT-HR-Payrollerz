@@ -23,14 +23,11 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { type Employee } from "@/services/employeeService";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
-import ContactInfoPopover from "@/components/ContactInfoPopover";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
-  getProfileCompleteness,
   getIncompleteEmployees,
-  getCompletionStatusIcon,
 } from "@/lib/employeeUtils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate, useSearchParams } from "react-router-dom";
@@ -38,9 +35,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
   Users,
   Search,
-  Filter,
   Download,
-  Building,
   Eye,
   Edit,
   UserMinus,

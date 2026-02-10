@@ -17,10 +17,9 @@ import {
   limit,
   serverTimestamp,
   writeBatch,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { TL_WORKING_HOURS, TL_OVERTIME_RATES } from '@/lib/payroll/constants-tl';
+import { TL_WORKING_HOURS } from '@/lib/payroll/constants-tl';
 import { FirestoreTimestamp } from '@/types/firebase';
 
 // ============================================

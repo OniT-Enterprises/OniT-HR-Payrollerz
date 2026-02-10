@@ -46,20 +46,14 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
-  Calendar,
   Filter,
   Plus,
   Download,
   Clock,
-  User,
-  Grid,
-  List,
   Upload,
   CheckCircle,
-  XCircle,
   AlertTriangle,
   Users,
-  Timer,
   TrendingUp,
   FileUp,
   Loader2,
@@ -71,7 +65,6 @@ import {
   AttendanceRecord,
   AttendanceStatus,
 } from "@/services/attendanceService";
-import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { SEO, seoConfig } from "@/components/SEO";
 
 export default function Attendance() {

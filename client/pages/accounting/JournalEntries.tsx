@@ -38,7 +38,6 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
@@ -51,9 +50,7 @@ import {
   Clock,
   XCircle,
   Loader2,
-  Filter,
   Trash2,
-  Calculator,
   ChevronRight,
   Lock,
   AlertCircle,

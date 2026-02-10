@@ -8,14 +8,14 @@
  * 4. Role-based permissions work correctly within tenants
  */
 
-import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
 import { 
   initializeTestEnvironment, 
   RulesTestEnvironment,
   assertSucceeds,
   assertFails,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
 
 const PROJECT_ID = 'test-tenant-isolation';
 

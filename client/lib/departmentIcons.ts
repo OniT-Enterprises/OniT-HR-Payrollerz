@@ -37,7 +37,6 @@ import {
   Wifi,
   Battery,
   Cpu,
-  HardDrive,
   Printer,
   Scan,
   Download,

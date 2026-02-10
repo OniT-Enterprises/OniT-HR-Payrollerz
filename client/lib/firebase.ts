@@ -1,10 +1,7 @@
 // Firebase SDK imports
 import { initializeApp } from "firebase/app";
 import {
-  getFirestore,
   initializeFirestore,
-  persistentLocalCache,
-  persistentMultipleTabManager,
   memoryLocalCache,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";

@@ -35,12 +35,9 @@ import {
   Building,
   Users,
   Database,
-  AlertCircle,
   User,
   Plus,
   Edit,
-  DollarSign,
-  Crown,
   Eye,
 } from "lucide-react";
 

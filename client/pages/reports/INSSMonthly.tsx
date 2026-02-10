@@ -230,7 +230,7 @@ export default function INSSMonthly() {
     ]);
 
     const csv = [header, ...rows]
-      .map((r) => r.map((v) => `"${String(v).replace(/\"/g, '""')}"`).join(","))
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
       .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });

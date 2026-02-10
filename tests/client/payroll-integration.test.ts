@@ -16,7 +16,7 @@ import {
   type TLPayrollInput,
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
-import { TL_INCOME_TAX, TL_INSS, TL_WORKING_HOURS } from "@/lib/payroll/constants-tl";
+import { TL_INSS, TL_WORKING_HOURS } from "@/lib/payroll/constants-tl";
 
 // ============================================================
 // HELPERS

@@ -3,11 +3,7 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -29,7 +25,6 @@ import {
   DropResult,
 } from "@hello-pangea/dnd";
 import {
-  Building,
   Users,
   Crown,
   User,

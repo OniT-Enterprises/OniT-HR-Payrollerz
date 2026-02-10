@@ -26,7 +26,6 @@ import type {
   QBJournalEntry,
   QBExportLog,
   QBExportOptions,
-  DEFAULT_TL_ACCOUNT_MAPPINGS,
 } from '@/types/quickbooks';
 
 // ============================================

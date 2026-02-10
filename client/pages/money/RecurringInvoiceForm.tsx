@@ -33,7 +33,7 @@ import { customerService } from '@/services/customerService';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
-import type { RecurringInvoice, RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
+import type { RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
 import {
   Repeat,
   ArrowLeft,

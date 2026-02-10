@@ -17,7 +17,6 @@ import {
   limit,
   serverTimestamp,
   writeBatch,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
@@ -26,13 +25,11 @@ import type { AuditContext } from './employeeService';
 import type {
   PayrollRun,
   PayrollRecord,
-  PayrollStatus,
   BenefitEnrollment,
   RecurringDeduction,
   TaxReport,
   BankTransfer,
   ListPayrollRunsOptions,
-  ListPayrollRecordsOptions,
 } from '@/types/payroll';
 
 // ============================================

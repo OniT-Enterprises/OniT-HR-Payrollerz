@@ -61,7 +61,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   BankCode,
-  BankFileResult,
   generateBankFile,
   groupRecordsByBank,
   downloadBankFile,

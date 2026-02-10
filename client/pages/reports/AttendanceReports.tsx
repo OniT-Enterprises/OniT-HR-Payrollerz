@@ -19,8 +19,8 @@ import {
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
-import { leaveService, LeaveRequest, LeaveBalance } from "@/services/leaveService";
+import { attendanceService } from "@/services/attendanceService";
+import { leaveService } from "@/services/leaveService";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";

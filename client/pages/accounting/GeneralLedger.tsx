@@ -36,8 +36,6 @@ import {
   BookOpen,
   Search,
   Download,
-  Calendar,
-  ChevronRight,
   Loader2,
   FileText,
   ArrowUpRight,

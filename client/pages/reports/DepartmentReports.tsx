@@ -28,7 +28,6 @@ import {
   Download,
   Users,
   TrendingUp,
-  DollarSign,
   UserPlus,
   BarChart3,
   PieChart,

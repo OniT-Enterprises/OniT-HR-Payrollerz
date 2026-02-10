@@ -36,16 +36,14 @@ import {
   Settings,
   Check,
   Loader2,
-  ExternalLink,
 } from 'lucide-react';
 import type { PayrollRun, PayrollRecord } from '@/types/payroll';
 import type { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
-import type { QBExportOptions, QBJournalEntry } from '@/types/quickbooks';
+import type { QBExportOptions } from '@/types/quickbooks';
 import {
   buildJournalEntry,
   exportPayrollToQuickBooks,
   downloadFile,
-  getExportSettings,
   getDefaultMappings,
 } from '@/services/quickbooksExportService';
 

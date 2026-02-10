@@ -45,7 +45,6 @@ import {
   CreditCard,
   Globe,
   Users,
-  X,
   Download,
   Loader2,
 } from "lucide-react";

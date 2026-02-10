@@ -24,7 +24,6 @@ import {
 } from "@/lib/employeeUtils";
 import {
   AlertTriangle,
-  User,
   Building,
   Mail,
   Phone,

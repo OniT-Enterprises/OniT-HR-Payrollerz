@@ -3,7 +3,7 @@
  * Extracted from App.tsx for better maintainability
  */
 
-import React, { Suspense, lazy } from "react";
+import React, { lazy } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 
