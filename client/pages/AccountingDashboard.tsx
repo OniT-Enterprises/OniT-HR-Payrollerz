@@ -45,7 +45,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 
-const theme = sectionThemes.accounting;
+const _theme = sectionThemes.accounting;
 
 function AccountingDashboardSkeleton() {
   return (
@@ -142,7 +142,7 @@ function AccountingDashboardSkeleton() {
 
 export default function AccountingDashboard() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(true);
 

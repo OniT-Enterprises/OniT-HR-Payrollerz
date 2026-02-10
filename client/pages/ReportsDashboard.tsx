@@ -43,7 +43,7 @@ import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 
-const theme = sectionThemes.reports;
+const _theme = sectionThemes.reports;
 
 function ReportsDashboardSkeleton() {
   return (
@@ -370,7 +370,7 @@ export default function ReportsDashboard() {
         {/* Primary Categories - Payroll (largest) and Employee (second) */}
         <section>
           <div className="grid gap-6 md:grid-cols-2">
-            {primaryCategories.map((category, index) => {
+            {primaryCategories.map((category, _index) => {
               const CategoryIcon = category.icon;
               const isPayroll = category.id === "payroll";
               return (

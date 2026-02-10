@@ -243,7 +243,7 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {expenseMappings.map((mapping, idx) => {
+                    {expenseMappings.map((mapping, _idx) => {
                       const globalIndex = settings.accountMappings.findIndex(
                         m => m.onitAccountCode === mapping.onitAccountCode
                       );

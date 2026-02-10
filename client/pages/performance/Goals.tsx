@@ -134,7 +134,7 @@ export default function Goals() {
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedQuarter, setSelectedQuarter] = useState(`Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`);
-  const [selectedYear] = useState(new Date().getFullYear());
+  const [_selectedYear] = useState(new Date().getFullYear());
 
   // Dialog states
   const [showOKRDialog, setShowOKRDialog] = useState(false);

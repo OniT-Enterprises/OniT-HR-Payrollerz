@@ -45,12 +45,12 @@ import {
 
 export default function MoneyDashboard() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MoneyStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
-  const [customerCount, setCustomerCount] = useState(0);
+  const [_customerCount, setCustomerCount] = useState(0);
   const [payablesSummary, setPayablesSummary] = useState<{
     overdue: number;
     overdueCount: number;
@@ -97,7 +97,7 @@ export default function MoneyDashboard() {
     }).format(amount);
   };
 
-  const formatTimeAgo = (date: Date) => {
+  const _formatTimeAgo = (date: Date) => {
     const now = new Date();
     const diff = now.getTime() - date.getTime();
     const minutes = Math.floor(diff / 60000);

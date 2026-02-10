@@ -123,7 +123,7 @@ export default function AddEmployee() {
     handleSubmit,
     watch,
     reset,
-    trigger,
+    trigger: _trigger,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(addEmployeeFormSchema),

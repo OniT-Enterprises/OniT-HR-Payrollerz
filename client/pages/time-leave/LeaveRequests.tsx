@@ -109,7 +109,7 @@ export default function LeaveRequests() {
     return "employee";
   }, [session?.role]);
 
-  const isAdmin = viewRole === "admin";
+  const _isAdmin = viewRole === "admin";
   const isManager = viewRole === "manager";
   const isEmployee = viewRole === "employee";
 
@@ -215,7 +215,7 @@ export default function LeaveRequests() {
   const effectiveEmployeeId = isEmployee && currentEmployeeId ? currentEmployeeId : formData.employeeId;
 
   // Get selected employee details
-  const selectedEmployee = useMemo(() => {
+  const _selectedEmployee = useMemo(() => {
     return employees.find((e) => e.id === effectiveEmployeeId);
   }, [employees, effectiveEmployeeId]);
 
@@ -479,7 +479,7 @@ export default function LeaveRequests() {
     }
   };
 
-  const getStatusLabel = (status: LeaveStatus) => {
+  const _getStatusLabel = (status: LeaveStatus) => {
     switch (status) {
       case "approved":
         return t("timeLeave.leaveRequests.status.approved");
@@ -965,7 +965,7 @@ export default function LeaveRequests() {
                     { key: "sick" as const, label: "Sick", icon: <Heart className="h-4 w-4" />, color: "red" },
                     { key: "maternity" as const, label: "Maternity", icon: <Baby className="h-4 w-4" />, color: "pink" },
                     { key: "paternity" as const, label: "Paternity", icon: <Baby className="h-4 w-4" />, color: "blue" },
-                  ].map(({ key, label, icon, color }) => {
+                  ].map(({ key, label, icon, color: _color }) => {
                     const bal = myBalance[key];
                     if (typeof bal !== "object" || !("remaining" in bal)) return null;
                     return (

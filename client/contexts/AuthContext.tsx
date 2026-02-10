@@ -56,7 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         // Update last login
         try {
           await setDoc(userDocRef, { lastLoginAt: serverTimestamp() }, { merge: true });
-        } catch (e) {
+        } catch {
           // Ignore if we can't update last login (might not have permission yet)
         }
 

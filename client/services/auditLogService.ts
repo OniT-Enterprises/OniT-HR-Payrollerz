@@ -144,7 +144,7 @@ export interface PaginatedAuditLogs {
 
 // Tenant-scoped audit logs use paths.auditLogs(tenantId)
 // Fallback for global logs (should not be used in production)
-const LEGACY_AUDIT_COLLECTION = "audit_logs";
+const _LEGACY_AUDIT_COLLECTION = "audit_logs";
 
 // ============================================
 // HELPER FUNCTIONS

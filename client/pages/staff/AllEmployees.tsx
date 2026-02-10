@@ -519,7 +519,7 @@ export default function AllEmployees() {
 
             // Basic validation - you would typically process this data
             // and add it to your employee service
-            const employeeData = {
+            const _employeeData = {
               employeeId: values[0],
               firstName: values[1],
               lastName: values[2],
@@ -544,7 +544,7 @@ export default function AllEmployees() {
           }),
           variant: errorCount > 0 ? "destructive" : "default",
         });
-      } catch (error) {
+      } catch {
         toast({
           title: t("employees.importErrorTitle"),
           description: t("employees.importErrorDesc"),

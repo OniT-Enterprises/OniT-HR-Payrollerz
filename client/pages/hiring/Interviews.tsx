@@ -87,7 +87,7 @@ export default function Interviews() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const { user } = useAuth();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: employees = [], isLoading: _employeesLoading } = useAllEmployees();
 
   // State
   const [interviews, setInterviews] = useState<Interview[]>([]);
@@ -329,7 +329,7 @@ export default function Interviews() {
       await interviewService.markInvitationSent(tenantId, interview.id);
       toast.success("Invitation marked as sent");
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update");
     }
   };
@@ -341,7 +341,7 @@ export default function Interviews() {
       await interviewService.markFollowUpCall(tenantId, interview.id);
       toast.success("Follow-up call recorded");
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update");
     }
   };
@@ -354,7 +354,7 @@ export default function Interviews() {
       await interviewService.completeInterview(tenantId, interview.id);
       toast.success("Interview marked as completed");
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update status");
     }
   };
@@ -366,19 +366,19 @@ export default function Interviews() {
       await interviewService.cancelInterview(tenantId, interview.id);
       toast.success("Interview cancelled");
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to cancel interview");
     }
   };
 
-  const handleNoShow = async (interview: Interview) => {
+  const _handleNoShow = async (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
     try {
       await interviewService.markNoShow(tenantId, interview.id);
       toast.success("Marked as no-show");
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to update status");
     }
   };
@@ -394,7 +394,7 @@ export default function Interviews() {
       setDeleteDialogOpen(false);
       setSelectedInterview(null);
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to delete interview");
     } finally {
       setSaving(false);
@@ -409,7 +409,7 @@ export default function Interviews() {
       await interviewService.makeDecision(tenantId, interview.id, decision);
       toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`);
       loadInterviews();
-    } catch (error) {
+    } catch {
       toast.error("Failed to record decision");
     }
   };

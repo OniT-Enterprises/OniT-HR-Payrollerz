@@ -35,7 +35,7 @@ import { SEO } from "@/components/SEO";
 
 export default function SetupReports() {
   const { session } = useTenant();
-  const { user } = useAuth();
+  const { user: _user } = useAuth();
   const { toast } = useToast();
   const { t } = useI18n();
 

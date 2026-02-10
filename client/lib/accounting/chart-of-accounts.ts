@@ -761,7 +761,7 @@ export const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
  * Get default accounts as Account objects
  */
 export function getDefaultAccounts(): Omit<Account, 'id' | 'createdAt' | 'updatedAt'>[] {
-  return DEFAULT_CHART_OF_ACCOUNTS.map((acc, index) => ({
+  return DEFAULT_CHART_OF_ACCOUNTS.map((acc, _index) => ({
     code: acc.code,
     name: acc.name,
     nameTL: acc.nameTL,

@@ -358,7 +358,7 @@ export default function Settings() {
           description: t("settings.notifications.companySaved"),
         });
         loadSettings();
-      } catch (error) {
+      } catch {
         toast({
           title: t("settings.notifications.errorTitle"),
           description: t("settings.notifications.saveFailed"),
@@ -381,7 +381,7 @@ export default function Settings() {
         description: t("settings.notifications.structureSaved"),
       });
       loadSettings();
-    } catch (error) {
+    } catch {
       toast({
         title: t("settings.notifications.errorTitle"),
         description: t("settings.notifications.saveFailed"),
@@ -402,7 +402,7 @@ export default function Settings() {
         description: t("settings.notifications.paymentSaved"),
       });
       loadSettings();
-    } catch (error) {
+    } catch {
       toast({
         title: t("settings.notifications.errorTitle"),
         description: t("settings.notifications.saveFailed"),
@@ -423,7 +423,7 @@ export default function Settings() {
         description: t("settings.notifications.timeOffSaved"),
       });
       loadSettings();
-    } catch (error) {
+    } catch {
       toast({
         title: t("settings.notifications.errorTitle"),
         description: t("settings.notifications.saveFailed"),
@@ -444,7 +444,7 @@ export default function Settings() {
         description: t("settings.notifications.payrollSaved"),
       });
       loadSettings();
-    } catch (error) {
+    } catch {
       toast({
         title: t("settings.notifications.errorTitle"),
         description: t("settings.notifications.saveFailed"),

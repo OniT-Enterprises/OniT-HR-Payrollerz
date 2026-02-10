@@ -290,7 +290,7 @@ export default function CSVColumnMapper({
   const [mappings, setMappings] = useState<ColumnMapping[]>([]);
   const [unmappedColumns, setUnmappedColumns] = useState<CSVColumn[]>([]);
   const [step, setStep] = useState<"upload" | "map" | "preview">("upload");
-  const [loading, setLoading] = useState(false);
+  const [, setLoading] = useState(false);
 
   useEffect(() => {
     if (csvFile) {

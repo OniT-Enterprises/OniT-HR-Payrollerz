@@ -384,7 +384,7 @@ export default function InvoiceForm() {
     }).format(amount);
   };
 
-  const selectedCustomer = customers.find((c) => c.id === formData.customerId);
+  const _selectedCustomer = customers.find((c) => c.id === formData.customerId);
   const canEdit = isNew || duplicateId || (invoice && invoice.status === 'draft');
 
   if (loading) {

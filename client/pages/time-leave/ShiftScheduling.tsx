@@ -165,7 +165,7 @@ export default function ShiftScheduling() {
     notes: "",
   });
 
-  const [templateData, setTemplateData] = useState({
+  const [_templateData, _setTemplateData] = useState({
     name: "",
     department: "",
   });
@@ -721,8 +721,8 @@ export default function ShiftScheduling() {
       return;
     }
 
-    const employee = employees.find((e) => e.id === formData.employee);
-    const hours = calculateHours(formData.startTime, formData.endTime);
+    const _employee = employees.find((e) => e.id === formData.employee);
+    const _hours = calculateHours(formData.startTime, formData.endTime);
 
     try {
       toast({
@@ -732,7 +732,7 @@ export default function ShiftScheduling() {
 
       resetForm();
       setShowCreateDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
         description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
@@ -768,7 +768,7 @@ export default function ShiftScheduling() {
       resetForm();
       setShowEditDialog(false);
       setSelectedShift(null);
-    } catch (error) {
+    } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
         description: t("timeLeave.shiftScheduling.toast.updateErrorDesc"),
@@ -777,13 +777,13 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleDeleteShift = async (shiftId: string) => {
+  const handleDeleteShift = async (_shiftId: string) => {
     try {
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.deleteSuccessDesc"),
       });
-    } catch (error) {
+    } catch {
       toast({
         title: t("timeLeave.shiftScheduling.toast.errorTitle"),
         description: t("timeLeave.shiftScheduling.toast.deleteErrorDesc"),

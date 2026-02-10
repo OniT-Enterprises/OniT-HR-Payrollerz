@@ -67,7 +67,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 
-const theme = sectionThemes.people;
+const _theme = sectionThemes.people;
 
 function PeopleDashboardSkeleton() {
   return (
@@ -239,7 +239,7 @@ export default function PeopleDashboard() {
 
   const loadData = async () => {
     try {
-      const [employeesData, departmentsData, leaveStats] = await Promise.all([
+      const [employeesData, _departmentsData, leaveStats] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
         departmentService.getAllDepartments(tenantId),
         leaveService.getLeaveStats(tenantId),

@@ -703,7 +703,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   // - Voluntary deductions (loans, advances, other): capped at 1/6 of gross pay
   const VOLUNTARY_DEDUCTION_CAP_RATIO = 1 / 6; // ~16.67%
 
-  const statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
+  const _statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
   const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
   const voluntaryTotal = sumMoney(voluntaryDeductions.map(d => d.amount));
   const voluntaryCap = multiplyMoney(grossPay, VOLUNTARY_DEDUCTION_CAP_RATIO);

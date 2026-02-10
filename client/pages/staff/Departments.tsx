@@ -180,7 +180,7 @@ export default function Departments() {
   // Sort departments by employee count
   departmentStats.sort((a, b) => b.totalEmployees - a.totalEmployees);
 
-  const getDepartmentColor = (index: number) => {
+  const _getDepartmentColor = (index: number) => {
     const colors = [
       "bg-blue-50 border-blue-200",
       "bg-green-50 border-green-200",
@@ -194,7 +194,7 @@ export default function Departments() {
     return colors[index % colors.length];
   };
 
-  const formatSalary = (monthlySalary: number) => {
+  const _formatSalary = (monthlySalary: number) => {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: "USD",
@@ -208,7 +208,7 @@ export default function Departments() {
     setShowDepartmentEmployees(true);
   };
 
-  const handleEditDepartment = (department: Department) => {
+  const handleEditDepartment = (_department: Department) => {
     setManagerMode("edit");
     setShowDepartmentManager(true);
   };

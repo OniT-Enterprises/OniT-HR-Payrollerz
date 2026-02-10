@@ -323,7 +323,7 @@ export default function StaffDashboard() {
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {topDepartments.map(([department, count], index) => {
+                    {topDepartments.map(([department, count], _index) => {
                       const percentage = totalEmployees > 0
                         ? Math.round((count / totalEmployees) * 100)
                         : 0;

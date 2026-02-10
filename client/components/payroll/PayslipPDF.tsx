@@ -442,8 +442,8 @@ export const PayslipDocument = ({
   const s = payslipStrings[language];
 
   // Group earnings
-  const taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
-  const nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
+  const _taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
+  const _nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
 
   const isTimorLestePayslip = record.deductions.some((d) =>
     /\b(inss|wit)\b/i.test(d.description || "")

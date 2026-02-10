@@ -268,7 +268,7 @@ export default function GoalsOKRs() {
       });
       setKeyResults([{ title: "", target: "" }]);
       setShowCreateDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to create OKR. Please try again.",

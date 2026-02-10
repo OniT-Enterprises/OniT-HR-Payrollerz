@@ -379,7 +379,7 @@ export default function PayrollHistory() {
 
   // Export to CSV
   const handleExportCSV = (run: PayrollRun) => {
-    const data = {
+    const _data = {
       period: getPayPeriodLabel(run.periodStart, run.periodEnd),
       payDate: run.payDate,
       employees: run.employeeCount,

@@ -75,7 +75,7 @@ export default function Attendance() {
   // Today's date as default
   const today = new Date().toISOString().split("T")[0];
   const [selectedDate, setSelectedDate] = useState(today);
-  const [viewMode, setViewMode] = useState<"calendar" | "table">("table");
+  const [_viewMode, _setViewMode] = useState<"calendar" | "table">("table");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
@@ -289,7 +289,7 @@ export default function Attendance() {
         notes: "",
       });
       setShowMarkDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: t("timeLeave.attendance.toast.errorTitle"),
         description: t("timeLeave.attendance.toast.saveFailed"),

@@ -120,7 +120,7 @@ export default function SetupWizard() {
     try {
       await settingsService.updateCompanyDetails(tenantId, companyForm as CompanyDetails);
       return true;
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save company details.",
@@ -160,7 +160,7 @@ export default function SetupWizard() {
         payrollPeriods: [],
       });
       return true;
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save bank account.",
@@ -183,7 +183,7 @@ export default function SetupWizard() {
         paternityLeave: { days: 5 },
       });
       return true;
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save leave policies.",
@@ -210,7 +210,7 @@ export default function SetupWizard() {
         standardWeeklyHours: 44,
       });
       return true;
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to save payroll config.",
@@ -231,7 +231,7 @@ export default function SetupWizard() {
         description: "Your account is ready to use!",
       });
       navigate("/dashboard");
-    } catch (error) {
+    } catch {
       toast({
         title: "Error",
         description: "Failed to complete setup.",

@@ -179,7 +179,7 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
     }
 
     // Process batch
-    const { results, totals } = runPayrollBatch(roster);
+    const { results, totals: _totals } = runPayrollBatch(roster);
 
     // All should produce results
     expect(results).toHaveLength(8);

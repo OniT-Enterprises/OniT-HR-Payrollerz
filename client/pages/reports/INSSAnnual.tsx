@@ -144,7 +144,7 @@ export default function INSSAnnual() {
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [company, setCompany] = useState<Partial<CompanyDetails>>({});
-  const [filings, setFilings] = useState<TaxFiling[]>([]);
+  const [_filings, setFilings] = useState<TaxFiling[]>([]);
   const [summary, setSummary] = useState<AnnualSummary | null>(null);
 
   const currentYear = new Date().getFullYear();

@@ -595,7 +595,7 @@ export default function SeedDatabase() {
           updatedAt: serverTimestamp(),
         });
         success++;
-      } catch (err) {
+      } catch {
         failed++;
       }
     }
@@ -635,7 +635,7 @@ export default function SeedDatabase() {
             createdAt: serverTimestamp(),
           });
           success++;
-        } catch (err) {
+        } catch {
           failed++;
         }
       }
@@ -676,7 +676,7 @@ export default function SeedDatabase() {
             updatedAt: serverTimestamp(),
           });
           success++;
-        } catch (err) {
+        } catch {
           failed++;
         }
       }
@@ -713,7 +713,7 @@ export default function SeedDatabase() {
           updatedAt: serverTimestamp(),
         });
         success++;
-      } catch (err) {
+      } catch {
         failed++;
       }
     }
@@ -738,7 +738,7 @@ export default function SeedDatabase() {
         });
         success++;
         addLog(`✓ Training: ${course.name}`);
-      } catch (err) {
+      } catch {
         failed++;
       }
     }
@@ -842,7 +842,7 @@ export default function SeedDatabase() {
           updatedAt: serverTimestamp(),
         });
         success++;
-      } catch (err) {
+      } catch {
         failed++;
       }
     }
@@ -1029,7 +1029,7 @@ export default function SeedDatabase() {
           createdAt: serverTimestamp(),
         });
         success++;
-      } catch (err) {
+      } catch {
         failed++;
       }
     }

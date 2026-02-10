@@ -328,7 +328,7 @@ class RecurringInvoiceService {
       customerId: recurring.customerId,
       issueDate,
       dueDate,
-      items: recurring.items.map(({ id, ...item }) => item),
+      items: recurring.items.map(({ id: _id, ...item }) => item),
       taxRate: recurring.taxRate,
       notes: recurring.notes,
       terms: recurring.terms,

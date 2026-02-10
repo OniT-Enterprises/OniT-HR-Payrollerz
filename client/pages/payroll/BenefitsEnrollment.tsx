@@ -139,7 +139,7 @@ export default function EmployeeAllowances() {
   const [effectiveDate, setEffectiveDate] = useState(
     new Date().toISOString().split("T")[0]
   );
-  const [notes, setNotes] = useState("");
+  const [_notes, setNotes] = useState("");
 
   // Load data
   useEffect(() => {
@@ -458,7 +458,7 @@ export default function EmployeeAllowances() {
                 const count = allowances.filter(
                   (a) => a.benefitType === type.value && a.status === "active"
                 ).length;
-                const total = stats.byType[type.value] || 0;
+                const _total = stats.byType[type.value] || 0;
 
                 return (
                   <button

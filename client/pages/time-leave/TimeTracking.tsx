@@ -123,7 +123,7 @@ export default function TimeTracking() {
   const [selectedSite, setSelectedSite] = useState("");
   const [selectedClient, setSelectedClient] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [entryType, setEntryType] = useState<"daily" | "hourly">("daily");
+  const [_entryType, _setEntryType] = useState<"daily" | "hourly">("daily");
   const [currentPage, setCurrentPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const itemsPerPage = 20;
@@ -513,7 +513,7 @@ export default function TimeTracking() {
         field === "clockOut" ||
         field === "breakMinutes"
       ) {
-        const totalHours = calculateTotalHours(
+        const _totalHours = calculateTotalHours(
           field === "clockIn" ? (value as string) : updated.clockIn,
           field === "clockOut" ? (value as string) : updated.clockOut,
           field === "breakMinutes" ? (value as number) : updated.breakMinutes,
@@ -544,7 +544,7 @@ export default function TimeTracking() {
     }
 
     try {
-      const totalHours = calculateTotalHours(
+      const _totalHours = calculateTotalHours(
         formData.clockIn,
         formData.clockOut,
         formData.breakMinutes,
@@ -569,7 +569,7 @@ export default function TimeTracking() {
         notes: "",
       });
       setShowAddDialog(false);
-    } catch (error) {
+    } catch {
       toast({
         title: t("timeLeave.timeTracking.toast.errorTitle"),
         description: t("timeLeave.timeTracking.toast.errorDesc"),
@@ -589,7 +589,7 @@ export default function TimeTracking() {
   };
 
   const handleExportCSV = () => {
-    const csvData = timeEntries.map((entry) => ({
+    const _csvData = timeEntries.map((entry) => ({
       [t("timeLeave.timeTracking.csv.badgeNumber")]: entry.badgeNumber,
       [t("timeLeave.timeTracking.csv.employeeName")]: entry.employeeName,
       [t("timeLeave.timeTracking.csv.date")]: entry.date,
@@ -630,7 +630,7 @@ export default function TimeTracking() {
   );
 
   // Removed renderDailyView function - content moved inline
-  const renderDailyView_unused = () => (
+  const _renderDailyView_unused = () => (
     <div className="flex flex-col space-y-6">
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

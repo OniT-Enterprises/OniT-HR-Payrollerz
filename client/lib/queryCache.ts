@@ -118,7 +118,7 @@ function loadCacheStore(): CacheStore {
         return store;
       }
     }
-  } catch (e) {
+  } catch {
     // Corrupted cache - ignore
   }
   return { version: CACHE_VERSION, entries: {} };
@@ -181,7 +181,7 @@ export function hydrateQueryClient(queryClient: QueryClient): void {
       // Parse the query key back to array format
       const queryKey = JSON.parse(entry.queryKey);
       queryClient.setQueryData(queryKey, entry.data);
-    } catch (e) {
+    } catch {
       // Invalid key format - skip
     }
   });

@@ -27,7 +27,7 @@ import type {
 const getCollection = (tenantId: string) =>
   collection(db, 'tenants', tenantId, 'bankTransactions');
 
-const getReconciliationsCollection = (tenantId: string) =>
+const _getReconciliationsCollection = (tenantId: string) =>
   collection(db, 'tenants', tenantId, 'bankReconciliations');
 
 class BankReconciliationService {
@@ -210,7 +210,7 @@ class BankReconciliationService {
           createdAt: Timestamp.now(),
         });
         imported++;
-      } catch (error) {
+      } catch {
         errors.push(`Failed to import: ${tx.description}`);
       }
     }

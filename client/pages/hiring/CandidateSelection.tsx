@@ -58,7 +58,7 @@ export default function CandidateSelection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [_showFilterPanel, _setShowFilterPanel] = useState(false);
 
   // Sample realistic candidate data for AI extraction
   const sampleCandidates = [
@@ -175,8 +175,8 @@ export default function CandidateSelection() {
 
   // AI extraction function - simulates real AI processing with realistic data
   const extractInfoFromFiles = async (
-    cvFile?: File,
-    coverLetterFile?: File,
+    _cvFile?: File,
+    _coverLetterFile?: File,
   ) => {
     setIsProcessing(true);
 

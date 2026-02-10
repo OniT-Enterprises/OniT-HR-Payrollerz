@@ -77,7 +77,7 @@ export default function Invoices() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const queryClient = useQueryClient();
+  const _queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);

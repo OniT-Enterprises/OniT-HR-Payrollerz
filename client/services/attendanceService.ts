@@ -617,7 +617,7 @@ class AttendanceService {
     const records = await this.getAttendanceByDate(tenantId, date);
 
     const present = records.filter(r => r.status === 'present' || r.status === 'late').length;
-    const absent = records.filter(r => r.status === 'absent').length;
+    const _absent = records.filter(r => r.status === 'absent').length;
     const late = records.filter(r => r.status === 'late').length;
     const onLeave = records.filter(r => r.status === 'leave').length;
 

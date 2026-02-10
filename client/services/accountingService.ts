@@ -419,7 +419,7 @@ class JournalEntryService {
   async createFromPayroll(
     tenantId: string,
     payrollRun: TLPayrollRun,
-    records: TLPayrollRecord[]
+    _records: TLPayrollRecord[]
   ): Promise<string> {
     const year = new Date(payrollRun.periodEnd).getFullYear();
     const month = new Date(payrollRun.periodEnd).getMonth() + 1;

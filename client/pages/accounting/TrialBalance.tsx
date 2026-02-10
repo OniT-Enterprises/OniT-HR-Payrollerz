@@ -57,7 +57,7 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
 export default function TrialBalance() {
   const tenantId = useTenantId();
   // State
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [_accounts, setAccounts] = useState<Account[]>([]);
   const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

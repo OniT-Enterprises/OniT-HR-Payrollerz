@@ -66,7 +66,7 @@ export default function RecurringInvoiceForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const { session } = useTenant();
 
   const isEditMode = !!id;
@@ -74,7 +74,7 @@ export default function RecurringInvoiceForm() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const [settings, setSettings] = useState<Partial<InvoiceSettings>>({});
+  const [_settings, setSettings] = useState<Partial<InvoiceSettings>>({});
 
   // React Hook Form for better performance
   const {
@@ -224,7 +224,7 @@ export default function RecurringInvoiceForm() {
       // Filter valid items and prepare data
       const validItems = formValues.items
         .filter((item) => item.description && (Number(item.quantity) * Number(item.unitPrice)) > 0)
-        .map(({ id, ...item }) => ({
+        .map(({ id: _id, ...item }) => ({
           description: item.description,
           quantity: Number(item.quantity),
           unitPrice: Number(item.unitPrice),

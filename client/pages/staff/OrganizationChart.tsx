@@ -55,7 +55,7 @@ interface DepartmentGroup {
 
 export default function OrganizationChart() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
+  const [_departments, setDepartments] = useState<Department[]>([]);
   const [executives, setExecutives] = useState<OrgPerson[]>([]);
   const [departmentGroups, setDepartmentGroups] = useState<DepartmentGroup[]>(
     [],

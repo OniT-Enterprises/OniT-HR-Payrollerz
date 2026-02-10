@@ -276,7 +276,7 @@ export const formatPayPeriod = (startDate: string, endDate: string): string => {
   return `${startMonth} ${start.getDate()} - ${endMonth} ${end.getDate()}, ${end.getFullYear()}`;
 };
 
-export const getPayPeriodLabel = (periodStart: string, periodEnd: string): string => {
+export const getPayPeriodLabel = (periodStart: string, _periodEnd: string): string => {
   const start = new Date(periodStart);
   const month = MONTHS[start.getMonth()];
   const year = start.getFullYear();

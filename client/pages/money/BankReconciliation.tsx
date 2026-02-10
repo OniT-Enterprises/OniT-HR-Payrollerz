@@ -240,7 +240,7 @@ export default function BankReconciliation() {
 
       setMatchDialogOpen(false);
       loadData();
-    } catch (error) {
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         description: t('money.bankRecon.matchError') || 'Failed to match transaction',
@@ -256,7 +256,7 @@ export default function BankReconciliation() {
         title: t('money.bankRecon.unmatched') || 'Unmatched',
       });
       loadData();
-    } catch (error) {
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         variant: 'destructive',
@@ -271,7 +271,7 @@ export default function BankReconciliation() {
         title: t('money.bankRecon.deleted') || 'Deleted',
       });
       loadData();
-    } catch (error) {
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         variant: 'destructive',
@@ -290,7 +290,7 @@ export default function BankReconciliation() {
       });
       setSelectedIds(new Set());
       loadData();
-    } catch (error) {
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         variant: 'destructive',

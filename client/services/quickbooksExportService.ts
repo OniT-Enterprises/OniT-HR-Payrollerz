@@ -149,7 +149,7 @@ function aggregatePayrollTotals(
 function buildJournalLines(
   totals: PayrollTotals,
   mappings: QBAccountMapping[],
-  includeEmployeeDetail: boolean = false
+  _includeEmployeeDetail: boolean = false
 ): QBJournalLine[] {
   const lines: QBJournalLine[] = [];
 
@@ -437,7 +437,7 @@ export function generateIIF(journalEntry: QBJournalEntry): string {
 // SETTINGS MANAGEMENT
 // ============================================
 
-const SETTINGS_DOC_ID = 'quickbooks_export_settings';
+const _SETTINGS_DOC_ID = 'quickbooks_export_settings';
 
 /**
  * Get QuickBooks export settings
@@ -609,7 +609,7 @@ export async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Pro
 /**
  * Get export history for a payroll run
  */
-export async function getExportHistory(payrollRunId?: string, maxResults: number = 20): Promise<QBExportLog[]> {
+export async function getExportHistory(payrollRunId?: string, _maxResults: number = 20): Promise<QBExportLog[]> {
   console.warn('getExportHistory() called without tenantId; returning empty list.');
   return [];
 }

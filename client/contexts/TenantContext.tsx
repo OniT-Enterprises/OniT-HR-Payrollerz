@@ -502,7 +502,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
               setLoading(false);
               return;
             }
-          } catch (error) {
+          } catch {
             // Clear invalid impersonation data
             sessionStorage.removeItem("impersonatingTenantId");
             sessionStorage.removeItem("impersonatingTenantName");

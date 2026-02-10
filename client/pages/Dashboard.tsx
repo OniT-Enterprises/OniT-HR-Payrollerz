@@ -161,7 +161,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { session } = useTenant();
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [pendingLeave, setPendingLeave] = useState(0);

@@ -151,7 +151,7 @@ describe('Integration Tests', () => {
     
     // Employee worked 44 hours, gets 8 hours paid leave
     const expectedRegularHours = timesheet.regularHours + (leaveIsPaid ? 8 : 0);
-    const expectedOvertimeHours = timesheet.overtimeHours;
+    const _expectedOvertimeHours = timesheet.overtimeHours;
     
     expect(timesheet.regularHours).toBe(44);
     expect(timesheet.overtimeHours).toBe(0);
