@@ -335,7 +335,7 @@ export default function ATTLMonthlyWIT() {
     }
   };
 
-  const handleExportOfficialForm = () => {
+  const handleExportOfficialForm = async () => {
     if (!selectedReturn) return;
 
     if (!company.tinNumber) {
@@ -348,7 +348,7 @@ export default function ATTLMonthlyWIT() {
     }
 
     try {
-      downloadATTLExcel(
+      await downloadATTLExcel(
         selectedReturn,
         company || undefined,
         `ATTL_Monthly_Tax_${selectedReturn.reportingPeriod}.xlsx`

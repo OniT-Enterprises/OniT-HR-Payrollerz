@@ -61,6 +61,13 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     ytdStateTax: 'YTD State Tax',
     ytdSocialSecurity: 'YTD Social Security',
     ytdMedicare: 'YTD Medicare',
+    employerContributions: 'Employer Contributions',
+    employerINSS: 'INSS Employer (6%)',
+    totalEmployerCost: 'Total Employer Cost',
+    employerNote: 'The following contributions are paid by the employer and are not deducted from your pay.',
+    subsidioAnualAccrual: '13th Month Accrual',
+    subsidioAnualNote: 'Monthly accrual towards your Subsidio Anual (13th month salary), paid annually.',
+    perMonth: '/month',
     footer: 'This is a computer-generated document. No signature is required.',
     footerContact: 'For questions about your pay, please contact HR at',
   },
@@ -103,6 +110,13 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     ytdStateTax: 'Impostu Estadu Tinan Tomak',
     ytdSocialSecurity: 'Seguransa Sosiál Tinan Tomak',
     ytdMedicare: 'Medicare Tinan Tomak',
+    employerContributions: 'Kontribuisaun Empreza',
+    employerINSS: 'INSS Empreza (6%)',
+    totalEmployerCost: 'Kustu Totál Empreza',
+    employerNote: 'Kontribuisaun tuir mai selu husi empreza no la halo dedusaun husi ita-nia saláriu.',
+    subsidioAnualAccrual: 'Akumulasaun Fulan-13',
+    subsidioAnualNote: 'Akumulasaun mensal ba ita-nia Subsídiu Anuál (saláriu fulan-13), selu tinan-tinan.',
+    perMonth: '/fulan',
     footer: 'Dokumentu ne\'e halo husi komputador. La presiza asinatura.',
     footerContact: 'Se iha dúvida kona-ba ita-nia pagamentu, kontaktu RH iha',
   },
@@ -247,6 +261,58 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  employerSection: {
+    marginTop: 12,
+    padding: 10,
+    backgroundColor: '#fef3c7',
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+  },
+  employerSectionTitle: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#92400e',
+    marginBottom: 4,
+  },
+  employerNote: {
+    fontSize: 7,
+    color: '#a16207',
+    marginBottom: 6,
+    fontStyle: 'italic',
+  },
+  employerRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 2,
+  },
+  employerLabel: {
+    fontSize: 8,
+    color: '#78350f',
+  },
+  employerValue: {
+    fontSize: 8,
+    fontWeight: 'bold',
+    color: '#78350f',
+  },
+  employerTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 4,
+    marginTop: 4,
+    borderTopWidth: 1,
+    borderTopColor: '#fcd34d',
+  },
+  employerTotalLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#78350f',
+  },
+  employerTotalValue: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#78350f',
   },
   ytdSection: {
     marginTop: 15,
@@ -590,6 +656,44 @@ export const PayslipDocument = ({
             <Text style={styles.summaryValue}>{formatCurrency(record.netPay)}</Text>
           </View>
         </View>
+
+        {/* Employer Contributions (informational — not deducted from employee) */}
+        {(record.employerContributions?.length > 0 || record.employerTaxes?.length > 0) && (
+          <View style={styles.employerSection}>
+            <Text style={styles.employerSectionTitle}>{s.employerContributions}</Text>
+            <Text style={styles.employerNote}>{s.employerNote}</Text>
+            {record.employerTaxes?.map((tax, i) => (
+              <View key={`etax-${i}`} style={styles.employerRow}>
+                <Text style={styles.employerLabel}>{tax.description}</Text>
+                <Text style={styles.employerValue}>{formatCurrency(tax.amount)}</Text>
+              </View>
+            ))}
+            {record.employerContributions?.map((contrib, i) => (
+              <View key={`econtrib-${i}`} style={styles.employerRow}>
+                <Text style={styles.employerLabel}>{contrib.description}</Text>
+                <Text style={styles.employerValue}>{formatCurrency(contrib.amount)}</Text>
+              </View>
+            ))}
+            <View style={styles.employerTotalRow}>
+              <Text style={styles.employerTotalLabel}>{s.totalEmployerCost}</Text>
+              <Text style={styles.employerTotalValue}>{formatCurrency(record.totalEmployerCost)}</Text>
+            </View>
+          </View>
+        )}
+
+        {/* 13th Month Accrual (TL payslips only — informational) */}
+        {isTimorLestePayslip && record.totalGrossPay > 0 && (
+          <View style={styles.employerSection}>
+            <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
+            <Text style={styles.employerNote}>{s.subsidioAnualNote}</Text>
+            <View style={styles.employerRow}>
+              <Text style={styles.employerLabel}>{s.subsidioAnualAccrual}</Text>
+              <Text style={styles.employerValue}>
+                {formatCurrency(+(record.totalGrossPay / 12).toFixed(2))}{s.perMonth}
+              </Text>
+            </View>
+          </View>
+        )}
 
         {/* YTD Section */}
         {showYtd && (

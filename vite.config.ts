@@ -3,7 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   server: {
     host: "::",
     port: 8080,
@@ -41,8 +41,9 @@ export default defineConfig({
     },
   },
   esbuild: {
-    // SEC-4: Drop console.log and console.warn in production builds to prevent PII leaks
-    drop: process.env.NODE_ENV === "production" ? ["console", "debugger"] : [],
+    // SEC-4: Drop console/debugger in production builds to prevent PII leaks
+    // Uses Vite's mode (set by `vite build`) for reliable detection
+    drop: mode === "production" ? ["console", "debugger"] : [],
   },
   plugins: [react()],
   resolve: {
@@ -50,4 +51,4 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./client"),
     },
   },
-});
+}));

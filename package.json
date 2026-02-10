@@ -1,5 +1,6 @@
 {
-  "name": "fusion-starter",
+  "name": "onit-hr-payroll",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "pkg": {
@@ -25,12 +26,13 @@
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
     "@react-pdf/renderer": "^4.3.2",
+    "@sentry/react": "^10.38.0",
     "decimal.js": "^10.6.0",
+    "exceljs": "^4.4.0",
     "firebase": "^11.10.0",
     "papaparse": "^5.5.3",
     "react-helmet-async": "^2.0.5",
     "react-markdown": "^10.1.0",
-    "xlsx": "^0.18.5",
     "zod": "^3.23.8"
   },
   "devDependencies": {

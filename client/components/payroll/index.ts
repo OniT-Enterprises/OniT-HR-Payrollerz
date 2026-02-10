@@ -2,7 +2,8 @@
  * Payroll Components
  */
 
-export { default as PayslipDocument, downloadPayslip, generatePayslipBlob } from './PayslipPDF';
+// PayslipPDF is NOT re-exported here to preserve lazy-loading.
+// Import directly from '@/components/payroll/PayslipPDF' using dynamic import().
 export { PayrollLoadingSkeleton } from './PayrollLoadingSkeleton';
 export { TaxInfoBanner } from './TaxInfoBanner';
 export { PayrollSummaryCards } from './PayrollSummaryCards';

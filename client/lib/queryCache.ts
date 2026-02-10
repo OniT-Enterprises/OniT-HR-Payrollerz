@@ -9,7 +9,8 @@
  * 3. Prevents PII/financial data leakage by secure-by-default design
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react';
 
 const CACHE_KEY = 'onit-query-cache';
 const CACHE_VERSION = 4; // Bumped: v3 allow-list, v4 switched to sessionStorage
@@ -140,6 +141,18 @@ export function getCachedData<T>(queryKey: string): T | undefined {
  */
 export function createOptimizedQueryClient(): QueryClient {
   return new QueryClient({
+    queryCache: new QueryCache({
+      onError: (error, query) => {
+        Sentry.captureException(error, {
+          tags: { queryKey: JSON.stringify(query.queryKey) },
+        });
+      },
+    }),
+    mutationCache: new MutationCache({
+      onError: (error) => {
+        Sentry.captureException(error);
+      },
+    }),
     defaultOptions: {
       queries: {
         // Data stays fresh for 5 minutes - no refetch in that window

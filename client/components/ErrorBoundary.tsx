@@ -1,4 +1,5 @@
 import React from 'react';
+import * as Sentry from '@sentry/react';
 import { AlertTriangle, RefreshCw, BarChart3, FileSpreadsheet, Table } from 'lucide-react';
 
 interface ErrorBoundaryState {
@@ -26,6 +27,11 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log the error details
     console.error('ErrorBoundary caught an error:', error, errorInfo);
+
+    // Report to Sentry
+    Sentry.captureException(error, {
+      contexts: { react: { componentStack: errorInfo.componentStack } },
+    });
 
     // Call optional error handler
     this.props.onError?.(error, errorInfo);

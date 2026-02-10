@@ -20,7 +20,7 @@ import { Link } from "react-router-dom";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 
-export type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss";
+export type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss" | "contract";
 export type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
 
 export interface DocumentAlert {
@@ -42,6 +42,7 @@ const DOCUMENT_LABELS: Record<DocumentType, string> = {
   residence_permit: "Residence Permit",
   electoral: "Electoral Card",
   inss: "INSS Card",
+  contract: "Employment Contract",
 };
 
 const SEVERITY_CONFIG: Record<AlertSeverity, { label: string; className: string; icon: React.ReactNode }> = {
@@ -221,6 +222,23 @@ function extractAlerts(employees: Employee[]): DocumentAlert[] {
           documentType: "electoral",
           documentLabel: DOCUMENT_LABELS.electoral,
           expiryDate: employee.documents.electoralCard.expiryDate,
+          daysUntilExpiry: days,
+          severity,
+        });
+      }
+    }
+
+    // Check fixed-term contract end date (90 day window for renewal planning)
+    if (employee.jobDetails?.contractEndDate) {
+      const { days, severity } = calculateExpiryInfo(employee.jobDetails.contractEndDate);
+      if (days <= 90) {
+        alerts.push({
+          id: `${employee.id}-contract`,
+          employeeId: employee.id || "",
+          employeeName,
+          documentType: "contract",
+          documentLabel: DOCUMENT_LABELS.contract,
+          expiryDate: employee.jobDetails.contractEndDate,
           daysUntilExpiry: days,
           severity,
         });

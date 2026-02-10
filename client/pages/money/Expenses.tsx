@@ -203,8 +203,10 @@ export default function Expenses() {
     setExistingReceiptUrl(null);
   };
 
+  const [saving, setSaving] = useState(false);
+
   const handleSubmit = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || saving) return;
     if (!formData.description.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -223,6 +225,7 @@ export default function Expenses() {
       return;
     }
 
+    setSaving(true);
     try {
       let receiptUrl = existingReceiptUrl || undefined;
 
@@ -274,6 +277,8 @@ export default function Expenses() {
         description: t('money.expenses.saveError') || 'Failed to save expense',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -797,11 +802,11 @@ export default function Expenses() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)} disabled={uploadingReceipt}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700" disabled={uploadingReceipt}>
-              {uploadingReceipt ? (
+            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700" disabled={uploadingReceipt || saving}>
+              {uploadingReceipt || saving ? (
                 <>
                   <span className="animate-spin mr-2">⏳</span>
-                  {t('money.expenses.uploading') || 'Uploading...'}
+                  {uploadingReceipt ? (t('money.expenses.uploading') || 'Uploading...') : (t('common.saving') || 'Saving...')}
                 </>
               ) : editingExpense ? (
                 t('common.save') || 'Save'

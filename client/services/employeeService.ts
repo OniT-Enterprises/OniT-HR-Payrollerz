@@ -57,6 +57,7 @@ export interface Employee {
     position: string;
     hireDate: string;
     employmentType: string;
+    contractEndDate?: string;  // For fixed-term contracts (YYYY-MM-DD)
     workLocation: string;
     manager: string;
     // TL-specific: SEFOPE registration for labor ministry compliance

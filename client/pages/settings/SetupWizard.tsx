@@ -545,14 +545,26 @@ export default function SetupWizard() {
 
         {/* Navigation */}
         <div className="flex justify-between mt-6">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={currentStep === 0 || saving}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={handleBack}
+              disabled={currentStep === 0 || saving}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <Button
+              variant="ghost"
+              className="text-muted-foreground"
+              onClick={() => {
+                sessionStorage.setItem("setup-dismissed", "1");
+                navigate("/dashboard");
+              }}
+            >
+              I'll do this later
+            </Button>
+          </div>
           <Button
             onClick={handleNext}
             disabled={saving}

@@ -43,6 +43,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
@@ -200,6 +201,7 @@ const getPayPeriodsInPayMonth = (
 export default function RunPayroll() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useI18n();
   const { user } = useAuth();
   const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
@@ -834,8 +836,8 @@ export default function RunPayroll() {
       );
 
       toast({
-        title: "Payroll Submitted",
-        description: `Payroll for ${includedData.length} employees submitted for approval.`,
+        title: t("runPayroll.toastSubmittedTitle"),
+        description: t("runPayroll.toastSubmittedDesc", { count: String(includedData.length) }),
       });
 
       setShowFinalConfirmDialog(false);
@@ -846,8 +848,8 @@ export default function RunPayroll() {
     } catch (error) {
       console.error("Failed to process payroll:", error);
       toast({
-        title: "Error",
-        description: "Failed to process payroll. Please try again.",
+        title: t("runPayroll.toastErrorTitle"),
+        description: t("runPayroll.toastErrorDesc"),
         variant: "destructive",
       });
     } finally {
@@ -1380,10 +1382,10 @@ export default function RunPayroll() {
               <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                 <CheckCircle className="h-4 w-4 text-green-600" />
               </div>
-              Review Payroll
+              {t("runPayroll.reviewTitle")}
             </DialogTitle>
             <DialogDescription>
-              Review the payroll summary before processing.
+              {t("runPayroll.reviewDescription")}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
@@ -1391,32 +1393,32 @@ export default function RunPayroll() {
             <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800 dark:text-green-200">Pay Period</span>
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">{t("runPayroll.payPeriod")}</span>
               </div>
               <p className="font-semibold text-lg">
                 {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : "Not set"}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                Pay date: {payDate ? formatPayDate(payDate) : "Not set"}
+                {t("runPayroll.payDateLabel")} {payDate ? formatPayDate(payDate) : "Not set"}
               </p>
             </div>
 
             {/* Summary */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Employees</p>
+                <p className="text-xs text-muted-foreground">{t("runPayroll.employees")}</p>
                 <p className="text-lg font-bold tracking-tight">{employees.length}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Total Gross</p>
+                <p className="text-xs text-muted-foreground">{t("runPayroll.totalGross")}</p>
                 <p className="text-lg font-bold tracking-tight">{formatCurrencyTL(totals.grossPay)}</p>
               </div>
               <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
-                <p className="text-xs text-muted-foreground">Total Deductions</p>
+                <p className="text-xs text-muted-foreground">{t("runPayroll.totalDeductions")}</p>
                 <p className="text-lg font-bold tracking-tight text-red-600">{formatCurrencyTL(totals.totalDeductions)}</p>
               </div>
               <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
-                <p className="text-xs text-muted-foreground">Net to Employees</p>
+                <p className="text-xs text-muted-foreground">{t("runPayroll.netToEmployees")}</p>
                 <p className="text-lg font-bold tracking-tight text-emerald-600">{formatCurrencyTL(totals.netPay)}</p>
               </div>
             </div>
@@ -1425,8 +1427,8 @@ export default function RunPayroll() {
             <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10 border border-amber-500/10">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Total Employer Cost</p>
-                  <p className="text-[10px] text-muted-foreground/60">Gross + INSS Employer (6%)</p>
+                  <p className="text-xs text-muted-foreground">{t("runPayroll.totalEmployerCost")}</p>
+                  <p className="text-[10px] text-muted-foreground/60">{t("runPayroll.employerCostHint")}</p>
                 </div>
                 <p className="text-lg font-bold tracking-tight text-amber-600">{formatCurrencyTL(totals.totalEmployerCost)}</p>
               </div>
@@ -1436,14 +1438,14 @@ export default function RunPayroll() {
               <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                 <Pencil className="h-4 w-4 text-amber-600" />
                 <span className="text-sm text-amber-700 dark:text-amber-300">
-                  {editedCount} employee{editedCount > 1 ? "s" : ""} have been manually adjusted
+                  {t("runPayroll.manuallyAdjusted", { count: String(editedCount) })}
                 </span>
               </div>
             )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
-              Back to Edit
+              {t("runPayroll.backToEdit")}
             </Button>
             <Button
               onClick={() => {
@@ -1452,7 +1454,7 @@ export default function RunPayroll() {
               }}
               className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
             >
-              Continue to Confirm
+              {t("runPayroll.continueToConfirm")}
               <ChevronDown className="h-4 w-4 ml-2 rotate-[-90deg]" />
             </Button>
           </DialogFooter>
@@ -1469,22 +1471,22 @@ export default function RunPayroll() {
               <div className="p-1.5 rounded-lg bg-amber-500/10">
                 <AlertCircle className="h-4 w-4 text-amber-600" />
               </div>
-              <span className="text-amber-700 dark:text-amber-400">Submit Payroll for Approval</span>
+              <span className="text-amber-700 dark:text-amber-400">{t("runPayroll.submitForApprovalTitle")}</span>
             </DialogTitle>
           </DialogHeader>
           <div className="py-4 space-y-4">
             {/* Warning banner */}
             <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border-2 border-amber-300 dark:border-amber-700">
               <p className="font-semibold text-amber-800 dark:text-amber-200 mb-3">
-                You are about to submit payroll for {employees.length} employees for approval
+                {t("runPayroll.aboutToSubmit", { count: String(employees.length) })}
               </p>
               <div className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
                 <div className="flex justify-between">
-                  <span>Pay date:</span>
+                  <span>{t("runPayroll.payDateLabel")}</span>
                   <span className="font-medium">{payDate ? formatPayDate(payDate) : "Not set"}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Total net pay:</span>
+                  <span>{t("runPayroll.totalNetPay")}</span>
                   <span className="font-medium">{formatCurrencyTL(totals.netPay)}</span>
                 </div>
               </div>
@@ -1493,20 +1495,20 @@ export default function RunPayroll() {
             {/* Consequences */}
             <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
               <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">
-                This action will:
+                {t("runPayroll.thisActionWill")}
               </p>
               <ul className="space-y-1.5 text-sm text-amber-700 dark:text-amber-300">
                 <li className="flex items-start gap-2">
                   <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  Submit payroll for second-person review
+                  {t("runPayroll.submitForReview")}
                 </li>
                 <li className="flex items-start gap-2">
                   <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  A different admin must approve before processing
+                  {t("runPayroll.differentAdminApprove")}
                 </li>
                 <li className="flex items-start gap-2">
                   <Calculator className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  Journal entries created upon approval
+                  {t("runPayroll.journalEntriesCreated")}
                 </li>
               </ul>
             </div>
@@ -1519,7 +1521,7 @@ export default function RunPayroll() {
                 setShowApproveDialog(true);
               }}
             >
-              Back
+              {t("runPayroll.back")}
             </Button>
             <Button
               onClick={handleProcessPayroll}
@@ -1529,12 +1531,12 @@ export default function RunPayroll() {
               {processing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Submitting...
+                  {t("runPayroll.submitting")}
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Submit for Approval
+                  {t("runPayroll.submitForApproval")}
                 </>
               )}
             </Button>

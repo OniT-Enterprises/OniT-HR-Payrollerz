@@ -105,6 +105,7 @@ const DepartmentReports = lazy(() => import("@/pages/reports/DepartmentReports")
 const SetupReports = lazy(() => import("@/pages/reports/SetupReports"));
 const ATTLMonthlyWIT = lazy(() => import("@/pages/reports/ATTLMonthlyWIT"));
 const INSSMonthly = lazy(() => import("@/pages/reports/INSSMonthly"));
+const INSSAnnual = lazy(() => import("@/pages/reports/INSSAnnual"));
 
 // Settings
 const SetupWizard = lazy(() => import("@/pages/settings/SetupWizard"));
@@ -254,6 +255,7 @@ export const reportsRoutes = (
     {/* Tax Filings (ATTL) */}
     <Route path="/reports/attl-monthly-wit" element={<ATTLMonthlyWIT />} />
     <Route path="/reports/inss-monthly" element={<INSSMonthly />} />
+    <Route path="/reports/inss-annual" element={<INSSAnnual />} />
   </>
 );
 

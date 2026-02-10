@@ -7,7 +7,7 @@
  * Based on: https://attl.gov.tl/wp-content/uploads/2021/03/Form_Pay_eng.xlsx
  */
 
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 import type { MonthlyWITReturn } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 
@@ -55,21 +55,6 @@ interface ATTLFormData {
 // CONSTANTS
 // ============================================
 
-const MONTH_NAMES: Record<string, string> = {
-  "01": "January",
-  "02": "February",
-  "03": "March",
-  "04": "April",
-  "05": "May",
-  "06": "June",
-  "07": "July",
-  "08": "August",
-  "09": "September",
-  "10": "October",
-  "11": "November",
-  "12": "December",
-};
-
 // Official BNU account numbers for payment
 const BNU_ACCOUNTS = {
   wagesIncomeTax: "286442.10.001",
@@ -85,11 +70,11 @@ const BNU_ACCOUNTS = {
 /**
  * Generate ATTL Consolidated Monthly Taxes Form as Excel
  */
-export function generateATTLExcel(
+export async function generateATTLExcel(
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,
   additionalData?: Partial<ATTLFormData>
-): Blob {
+): Promise<Blob> {
   // Parse period
   const [year, month] = witReturn.reportingPeriod.split("-");
 
@@ -109,19 +94,17 @@ export function generateATTLExcel(
   };
 
   // Create workbook
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
 
   // Create main form sheet
-  const formSheet = createFormSheet(formData);
-  XLSX.utils.book_append_sheet(wb, formSheet, "Monthly Tax Form");
+  createFormSheet(wb, formData);
 
   // Create employee detail sheet (supplementary)
-  const detailSheet = createEmployeeDetailSheet(witReturn);
-  XLSX.utils.book_append_sheet(wb, detailSheet, "Employee Details");
+  createEmployeeDetailSheet(wb, witReturn);
 
   // Generate binary
-  const wbOut = XLSX.write(wb, { bookType: "xlsx", type: "array" });
-  return new Blob([wbOut], {
+  const buffer = await wb.xlsx.writeBuffer();
+  return new Blob([buffer], {
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
 }
@@ -129,39 +112,47 @@ export function generateATTLExcel(
 /**
  * Create the main ATTL form sheet
  */
-function createFormSheet(data: ATTLFormData): XLSX.WorkSheet {
-  // Build the form as an array of arrays (rows)
-  const rows: (string | number | null)[][] = [];
+function createFormSheet(wb: ExcelJS.Workbook, data: ATTLFormData): void {
+  const ws = wb.addWorksheet("Monthly Tax Form");
+
+  // Set column widths
+  ws.columns = [
+    { width: 12 }, // A - Line numbers
+    { width: 45 }, // B - Descriptions
+    { width: 15 }, // C - Amounts/Payments
+    { width: 10 }, // D - Rates
+    { width: 15 }, // E - Tax amounts
+  ];
 
   // === HEADER ===
-  rows.push(["CONSOLIDATED MONTHLY TAXES FORM"]);
-  rows.push(["REPÚBLICA DEMOCRÁTICA DE TIMOR-LESTE"]);
-  rows.push(["MINISTÉRIO DAS FINANÇAS"]);
-  rows.push(["AUTORIDADE TRIBUTÁRIA DE TIMOR-LESTE"]);
-  rows.push([]);
+  ws.addRow(["CONSOLIDATED MONTHLY TAXES FORM"]);
+  ws.addRow(["REPÚBLICA DEMOCRÁTICA DE TIMOR-LESTE"]);
+  ws.addRow(["MINISTÉRIO DAS FINANÇAS"]);
+  ws.addRow(["AUTORIDADE TRIBUTÁRIA DE TIMOR-LESTE"]);
+  ws.addRow([]);
 
   // Period info
-  rows.push(["Month:", data.month, "Year:", data.year]);
-  rows.push(["TIN:", data.tin]);
-  rows.push(["Taxpayer Name:", data.taxpayerName]);
+  ws.addRow(["Month:", data.month, "Year:", data.year]);
+  ws.addRow(["TIN:", data.tin]);
+  ws.addRow(["Taxpayer Name:", data.taxpayerName]);
   if (data.establishmentName) {
-    rows.push(["Establishment Name:", data.establishmentName]);
+    ws.addRow(["Establishment Name:", data.establishmentName]);
   }
-  rows.push([]);
+  ws.addRow([]);
 
   // === SECTION 1: WAGE INCOME TAX ===
-  rows.push(["SECTION 1: WAGE INCOME TAX"]);
-  rows.push([]);
-  rows.push(["Line", "Description", "Amount (USD)"]);
-  rows.push([5, "Total gross wages paid during the month", data.totalGrossWages]);
-  rows.push([]);
-  rows.push([10, "Total Wages Income Tax (withheld during the month)", data.totalWITWithheld]);
-  rows.push([]);
+  ws.addRow(["SECTION 1: WAGE INCOME TAX"]);
+  ws.addRow([]);
+  ws.addRow(["Line", "Description", "Amount (USD)"]);
+  ws.addRow([5, "Total gross wages paid during the month", data.totalGrossWages]);
+  ws.addRow([]);
+  ws.addRow([10, "Total Wages Income Tax (withheld during the month)", data.totalWITWithheld]);
+  ws.addRow([]);
 
   // === SECTION 2: WITHHOLDING TAX ===
-  rows.push(["SECTION 2: WITHHOLDING TAX"]);
-  rows.push([]);
-  rows.push(["Line", "Payment Type", "Gross Payment", "Tax Rate", "Tax Withheld"]);
+  ws.addRow(["SECTION 2: WITHHOLDING TAX"]);
+  ws.addRow([]);
+  ws.addRow(["Line", "Payment Type", "Gross Payment", "Tax Rate", "Tax Withheld"]);
 
   const withholdingItems = [
     { line: "45/50", type: "Prizes and Lotteries", rate: "10%", data: data.prizesLotteries },
@@ -179,16 +170,16 @@ function createFormSheet(data: ATTLFormData): XLSX.WorkSheet {
     const payment = item.data?.payment || 0;
     const tax = item.data?.tax || 0;
     totalWithholdingTax += tax;
-    rows.push([item.line, item.type, payment || "", item.rate, tax || ""]);
+    ws.addRow([item.line, item.type, payment || "", item.rate, tax || ""]);
   }
 
-  rows.push([130, "TOTAL WITHHOLDING TAX", "", "", totalWithholdingTax || ""]);
-  rows.push([]);
+  ws.addRow([130, "TOTAL WITHHOLDING TAX", "", "", totalWithholdingTax || ""]);
+  ws.addRow([]);
 
   // === SECTION 3: SERVICES TAX ===
-  rows.push(["SECTION 3: SERVICES TAX"]);
-  rows.push([]);
-  rows.push(["Line", "Service Type", "Total Sales", "Rate", "Tax"]);
+  ws.addRow(["SECTION 3: SERVICES TAX"]);
+  ws.addRow([]);
+  ws.addRow(["Line", "Service Type", "Total Sales", "Rate", "Tax"]);
 
   const hotelSales = data.hotelServices || 0;
   const restaurantSales = data.restaurantBarServices || 0;
@@ -196,72 +187,70 @@ function createFormSheet(data: ATTLFormData): XLSX.WorkSheet {
   const totalServiceSales = hotelSales + restaurantSales + telecomSales;
   const servicesTaxPayable = Math.round(totalServiceSales * 0.05);
 
-  rows.push([15, "Hotel services", hotelSales || "", "5%", hotelSales ? Math.round(hotelSales * 0.05) : ""]);
-  rows.push([20, "Restaurant and bar services", restaurantSales || "", "5%", restaurantSales ? Math.round(restaurantSales * 0.05) : ""]);
-  rows.push([30, "Telecommunications services", telecomSales || "", "5%", telecomSales ? Math.round(telecomSales * 0.05) : ""]);
-  rows.push([35, "Total Sales (before tax)", totalServiceSales || ""]);
-  rows.push([40, "Services Tax Payable", "", "", servicesTaxPayable || ""]);
-  rows.push([]);
+  ws.addRow([15, "Hotel services", hotelSales || "", "5%", hotelSales ? Math.round(hotelSales * 0.05) : ""]);
+  ws.addRow([20, "Restaurant and bar services", restaurantSales || "", "5%", restaurantSales ? Math.round(restaurantSales * 0.05) : ""]);
+  ws.addRow([30, "Telecommunications services", telecomSales || "", "5%", telecomSales ? Math.round(telecomSales * 0.05) : ""]);
+  ws.addRow([35, "Total Sales (before tax)", totalServiceSales || ""]);
+  ws.addRow([40, "Services Tax Payable", "", "", servicesTaxPayable || ""]);
+  ws.addRow([]);
 
   // === SECTION 4: ANNUAL INCOME TAX INSTALLMENT ===
-  rows.push(["SECTION 4: ANNUAL INCOME TAX INSTALLMENT"]);
-  rows.push([]);
-  rows.push([20, "Installment Amount (0.5% of turnover)", data.annualTaxInstallment || ""]);
-  rows.push([]);
+  ws.addRow(["SECTION 4: ANNUAL INCOME TAX INSTALLMENT"]);
+  ws.addRow([]);
+  ws.addRow([20, "Installment Amount (0.5% of turnover)", data.annualTaxInstallment || ""]);
+  ws.addRow([]);
 
   // === SECTION 5: PAYMENT ADVICE ===
-  rows.push(["SECTION 5: PAYMENT ADVICE"]);
-  rows.push([]);
-  rows.push(["Tax Type", "Amount", "BNU Account"]);
-  rows.push(["Wages Income Tax (Line 10)", data.totalWITWithheld, BNU_ACCOUNTS.wagesIncomeTax]);
-  rows.push(["Withholding Tax (Line 130)", totalWithholdingTax || "", BNU_ACCOUNTS.withholdingTax]);
-  rows.push(["Services Tax (Line 40)", servicesTaxPayable || "", BNU_ACCOUNTS.servicesTax]);
-  rows.push(["Income Tax Installment (Line 20)", data.annualTaxInstallment || "", BNU_ACCOUNTS.incomeTaxInstallment]);
+  ws.addRow(["SECTION 5: PAYMENT ADVICE"]);
+  ws.addRow([]);
+  ws.addRow(["Tax Type", "Amount", "BNU Account"]);
+  ws.addRow(["Wages Income Tax (Line 10)", data.totalWITWithheld, BNU_ACCOUNTS.wagesIncomeTax]);
+  ws.addRow(["Withholding Tax (Line 130)", totalWithholdingTax || "", BNU_ACCOUNTS.withholdingTax]);
+  ws.addRow(["Services Tax (Line 40)", servicesTaxPayable || "", BNU_ACCOUNTS.servicesTax]);
+  ws.addRow(["Income Tax Installment (Line 20)", data.annualTaxInstallment || "", BNU_ACCOUNTS.incomeTaxInstallment]);
 
   const totalPayment = (data.totalWITWithheld || 0) + totalWithholdingTax + servicesTaxPayable + (data.annualTaxInstallment || 0);
-  rows.push(["TOTAL TO PAY", totalPayment, ""]);
-  rows.push([]);
+  ws.addRow(["TOTAL TO PAY", totalPayment, ""]);
+  ws.addRow([]);
 
   // === SECTION 6: DECLARATION ===
-  rows.push(["SECTION 6: DECLARATION"]);
-  rows.push([]);
-  rows.push(["I declare that the information provided is true and complete."]);
-  rows.push([]);
-  rows.push(["Full Name:", data.declarantName || ""]);
-  rows.push(["Date:", data.declarationDate || ""]);
-  rows.push(["Telephone:", data.declarantPhone || ""]);
-  rows.push(["Signature:", "____________________"]);
-
-  // Convert to worksheet
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
-  // Set column widths
-  ws["!cols"] = [
-    { wch: 12 }, // A - Line numbers
-    { wch: 45 }, // B - Descriptions
-    { wch: 15 }, // C - Amounts/Payments
-    { wch: 10 }, // D - Rates
-    { wch: 15 }, // E - Tax amounts
-  ];
-
-  return ws;
+  ws.addRow(["SECTION 6: DECLARATION"]);
+  ws.addRow([]);
+  ws.addRow(["I declare that the information provided is true and complete."]);
+  ws.addRow([]);
+  ws.addRow(["Full Name:", data.declarantName || ""]);
+  ws.addRow(["Date:", data.declarationDate || ""]);
+  ws.addRow(["Telephone:", data.declarantPhone || ""]);
+  ws.addRow(["Signature:", "____________________"]);
 }
 
 /**
  * Create supplementary employee detail sheet
  */
-function createEmployeeDetailSheet(witReturn: MonthlyWITReturn): XLSX.WorkSheet {
-  const rows: (string | number | null)[][] = [];
+function createEmployeeDetailSheet(wb: ExcelJS.Workbook, witReturn: MonthlyWITReturn): void {
+  const ws = wb.addWorksheet("Employee Details");
+
+  // Set column widths
+  ws.columns = [
+    { width: 15 }, // Employee ID
+    { width: 25 }, // Full Name
+    { width: 15 }, // TIN
+    { width: 10 }, // Resident
+    { width: 18 }, // Gross Wages
+    { width: 18 }, // Taxable Wages
+    { width: 18 }, // WIT Withheld
+    { width: 12 }, // Effective Rate
+  ];
 
   // Header
-  rows.push(["EMPLOYEE WAGE INCOME TAX DETAILS"]);
-  rows.push([`Period: ${witReturn.reportingPeriod}`]);
-  rows.push([`Employer: ${witReturn.employerName}`]);
-  rows.push([`TIN: ${witReturn.employerTIN}`]);
-  rows.push([]);
+  ws.addRow(["EMPLOYEE WAGE INCOME TAX DETAILS"]);
+  ws.addRow([`Period: ${witReturn.reportingPeriod}`]);
+  ws.addRow([`Employer: ${witReturn.employerName}`]);
+  ws.addRow([`TIN: ${witReturn.employerTIN}`]);
+  ws.addRow([]);
 
   // Column headers
-  rows.push([
+  ws.addRow([
     "Employee ID",
     "Full Name",
     "TIN",
@@ -278,7 +267,7 @@ function createEmployeeDetailSheet(witReturn: MonthlyWITReturn): XLSX.WorkSheet 
       ? ((emp.witWithheld / emp.taxableWages) * 100).toFixed(1) + "%"
       : "0%";
 
-    rows.push([
+    ws.addRow([
       emp.employeeId,
       emp.fullName,
       emp.tinNumber || "",
@@ -291,8 +280,8 @@ function createEmployeeDetailSheet(witReturn: MonthlyWITReturn): XLSX.WorkSheet 
   }
 
   // Totals row
-  rows.push([]);
-  rows.push([
+  ws.addRow([]);
+  ws.addRow([
     "",
     "TOTAL",
     "",
@@ -304,28 +293,11 @@ function createEmployeeDetailSheet(witReturn: MonthlyWITReturn): XLSX.WorkSheet 
   ]);
 
   // Summary
-  rows.push([]);
-  rows.push(["Summary:"]);
-  rows.push(["Total Employees:", witReturn.totalEmployees]);
-  rows.push(["Resident Employees:", witReturn.totalResidentEmployees]);
-  rows.push(["Non-Resident Employees:", witReturn.totalNonResidentEmployees]);
-
-  // Convert to worksheet
-  const ws = XLSX.utils.aoa_to_sheet(rows);
-
-  // Set column widths
-  ws["!cols"] = [
-    { wch: 15 }, // Employee ID
-    { wch: 25 }, // Full Name
-    { wch: 15 }, // TIN
-    { wch: 10 }, // Resident
-    { wch: 18 }, // Gross Wages
-    { wch: 18 }, // Taxable Wages
-    { wch: 18 }, // WIT Withheld
-    { wch: 12 }, // Effective Rate
-  ];
-
-  return ws;
+  ws.addRow([]);
+  ws.addRow(["Summary:"]);
+  ws.addRow(["Total Employees:", witReturn.totalEmployees]);
+  ws.addRow(["Resident Employees:", witReturn.totalResidentEmployees]);
+  ws.addRow(["Non-Resident Employees:", witReturn.totalNonResidentEmployees]);
 }
 
 // ============================================
@@ -335,12 +307,12 @@ function createEmployeeDetailSheet(witReturn: MonthlyWITReturn): XLSX.WorkSheet 
 /**
  * Download ATTL form as Excel file
  */
-export function downloadATTLExcel(
+export async function downloadATTLExcel(
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,
   filename?: string
-): void {
-  const blob = generateATTLExcel(witReturn, company);
+): Promise<void> {
+  const blob = await generateATTLExcel(witReturn, company);
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;

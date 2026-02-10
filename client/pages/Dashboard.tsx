@@ -176,10 +176,12 @@ export default function Dashboard() {
   });
 
   // Redirect to setup wizard if setup is incomplete (owner/hr-admin only)
+  // Skipped if user dismissed the wizard this session
   useEffect(() => {
     const checkSetup = async () => {
       const role = session?.role;
       if (role !== "owner" && role !== "hr-admin") return;
+      if (sessionStorage.getItem("setup-dismissed")) return;
       try {
         const progress = await settingsService.getSetupProgress(tenantId);
         if (!progress.isComplete) {
