@@ -496,7 +496,7 @@ class PayrollRecordService {
       if (typeof fromRun === 'number') {
         return fromRun === year;
       }
-      const createdAt = record.createdAt instanceof Date ? record.createdAt : new Date(record.createdAt as any);
+      const createdAt = record.createdAt instanceof Date ? record.createdAt : new Date(String(record.createdAt));
       return createdAt.getFullYear() === year;
     });
 
@@ -823,11 +823,11 @@ class BankTransferService {
   ): Promise<boolean> {
     const updates: Partial<BankTransfer> = {
       status,
-      updatedAt: serverTimestamp() as any,
+      updatedAt: serverTimestamp(),
     };
 
     if (status === 'completed') {
-      updates.completedAt = serverTimestamp() as any;
+      updates.completedAt = serverTimestamp();
     }
 
     if (errorMessage) {

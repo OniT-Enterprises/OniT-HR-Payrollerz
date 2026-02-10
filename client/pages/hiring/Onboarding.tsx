@@ -61,7 +61,7 @@ export default function Onboarding() {
     signed: false,
     signatureDate: "",
   });
-  const [sopStatuses, setSopStatuses] = useState({});
+  const [sopStatuses, setSopStatuses] = useState<Record<number, boolean>>({});
 
   const steps = useMemo(
     () => [
@@ -602,7 +602,7 @@ export default function Onboarding() {
                       >
                         <Checkbox
                           id={policy.id}
-                          checked={acknowledgements[policy.id]}
+                          checked={!!acknowledgements[policy.id as keyof typeof acknowledgements]}
                           onCheckedChange={(checked) =>
                             setAcknowledgements((prev) => ({
                               ...prev,

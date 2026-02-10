@@ -158,7 +158,7 @@ export default function SetupWizard() {
         employmentTypes: ["full_time", "part_time", "contract"],
         payrollFrequencies: ["monthly"],
         payrollPeriods: [],
-      } as any);
+      });
       return true;
     } catch (error) {
       toast({
@@ -181,7 +181,7 @@ export default function SetupWizard() {
         sickLeave: { daysPerYear: 30, requiresCertificate: true, certificateAfterDays: 3 },
         maternityLeave: { weeks: 12, paidWeeks: 12 },
         paternityLeave: { days: 5 },
-      } as any);
+      });
       return true;
     } catch (error) {
       toast({
@@ -208,7 +208,7 @@ export default function SetupWizard() {
         inssEmployeeRate: 0.04,
         inssEmployerRate: 0.06,
         standardWeeklyHours: 44,
-      } as any);
+      });
       return true;
     } catch (error) {
       toast({

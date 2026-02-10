@@ -22,11 +22,12 @@ if (!container) {
   throw new Error("Root element not found");
 }
 
-// Check if root already exists to prevent double creation
-let root = (container as any)._reactRoot;
+// Check if root already exists to prevent double creation (HMR)
+const containerWithRoot = container as HTMLElement & { _reactRoot?: ReturnType<typeof createRoot> };
+let root = containerWithRoot._reactRoot;
 if (!root) {
   root = createRoot(container);
-  (container as any)._reactRoot = root;
+  containerWithRoot._reactRoot = root;
 }
 
 // Render the app

@@ -991,7 +991,7 @@ export default function Goals() {
                     {employees
                       .filter((e) => e.status === "active")
                       .map((emp) => (
-                        <SelectItem key={emp.id} value={emp.id}>
+                        <SelectItem key={emp.id} value={emp.id || ""}>
                           {emp.personalInfo.firstName} {emp.personalInfo.lastName}
                         </SelectItem>
                       ))}
@@ -1187,7 +1187,7 @@ export default function Goals() {
                         {employees
                           .filter((e) => e.status === "active")
                           .map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id}>
+                            <SelectItem key={emp.id} value={emp.id || ""}>
                               {emp.personalInfo.firstName} {emp.personalInfo.lastName}
                             </SelectItem>
                           ))}

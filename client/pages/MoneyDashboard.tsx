@@ -111,7 +111,7 @@ export default function MoneyDashboard() {
   };
 
   // Calculate action items
-  const actionItems = [];
+  const actionItems: { type: string; icon: React.ReactNode; title: string; description: string; action: () => void; priority: string }[] = [];
 
   // Drafts that need sending
   if (stats?.invoicesDraft && stats.invoicesDraft > 0) {

@@ -213,13 +213,13 @@ export default function OrganizationChart() {
           department: t("orgChart.labels.executive"),
           employee: ceo,
         });
-        usedIds.add(ceo.id);
+        usedIds.add(ceo.id!);
       }
 
       // CFO or top financial officer
       const cfo = employeesData.find(
         (emp) =>
-          !usedIds.has(emp.id) &&
+          !usedIds.has(emp.id!) &&
           (emp.jobDetails.position.toLowerCase().includes("cfo") ||
             emp.jobDetails.position.toLowerCase().includes("chief financial") ||
             emp.jobDetails.position.toLowerCase().includes("chief finance")),
@@ -233,13 +233,13 @@ export default function OrganizationChart() {
           department: t("orgChart.labels.executive"),
           employee: cfo,
         });
-        usedIds.add(cfo.id);
+        usedIds.add(cfo.id!);
       }
 
       // COO/CTO or other C-level
       const otherExec = employeesData.find(
         (emp) =>
-          !usedIds.has(emp.id) &&
+          !usedIds.has(emp.id!) &&
           (emp.jobDetails.position.toLowerCase().includes("coo") ||
             emp.jobDetails.position.toLowerCase().includes("cto") ||
             emp.jobDetails.position.toLowerCase().includes("chief operating") ||
@@ -257,7 +257,7 @@ export default function OrganizationChart() {
           department: t("orgChart.labels.executive"),
           employee: otherExec,
         });
-        usedIds.add(otherExec.id);
+        usedIds.add(otherExec.id!);
       }
 
       setExecutives(execChain);
@@ -271,7 +271,7 @@ export default function OrganizationChart() {
         // Find department head
         const head = deptEmployees.find(
           (emp) =>
-            !usedIds.has(emp.id) &&
+            !usedIds.has(emp.id!) &&
             (emp.jobDetails.position.toLowerCase().includes("director") ||
               emp.jobDetails.position.toLowerCase().includes("vp") ||
               emp.jobDetails.position
@@ -285,7 +285,7 @@ export default function OrganizationChart() {
         let headPerson: OrgPerson;
 
         if (head) {
-          usedIds.add(head.id);
+          usedIds.add(head.id!);
           headPerson = {
             id: `head-${head.id}`,
             name: `${head.personalInfo.firstName} ${head.personalInfo.lastName}`,
@@ -311,10 +311,10 @@ export default function OrganizationChart() {
 
         // Find team members (limit to 6 for clean layout)
         const members = deptEmployees
-          .filter((emp) => !usedIds.has(emp.id))
+          .filter((emp) => !usedIds.has(emp.id!))
           .slice(0, 6)
           .map((emp) => {
-            usedIds.add(emp.id);
+            usedIds.add(emp.id!);
             return {
               id: `member-${emp.id}`,
               name: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,

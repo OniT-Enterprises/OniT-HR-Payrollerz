@@ -20,12 +20,12 @@ const localeLabels: Record<Locale, string> = {
 };
 
 const resolvePath = (obj: unknown, path: string): unknown =>
-  path.split(".").reduce((acc, key) => {
+  path.split(".").reduce<unknown>((acc, key) => {
     if (!acc || typeof acc !== "object") {
       return undefined;
     }
     return (acc as Record<string, unknown>)[key];
-  }, obj as Record<string, unknown>);
+  }, obj);
 
 const formatString = (value: string, params?: TranslationParams) => {
   if (!params) {

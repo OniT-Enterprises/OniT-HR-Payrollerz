@@ -226,8 +226,8 @@ export default function AddEmployee() {
           lastName: employee.personalInfo.lastName,
           email: employee.personalInfo.email,
           phone: employee.personalInfo.phone || "",
-          phoneApp: (employee.personalInfo as any).phoneApp || "",
-          appEligible: (employee.personalInfo as any).appEligible || false,
+          phoneApp: employee.personalInfo.phoneApp || "",
+          appEligible: employee.personalInfo.appEligible || false,
           emergencyContactName: employee.personalInfo.emergencyContactName || "",
           emergencyContactPhone: employee.personalInfo.emergencyContactPhone || "",
           department: employee.jobDetails.department,
@@ -235,12 +235,12 @@ export default function AddEmployee() {
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
           employmentType: employee.jobDetails.employmentType as "Full-time" | "Part-time" | "Contractor",
-          sefopeNumber: (employee.jobDetails as any).sefopeNumber || "",
-          sefopeRegistrationDate: (employee.jobDetails as any).sefopeRegistrationDate || "",
+          sefopeNumber: employee.jobDetails.sefopeNumber || "",
+          sefopeRegistrationDate: employee.jobDetails.sefopeRegistrationDate || "",
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
           benefits: (employee.compensation.benefitsPackage || "standard") as "basic" | "standard" | "premium" | "executive",
-          isResident: (employee.compensation as any).isResident ?? true,
+          isResident: employee.compensation.isResident ?? true,
         });
 
         if (employee.documents?.nationality) {
@@ -395,7 +395,7 @@ export default function AddEmployee() {
       };
 
       // Upload files if they exist
-      const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id : fileUploadService.generateTempEmployeeId();
+      const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id! : fileUploadService.generateTempEmployeeId();
 
       if (additionalInfo.workContract) {
         try {
@@ -417,7 +417,7 @@ export default function AddEmployee() {
 
       // Save to Firebase
       if (isEditMode && editingEmployee) {
-        await employeeService.updateEmployee(tenantId, editingEmployee.id, newEmployee);
+        await employeeService.updateEmployee(tenantId, editingEmployee.id!, newEmployee);
         toast({
           title: t("addEmployee.toast.updatedTitle"),
           description: t("addEmployee.toast.updatedDesc", {

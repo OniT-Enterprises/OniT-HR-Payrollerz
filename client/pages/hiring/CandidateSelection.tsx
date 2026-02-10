@@ -201,7 +201,7 @@ export default function CandidateSelection() {
       const cvFile = files[0];
       setUploadedFiles((prev) => ({ ...prev, cv: cvFile }));
       // Trigger AI extraction when CV is uploaded
-      extractInfoFromFiles(cvFile, uploadedFiles.coverLetter);
+      extractInfoFromFiles(cvFile, uploadedFiles.coverLetter ?? undefined);
     }
   };
 
@@ -213,7 +213,7 @@ export default function CandidateSelection() {
       const coverLetterFile = files[0];
       setUploadedFiles((prev) => ({ ...prev, coverLetter: coverLetterFile }));
       // Trigger AI extraction when cover letter is uploaded
-      extractInfoFromFiles(uploadedFiles.cv, coverLetterFile);
+      extractInfoFromFiles(uploadedFiles.cv ?? undefined, coverLetterFile);
     }
   };
 

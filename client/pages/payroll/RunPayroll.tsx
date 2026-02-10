@@ -609,7 +609,7 @@ export default function RunPayroll() {
   // Handle input changes with edit tracking, validation, and inline recalculation
   const handleInputChange = (
     employeeId: string,
-    field: keyof EmployeePayrollData,
+    field: string,
     value: number
   ) => {
     // Reject non-finite values (NaN, Infinity)

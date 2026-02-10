@@ -244,12 +244,12 @@ export default function EmployeeProfileView({
                   <Smartphone className="h-4 w-4 text-purple-600 flex-shrink-0" />
                   <div className="flex-1">
                     <p className="font-medium text-sm">
-                      {(employee.personalInfo as any).phoneApp ||
+                      {employee.personalInfo.phoneApp ||
                         "Not provided"}
                     </p>
                     <div className="text-xs text-muted-foreground flex items-center gap-1">
                       Phone App
-                      {(employee.personalInfo as any).appEligible && (
+                      {employee.personalInfo.appEligible && (
                         <Badge
                           variant="outline"
                           className="text-xs bg-green-50 text-green-700"
@@ -364,7 +364,7 @@ export default function EmployeeProfileView({
                     {formatSalary(
                       employee.compensation.monthlySalary ||
                         Math.round(
-                          (employee.compensation as any).annualSalary / 12,
+                          (employee.compensation.annualSalary ?? 0) / 12,
                         ) ||
                         0,
                     )}

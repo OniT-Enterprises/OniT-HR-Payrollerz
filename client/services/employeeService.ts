@@ -70,6 +70,7 @@ export interface Employee {
   };
   compensation: {
     monthlySalary: number;
+    annualSalary?: number;       // Legacy: some records store annual instead of monthly
     annualLeaveDays: number;
     benefitsPackage: string;
     // TL-specific: Tax residency status affects WIT calculation
@@ -110,6 +111,14 @@ export interface Employee {
       // TL-specific: Work permit type
       permitType?: 'work_visa' | 'temporary_residence' | 'permanent_residence';
     };
+  };
+  // Bank details (optional — used for bank transfers)
+  bankName?: string;
+  bankAccountNumber?: string;
+  bankDetails?: {
+    accountNumber: string;
+    bankName?: string;
+    branch?: string;
   };
   status: "active" | "inactive" | "terminated";
   createdAt?: Date | Timestamp;

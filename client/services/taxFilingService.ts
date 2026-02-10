@@ -484,7 +484,7 @@ class TaxFilingService {
     }> = new Map();
 
     for (const run of yearRuns) {
-      const records = await payrollService.records.getPayrollRecordsByRunId(run.id, tenantId);
+      const records = await payrollService.records.getPayrollRecordsByRunId(run.id!, tenantId);
       const runMonth = parseInt(run.payDate.substring(5, 7));
 
       for (const record of records) {

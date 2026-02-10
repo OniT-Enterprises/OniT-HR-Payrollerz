@@ -434,7 +434,7 @@ class ReviewService {
   async submitSelfAssessment(
     tenantId: string,
     reviewId: string,
-    selfAssessment: Omit<PerformanceReview['selfAssessment'], 'submitted' | 'submittedAt'>
+    selfAssessment: Omit<NonNullable<PerformanceReview['selfAssessment']>, 'submitted' | 'submittedAt'>
   ): Promise<void> {
     await this.updateReview(tenantId, reviewId, {
       selfAssessment: {

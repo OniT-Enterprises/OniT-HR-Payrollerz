@@ -11,7 +11,7 @@ import {
   DollarSign, FileText, Star, Calculator, ClipboardCheck, Copy, Download,
   Wallet, Trash2
 } from "lucide-react";
-import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, writeBatch, deleteDoc } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, writeBatch, deleteDoc, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
 
@@ -1262,14 +1262,15 @@ export default function SeedDatabase() {
         getDocs(collection(db!, `tenants/${tenantId}/employees`)),
       ]);
 
-      const invoices = invoicesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const paymentsReceived = paymentsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const bills = billsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const billPayments = billPaymentsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const expenses = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const customers = customersSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const vendors = vendorsSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
-      const employees = employeesSnap.docs.map(d => ({ id: d.id, ...d.data() })) as any[];
+      type DocWithId = DocumentData & { id: string };
+      const invoices: DocWithId[] = invoicesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const paymentsReceived: DocWithId[] = paymentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const bills: DocWithId[] = billsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const billPayments: DocWithId[] = billPaymentsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const expenses: DocWithId[] = expensesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const customers: DocWithId[] = customersSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const vendors: DocWithId[] = vendorsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      const employees: DocWithId[] = employeesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
 
       let report = '';
       report += '═'.repeat(100) + '\n';

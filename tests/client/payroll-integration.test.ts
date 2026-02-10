@@ -8,11 +8,15 @@ import { describe, expect, it } from "vitest";
 import {
   calculateTLPayroll,
   calculateSubsidioAnual,
+  calculateAbsenceDeduction,
+  calculateLateDeduction,
+  calculateHourlyRate,
+  calculateMonthlyWeeklyPayrolls,
   validateTLPayrollInput,
   type TLPayrollInput,
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
-import { TL_INCOME_TAX, TL_INSS } from "@/lib/payroll/constants-tl";
+import { TL_INCOME_TAX, TL_INSS, TL_WORKING_HOURS } from "@/lib/payroll/constants-tl";
 
 // ============================================================
 // HELPERS
@@ -380,5 +384,263 @@ describe("Integration: Subsidio Anual across multiple employees", () => {
   it("returns 0 for future hire date", () => {
     const futureHire = calculateSubsidioAnual(800, 0, "2026-03-01", asOfDate);
     expect(futureHire).toBe(0);
+  });
+});
+
+// ============================================================
+// TEST SUITE: ABSENCE & LATE ARRIVAL DEDUCTIONS
+// ============================================================
+
+describe("Absence and Late Arrival Deductions", () => {
+  const monthlySalary = 800;
+  const hourlyRate = calculateHourlyRate(monthlySalary);
+
+  // ---- Absence deduction unit tests ----
+
+  it("calculates zero absence deduction for 0 hours", () => {
+    const deduction = calculateAbsenceDeduction(hourlyRate, 0);
+    expect(deduction).toBe(0);
+  });
+
+  it("deducts correctly for a full day absence (8 hours)", () => {
+    const deduction = calculateAbsenceDeduction(hourlyRate, TL_WORKING_HOURS.standardDailyHours);
+    // One day = hourlyRate * 8
+    const expected = hourlyRate * TL_WORKING_HOURS.standardDailyHours;
+    expect(deduction).toBeCloseTo(expected, 1);
+  });
+
+  it("deducts correctly for partial absence (4 hours)", () => {
+    const deduction = calculateAbsenceDeduction(hourlyRate, 4);
+    expect(deduction).toBeCloseTo(hourlyRate * 4, 1);
+  });
+
+  it("deducts correctly for multi-day absence (3 days = 24 hours)", () => {
+    const absenceHours = TL_WORKING_HOURS.standardDailyHours * 3;
+    const deduction = calculateAbsenceDeduction(hourlyRate, absenceHours);
+    expect(deduction).toBeCloseTo(hourlyRate * absenceHours, 1);
+  });
+
+  // ---- Late arrival deduction unit tests ----
+
+  it("calculates zero late deduction for 0 minutes", () => {
+    const deduction = calculateLateDeduction(hourlyRate, 0);
+    expect(deduction).toBe(0);
+  });
+
+  it("rounds up to 15-minute increments by default", () => {
+    // 1 minute late → rounds to 15 minutes
+    const deduction1 = calculateLateDeduction(hourlyRate, 1);
+    const deduction15 = calculateLateDeduction(hourlyRate, 15);
+    expect(deduction1).toBe(deduction15);
+    expect(deduction1).toBeCloseTo(hourlyRate * (15 / 60), 2);
+  });
+
+  it("rounds 16 minutes to 30 minutes", () => {
+    const deduction = calculateLateDeduction(hourlyRate, 16);
+    expect(deduction).toBeCloseTo(hourlyRate * (30 / 60), 2);
+  });
+
+  it("exact 15-minute boundary stays at 15", () => {
+    const deduction = calculateLateDeduction(hourlyRate, 15);
+    expect(deduction).toBeCloseTo(hourlyRate * (15 / 60), 2);
+  });
+
+  it("supports custom rounding (30-minute increments)", () => {
+    // 10 minutes late, round to 30 → charges 30 minutes
+    const deduction = calculateLateDeduction(hourlyRate, 10, 30);
+    expect(deduction).toBeCloseTo(hourlyRate * (30 / 60), 2);
+  });
+
+  it("60-minute late equals 1 full hour", () => {
+    const deduction = calculateLateDeduction(hourlyRate, 60);
+    expect(deduction).toBeCloseTo(hourlyRate, 2);
+  });
+
+  // ---- Integration: absence/late in full payroll ----
+
+  it("absence reduces gross and affects WIT/INSS base", () => {
+    const base = makeEmployee({
+      employeeId: "absence-integration",
+      monthlySalary: 800,
+    });
+    const withAbsence = makeEmployee({
+      employeeId: "absence-integration",
+      monthlySalary: 800,
+      absenceHours: 16, // 2 days absent
+    });
+
+    const baseResult = calculateTLPayroll(base);
+    const absenceResult = calculateTLPayroll(withAbsence);
+
+    // Absence deduction should appear in result
+    expect(absenceResult.absenceDeduction).toBeGreaterThan(0);
+    expect(absenceResult.absenceDeduction).toBeCloseTo(hourlyRate * 16, 1);
+
+    // Net pay should be lower
+    expect(absenceResult.netPay).toBeLessThan(baseResult.netPay);
+
+    // INSS base should be reduced by absence
+    expect(absenceResult.inssBase).toBeLessThan(baseResult.inssBase);
+  });
+
+  it("late arrival reduces net pay and appears as deduction", () => {
+    const base = makeEmployee({
+      employeeId: "late-integration",
+      monthlySalary: 600,
+    });
+    const withLate = makeEmployee({
+      employeeId: "late-integration",
+      monthlySalary: 600,
+      lateArrivalMinutes: 45, // 45 min late (rounds to 45)
+    });
+
+    const baseResult = calculateTLPayroll(base);
+    const lateResult = calculateTLPayroll(withLate);
+
+    // Late deduction should appear
+    expect(lateResult.lateDeduction).toBeGreaterThan(0);
+
+    // Net pay should be lower
+    expect(lateResult.netPay).toBeLessThan(baseResult.netPay);
+
+    // Deduction line item should exist
+    const lateItem = lateResult.deductions.find(d => d.type === "late_arrival");
+    expect(lateItem).toBeDefined();
+    expect(lateItem!.amount).toBeGreaterThan(0);
+    expect(lateItem!.isStatutory).toBe(false);
+  });
+
+  it("combined absence + late arrival deductions accumulate", () => {
+    const emp = makeEmployee({
+      employeeId: "combined-deductions",
+      monthlySalary: 800,
+      absenceHours: 8,         // 1 day absent
+      lateArrivalMinutes: 30,  // 30 min late
+    });
+
+    const result = calculateTLPayroll(emp);
+
+    expect(result.absenceDeduction).toBeGreaterThan(0);
+    expect(result.lateDeduction).toBeGreaterThan(0);
+
+    // Both should appear in deductions array
+    const absenceItem = result.deductions.find(d => d.type === "absence");
+    const lateItem = result.deductions.find(d => d.type === "late_arrival");
+    expect(absenceItem).toBeDefined();
+    expect(lateItem).toBeDefined();
+
+    // Total deductions should include both
+    expect(result.totalDeductions).toBeGreaterThanOrEqual(
+      result.absenceDeduction + result.lateDeduction
+    );
+  });
+});
+
+// ============================================================
+// TEST SUITE: WEEKLY RECONCILIATION (4 weeks ≈ monthly)
+// ============================================================
+
+describe("Weekly Reconciliation: sum of weeks equals monthly salary", () => {
+  it("calculateMonthlyWeeklyPayrolls sums exactly to monthly salary", () => {
+    const monthlySalary = 1000;
+    // Typical month: 4 weeks of 5.5 working days + 1 short week
+    const weeklyDays = [5.5, 5.5, 5.5, 5.5, 1];
+    const breakdown = calculateMonthlyWeeklyPayrolls(monthlySalary, weeklyDays);
+
+    expect(breakdown).toHaveLength(5);
+
+    // Sum of all weeks must EXACTLY equal monthly salary
+    const total = breakdown.reduce((s, w) => s + w.amount, 0);
+    expect(total).toBeCloseTo(monthlySalary, 2);
+
+    // Last week should be reconciled
+    expect(breakdown[breakdown.length - 1].isReconciled).toBe(true);
+
+    // Non-last weeks should not be reconciled
+    for (let i = 0; i < breakdown.length - 1; i++) {
+      expect(breakdown[i].isReconciled).toBe(false);
+    }
+  });
+
+  it("handles even 4-week month (22 working days)", () => {
+    const monthlySalary = 800;
+    const weeklyDays = [5.5, 5.5, 5.5, 5.5]; // 22 days
+    const breakdown = calculateMonthlyWeeklyPayrolls(monthlySalary, weeklyDays);
+
+    const total = breakdown.reduce((s, w) => s + w.amount, 0);
+    expect(total).toBeCloseTo(monthlySalary, 2);
+
+    // All weeks should be equal except last (reconciliation)
+    expect(breakdown[0].amount).toBeCloseTo(breakdown[1].amount, 2);
+    expect(breakdown[0].amount).toBeCloseTo(breakdown[2].amount, 2);
+  });
+
+  it("handles empty weeks array", () => {
+    const breakdown = calculateMonthlyWeeklyPayrolls(1000, []);
+    expect(breakdown).toHaveLength(0);
+  });
+
+  it("handles all-zero working days", () => {
+    const breakdown = calculateMonthlyWeeklyPayrolls(1000, [0, 0, 0, 0]);
+    expect(breakdown).toHaveLength(4);
+    const total = breakdown.reduce((s, w) => s + w.amount, 0);
+    expect(total).toBe(0);
+  });
+
+  it("4 weekly payrolls approximate monthly payroll totals", () => {
+    // Run monthly payroll
+    const monthlyEmp = makeEmployee({
+      employeeId: "reconcile-monthly",
+      monthlySalary: 800,
+      payFrequency: "monthly",
+      regularHours: 190,
+    });
+    const monthlyResult = calculateTLPayroll(monthlyEmp);
+
+    // Run 4 weekly payrolls (splitting the same salary)
+    const weeklyResults = [];
+    for (let w = 1; w <= 4; w++) {
+      const weeklyEmp = makeEmployee({
+        employeeId: "reconcile-weekly",
+        monthlySalary: 800,
+        payFrequency: "weekly",
+        regularHours: 44,
+        periodNumber: w,
+        totalPeriodsInMonth: 4,
+      });
+      weeklyResults.push(calculateTLPayroll(weeklyEmp));
+    }
+
+    // Sum of weekly gross should equal monthly gross
+    const weeklyGrossSum = weeklyResults.reduce((s, r) => s + r.grossPay, 0);
+    expect(weeklyGrossSum).toBeCloseTo(monthlyResult.grossPay, 1);
+
+    // Sum of weekly WIT should equal monthly WIT
+    const weeklyWITSum = weeklyResults.reduce((s, r) => s + r.incomeTax, 0);
+    expect(weeklyWITSum).toBeCloseTo(monthlyResult.incomeTax, 1);
+
+    // Sum of weekly INSS employee should equal monthly INSS
+    const weeklyINSSSum = weeklyResults.reduce((s, r) => s + r.inssEmployee, 0);
+    expect(weeklyINSSSum).toBeCloseTo(monthlyResult.inssEmployee, 1);
+
+    // Sum of weekly net should equal monthly net
+    const weeklyNetSum = weeklyResults.reduce((s, r) => s + r.netPay, 0);
+    expect(weeklyNetSum).toBeCloseTo(monthlyResult.netPay, 1);
+  });
+
+  it("weekly payroll for below-threshold employee has $0 WIT per week", () => {
+    // $400/month is below $500 threshold
+    for (let w = 1; w <= 4; w++) {
+      const weeklyEmp = makeEmployee({
+        employeeId: "below-threshold-weekly",
+        monthlySalary: 400,
+        payFrequency: "weekly",
+        regularHours: 44,
+        periodNumber: w,
+        totalPeriodsInMonth: 4,
+      });
+      const result = calculateTLPayroll(weeklyEmp);
+      expect(result.incomeTax).toBe(0);
+    }
   });
 });

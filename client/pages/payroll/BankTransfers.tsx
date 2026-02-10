@@ -56,7 +56,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
-import type { BankTransfer, PayrollRun } from "@/types/payroll";
+import type { BankTransfer, PayrollRun, PayrollRecord } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
@@ -145,8 +145,8 @@ export default function BankTransfers() {
           }
           if (settings?.paymentStructure?.bankAccounts) {
             const accounts = settings.paymentStructure.bankAccounts
-              .filter((a: any) => a.isActive)
-              .map((a: any) => ({
+              .filter((a) => a.isActive)
+              .map((a) => ({
                 id: a.id,
                 name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
                 accountNumber: a.accountNumber || "",
@@ -154,7 +154,7 @@ export default function BankTransfers() {
               }));
             setBankAccounts(accounts);
             // Use the first payroll account (or first available) as company debit account
-            const payrollAccount = accounts.find((a: any) => a.purpose === "payroll") || accounts[0];
+            const payrollAccount = accounts.find((a) => a.purpose === "payroll") || accounts[0];
             if (payrollAccount) {
               setCompanyAccount(payrollAccount.accountNumber);
             }
@@ -168,7 +168,7 @@ export default function BankTransfers() {
   }, [tenantId]);
 
   // Payroll records for the selected bank file run
-  const [bankFileRecords, setBankFileRecords] = useState<any[]>([]);
+  const [bankFileRecords, setBankFileRecords] = useState<PayrollRecord[]>([]);
 
   // Load real payroll records and calculate bank file summary when payroll run is selected
   useEffect(() => {
@@ -183,7 +183,7 @@ export default function BankTransfers() {
         const records = await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
         setBankFileRecords(records);
 
-        const grouped = groupRecordsByBank(records as any, employees);
+        const grouped = groupRecordsByBank(records, employees);
         const summary: Record<BankCode, number> = {
           BNU: grouped.BNU.length,
           MANDIRI: grouped.MANDIRI.length,
@@ -235,8 +235,8 @@ export default function BankTransfers() {
 
       for (const bankCode of selectedBanks) {
         const result = generateBankFile(bankCode, {
-          payrollRun: selectedRun as any,
-          records: records as any,
+          payrollRun: selectedRun,
+          records,
           employees,
           valueDate: today,
           companyName,

@@ -18,12 +18,10 @@
     "forceConsistentCasingInFileNames": true,
 
     /* Linting */
-    "strict": false,
+    "strict": true,
     "noUnusedLocals": false,
     "noUnusedParameters": false,
-    "noImplicitAny": false,
     "noFallthroughCasesInSwitch": false,
-    "strictNullChecks": false,
 
     /* Path mapping */
     "baseUrl": ".",

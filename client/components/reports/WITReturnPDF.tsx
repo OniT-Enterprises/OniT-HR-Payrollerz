@@ -317,7 +317,7 @@ const WITReturnDocument = ({
           {witReturn.employees.map((emp, index) => (
             <View
               key={emp.employeeId}
-              style={[styles.tableRow, index % 2 === 1 && styles.tableRowAlt]}
+              style={[styles.tableRow, ...(index % 2 === 1 ? [styles.tableRowAlt] : [])]}
             >
               <Text style={[styles.tableCell, styles.colNum]}>{index + 1}</Text>
               <Text style={[styles.tableCell, styles.colName]}>

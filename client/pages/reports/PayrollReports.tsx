@@ -61,7 +61,7 @@ export default function PayrollReports() {
     (sum, emp) =>
       sum +
       (emp.compensation?.monthlySalary ||
-        Math.round((emp.compensation as any)?.annualSalary / 12) ||
+        Math.round((emp.compensation.annualSalary ?? 0) / 12) ||
         0),
     0,
   ), [employees]);
@@ -181,7 +181,7 @@ export default function PayrollReports() {
 
   const hasActiveFilters = filterDepartment !== "all" || filterBenefits !== "all" || filterStatus !== "all";
 
-  const getStatusLabel = (status) => {
+  const getStatusLabel = (status: string) => {
     if (status === "active") {
       return t("reports.payroll.status.active");
     }
@@ -191,7 +191,7 @@ export default function PayrollReports() {
     return status;
   };
 
-  const getBenefitsLabel = (benefits) => {
+  const getBenefitsLabel = (benefits: string) => {
     const normalized = typeof benefits === "string" ? benefits.toLowerCase() : benefits;
     switch (normalized) {
       case "basic":
@@ -444,7 +444,7 @@ export default function PayrollReports() {
                               (emp) =>
                                 emp.compensation.monthlySalary ||
                                 Math.round(
-                                  (emp.compensation as any).annualSalary / 12,
+                                  (emp.compensation.annualSalary ?? 0) / 12,
                                 ) ||
                                 0,
                             ),
@@ -464,7 +464,7 @@ export default function PayrollReports() {
                                 (emp) =>
                                   (emp.compensation.monthlySalary ||
                                     Math.round(
-                                      (emp.compensation as any).annualSalary /
+                                      (emp.compensation.annualSalary ?? 0) /
                                         12,
                                     ) ||
                                     0) > 0,
@@ -473,7 +473,7 @@ export default function PayrollReports() {
                                 (emp) =>
                                   emp.compensation.monthlySalary ||
                                   Math.round(
-                                    (emp.compensation as any).annualSalary / 12,
+                                    (emp.compensation.annualSalary ?? 0) / 12,
                                   ) ||
                                   0,
                               ),
@@ -615,12 +615,12 @@ export default function PayrollReports() {
                           (a, b) =>
                             (b.compensation.monthlySalary ||
                               Math.round(
-                                (b.compensation as any).annualSalary / 12,
+                                (b.compensation.annualSalary ?? 0) / 12,
                               ) ||
                               0) -
                             (a.compensation.monthlySalary ||
                               Math.round(
-                                (a.compensation as any).annualSalary / 12,
+                                (a.compensation.annualSalary ?? 0) / 12,
                               ) ||
                               0),
                         )
@@ -651,8 +651,7 @@ export default function PayrollReports() {
                               {formatCurrency(
                                 employee.compensation.monthlySalary ||
                                   Math.round(
-                                    (employee.compensation as any)
-                                      .annualSalary / 12,
+                                    (employee.compensation.annualSalary ?? 0) / 12,
                                   ) ||
                                   0,
                               )}

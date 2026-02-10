@@ -163,7 +163,7 @@ export default function Departments() {
             (sum, emp) =>
               sum +
               (emp.compensation.monthlySalary ||
-                Math.round((emp.compensation as any).annualSalary / 12) ||
+                Math.round((emp.compensation.annualSalary ?? 0) / 12) ||
                 0),
             0,
           ) / deptEmployees.length

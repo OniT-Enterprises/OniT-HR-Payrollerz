@@ -4,6 +4,7 @@
  */
 
 import { TLPayrollRun, TLPayrollRecord } from '@/types/payroll-tl';
+import { PayrollRecord, PayrollRun } from '@/types/payroll';
 import { Employee } from '@/services/employeeService';
 import { generateBNUFile } from './bnu-format';
 import { generateMandiriFile } from './mandiri-format';
@@ -38,8 +39,8 @@ export interface BankFileResult {
 }
 
 export interface BankTransferInput {
-  payrollRun: TLPayrollRun;
-  records: TLPayrollRecord[];
+  payrollRun: TLPayrollRun | PayrollRun;
+  records: AnyPayrollRecord[];
   employees: Employee[];
   valueDate: string;
   companyName: string;
@@ -56,11 +57,13 @@ const BANK_NAMES: Record<BankCode, string> = {
 /**
  * Group payroll records by bank
  */
+type AnyPayrollRecord = TLPayrollRecord | PayrollRecord;
+
 export function groupRecordsByBank(
-  records: TLPayrollRecord[],
+  records: AnyPayrollRecord[],
   employees: Employee[]
-): Record<BankCode, Array<{ record: TLPayrollRecord; employee: Employee }>> {
-  const groups: Record<BankCode, Array<{ record: TLPayrollRecord; employee: Employee }>> = {
+): Record<BankCode, Array<{ record: AnyPayrollRecord; employee: Employee }>> {
+  const groups: Record<BankCode, Array<{ record: AnyPayrollRecord; employee: Employee }>> = {
     BNU: [],
     MANDIRI: [],
     ANZ: [],
@@ -72,7 +75,7 @@ export function groupRecordsByBank(
     if (!employee) continue;
 
     // Get bank name from employee record and normalize
-    const bankName = (employee as any).bankName?.toUpperCase() || '';
+    const bankName = employee.bankName?.toUpperCase() || '';
 
     let bankCode: BankCode | null = null;
     if (bankName.includes('BNU') || bankName.includes('ULTRAMARINO')) {
@@ -110,7 +113,7 @@ export function generateBankFile(
   const lines: BankTransferLine[] = bankRecords.map(({ record, employee }) => {
     const period = formatPeriod(payrollRun.periodStart, payrollRun.periodEnd);
     return {
-      accountNumber: (employee as any).bankAccountNumber || '',
+      accountNumber: employee.bankAccountNumber || '',
       accountName: record.employeeName,
       amount: record.netPay,
       reference: `SALARY-${period}-${record.employeeNumber || record.employeeId}`,

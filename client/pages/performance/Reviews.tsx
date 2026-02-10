@@ -844,7 +844,7 @@ export default function Reviews() {
                   </SelectTrigger>
                   <SelectContent>
                     {activeEmployees.map((emp) => (
-                      <SelectItem key={emp.id} value={emp.id}>
+                      <SelectItem key={emp.id} value={emp.id || ""}>
                         {emp.personalInfo.firstName} {emp.personalInfo.lastName} -{" "}
                         {emp.jobDetails.position}
                       </SelectItem>

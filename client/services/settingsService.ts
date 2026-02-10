@@ -217,7 +217,7 @@ export const settingsService = {
    */
   async updatePaymentStructure(
     tenantId: string,
-    paymentStructure: PaymentStructure
+    paymentStructure: Partial<PaymentStructure> | Record<string, unknown>
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
@@ -237,7 +237,7 @@ export const settingsService = {
    */
   async updateTimeOffPolicies(
     tenantId: string,
-    timeOffPolicies: TimeOffPolicies
+    timeOffPolicies: Partial<TimeOffPolicies> | Record<string, unknown>
   ): Promise<void> {
     try {
       const docRef = doc(db, paths.settings(tenantId));
@@ -257,7 +257,7 @@ export const settingsService = {
    */
   async updatePayrollConfig(
     tenantId: string,
-    payrollConfig: PayrollConfig,
+    payrollConfig: Partial<PayrollConfig> | Record<string, unknown>,
     audit?: AuditContext
   ): Promise<void> {
     try {

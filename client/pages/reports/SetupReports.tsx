@@ -81,7 +81,7 @@ export default function SetupReports() {
   const totalUsers = users.length;
   const superAdmins = useMemo(() => users.filter((u) => u.isSuperAdmin).length, [users]);
   const recentActions = useMemo(() => auditLog.filter((a) => {
-    const actionDate = a.timestamp?.toDate?.() || new Date(a.timestamp as any);
+    const actionDate = a.timestamp?.toDate?.() || new Date(String(a.timestamp));
     const dayAgo = new Date();
     dayAgo.setDate(dayAgo.getDate() - 1);
     return actionDate > dayAgo;
@@ -519,7 +519,7 @@ export default function SetupReports() {
                     {auditLog[0]
                       ? new Date(
                           auditLog[0].timestamp?.toDate?.() ||
-                            (auditLog[0].timestamp as any)
+                            String(auditLog[0].timestamp)
                         ).toLocaleDateString()
                       : "-"}
                   </span>
@@ -590,7 +590,7 @@ export default function SetupReports() {
                         <td className="p-3 text-center text-sm text-muted-foreground">
                           {u.createdAt
                             ? new Date(
-                                (u.createdAt as any)?.toDate?.() || u.createdAt
+                                (typeof u.createdAt?.toDate === 'function' ? u.createdAt.toDate() : u.createdAt) as Date
                               ).toLocaleDateString()
                             : "-"}
                         </td>
@@ -643,7 +643,7 @@ export default function SetupReports() {
                             <Clock className="h-4 w-4 text-muted-foreground" />
                             {new Date(
                               entry.timestamp?.toDate?.() ||
-                                (entry.timestamp as any)
+                                String(entry.timestamp)
                             ).toLocaleString()}
                           </div>
                         </td>

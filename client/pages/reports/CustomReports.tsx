@@ -416,7 +416,7 @@ export default function CustomReports() {
                     <Select
                       value={dataSource}
                       onValueChange={(v) => {
-                        setDataSource(v as any);
+                        setDataSource(v as "employees" | "attendance" | "departments");
                         setSelectedColumns([]);
                       }}
                     >

@@ -198,7 +198,7 @@ export default function AllEmployees() {
       // Salary range filter
       const salary =
         employee.compensation.monthlySalary ||
-        Math.round((employee.compensation as any).annualSalary / 12) ||
+        Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
         0;
       const matchesMinSalary = !minSalary || salary >= parseInt(minSalary);
       const matchesMaxSalary = !maxSalary || salary <= parseInt(maxSalary);
@@ -208,7 +208,7 @@ export default function AllEmployees() {
       if (complianceFilter !== "all") {
         const hasContract = !!employee.documents?.workContract?.fileUrl;
         const hasINSS = !!employee.documents?.socialSecurityNumber?.number;
-        const hasBankAccount = !!(employee as any).bankDetails?.accountNumber;
+        const hasBankAccount = !!employee.bankDetails?.accountNumber;
 
         switch (complianceFilter) {
           case "missing-contract":
@@ -377,7 +377,7 @@ export default function AllEmployees() {
           emp.jobDetails.employmentType,
           emp.jobDetails.workLocation,
           emp.compensation.monthlySalary ||
-            Math.round((emp.compensation as any).annualSalary / 12) ||
+            Math.round((emp.compensation.annualSalary ?? 0) / 12) ||
             0,
         ].join(","),
       ),
@@ -1142,7 +1142,7 @@ export default function AllEmployees() {
                             {formatSalary(
                               employee.compensation.monthlySalary ||
                                 Math.round(
-                                  (employee.compensation as any).annualSalary / 12
+                                  (employee.compensation.annualSalary ?? 0) / 12
                                 ) || 0
                             )}
                           </span>
