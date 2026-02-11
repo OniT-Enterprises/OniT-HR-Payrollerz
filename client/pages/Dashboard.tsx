@@ -174,26 +174,26 @@ export default function Dashboard() {
   });
 
   // Redirect to setup wizard if setup is incomplete (owner/hr-admin only)
-  // Skipped if user dismissed the wizard this session
-  useEffect(() => {
-    const checkSetup = async () => {
-      const role = session?.role;
-      if (role !== "owner" && role !== "hr-admin") return;
-      if (sessionStorage.getItem("setup-dismissed")) return;
-      try {
-        const progress = await settingsService.getSetupProgress(tenantId);
-        if (!progress.isComplete) {
-          navigate("/setup", { replace: true });
-        }
-      } catch {
-        // Settings don't exist - redirect to setup
-        navigate("/setup", { replace: true });
-      }
-    };
-    if (tenantId && tenantId !== "local-dev-tenant") {
-      checkSetup();
-    }
-  }, [tenantId, session?.role, navigate]);
+  // TEMPORARILY DISABLED
+  // useEffect(() => {
+  //   const checkSetup = async () => {
+  //     const role = session?.role;
+  //     if (role !== "owner" && role !== "hr-admin") return;
+  //     if (sessionStorage.getItem("setup-dismissed")) return;
+  //     try {
+  //       const progress = await settingsService.getSetupProgress(tenantId);
+  //       if (!progress.isComplete) {
+  //         navigate("/setup", { replace: true });
+  //       }
+  //     } catch {
+  //       // Settings don't exist - redirect to setup
+  //       navigate("/setup", { replace: true });
+  //     }
+  //   };
+  //   if (tenantId && tenantId !== "local-dev-tenant") {
+  //     checkSetup();
+  //   }
+  // }, [tenantId, session?.role, navigate]);
 
   useEffect(() => {
     loadData();
