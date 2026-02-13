@@ -161,7 +161,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { session } = useTenant();
-  const { t: _t } = useI18n();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [pendingLeave, setPendingLeave] = useState(0);
@@ -333,7 +333,7 @@ export default function Dashboard() {
         {/* Header - Minimal */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">
-            Good {new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, {firstName}
+            {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}, {firstName}
           </h1>
           <Button
             variant="ghost"

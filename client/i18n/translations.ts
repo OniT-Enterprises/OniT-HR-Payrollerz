@@ -4,6 +4,9 @@
 export const translations = {
   en: {
   "common": {
+    "greetingMorning": "Good morning",
+    "greetingAfternoon": "Good afternoon",
+    "greetingEvening": "Good evening",
     "dashboard": "Dashboard",
     "settings": "Settings",
     "signOut": "Sign Out",
@@ -2663,6 +2666,9 @@ export const translations = {
 },
   tet: {
   "common": {
+    "greetingMorning": "Bondia",
+    "greetingAfternoon": "Botarde",
+    "greetingEvening": "Bonite",
     "dashboard": "Painél",
     "settings": "Konfigurasaun",
     "signOut": "Sai",
