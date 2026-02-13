@@ -35,7 +35,7 @@ jobs:
         with:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: onit-payroll
+          projectId: onit-hr-payroll
           channelId: live
 
       - name: Deploy to Hetzner (payroll.naroman.tl)
