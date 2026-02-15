@@ -45,13 +45,6 @@ const STATUS_STYLES: Record<RecurringStatus, string> = {
   completed: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400',
 };
 
-const FREQUENCY_LABELS: Record<string, string> = {
-  weekly: 'Weekly',
-  monthly: 'Monthly',
-  quarterly: 'Quarterly',
-  yearly: 'Yearly',
-};
-
 export default function RecurringInvoices() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -59,6 +52,10 @@ export default function RecurringInvoices() {
   const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RecurringInvoice[]>([]);
+
+  const getFrequencyLabel = (freq: string) => {
+    return t(`money.recurring.frequency${freq.charAt(0).toUpperCase() + freq.slice(1)}`) || freq;
+  };
 
   useEffect(() => {
     if (session?.tid) {
@@ -77,7 +74,7 @@ export default function RecurringInvoices() {
       console.error('Error loading recurring invoices:', error);
       toast({
         title: t('common.error') || 'Error',
-        description: 'Failed to load recurring invoices',
+        description: t('money.recurring.loadError') || 'Failed to load recurring invoices',
         variant: 'destructive',
       });
     } finally {
@@ -91,15 +88,15 @@ export default function RecurringInvoices() {
     try {
       await recurringInvoiceService.pause(session.tid, item.id);
       toast({
-        title: 'Paused',
-        description: `Recurring invoice for ${item.customerName} paused`,
+        title: t('money.recurring.pausedToast') || 'Paused',
+        description: (t('money.recurring.pausedDesc') || 'Recurring invoice for {{name}} paused').replace('{{name}}', item.customerName),
       });
       loadData();
     } catch (error) {
       console.error('Error pausing recurring invoice:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to pause recurring invoice',
+        title: t('common.error') || 'Error',
+        description: t('money.recurring.pauseError') || 'Failed to pause recurring invoice',
         variant: 'destructive',
       });
     }
@@ -111,15 +108,15 @@ export default function RecurringInvoices() {
     try {
       await recurringInvoiceService.resume(session.tid, item.id);
       toast({
-        title: 'Resumed',
-        description: `Recurring invoice for ${item.customerName} resumed`,
+        title: t('money.recurring.resumedToast') || 'Resumed',
+        description: (t('money.recurring.resumedDesc') || 'Recurring invoice for {{name}} resumed').replace('{{name}}', item.customerName),
       });
       loadData();
     } catch (error) {
       console.error('Error resuming recurring invoice:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to resume recurring invoice',
+        title: t('common.error') || 'Error',
+        description: t('money.recurring.resumeError') || 'Failed to resume recurring invoice',
         variant: 'destructive',
       });
     }
@@ -131,15 +128,15 @@ export default function RecurringInvoices() {
     try {
       const invoiceId = await recurringInvoiceService.generateInvoice(session.tid, item.id);
       toast({
-        title: 'Invoice generated',
-        description: `New invoice created for ${item.customerName}`,
+        title: t('money.recurring.invoiceGenerated') || 'Invoice generated',
+        description: (t('money.recurring.invoiceGeneratedDesc') || 'New invoice created for {{name}}').replace('{{name}}', item.customerName),
       });
       navigate(`/money/invoices/${invoiceId}`);
     } catch (error) {
       console.error('Error generating invoice:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to generate invoice',
+        title: t('common.error') || 'Error',
+        description: error instanceof Error ? error.message : (t('money.recurring.generateError') || 'Failed to generate invoice'),
         variant: 'destructive',
       });
     }
@@ -148,22 +145,22 @@ export default function RecurringInvoices() {
   const handleDelete = async (item: RecurringInvoice) => {
     if (!session?.tid) return;
 
-    if (!confirm(`Delete recurring invoice for ${item.customerName}? This cannot be undone.`)) {
+    if (!confirm((t('money.recurring.confirmDeleteMsg') || 'Delete recurring invoice for {{name}}? This cannot be undone.').replace('{{name}}', item.customerName))) {
       return;
     }
 
     try {
       await recurringInvoiceService.delete(session.tid, item.id);
       toast({
-        title: 'Deleted',
-        description: 'Recurring invoice deleted',
+        title: t('money.recurring.deletedToast') || 'Deleted',
+        description: t('money.recurring.deletedDesc') || 'Recurring invoice deleted',
       });
       loadData();
     } catch (error) {
       console.error('Error deleting recurring invoice:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to delete recurring invoice',
+        title: t('common.error') || 'Error',
+        description: t('money.recurring.deleteError') || 'Failed to delete recurring invoice',
         variant: 'destructive',
       });
     }
@@ -211,7 +208,7 @@ export default function RecurringInvoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Recurring Invoices - OniT" description="Manage recurring invoice templates" />
+      <SEO title="Recurring Invoices - Meza" description="Manage recurring invoice templates" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -227,8 +224,8 @@ export default function RecurringInvoices() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.recurring.title') || 'Recurring Invoices'}
                 <InfoTooltip
-                  title="Recurring Invoices"
-                  content="Templates that automatically generate new invoices on a schedule. Great for subscription services, retainers, or regular billing cycles."
+                  title={t('money.recurring.tooltipTitle') || 'Recurring Invoices'}
+                  content={t('money.recurring.tooltipContent') || 'Templates that automatically generate new invoices on a schedule. Great for subscription services, retainers, or regular billing cycles.'}
                 />
               </h1>
               <p className="text-muted-foreground">
@@ -276,24 +273,24 @@ export default function RecurringInvoices() {
                         <div className="flex items-center gap-2">
                           <span className="font-medium">{item.customerName}</span>
                           <Badge className={STATUS_STYLES[item.status]}>
-                            {item.status}
+                            {t(`money.recurring.${item.status}`) || item.status}
                           </Badge>
                           <Badge variant="outline">
-                            {FREQUENCY_LABELS[item.frequency]}
+                            {getFrequencyLabel(item.frequency)}
                           </Badge>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <Calendar className="h-3 w-3" />
-                            Next: {formatDate(item.nextRunDate)}
+                            {t('money.recurring.next') || 'Next'}: {formatDate(item.nextRunDate)}
                             <InfoTooltip content={MoneyTooltips.recurring.nextRunDate} size="sm" />
                           </span>
                           <span>
-                            {item.generatedCount} generated
+                            {item.generatedCount} {t('money.recurring.generated') || 'generated'}
                           </span>
                           {item.endAfterOccurrences && (
                             <span>
-                              ({item.endAfterOccurrences - item.generatedCount} remaining)
+                              ({item.endAfterOccurrences - item.generatedCount} {t('money.recurring.remaining') || 'remaining'})
                             </span>
                           )}
                         </div>
@@ -303,7 +300,7 @@ export default function RecurringInvoices() {
                     <div className="flex items-center gap-6">
                       <div className="text-right hidden sm:block">
                         <p className="font-semibold">{formatCurrency(calculateTotal(item))}</p>
-                        <p className="text-xs text-muted-foreground">per invoice</p>
+                        <p className="text-xs text-muted-foreground">{t('money.recurring.perInvoice') || 'per invoice'}</p>
                       </div>
 
                       <DropdownMenu>
@@ -317,30 +314,30 @@ export default function RecurringInvoices() {
                             onClick={() => navigate(`/money/invoices/recurring/${item.id}`)}
                           >
                             <Eye className="h-4 w-4 mr-2" />
-                            View Details
+                            {t('money.recurring.viewDetails') || 'View Details'}
                           </DropdownMenuItem>
                           <DropdownMenuItem
                             onClick={() => navigate(`/money/invoices/recurring/${item.id}/edit`)}
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Edit
+                            {t('money.recurring.edit') || 'Edit'}
                           </DropdownMenuItem>
                           {item.status === 'active' && (
                             <>
                               <DropdownMenuItem onClick={() => handleGenerateNow(item)}>
                                 <Zap className="h-4 w-4 mr-2" />
-                                Generate Now
+                                {t('money.recurring.generateNow') || 'Generate Now'}
                               </DropdownMenuItem>
                               <DropdownMenuItem onClick={() => handlePause(item)}>
                                 <Pause className="h-4 w-4 mr-2" />
-                                Pause
+                                {t('money.recurring.pause') || 'Pause'}
                               </DropdownMenuItem>
                             </>
                           )}
                           {item.status === 'paused' && (
                             <DropdownMenuItem onClick={() => handleResume(item)}>
                               <Play className="h-4 w-4 mr-2" />
-                              Resume
+                              {t('money.recurring.resume') || 'Resume'}
                             </DropdownMenuItem>
                           )}
                           <DropdownMenuSeparator />
@@ -349,7 +346,7 @@ export default function RecurringInvoices() {
                             className="text-red-500"
                           >
                             <Trash2 className="h-4 w-4 mr-2" />
-                            Delete
+                            {t('money.recurring.delete') || 'Delete'}
                           </DropdownMenuItem>
                         </DropdownMenuContent>
                       </DropdownMenu>
@@ -366,13 +363,13 @@ export default function RecurringInvoices() {
           <div className="mt-6 flex items-center gap-6 text-sm text-muted-foreground">
             <span className="flex items-center gap-1">
               <Users className="h-4 w-4" />
-              {items.length} recurring invoice{items.length !== 1 ? 's' : ''}
+              {items.length} {items.length !== 1 ? (t('money.recurring.recurringInvoices') || 'recurring invoices') : (t('money.recurring.recurringInvoice') || 'recurring invoice')}
             </span>
             <span>
-              {items.filter((i) => i.status === 'active').length} active
+              {items.filter((i) => i.status === 'active').length} {t('money.recurring.active') || 'active'}
             </span>
             <span>
-              {items.filter((i) => i.status === 'paused').length} paused
+              {items.filter((i) => i.status === 'paused').length} {t('money.recurring.paused') || 'paused'}
             </span>
           </div>
         )}

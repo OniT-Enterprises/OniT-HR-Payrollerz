@@ -22,8 +22,8 @@ export default function AdminSetup() {
   const [alreadySetup, setAlreadySetup] = useState(false);
 
   // Company/Tenant info
-  const [companyName, setCompanyName] = useState("OniT Demo Company");
-  const [companySlug, setCompanySlug] = useState("onit-demo");
+  const [companyName, setCompanyName] = useState("Meza Demo Company");
+  const [companySlug, setCompanySlug] = useState("meza-demo");
 
   // Check if bootstrap has already occurred
   useEffect(() => {
@@ -219,13 +219,12 @@ export default function AdminSetup() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-red-500 via-amber-500 to-black flex items-center justify-center shadow-lg">
-              <span className="text-white text-lg font-bold">TL</span>
-            </div>
-            <div className="flex flex-col">
-              <span className="text-2xl font-bold">OniT</span>
-              <span className="text-xs text-muted-foreground">Admin Setup</span>
-            </div>
+            <img
+              src="/images/meza-logo-dark-on-light.png"
+              alt="Meza"
+              className="h-10 w-auto"
+            />
+            <span className="text-xs text-muted-foreground">Admin Setup</span>
           </div>
         </div>
 

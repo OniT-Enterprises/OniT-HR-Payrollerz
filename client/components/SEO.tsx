@@ -12,9 +12,9 @@ export interface SEOProps {
 
 const BASE_URL = 'https://onit-hr-payroll.web.app';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
-const SITE_NAME = 'OniT HR & Payroll';
+const SITE_NAME = 'Meza';
 
-const DEFAULT_DESCRIPTION = 'Streamline your HR operations with OniT. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';
+const DEFAULT_DESCRIPTION = 'Streamline your HR operations with Meza. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';
 
 export function SEO({
   title,
@@ -70,19 +70,19 @@ export const seoConfig = {
   // Landing & Auth
   landing: {
     title: 'Modern HR Management System',
-    description: 'Transform your HR operations with OniT. All-in-one solution for hiring, employee management, time tracking, payroll, and more.',
+    description: 'Transform your HR operations with Meza. All-in-one solution for hiring, employee management, time tracking, payroll, and more.',
     keywords: 'HR software, payroll system, human resources, employee management, HRIS, HR platform',
     url: '/',
   },
   login: {
     title: 'Login',
-    description: 'Sign in to your OniT HR & Payroll account to manage your workforce.',
+    description: 'Sign in to your Meza account to manage your workforce.',
     url: '/auth/login',
     noIndex: true,
   },
   signup: {
     title: 'Sign Up',
-    description: 'Create your OniT HR & Payroll account and start managing your workforce today.',
+    description: 'Create your Meza account and start managing your workforce today.',
     url: '/auth/signup',
   },
   dashboard: {
@@ -329,7 +329,7 @@ export const seoConfig = {
   // Settings
   settings: {
     title: 'Settings',
-    description: 'Configure your OniT HR & Payroll preferences and account settings.',
+    description: 'Configure your Meza preferences and account settings.',
     url: '/settings',
     noIndex: true,
   },

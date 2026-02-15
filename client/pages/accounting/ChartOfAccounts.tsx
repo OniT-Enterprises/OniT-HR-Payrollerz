@@ -61,6 +61,7 @@ import { accountingService } from "@/services/accountingService";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -72,6 +73,7 @@ const PAYROLL_LINKED_CODES = [
 
 export default function ChartOfAccounts() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -108,8 +110,8 @@ export default function ChartOfAccounts() {
     } catch (error) {
       console.error("Failed to load accounts:", error);
       toast({
-        title: "Error",
-        description: "Failed to load chart of accounts.",
+        title: t("common.error"),
+        description: t("accounting.chartOfAccounts.errorLoad"),
         variant: "destructive",
       });
     } finally {
@@ -124,14 +126,14 @@ export default function ChartOfAccounts() {
       await accountingService.accounts.initializeChartOfAccounts(tenantId);
       await loadAccounts();
       toast({
-        title: "Success",
-        description: "Chart of accounts initialized with default TL accounts.",
+        title: t("accounting.chartOfAccounts.success"),
+        description: t("accounting.chartOfAccounts.initialized"),
       });
     } catch (error) {
       console.error("Failed to initialize:", error);
       toast({
-        title: "Error",
-        description: "Failed to initialize chart of accounts.",
+        title: t("common.error"),
+        description: t("accounting.chartOfAccounts.errorInit"),
         variant: "destructive",
       });
     } finally {
@@ -223,8 +225,8 @@ export default function ChartOfAccounts() {
 
     if (!formData.code || !formData.name) {
       toast({
-        title: "Validation Error",
-        description: "Account code and name are required.",
+        title: t("accounting.chartOfAccounts.validationError"),
+        description: t("accounting.chartOfAccounts.codeNameRequired"),
         variant: "destructive",
       });
       return;
@@ -239,8 +241,8 @@ export default function ChartOfAccounts() {
           level: formData.parentAccountId ? 2 : 1,
         });
         toast({
-          title: "Success",
-          description: "Account updated successfully.",
+          title: t("accounting.chartOfAccounts.success"),
+          description: t("accounting.chartOfAccounts.accountUpdated"),
         });
       } else {
         await accountingService.accounts.createAccount(tenantId, {
@@ -250,8 +252,8 @@ export default function ChartOfAccounts() {
           level: formData.parentAccountId ? 2 : 1,
         });
         toast({
-          title: "Success",
-          description: "Account created successfully.",
+          title: t("accounting.chartOfAccounts.success"),
+          description: t("accounting.chartOfAccounts.accountCreated"),
         });
       }
 
@@ -262,8 +264,8 @@ export default function ChartOfAccounts() {
     } catch (error) {
       console.error("Failed to save account:", error);
       toast({
-        title: "Error",
-        description: "Failed to save account.",
+        title: t("common.error"),
+        description: t("accounting.chartOfAccounts.errorSave"),
         variant: "destructive",
       });
     } finally {
@@ -360,15 +362,15 @@ export default function ChartOfAccounts() {
               {account.isSystem ? (
                 <Badge variant="secondary" className="gap-1 text-xs">
                   <Lock className="h-3 w-3" />
-                  System
+                  {t("accounting.chartOfAccounts.system")}
                 </Badge>
               ) : (
-                <Badge variant="outline" className="text-xs">Custom</Badge>
+                <Badge variant="outline" className="text-xs">{t("accounting.chartOfAccounts.custom")}</Badge>
               )}
               {payrollLinked && (
                 <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 gap-1 text-xs">
                   <Calculator className="h-3 w-3" />
-                  Payroll
+                  {t("accounting.chartOfAccounts.payroll")}
                 </Badge>
               )}
             </div>
@@ -379,7 +381,7 @@ export default function ChartOfAccounts() {
                 variant="ghost"
                 size="sm"
                 onClick={() => openEditDialog(account)}
-                title={payrollLinked ? "Edit (affects payroll)" : "Edit account"}
+                title={t("accounting.chartOfAccounts.edit")}
               >
                 <Edit className="h-4 w-4" />
               </Button>
@@ -478,10 +480,10 @@ export default function ChartOfAccounts() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Chart of Accounts
+                  {t("accounting.chartOfAccounts.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Plano de Contas - Manage your accounting structure
+                  {t("accounting.chartOfAccounts.subtitle")}
                 </p>
               </div>
             </div>
@@ -495,12 +497,12 @@ export default function ChartOfAccounts() {
                     {initializing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Initializing...
+                        {t("accounting.chartOfAccounts.initializingBtn")}
                       </>
                     ) : (
                       <>
                         <RefreshCw className="h-4 w-4 mr-2" />
-                        Initialize Defaults
+                        {t("accounting.chartOfAccounts.initializeDefaults")}
                       </>
                     )}
                   </Button>
@@ -512,43 +514,43 @@ export default function ChartOfAccounts() {
                       onClick={() => { setEditingAccount(null); resetForm(); }}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Add Account
+                      {t("accounting.chartOfAccounts.addAccount")}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="max-w-md">
                     <DialogHeader>
                       <DialogTitle>
-                        {editingAccount ? "Edit Account" : "Add New Account"}
+                        {editingAccount ? t("accounting.chartOfAccounts.editAccount") : t("accounting.chartOfAccounts.addNewAccount")}
                       </DialogTitle>
                       <DialogDescription>
                         {editingAccount
-                          ? "Update account details"
-                          : "Create a new account in your chart of accounts"}
+                          ? t("accounting.chartOfAccounts.editAccountDesc")
+                          : t("accounting.chartOfAccounts.addAccountDesc")}
                       </DialogDescription>
                     </DialogHeader>
                     {/* Warning for account changes */}
                     <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-sm">
                       <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                       <p className="text-amber-800 dark:text-amber-200">
-                        Changing accounts affects financial reports and payroll calculations. Only modify if you understand the impact.
+                        {t("accounting.chartOfAccounts.warning")}
                       </p>
                     </div>
                     <form onSubmit={handleSubmit} className="space-y-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <Label htmlFor="code">Account Code *</Label>
+                          <Label htmlFor="code">{t("accounting.chartOfAccounts.accountCode")}</Label>
                           <Input
                             id="code"
                             value={formData.code}
                             onChange={(e) =>
                               setFormData({ ...formData, code: e.target.value })
                             }
-                            placeholder="e.g., 1100"
+                            placeholder={t("accounting.chartOfAccounts.accountCodePlaceholder")}
                             required
                           />
                         </div>
                         <div>
-                          <Label htmlFor="type">Type *</Label>
+                          <Label htmlFor="type">{t("accounting.chartOfAccounts.accountType")}</Label>
                           <Select
                             value={formData.type}
                             onValueChange={(v) =>
@@ -559,40 +561,40 @@ export default function ChartOfAccounts() {
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="asset">Asset</SelectItem>
-                              <SelectItem value="liability">Liability</SelectItem>
-                              <SelectItem value="equity">Equity</SelectItem>
-                              <SelectItem value="revenue">Revenue</SelectItem>
-                              <SelectItem value="expense">Expense</SelectItem>
+                              <SelectItem value="asset">{t("accounting.chartOfAccounts.asset")}</SelectItem>
+                              <SelectItem value="liability">{t("accounting.chartOfAccounts.liability")}</SelectItem>
+                              <SelectItem value="equity">{t("accounting.chartOfAccounts.equity")}</SelectItem>
+                              <SelectItem value="revenue">{t("accounting.chartOfAccounts.revenue")}</SelectItem>
+                              <SelectItem value="expense">{t("accounting.chartOfAccounts.expense")}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                       </div>
                       <div>
-                        <Label htmlFor="name">Account Name (English) *</Label>
+                        <Label htmlFor="name">{t("accounting.chartOfAccounts.accountNameEn")}</Label>
                         <Input
                           id="name"
                           value={formData.name}
                           onChange={(e) =>
                             setFormData({ ...formData, name: e.target.value })
                           }
-                          placeholder="e.g., Cash on Hand"
+                          placeholder={t("accounting.chartOfAccounts.accountNameEnPlaceholder")}
                           required
                         />
                       </div>
                       <div>
-                        <Label htmlFor="nameTL">Account Name (Tetun)</Label>
+                        <Label htmlFor="nameTL">{t("accounting.chartOfAccounts.accountNameTet")}</Label>
                         <Input
                           id="nameTL"
                           value={formData.nameTL}
                           onChange={(e) =>
                             setFormData({ ...formData, nameTL: e.target.value })
                           }
-                          placeholder="e.g., Kaixa"
+                          placeholder={t("accounting.chartOfAccounts.accountNameTetPlaceholder")}
                         />
                       </div>
                       <div>
-                        <Label htmlFor="parentAccount">Parent Account</Label>
+                        <Label htmlFor="parentAccount">{t("accounting.chartOfAccounts.parentAccount")}</Label>
                         <Select
                           value={formData.parentAccountId || "_none_"}
                           onValueChange={(v) =>
@@ -600,10 +602,10 @@ export default function ChartOfAccounts() {
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="None (top-level)" />
+                            <SelectValue placeholder={t("accounting.chartOfAccounts.noneTopLevel")} />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="_none_">None (top-level)</SelectItem>
+                            <SelectItem value="_none_">{t("accounting.chartOfAccounts.noneTopLevel")}</SelectItem>
                             {accounts
                               .filter((a) => a.type === formData.type && a.level === 1)
                               .map((a) => (
@@ -615,14 +617,14 @@ export default function ChartOfAccounts() {
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="description">Description</Label>
+                        <Label htmlFor="description">{t("accounting.chartOfAccounts.description")}</Label>
                         <Input
                           id="description"
                           value={formData.description}
                           onChange={(e) =>
                             setFormData({ ...formData, description: e.target.value })
                           }
-                          placeholder="Optional description"
+                          placeholder={t("accounting.chartOfAccounts.descriptionPlaceholder")}
                         />
                       </div>
                       <div className="flex gap-2">
@@ -633,18 +635,18 @@ export default function ChartOfAccounts() {
                           className="flex-1"
                           disabled={submitting}
                         >
-                          Cancel
+                          {t("accounting.chartOfAccounts.cancel")}
                         </Button>
                         <Button type="submit" className="flex-1" disabled={submitting}>
                           {submitting ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              Saving...
+                              {t("accounting.chartOfAccounts.saving")}
                             </>
                           ) : editingAccount ? (
-                            "Update Account"
+                            t("accounting.chartOfAccounts.updateAccount")
                           ) : (
-                            "Create Account"
+                            t("accounting.chartOfAccounts.createAccount")
                           )}
                         </Button>
                       </div>
@@ -661,37 +663,37 @@ export default function ChartOfAccounts() {
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-muted-foreground">Total</p>
+                <p className="text-xs text-muted-foreground">{t("accounting.chartOfAccounts.total")}</p>
                 <p className="text-xl font-bold">{stats.total}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-blue-600 dark:text-blue-400">Assets</p>
+                <p className="text-xs text-blue-600 dark:text-blue-400">{t("accounting.chartOfAccounts.assets")}</p>
                 <p className="text-xl font-bold">{stats.assets}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-red-600 dark:text-red-400">Liabilities</p>
+                <p className="text-xs text-red-600 dark:text-red-400">{t("accounting.chartOfAccounts.liabilities")}</p>
                 <p className="text-xl font-bold">{stats.liabilities}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-purple-600 dark:text-purple-400">Equity</p>
+                <p className="text-xs text-purple-600 dark:text-purple-400">{t("accounting.chartOfAccounts.equityLabel")}</p>
                 <p className="text-xl font-bold">{stats.equity}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-green-600 dark:text-green-400">Revenue</p>
+                <p className="text-xs text-green-600 dark:text-green-400">{t("accounting.chartOfAccounts.revenueLabel")}</p>
                 <p className="text-xl font-bold">{stats.revenue}</p>
               </CardContent>
             </Card>
             <Card className="border-border/50">
               <CardContent className="p-3">
-                <p className="text-xs text-orange-600 dark:text-orange-400">Expenses</p>
+                <p className="text-xs text-orange-600 dark:text-orange-400">{t("accounting.chartOfAccounts.expenses")}</p>
                 <p className="text-xl font-bold">{stats.expenses}</p>
               </CardContent>
             </Card>
@@ -705,7 +707,7 @@ export default function ChartOfAccounts() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by code (e.g., 5110) or name..."
+                      placeholder={t("accounting.chartOfAccounts.searchPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
@@ -713,41 +715,41 @@ export default function ChartOfAccounts() {
                   </div>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">Type:</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">{t("accounting.chartOfAccounts.typeFilter")}</span>
                   <Select value={typeFilter} onValueChange={setTypeFilter}>
                     <SelectTrigger className="w-[150px]">
-                      <SelectValue placeholder="All types" />
+                      <SelectValue placeholder={t("accounting.chartOfAccounts.allTypes")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Types</SelectItem>
+                      <SelectItem value="all">{t("accounting.chartOfAccounts.allTypes")}</SelectItem>
                       <SelectItem value="asset">
                         <span className="flex items-center gap-2">
                           <Wallet className="h-3.5 w-3.5 text-blue-600" />
-                          Assets
+                          {t("accounting.chartOfAccounts.assets")}
                         </span>
                       </SelectItem>
                       <SelectItem value="liability">
                         <span className="flex items-center gap-2">
                           <Building2 className="h-3.5 w-3.5 text-red-600" />
-                          Liabilities
+                          {t("accounting.chartOfAccounts.liabilities")}
                         </span>
                       </SelectItem>
                       <SelectItem value="equity">
                         <span className="flex items-center gap-2">
                           <PiggyBank className="h-3.5 w-3.5 text-purple-600" />
-                          Equity
+                          {t("accounting.chartOfAccounts.equityLabel")}
                         </span>
                       </SelectItem>
                       <SelectItem value="revenue">
                         <span className="flex items-center gap-2">
                           <TrendingUp className="h-3.5 w-3.5 text-green-600" />
-                          Revenue
+                          {t("accounting.chartOfAccounts.revenueLabel")}
                         </span>
                       </SelectItem>
                       <SelectItem value="expense">
                         <span className="flex items-center gap-2">
                           <TrendingDown className="h-3.5 w-3.5 text-orange-600" />
-                          Expenses
+                          {t("accounting.chartOfAccounts.expenses")}
                         </span>
                       </SelectItem>
                     </SelectContent>
@@ -760,43 +762,43 @@ export default function ChartOfAccounts() {
           {/* Accounts Table */}
           <Card className="border-border/50">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Accounts</CardTitle>
+              <CardTitle className="text-lg">{t("accounting.chartOfAccounts.accounts")}</CardTitle>
               <CardDescription>
-                Showing {groupedAccounts.all.length} of {accounts.length} accounts
+                {t("accounting.chartOfAccounts.showingAccounts", { shown: String(groupedAccounts.all.length), total: String(accounts.length) })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {accounts.length === 0 ? (
                 <div className="text-center py-12">
                   <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-4">No accounts found</p>
+                  <p className="text-muted-foreground mb-4">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
                   <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (
                       <>
                         <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        Initializing...
+                        {t("accounting.chartOfAccounts.initializingBtn")}
                       </>
                     ) : (
-                      "Initialize Default Chart of Accounts"
+                      t("accounting.chartOfAccounts.initializeDefault")
                     )}
                   </Button>
                 </div>
               ) : groupedAccounts.all.length === 0 ? (
                 <div className="text-center py-12">
                   <Search className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground">No accounts match your search</p>
+                  <p className="text-muted-foreground">{t("accounting.chartOfAccounts.noAccountsMatch")}</p>
                 </div>
               ) : (
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="w-40">Code</TableHead>
-                        <TableHead>Name</TableHead>
-                        <TableHead className="w-32">Type</TableHead>
-                        <TableHead className="w-40">Sub-Type</TableHead>
-                        <TableHead className="w-32">Status</TableHead>
-                        <TableHead className="w-16">Edit</TableHead>
+                        <TableHead className="w-40">{t("accounting.chartOfAccounts.code")}</TableHead>
+                        <TableHead>{t("accounting.chartOfAccounts.name")}</TableHead>
+                        <TableHead className="w-32">{t("accounting.chartOfAccounts.type")}</TableHead>
+                        <TableHead className="w-40">{t("accounting.chartOfAccounts.subType")}</TableHead>
+                        <TableHead className="w-32">{t("accounting.chartOfAccounts.status")}</TableHead>
+                        <TableHead className="w-16">{t("accounting.chartOfAccounts.edit")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

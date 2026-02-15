@@ -575,7 +575,7 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
       <SEO
-        title="OniT HR/Payroll - Complete Platform Overview"
+        title="Meza - Complete Platform Overview"
         description="Comprehensive HR and Payroll system built for Timor-Leste. Full details on features, modules, and TL-specific capabilities."
       />
 
@@ -584,15 +584,11 @@ export default function ProductDetails() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             <Link to="/landing" className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 via-amber-500 to-black flex items-center justify-center border border-amber-500/20">
-                <span className="text-white text-sm font-black">TL</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold leading-none">
-                  Oni<span className="text-red-500">T</span>
-                </span>
-                <span className="text-[10px] text-zinc-500 tracking-wider">TIMOR-LESTE</span>
-              </div>
+              <img
+                src="/images/meza-logo-light-on-dark-glow.png"
+                alt="Meza"
+                className="h-9 w-auto"
+              />
             </Link>
 
             <div className="flex items-center gap-4">
@@ -626,7 +622,7 @@ export default function ProductDetails() {
           <h1 className="text-4xl lg:text-6xl font-black mb-6">
             Everything You Need to Know
             <span className="block bg-gradient-to-r from-red-400 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
-              About OniT HR/Payroll
+              About Meza
             </span>
           </h1>
 
@@ -827,7 +823,7 @@ export default function ProductDetails() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Benefits by Stakeholder</h2>
-              <p className="text-zinc-400 mb-8">How OniT helps everyone in your organization</p>
+              <p className="text-zinc-400 mb-8">How Meza helps everyone in your organization</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -890,7 +886,7 @@ export default function ProductDetails() {
             Ready to Get Started?
           </h2>
           <p className="text-zinc-400 mb-8">
-            Join businesses across Timor-Leste using OniT for compliant HR and Payroll.
+            Join businesses across Timor-Leste using Meza for compliant HR and Payroll.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400">
@@ -913,10 +909,11 @@ export default function ProductDetails() {
       <footer className="border-t border-white/5 py-8">
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-amber-500 flex items-center justify-center">
-              <span className="text-white text-xs font-black">TL</span>
-            </div>
-            <span className="font-bold">OniT</span>
+            <img
+              src="/images/meza-logo-light-on-dark-glow.png"
+              alt="Meza"
+              className="h-7 w-auto"
+            />
             <span className="text-zinc-600 text-sm">Dili, Timor-Leste</span>
           </div>
           <div className="text-sm text-zinc-600">

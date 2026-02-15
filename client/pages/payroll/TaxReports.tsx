@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { taxFilingService } from "@/services/taxFilingService";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { FilingDueDate } from "@/types/tax-filing";
 import {
   ArrowRight,
@@ -31,6 +32,7 @@ import {
 export default function TaxReports() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const { t } = useI18n();
 
   const [loading, setLoading] = useState(true);
   const [dueDates, setDueDates] = useState<FilingDueDate[]>([]);
@@ -103,9 +105,9 @@ export default function TaxReports() {
               <Shield className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">Payroll Taxes & INSS</h1>
+              <h1 className="text-3xl font-bold">{t("taxReports.title")}</h1>
               <p className="text-muted-foreground">
-                Timor-Leste compliance center for WIT (ATTL) and INSS monthly filings.
+                {t("taxReports.subtitle")}
               </p>
             </div>
           </div>
@@ -113,12 +115,12 @@ export default function TaxReports() {
           {hasOverdue ? (
             <Badge className="bg-red-100 text-red-800">
               <AlertTriangle className="h-3 w-3 mr-1" />
-              Action required
+              {t("taxReports.actionRequired")}
             </Badge>
           ) : (
             <Badge className="bg-emerald-100 text-emerald-800">
               <CheckCircle className="h-3 w-3 mr-1" />
-              On track
+              {t("taxReports.onTrack")}
             </Badge>
           )}
         </div>
@@ -127,10 +129,10 @@ export default function TaxReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-muted-foreground" />
-              Upcoming Deadlines
+              {t("taxReports.upcomingDeadlines")}
             </CardTitle>
             <CardDescription>
-              These deadlines are calculated from your filing periods; always verify against current ATTL/INSS guidance.
+              {t("taxReports.upcomingDeadlinesDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -139,7 +141,7 @@ export default function TaxReports() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Building className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Monthly WIT (ATTL)</span>
+                    <span className="font-medium">{t("taxReports.monthlyWit")}</span>
                   </div>
                   <Badge variant="secondary" className="gap-1">
                     <Clock className="h-3 w-3" />
@@ -147,7 +149,7 @@ export default function TaxReports() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Next: {nextWit ? `${nextWit.period} • due ${nextWit.dueDate}` : "No periods found"}
+                  {t("taxReports.next")}: {nextWit ? `${nextWit.period} • due ${nextWit.dueDate}` : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
 
@@ -155,7 +157,7 @@ export default function TaxReports() {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Shield className="h-4 w-4 text-muted-foreground" />
-                    <span className="font-medium">Monthly INSS</span>
+                    <span className="font-medium">{t("taxReports.monthlyInss")}</span>
                   </div>
                   <Badge variant="secondary" className="gap-1">
                     <Clock className="h-3 w-3" />
@@ -163,7 +165,7 @@ export default function TaxReports() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  Next: {nextInss ? `${nextInss.period} • due ${nextInss.dueDate}` : "No periods found"}
+                  {t("taxReports.next")}: {nextInss ? `${nextInss.period} • due ${nextInss.dueDate}` : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
             </div>
@@ -173,14 +175,14 @@ export default function TaxReports() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card>
             <CardHeader>
-              <CardTitle>ATTL Monthly WIT Return</CardTitle>
+              <CardTitle>{t("taxReports.attlTitle")}</CardTitle>
               <CardDescription>
-                Generate, export (CSV/PDF), and track monthly Wage Income Tax filings.
+                {t("taxReports.attlDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-between">
               <Button onClick={() => navigate("/reports/attl-monthly-wit")}>
-                Open WIT Filing
+                {t("taxReports.openWitFiling")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardContent>
@@ -188,14 +190,14 @@ export default function TaxReports() {
 
           <Card>
             <CardHeader>
-              <CardTitle>INSS Monthly Return</CardTitle>
+              <CardTitle>{t("taxReports.inssTitle")}</CardTitle>
               <CardDescription>
-                Generate and export monthly INSS contribution submissions and track filing status.
+                {t("taxReports.inssDesc")}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-between">
               <Button onClick={() => navigate("/reports/inss-monthly")}>
-                Open INSS Filing
+                {t("taxReports.openInssFiling")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </CardContent>

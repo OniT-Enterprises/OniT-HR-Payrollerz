@@ -74,7 +74,7 @@ export default function Index() {
   const testimonials = [
     {
       quote:
-        "PayrollHR transformed our entire HR process. What used to take days now takes hours.",
+        "Meza transformed our entire HR process. What used to take days now takes hours.",
       author: "Sarah Chen",
       role: "HR Director",
       company: "TechCorp",
@@ -234,7 +234,7 @@ export default function Index() {
                 Ready to transform your HR operations?
               </h2>
               <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-                Join thousands of companies that trust PayrollHR for their
+                Join thousands of companies that trust Meza for their
                 payroll and HR needs.
               </p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -269,7 +269,7 @@ export default function Index() {
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
                   <Building className="h-5 w-5" />
                 </div>
-                <span className="text-xl font-bold">PayrollHR</span>
+                <span className="text-xl font-bold">Meza</span>
               </div>
               <p className="text-sm text-muted-foreground">
                 Modern payroll and HR management for growing businesses.
@@ -389,7 +389,7 @@ export default function Index() {
           </div>
           <Separator className="my-8" />
           <div className="flex flex-col sm:flex-row justify-between items-center text-sm text-muted-foreground">
-            <p>© 2024 PayrollHR. All rights reserved.</p>
+            <p>© 2026 OniT Enterprises. All rights reserved.</p>
             <div className="flex gap-6 mt-4 sm:mt-0">
               <a href="#" className="hover:text-foreground transition-colors">
                 Privacy

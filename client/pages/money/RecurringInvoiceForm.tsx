@@ -46,30 +46,28 @@ import {
   FileText,
 } from 'lucide-react';
 
-const FREQUENCY_OPTIONS: { value: RecurringFrequency; label: string }[] = [
-  { value: 'weekly', label: 'Weekly' },
-  { value: 'monthly', label: 'Monthly' },
-  { value: 'quarterly', label: 'Quarterly (every 3 months)' },
-  { value: 'yearly', label: 'Yearly' },
-];
+const FREQUENCY_VALUES: RecurringFrequency[] = ['weekly', 'monthly', 'quarterly', 'yearly'];
 
-const DUE_DAYS_OPTIONS = [
-  { value: 7, label: '7 days' },
-  { value: 14, label: '14 days' },
-  { value: 15, label: '15 days' },
-  { value: 30, label: '30 days' },
-  { value: 45, label: '45 days' },
-  { value: 60, label: '60 days' },
-];
+const DUE_DAYS_VALUES = [7, 14, 15, 30, 45, 60];
 
 export default function RecurringInvoiceForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { toast } = useToast();
-  const { t: _t } = useI18n();
+  const { t } = useI18n();
   const { session } = useTenant();
 
   const isEditMode = !!id;
+
+  const frequencyOptions = FREQUENCY_VALUES.map((value) => ({
+    value,
+    label: t(`money.recurringInvoiceForm.frequency${value.charAt(0).toUpperCase() + value.slice(1)}`) || value,
+  }));
+
+  const dueDaysOptions = DUE_DAYS_VALUES.map((value) => ({
+    value,
+    label: t(`money.recurringInvoiceForm.dueDays${value}`) || `${value} days`,
+  }));
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -177,8 +175,8 @@ export default function RecurringInvoiceForm() {
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
-        title: 'Error',
-        description: 'Failed to load data',
+        title: t('common.error') || 'Error',
+        description: t('money.recurringInvoiceForm.loadError') || 'Failed to load data',
         variant: 'destructive',
       });
     } finally {
@@ -247,18 +245,18 @@ export default function RecurringInvoiceForm() {
 
       if (isEditMode && id) {
         await recurringInvoiceService.update(session.tid, id, data);
-        toast({ title: 'Success', description: 'Recurring invoice updated' });
+        toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.updated') || 'Recurring invoice updated' });
       } else {
         await recurringInvoiceService.create(session.tid, data);
-        toast({ title: 'Success', description: 'Recurring invoice created' });
+        toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.created') || 'Recurring invoice created' });
       }
 
       navigate('/money/invoices/recurring');
     } catch (error) {
       console.error('Error saving recurring invoice:', error);
       toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save',
+        title: t('common.error') || 'Error',
+        description: error instanceof Error ? error.message : (t('money.recurringInvoiceForm.saveError') || 'Failed to save'),
         variant: 'destructive',
       });
     } finally {
@@ -287,8 +285,8 @@ export default function RecurringInvoiceForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isEditMode ? 'Edit Recurring Invoice - OniT' : 'New Recurring Invoice - OniT'}
-        description="Set up a recurring invoice template"
+        title={isEditMode ? `${t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice'} - Meza` : `${t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice'} - Meza`}
+        description={t('money.recurringInvoiceForm.autoGenerate') || 'Set up a recurring invoice template'}
       />
       <MainNavigation />
 
@@ -300,17 +298,17 @@ export default function RecurringInvoiceForm() {
           <div className="flex items-center gap-3">
             <Button variant="ghost" onClick={() => navigate('/money/invoices/recurring')}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              {t('money.recurringInvoiceForm.back') || 'Back'}
             </Button>
             <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
               <Repeat className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <div>
               <h1 className="text-2xl font-bold">
-                {isEditMode ? 'Edit Recurring Invoice' : 'New Recurring Invoice'}
+                {isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
               </h1>
               <p className="text-muted-foreground">
-                Auto-generate invoices on a schedule
+                {t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}
               </p>
             </div>
           </div>
@@ -320,7 +318,7 @@ export default function RecurringInvoiceForm() {
             ) : (
               <Save className="h-4 w-4 mr-2" />
             )}
-            {isEditMode ? 'Save Changes' : 'Create Recurring'}
+            {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
           </Button>
         </div>
 
@@ -330,23 +328,23 @@ export default function RecurringInvoiceForm() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-purple-600" />
-                Customer & Schedule
+                {t('money.recurringInvoiceForm.customerSchedule') || 'Customer & Schedule'}
               </CardTitle>
               <CardDescription>
-                Select the customer and set the billing frequency
+                {t('money.recurringInvoiceForm.customerScheduleDesc') || 'Select the customer and set the billing frequency'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Customer *</Label>
+                  <Label>{t('money.recurringInvoiceForm.customer') || 'Customer'} *</Label>
                   <Controller
                     name="customerId"
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
                         <SelectTrigger className={errors.customerId ? 'border-red-500' : ''}>
-                          <SelectValue placeholder="Select a customer" />
+                          <SelectValue placeholder={t('money.recurringInvoiceForm.selectCustomer') || 'Select a customer'} />
                         </SelectTrigger>
                         <SelectContent>
                           {customers.map((customer) => (
@@ -363,13 +361,13 @@ export default function RecurringInvoiceForm() {
                   )}
                   {customers.length === 0 && (
                     <p className="text-xs text-muted-foreground">
-                      No customers yet.{' '}
+                      {t('money.recurringInvoiceForm.noCustomers') || 'No customers yet.'}{' '}
                       <button
                         type="button"
                         onClick={() => navigate('/money/customers')}
                         className="text-purple-600 hover:underline"
                       >
-                        Add one first
+                        {t('money.recurringInvoiceForm.addOneFirst') || 'Add one first'}
                       </button>
                     </p>
                   )}
@@ -377,7 +375,7 @@ export default function RecurringInvoiceForm() {
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
-                    Frequency *
+                    {t('money.recurringInvoiceForm.frequency') || 'Frequency'} *
                     <InfoTooltip content={MoneyTooltips.recurring.frequency} />
                   </Label>
                   <Controller
@@ -389,7 +387,7 @@ export default function RecurringInvoiceForm() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {FREQUENCY_OPTIONS.map((opt) => (
+                          {frequencyOptions.map((opt) => (
                             <SelectItem key={opt.value} value={opt.value}>
                               {opt.label}
                             </SelectItem>
@@ -405,7 +403,7 @@ export default function RecurringInvoiceForm() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     <Calendar className="h-3.5 w-3.5" />
-                    Start Date *
+                    {t('money.recurringInvoiceForm.startDate') || 'Start Date'} *
                   </Label>
                   <Input
                     type="date"
@@ -416,13 +414,13 @@ export default function RecurringInvoiceForm() {
                     <p className="text-xs text-red-500">{errors.startDate.message}</p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    First invoice will be generated on this date
+                    {t('money.recurringInvoiceForm.firstInvoiceHint') || 'First invoice will be generated on this date'}
                   </p>
                 </div>
 
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
-                    End Condition
+                    {t('money.recurringInvoiceForm.endCondition') || 'End Condition'}
                     <InfoTooltip content={MoneyTooltips.recurring.endCondition} />
                   </Label>
                   <Controller
@@ -434,9 +432,9 @@ export default function RecurringInvoiceForm() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="never">Never (continues indefinitely)</SelectItem>
-                          <SelectItem value="date">On a specific date</SelectItem>
-                          <SelectItem value="occurrences">After X invoices</SelectItem>
+                          <SelectItem value="never">{t('money.recurringInvoiceForm.endNever') || 'Never (continues indefinitely)'}</SelectItem>
+                          <SelectItem value="date">{t('money.recurringInvoiceForm.endOnDate') || 'On a specific date'}</SelectItem>
+                          <SelectItem value="occurrences">{t('money.recurringInvoiceForm.endAfterX') || 'After X invoices'}</SelectItem>
                         </SelectContent>
                       </Select>
                     )}
@@ -446,7 +444,7 @@ export default function RecurringInvoiceForm() {
 
               {endType === 'date' && (
                 <div className="space-y-2 max-w-xs">
-                  <Label>End Date</Label>
+                  <Label>{t('money.recurringInvoiceForm.endDate') || 'End Date'}</Label>
                   <Input
                     type="date"
                     {...register('endDate')}
@@ -461,7 +459,7 @@ export default function RecurringInvoiceForm() {
 
               {endType === 'occurrences' && (
                 <div className="space-y-2 max-w-xs">
-                  <Label>Number of Invoices</Label>
+                  <Label>{t('money.recurringInvoiceForm.numberOfInvoices') || 'Number of Invoices'}</Label>
                   <Input
                     type="number"
                     min={1}
@@ -482,10 +480,10 @@ export default function RecurringInvoiceForm() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <FileText className="h-5 w-5 text-purple-600" />
-                Invoice Template
+                {t('money.recurringInvoiceForm.invoiceTemplate') || 'Invoice Template'}
               </CardTitle>
               <CardDescription>
-                These items will appear on each generated invoice
+                {t('money.recurringInvoiceForm.invoiceTemplateDesc') || 'These items will appear on each generated invoice'}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -494,10 +492,10 @@ export default function RecurringInvoiceForm() {
                 <table className="w-full">
                   <thead className="bg-muted/50">
                     <tr>
-                      <th className="text-left p-3 font-medium text-sm">Description</th>
-                      <th className="text-right p-3 font-medium text-sm w-24">Qty</th>
-                      <th className="text-right p-3 font-medium text-sm w-32">Price</th>
-                      <th className="text-right p-3 font-medium text-sm w-32">Amount</th>
+                      <th className="text-left p-3 font-medium text-sm">{t('money.recurringInvoiceForm.description') || 'Description'}</th>
+                      <th className="text-right p-3 font-medium text-sm w-24">{t('money.recurringInvoiceForm.qty') || 'Qty'}</th>
+                      <th className="text-right p-3 font-medium text-sm w-32">{t('money.recurringInvoiceForm.price') || 'Price'}</th>
+                      <th className="text-right p-3 font-medium text-sm w-32">{t('money.recurringInvoiceForm.amount') || 'Amount'}</th>
                       <th className="w-10"></th>
                     </tr>
                   </thead>
@@ -510,7 +508,7 @@ export default function RecurringInvoiceForm() {
                           <td className="p-2">
                             <Input
                               {...register(`items.${index}.description`)}
-                              placeholder="Service or product description"
+                              placeholder={t('money.recurringInvoiceForm.descriptionPlaceholder') || 'Service or product description'}
                               className={`border-0 focus-visible:ring-0 ${errors.items?.[index]?.description ? 'border border-red-500' : ''}`}
                             />
                           </td>
@@ -561,18 +559,18 @@ export default function RecurringInvoiceForm() {
 
               <Button type="button" variant="outline" onClick={addItem}>
                 <Plus className="h-4 w-4 mr-2" />
-                Add Line Item
+                {t('money.recurringInvoiceForm.addLineItem') || 'Add Line Item'}
               </Button>
 
               {/* Totals */}
               <div className="flex justify-end">
                 <div className="w-64 space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">{t('money.recurringInvoiceForm.subtotal') || 'Subtotal'}</span>
                     <span>{formatCurrency(calculateSubtotal())}</span>
                   </div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted-foreground">Tax</span>
+                    <span className="text-muted-foreground">{t('money.recurringInvoiceForm.tax') || 'Tax'}</span>
                     <div className="flex items-center gap-2">
                       <Input
                         type="number"
@@ -587,7 +585,7 @@ export default function RecurringInvoiceForm() {
                     </div>
                   </div>
                   <div className="flex justify-between font-medium text-lg pt-2 border-t">
-                    <span>Total</span>
+                    <span>{t('money.recurringInvoiceForm.total') || 'Total'}</span>
                     <span>{formatCurrency(calculateTotal())}</span>
                   </div>
                 </div>
@@ -596,7 +594,7 @@ export default function RecurringInvoiceForm() {
               {/* Payment Terms */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
                 <div className="space-y-2">
-                  <Label>Payment Due</Label>
+                  <Label>{t('money.recurringInvoiceForm.paymentDue') || 'Payment Due'}</Label>
                   <Controller
                     name="dueDays"
                     control={control}
@@ -606,9 +604,9 @@ export default function RecurringInvoiceForm() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          {DUE_DAYS_OPTIONS.map((opt) => (
+                          {dueDaysOptions.map((opt) => (
                             <SelectItem key={opt.value} value={String(opt.value)}>
-                              {opt.label} after invoice date
+                              {opt.label} {t('money.recurringInvoiceForm.afterInvoiceDate') || 'after invoice date'}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -630,7 +628,7 @@ export default function RecurringInvoiceForm() {
                     )}
                   />
                   <label htmlFor="autoSend" className="text-sm cursor-pointer flex items-center gap-1.5">
-                    Auto-send invoice when generated
+                    {t('money.recurringInvoiceForm.autoSendLabel') || 'Auto-send invoice when generated'}
                     <InfoTooltip content={MoneyTooltips.recurring.autoSend} />
                   </label>
                 </div>
@@ -639,18 +637,18 @@ export default function RecurringInvoiceForm() {
               {/* Notes & Terms */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                 <div className="space-y-2">
-                  <Label>Notes</Label>
+                  <Label>{t('money.recurringInvoiceForm.notes') || 'Notes'}</Label>
                   <Textarea
                     {...register('notes')}
-                    placeholder="Notes to appear on invoice"
+                    placeholder={t('money.recurringInvoiceForm.notesPlaceholder') || 'Notes to appear on invoice'}
                     rows={3}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Terms & Conditions</Label>
+                  <Label>{t('money.recurringInvoiceForm.terms') || 'Terms & Conditions'}</Label>
                   <Textarea
                     {...register('terms')}
-                    placeholder="Payment terms"
+                    placeholder={t('money.recurringInvoiceForm.termsPlaceholder') || 'Payment terms'}
                     rows={3}
                   />
                 </div>
@@ -667,7 +665,7 @@ export default function RecurringInvoiceForm() {
             ) : (
               <Save className="h-4 w-4 mr-2" />
             )}
-            {isEditMode ? 'Save Changes' : 'Create Recurring'}
+            {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
           </Button>
         </div>
       </div>

@@ -731,7 +731,7 @@ export async function exportPayrollToQuickBooks(
 
   // Generate filename
   const payDate = new Date(payrollRun.payDate);
-  const fileName = `OniT_Payroll_${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}.${extension}`;
+  const fileName = `Meza_Payroll_${payDate.getFullYear()}-${String(payDate.getMonth() + 1).padStart(2, '0')}.${extension}`;
 
   // Log the export
   await logExport({

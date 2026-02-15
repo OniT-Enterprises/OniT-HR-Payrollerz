@@ -61,6 +61,7 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 interface EntryLineForm {
   accountId: string;
@@ -73,6 +74,7 @@ interface EntryLineForm {
 
 export default function JournalEntries() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
@@ -121,7 +123,7 @@ export default function JournalEntries() {
       console.error("Failed to load data:", error);
       toast({
         title: "Error",
-        description: "Failed to load journal entries.",
+        description: t("accounting.journalEntries.errorLoad"),
         variant: "destructive",
       });
     } finally {
@@ -186,21 +188,21 @@ export default function JournalEntries() {
         return (
           <Badge className="bg-green-100 text-green-800">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Posted
+            {t("accounting.journalEntries.statusPosted")}
           </Badge>
         );
       case "draft":
         return (
           <Badge className="bg-yellow-100 text-yellow-800">
             <Clock className="h-3 w-3 mr-1" />
-            Draft
+            {t("accounting.journalEntries.statusDraft")}
           </Badge>
         );
       case "void":
         return (
           <Badge className="bg-red-100 text-red-800">
             <XCircle className="h-3 w-3 mr-1" />
-            Void
+            {t("accounting.journalEntries.statusVoid")}
           </Badge>
         );
       default:
@@ -211,7 +213,7 @@ export default function JournalEntries() {
   // Source badge
   const getSourceBadge = (source: JournalEntry["source"] | undefined) => {
     if (!source) {
-      return <Badge className="bg-gray-100 text-gray-800">Manual</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800">{t("accounting.journalEntries.sourceManual")}</Badge>;
     }
     const colors: Record<string, string> = {
       manual: "bg-gray-100 text-gray-800",
@@ -225,9 +227,21 @@ export default function JournalEntries() {
       payment: "bg-amber-100 text-amber-800",
     };
 
+    const sourceLabels: Record<string, string> = {
+      manual: t("accounting.journalEntries.sourceManual"),
+      payroll: t("accounting.journalEntries.sourcePayroll"),
+      invoice: t("accounting.journalEntries.sourceInvoice"),
+      adjustment: t("accounting.journalEntries.sourceAdjustment"),
+      opening: t("accounting.journalEntries.sourceOpening"),
+      expense: t("accounting.journalEntries.sourceExpense"),
+      revenue: t("accounting.journalEntries.sourceRevenue"),
+      receipt: t("accounting.journalEntries.sourceReceipt"),
+      payment: t("accounting.journalEntries.sourcePayment"),
+    };
+
     return (
       <Badge className={colors[source] || "bg-gray-100 text-gray-800"}>
-        {source.charAt(0).toUpperCase() + source.slice(1)}
+        {sourceLabels[source] || source.charAt(0).toUpperCase() + source.slice(1)}
       </Badge>
     );
   };
@@ -245,7 +259,7 @@ export default function JournalEntries() {
     if (entryLines.length <= 2) {
       toast({
         title: "Error",
-        description: "Journal entry must have at least 2 lines.",
+        description: t("accounting.journalEntries.minTwoLines"),
         variant: "destructive",
       });
       return;
@@ -281,8 +295,8 @@ export default function JournalEntries() {
   const handleSubmit = async (asDraft: boolean = false) => {
     if (!entryDate || !entryDescription) {
       toast({
-        title: "Validation Error",
-        description: "Date and description are required.",
+        title: t("accounting.journalEntries.validationError"),
+        description: t("accounting.journalEntries.dateDescRequired"),
         variant: "destructive",
       });
       return;
@@ -290,8 +304,8 @@ export default function JournalEntries() {
 
     if (!formTotals.isBalanced) {
       toast({
-        title: "Validation Error",
-        description: "Debits must equal credits.",
+        title: t("accounting.journalEntries.validationError"),
+        description: t("accounting.journalEntries.debitsEqualCredits"),
         variant: "destructive",
       });
       return;
@@ -301,8 +315,8 @@ export default function JournalEntries() {
     const validLines = entryLines.filter((l) => l.accountId);
     if (validLines.length < 2) {
       toast({
-        title: "Validation Error",
-        description: "At least 2 lines with accounts are required.",
+        title: t("accounting.journalEntries.validationError"),
+        description: t("accounting.journalEntries.minTwoAccounts"),
         variant: "destructive",
       });
       return;
@@ -347,8 +361,8 @@ export default function JournalEntries() {
       await accountingService.journalEntries.createJournalEntry(tenantId, entry);
 
       toast({
-        title: "Success",
-        description: `Journal entry ${entryNumber} ${asDraft ? "saved as draft" : "posted"}.`,
+        title: t("accounting.journalEntries.success"),
+        description: t("accounting.journalEntries.entryCreated", { number: entryNumber, status: asDraft ? t("accounting.journalEntries.savedAsDraft") : t("accounting.journalEntries.entryPosted") }),
       });
 
       await loadData();
@@ -358,7 +372,7 @@ export default function JournalEntries() {
       console.error("Failed to create entry:", error);
       toast({
         title: "Error",
-        description: "Failed to create journal entry.",
+        description: t("accounting.journalEntries.errorCreate"),
         variant: "destructive",
       });
     } finally {
@@ -470,10 +484,10 @@ export default function JournalEntries() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Journal Entries
+                  {t("accounting.journalEntries.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Lançamentos Contábeis - Review accounting entries from payroll and operations
+                  {t("accounting.journalEntries.subtitle")}
                 </p>
               </div>
             </div>
@@ -482,23 +496,23 @@ export default function JournalEntries() {
                   <div className="flex flex-col items-end gap-1">
                     <Button onClick={resetForm} variant="outline" size="sm" className="border-orange-400 dark:border-orange-500 hover:border-orange-500 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400">
                       <Plus className="h-4 w-4 mr-2" />
-                      Manual Entry
+                      {t("accounting.journalEntries.manualEntry")}
                     </Button>
-                    <span className="text-xs text-muted-foreground">For non-payroll adjustments only</span>
+                    <span className="text-xs text-muted-foreground">{t("accounting.journalEntries.forNonPayroll")}</span>
                   </div>
                 </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
-                    <DialogTitle>Create Journal Entry</DialogTitle>
+                    <DialogTitle>{t("accounting.journalEntries.createEntry")}</DialogTitle>
                     <DialogDescription>
-                      Enter debits and credits. Total must balance.
+                      {t("accounting.journalEntries.createEntryDesc")}
                     </DialogDescription>
                   </DialogHeader>
 
                   <div className="space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="entry-date">Date *</Label>
+                        <Label htmlFor="entry-date">{t("accounting.journalEntries.date")}</Label>
                         <Input
                           id="entry-date"
                           type="date"
@@ -508,12 +522,12 @@ export default function JournalEntries() {
                         />
                       </div>
                       <div>
-                        <Label htmlFor="description">Description *</Label>
+                        <Label htmlFor="description">{t("accounting.journalEntries.descriptionLabel")}</Label>
                         <Input
                           id="description"
                           value={entryDescription}
                           onChange={(e) => setEntryDescription(e.target.value)}
-                          placeholder="e.g., Monthly payroll"
+                          placeholder={t("accounting.journalEntries.descriptionPlaceholder")}
                           required
                         />
                       </div>
@@ -522,10 +536,10 @@ export default function JournalEntries() {
                     {/* Entry Lines */}
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <Label>Entry Lines</Label>
+                        <Label>{t("accounting.journalEntries.entryLines")}</Label>
                         <Button type="button" variant="outline" size="sm" onClick={addLine}>
                           <Plus className="h-4 w-4 mr-1" />
-                          Add Line
+                          {t("accounting.journalEntries.addLine")}
                         </Button>
                       </div>
 
@@ -533,10 +547,10 @@ export default function JournalEntries() {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead className="w-64">Account</TableHead>
-                              <TableHead className="w-32">Debit</TableHead>
-                              <TableHead className="w-32">Credit</TableHead>
-                              <TableHead>Description</TableHead>
+                              <TableHead className="w-64">{t("accounting.journalEntries.account")}</TableHead>
+                              <TableHead className="w-32">{t("accounting.journalEntries.debit")}</TableHead>
+                              <TableHead className="w-32">{t("accounting.journalEntries.credit")}</TableHead>
+                              <TableHead>{t("accounting.journalEntries.description")}</TableHead>
                               <TableHead className="w-12"></TableHead>
                             </TableRow>
                           </TableHeader>
@@ -549,7 +563,7 @@ export default function JournalEntries() {
                                     onValueChange={(v) => updateLine(index, "accountId", v)}
                                   >
                                     <SelectTrigger className="w-full">
-                                      <SelectValue placeholder="Select account" />
+                                      <SelectValue placeholder={t("accounting.journalEntries.selectAccount")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                       {accounts.map((acc) => (
@@ -605,7 +619,7 @@ export default function JournalEntries() {
                             ))}
                             {/* Totals row */}
                             <TableRow className="bg-card border-t font-semibold">
-                              <TableCell className="text-foreground">Totals</TableCell>
+                              <TableCell className="text-foreground">{t("accounting.journalEntries.totals")}</TableCell>
                               <TableCell className="text-right text-foreground">
                                 {formatCurrencyTL(formTotals.totalDebit)}
                               </TableCell>
@@ -616,11 +630,11 @@ export default function JournalEntries() {
                                 {formTotals.isBalanced ? (
                                   <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                                     <CheckCircle className="h-4 w-4" />
-                                    Balanced
+                                    {t("accounting.journalEntries.balanced")}
                                   </span>
                                 ) : (
                                   <span className="text-red-600 dark:text-red-400">
-                                    Difference: {formatCurrencyTL(formTotals.difference)}
+                                    {t("accounting.journalEntries.difference", { amount: formatCurrencyTL(formTotals.difference) })}
                                   </span>
                                 )}
                               </TableCell>
@@ -637,7 +651,7 @@ export default function JournalEntries() {
                         onClick={() => setShowAddDialog(false)}
                         disabled={submitting}
                       >
-                        Cancel
+                        {t("accounting.journalEntries.cancel")}
                       </Button>
                       <Button
                         type="button"
@@ -645,7 +659,7 @@ export default function JournalEntries() {
                         onClick={() => handleSubmit(true)}
                         disabled={submitting}
                       >
-                        Save as Draft
+                        {t("accounting.journalEntries.saveAsDraft")}
                       </Button>
                       <Button
                         type="button"
@@ -655,10 +669,10 @@ export default function JournalEntries() {
                         {submitting ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Posting...
+                            {t("accounting.journalEntries.posting")}
                           </>
                         ) : (
-                          "Post Entry"
+                          t("accounting.journalEntries.postEntry")
                         )}
                       </Button>
                     </div>
@@ -674,30 +688,30 @@ export default function JournalEntries() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Total Entries</p>
+                <p className="text-sm text-muted-foreground">{t("accounting.journalEntries.totalEntries")}</p>
                 <p className="text-2xl font-bold">{stats.total}</p>
-                <p className="text-xs text-muted-foreground/70">for {yearFilter}</p>
+                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.forYear", { year: yearFilter })}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-green-600 dark:text-green-400">Posted</p>
+                <p className="text-sm text-green-600 dark:text-green-400">{t("accounting.journalEntries.posted")}</p>
                 <p className="text-2xl font-bold">{stats.posted}</p>
-                <p className="text-xs text-muted-foreground/70">entries finalized</p>
+                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.entriesFinalized")}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-yellow-600 dark:text-yellow-400">Drafts</p>
+                <p className="text-sm text-yellow-600 dark:text-yellow-400">{t("accounting.journalEntries.drafts")}</p>
                 <p className="text-2xl font-bold">{stats.drafts}</p>
-                <p className="text-xs text-muted-foreground/70">pending review</p>
+                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.pendingReview")}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-sm text-muted-foreground">Total Debits</p>
+                <p className="text-sm text-muted-foreground">{t("accounting.journalEntries.totalDebits")}</p>
                 <p className="text-2xl font-bold">{formatCurrencyTL(stats.totalDebit)}</p>
-                <p className="text-xs text-muted-foreground/70">posted entries for {yearFilter}</p>
+                <p className="text-xs text-muted-foreground/70">{t("accounting.journalEntries.postedEntriesFor", { year: yearFilter })}</p>
               </CardContent>
             </Card>
           </div>
@@ -710,7 +724,7 @@ export default function JournalEntries() {
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
-                      placeholder="Search by entry number or description..."
+                      placeholder={t("accounting.journalEntries.searchPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
@@ -720,30 +734,30 @@ export default function JournalEntries() {
                 <div className="w-36">
                   <Select value={sourceFilter} onValueChange={setSourceFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All sources" />
+                      <SelectValue placeholder={t("accounting.journalEntries.allSources")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Sources</SelectItem>
-                      <SelectItem value="payroll">Payroll</SelectItem>
-                      <SelectItem value="manual">Manual</SelectItem>
-                      <SelectItem value="opening">Opening</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="revenue">Revenue</SelectItem>
-                      <SelectItem value="payment">Payment</SelectItem>
-                      <SelectItem value="receipt">Receipt</SelectItem>
+                      <SelectItem value="all">{t("accounting.journalEntries.allSources")}</SelectItem>
+                      <SelectItem value="payroll">{t("accounting.journalEntries.sourcePayroll")}</SelectItem>
+                      <SelectItem value="manual">{t("accounting.journalEntries.sourceManual")}</SelectItem>
+                      <SelectItem value="opening">{t("accounting.journalEntries.sourceOpening")}</SelectItem>
+                      <SelectItem value="expense">{t("accounting.journalEntries.sourceExpense")}</SelectItem>
+                      <SelectItem value="revenue">{t("accounting.journalEntries.sourceRevenue")}</SelectItem>
+                      <SelectItem value="payment">{t("accounting.journalEntries.sourcePayment")}</SelectItem>
+                      <SelectItem value="receipt">{t("accounting.journalEntries.sourceReceipt")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="w-32">
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("accounting.journalEntries.allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All Statuses</SelectItem>
-                      <SelectItem value="posted">Posted</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="void">Void</SelectItem>
+                      <SelectItem value="all">{t("accounting.journalEntries.allStatuses")}</SelectItem>
+                      <SelectItem value="posted">{t("accounting.journalEntries.statusPosted")}</SelectItem>
+                      <SelectItem value="draft">{t("accounting.journalEntries.statusDraft")}</SelectItem>
+                      <SelectItem value="void">{t("accounting.journalEntries.statusVoid")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -768,20 +782,20 @@ export default function JournalEntries() {
           {/* Entries Table - Grouped by Journal Entry */}
           <Card>
             <CardHeader>
-              <CardTitle>Journal Entries</CardTitle>
+              <CardTitle>{t("accounting.journalEntries.journalEntriesLabel")}</CardTitle>
               <CardDescription>
-                Showing {filteredEntries.length} entries for {yearFilter}
-                {sourceFilter !== "all" && ` • Source: ${sourceFilter}`}
-                {statusFilter !== "all" && ` • Status: ${statusFilter}`}
+                {t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}
+                {sourceFilter !== "all" && ` • ${t("accounting.journalEntries.source")}: ${sourceFilter}`}
+                {statusFilter !== "all" && ` • ${t("accounting.journalEntries.statusLabel")}: ${statusFilter}`}
               </CardDescription>
             </CardHeader>
             <CardContent>
               {filteredEntries.length === 0 ? (
                 <div className="text-center py-12">
                   <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">No journal entries found</p>
+                  <p className="text-muted-foreground mb-2">{t("accounting.journalEntries.noEntriesFound")}</p>
                   <p className="text-sm text-muted-foreground/70 mb-4">
-                    Journal entries are typically generated from payroll runs
+                    {t("accounting.journalEntries.noEntriesDesc")}
                   </p>
                 </div>
               ) : (
@@ -813,7 +827,7 @@ export default function JournalEntries() {
                                     {entry.entryNumber}
                                   </code>
                                   {isLocked && (
-                                    <span title="Linked to payroll run">
+                                    <span title={t("accounting.journalEntries.linkedPayroll")}>
                                       <Lock className="h-3 w-3 text-blue-500" />
                                     </span>
                                   )}
@@ -863,9 +877,9 @@ export default function JournalEntries() {
                                 <TableHeader>
                                   <TableRow className="hover:bg-transparent">
                                     <TableHead className="w-16"></TableHead>
-                                    <TableHead>Account</TableHead>
-                                    <TableHead className="text-right w-32">Debit</TableHead>
-                                    <TableHead className="text-right w-32">Credit</TableHead>
+                                    <TableHead>{t("accounting.journalEntries.account")}</TableHead>
+                                    <TableHead className="text-right w-32">{t("accounting.journalEntries.debit")}</TableHead>
+                                    <TableHead className="text-right w-32">{t("accounting.journalEntries.credit")}</TableHead>
                                   </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -896,7 +910,7 @@ export default function JournalEntries() {
                                   {/* Totals Row */}
                                   <TableRow className="bg-muted/50 font-semibold border-t">
                                     <TableCell></TableCell>
-                                    <TableCell className="text-sm">Total</TableCell>
+                                    <TableCell className="text-sm">{t("accounting.journalEntries.total")}</TableCell>
                                     <TableCell className="text-right font-mono text-sm">
                                       {formatCurrencyTL(entry.totalDebit)}
                                     </TableCell>
@@ -913,11 +927,11 @@ export default function JournalEntries() {
                                   {isLocked && (
                                     <span className="flex items-center gap-1">
                                       <Lock className="h-3 w-3" />
-                                      Linked to payroll run
+                                      {t("accounting.journalEntries.linkedPayroll")}
                                     </span>
                                   )}
                                   {entry.sourceRef && (
-                                    <span>Ref: {entry.sourceRef}</span>
+                                    <span>{t("accounting.journalEntries.reference", { ref: entry.sourceRef })}</span>
                                   )}
                                 </div>
                                 <Button
@@ -930,7 +944,7 @@ export default function JournalEntries() {
                                   className="h-7 text-xs"
                                 >
                                   <Eye className="h-3 w-3 mr-1" />
-                                  Full Details
+                                  {t("accounting.journalEntries.fullDetails")}
                                 </Button>
                               </div>
                             </div>
@@ -950,7 +964,7 @@ export default function JournalEntries() {
         <DialogContent className="max-w-3xl">
           <DialogHeader>
             <DialogTitle>
-              Journal Entry {selectedEntry?.entryNumber}
+              {t("accounting.journalEntries.journalEntry", { number: selectedEntry?.entryNumber ?? "" })}
             </DialogTitle>
             <DialogDescription>
               {selectedEntry?.description}
@@ -961,17 +975,17 @@ export default function JournalEntries() {
             <div className="space-y-4">
               <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <p className="text-sm text-gray-500">Date</p>
+                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.dateLabel")}</p>
                   <p className="font-medium">
                     {new Date(selectedEntry.date).toLocaleDateString()}
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Source</p>
+                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.source")}</p>
                   <p>{getSourceBadge(selectedEntry.source)}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Status</p>
+                  <p className="text-sm text-gray-500">{t("accounting.journalEntries.statusLabel")}</p>
                   <p>{getStatusBadge(selectedEntry.status)}</p>
                 </div>
               </div>
@@ -980,9 +994,9 @@ export default function JournalEntries() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Account</TableHead>
-                      <TableHead className="text-right">Debit</TableHead>
-                      <TableHead className="text-right">Credit</TableHead>
+                      <TableHead>{t("accounting.journalEntries.account")}</TableHead>
+                      <TableHead className="text-right">{t("accounting.journalEntries.debit")}</TableHead>
+                      <TableHead className="text-right">{t("accounting.journalEntries.credit")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1006,7 +1020,7 @@ export default function JournalEntries() {
                       </TableRow>
                     ))}
                     <TableRow className="bg-gray-50 font-semibold">
-                      <TableCell>Total</TableCell>
+                      <TableCell>{t("accounting.journalEntries.total")}</TableCell>
                       <TableCell className="text-right font-mono">
                         {formatCurrencyTL(selectedEntry.totalDebit)}
                       </TableCell>
@@ -1020,7 +1034,7 @@ export default function JournalEntries() {
 
               {selectedEntry.sourceRef && (
                 <p className="text-sm text-gray-500">
-                  Reference: {selectedEntry.sourceRef}
+                  {t("accounting.journalEntries.reference", { ref: selectedEntry.sourceRef })}
                 </p>
               )}
             </div>

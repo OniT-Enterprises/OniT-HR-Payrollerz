@@ -44,54 +44,56 @@ import {
 } from "lucide-react";
 import { adminService, AuditLogEntry } from "@/services/adminService";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n/I18nProvider";
 
-const ACTION_CONFIGS: Record<
+const ACTION_ICON_CONFIGS: Record<
   string,
-  { label: string; icon: React.ReactNode; color: string }
+  { labelKey: string; icon: React.ReactNode; color: string }
 > = {
   tenant_created: {
-    label: "Tenant Created",
+    labelKey: "admin.auditLog.actionTenantCreated",
     icon: <Building2 className="h-4 w-4" />,
     color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   },
   tenant_suspended: {
-    label: "Tenant Suspended",
+    labelKey: "admin.auditLog.actionTenantSuspended",
     icon: <Ban className="h-4 w-4" />,
     color: "bg-red-500/10 text-red-600 border-red-500/20",
   },
   tenant_reactivated: {
-    label: "Tenant Reactivated",
+    labelKey: "admin.auditLog.actionTenantReactivated",
     icon: <CheckCircle className="h-4 w-4" />,
     color: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   },
   tenant_updated: {
-    label: "Tenant Updated",
+    labelKey: "admin.auditLog.actionTenantUpdated",
     icon: <Building2 className="h-4 w-4" />,
     color: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   },
   superadmin_granted: {
-    label: "Superadmin Granted",
+    labelKey: "admin.auditLog.actionSuperadminGranted",
     icon: <Shield className="h-4 w-4" />,
     color: "bg-amber-500/10 text-amber-600 border-amber-500/20",
   },
   superadmin_revoked: {
-    label: "Superadmin Revoked",
+    labelKey: "admin.auditLog.actionSuperadminRevoked",
     icon: <ShieldOff className="h-4 w-4" />,
     color: "bg-orange-500/10 text-orange-600 border-orange-500/20",
   },
   impersonation_started: {
-    label: "Impersonation Started",
+    labelKey: "admin.auditLog.actionImpersonationStarted",
     icon: <Eye className="h-4 w-4" />,
     color: "bg-purple-500/10 text-purple-600 border-purple-500/20",
   },
   impersonation_ended: {
-    label: "Impersonation Ended",
+    labelKey: "admin.auditLog.actionImpersonationEnded",
     icon: <Eye className="h-4 w-4" />,
     color: "bg-gray-500/10 text-gray-600 border-gray-500/20",
   },
 };
 
 export default function AuditLog() {
+  const { t } = useI18n();
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
@@ -109,7 +111,7 @@ export default function AuditLog() {
       setEntries(data);
     } catch (error) {
       console.error("Error loading audit log:", error);
-      toast.error("Failed to load audit log");
+      toast.error(t("admin.auditLog.errorLoad"));
     } finally {
       setLoading(false);
     }
@@ -174,13 +176,19 @@ export default function AuditLog() {
   };
 
   const getActionConfig = (action: string) => {
-    return (
-      ACTION_CONFIGS[action] || {
-        label: action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-        icon: <ScrollText className="h-4 w-4" />,
-        color: "bg-gray-500/10 text-gray-600 border-gray-500/20",
-      }
-    );
+    const config = ACTION_ICON_CONFIGS[action];
+    if (config) {
+      return {
+        label: t(config.labelKey),
+        icon: config.icon,
+        color: config.color,
+      };
+    }
+    return {
+      label: action.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+      icon: <ScrollText className="h-4 w-4" />,
+      color: "bg-gray-500/10 text-gray-600 border-gray-500/20",
+    };
   };
 
   const uniqueActions = [...new Set(entries.map((e) => e.action))];
@@ -203,16 +211,16 @@ export default function AuditLog() {
                   <Sparkles className="h-4 w-4 text-violet-500" />
                   <span>Platform Management</span>
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight">Audit Log</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t("admin.auditLog.title")}</h1>
                 <p className="text-muted-foreground">
-                  Track all administrative actions on the platform
+                  {t("admin.auditLog.subtitle")}
                 </p>
               </div>
             </div>
 
             <Button onClick={loadAuditLog} variant="outline" className="gap-2">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Refresh
+              {t("admin.auditLog.refresh")}
             </Button>
           </div>
         </div>
@@ -224,16 +232,16 @@ export default function AuditLog() {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg">Activity History</CardTitle>
+                <CardTitle className="text-lg">{t("admin.auditLog.activityHistory")}</CardTitle>
                 <CardDescription>
-                  {filteredEntries.length} event{filteredEntries.length !== 1 ? "s" : ""} found
+                  {t("admin.auditLog.eventsFound", { count: String(filteredEntries.length) })}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search logs..."
+                    placeholder={t("admin.auditLog.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-9"
@@ -242,10 +250,10 @@ export default function AuditLog() {
                 <Select value={actionFilter} onValueChange={setActionFilter}>
                   <SelectTrigger className="w-48">
                     <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Filter by action" />
+                    <SelectValue placeholder={t("admin.auditLog.filterByAction")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">All Actions</SelectItem>
+                    <SelectItem value="all">{t("admin.auditLog.allActions")}</SelectItem>
                     {uniqueActions.map((action) => (
                       <SelectItem key={action} value={action}>
                         {getActionConfig(action).label}
@@ -264,20 +272,20 @@ export default function AuditLog() {
             ) : filteredEntries.length === 0 ? (
               <div className="text-center py-12">
                 <ScrollText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground">No audit entries found</p>
+                <p className="text-muted-foreground">{t("admin.auditLog.noEntries")}</p>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Administrative actions will appear here
+                  {t("admin.auditLog.noEntriesDesc")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[180px]">Timestamp</TableHead>
-                    <TableHead>Action</TableHead>
-                    <TableHead>Performed By</TableHead>
-                    <TableHead>Target</TableHead>
-                    <TableHead className="text-right">Details</TableHead>
+                    <TableHead className="w-[180px]">{t("admin.auditLog.timestamp")}</TableHead>
+                    <TableHead>{t("admin.auditLog.action")}</TableHead>
+                    <TableHead>{t("admin.auditLog.performedBy")}</TableHead>
+                    <TableHead>{t("admin.auditLog.target")}</TableHead>
+                    <TableHead className="text-right">{t("admin.auditLog.details")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -307,7 +315,7 @@ export default function AuditLog() {
                             <User className="h-3 w-3 text-muted-foreground" />
                             <span className="text-sm">
                               {entry.triggeredBy === "system"
-                                ? "System"
+                                ? t("admin.auditLog.system")
                                 : entry.performedByEmail || "Unknown"}
                             </span>
                           </div>
@@ -367,16 +375,16 @@ export default function AuditLog() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="text-muted-foreground mb-1">Performed By</p>
+                  <p className="text-muted-foreground mb-1">{t("admin.auditLog.performedBy")}</p>
                   <p className="font-medium">
                     {selectedEntry.triggeredBy === "system"
-                      ? "System (Automated)"
+                      ? t("admin.auditLog.systemAutomated")
                       : selectedEntry.performedByEmail || "Unknown"}
                   </p>
                 </div>
                 {selectedEntry.tenantId && (
                   <div>
-                    <p className="text-muted-foreground mb-1">Tenant</p>
+                    <p className="text-muted-foreground mb-1">{t("admin.auditLog.tenant")}</p>
                     <p className="font-medium">
                       {selectedEntry.tenantName || selectedEntry.tenantId}
                     </p>
@@ -384,13 +392,13 @@ export default function AuditLog() {
                 )}
                 {selectedEntry.targetEmail && (
                   <div>
-                    <p className="text-muted-foreground mb-1">Target User</p>
+                    <p className="text-muted-foreground mb-1">{t("admin.auditLog.targetUser")}</p>
                     <p className="font-medium">{selectedEntry.targetEmail}</p>
                   </div>
                 )}
                 {selectedEntry.targetUserId && (
                   <div>
-                    <p className="text-muted-foreground mb-1">Target User ID</p>
+                    <p className="text-muted-foreground mb-1">{t("admin.auditLog.targetUserId")}</p>
                     <p className="font-mono text-xs">{selectedEntry.targetUserId}</p>
                   </div>
                 )}
@@ -398,7 +406,7 @@ export default function AuditLog() {
 
               {selectedEntry.details && Object.keys(selectedEntry.details).length > 0 && (
                 <div>
-                  <p className="text-muted-foreground mb-2 text-sm">Details</p>
+                  <p className="text-muted-foreground mb-2 text-sm">{t("admin.auditLog.details")}</p>
                   <div className="bg-muted/50 rounded-lg p-3">
                     <pre className="text-xs overflow-auto whitespace-pre-wrap">
                       {JSON.stringify(selectedEntry.details, null, 2)}
@@ -408,7 +416,7 @@ export default function AuditLog() {
               )}
 
               <div className="pt-2 border-t">
-                <p className="text-muted-foreground text-xs">Entry ID: {selectedEntry.id}</p>
+                <p className="text-muted-foreground text-xs">{t("admin.auditLog.entryId", { id: selectedEntry.id ?? "" })}</p>
               </div>
             </div>
           )}

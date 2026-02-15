@@ -142,7 +142,7 @@ function AccountingDashboardSkeleton() {
 
 export default function AccountingDashboard() {
   const navigate = useNavigate();
-  const { t: _t } = useI18n();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(true);
 
@@ -180,9 +180,9 @@ export default function AccountingDashboard() {
   const attentionItems = accountingStatus.pendingEntries > 0
     ? [
         {
-          issue: `${accountingStatus.pendingEntries} manual entries awaiting approval`,
-          hint: "Manual entries can affect financial reports",
-          action: "Review",
+          issue: t("accounting.dashboard.manualEntriesAwaiting", { count: String(accountingStatus.pendingEntries) }),
+          hint: t("accounting.dashboard.manualEntriesHint"),
+          action: t("accounting.dashboard.review"),
           path: "/accounting/journal-entries?status=pending",
         },
       ]
@@ -192,36 +192,36 @@ export default function AccountingDashboard() {
   const accountingTools = [
     {
       id: "chart-of-accounts",
-      title: "Chart of Accounts",
-      description: "Manage account structure",
+      title: t("accounting.dashboard.chartOfAccounts"),
+      description: t("accounting.dashboard.chartOfAccountsDesc"),
       icon: BookOpen,
       path: "/accounting/chart-of-accounts",
     },
     {
       id: "journal-entries",
-      title: "Journal Entries",
-      description: "View and create entries",
+      title: t("accounting.dashboard.journalEntries"),
+      description: t("accounting.dashboard.journalEntriesDesc"),
       icon: FileSpreadsheet,
       path: "/accounting/journal-entries",
     },
     {
       id: "general-ledger",
-      title: "General Ledger",
-      description: "Account transaction history",
+      title: t("accounting.dashboard.generalLedger"),
+      description: t("accounting.dashboard.generalLedgerDesc"),
       icon: Landmark,
       path: "/accounting/general-ledger",
     },
     {
       id: "trial-balance",
-      title: "Trial Balance",
-      description: "Verify debits equal credits",
+      title: t("accounting.dashboard.trialBalance"),
+      description: t("accounting.dashboard.trialBalanceDesc"),
       icon: Scale,
       path: "/accounting/trial-balance",
     },
     {
       id: "reports",
-      title: "Financial Reports",
-      description: "Income statement, balance sheet",
+      title: t("accounting.dashboard.financialReports"),
+      description: t("accounting.dashboard.financialReportsDesc"),
       icon: BarChart3,
       path: "/accounting/reports",
     },
@@ -246,9 +246,9 @@ export default function AccountingDashboard() {
                 <Landmark className="h-6 w-6 text-white" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold text-foreground">Accounting</h1>
+                <h1 className="text-2xl font-bold text-foreground">{t("accounting.dashboard.title")}</h1>
                 <p className="text-sm text-muted-foreground">
-                  Ledger, journal entries, and audit trail
+                  {t("accounting.dashboard.ledgerSubtitle")}
                 </p>
               </div>
             </div>
@@ -259,7 +259,7 @@ export default function AccountingDashboard() {
                 onClick={() => navigate("/accounting/journal-entries?action=new")}
               >
                 <FilePlus className="h-4 w-4 mr-1.5" />
-                New Manual Entry
+                {t("accounting.dashboard.newManualEntry")}
               </Button>
               <Button
                 size="sm"
@@ -267,7 +267,7 @@ export default function AccountingDashboard() {
                 onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
               >
                 <Eye className="h-4 w-4 mr-1.5" />
-                Review Payroll Entries
+                {t("accounting.dashboard.reviewPayrollEntries")}
               </Button>
             </div>
           </div>
@@ -285,14 +285,14 @@ export default function AccountingDashboard() {
             </div>
             <div className="flex-1">
               <p className="font-medium text-orange-800 dark:text-orange-200">
-                This section is for accountants and auditors
+                {t("accounting.dashboard.accountantGateTitle")}
               </p>
               <p className="text-sm text-orange-700/80 dark:text-orange-400/80 mt-0.5">
-                For everyday tasks like sending invoices, paying bills, or running payroll,
-                use <button onClick={() => navigate("/money")} className="underline hover:text-orange-800 dark:hover:text-orange-300">Money</button> or <button onClick={() => navigate("/payroll")} className="underline hover:text-orange-800 dark:hover:text-orange-300">Payroll</button> instead.
+                {t("accounting.dashboard.accountantGateDesc")}{" "}
+                <button onClick={() => navigate("/money")} className="underline hover:text-orange-800 dark:hover:text-orange-300">{t("accounting.dashboard.moneyLink")}</button> or <button onClick={() => navigate("/payroll")} className="underline hover:text-orange-800 dark:hover:text-orange-300">{t("accounting.dashboard.payrollLink")}</button> {t("accounting.dashboard.accountantGateInstead")}
               </p>
               <p className="text-xs text-orange-600/70 dark:text-orange-500/70 mt-2">
-                Most businesses never need to change anything here — OniT keeps this in sync automatically.
+                {t("accounting.dashboard.accountantGateNote")}
               </p>
             </div>
           </div>
@@ -303,7 +303,7 @@ export default function AccountingDashboard() {
         ═══════════════════════════════════════════════════════════════ */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">This Month</CardTitle>
+            <CardTitle className="text-base">{t("accounting.dashboard.thisMonth")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
@@ -315,9 +315,9 @@ export default function AccountingDashboard() {
                   <AlertCircle className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Payroll Entries</p>
+                  <p className="text-sm font-medium">{t("accounting.dashboard.payrollEntries")}</p>
                   <p className="text-xs text-muted-foreground">
-                    {accountingStatus.payrollPosted ? "Posted" : "Not posted"}
+                    {accountingStatus.payrollPosted ? t("accounting.dashboard.posted") : t("accounting.dashboard.notPosted")}
                   </p>
                 </div>
                 <span className="text-lg font-bold">
@@ -337,13 +337,13 @@ export default function AccountingDashboard() {
                   <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Trial Balance</p>
+                  <p className="text-sm font-medium">{t("accounting.dashboard.trialBalanceLabel")}</p>
                   <p className={`text-xs ${
                     accountingStatus.trialBalanced
                       ? "text-emerald-600 dark:text-emerald-400"
                       : "text-red-600 dark:text-red-400"
                   }`}>
-                    {accountingStatus.trialBalanced ? "Balanced" : "Out of balance"}
+                    {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.outOfBalance")}
                   </p>
                 </div>
                 <Badge
@@ -353,7 +353,7 @@ export default function AccountingDashboard() {
                       : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700"
                   }`}
                 >
-                  {accountingStatus.trialBalanced ? "Balanced" : "Check"}
+                  {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.check")}
                 </Badge>
               </div>
 
@@ -365,8 +365,8 @@ export default function AccountingDashboard() {
                   <Clock className="h-5 w-5 text-amber-500 flex-shrink-0" />
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">Pending Items</p>
-                  <p className="text-xs text-muted-foreground">Manual entries</p>
+                  <p className="text-sm font-medium">{t("accounting.dashboard.pendingItems")}</p>
+                  <p className="text-xs text-muted-foreground">{t("accounting.dashboard.manualEntries")}</p>
                 </div>
                 <span className={`text-lg font-bold ${
                   accountingStatus.pendingEntries > 0 ? "text-amber-600 dark:text-amber-400" : ""
@@ -384,7 +384,7 @@ export default function AccountingDashboard() {
                   size="sm"
                   onClick={() => navigate("/accounting/journal-entries")}
                 >
-                  Review entries
+                  {t("accounting.dashboard.reviewEntries")}
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -401,9 +401,9 @@ export default function AccountingDashboard() {
               <div>
                 <CardTitle className="text-base flex items-center gap-2">
                   <Calculator className="h-4 w-4 text-orange-500" />
-                  Payroll → Accounting
+                  {t("accounting.dashboard.payrollToAccounting")}
                 </CardTitle>
-                <CardDescription>Last payroll journal entry</CardDescription>
+                <CardDescription>{t("accounting.dashboard.lastPayrollEntry")}</CardDescription>
               </div>
               <Badge variant="secondary" className="text-xs">
                 {lastPayrollEntry.date}
@@ -413,7 +413,7 @@ export default function AccountingDashboard() {
           <CardContent>
             {/* Clarification text */}
             <p className="text-xs text-muted-foreground mb-4 pb-3 border-b border-border/50">
-              Payroll automatically posts journal entries. These entries should normally not be edited.
+              {t("accounting.dashboard.payrollAutoPost")}
             </p>
 
             <div className="space-y-3">
@@ -436,7 +436,7 @@ export default function AccountingDashboard() {
                           ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
                           : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
                       }`}>
-                        {entry.type === "debit" ? "Debit" : "Credit"}
+                        {entry.type === "debit" ? t("accounting.dashboard.debit") : t("accounting.dashboard.credit")}
                       </span>
                       <span className="text-muted-foreground">{entry.account}</span>
                     </div>
@@ -455,7 +455,7 @@ export default function AccountingDashboard() {
                   className="text-muted-foreground hover:text-foreground -ml-2"
                   onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
                 >
-                  View all payroll entries
+                  {t("accounting.dashboard.viewAllPayrollEntries")}
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -471,7 +471,7 @@ export default function AccountingDashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Attention Required
+                {t("accounting.dashboard.attentionRequired")}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -512,9 +512,9 @@ export default function AccountingDashboard() {
               <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-base">Accounting Tools</CardTitle>
+                    <CardTitle className="text-base">{t("accounting.dashboard.accountingTools")}</CardTitle>
                     <CardDescription>
-                      Chart of accounts, journal entries, ledger, reports
+                      {t("accounting.dashboard.accountingToolsDesc")}
                     </CardDescription>
                   </div>
                   <ChevronDown
@@ -555,7 +555,7 @@ export default function AccountingDashboard() {
 
         {/* Last reconciliation note */}
         <p className="text-xs text-muted-foreground text-center mt-6">
-          Last reconciliation: {accountingStatus.lastReconciliation}
+          {t("accounting.dashboard.lastReconciliation", { date: accountingStatus.lastReconciliation })}
         </p>
       </div>
     </div>

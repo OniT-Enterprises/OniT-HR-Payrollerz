@@ -327,11 +327,11 @@ export default function BankReconciliation() {
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'matched':
-        return <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">Matched</Badge>;
+        return <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">{t('money.bankRecon.matched') || 'Matched'}</Badge>;
       case 'reconciled':
-        return <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">Reconciled</Badge>;
+        return <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">{t('money.bankRecon.reconciled') || 'Reconciled'}</Badge>;
       default:
-        return <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">Unmatched</Badge>;
+        return <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">{t('money.bankRecon.unmatched') || 'Unmatched'}</Badge>;
     }
   };
 
@@ -423,7 +423,7 @@ export default function BankReconciliation() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Bank Reconciliation - OniT" description="Reconcile bank transactions" />
+      <SEO title="Bank Reconciliation - Meza" description="Reconcile bank transactions" />
       <MainNavigation />
 
       {/* Hero Section */}
@@ -484,7 +484,10 @@ export default function BankReconciliation() {
               {selectedIds.size}
             </Badge>
             <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
-              transaction{selectedIds.size !== 1 ? 's' : ''} {t('money.bankRecon.selected') || 'selected'}
+              {selectedIds.size !== 1
+                ? (t('money.bankRecon.transactionPlural') || 'transactions')
+                : (t('money.bankRecon.transaction') || 'transaction')
+              } {t('money.bankRecon.selected') || 'selected'}
             </span>
             <div className="flex-1" />
             <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300">
@@ -539,7 +542,7 @@ export default function BankReconciliation() {
                   {t('money.bankRecon.noTransactions') || 'No transactions yet'}
                 </p>
                 <p className="text-sm text-muted-foreground mb-5">
-                  Upload a CSV export from your bank to get started
+                  {t('money.bankRecon.uploadCsvHint') || 'Upload a CSV export from your bank to get started'}
                 </p>
                 <Button onClick={() => fileInputRef.current?.click()} className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-sm">
                   <Upload className="h-4 w-4 mr-2" />
@@ -591,7 +594,7 @@ export default function BankReconciliation() {
                             <div>
                               <p className="font-medium text-sm">{tx.description}</p>
                               {tx.reference && (
-                                <p className="text-xs text-muted-foreground">Ref: {tx.reference}</p>
+                                <p className="text-xs text-muted-foreground">{t('money.bankRecon.ref') || 'Ref'}: {tx.reference}</p>
                               )}
                             </div>
                           </div>

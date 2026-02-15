@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -31,18 +32,19 @@ interface AdminLayoutProps {
   children: React.ReactNode;
 }
 
-const adminNavItems = [
-  { path: "/admin/tenants", label: "Tenants", icon: Building2 },
-  { path: "/admin/users", label: "Users", icon: Users },
-  { path: "/admin/audit", label: "Audit Log", icon: FileText },
-];
-
 export function AdminLayout({ children }: AdminLayoutProps) {
   const { user, userProfile, signOut } = useAuth();
   const { isImpersonating } = useTenant();
   const { isDark, toggleTheme } = useTheme();
+  const { t } = useI18n();
   const location = useLocation();
   const navigate = useNavigate();
+
+  const adminNavItems = [
+    { path: "/admin/tenants", label: t("admin.layout.tenants"), icon: Building2 },
+    { path: "/admin/users", label: t("admin.layout.users"), icon: Users },
+    { path: "/admin/audit", label: t("admin.layout.auditLog"), icon: FileText },
+  ];
 
   const handleSignOut = async () => {
     try {
@@ -69,14 +71,14 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             onClick={() => navigate("/")}
           >
             <ChevronLeft className="h-4 w-4" />
-            Back to App
+            {t("admin.layout.backToApp")}
           </Button>
 
           {/* Admin Badge */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
             <Shield className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
-              Admin Console
+              {t("admin.layout.adminConsole")}
             </span>
           </div>
 
@@ -129,23 +131,23 @@ export function AdminLayout({ children }: AdminLayoutProps) {
                     <p className="text-sm font-medium">
                       {userProfile?.displayName || user?.email?.split("@")[0]}
                     </p>
-                    <p className="text-xs text-muted-foreground">Superadmin</p>
+                    <p className="text-xs text-muted-foreground">{t("admin.layout.superadmin")}</p>
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuItem onClick={() => navigate("/")}>
                   <LayoutDashboard className="h-4 w-4 mr-2" />
-                  Dashboard
+                  {t("common.dashboard")}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/settings")}>
                   <Settings className="h-4 w-4 mr-2" />
-                  Settings
+                  {t("common.settings")}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-600">
                   <LogOut className="h-4 w-4 mr-2" />
-                  Sign Out
+                  {t("common.signOut")}
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

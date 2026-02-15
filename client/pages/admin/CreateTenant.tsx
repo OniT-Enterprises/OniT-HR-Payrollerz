@@ -17,23 +17,25 @@ import { adminService } from "@/services/adminService";
 import { TenantPlan, PLAN_LIMITS } from "@/types/tenant";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
-
-const plans: { value: TenantPlan; label: string; description: string }[] = [
-  { value: "free", label: "Free", description: "Up to 5 employees, 2 users" },
-  { value: "starter", label: "Starter", description: "Up to 25 employees, 5 users" },
-  { value: "professional", label: "Professional", description: "Up to 100 employees, 20 users" },
-  { value: "enterprise", label: "Enterprise", description: "Unlimited employees and users" },
-];
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function CreateTenant() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     ownerEmail: "",
     plan: "free" as TenantPlan,
   });
+
+  const plans: { value: TenantPlan; label: string; description: string }[] = [
+    { value: "free", label: t("admin.createTenant.planFree"), description: t("admin.createTenant.planFreeDesc") },
+    { value: "starter", label: t("admin.createTenant.planStarter"), description: t("admin.createTenant.planStarterDesc") },
+    { value: "professional", label: t("admin.createTenant.planPro"), description: t("admin.createTenant.planProDesc") },
+    { value: "enterprise", label: t("admin.createTenant.planEnterprise"), description: t("admin.createTenant.planEnterpriseDesc") },
+  ];
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,12 +46,12 @@ export default function CreateTenant() {
     }
 
     if (!formData.name.trim()) {
-      toast.error("Tenant name is required");
+      toast.error(t("admin.createTenant.nameRequired"));
       return;
     }
 
     if (!formData.ownerEmail.trim()) {
-      toast.error("Owner email is required");
+      toast.error(t("admin.createTenant.emailRequired"));
       return;
     }
 
@@ -66,11 +68,11 @@ export default function CreateTenant() {
         user.uid
       );
 
-      toast.success("Tenant created successfully!");
+      toast.success(t("admin.createTenant.success"));
       navigate(`/admin/tenants/${tenantId}`);
     } catch (error) {
       console.error("Error creating tenant:", error);
-      toast.error("Failed to create tenant");
+      toast.error(t("admin.createTenant.error"));
     } finally {
       setLoading(false);
     }
@@ -89,7 +91,7 @@ export default function CreateTenant() {
               className="gap-2"
             >
               <ChevronLeft className="h-4 w-4" />
-              Back
+              {t("admin.createTenant.back")}
             </Button>
           </div>
 
@@ -98,9 +100,9 @@ export default function CreateTenant() {
               <Building2 className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Create Tenant</h1>
+              <h1 className="text-3xl font-bold tracking-tight">{t("admin.createTenant.title")}</h1>
               <p className="text-muted-foreground mt-1">
-                Add a new organization to the platform
+                {t("admin.createTenant.subtitle")}
               </p>
             </div>
           </div>
@@ -113,43 +115,43 @@ export default function CreateTenant() {
           <form onSubmit={handleSubmit}>
             <Card className="border-border/50">
               <CardHeader>
-                <CardTitle className="text-lg">Tenant Details</CardTitle>
+                <CardTitle className="text-lg">{t("admin.createTenant.tenantDetails")}</CardTitle>
                 <CardDescription>
-                  Enter the basic information for the new tenant organization
+                  {t("admin.createTenant.tenantDetailsDesc")}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="name">Organization Name *</Label>
+                  <Label htmlFor="name">{t("admin.createTenant.orgName")}</Label>
                   <Input
                     id="name"
-                    placeholder="Acme Corp"
+                    placeholder={t("admin.createTenant.orgNamePlaceholder")}
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    This will be displayed throughout the application
+                    {t("admin.createTenant.orgNameHint")}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="ownerEmail">Owner Email *</Label>
+                  <Label htmlFor="ownerEmail">{t("admin.createTenant.ownerEmail")}</Label>
                   <Input
                     id="ownerEmail"
                     type="email"
-                    placeholder="admin@acme.com"
+                    placeholder={t("admin.createTenant.ownerEmailPlaceholder")}
                     value={formData.ownerEmail}
                     onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
                     disabled={loading}
                   />
                   <p className="text-xs text-muted-foreground">
-                    The user who will be the tenant owner with full access
+                    {t("admin.createTenant.ownerEmailHint")}
                   </p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="plan">Subscription Plan</Label>
+                  <Label htmlFor="plan">{t("admin.createTenant.subscriptionPlan")}</Label>
                   <Select
                     value={formData.plan}
                     onValueChange={(value: TenantPlan) =>
@@ -158,7 +160,7 @@ export default function CreateTenant() {
                     disabled={loading}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select a plan" />
+                      <SelectValue placeholder={t("admin.createTenant.selectPlan")} />
                     </SelectTrigger>
                     <SelectContent>
                       {plans.map((plan) => (
@@ -178,22 +180,22 @@ export default function CreateTenant() {
                 {/* Plan Limits Preview */}
                 {formData.plan && (
                   <div className="p-4 rounded-lg bg-muted/50 space-y-2">
-                    <p className="text-sm font-medium">Plan Limits</p>
+                    <p className="text-sm font-medium">{t("admin.createTenant.planLimits")}</p>
                     <div className="grid grid-cols-3 gap-4 text-sm">
                       <div>
-                        <p className="text-muted-foreground">Max Employees</p>
+                        <p className="text-muted-foreground">{t("admin.createTenant.maxEmployees")}</p>
                         <p className="font-medium">
                           {PLAN_LIMITS[formData.plan]?.maxEmployees?.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Max Users</p>
+                        <p className="text-muted-foreground">{t("admin.createTenant.maxUsers")}</p>
                         <p className="font-medium">
                           {PLAN_LIMITS[formData.plan]?.maxUsers?.toLocaleString()}
                         </p>
                       </div>
                       <div>
-                        <p className="text-muted-foreground">Storage</p>
+                        <p className="text-muted-foreground">{t("admin.createTenant.storage")}</p>
                         <p className="font-medium">{PLAN_LIMITS[formData.plan]?.storageGB} GB</p>
                       </div>
                     </div>
@@ -209,7 +211,7 @@ export default function CreateTenant() {
                 onClick={() => navigate("/admin/tenants")}
                 disabled={loading}
               >
-                Cancel
+                {t("admin.createTenant.cancel")}
               </Button>
               <Button
                 type="submit"
@@ -219,12 +221,12 @@ export default function CreateTenant() {
                 {loading ? (
                   <>
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    Creating...
+                    {t("admin.createTenant.creating")}
                   </>
                 ) : (
                   <>
                     <CheckCircle className="h-4 w-4" />
-                    Create Tenant
+                    {t("admin.createTenant.createBtn")}
                   </>
                 )}
               </Button>

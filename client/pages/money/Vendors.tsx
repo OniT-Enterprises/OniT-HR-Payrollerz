@@ -208,7 +208,7 @@ export default function Vendors() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Vendors - OniT" description="Manage your vendors and suppliers" />
+      <SEO title="Vendors - Meza" description="Manage your vendors and suppliers" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -224,8 +224,8 @@ export default function Vendors() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.vendors.title') || 'Vendors'}
                 <InfoTooltip
-                  title="Vendors (Suppliers)"
-                  content={MoneyTooltips.bills.vendor}
+                  title={t('money.vendors.tooltipTitle') || 'Vendors (Suppliers)'}
+                  content={t('money.vendors.tooltipContent') || MoneyTooltips.bills.vendor}
                 />
               </h1>
               <p className="text-muted-foreground">

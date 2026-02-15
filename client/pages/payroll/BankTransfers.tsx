@@ -69,11 +69,13 @@ import { TL_BANKS } from "@/lib/payroll/constants-tl";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function BankTransfers() {
   const { toast } = useToast();
   const { user } = useAuth();
   const tenantId = useTenantId();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [transfers, setTransfers] = useState<BankTransfer[]>([]);
@@ -88,7 +90,7 @@ export default function BankTransfers() {
   const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
   const [generatingFiles, setGeneratingFiles] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [companyName, setCompanyName] = useState("Company");
+  const [companyName, setCompanyName] = useState(t("bankTransfers.company"));
   const [companyAccount, setCompanyAccount] = useState("");
   const [bankFileSummary, setBankFileSummary] = useState<Record<BankCode, number> | null>(null);
 
@@ -116,8 +118,8 @@ export default function BankTransfers() {
       } catch (error) {
         console.error("Failed to load data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load transfers. Please refresh the page.",
+          title: t("bankTransfers.toastErrorTitle"),
+          description: t("bankTransfers.toastLoadError"),
           variant: "destructive",
         });
       } finally {
@@ -140,7 +142,7 @@ export default function BankTransfers() {
         if (tenantId && tenantId !== "local-dev-tenant") {
           const settings = await settingsService.getSettings(tenantId);
           if (settings?.companyDetails) {
-            setCompanyName(settings.companyDetails.legalName || settings.companyDetails.tradingName || "Company");
+            setCompanyName(settings.companyDetails.legalName || settings.companyDetails.tradingName || t("bankTransfers.company"));
           }
           if (settings?.paymentStructure?.bankAccounts) {
             const accounts = settings.paymentStructure.bankAccounts
@@ -206,8 +208,8 @@ export default function BankTransfers() {
   const handleGenerateBankFiles = async () => {
     if (!selectedBankFileRun || selectedBanks.length === 0) {
       toast({
-        title: "Error",
-        description: "Please select a payroll run and at least one bank.",
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.toastSelectRunAndBank"),
         variant: "destructive",
       });
       return;
@@ -216,8 +218,8 @@ export default function BankTransfers() {
     const selectedRun = payrollRuns.find(r => r.id === selectedBankFileRun);
     if (!selectedRun) {
       toast({
-        title: "Error",
-        description: "Selected payroll run not found.",
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.toastRunNotFound"),
         variant: "destructive",
       });
       return;
@@ -249,8 +251,8 @@ export default function BankTransfers() {
       }
 
       toast({
-        title: "Success",
-        description: `Generated ${selectedBanks.length} bank file(s) successfully.`,
+        title: t("bankTransfers.toastTransferSuccess"),
+        description: t("bankTransfers.toastBankFilesSuccess", { count: String(selectedBanks.length) }),
       });
 
       setShowBankFileDialog(false);
@@ -259,8 +261,8 @@ export default function BankTransfers() {
     } catch (error) {
       console.error("Failed to generate bank files:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate bank files. Please try again.",
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.toastBankFilesError"),
         variant: "destructive",
       });
     } finally {
@@ -334,28 +336,28 @@ export default function BankTransfers() {
         return (
           <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
             <CheckCircle className="h-3 w-3 mr-1" />
-            Completed
+            {t("bankTransfers.completed")}
           </Badge>
         );
       case "pending":
         return (
           <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400">
             <Clock className="h-3 w-3 mr-1" />
-            Pending
+            {t("bankTransfers.pending")}
           </Badge>
         );
       case "processing":
         return (
           <Badge className="bg-blue-500/10 text-blue-600 dark:text-blue-400">
             <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-            Processing
+            {t("bankTransfers.processing")}
           </Badge>
         );
       case "failed":
         return (
           <Badge className="bg-red-500/10 text-red-600 dark:text-red-400">
             <XCircle className="h-3 w-3 mr-1" />
-            Failed
+            {t("bankTransfers.failed")}
           </Badge>
         );
       default:
@@ -379,8 +381,8 @@ export default function BankTransfers() {
       !formData.transferDate
     ) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: t("bankTransfers.toastValidationError"),
+        description: t("bankTransfers.toastValidationDesc"),
         variant: "destructive",
       });
       return;
@@ -390,8 +392,8 @@ export default function BankTransfers() {
     const selectedRun = payrollRuns.find((r) => r.id === formData.payrollRunId);
     if (!selectedRun) {
       toast({
-        title: "Error",
-        description: "Selected payroll run not found.",
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.toastRunNotFound"),
         variant: "destructive",
       });
       return;
@@ -417,7 +419,7 @@ export default function BankTransfers() {
         bankAccountName: bankAccount?.name || formData.bankAccount,
         status: "pending",
         reference,
-        initiatedBy: user?.email || "Unknown",
+        initiatedBy: user?.email || t("bankTransfers.unknown"),
         notes: formData.notes || undefined,
       };
 
@@ -431,8 +433,8 @@ export default function BankTransfers() {
       setTransfers((prev) => [createdTransfer, ...prev]);
 
       toast({
-        title: "Success",
-        description: `Bank transfer ${reference} initiated successfully.`,
+        title: t("bankTransfers.toastTransferSuccess"),
+        description: t("bankTransfers.toastTransferSuccessDesc", { reference }),
       });
 
       setFormData({
@@ -445,8 +447,8 @@ export default function BankTransfers() {
     } catch (error) {
       console.error("Failed to create transfer:", error);
       toast({
-        title: "Error",
-        description: "Failed to initiate transfer. Please try again.",
+        title: t("bankTransfers.toastErrorTitle"),
+        description: t("bankTransfers.toastTransferError"),
         variant: "destructive",
       });
     } finally {
@@ -457,8 +459,8 @@ export default function BankTransfers() {
   const handleExportCSV = () => {
     if (filteredTransfers.length === 0) {
       toast({
-        title: "No Data",
-        description: "No transfers to export.",
+        title: t("bankTransfers.toastNoData"),
+        description: t("bankTransfers.toastNoDataDesc"),
         variant: "destructive",
       });
       return;
@@ -466,15 +468,15 @@ export default function BankTransfers() {
 
     // Create CSV content
     const headers = [
-      "Payroll Period",
-      "Amount",
-      "Employee Count",
-      "Transfer Date",
-      "Bank Account",
-      "Status",
-      "Reference",
-      "Initiated By",
-      "Notes",
+      t("bankTransfers.csvPayrollPeriod"),
+      t("bankTransfers.csvAmount"),
+      t("bankTransfers.csvEmployeeCount"),
+      t("bankTransfers.csvTransferDate"),
+      t("bankTransfers.csvBankAccount"),
+      t("bankTransfers.csvStatus"),
+      t("bankTransfers.csvReference"),
+      t("bankTransfers.csvInitiatedBy"),
+      t("bankTransfers.csvNotes"),
     ];
 
     const rows = filteredTransfers.map((transfer) => [
@@ -508,8 +510,8 @@ export default function BankTransfers() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: `Exported ${filteredTransfers.length} transfers to CSV.`,
+      title: t("bankTransfers.toastExportComplete"),
+      description: t("bankTransfers.toastExportCompleteDesc", { count: String(filteredTransfers.length) }),
     });
   };
 
@@ -608,10 +610,10 @@ export default function BankTransfers() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-foreground">
-                Bank Transfers
+                {t("bankTransfers.title")}
               </h1>
               <p className="text-muted-foreground mt-1">
-                Manage payroll bank transfers and transaction history
+                {t("bankTransfers.subtitle")}
               </p>
             </div>
           </div>
@@ -627,7 +629,7 @@ export default function BankTransfers() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      This Month
+                      {t("bankTransfers.thisMonth")}
                     </p>
                     <p className="text-2xl font-bold">
                       {formatCurrency(stats.thisMonthTotal)}
@@ -644,7 +646,7 @@ export default function BankTransfers() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Pending Transfers
+                      {t("bankTransfers.pendingTransfers")}
                     </p>
                     <p className="text-2xl font-bold">{stats.pendingCount}</p>
                   </div>
@@ -659,7 +661,7 @@ export default function BankTransfers() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Completed
+                      {t("bankTransfers.completed")}
                     </p>
                     <p className="text-2xl font-bold">{stats.completedCount}</p>
                   </div>
@@ -673,7 +675,7 @@ export default function BankTransfers() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-muted-foreground">Failed</p>
+                    <p className="text-sm font-medium text-muted-foreground">{t("bankTransfers.failed")}</p>
                     <p className="text-2xl font-bold">{stats.failedCount}</p>
                   </div>
                   <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
@@ -689,40 +691,40 @@ export default function BankTransfers() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Filters
+                {t("bankTransfers.filters")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="status-filter">Status</Label>
+                  <Label htmlFor="status-filter">{t("bankTransfers.status")}</Label>
                   <Select
                     value={selectedStatus}
                     onValueChange={setSelectedStatus}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("bankTransfers.allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="completed">Completed</SelectItem>
-                      <SelectItem value="pending">Pending</SelectItem>
-                      <SelectItem value="processing">Processing</SelectItem>
-                      <SelectItem value="failed">Failed</SelectItem>
+                      <SelectItem value="all">{t("bankTransfers.allStatuses")}</SelectItem>
+                      <SelectItem value="completed">{t("bankTransfers.completed")}</SelectItem>
+                      <SelectItem value="pending">{t("bankTransfers.pending")}</SelectItem>
+                      <SelectItem value="processing">{t("bankTransfers.processing")}</SelectItem>
+                      <SelectItem value="failed">{t("bankTransfers.failed")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="period-filter">Payroll Period</Label>
+                  <Label htmlFor="period-filter">{t("bankTransfers.payrollPeriod")}</Label>
                   <Select
                     value={selectedPeriod}
                     onValueChange={setSelectedPeriod}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="All periods" />
+                      <SelectValue placeholder={t("bankTransfers.allPeriods")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All periods</SelectItem>
+                      <SelectItem value="all">{t("bankTransfers.allPeriods")}</SelectItem>
                       {availablePeriods.map((period) => (
                         <SelectItem key={period} value={period}>
                           {period}
@@ -742,16 +744,16 @@ export default function BankTransfers() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <Send className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    Transfer History
+                    {t("bankTransfers.transferHistory")}
                   </CardTitle>
                   <CardDescription>
-                    Showing {filteredTransfers.length} transfers
+                    {t("bankTransfers.showingTransfers", { count: String(filteredTransfers.length) })}
                   </CardDescription>
                 </div>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export CSV
+                    {t("bankTransfers.exportCsv")}
                   </Button>
 
                   {/* Bank File Generation Dialog */}
@@ -759,30 +761,30 @@ export default function BankTransfers() {
                     <DialogTrigger asChild>
                       <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
                         <FileText className="h-4 w-4 mr-2" />
-                        Bank Files
+                        {t("bankTransfers.bankFiles")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-lg">
                       <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
                           <Building2 className="h-5 w-5 text-green-600" />
-                          Generate Bank Transfer Files
+                          {t("bankTransfers.generateBankFiles")}
                         </DialogTitle>
                         <DialogDescription>
-                          Generate bank-specific files for salary payments (BNU, Mandiri, ANZ, BNCTL)
+                          {t("bankTransfers.generateBankFilesDesc")}
                         </DialogDescription>
                       </DialogHeader>
 
                       <div className="space-y-4 mt-4">
                         {/* Payroll Run Selection */}
                         <div>
-                          <Label>Select Payroll Run</Label>
+                          <Label>{t("bankTransfers.selectPayrollRun")}</Label>
                           <Select
                             value={selectedBankFileRun}
                             onValueChange={setSelectedBankFileRun}
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select a payroll run" />
+                              <SelectValue placeholder={t("bankTransfers.selectPayrollRunPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
                               {payrollRuns
@@ -803,7 +805,7 @@ export default function BankTransfers() {
                         {/* Bank Summary & Selection */}
                         {bankFileSummary && (
                           <div className="space-y-3">
-                            <Label>Select Banks to Generate</Label>
+                            <Label>{t("bankTransfers.selectBanksToGenerate")}</Label>
                             <div className="grid grid-cols-2 gap-3">
                               {TL_BANKS.map((bank) => {
                                 const bankCode = bank.code as BankCode;
@@ -831,7 +833,7 @@ export default function BankTransfers() {
                                       <p className="text-xs text-muted-foreground truncate">{bank.name}</p>
                                     </div>
                                     <Badge variant={count > 0 ? "default" : "secondary"} className="shrink-0">
-                                      {count} emp
+                                      {count} {t("bankTransfers.emp")}
                                     </Badge>
                                   </div>
                                 );
@@ -844,11 +846,11 @@ export default function BankTransfers() {
                         {selectedBankFileRun && (
                           <div className="p-3 rounded-lg bg-gray-50 dark:bg-gray-900 text-sm">
                             <p className="text-muted-foreground">
-                              Files will be generated for <strong>{companyName}</strong>
+                              {t("bankTransfers.filesGeneratedFor")} <strong>{companyName}</strong>
                             </p>
                             {companyAccount && (
                               <p className="text-muted-foreground">
-                                Debit account: ****{companyAccount.slice(-4)}
+                                {t("bankTransfers.debitAccount")}: ****{companyAccount.slice(-4)}
                               </p>
                             )}
                           </div>
@@ -862,7 +864,7 @@ export default function BankTransfers() {
                             className="flex-1"
                             disabled={generatingFiles}
                           >
-                            Cancel
+                            {t("bankTransfers.cancel")}
                           </Button>
                           <Button
                             onClick={handleGenerateBankFiles}
@@ -872,12 +874,12 @@ export default function BankTransfers() {
                             {generatingFiles ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Generating...
+                                {t("bankTransfers.generating")}
                               </>
                             ) : (
                               <>
                                 <Download className="h-4 w-4 mr-2" />
-                                Generate {selectedBanks.length} File(s)
+                                {t("bankTransfers.generateFiles", { count: String(selectedBanks.length) })}
                               </>
                             )}
                           </Button>
@@ -893,19 +895,19 @@ export default function BankTransfers() {
                     <DialogTrigger asChild>
                       <Button disabled={availablePayrollRuns.length === 0}>
                         <Plus className="h-4 w-4 mr-2" />
-                        New Transfer
+                        {t("bankTransfers.newTransfer")}
                       </Button>
                     </DialogTrigger>
                     <DialogContent className="max-w-md">
                       <DialogHeader>
-                        <DialogTitle>Initiate Bank Transfer</DialogTitle>
+                        <DialogTitle>{t("bankTransfers.initiateBankTransfer")}</DialogTitle>
                         <DialogDescription>
-                          Set up a new payroll bank transfer
+                          {t("bankTransfers.initiateBankTransferDesc")}
                         </DialogDescription>
                       </DialogHeader>
                       <form onSubmit={handleSubmit} className="space-y-4">
                         <div>
-                          <Label htmlFor="payroll-run">Payroll Run *</Label>
+                          <Label htmlFor="payroll-run">{t("bankTransfers.payrollRunLabel")} *</Label>
                           <Select
                             value={formData.payrollRunId}
                             onValueChange={(value) =>
@@ -913,7 +915,7 @@ export default function BankTransfers() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select payroll run" />
+                              <SelectValue placeholder={t("bankTransfers.selectPayrollRunFormPlaceholder")} />
                             </SelectTrigger>
                             <SelectContent>
                               {availablePayrollRuns.map((run) => (
@@ -930,12 +932,12 @@ export default function BankTransfers() {
                           {availablePayrollRuns.length === 0 && (
                             <p className="text-sm text-amber-600 mt-1 flex items-center gap-1">
                               <AlertCircle className="h-3 w-3" />
-                              No approved payroll runs available
+                              {t("bankTransfers.noApprovedRuns")}
                             </p>
                           )}
                         </div>
                         <div>
-                          <Label htmlFor="bank-account">Bank Account *</Label>
+                          <Label htmlFor="bank-account">{t("bankTransfers.bankAccountLabel")} *</Label>
                           <Select
                             value={formData.bankAccount}
                             onValueChange={(value) =>
@@ -943,7 +945,7 @@ export default function BankTransfers() {
                             }
                           >
                             <SelectTrigger>
-                              <SelectValue placeholder="Select bank account" />
+                              <SelectValue placeholder={t("bankTransfers.selectBankAccount")} />
                             </SelectTrigger>
                             <SelectContent>
                               {bankAccounts.map((account) => (
@@ -955,7 +957,7 @@ export default function BankTransfers() {
                           </Select>
                         </div>
                         <div>
-                          <Label htmlFor="transfer-date">Transfer Date *</Label>
+                          <Label htmlFor="transfer-date">{t("bankTransfers.transferDateLabel")} *</Label>
                           <Input
                             id="transfer-date"
                             type="date"
@@ -967,14 +969,14 @@ export default function BankTransfers() {
                           />
                         </div>
                         <div>
-                          <Label htmlFor="notes">Notes</Label>
+                          <Label htmlFor="notes">{t("bankTransfers.notesLabel")}</Label>
                           <Input
                             id="notes"
                             value={formData.notes}
                             onChange={(e) =>
                               handleInputChange("notes", e.target.value)
                             }
-                            placeholder="Optional notes"
+                            placeholder={t("bankTransfers.optionalNotes")}
                           />
                         </div>
                         <div className="flex gap-2">
@@ -985,7 +987,7 @@ export default function BankTransfers() {
                             className="flex-1"
                             disabled={submitting}
                           >
-                            Cancel
+                            {t("bankTransfers.cancel")}
                           </Button>
                           <Button
                             type="submit"
@@ -995,10 +997,10 @@ export default function BankTransfers() {
                             {submitting ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                Processing...
+                                {t("bankTransfers.processing")}...
                               </>
                             ) : (
-                              "Initiate Transfer"
+                              t("bankTransfers.initiateTransfer")
                             )}
                           </Button>
                         </div>
@@ -1012,25 +1014,25 @@ export default function BankTransfers() {
               {filteredTransfers.length === 0 ? (
                 <div className="text-center py-12">
                   <Send className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                  <p className="text-muted-foreground mb-2">No transfers found</p>
+                  <p className="text-muted-foreground mb-2">{t("bankTransfers.noTransfersFound")}</p>
                   <p className="text-sm text-muted-foreground/70">
                     {transfers.length === 0
-                      ? "Create your first transfer by running payroll and initiating a bank transfer."
-                      : "Try adjusting your filters."}
+                      ? t("bankTransfers.createFirstTransfer")
+                      : t("bankTransfers.adjustFilters")}
                   </p>
                 </div>
               ) : (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Payroll Period</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Employees</TableHead>
-                      <TableHead>Transfer Date</TableHead>
-                      <TableHead>Bank Account</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Actions</TableHead>
+                      <TableHead>{t("bankTransfers.payrollPeriod")}</TableHead>
+                      <TableHead>{t("bankTransfers.amount")}</TableHead>
+                      <TableHead>{t("bankTransfers.employees")}</TableHead>
+                      <TableHead>{t("bankTransfers.transferDate")}</TableHead>
+                      <TableHead>{t("bankTransfers.bankAccount")}</TableHead>
+                      <TableHead>{t("bankTransfers.status")}</TableHead>
+                      <TableHead>{t("bankTransfers.reference")}</TableHead>
+                      <TableHead>{t("bankTransfers.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -1055,7 +1057,7 @@ export default function BankTransfers() {
                           <Button
                             size="sm"
                             variant="ghost"
-                            title="View details"
+                            title={t("bankTransfers.viewDetails")}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>

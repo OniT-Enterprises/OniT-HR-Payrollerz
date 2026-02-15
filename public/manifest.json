@@ -1,6 +1,6 @@
 {
-  "name": "OniT HR & Payroll",
-  "short_name": "OniT HR",
+  "name": "Meza",
+  "short_name": "Meza",
   "description": "Comprehensive HR management system for hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.",
   "start_url": "/",
   "display": "standalone",

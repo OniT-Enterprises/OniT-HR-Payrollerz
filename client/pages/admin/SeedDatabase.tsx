@@ -1273,7 +1273,7 @@ export default function SeedDatabase() {
 
       let report = '';
       report += '═'.repeat(100) + '\n';
-      report += '  ONIT HR/PAYROLL SYSTEM - COMPREHENSIVE DATA AUDIT REPORT\n';
+      report += '  MEZA - COMPREHENSIVE DATA AUDIT REPORT\n';
       report += `  Generated: ${new Date().toISOString()}\n`;
       report += `  Tenant: ${tenantId}\n`;
       report += '═'.repeat(100) + '\n\n';

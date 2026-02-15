@@ -226,7 +226,7 @@ export default function Invoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Invoices - OniT" description="Manage your invoices" />
+      <SEO title="Invoices - Meza" description="Manage your invoices" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -252,7 +252,7 @@ export default function Invoices() {
               title={t('money.recurring.title') || 'Recurring Invoices'}
             >
               <Repeat className="h-4 w-4 mr-2" />
-              Recurring
+              {t('money.invoices.recurring') || 'Recurring'}
             </Button>
             <Button
               variant="outline"
@@ -301,17 +301,17 @@ export default function Invoices() {
               </SelectContent>
             </Select>
             <InfoTooltip
-              title="Invoice Statuses"
+              title={t('money.invoices.invoiceStatuses') || 'Invoice Statuses'}
               maxWidth={320}
               content={
                 <div className="space-y-1.5">
-                  <p><strong>Draft:</strong> {MoneyTooltips.invoiceStatus.draft}</p>
-                  <p><strong>Sent:</strong> {MoneyTooltips.invoiceStatus.sent}</p>
-                  <p><strong>Viewed:</strong> {MoneyTooltips.invoiceStatus.viewed}</p>
-                  <p><strong>Partial:</strong> {MoneyTooltips.invoiceStatus.partial}</p>
-                  <p><strong>Paid:</strong> {MoneyTooltips.invoiceStatus.paid}</p>
-                  <p><strong>Overdue:</strong> {MoneyTooltips.invoiceStatus.overdue}</p>
-                  <p><strong>Cancelled:</strong> {MoneyTooltips.invoiceStatus.cancelled}</p>
+                  <p><strong>{t('money.status.draft') || 'Draft'}:</strong> {MoneyTooltips.invoiceStatus.draft}</p>
+                  <p><strong>{t('money.status.sent') || 'Sent'}:</strong> {MoneyTooltips.invoiceStatus.sent}</p>
+                  <p><strong>{t('money.status.viewed') || 'Viewed'}:</strong> {MoneyTooltips.invoiceStatus.viewed}</p>
+                  <p><strong>{t('money.status.partial') || 'Partial'}:</strong> {MoneyTooltips.invoiceStatus.partial}</p>
+                  <p><strong>{t('money.status.paid') || 'Paid'}:</strong> {MoneyTooltips.invoiceStatus.paid}</p>
+                  <p><strong>{t('money.status.overdue') || 'Overdue'}:</strong> {MoneyTooltips.invoiceStatus.overdue}</p>
+                  <p><strong>{t('money.status.cancelled') || 'Cancelled'}:</strong> {MoneyTooltips.invoiceStatus.cancelled}</p>
                 </div>
               }
             />

@@ -64,23 +64,12 @@ import { payrollService } from "@/services/payrollService";
 import { formatCurrency, DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
-
-const DEDUCTION_TYPES: { value: DeductionType; label: string }[] = [
-  { value: "garnishment", label: "Wage Garnishment" },
-  { value: "advance", label: "Payroll Advance" },
-  { value: "other", label: "Other Deduction" },
-];
-
-const FREQUENCY_OPTIONS: { value: PayFrequency | "per_paycheck"; label: string }[] = [
-  { value: "per_paycheck", label: "Every Paycheck" },
-  { value: "weekly", label: "Weekly" },
-  { value: "biweekly", label: "Bi-Weekly" },
-  { value: "monthly", label: "Monthly" },
-];
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DeductionsAdvances() {
   const { toast } = useToast();
   const tenantId = useTenantId();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [deductions, setDeductions] = useState<RecurringDeduction[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -102,6 +91,20 @@ export default function DeductionsAdvances() {
   const [totalAmount, setTotalAmount] = useState(0);
   const [frequency, setFrequency] = useState<PayFrequency | "per_paycheck">("per_paycheck");
 
+  // Translated arrays (inside component so t() is available)
+  const DEDUCTION_TYPES: { value: DeductionType; label: string }[] = [
+    { value: "garnishment", label: t("deductions.typeGarnishment") },
+    { value: "advance", label: t("deductions.typeAdvance") },
+    { value: "other", label: t("deductions.typeOther") },
+  ];
+
+  const FREQUENCY_OPTIONS: { value: PayFrequency | "per_paycheck"; label: string }[] = [
+    { value: "per_paycheck", label: t("deductions.freqPerPaycheck") },
+    { value: "weekly", label: t("deductions.freqWeekly") },
+    { value: "biweekly", label: t("deductions.freqBiweekly") },
+    { value: "monthly", label: t("deductions.freqMonthly") },
+  ];
+
   // Load data
   useEffect(() => {
     const loadData = async () => {
@@ -116,8 +119,8 @@ export default function DeductionsAdvances() {
       } catch (error) {
         console.error("Failed to load data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load deductions. Please refresh the page.",
+          title: t("common.error"),
+          description: t("deductions.loadError"),
           variant: "destructive",
         });
       } finally {
@@ -186,9 +189,9 @@ export default function DeductionsAdvances() {
   // Get status badge
   const getStatusBadge = (status: RecurringDeduction["status"]) => {
     const configs = {
-      active: { icon: CheckCircle, className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", label: "Active" },
-      paused: { icon: Pause, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400", label: "Paused" },
-      completed: { icon: CheckCircle, className: "bg-muted text-muted-foreground", label: "Completed" },
+      active: { icon: CheckCircle, className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", label: t("deductions.statusActive") },
+      paused: { icon: Pause, className: "bg-amber-500/10 text-amber-600 dark:text-amber-400", label: t("deductions.statusPaused") },
+      completed: { icon: CheckCircle, className: "bg-muted text-muted-foreground", label: t("deductions.statusCompleted") },
     };
 
     const config = configs[status];
@@ -226,8 +229,8 @@ export default function DeductionsAdvances() {
   const handleAddDeduction = async () => {
     if (!selectedEmployee || !description || (isPercentage ? percentage <= 0 : amount <= 0)) {
       toast({
-        title: "Validation Error",
-        description: "Please fill in all required fields.",
+        title: t("deductions.validationError"),
+        description: t("deductions.validationDescription"),
         variant: "destructive",
       });
       return;
@@ -254,8 +257,8 @@ export default function DeductionsAdvances() {
       await payrollService.deductions.createDeduction(tenantId, deduction);
 
       toast({
-        title: "Success",
-        description: "Deduction created successfully.",
+        title: t("common.success"),
+        description: t("deductions.createSuccess"),
       });
 
       // Reload deductions
@@ -267,8 +270,8 @@ export default function DeductionsAdvances() {
     } catch (error) {
       console.error("Failed to create deduction:", error);
       toast({
-        title: "Error",
-        description: "Failed to create deduction. Please try again.",
+        title: t("common.error"),
+        description: t("deductions.createError"),
         variant: "destructive",
       });
     } finally {
@@ -290,14 +293,14 @@ export default function DeductionsAdvances() {
       setDeductions(data);
 
       toast({
-        title: "Success",
-        description: `Deduction ${deduction.status === "active" ? "paused" : "resumed"}.`,
+        title: t("common.success"),
+        description: deduction.status === "active" ? t("deductions.pausedSuccess") : t("deductions.resumedSuccess"),
       });
     } catch (error) {
       console.error("Failed to update deduction:", error);
       toast({
-        title: "Error",
-        description: "Failed to update deduction.",
+        title: t("common.error"),
+        description: t("deductions.toggleError"),
         variant: "destructive",
       });
     }
@@ -313,14 +316,14 @@ export default function DeductionsAdvances() {
       setDeductions(data);
 
       toast({
-        title: "Success",
-        description: "Deduction deleted.",
+        title: t("common.success"),
+        description: t("deductions.deleteSuccess"),
       });
     } catch (error) {
       console.error("Failed to delete deduction:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete deduction.",
+        title: t("common.error"),
+        description: t("deductions.deleteError"),
         variant: "destructive",
       });
     }
@@ -412,16 +415,16 @@ export default function DeductionsAdvances() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Deductions & Advances
+                  {t("deductions.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Manage recurring deductions and payroll advances
+                  {t("deductions.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
               <Plus className="h-4 w-4 mr-2" />
-              Add Deduction
+              {t("deductions.addDeduction")}
             </Button>
           </div>
         </div>
@@ -436,13 +439,13 @@ export default function DeductionsAdvances() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Active Deductions
+                      {t("deductions.activeDeductions")}
                     </p>
                     <p className="text-2xl font-bold">
                       {stats.totalActive}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(stats.totalActiveAmount)}/period
+                      {t("deductions.perPeriod", { amount: formatCurrency(stats.totalActiveAmount) })}
                     </p>
                   </div>
                   <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
@@ -456,13 +459,13 @@ export default function DeductionsAdvances() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Payroll Advances
+                      {t("deductions.payrollAdvances")}
                     </p>
                     <p className="text-2xl font-bold">
                       {stats.advancesCount}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(stats.advancesAmount)} outstanding
+                      {t("deductions.outstanding", { amount: formatCurrency(stats.advancesAmount) })}
                     </p>
                   </div>
                   <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
@@ -476,13 +479,13 @@ export default function DeductionsAdvances() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Garnishments
+                      {t("deductions.garnishments")}
                     </p>
                     <p className="text-2xl font-bold">
                       {stats.garnishmentsCount}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {formatCurrency(stats.garnishmentsAmount)}/period
+                      {t("deductions.perPeriod", { amount: formatCurrency(stats.garnishmentsAmount) })}
                     </p>
                   </div>
                   <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
@@ -496,7 +499,7 @@ export default function DeductionsAdvances() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Other Deductions
+                      {t("deductions.otherDeductions")}
                     </p>
                     <p className="text-2xl font-bold">
                       {stats.otherCount}
@@ -517,16 +520,16 @@ export default function DeductionsAdvances() {
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    Deductions
+                    {t("deductions.deductionsTableTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Manage employee deductions and advances
+                    {t("deductions.deductionsTableDescription")}
                   </CardDescription>
                 </div>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search..."
+                    placeholder={t("deductions.searchPlaceholder")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9"
@@ -537,20 +540,20 @@ export default function DeductionsAdvances() {
             <CardContent>
               <Tabs value={activeTab} onValueChange={setActiveTab}>
                 <TabsList className="mb-4">
-                  <TabsTrigger value="all">All</TabsTrigger>
-                  <TabsTrigger value="advances">Advances</TabsTrigger>
-                  <TabsTrigger value="garnishments">Garnishments</TabsTrigger>
-                  <TabsTrigger value="other">Other</TabsTrigger>
+                  <TabsTrigger value="all">{t("deductions.tabAll")}</TabsTrigger>
+                  <TabsTrigger value="advances">{t("deductions.tabAdvances")}</TabsTrigger>
+                  <TabsTrigger value="garnishments">{t("deductions.tabGarnishments")}</TabsTrigger>
+                  <TabsTrigger value="other">{t("deductions.tabOther")}</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value={activeTab}>
                   {filteredDeductions.length === 0 ? (
                     <div className="text-center py-12">
                       <CreditCard className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="text-muted-foreground mb-4">No deductions found</p>
+                      <p className="text-muted-foreground mb-4">{t("deductions.noDeductions")}</p>
                       <Button onClick={() => setShowAddDialog(true)}>
                         <Plus className="h-4 w-4 mr-2" />
-                        Add Deduction
+                        {t("deductions.addDeduction")}
                       </Button>
                     </div>
                   ) : (
@@ -558,13 +561,13 @@ export default function DeductionsAdvances() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Employee</TableHead>
-                            <TableHead>Type</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead className="text-right">Amount</TableHead>
-                            <TableHead>Frequency</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>{t("deductions.employee")}</TableHead>
+                            <TableHead>{t("deductions.type")}</TableHead>
+                            <TableHead>{t("deductions.description")}</TableHead>
+                            <TableHead className="text-right">{t("deductions.amount")}</TableHead>
+                            <TableHead>{t("deductions.frequency")}</TableHead>
+                            <TableHead>{t("deductions.status")}</TableHead>
+                            <TableHead className="text-right">{t("deductions.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -586,7 +589,7 @@ export default function DeductionsAdvances() {
                                 )}
                                 {deduction.type === "advance" && deduction.remainingBalance !== undefined && (
                                   <p className="text-xs text-muted-foreground">
-                                    {formatCurrency(deduction.remainingBalance)} remaining
+                                    {t("deductions.remaining", { amount: formatCurrency(deduction.remainingBalance) })}
                                   </p>
                                 )}
                               </TableCell>
@@ -636,18 +639,18 @@ export default function DeductionsAdvances() {
       <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
-            <DialogTitle>Add Deduction</DialogTitle>
+            <DialogTitle>{t("deductions.addDialogTitle")}</DialogTitle>
             <DialogDescription>
-              Create a recurring deduction or payroll advance
+              {t("deductions.addDialogDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div>
-              <Label htmlFor="employee">Employee *</Label>
+              <Label htmlFor="employee">{t("deductions.employeeLabel")}</Label>
               <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select employee" />
+                  <SelectValue placeholder={t("deductions.selectEmployee")} />
                 </SelectTrigger>
                 <SelectContent>
                   {employees.map((emp) => (
@@ -660,7 +663,7 @@ export default function DeductionsAdvances() {
             </div>
 
             <div>
-              <Label htmlFor="deduction-type">Type *</Label>
+              <Label htmlFor="deduction-type">{t("deductions.typeLabel")}</Label>
               <Select
                 value={deductionType}
                 onValueChange={(v) => setDeductionType(v as DeductionType)}
@@ -679,12 +682,12 @@ export default function DeductionsAdvances() {
             </div>
 
             <div>
-              <Label htmlFor="description">Description *</Label>
+              <Label htmlFor="description">{t("deductions.descriptionLabel")}</Label>
               <Input
                 id="description"
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Court-ordered garnishment, Salary advance"
+                placeholder={t("deductions.descriptionPlaceholder")}
               />
             </div>
 
@@ -695,13 +698,13 @@ export default function DeductionsAdvances() {
                   checked={isPercentage}
                   onCheckedChange={setIsPercentage}
                 />
-                <Label htmlFor="is-percentage">Percentage-based</Label>
+                <Label htmlFor="is-percentage">{t("deductions.percentageBased")}</Label>
               </div>
             </div>
 
             {isPercentage ? (
               <div>
-                <Label htmlFor="percentage">Percentage *</Label>
+                <Label htmlFor="percentage">{t("deductions.percentageLabel")}</Label>
                 <div className="flex items-center gap-2">
                   <Input
                     id="percentage"
@@ -717,7 +720,7 @@ export default function DeductionsAdvances() {
               </div>
             ) : (
               <div>
-                <Label htmlFor="amount">Amount per Period *</Label>
+                <Label htmlFor="amount">{t("deductions.amountPerPeriod")}</Label>
                 <Input
                   id="amount"
                   type="number"
@@ -731,7 +734,7 @@ export default function DeductionsAdvances() {
 
             {deductionType === "advance" && (
               <div>
-                <Label htmlFor="total-amount">Total Advance Amount</Label>
+                <Label htmlFor="total-amount">{t("deductions.totalAdvanceAmount")}</Label>
                 <Input
                   id="total-amount"
                   type="number"
@@ -739,13 +742,13 @@ export default function DeductionsAdvances() {
                   onChange={(e) => setTotalAmount(parseFloat(e.target.value) || 0)}
                   min={0}
                   step={100}
-                  placeholder="Total amount to be repaid"
+                  placeholder={t("deductions.totalAdvancePlaceholder")}
                 />
               </div>
             )}
 
             <div>
-              <Label htmlFor="frequency">Frequency</Label>
+              <Label htmlFor="frequency">{t("deductions.frequencyLabel")}</Label>
               <Select
                 value={frequency}
                 onValueChange={(v) => setFrequency(v as PayFrequency | "per_paycheck")}
@@ -765,7 +768,7 @@ export default function DeductionsAdvances() {
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="start-date">Start Date</Label>
+                <Label htmlFor="start-date">{t("deductions.startDate")}</Label>
                 <Input
                   id="start-date"
                   type="date"
@@ -774,7 +777,7 @@ export default function DeductionsAdvances() {
                 />
               </div>
               <div>
-                <Label htmlFor="end-date">End Date (Optional)</Label>
+                <Label htmlFor="end-date">{t("deductions.endDate")}</Label>
                 <Input
                   id="end-date"
                   type="date"
@@ -790,24 +793,24 @@ export default function DeductionsAdvances() {
                 checked={isPreTax}
                 onCheckedChange={setIsPreTax}
               />
-              <Label htmlFor="is-pre-tax">Pre-tax deduction</Label>
+              <Label htmlFor="is-pre-tax">{t("deductions.preTaxDeduction")}</Label>
             </div>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancel
+              {t("deductions.cancel")}
             </Button>
             <Button onClick={handleAddDeduction} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {t("deductions.saving")}
                 </>
               ) : (
                 <>
                   <Plus className="h-4 w-4 mr-2" />
-                  Add Deduction
+                  {t("deductions.addDeduction")}
                 </>
               )}
             </Button>

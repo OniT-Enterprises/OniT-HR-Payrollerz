@@ -87,40 +87,40 @@ export default function PayrollDashboard() {
   const [checklist, setChecklist] = useState<PayrollChecklistItem[]>([
     {
       id: "attendance",
-      label: "Attendance finalized",
-      issueLabel: "timesheet pending approval",
-      description: "All timesheets submitted and approved",
+      label: t("payrollDashboard.checklist.attendanceLabel"),
+      issueLabel: t("payrollDashboard.checklist.attendanceIssue"),
+      description: t("payrollDashboard.checklist.attendanceDesc"),
       status: "complete",
       linkPath: "/people/time-tracking",
-      linkLabel: "Review timesheets",
+      linkLabel: t("payrollDashboard.checklist.attendanceLink"),
     },
     {
       id: "leave",
-      label: "Leave requests approved",
-      issueLabel: "leave request pending approval",
-      description: "No pending leave requests for pay period",
+      label: t("payrollDashboard.checklist.leaveLabel"),
+      issueLabel: t("payrollDashboard.checklist.leaveIssue"),
+      description: t("payrollDashboard.checklist.leaveDesc"),
       status: "warning",
       count: 2,
       linkPath: "/people/leave",
-      linkLabel: "Review leave requests",
+      linkLabel: t("payrollDashboard.checklist.leaveLink"),
     },
     {
       id: "contracts",
-      label: "Employee contracts complete",
-      issueLabel: "employee missing contract",
-      description: "All employees have valid contracts",
+      label: t("payrollDashboard.checklist.contractsLabel"),
+      issueLabel: t("payrollDashboard.checklist.contractsIssue"),
+      description: t("payrollDashboard.checklist.contractsDesc"),
       status: "complete",
       linkPath: "/people/employees?filter=missing-contract",
-      linkLabel: "View employees",
+      linkLabel: t("payrollDashboard.checklist.contractsLink"),
     },
     {
       id: "salaries",
-      label: "Salary data verified",
-      issueLabel: "employee missing salary data",
-      description: "Compensation data up to date",
+      label: t("payrollDashboard.checklist.salariesLabel"),
+      issueLabel: t("payrollDashboard.checklist.salariesIssue"),
+      description: t("payrollDashboard.checklist.salariesDesc"),
       status: "complete",
       linkPath: "/people/employees?filter=missing-salary",
-      linkLabel: "Review salaries",
+      linkLabel: t("payrollDashboard.checklist.salariesLink"),
     },
   ]);
 
@@ -281,31 +281,31 @@ export default function PayrollDashboard() {
   // Status display config
   const statusConfig = {
     not_prepared: {
-      label: "Getting Ready",
+      label: t("payrollDashboard.status.gettingReady"),
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-100 dark:bg-amber-900/30",
       borderColor: "border-amber-200 dark:border-amber-800",
     },
     preparing: {
-      label: "Almost Ready",
+      label: t("payrollDashboard.status.almostReady"),
       color: "text-amber-600 dark:text-amber-400",
       bg: "bg-amber-100 dark:bg-amber-900/30",
       borderColor: "border-amber-200 dark:border-amber-800",
     },
     ready: {
-      label: "Ready to Run",
+      label: t("payrollDashboard.status.readyToRun"),
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-100 dark:bg-emerald-900/30",
       borderColor: "border-emerald-200 dark:border-emerald-800",
     },
     processing: {
-      label: "Processing",
+      label: t("payrollDashboard.status.processing"),
       color: "text-blue-600 dark:text-blue-400",
       bg: "bg-blue-100 dark:bg-blue-900/30",
       borderColor: "border-blue-200 dark:border-blue-800",
     },
     completed: {
-      label: "Completed",
+      label: t("payrollDashboard.status.completed"),
       color: "text-emerald-600 dark:text-emerald-400",
       bg: "bg-emerald-100 dark:bg-emerald-900/30",
       borderColor: "border-emerald-200 dark:border-emerald-800",
@@ -317,14 +317,14 @@ export default function PayrollDashboard() {
   // Primary and secondary links
   const primaryLinks = [
     {
-      label: "Allowances",
-      description: "Transport, housing, meals & more",
+      label: t("payrollDashboard.links.allowances"),
+      description: t("payrollDashboard.links.allowancesDesc"),
       path: "/payroll/benefits",
       icon: Wallet,
     },
     {
-      label: "Deductions",
-      description: "Loans, advances & deductions",
+      label: t("payrollDashboard.links.deductions"),
+      description: t("payrollDashboard.links.deductionsDesc"),
       path: "/payroll/deductions",
       icon: DollarSign,
     },
@@ -332,20 +332,20 @@ export default function PayrollDashboard() {
 
   const secondaryLinks = [
     {
-      label: "Payroll History",
-      description: "View past payroll runs",
+      label: t("payrollDashboard.links.payrollHistory"),
+      description: t("payrollDashboard.links.payrollHistoryDesc"),
       path: "/payroll/history",
       icon: FileText,
     },
     {
-      label: "Bank Transfers",
-      description: "Manage salary payments",
+      label: t("payrollDashboard.links.bankTransfers"),
+      description: t("payrollDashboard.links.bankTransfersDesc"),
       path: "/payroll/transfers",
       icon: Banknote,
     },
     {
-      label: "Tax Reports",
-      description: "WIT and INSS reports",
+      label: t("payrollDashboard.links.taxReports"),
+      description: t("payrollDashboard.links.taxReportsDesc"),
       path: "/payroll/taxes",
       icon: FileSpreadsheet,
     },
@@ -564,10 +564,10 @@ export default function PayrollDashboard() {
             </div>
             <div className="flex-1">
               <p className="font-semibold text-emerald-800 dark:text-emerald-200">
-                Payroll ready to run
+                {t("payrollDashboard.readyToRun")}
               </p>
               <p className="text-sm text-emerald-600 dark:text-emerald-400">
-                All checklist items verified. You can proceed with payroll.
+                {t("payrollDashboard.allVerifiedProceed")}
               </p>
             </div>
             <Button
@@ -575,7 +575,7 @@ export default function PayrollDashboard() {
               className="bg-emerald-600 hover:bg-emerald-700 text-white"
             >
               <Play className="h-4 w-4 mr-2" />
-              Run Payroll
+              {t("payrollDashboard.runPayrollBtn")}
             </Button>
           </div>
         )}
@@ -590,7 +590,7 @@ export default function PayrollDashboard() {
               <div className="flex-1">
                 <div className="flex items-center gap-3 mb-2">
                   <h2 className="text-xl font-bold text-foreground">
-                    Payroll for {stats.currentMonth}
+                    {t("payrollDashboard.payrollFor", { month: stats.currentMonth })}
                   </h2>
                   <Badge className={`${currentStatus.bg} ${currentStatus.color} border ${currentStatus.borderColor}`}>
                     {currentStatus.label}
@@ -600,17 +600,17 @@ export default function PayrollDashboard() {
                 <div className="flex items-center gap-6 text-sm text-muted-foreground">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4" />
-                    <span>Pay date: <span className="font-semibold text-foreground">{stats.nextPayDate}</span></span>
+                    <span>{t("payrollDashboard.payDate")} <span className="font-semibold text-foreground">{stats.nextPayDate}</span></span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Clock className="h-4 w-4" />
                     <span className={stats.daysUntilPayday <= 5 ? "text-amber-600 dark:text-amber-400 font-semibold" : ""}>
-                      {stats.daysUntilPayday} days remaining
+                      {t("payrollDashboard.daysRemaining", { days: String(stats.daysUntilPayday) })}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4" />
-                    <span>{stats.totalEmployees} employees</span>
+                    <span>{t("payrollDashboard.employees", { count: String(stats.totalEmployees) })}</span>
                   </div>
                 </div>
 
@@ -645,7 +645,7 @@ export default function PayrollDashboard() {
                     className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
                   >
                     <Play className="h-5 w-5 mr-2" />
-                    Confirm & Run Payroll
+                    {t("payrollDashboard.confirmRunPayroll")}
                   </Button>
                 ) : (
                   <Button
@@ -654,7 +654,7 @@ export default function PayrollDashboard() {
                     className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white"
                   >
                     <Calculator className="h-5 w-5 mr-2" />
-                    Review Payroll
+                    {t("payrollDashboard.reviewPayroll")}
                   </Button>
                 )}
                 <Button
@@ -666,7 +666,7 @@ export default function PayrollDashboard() {
                   }}
                 >
                   <ClipboardCheck className="h-5 w-5 mr-2" />
-                  View Checklist
+                  {t("payrollDashboard.viewChecklist")}
                 </Button>
               </div>
             </div>
@@ -680,12 +680,12 @@ export default function PayrollDashboard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
               <ClipboardCheck className="h-5 w-5 text-green-600 dark:text-green-400" />
-              Payroll Checklist
+              {t("payrollDashboard.checklistTitle")}
             </CardTitle>
             <CardDescription>
               {checklistComplete
-                ? "All items verified. Payroll is ready to run."
-                : `${checklist.filter(i => i.status === "complete").length} of ${checklist.length} items complete`
+                ? t("payrollDashboard.allVerifiedReady")
+                : t("payrollDashboard.checklistProgress", { done: String(checklist.filter(i => i.status === "complete").length), total: String(checklist.length) })
               }
             </CardDescription>
           </CardHeader>
@@ -731,7 +731,7 @@ export default function PayrollDashboard() {
                       </p>
                       {item.count && item.status !== "complete" && (
                         <Badge variant="secondary" className="text-xs">
-                          {item.count} pending
+                          {item.count} {t("payrollDashboard.pending")}
                         </Badge>
                       )}
                     </div>
@@ -760,7 +760,7 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between mb-3">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Gross Payroll
+                    {t("payrollDashboard.grossPayroll")}
                   </p>
                   <p className="text-2xl font-bold">{formatCurrencyTL(stats.grossPayroll)}</p>
                 </div>
@@ -771,15 +771,15 @@ export default function PayrollDashboard() {
               {/* Breakdown */}
               <div className="pt-3 border-t border-border/50 space-y-1.5 text-xs">
                 <div className="flex justify-between text-muted-foreground">
-                  <span>+ Employer INSS ({(TL_INSS.employerRate * 100).toFixed(0)}%)</span>
+                  <span>+ {t("payrollDashboard.employerINSS", { rate: (TL_INSS.employerRate * 100).toFixed(0) })}</span>
                   <span>{formatCurrencyTL(stats.employerINSS)}</span>
                 </div>
                 <div className="flex justify-between text-muted-foreground">
-                  <span>- Employee INSS ({(TL_INSS.employeeRate * 100).toFixed(0)}%)</span>
+                  <span>- {t("payrollDashboard.employeeINSS", { rate: (TL_INSS.employeeRate * 100).toFixed(0) })}</span>
                   <span>{formatCurrencyTL(stats.employeeINSS)}</span>
                 </div>
                 <div className="flex justify-between font-medium pt-1 border-t border-border/30">
-                  <span>Est. Net to Employees</span>
+                  <span>{t("payrollDashboard.estNetToEmployees")}</span>
                   <span>{formatCurrencyTL(stats.estimatedNet)}</span>
                 </div>
               </div>
@@ -797,7 +797,7 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    {stats.blockedEmployees > 0 ? "Employees Need Attention" : "Payroll Coverage"}
+                    {stats.blockedEmployees > 0 ? t("payrollDashboard.employeesNeedAttention") : t("payrollDashboard.payrollCoverage")}
                   </p>
                   {stats.blockedEmployees > 0 ? (
                     <>
@@ -806,7 +806,7 @@ export default function PayrollDashboard() {
                       </p>
                       <p className="text-xs text-amber-600 dark:text-amber-400 mt-1 flex items-center gap-1">
                         <AlertTriangle className="h-3 w-3" />
-                        Missing contracts or INSS
+                        {t("payrollDashboard.missingContractsINSS")}
                       </p>
                     </>
                   ) : (
@@ -816,7 +816,7 @@ export default function PayrollDashboard() {
                       </p>
                       <p className="text-xs text-emerald-600 dark:text-emerald-400 mt-1 flex items-center gap-1">
                         <CheckCircle className="h-3 w-3" />
-                        All employees ready
+                        {t("payrollDashboard.allEmployeesReady")}
                       </p>
                     </>
                   )}
@@ -842,13 +842,13 @@ export default function PayrollDashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
-                    Last Payroll
+                    {t("payrollDashboard.lastPayroll")}
                   </p>
                   <p className="text-lg font-bold">{stats.lastPayrollDate}</p>
                   <p className="text-xs text-muted-foreground mt-1">
                     <span className="inline-flex items-center gap-1 text-emerald-600">
                       <CheckCircle className="h-3 w-3" />
-                      Completed
+                      {t("payrollDashboard.completed")}
                     </span>
                   </p>
                 </div>
@@ -865,7 +865,7 @@ export default function PayrollDashboard() {
         {/* =================== */}
         <div className="mb-6">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-            Manage
+            {t("payrollDashboard.manage")}
           </h3>
           <div className="grid gap-4 md:grid-cols-2">
             {primaryLinks.map((link) => {
@@ -905,7 +905,7 @@ export default function PayrollDashboard() {
               className="w-full justify-between mb-4 text-muted-foreground hover:text-foreground"
             >
               <span className="text-sm font-semibold uppercase tracking-wide">
-                Past & Reports
+                {t("payrollDashboard.pastReports")}
               </span>
               <ChevronDown className={`h-4 w-4 transition-transform ${secondaryOpen ? "rotate-180" : ""}`} />
             </Button>
@@ -947,7 +947,7 @@ export default function PayrollDashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
               <Shield className="h-4 w-4 text-green-600 dark:text-green-400" />
-              Compliance Deadlines
+              {t("payrollDashboard.complianceDeadlines")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -957,7 +957,7 @@ export default function PayrollDashboard() {
                   compliance.wit.status === 'ok' ? 'bg-emerald-500' :
                   compliance.wit.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                 }`} />
-                <span className="text-muted-foreground">WIT due:</span>
+                <span className="text-muted-foreground">{t("payrollDashboard.witDue")}</span>
                 <span className="font-medium">{compliance.wit.date}</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
                   compliance.wit.status === 'ok'
@@ -974,7 +974,7 @@ export default function PayrollDashboard() {
                   compliance.inss.status === 'ok' ? 'bg-emerald-500' :
                   compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                 }`} />
-                <span className="text-muted-foreground">INSS due:</span>
+                <span className="text-muted-foreground">{t("payrollDashboard.inssDue")}</span>
                 <span className="font-medium">{compliance.inss.date}</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
                   compliance.inss.status === 'ok'
@@ -988,8 +988,8 @@ export default function PayrollDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="h-2 w-2 rounded-full bg-emerald-500" />
-                <span className="text-muted-foreground">Minimum wage:</span>
-                <span className="font-medium">$115 USD</span>
+                <span className="text-muted-foreground">{t("payrollDashboard.minimumWage")}</span>
+                <span className="font-medium">{t("payrollDashboard.minimumWageAmount")}</span>
               </div>
             </div>
           </CardContent>
@@ -1000,7 +1000,7 @@ export default function PayrollDashboard() {
         {/* ===================== */}
         <div className="mt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            Last reviewed by {user?.displayName || "Admin"} &bull; {new Date().toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {t("payrollDashboard.lastReviewedBy", { name: user?.displayName || "Admin" })} &bull; {new Date().toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>

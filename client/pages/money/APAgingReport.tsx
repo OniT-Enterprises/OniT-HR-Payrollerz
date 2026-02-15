@@ -179,7 +179,7 @@ export default function APAgingReport() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="A/P Aging - OniT" description="Accounts payable aging report" />
+      <SEO title="A/P Aging - Meza" description="Accounts payable aging report" />
       <MainNavigation />
 
       <div className="p-6 max-w-6xl mx-auto">
@@ -195,7 +195,7 @@ export default function APAgingReport() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.apAging.title') || 'A/P Aging Report'}
                 <InfoTooltip
-                  title="Accounts Payable Aging"
+                  title={t('money.apAging.tooltipTitle') || 'Accounts Payable Aging'}
                   content={MoneyTooltips.terms.apAging}
                 />
               </h1>
@@ -220,7 +220,9 @@ export default function APAgingReport() {
                   {formatCurrency(bucket.total)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {bucket.bills.length} {bucket.bills.length === 1 ? 'bill' : 'bills'}
+                  {bucket.bills.length} {bucket.bills.length === 1
+                    ? (t('money.apAging.bill') || 'bill')
+                    : (t('money.apAging.bills') || 'bills')}
                 </p>
               </CardContent>
             </Card>

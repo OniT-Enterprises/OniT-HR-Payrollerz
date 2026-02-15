@@ -70,7 +70,7 @@ export default function EmployeeProfileView({
       if (!tenantId || tenantId === "local-dev-tenant") {
         // Use default values for local dev
         setCompanyDetails({
-          legalName: "OniT Demo Company",
+          legalName: "Meza Demo Company",
           tinNumber: "000000000",
           registeredAddress: "Dili, Timor-Leste",
           city: "Dili",

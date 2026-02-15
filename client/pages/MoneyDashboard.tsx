@@ -247,7 +247,7 @@ export default function MoneyDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Money - OniT" description="Track who owes you money, what you need to pay, and what to do next" />
+      <SEO title="Money - Meza" description="Track who owes you money, what you need to pay, and what to do next" />
       <MainNavigation />
 
       {/* Hero Section */}

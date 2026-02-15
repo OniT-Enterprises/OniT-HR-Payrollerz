@@ -1,6 +1,6 @@
 /**
  * Sitemap Page
- * A comprehensive overview of all pages in the OniT HR/Payroll system
+ * A comprehensive overview of all pages in the Meza system
  * with descriptions and easy navigation
  */
 
@@ -41,7 +41,7 @@ interface SitemapSection {
 const sitemapData: SitemapSection[] = [
   {
     title: 'Dashboard',
-    description: 'Your central command center for OniT HR/Payroll',
+    description: 'Your central command center for Meza',
     icon: Home,
     color: 'text-blue-600',
     bgColor: 'bg-blue-100 dark:bg-blue-900',
@@ -460,7 +460,7 @@ const sitemapData: SitemapSection[] = [
 export default function Sitemap() {
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Sitemap - OniT HR/Payroll" description="Complete navigation guide for OniT HR/Payroll system" />
+      <SEO title="Sitemap - Meza" description="Complete navigation guide for Meza system" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -473,7 +473,7 @@ export default function Sitemap() {
             <div>
               <h1 className="text-3xl font-bold">Sitemap</h1>
               <p className="text-muted-foreground">
-                Complete navigation guide for OniT HR/Payroll
+                Complete navigation guide for Meza
               </p>
             </div>
           </div>
@@ -553,7 +553,7 @@ export default function Sitemap() {
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>
-            OniT HR/Payroll System - Built for Timor-Leste businesses
+            Meza System - Built for Timor-Leste businesses
           </p>
           <p className="mt-1">
             Compliant with ATTL tax regulations, INSS social security, and TL labor law

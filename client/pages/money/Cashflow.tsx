@@ -192,7 +192,7 @@ export default function Cashflow() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Cashflow - OniT" description="View your cash flow statement" />
+      <SEO title="Cashflow - Meza" description="View your cash flow statement" />
       <MainNavigation />
 
       <div className="p-6 max-w-4xl mx-auto">

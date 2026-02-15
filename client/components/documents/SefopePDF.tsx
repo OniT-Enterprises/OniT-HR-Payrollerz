@@ -452,7 +452,7 @@ export const SefopeDocument = ({ data }: SefopePDFProps) => {
 
         {/* Footer */}
         <Text style={styles.footer}>
-          Este documento é gerado automaticamente pelo sistema OniT HR/Payroll.
+          Este documento é gerado automaticamente pelo sistema Meza.
           {'\n'}
           Document generated on {today} | SEFOPE Employment Registration Form
         </Text>

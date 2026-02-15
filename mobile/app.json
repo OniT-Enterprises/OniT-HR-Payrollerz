@@ -1,0 +1,34 @@
+{
+  "expo": {
+    "name": "Kaixa",
+    "slug": "kaixa",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "kaixa",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0C0A09"
+    },
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "tl.onit.kaixa",
+      "backgroundColor": "#0C0A09"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0C0A09"
+      },
+      "package": "tl.onit.kaixa",
+      "edgeToEdgeEnabled": true,
+      "navigationBarColor": "#0C0A09"
+    },
+    "plugins": [
+      "expo-router"
+    ]
+  }
+}

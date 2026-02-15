@@ -216,7 +216,7 @@ export default function EmployeeAllowances() {
     if (employee) {
       return `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
     }
-    return "Unknown";
+    return t("common.unknown");
   };
 
   // Get allowance type config
@@ -344,7 +344,7 @@ export default function EmployeeAllowances() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Employee Allowances - OniT" description="Manage employee allowances for transport, housing, meals, and more" />
+      <SEO title="Employee Allowances - Meza" description="Manage employee allowances for transport, housing, meals, and more" />
       <MainNavigation />
 
       {/* Hero Section */}
@@ -559,10 +559,10 @@ export default function EmployeeAllowances() {
                           <TableCell>{getStatusBadge(allowance.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="sm" title="Edit">
+                              <Button variant="ghost" size="sm" title={t("common.edit")}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" title="Remove">
+                              <Button variant="ghost" size="sm" title={t("common.remove")}>
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>

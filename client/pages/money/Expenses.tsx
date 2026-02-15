@@ -367,7 +367,7 @@ export default function Expenses() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Expenses - OniT" description="Track and manage business expenses" />
+      <SEO title="Expenses - Meza" description="Track and manage business expenses" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -383,7 +383,7 @@ export default function Expenses() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.expenses.title') || 'Expenses'}
                 <InfoTooltip
-                  title="Expenses vs Bills"
+                  title={t('money.expenses.expensesVsBillsTitle') || 'Expenses vs Bills'}
                   content={MoneyTooltips.bills.expense}
                 />
               </h1>
@@ -722,7 +722,7 @@ export default function Expenses() {
                   ) : existingReceiptUrl && existingReceiptUrl.includes('.pdf') ? (
                     <div className="w-full h-32 flex items-center justify-center">
                       <FileText className="h-12 w-12 text-muted-foreground" />
-                      <span className="ml-2 text-sm text-muted-foreground">PDF Receipt</span>
+                      <span className="ml-2 text-sm text-muted-foreground">{t('money.expenses.pdfReceipt') || 'PDF Receipt'}</span>
                     </div>
                   ) : existingReceiptUrl ? (
                     <img

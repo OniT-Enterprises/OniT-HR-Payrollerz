@@ -149,7 +149,7 @@ export default function Payments() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Payments - OniT" description="View payment history" />
+      <SEO title="Payments - Meza" description="View payment history" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -164,8 +164,8 @@ export default function Payments() {
             <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.payments.title') || 'Payments'}
                 <InfoTooltip
-                  title="Payments Received"
-                  content="Record of all payments received from customers. Each payment is linked to an invoice and updates that invoice's balance."
+                  title={t('money.payments.tooltipTitle') || 'Payments Received'}
+                  content={t('money.payments.tooltipContent') || 'Record of all payments received from customers. Each payment is linked to an invoice and updates that invoice\'s balance.'}
                 />
               </h1>
             <p className="text-muted-foreground">
@@ -257,7 +257,7 @@ export default function Payments() {
               <SelectValue placeholder={t('money.payments.method') || 'Payment Method'} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('common.all') || 'All Methods'}</SelectItem>
+              <SelectItem value="all">{t('money.payments.allMethods') || 'All Methods'}</SelectItem>
               <SelectItem value="cash">{t('money.payments.cash') || 'Cash'}</SelectItem>
               <SelectItem value="bank_transfer">
                 {t('money.payments.bankTransfer') || 'Bank Transfer'}

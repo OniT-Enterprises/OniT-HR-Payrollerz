@@ -155,7 +155,7 @@ export default function Bills() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Bills - OniT" description="Manage your bills and accounts payable" />
+      <SEO title="Bills - Meza" description="Manage your bills and accounts payable" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -171,8 +171,8 @@ export default function Bills() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.bills.title') || 'Bills'}
                 <InfoTooltip
-                  title="Bills (Accounts Payable)"
-                  content={MoneyTooltips.bills.bill}
+                  title={t('money.bills.tooltipTitle') || 'Bills (Accounts Payable)'}
+                  content={t('money.bills.tooltipContent') || MoneyTooltips.bills.bill}
                 />
               </h1>
               <p className="text-muted-foreground">

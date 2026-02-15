@@ -59,13 +59,6 @@ import {
   Loader2,
 } from 'lucide-react';
 
-const TAX_RATES = [
-  { value: 0, label: 'No Tax (0%)' },
-  { value: 2.5, label: '2.5%' },
-  { value: 5, label: '5%' },
-  { value: 10, label: '10%' },
-];
-
 const STATUS_STYLES: Record<string, string> = {
   draft: 'bg-slate-100 text-slate-700',
   sent: 'bg-blue-100 text-blue-700',
@@ -99,6 +92,13 @@ export default function InvoiceForm() {
   const [paymentNotes, setPaymentNotes] = useState('');
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
+
+  const TAX_RATES = [
+    { value: 0, label: t('money.invoices.noTax') || 'No Tax (0%)' },
+    { value: 2.5, label: '2.5%' },
+    { value: 5, label: '5%' },
+    { value: 10, label: '10%' },
+  ];
 
   // React Hook Form for better performance (no re-render on every keystroke)
   const {
@@ -198,7 +198,7 @@ export default function InvoiceForm() {
       console.error('Error loading data:', error);
       toast({
         title: t('common.error') || 'Error',
-        description: 'Failed to load data',
+        description: t('money.invoices.failedToLoadData') || 'Failed to load data',
         variant: 'destructive',
       });
     } finally {
@@ -403,7 +403,7 @@ export default function InvoiceForm() {
   if (invoice && !canEdit && !isEditMode) {
     return (
       <div className="min-h-screen bg-background">
-        <SEO title={`Invoice ${invoice.invoiceNumber} - OniT`} />
+        <SEO title={`Invoice ${invoice.invoiceNumber} - Meza`} />
         <MainNavigation />
 
         <div className="p-6 max-w-4xl mx-auto">
@@ -670,7 +670,7 @@ export default function InvoiceForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isNew ? 'New Invoice - OniT' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - OniT`}
+        title={isNew ? 'New Invoice - Meza' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Meza`}
       />
       <MainNavigation />
 

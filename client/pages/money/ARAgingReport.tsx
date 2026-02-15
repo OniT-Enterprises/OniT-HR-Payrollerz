@@ -170,7 +170,7 @@ export default function ARAgingReport() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="A/R Aging - OniT" description="Accounts receivable aging report" />
+      <SEO title="A/R Aging - Meza" description="Accounts receivable aging report" />
       <MainNavigation />
 
       <div className="p-6 max-w-6xl mx-auto">
@@ -186,7 +186,7 @@ export default function ARAgingReport() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.arAging.title') || 'A/R Aging Report'}
                 <InfoTooltip
-                  title="Accounts Receivable Aging"
+                  title={t('money.arAging.tooltipTitle') || 'Accounts Receivable Aging'}
                   content={MoneyTooltips.terms.arAging}
                 />
               </h1>
@@ -211,7 +211,9 @@ export default function ARAgingReport() {
                   {formatCurrency(bucket.total)}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {bucket.invoices.length} {bucket.invoices.length === 1 ? 'invoice' : 'invoices'}
+                  {bucket.invoices.length} {bucket.invoices.length === 1
+                    ? (t('money.arAging.invoice') || 'invoice')
+                    : (t('money.arAging.invoices') || 'invoices')}
                 </p>
               </CardContent>
             </Card>

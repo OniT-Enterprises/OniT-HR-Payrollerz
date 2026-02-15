@@ -131,15 +131,11 @@ export default function Landing() {
           <div className="flex items-center justify-between h-16">
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 via-amber-500 to-black flex items-center justify-center shadow-lg shadow-red-500/20 group-hover:shadow-red-500/30 transition-shadow border border-amber-500/20">
-                <span className="text-white text-sm font-black tracking-tight">TL</span>
-              </div>
-              <div className="flex flex-col">
-                <span className="text-lg font-bold tracking-tight leading-none">
-                  Oni<span className="text-red-500">T</span>
-                </span>
-                <span className="text-[10px] text-zinc-500 tracking-wider">TIMOR-LESTE</span>
-              </div>
+              <img
+                src="/images/meza-logo-light-on-dark-glow.png"
+                alt="Meza"
+                className="h-9 w-auto"
+              />
             </Link>
 
             {/* Nav Links */}
@@ -300,7 +296,7 @@ export default function Landing() {
                   <div className="w-3 h-3 rounded-full bg-green-500/80" />
                 </div>
                 <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 rounded-lg bg-white/5 text-xs text-zinc-500">app.onit.tl/dashboard</div>
+                  <div className="px-4 py-1 rounded-lg bg-white/5 text-xs text-zinc-500">meza.onit.tl/dashboard</div>
                 </div>
               </div>
               <div className="p-8 min-h-[400px] bg-gradient-to-br from-zinc-900 to-zinc-950">
@@ -405,7 +401,7 @@ export default function Landing() {
             </div>
             <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <div className="text-3xl mb-3">✅</div>
-              <h3 className="font-semibold text-white mb-2">OniT solves this</h3>
+              <h3 className="font-semibold text-white mb-2">Meza solves this</h3>
               <p className="text-sm text-zinc-400">Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface.</p>
             </div>
           </div>
@@ -758,7 +754,7 @@ export default function Landing() {
                 <span className="block text-zinc-500">iha Tetun no English</span>
               </h2>
               <p className="text-zinc-400 mb-6">
-                We're not a foreign company with offshore support. OniT is built in Timor-Leste,
+                We're not a foreign company with offshore support. Meza is built in Timor-Leste,
                 for Timor-Leste. Get help from people who understand local business practices.
               </p>
               <ul className="space-y-3">
@@ -842,15 +838,14 @@ export default function Landing() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-red-500 to-amber-500 flex items-center justify-center">
-                <span className="text-white text-xs font-black">TL</span>
-              </div>
-              <div>
-                <span className="font-bold">{t("landing.footer.brand")}</span>
-                <span className="text-zinc-600 text-sm ml-2">
-                  {t("landing.footer.location")}
-                </span>
-              </div>
+              <img
+                src="/images/meza-logo-light-on-dark-glow.png"
+                alt="Meza"
+                className="h-7 w-auto"
+              />
+              <span className="text-zinc-600 text-sm">
+                {t("landing.footer.location")}
+              </span>
             </div>
             <div className="flex items-center gap-8 text-sm text-zinc-500">
               <a href="#" className="hover:text-white transition-colors">

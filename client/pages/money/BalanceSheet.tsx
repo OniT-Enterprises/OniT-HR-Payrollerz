@@ -182,7 +182,7 @@ export default function BalanceSheet() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Balance Sheet - OniT" description="View your balance sheet" />
+      <SEO title="Balance Sheet - Meza" description="View your balance sheet" />
       <MainNavigation />
 
       <div className="p-6 max-w-4xl mx-auto">

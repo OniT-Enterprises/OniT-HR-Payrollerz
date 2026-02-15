@@ -495,7 +495,7 @@ export default function CSVColumnMapper({
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = "payrollhr_employee_template.csv";
+    link.download = "meza_employee_template.csv";
     link.click();
     window.URL.revokeObjectURL(url);
   };

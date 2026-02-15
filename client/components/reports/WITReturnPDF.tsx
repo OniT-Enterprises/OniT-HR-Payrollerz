@@ -398,7 +398,7 @@ const WITReturnDocument = ({
           {generatedDate.toLocaleTimeString()}
         </Text>
         <Text style={styles.footerText}>
-          OniT HR/Payroll - ATTL Monthly WIT Return
+          Meza - ATTL Monthly WIT Return
         </Text>
       </View>
     </Page>

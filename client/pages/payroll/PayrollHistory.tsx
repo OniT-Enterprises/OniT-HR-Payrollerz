@@ -96,12 +96,14 @@ import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const tenantId = useTenantId();
   const { user } = useAuth();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
@@ -146,8 +148,8 @@ export default function PayrollHistory() {
       } catch (error) {
         console.error("Failed to load payroll runs:", error);
         toast({
-          title: "Error",
-          description: "Failed to load payroll history. Please refresh the page.",
+          title: t("common.error"),
+          description: t("payrollHistory.toastLoadError"),
           variant: "destructive",
         });
       } finally {
@@ -295,16 +297,16 @@ export default function PayrollHistory() {
       );
 
       toast({
-        title: "Payroll Approved",
-        description: `Payroll approved and journal entry posted.`,
+        title: t("payrollHistory.toastApproved"),
+        description: t("payrollHistory.toastApprovedDesc"),
       });
 
       setShowApproveDialog(false);
       setApproveRun(null);
     } catch (error: any) {
       toast({
-        title: "Approval Failed",
-        description: error.message || "Failed to approve payroll run.",
+        title: t("payrollHistory.toastApprovalFailed"),
+        description: error.message || t("payrollHistory.toastApprovalFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -336,8 +338,8 @@ export default function PayrollHistory() {
       );
 
       toast({
-        title: "Payroll Rejected",
-        description: "Payroll run has been rejected and sent back for revision.",
+        title: t("payrollHistory.toastRejected"),
+        description: t("payrollHistory.toastRejectedDesc"),
       });
 
       setShowRejectDialog(false);
@@ -345,8 +347,8 @@ export default function PayrollHistory() {
       setRejectionReason("");
     } catch (error: any) {
       toast({
-        title: "Rejection Failed",
-        description: error.message || "Failed to reject payroll run.",
+        title: t("payrollHistory.toastRejectionFailed"),
+        description: error.message || t("payrollHistory.toastRejectionFailedDesc"),
         variant: "destructive",
       });
     } finally {
@@ -368,8 +370,8 @@ export default function PayrollHistory() {
     } catch (error) {
       console.error("Failed to load payroll records:", error);
       toast({
-        title: "Error",
-        description: "Failed to load payroll details.",
+        title: t("common.error"),
+        description: t("payrollHistory.toastDetailsError"),
         variant: "destructive",
       });
     } finally {
@@ -390,8 +392,8 @@ export default function PayrollHistory() {
     };
 
     toast({
-      title: "Export Started",
-      description: "CSV file will be downloaded shortly.",
+      title: t("payrollHistory.toastExportStarted"),
+      description: t("payrollHistory.toastExportDesc"),
     });
   };
 
@@ -409,8 +411,8 @@ export default function PayrollHistory() {
     } catch (error) {
       console.error("Failed to load payroll records for QB export:", error);
       toast({
-        title: "Error",
-        description: "Failed to load payroll records.",
+        title: t("common.error"),
+        description: t("payrollHistory.toastRecordsError"),
         variant: "destructive",
       });
     }
@@ -430,8 +432,8 @@ export default function PayrollHistory() {
     } catch (error) {
       console.error("Failed to load payroll records for email:", error);
       toast({
-        title: "Error",
-        description: "Failed to load payroll records.",
+        title: t("common.error"),
+        description: t("payrollHistory.toastRecordsError"),
         variant: "destructive",
       });
     }
@@ -443,21 +445,21 @@ export default function PayrollHistory() {
 
     try {
       toast({
-        title: "Generating Payslip",
-        description: `Preparing payslip for ${record.employeeName}...`,
+        title: t("payrollHistory.toastGenerating"),
+        description: t("payrollHistory.toastGeneratingDesc", { name: record.employeeName }),
       });
 
       await downloadPayslip(record, selectedRun);
 
       toast({
-        title: "Payslip Downloaded",
-        description: `Payslip for ${record.employeeName} has been downloaded.`,
+        title: t("payrollHistory.toastDownloaded"),
+        description: t("payrollHistory.toastDownloadedDesc", { name: record.employeeName }),
       });
     } catch (error) {
       console.error("Failed to generate payslip:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate payslip. Please try again.",
+        title: t("common.error"),
+        description: t("payrollHistory.toastPayslipError"),
         variant: "destructive",
       });
     }
@@ -550,15 +552,15 @@ export default function PayrollHistory() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Payroll History
+                  {t("payrollHistory.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  View and manage past payroll runs
+                  {t("payrollHistory.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate("/payroll/run")} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
-              Run New Payroll
+              {t("payrollHistory.runNewPayroll")}
             </Button>
           </div>
         </div>
@@ -573,7 +575,7 @@ export default function PayrollHistory() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      YTD Total Paid
+                      {t("payrollHistory.ytdTotalPaid")}
                     </p>
                     <p className="text-2xl font-bold">
                       {formatCurrency(stats.totalPaid)}
@@ -590,7 +592,7 @@ export default function PayrollHistory() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Payroll Runs (YTD)
+                      {t("payrollHistory.payrollRunsYtd")}
                     </p>
                     <p className="text-2xl font-bold">
                       {stats.totalRuns}
@@ -607,7 +609,7 @@ export default function PayrollHistory() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Average Per Run
+                      {t("payrollHistory.averagePerRun")}
                     </p>
                     <p className="text-2xl font-bold">
                       {formatCurrency(stats.averagePer)}
@@ -624,7 +626,7 @@ export default function PayrollHistory() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">
-                      Trend vs Last
+                      {t("payrollHistory.trendVsLast")}
                     </p>
                     <div className="flex items-center gap-1">
                       <p
@@ -654,36 +656,36 @@ export default function PayrollHistory() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
-                Filters
+                {t("payrollHistory.filters")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                  <Label htmlFor="status-filter">Status</Label>
+                  <Label htmlFor="status-filter">{t("payrollHistory.statusLabel")}</Label>
                   <Select value={statusFilter} onValueChange={setStatusFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="All statuses" />
+                      <SelectValue placeholder={t("payrollHistory.allStatuses")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All statuses</SelectItem>
-                      <SelectItem value="draft">Draft</SelectItem>
-                      <SelectItem value="processing">Pending Approval</SelectItem>
-                      <SelectItem value="approved">Approved</SelectItem>
-                      <SelectItem value="paid">Paid</SelectItem>
-                      <SelectItem value="rejected">Rejected</SelectItem>
-                      <SelectItem value="cancelled">Cancelled</SelectItem>
+                      <SelectItem value="all">{t("payrollHistory.allStatuses")}</SelectItem>
+                      <SelectItem value="draft">{t("payrollHistory.draft")}</SelectItem>
+                      <SelectItem value="processing">{t("payrollHistory.pendingApproval")}</SelectItem>
+                      <SelectItem value="approved">{t("payrollHistory.approved")}</SelectItem>
+                      <SelectItem value="paid">{t("payrollHistory.paid")}</SelectItem>
+                      <SelectItem value="rejected">{t("payrollHistory.rejected")}</SelectItem>
+                      <SelectItem value="cancelled">{t("payrollHistory.cancelled")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label htmlFor="year-filter">Year</Label>
+                  <Label htmlFor="year-filter">{t("payrollHistory.yearLabel")}</Label>
                   <Select value={yearFilter} onValueChange={setYearFilter}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select year" />
+                      <SelectValue placeholder={t("payrollHistory.selectYear")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All years</SelectItem>
+                      <SelectItem value="all">{t("payrollHistory.allYears")}</SelectItem>
                       {availableYears.map((year) => (
                         <SelectItem key={year} value={year}>
                           {year}
@@ -693,12 +695,12 @@ export default function PayrollHistory() {
                   </Select>
                 </div>
                 <div className="md:col-span-2">
-                  <Label htmlFor="search">Search</Label>
+                  <Label htmlFor="search">{t("payrollHistory.searchLabel")}</Label>
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="search"
-                      placeholder="Search by period..."
+                      placeholder={t("payrollHistory.searchPlaceholder")}
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="pl-9"
@@ -713,14 +715,14 @@ export default function PayrollHistory() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
               <TabsTrigger value="pending" className="relative">
-                Pending Approval
+                {t("payrollHistory.tabPending")}
                 {stats.pendingApprovalCount > 0 && (
                   <Badge className="ml-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 min-w-[20px] h-5">
                     {stats.pendingApprovalCount}
                   </Badge>
                 )}
               </TabsTrigger>
-              <TabsTrigger value="all">All Runs</TabsTrigger>
+              <TabsTrigger value="all">{t("payrollHistory.tabAll")}</TabsTrigger>
             </TabsList>
 
             {/* Pending Approval Tab */}
@@ -729,30 +731,30 @@ export default function PayrollHistory() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <ShieldCheck className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                    Pending Approval
+                    {t("payrollHistory.pendingApprovalTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Payroll runs awaiting second-person review and approval
+                    {t("payrollHistory.pendingApprovalDescription")}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {pendingRuns.length === 0 ? (
                     <div className="text-center py-12">
                       <CheckCircle className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="text-muted-foreground">No payroll runs pending approval</p>
+                      <p className="text-muted-foreground">{t("payrollHistory.noPendingRuns")}</p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Period</TableHead>
-                            <TableHead>Pay Date</TableHead>
-                            <TableHead className="text-right">Employees</TableHead>
-                            <TableHead className="text-right">Gross Pay</TableHead>
-                            <TableHead className="text-right">Net Pay</TableHead>
-                            <TableHead>Submitted By</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>{t("payrollHistory.period")}</TableHead>
+                            <TableHead>{t("payrollHistory.payDate")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.grossPay")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.netPay")}</TableHead>
+                            <TableHead>{t("payrollHistory.submittedBy")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -784,7 +786,7 @@ export default function PayrollHistory() {
                                 </TableCell>
                                 <TableCell>
                                   <span className="text-sm text-muted-foreground">
-                                    {run.createdBy === user?.uid ? "You" : run.createdBy?.slice(0, 8) + "..."}
+                                    {run.createdBy === user?.uid ? t("payrollHistory.you") : run.createdBy?.slice(0, 8) + "..."}
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-right">
@@ -807,7 +809,7 @@ export default function PayrollHistory() {
                                       title={isSameUser ? "Cannot approve your own payroll submission" : "Approve payroll"}
                                     >
                                       <CheckCircle className="h-4 w-4 mr-1" />
-                                      Approve
+                                      {t("payrollHistory.approve")}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -820,12 +822,12 @@ export default function PayrollHistory() {
                                       className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
                                     >
                                       <XCircle className="h-4 w-4 mr-1" />
-                                      Reject
+                                      {t("payrollHistory.reject")}
                                     </Button>
                                   </div>
                                   {isSameUser && (
                                     <p className="text-xs text-muted-foreground mt-1">
-                                      Two-person rule: another admin must approve
+                                      {t("payrollHistory.twoPersonRule")}
                                     </p>
                                   )}
                                 </TableCell>
@@ -846,19 +848,19 @@ export default function PayrollHistory() {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    Payroll Runs
+                    {t("payrollHistory.payrollRunsTitle")}
                   </CardTitle>
                   <CardDescription>
-                    Showing {filteredRuns.length} payroll runs
+                    {t("payrollHistory.showingRuns", { count: filteredRuns.length })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {filteredRuns.length === 0 ? (
                     <div className="text-center py-12">
                       <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
-                      <p className="text-muted-foreground mb-4">No payroll runs found</p>
+                      <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
                       <Button onClick={() => navigate("/payroll/run")}>
-                        Run Your First Payroll
+                        {t("payrollHistory.runFirstPayroll")}
                       </Button>
                     </div>
                   ) : (
@@ -866,13 +868,13 @@ export default function PayrollHistory() {
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Period</TableHead>
-                            <TableHead>Pay Date</TableHead>
-                            <TableHead className="text-right">Employees</TableHead>
-                            <TableHead className="text-right">Gross Pay</TableHead>
-                            <TableHead className="text-right">Net Pay</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead>{t("payrollHistory.period")}</TableHead>
+                            <TableHead>{t("payrollHistory.payDate")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.grossPay")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.netPay")}</TableHead>
+                            <TableHead>{t("payrollHistory.status")}</TableHead>
+                            <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -913,7 +915,7 @@ export default function PayrollHistory() {
                                       onClick={() => handleViewDetails(run)}
                                     >
                                       <Eye className="h-4 w-4 mr-2" />
-                                      View Details
+                                      {t("payrollHistory.viewDetails")}
                                     </DropdownMenuItem>
                                     {run.status === "processing" && run.createdBy !== user?.uid && (
                                       <DropdownMenuItem
@@ -923,7 +925,7 @@ export default function PayrollHistory() {
                                         }}
                                       >
                                         <CheckCircle className="h-4 w-4 mr-2" />
-                                        Approve
+                                        {t("payrollHistory.approve")}
                                       </DropdownMenuItem>
                                     )}
                                     {run.status === "processing" && (
@@ -935,27 +937,27 @@ export default function PayrollHistory() {
                                         }}
                                       >
                                         <XCircle className="h-4 w-4 mr-2" />
-                                        Reject
+                                        {t("payrollHistory.reject")}
                                       </DropdownMenuItem>
                                     )}
                                     <DropdownMenuItem
                                       onClick={() => handleExportCSV(run)}
                                     >
                                       <Download className="h-4 w-4 mr-2" />
-                                      Export CSV
+                                      {t("payrollHistory.exportCsv")}
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                       onClick={() => handleExportToQuickBooks(run)}
                                     >
                                       <FileText className="h-4 w-4 mr-2" />
-                                      Export to QuickBooks
+                                      {t("payrollHistory.exportQuickBooks")}
                                     </DropdownMenuItem>
                                     {(run.status === "approved" || run.status === "paid") && (
                                       <DropdownMenuItem
                                         onClick={() => handleSendPayslips(run)}
                                       >
                                         <Mail className="h-4 w-4 mr-2" />
-                                        Send Payslips
+                                        {t("payrollHistory.sendPayslips")}
                                       </DropdownMenuItem>
                                     )}
                                   </DropdownMenuContent>
@@ -1000,43 +1002,43 @@ export default function PayrollHistory() {
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-green-600" />
-              Approve Payroll Run
+              {t("payrollHistory.approveDialogTitle")}
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-4">
-                <p>You are about to approve this payroll run. This will:</p>
+                <p>{t("payrollHistory.approveDialogDescription")}</p>
                 {approveRun && (
                   <div className="p-4 bg-muted rounded-lg space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span>Period</span>
+                      <span>{t("payrollHistory.approveDialogPeriod")}</span>
                       <span className="font-medium">
                         {formatPayPeriod(approveRun.periodStart, approveRun.periodEnd)}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Employees</span>
+                      <span>{t("payrollHistory.approveDialogEmployees")}</span>
                       <span className="font-medium">{approveRun.employeeCount}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Gross Pay</span>
+                      <span>{t("payrollHistory.approveDialogGrossPay")}</span>
                       <span className="font-medium">{formatCurrency(approveRun.totalGrossPay)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span>Net Pay</span>
+                      <span>{t("payrollHistory.approveDialogNetPay")}</span>
                       <span className="font-semibold text-emerald-600">{formatCurrency(approveRun.totalNetPay)}</span>
                     </div>
                   </div>
                 )}
                 <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>- Mark payroll as approved and paid</li>
-                  <li>- Create accounting journal entries</li>
-                  <li>- Generate payslips for all employees</li>
+                  <li>- {t("payrollHistory.approveMarkPaid")}</li>
+                  <li>- {t("payrollHistory.approveCreateJournalEntries")}</li>
+                  <li>- {t("payrollHistory.approveGeneratePayslips")}</li>
                 </ul>
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={approving}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={approving}>{t("payrollHistory.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleApprovePayroll}
               disabled={approving}
@@ -1045,12 +1047,12 @@ export default function PayrollHistory() {
               {approving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Approving...
+                  {t("payrollHistory.approving")}
                 </>
               ) : (
                 <>
                   <CheckCircle className="h-4 w-4 mr-2" />
-                  Approve & Process
+                  {t("payrollHistory.approveAndProcess")}
                 </>
               )}
             </AlertDialogAction>
@@ -1064,10 +1066,10 @@ export default function PayrollHistory() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
-              Reject Payroll Run
+              {t("payrollHistory.rejectDialogTitle")}
             </DialogTitle>
             <DialogDescription>
-              Provide a reason for rejecting this payroll run. The submitter will be able to revise and resubmit.
+              {t("payrollHistory.rejectDialogDescription")}
             </DialogDescription>
           </DialogHeader>
           {rejectRun && (
@@ -1077,13 +1079,13 @@ export default function PayrollHistory() {
                   {getPayPeriodLabel(rejectRun.periodStart, rejectRun.periodEnd)}
                 </span>
                 {" - "}
-                {rejectRun.employeeCount} employees, {formatCurrency(rejectRun.totalNetPay)} net
+                {t("payrollHistory.employeesNet", { count: rejectRun.employeeCount, amount: formatCurrency(rejectRun.totalNetPay) })}
               </div>
               <div>
-                <Label htmlFor="rejection-reason">Rejection Reason</Label>
+                <Label htmlFor="rejection-reason">{t("payrollHistory.rejectionReasonLabel")}</Label>
                 <Textarea
                   id="rejection-reason"
-                  placeholder="Explain why this payroll run is being rejected (minimum 10 characters)..."
+                  placeholder={t("payrollHistory.rejectionReasonPlaceholder")}
                   value={rejectionReason}
                   onChange={(e) => setRejectionReason(e.target.value)}
                   rows={3}
@@ -1091,13 +1093,13 @@ export default function PayrollHistory() {
                 />
                 {rejectionReason.length > 0 && rejectionReason.trim().length < 10 && (
                   <p className="text-xs text-red-500 mt-1">
-                    Reason must be at least 10 characters ({rejectionReason.trim().length}/10)
+                    {t("payrollHistory.rejectionReasonMinChars", { count: rejectionReason.trim().length })}
                   </p>
                 )}
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowRejectDialog(false)} disabled={rejecting}>
-                  Cancel
+                  {t("payrollHistory.cancel")}
                 </Button>
                 <Button
                   onClick={handleRejectPayroll}
@@ -1107,12 +1109,12 @@ export default function PayrollHistory() {
                   {rejecting ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Rejecting...
+                      {t("payrollHistory.rejecting")}
                     </>
                   ) : (
                     <>
                       <XCircle className="h-4 w-4 mr-2" />
-                      Reject Payroll
+                      {t("payrollHistory.rejectPayroll")}
                     </>
                   )}
                 </Button>
@@ -1129,12 +1131,12 @@ export default function PayrollHistory() {
             <div className="flex items-start justify-between">
               <div>
                 <DialogTitle>
-                  Payroll Details -{" "}
+                  {t("payrollHistory.detailsTitle")} -{" "}
                   {selectedRun &&
                     getPayPeriodLabel(selectedRun.periodStart, selectedRun.periodEnd)}
                 </DialogTitle>
                 <DialogDescription>
-                  View individual employee payroll records
+                  {t("payrollHistory.detailsDescription")}
                 </DialogDescription>
               </div>
               {selectedRun && (selectedRun.status === "approved" || selectedRun.status === "paid") && (
@@ -1148,7 +1150,7 @@ export default function PayrollHistory() {
                   className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
                 >
                   <Mail className="h-4 w-4 mr-2" />
-                  Send Payslips
+                  {t("payrollHistory.sendPayslips")}
                 </Button>
               )}
             </div>
@@ -1159,25 +1161,25 @@ export default function PayrollHistory() {
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Total Gross</p>
+                  <p className="text-sm text-muted-foreground">{t("payrollHistory.totalGross")}</p>
                   <p className="text-lg font-semibold text-foreground">
                     {formatCurrency(selectedRun.totalGrossPay)}
                   </p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Total Deductions</p>
+                  <p className="text-sm text-muted-foreground">{t("payrollHistory.totalDeductions")}</p>
                   <p className="text-lg font-semibold text-red-600 dark:text-red-400">
                     {formatCurrency(selectedRun.totalDeductions)}
                   </p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Total Net Pay</p>
+                  <p className="text-sm text-muted-foreground">{t("payrollHistory.totalNetPay")}</p>
                   <p className="text-lg font-semibold text-emerald-600 dark:text-emerald-400">
                     {formatCurrency(selectedRun.totalNetPay)}
                   </p>
                 </div>
                 <div className="p-4 bg-muted rounded-lg">
-                  <p className="text-sm text-muted-foreground">Employees</p>
+                  <p className="text-sm text-muted-foreground">{t("payrollHistory.employees")}</p>
                   <p className="text-lg font-semibold text-foreground">
                     {selectedRun.employeeCount}
                   </p>
@@ -1194,13 +1196,13 @@ export default function PayrollHistory() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Employee</TableHead>
-                        <TableHead>Department</TableHead>
-                        <TableHead className="text-right">Hours</TableHead>
-                        <TableHead className="text-right">Gross</TableHead>
-                        <TableHead className="text-right">Deductions</TableHead>
-                        <TableHead className="text-right">Net Pay</TableHead>
-                        <TableHead className="text-right">Payslip</TableHead>
+                        <TableHead>{t("payrollHistory.employee")}</TableHead>
+                        <TableHead>{t("payrollHistory.department")}</TableHead>
+                        <TableHead className="text-right">{t("payrollHistory.hours")}</TableHead>
+                        <TableHead className="text-right">{t("payrollHistory.gross")}</TableHead>
+                        <TableHead className="text-right">{t("payrollHistory.deductions")}</TableHead>
+                        <TableHead className="text-right">{t("payrollHistory.netPay")}</TableHead>
+                        <TableHead className="text-right">{t("payrollHistory.payslip")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -1250,7 +1252,7 @@ export default function PayrollHistory() {
                 </div>
               ) : (
                 <div className="text-center py-8 text-muted-foreground">
-                  No individual records found for this payroll run.
+                  {t("payrollHistory.noRecords")}
                 </div>
               )}
             </div>

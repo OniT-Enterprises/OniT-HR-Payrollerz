@@ -62,6 +62,7 @@ import { SEO } from "@/components/SEO";
 import { employeeService, Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import type { WorkPermitStatus } from "@/types/tax-filing";
+import { useI18n } from "@/i18n/I18nProvider";
 
 // ============================================
 // TYPES
@@ -88,30 +89,30 @@ interface DashboardStats {
 
 const STATUS_CONFIG: Record<
   WorkPermitStatus,
-  { label: string; className: string; icon: typeof CheckCircle }
+  { labelKey: string; className: string; icon: typeof CheckCircle }
 > = {
   not_required: {
-    label: "Not Required",
+    labelKey: "admin.foreignWorkers.statusNotRequired",
     className: "bg-gray-100 text-gray-700",
     icon: CheckCircle,
   },
   pending: {
-    label: "Pending",
+    labelKey: "admin.foreignWorkers.statusPending",
     className: "bg-yellow-100 text-yellow-800",
     icon: Clock,
   },
   approved: {
-    label: "Active",
+    labelKey: "admin.foreignWorkers.statusActive",
     className: "bg-green-100 text-green-800",
     icon: CheckCircle,
   },
   expired: {
-    label: "Expired",
+    labelKey: "admin.foreignWorkers.statusExpired",
     className: "bg-red-100 text-red-800",
     icon: XCircle,
   },
   renewal_pending: {
-    label: "Renewal Pending",
+    labelKey: "admin.foreignWorkers.statusRenewalPending",
     className: "bg-orange-100 text-orange-800",
     icon: RefreshCw,
   },
@@ -215,6 +216,7 @@ export default function ForeignWorkers() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const { t } = useI18n();
 
   // State
   const [loading, setLoading] = useState(true);
@@ -237,8 +239,8 @@ export default function ForeignWorkers() {
     } catch (error) {
       console.error("Failed to load employees:", error);
       toast({
-        title: "Error",
-        description: "Failed to load employee data.",
+        title: t("common.error"),
+        description: t("admin.foreignWorkers.errorLoad"),
         variant: "destructive",
       });
     } finally {
@@ -353,11 +355,11 @@ export default function ForeignWorkers() {
 
   // Format days remaining text
   const formatDaysRemaining = (days: number): string => {
-    if (days === Infinity) return "No expiry set";
-    if (days < 0) return `Expired ${Math.abs(days)} days ago`;
-    if (days === 0) return "Expires today";
-    if (days === 1) return "Expires tomorrow";
-    return `${days} days`;
+    if (days === Infinity) return t("admin.foreignWorkers.noExpiry");
+    if (days < 0) return t("admin.foreignWorkers.expiredDaysAgo", { days: String(Math.abs(days)) });
+    if (days === 0) return t("admin.foreignWorkers.expiresToday");
+    if (days === 1) return t("admin.foreignWorkers.expiresTomorrow");
+    return t("admin.foreignWorkers.expiresInDays", { days: String(days) });
   };
 
   if (loading) {
@@ -367,8 +369,8 @@ export default function ForeignWorkers() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Foreign Workers | OniT HR"
-        description="Manage foreign worker documentation and permit tracking"
+        title="Foreign Workers | Meza"
+        description={t("admin.foreignWorkers.pageDesc")}
       />
       <MainNavigation />
 
@@ -383,16 +385,16 @@ export default function ForeignWorkers() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
-                  Foreign Workers
+                  {t("admin.foreignWorkers.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Track work permits, visas, and compliance documentation
+                  {t("admin.foreignWorkers.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate("/people/employees")}>
               <Users className="h-4 w-4 mr-2" />
-              All Employees
+              {t("admin.foreignWorkers.allEmployees")}
             </Button>
           </div>
         </div>
@@ -407,13 +409,10 @@ export default function ForeignWorkers() {
                 <AlertTriangle className="h-5 w-5 text-red-600" />
                 <div className="flex-1">
                   <p className="font-medium text-red-800 dark:text-red-200">
-                    Action Required
+                    {t("admin.foreignWorkers.actionRequired")}
                   </p>
                   <p className="text-sm text-red-600 dark:text-red-300">
-                    {stats.expired > 0 &&
-                      `${stats.expired} worker(s) have expired documents. `}
-                    {stats.expiringWithin30Days > 0 &&
-                      `${stats.expiringWithin30Days} worker(s) have documents expiring within 30 days.`}
+                    {t("admin.foreignWorkers.actionRequiredDesc", { expired: String(stats.expired), expiring: String(stats.expiringWithin30Days) })}
                   </p>
                 </div>
                 <Button
@@ -422,7 +421,7 @@ export default function ForeignWorkers() {
                   className="border-red-300 text-red-700 hover:bg-red-100"
                   onClick={() => setActiveTab("expiring")}
                 >
-                  View Details
+                  {t("admin.foreignWorkers.viewDetails")}
                 </Button>
               </div>
             </CardContent>
@@ -438,7 +437,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Foreign</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.totalForeign")}</p>
                   <p className="text-2xl font-bold">{stats.totalForeignWorkers}</p>
                 </div>
                 <Globe className="h-8 w-8 text-blue-500/30" />
@@ -453,7 +452,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active Permits</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.activePermits")}</p>
                   <p className="text-2xl font-bold text-green-600">
                     {stats.activePermits}
                   </p>
@@ -470,7 +469,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pending</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.pending")}</p>
                   <p className="text-2xl font-bold text-yellow-600">
                     {stats.pendingApproval}
                   </p>
@@ -487,7 +486,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">&lt;30 Days</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.under30Days")}</p>
                   <p className="text-2xl font-bold text-orange-600">
                     {stats.expiringWithin30Days}
                   </p>
@@ -501,7 +500,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">30-90 Days</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.thirtyToNinetyDays")}</p>
                   <p className="text-2xl font-bold text-amber-600">
                     {stats.expiringWithin90Days}
                   </p>
@@ -518,7 +517,7 @@ export default function ForeignWorkers() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Expired</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.foreignWorkers.expired")}</p>
                   <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
                 </div>
                 <XCircle className="h-8 w-8 text-red-500/30" />
@@ -534,10 +533,10 @@ export default function ForeignWorkers() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <Users className="h-5 w-5 text-blue-600" />
-                  Foreign Worker Registry
+                  {t("admin.foreignWorkers.registryTitle")}
                 </CardTitle>
                 <CardDescription>
-                  {filteredWorkers.length} of {foreignWorkers.length} workers
+                  {t("admin.foreignWorkers.registryCount", { shown: String(filteredWorkers.length), total: String(foreignWorkers.length) })}
                 </CardDescription>
               </div>
             </div>
@@ -548,14 +547,13 @@ export default function ForeignWorkers() {
             <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-4">
               <TabsList>
                 <TabsTrigger value="all">
-                  All ({foreignWorkers.length})
+                  {t("admin.foreignWorkers.tabAll", { count: String(foreignWorkers.length) })}
                 </TabsTrigger>
                 <TabsTrigger value="expiring" className="text-amber-600">
-                  Expiring Soon (
-                  {stats.expiringWithin30Days + stats.expiringWithin90Days})
+                  {t("admin.foreignWorkers.tabExpiring", { count: String(stats.expiringWithin30Days + stats.expiringWithin90Days) })}
                 </TabsTrigger>
                 <TabsTrigger value="expired" className="text-red-600">
-                  Expired ({stats.expired})
+                  {t("admin.foreignWorkers.tabExpired", { count: String(stats.expired) })}
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -566,7 +564,7 @@ export default function ForeignWorkers() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search by name or employee ID..."
+                    placeholder={t("admin.foreignWorkers.searchPlaceholder")}
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                     className="pl-10"
@@ -576,23 +574,23 @@ export default function ForeignWorkers() {
 
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All statuses" />
+                  <SelectValue placeholder={t("admin.foreignWorkers.allStatuses")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Statuses</SelectItem>
-                  <SelectItem value="approved">Active</SelectItem>
-                  <SelectItem value="pending">Pending</SelectItem>
-                  <SelectItem value="renewal_pending">Renewal Pending</SelectItem>
-                  <SelectItem value="expired">Expired</SelectItem>
+                  <SelectItem value="all">{t("admin.foreignWorkers.allStatuses")}</SelectItem>
+                  <SelectItem value="approved">{t("admin.foreignWorkers.statusActive")}</SelectItem>
+                  <SelectItem value="pending">{t("admin.foreignWorkers.statusPending")}</SelectItem>
+                  <SelectItem value="renewal_pending">{t("admin.foreignWorkers.statusRenewalPending")}</SelectItem>
+                  <SelectItem value="expired">{t("admin.foreignWorkers.statusExpired")}</SelectItem>
                 </SelectContent>
               </Select>
 
               <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
                 <SelectTrigger>
-                  <SelectValue placeholder="All nationalities" />
+                  <SelectValue placeholder={t("admin.foreignWorkers.allNationalities")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">All Nationalities</SelectItem>
+                  <SelectItem value="all">{t("admin.foreignWorkers.allNationalities")}</SelectItem>
                   {nationalities.map((nat) => (
                     <SelectItem key={nat} value={nat}>
                       {nat}
@@ -606,24 +604,24 @@ export default function ForeignWorkers() {
             {filteredWorkers.length === 0 ? (
               <div className="text-center py-12">
                 <Globe className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">No foreign workers found</p>
+                <p className="text-muted-foreground mb-2">{t("admin.foreignWorkers.noWorkers")}</p>
                 <p className="text-sm text-muted-foreground/70">
                   {foreignWorkers.length === 0
-                    ? "No foreign workers are registered in the system."
-                    : "Try adjusting your filters."}
+                    ? t("admin.foreignWorkers.noWorkersDesc")
+                    : t("admin.foreignWorkers.noWorkersFilter")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Nationality</TableHead>
-                    <TableHead>Department</TableHead>
-                    <TableHead>Visa Status</TableHead>
-                    <TableHead>Visa Expiry</TableHead>
-                    <TableHead>Permit Status</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.employee")}</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.nationality")}</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.department")}</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.visaStatus")}</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.visaExpiry")}</TableHead>
+                    <TableHead>{t("admin.foreignWorkers.permitStatus")}</TableHead>
+                    <TableHead className="text-right">{t("admin.foreignWorkers.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -672,7 +670,7 @@ export default function ForeignWorkers() {
                         <TableCell>
                           <Badge className={statusConfig.className}>
                             <StatusIcon className="h-3 w-3 mr-1" />
-                            {statusConfig.label}
+                            {t(statusConfig.labelKey)}
                           </Badge>
                         </TableCell>
                         <TableCell>
@@ -686,7 +684,7 @@ export default function ForeignWorkers() {
                               <TooltipContent>
                                 {getVisaExpiry(worker)
                                   ? new Date(getVisaExpiry(worker)!).toLocaleDateString()
-                                  : "No visa on file"}
+                                  : t("admin.foreignWorkers.noVisaOnFile")}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -707,7 +705,7 @@ export default function ForeignWorkers() {
                               <TooltipContent>
                                 {getPermitExpiry(worker)
                                   ? new Date(getPermitExpiry(worker)!).toLocaleDateString()
-                                  : "No permit on file"}
+                                  : t("admin.foreignWorkers.noPermitOnFile")}
                               </TooltipContent>
                             </Tooltip>
                           </TooltipProvider>
@@ -739,7 +737,7 @@ export default function ForeignWorkers() {
           <CardHeader>
             <CardTitle className="text-base flex items-center gap-2">
               <FileText className="h-4 w-4 text-blue-600" />
-              Work Permit Requirements (Timor-Leste)
+              {t("admin.foreignWorkers.requirementsTitle")}
             </CardTitle>
           </CardHeader>
           <CardContent>

@@ -218,7 +218,7 @@ export default function Settings() {
       console.error("Error loading holiday overrides:", error);
       toast({
         title: t("settings.notifications.errorTitle"),
-        description: "Failed to load holiday overrides.",
+        description: t("settings.notifications.holidayLoadFailed"),
         variant: "destructive",
       });
     } finally {
@@ -253,7 +253,7 @@ export default function Settings() {
       }
       map.set(o.date, {
         date: o.date,
-        name: o.name || "Holiday",
+        name: o.name || t("settings.notifications.holidayName"),
         nameTetun: o.nameTetun || undefined,
         source: "override",
       });
@@ -299,13 +299,13 @@ export default function Settings() {
 
         toast({
           title: t("settings.notifications.savedTitle"),
-          description: "Holiday override saved.",
+          description: t("settings.notifications.holidaySaved"),
         });
       } catch (error) {
         console.error("Error saving holiday override:", error);
         toast({
           title: t("settings.notifications.errorTitle"),
-          description: "Failed to save holiday override.",
+          description: t("settings.notifications.holidaySaveFailed"),
           variant: "destructive",
         });
       } finally {
@@ -322,13 +322,13 @@ export default function Settings() {
       await loadHolidayOverrides();
       toast({
         title: t("settings.notifications.savedTitle"),
-        description: "Holiday override removed.",
+        description: t("settings.notifications.holidayRemoved"),
       });
     } catch (error) {
       console.error("Error removing holiday override:", error);
       toast({
         title: t("settings.notifications.errorTitle"),
-        description: "Failed to remove holiday override.",
+        description: t("settings.notifications.holidayRemoveFailed"),
         variant: "destructive",
       });
     }
@@ -564,7 +564,7 @@ export default function Settings() {
             </TabsTrigger>
             <TabsTrigger value="integrations" className="gap-2">
               <Plug className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.integrations") || "Integrations"}</span>
+              <span className="hidden sm:inline">{t("settings.tabs.integrations")}</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1503,7 +1503,7 @@ export default function Settings() {
                       </div>
                     ) : mergedHolidays.length === 0 ? (
                       <div className="p-4 text-sm text-muted-foreground">
-                        No holidays found for {holidayYear}.
+                        {t("settings.notifications.noHolidaysFound", { year: String(holidayYear) })}
                       </div>
                     ) : (
                       mergedHolidays.map((h) => {
@@ -1514,7 +1514,7 @@ export default function Settings() {
                               <div className="flex items-center gap-2">
                                 <span className="font-mono text-sm">{h.date}</span>
                                 <Badge variant={h.source === "override" ? "default" : "secondary"}>
-                                  {h.source === "override" ? "Override" : "Built-in"}
+                                  {h.source === "override" ? t("settings.notifications.override") : t("settings.notifications.builtIn")}
                                 </Badge>
                               </div>
                               <div className="text-sm font-medium truncate">{h.name}</div>
@@ -1537,7 +1537,7 @@ export default function Settings() {
                                   })
                                 }
                               >
-                                {override ? "Edit" : "Override"}
+                                {override ? t("settings.notifications.edit") : t("settings.notifications.override")}
                               </Button>
                               {override ? (
                                 <Button
@@ -1545,7 +1545,7 @@ export default function Settings() {
                                   variant="ghost"
                                   size="icon"
                                   onClick={() => removeHolidayOverride(h.date)}
-                                  title="Remove override"
+                                  title={t("settings.notifications.removeOverride")}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
@@ -1562,7 +1562,7 @@ export default function Settings() {
                     onSubmit={holidayOverrideForm.handleSubmit(onSaveHolidayOverride)}
                   >
                     <div className="flex items-center justify-between">
-                      <h4 className="font-medium">Add / override holiday</h4>
+                      <h4 className="font-medium">{t("settings.notifications.addOverrideHoliday")}</h4>
                       <div className="flex items-center gap-2">
                         <Controller
                           name="isHoliday"
@@ -1574,13 +1574,13 @@ export default function Settings() {
                             />
                           )}
                         />
-                        <Label>Holiday</Label>
+                        <Label>{t("settings.notifications.holidayName")}</Label>
                       </div>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="space-y-2">
-                        <Label>Date</Label>
+                        <Label>{t("common.date")}</Label>
                         <Input
                           type="date"
                           {...holidayOverrideForm.register("date")}
@@ -1592,11 +1592,11 @@ export default function Settings() {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label>Name</Label>
+                        <Label>{t("common.name")}</Label>
                         <Input
                           {...holidayOverrideForm.register("name")}
                           disabled={!holidayFormValues.isHoliday}
-                          placeholder={holidayFormValues.isHoliday ? "Holiday name" : "Optional"}
+                          placeholder={holidayFormValues.isHoliday ? t("settings.notifications.holidayNamePlaceholder") : t("settings.notifications.optional")}
                         />
                         {holidayOverrideForm.formState.errors.name && (
                           <p className="text-sm text-destructive">
@@ -1605,20 +1605,20 @@ export default function Settings() {
                         )}
                       </div>
                       <div className="space-y-2">
-                        <Label>Name (Tetun)</Label>
+                        <Label>{t("settings.notifications.nameTetun")}</Label>
                         <Input
                           {...holidayOverrideForm.register("nameTetun")}
                           disabled={!holidayFormValues.isHoliday}
-                          placeholder="Optional"
+                          placeholder={t("settings.notifications.optional")}
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label>Notes</Label>
+                      <Label>{t("settings.notifications.notes")}</Label>
                       <Textarea
                         {...holidayOverrideForm.register("notes")}
-                        placeholder="Optional (e.g., government decree reference)"
+                        placeholder={t("settings.notifications.notesPlaceholder")}
                       />
                     </div>
 
@@ -1630,7 +1630,7 @@ export default function Settings() {
                           holidayOverrideForm.reset({ date: "", name: "", nameTetun: "", isHoliday: true, notes: "" })
                         }
                       >
-                        Clear
+                        {t("settings.notifications.clear")}
                       </Button>
                       <Button type="submit" disabled={holidayOverrideSaving}>
                         {holidayOverrideSaving ? (
@@ -1638,7 +1638,7 @@ export default function Settings() {
                         ) : (
                           <Save className="mr-2 h-4 w-4" />
                         )}
-                        Save Override
+                        {t("settings.notifications.saveOverride")}
                       </Button>
                     </div>
                   </form>

@@ -47,23 +47,6 @@ const DEFAULT_SETTINGS: Partial<InvoiceSettings> = {
   defaultDueDays: 30,
 };
 
-const TAX_RATES = [
-  { value: '0', label: 'No Tax (0%)' },
-  { value: '2.5', label: '2.5%' },
-  { value: '5', label: '5%' },
-  { value: '10', label: '10% (Standard)' },
-];
-
-const DUE_DAYS_OPTIONS = [
-  { value: '7', label: '7 days' },
-  { value: '14', label: '14 days' },
-  { value: '15', label: '15 days' },
-  { value: '30', label: '30 days (Standard)' },
-  { value: '45', label: '45 days' },
-  { value: '60', label: '60 days' },
-  { value: '90', label: '90 days' },
-];
-
 export default function InvoiceSettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -73,6 +56,23 @@ export default function InvoiceSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>(DEFAULT_SETTINGS);
+
+  const TAX_RATES = [
+    { value: '0', label: t('money.settings.noTax') || 'No Tax (0%)' },
+    { value: '2.5', label: '2.5%' },
+    { value: '5', label: '5%' },
+    { value: '10', label: t('money.settings.taxStandard') || '10% (Standard)' },
+  ];
+
+  const DUE_DAYS_OPTIONS = [
+    { value: '7', label: `7 ${t('money.settings.days') || 'days'}` },
+    { value: '14', label: `14 ${t('money.settings.days') || 'days'}` },
+    { value: '15', label: `15 ${t('money.settings.days') || 'days'}` },
+    { value: '30', label: `30 ${t('money.settings.days') || 'days'} ${t('money.settings.dueDaysStandard') || '(Standard)'}` },
+    { value: '45', label: `45 ${t('money.settings.days') || 'days'}` },
+    { value: '60', label: `60 ${t('money.settings.days') || 'days'}` },
+    { value: '90', label: `90 ${t('money.settings.days') || 'days'}` },
+  ];
 
   useEffect(() => {
     if (session?.tid) {
@@ -141,7 +141,7 @@ export default function InvoiceSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Invoice Settings - OniT" description="Configure invoice settings" />
+      <SEO title="Invoice Settings - Meza" description="Configure invoice settings" />
       <MainNavigation />
 
       <div className="p-6 max-w-4xl mx-auto">
@@ -161,8 +161,8 @@ export default function InvoiceSettingsPage() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.settings.title') || 'Invoice Settings'}
                 <InfoTooltip
-                  title="Invoice Settings"
-                  content="Configure your company details, logo, default tax rate, payment terms, and bank information that appears on all invoices."
+                  title={t('money.settings.title') || 'Invoice Settings'}
+                  content={t('money.settings.tooltipContent') || 'Configure your company details, logo, default tax rate, payment terms, and bank information that appears on all invoices.'}
                 />
               </h1>
               <p className="text-muted-foreground">
@@ -203,7 +203,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.companyName || ''}
                     onChange={(e) => updateField('companyName', e.target.value)}
-                    placeholder="Your Company Name"
+                    placeholder={t('money.settings.companyNamePlaceholder') || 'Your Company Name'}
                   />
                 </div>
                 <div className="space-y-2">
@@ -211,7 +211,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.companyTin || ''}
                     onChange={(e) => updateField('companyTin', e.target.value)}
-                    placeholder="e.g., 123456789"
+                    placeholder={t('money.settings.tinPlaceholder') || 'e.g., 123456789'}
                   />
                 </div>
               </div>
@@ -221,7 +221,7 @@ export default function InvoiceSettingsPage() {
                 <Textarea
                   value={settings.companyAddress || ''}
                   onChange={(e) => updateField('companyAddress', e.target.value)}
-                  placeholder="Street address, City, District"
+                  placeholder={t('money.settings.addressPlaceholder') || 'Street address, City, District'}
                   rows={2}
                 />
               </div>
@@ -232,7 +232,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.companyPhone || ''}
                     onChange={(e) => updateField('companyPhone', e.target.value)}
-                    placeholder="+670 7XX XXXX"
+                    placeholder={t('money.settings.phonePlaceholder') || '+670 7XX XXXX'}
                   />
                 </div>
                 <div className="space-y-2">
@@ -241,7 +241,7 @@ export default function InvoiceSettingsPage() {
                     type="email"
                     value={settings.companyEmail || ''}
                     onChange={(e) => updateField('companyEmail', e.target.value)}
-                    placeholder="billing@yourcompany.tl"
+                    placeholder={t('money.settings.emailPlaceholder') || 'billing@yourcompany.tl'}
                   />
                 </div>
               </div>
@@ -267,14 +267,14 @@ export default function InvoiceSettingsPage() {
                   onValueChange={(value) => updateField('bankName', value)}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a bank" />
+                    <SelectValue placeholder={t('money.settings.selectBank') || 'Select a bank'} />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="BNU">BNU (Banco Nacional Ultramarino)</SelectItem>
                     <SelectItem value="BNCTL">BNCTL (Banco Nacional Comercio Timor-Leste)</SelectItem>
                     <SelectItem value="Mandiri">Bank Mandiri</SelectItem>
                     <SelectItem value="ANZ">ANZ Bank</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    <SelectItem value="Other">{t('money.settings.bankOther') || 'Other'}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -285,7 +285,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.bankAccountName || ''}
                     onChange={(e) => updateField('bankAccountName', e.target.value)}
-                    placeholder="Account holder name"
+                    placeholder={t('money.settings.accountNamePlaceholder') || 'Account holder name'}
                   />
                 </div>
                 <div className="space-y-2">
@@ -293,7 +293,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.bankAccountNumber || ''}
                     onChange={(e) => updateField('bankAccountNumber', e.target.value)}
-                    placeholder="XXXX-XXXX-XXXX"
+                    placeholder={t('money.settings.accountNumberPlaceholder') || 'XXXX-XXXX-XXXX'}
                   />
                 </div>
               </div>
@@ -318,11 +318,11 @@ export default function InvoiceSettingsPage() {
                   <Input
                     value={settings.prefix || ''}
                     onChange={(e) => updateField('prefix', e.target.value)}
-                    placeholder="INV"
+                    placeholder={t('money.settings.prefixPlaceholder') || 'INV'}
                     maxLength={10}
                   />
                   <p className="text-xs text-muted-foreground">
-                    e.g., {settings.prefix || 'INV'}-2026-001
+                    {t('money.settings.prefixExample') || 'e.g.,'} {settings.prefix || 'INV'}-2026-001
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -382,11 +382,11 @@ export default function InvoiceSettingsPage() {
                 <Textarea
                   value={settings.defaultNotes || ''}
                   onChange={(e) => updateField('defaultNotes', e.target.value)}
-                  placeholder="Thank you for your business"
+                  placeholder={t('money.settings.notesPlaceholder') || 'Thank you for your business'}
                   rows={2}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Appears at the bottom of invoices
+                  {t('money.settings.notesHelp') || 'Appears at the bottom of invoices'}
                 </p>
               </div>
 
@@ -395,7 +395,7 @@ export default function InvoiceSettingsPage() {
                 <Textarea
                   value={settings.defaultTerms || ''}
                   onChange={(e) => updateField('defaultTerms', e.target.value)}
-                  placeholder="Payment due within 30 days"
+                  placeholder={t('money.settings.termsPlaceholder') || 'Payment due within 30 days'}
                   rows={2}
                 />
               </div>

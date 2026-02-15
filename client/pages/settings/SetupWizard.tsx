@@ -36,19 +36,21 @@ import {
 } from "lucide-react";
 import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import type { CompanyDetails } from "@/types/settings";
 
 const STEPS = [
-  { id: "company", label: "Company Details", icon: Building2 },
-  { id: "bank", label: "Bank Accounts", icon: CreditCard },
-  { id: "leave", label: "Leave Policies", icon: Calendar },
-  { id: "payroll", label: "Payroll Config", icon: Settings },
-  { id: "complete", label: "Complete", icon: CheckCircle },
+  { id: "company", labelKey: "setupWizard.steps.companyDetails", icon: Building2 },
+  { id: "bank", labelKey: "setupWizard.steps.bankAccounts", icon: CreditCard },
+  { id: "leave", labelKey: "setupWizard.steps.leavePolicies", icon: Calendar },
+  { id: "payroll", labelKey: "setupWizard.steps.payrollConfig", icon: Settings },
+  { id: "complete", labelKey: "setupWizard.steps.complete", icon: CheckCircle },
 ] as const;
 
 export default function SetupWizard() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -109,8 +111,8 @@ export default function SetupWizard() {
   const handleSaveCompanyDetails = async () => {
     if (!companyForm.legalName || !companyForm.tinNumber) {
       toast({
-        title: "Required Fields",
-        description: "Company name and TIN are required.",
+        title: t("setupWizard.requiredFields"),
+        description: t("setupWizard.companyNameTinRequired"),
         variant: "destructive",
       });
       return false;
@@ -122,8 +124,8 @@ export default function SetupWizard() {
       return true;
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to save company details.",
+        title: t("setupWizard.error"),
+        description: t("setupWizard.failedSaveCompany"),
         variant: "destructive",
       });
       return false;
@@ -135,8 +137,8 @@ export default function SetupWizard() {
   const handleSaveBankAccount = async () => {
     if (!bankForm.bankName || !bankForm.accountNumber) {
       toast({
-        title: "Required Fields",
-        description: "Bank name and account number are required.",
+        title: t("setupWizard.requiredFields"),
+        description: t("setupWizard.bankNameAccountRequired"),
         variant: "destructive",
       });
       return false;
@@ -162,8 +164,8 @@ export default function SetupWizard() {
       return true;
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to save bank account.",
+        title: t("setupWizard.error"),
+        description: t("setupWizard.failedSaveBank"),
         variant: "destructive",
       });
       return false;
@@ -185,8 +187,8 @@ export default function SetupWizard() {
       return true;
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to save leave policies.",
+        title: t("setupWizard.error"),
+        description: t("setupWizard.failedSaveLeave"),
         variant: "destructive",
       });
       return false;
@@ -212,8 +214,8 @@ export default function SetupWizard() {
       return true;
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to save payroll config.",
+        title: t("setupWizard.error"),
+        description: t("setupWizard.failedSavePayroll"),
         variant: "destructive",
       });
       return false;
@@ -227,14 +229,14 @@ export default function SetupWizard() {
     try {
       await settingsService.completeSetup(tenantId);
       toast({
-        title: "Setup Complete",
-        description: "Your account is ready to use!",
+        title: t("setupWizard.setupComplete"),
+        description: t("setupWizard.accountReady"),
       });
       navigate("/dashboard");
     } catch {
       toast({
-        title: "Error",
-        description: "Failed to complete setup.",
+        title: t("setupWizard.error"),
+        description: t("setupWizard.failedComplete"),
         variant: "destructive",
       });
     } finally {
@@ -288,9 +290,9 @@ export default function SetupWizard() {
           <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25 mb-4">
             <Sparkles className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-3xl font-bold">Welcome! Let's set up your account</h1>
+          <h1 className="text-3xl font-bold">{t("setupWizard.welcome")}</h1>
           <p className="text-muted-foreground mt-2">
-            Complete these steps to get started with OniT HR & Payroll
+            {t("setupWizard.welcomeDesc")}
           </p>
         </div>
 
@@ -329,10 +331,10 @@ export default function SetupWizard() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               {React.createElement(STEPS[currentStep].icon, { className: "h-5 w-5 text-green-600" })}
-              {STEPS[currentStep].label}
+              {t(STEPS[currentStep].labelKey)}
             </CardTitle>
             <CardDescription>
-              Step {currentStep + 1} of {STEPS.length}
+              {t("setupWizard.stepOf", { current: String(currentStep + 1), total: String(STEPS.length) })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -341,67 +343,67 @@ export default function SetupWizard() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Legal Name *</Label>
+                    <Label>{t("setupWizard.legalName")}</Label>
                     <Input
                       value={companyForm.legalName}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, legalName: e.target.value }))}
-                      placeholder="Your Company Lda."
+                      placeholder={t("setupWizard.legalNamePlaceholder")}
                     />
                   </div>
                   <div>
-                    <Label>Trading Name</Label>
+                    <Label>{t("setupWizard.tradingName")}</Label>
                     <Input
                       value={companyForm.tradingName}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, tradingName: e.target.value }))}
-                      placeholder="Your Company"
+                      placeholder={t("setupWizard.tradingNamePlaceholder")}
                     />
                   </div>
                 </div>
                 <div>
-                  <Label>TIN Number *</Label>
+                  <Label>{t("setupWizard.tinNumber")}</Label>
                   <Input
                     value={companyForm.tinNumber}
                     onChange={(e) => setCompanyForm((p) => ({ ...p, tinNumber: e.target.value }))}
-                    placeholder="Tax Identification Number"
+                    placeholder={t("setupWizard.tinPlaceholder")}
                   />
                 </div>
                 <div>
-                  <Label>Address</Label>
+                  <Label>{t("setupWizard.address")}</Label>
                   <Input
                     value={companyForm.registeredAddress}
                     onChange={(e) => setCompanyForm((p) => ({ ...p, registeredAddress: e.target.value }))}
-                    placeholder="Street address"
+                    placeholder={t("setupWizard.addressPlaceholder")}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>City</Label>
+                    <Label>{t("setupWizard.city")}</Label>
                     <Input
                       value={companyForm.city}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, city: e.target.value }))}
-                      placeholder="Dili"
+                      placeholder={t("setupWizard.cityPlaceholder")}
                     />
                   </div>
                   <div>
-                    <Label>Country</Label>
+                    <Label>{t("setupWizard.country")}</Label>
                     <Input value={companyForm.country} disabled />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label>Phone</Label>
+                    <Label>{t("setupWizard.phone")}</Label>
                     <Input
                       value={companyForm.phone}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, phone: e.target.value }))}
-                      placeholder="+670 ..."
+                      placeholder={t("setupWizard.phonePlaceholder")}
                     />
                   </div>
                   <div>
-                    <Label>Email</Label>
+                    <Label>{t("setupWizard.email")}</Label>
                     <Input
                       value={companyForm.email}
                       onChange={(e) => setCompanyForm((p) => ({ ...p, email: e.target.value }))}
-                      placeholder="info@company.tl"
+                      placeholder={t("setupWizard.emailPlaceholder")}
                     />
                   </div>
                 </div>
@@ -412,16 +414,16 @@ export default function SetupWizard() {
             {currentStep === 1 && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Add your primary bank account for salary payments. You can add more accounts later in Settings.
+                  {t("setupWizard.bankIntro")}
                 </p>
                 <div>
-                  <Label>Bank Name *</Label>
+                  <Label>{t("setupWizard.bankName")}</Label>
                   <Select
                     value={bankForm.bankName}
                     onValueChange={(v) => setBankForm((p) => ({ ...p, bankName: v }))}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select bank" />
+                      <SelectValue placeholder={t("setupWizard.selectBank")} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="BNU">BNU (Banco Nacional Ultramarino)</SelectItem>
@@ -432,19 +434,19 @@ export default function SetupWizard() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Account Name</Label>
+                  <Label>{t("setupWizard.accountName")}</Label>
                   <Input
                     value={bankForm.accountName}
                     onChange={(e) => setBankForm((p) => ({ ...p, accountName: e.target.value }))}
-                    placeholder="Company Payroll Account"
+                    placeholder={t("setupWizard.accountNamePlaceholder")}
                   />
                 </div>
                 <div>
-                  <Label>Account Number *</Label>
+                  <Label>{t("setupWizard.accountNumber")}</Label>
                   <Input
                     value={bankForm.accountNumber}
                     onChange={(e) => setBankForm((p) => ({ ...p, accountNumber: e.target.value }))}
-                    placeholder="Account number"
+                    placeholder={t("setupWizard.accountNumberPlaceholder")}
                   />
                 </div>
               </div>
@@ -454,23 +456,23 @@ export default function SetupWizard() {
             {currentStep === 2 && (
               <div className="space-y-4">
                 <p className="text-sm text-muted-foreground">
-                  Default leave policies based on Timor-Leste labor law will be applied. You can customize these later.
+                  {t("setupWizard.leaveIntro")}
                 </p>
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { label: "Annual Leave", value: "12 days/year" },
-                    { label: "Sick Leave", value: "30 days/year" },
-                    { label: "Maternity Leave", value: "12 weeks" },
-                    { label: "Paternity Leave", value: "5 days" },
+                    { labelKey: "setupWizard.annualLeave", valueKey: "setupWizard.annualLeaveValue" },
+                    { labelKey: "setupWizard.sickLeave", valueKey: "setupWizard.sickLeaveValue" },
+                    { labelKey: "setupWizard.maternityLeave", valueKey: "setupWizard.maternityLeaveValue" },
+                    { labelKey: "setupWizard.paternityLeave", valueKey: "setupWizard.paternityLeaveValue" },
                   ].map((policy) => (
-                    <div key={policy.label} className="p-4 bg-muted rounded-lg">
-                      <p className="text-sm font-medium">{policy.label}</p>
-                      <p className="text-lg font-bold text-green-600">{policy.value}</p>
+                    <div key={policy.labelKey} className="p-4 bg-muted rounded-lg">
+                      <p className="text-sm font-medium">{t(policy.labelKey)}</p>
+                      <p className="text-lg font-bold text-green-600">{t(policy.valueKey)}</p>
                     </div>
                   ))}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  These defaults comply with TL Labor Code. Customize in Settings after setup.
+                  {t("setupWizard.leaveNote")}
                 </p>
               </div>
             )}
@@ -479,7 +481,7 @@ export default function SetupWizard() {
             {currentStep === 3 && (
               <div className="space-y-4">
                 <div>
-                  <Label>Pay Frequency</Label>
+                  <Label>{t("setupWizard.payFrequency")}</Label>
                   <Select
                     value={payrollForm.payFrequency}
                     onValueChange={(v) => setPayrollForm((p) => ({ ...p, payFrequency: v }))}
@@ -488,14 +490,14 @@ export default function SetupWizard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="monthly">Monthly</SelectItem>
-                      <SelectItem value="biweekly">Bi-weekly</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
+                      <SelectItem value="monthly">{t("setupWizard.monthly")}</SelectItem>
+                      <SelectItem value="biweekly">{t("setupWizard.biWeekly")}</SelectItem>
+                      <SelectItem value="weekly">{t("setupWizard.weekly")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div>
-                  <Label>Pay Day (day of month)</Label>
+                  <Label>{t("setupWizard.payDay")}</Label>
                   <Input
                     type="number"
                     min="1"
@@ -505,7 +507,7 @@ export default function SetupWizard() {
                   />
                 </div>
                 <div>
-                  <Label>Currency</Label>
+                  <Label>{t("setupWizard.currency")}</Label>
                   <Select
                     value={payrollForm.currency}
                     onValueChange={(v) => setPayrollForm((p) => ({ ...p, currency: v }))}
@@ -514,16 +516,16 @@ export default function SetupWizard() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD (US Dollar)</SelectItem>
+                      <SelectItem value="USD">{t("setupWizard.usdCurrency")}</SelectItem>
                     </SelectContent>
                   </Select>
-                  <p className="text-xs text-muted-foreground mt-1">Timor-Leste uses USD as official currency</p>
+                  <p className="text-xs text-muted-foreground mt-1">{t("setupWizard.usdNote")}</p>
                 </div>
                 <div className="p-3 bg-muted rounded-lg text-sm space-y-1">
-                  <p className="font-medium">Tax Settings (TL defaults)</p>
-                  <p className="text-muted-foreground">WIT: 10% above $500/month</p>
-                  <p className="text-muted-foreground">INSS Employee: 4% | Employer: 6%</p>
-                  <p className="text-muted-foreground">Standard hours: 44/week</p>
+                  <p className="font-medium">{t("setupWizard.taxSettings")}</p>
+                  <p className="text-muted-foreground">{t("setupWizard.witInfo")}</p>
+                  <p className="text-muted-foreground">{t("setupWizard.inssInfo")}</p>
+                  <p className="text-muted-foreground">{t("setupWizard.hoursInfo")}</p>
                 </div>
               </div>
             )}
@@ -534,9 +536,9 @@ export default function SetupWizard() {
                 <div className="inline-flex p-4 rounded-full bg-green-100 dark:bg-green-900/30">
                   <CheckCircle className="h-12 w-12 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold">You're all set!</h3>
+                <h3 className="text-xl font-bold">{t("setupWizard.allSet")}</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
-                  Your account has been configured. You can now start adding employees, running payroll, and managing your team.
+                  {t("setupWizard.allSetDesc")}
                 </p>
               </div>
             )}
@@ -552,7 +554,7 @@ export default function SetupWizard() {
               disabled={currentStep === 0 || saving}
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back
+              {t("setupWizard.back")}
             </Button>
             <Button
               variant="ghost"
@@ -562,7 +564,7 @@ export default function SetupWizard() {
                 navigate("/dashboard");
               }}
             >
-              I'll do this later
+              {t("setupWizard.doLater")}
             </Button>
           </div>
           <Button
@@ -573,16 +575,16 @@ export default function SetupWizard() {
             {saving ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
+                {t("setupWizard.saving")}
               </>
             ) : currentStep === STEPS.length - 1 ? (
               <>
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Go to Dashboard
+                {t("setupWizard.goToDashboard")}
               </>
             ) : (
               <>
-                Next
+                {t("setupWizard.next")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </>
             )}

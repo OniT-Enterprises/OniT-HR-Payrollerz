@@ -46,9 +46,11 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function GeneralLedger() {
   const tenantId = useTenantId();
+  const { t } = useI18n();
   // State
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -265,15 +267,15 @@ export default function GeneralLedger() {
                 <BookOpen className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">General Ledger</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t("accounting.generalLedger.title")}</h1>
                 <p className="text-muted-foreground mt-1">
-                  View all transactions for any account
+                  {t("accounting.generalLedger.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={exportToCSV} disabled={filteredEntries.length === 0}>
               <Download className="mr-2 h-4 w-4" />
-              Export CSV
+              {t("accounting.generalLedger.exportCsv")}
             </Button>
           </div>
         </div>
@@ -284,16 +286,16 @@ export default function GeneralLedger() {
       {/* Filters */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Select Account & Date Range</CardTitle>
+          <CardTitle className="text-lg">{t("accounting.generalLedger.selectAccountRange")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid gap-4 md:grid-cols-4">
             {/* Account Select */}
             <div className="space-y-2 md:col-span-2">
-              <Label>Account</Label>
+              <Label>{t("accounting.generalLedger.account")}</Label>
               <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select an account..." />
+                  <SelectValue placeholder={t("accounting.generalLedger.selectAccount")} />
                 </SelectTrigger>
                 <SelectContent>
                   {Object.entries(groupedAccounts).map(([type, accts]) =>
@@ -316,7 +318,7 @@ export default function GeneralLedger() {
 
             {/* Date Range */}
             <div className="space-y-2">
-              <Label>Start Date</Label>
+              <Label>{t("accounting.generalLedger.startDate")}</Label>
               <Input
                 type="date"
                 value={startDate}
@@ -324,7 +326,7 @@ export default function GeneralLedger() {
               />
             </div>
             <div className="space-y-2">
-              <Label>End Date</Label>
+              <Label>{t("accounting.generalLedger.endDate")}</Label>
               <Input
                 type="date"
                 value={endDate}
@@ -339,7 +341,7 @@ export default function GeneralLedger() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                  placeholder="Search by description or entry number..."
+                  placeholder={t("accounting.generalLedger.searchPlaceholder")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-9"
@@ -365,7 +367,7 @@ export default function GeneralLedger() {
                 </CardDescription>
               </div>
               <div className="text-right">
-                <div className="text-sm text-muted-foreground">Ending Balance</div>
+                <div className="text-sm text-muted-foreground">{t("accounting.generalLedger.endingBalance")}</div>
                 <div className="text-2xl font-bold">{formatCurrencyTL(endingBalance)}</div>
               </div>
             </div>
@@ -379,10 +381,10 @@ export default function GeneralLedger() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               <BookOpen className="h-5 w-5" />
-              Transactions
+              {t("accounting.generalLedger.transactions")}
             </CardTitle>
             <CardDescription>
-              {startDate} to {endDate} • {filteredEntries.length} transactions
+              {t("accounting.generalLedger.transactionsSummary", { start: startDate, end: endDate, count: filteredEntries.length })}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -393,19 +395,19 @@ export default function GeneralLedger() {
             ) : filteredEntries.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No transactions found for this period</p>
+                <p>{t("accounting.generalLedger.noTransactions")}</p>
               </div>
             ) : (
               <>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Entry #</TableHead>
-                      <TableHead className="w-[40%]">Description</TableHead>
-                      <TableHead className="text-right">Debit</TableHead>
-                      <TableHead className="text-right">Credit</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead>{t("accounting.generalLedger.date")}</TableHead>
+                      <TableHead>{t("accounting.generalLedger.entryNumber")}</TableHead>
+                      <TableHead className="w-[40%]">{t("accounting.generalLedger.description")}</TableHead>
+                      <TableHead className="text-right">{t("accounting.generalLedger.debit")}</TableHead>
+                      <TableHead className="text-right">{t("accounting.generalLedger.credit")}</TableHead>
+                      <TableHead className="text-right">{t("accounting.generalLedger.balance")}</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -449,7 +451,7 @@ export default function GeneralLedger() {
                     {/* Totals Row */}
                     <TableRow className="bg-muted/50 font-bold">
                       <TableCell colSpan={3} className="text-right">
-                        Period Totals:
+                        {t("accounting.generalLedger.periodTotals")}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {formatCurrencyTL(totals.debit)}
@@ -472,8 +474,8 @@ export default function GeneralLedger() {
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
               <BookOpen className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">Select an Account</h3>
-              <p>Choose an account above to view its transaction history</p>
+              <h3 className="text-lg font-medium mb-2">{t("accounting.generalLedger.selectAnAccount")}</h3>
+              <p>{t("accounting.generalLedger.selectAccountDesc")}</p>
             </div>
           </CardContent>
         </Card>

@@ -165,10 +165,11 @@ export default function Signup() {
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center shadow-lg shadow-primary/25">
-              <span className="text-white text-lg font-bold">HR</span>
-            </div>
-            <span className="text-2xl font-bold text-foreground">OniT</span>
+            <img
+              src="/images/meza-logo-dark-on-light.png"
+              alt="Meza"
+              className="h-10 w-auto"
+            />
           </div>
         </div>
 

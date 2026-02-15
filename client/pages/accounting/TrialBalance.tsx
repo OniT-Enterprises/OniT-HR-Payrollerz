@@ -42,6 +42,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -56,6 +57,7 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
 
 export default function TrialBalance() {
   const tenantId = useTenantId();
+  const { t } = useI18n();
   // State
   const [_accounts, setAccounts] = useState<Account[]>([]);
   const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
@@ -274,20 +276,20 @@ export default function TrialBalance() {
                 <Scale className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Trial Balance</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t("accounting.trialBalance.title")}</h1>
                 <p className="text-muted-foreground mt-1">
-                  Verify that debits equal credits across all accounts
+                  {t("accounting.trialBalance.subtitle")}
                 </p>
               </div>
             </div>
             <div className="flex gap-2">
               <Button variant="outline" onClick={handlePrint} disabled={filteredRows.length === 0}>
                 <Printer className="mr-2 h-4 w-4" />
-                Print
+                {t("accounting.trialBalance.print")}
               </Button>
               <Button onClick={exportToCSV} disabled={filteredRows.length === 0}>
                 <Download className="mr-2 h-4 w-4" />
-                Export CSV
+                {t("accounting.trialBalance.exportCsv")}
               </Button>
             </div>
           </div>
@@ -299,12 +301,12 @@ export default function TrialBalance() {
       {/* Generate Controls */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Generate Trial Balance</CardTitle>
+          <CardTitle className="text-lg">{t("accounting.trialBalance.generateTitle")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
-              <Label>As of Date</Label>
+              <Label>{t("accounting.trialBalance.asOfDate")}</Label>
               <Input
                 type="date"
                 value={asOfDate}
@@ -322,7 +324,7 @@ export default function TrialBalance() {
                 className="h-4 w-4 rounded border-gray-300"
               />
               <Label htmlFor="includeZero" className="cursor-pointer">
-                Include zero balances
+                {t("accounting.trialBalance.includeZero")}
               </Label>
             </div>
 
@@ -332,7 +334,7 @@ export default function TrialBalance() {
               ) : (
                 <RefreshCw className="mr-2 h-4 w-4" />
               )}
-              Generate
+              {t("accounting.trialBalance.generate")}
             </Button>
           </div>
         </CardContent>
@@ -348,9 +350,9 @@ export default function TrialBalance() {
                   <>
                     <CheckCircle2 className="h-8 w-8 text-green-600" />
                     <div>
-                      <h3 className="font-semibold text-green-800">Books are Balanced</h3>
+                      <h3 className="font-semibold text-green-800">{t("accounting.trialBalance.balanced")}</h3>
                       <p className="text-sm text-green-600">
-                        Total Debits equal Total Credits
+                        {t("accounting.trialBalance.balancedDesc")}
                       </p>
                     </div>
                   </>
@@ -358,18 +360,18 @@ export default function TrialBalance() {
                   <>
                     <XCircle className="h-8 w-8 text-red-600" />
                     <div>
-                      <h3 className="font-semibold text-red-800">Books are NOT Balanced</h3>
+                      <h3 className="font-semibold text-red-800">{t("accounting.trialBalance.notBalanced")}</h3>
                       <p className="text-sm text-red-600">
-                        Difference: {formatCurrencyTL(Math.abs(difference))} ({difference > 0 ? 'Debits higher' : 'Credits higher'})
+                        {t("accounting.trialBalance.notBalancedDesc", { amount: formatCurrencyTL(Math.abs(difference)), direction: difference > 0 ? t("accounting.trialBalance.debitsHigher") : t("accounting.trialBalance.creditsHigher") })}
                       </p>
                     </div>
                   </>
                 )}
               </div>
               <div className="text-right">
-                <div className="text-sm text-muted-foreground">As of {asOfDate}</div>
+                <div className="text-sm text-muted-foreground">{t("accounting.trialBalance.asOf", { date: asOfDate })}</div>
                 <div className="text-lg font-semibold">
-                  {filteredRows.length} accounts
+                  {t("accounting.trialBalance.accountCount", { count: filteredRows.length })}
                 </div>
               </div>
             </div>
@@ -384,7 +386,7 @@ export default function TrialBalance() {
             <Card key={type}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium capitalize">
-                  {type}s
+                  {type}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -396,7 +398,7 @@ export default function TrialBalance() {
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  {summaryByType[type].count} accounts
+                  {t("accounting.trialBalance.accountCount", { count: summaryByType[type].count })}
                 </p>
               </CardContent>
             </Card>
@@ -410,19 +412,19 @@ export default function TrialBalance() {
           <CardHeader className="print:pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Scale className="h-5 w-5" />
-              Trial Balance Report
+              {t("accounting.trialBalance.reportTitle")}
             </CardTitle>
-            <CardDescription>As of {asOfDate}</CardDescription>
+            <CardDescription>{t("accounting.trialBalance.asOf", { date: asOfDate })}</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">Code</TableHead>
-                  <TableHead>Account Name</TableHead>
-                  <TableHead className="w-[100px]">Type</TableHead>
-                  <TableHead className="text-right w-[150px]">Debit</TableHead>
-                  <TableHead className="text-right w-[150px]">Credit</TableHead>
+                  <TableHead className="w-[100px]">{t("accounting.trialBalance.code")}</TableHead>
+                  <TableHead>{t("accounting.trialBalance.accountName")}</TableHead>
+                  <TableHead className="w-[100px]">{t("accounting.trialBalance.type")}</TableHead>
+                  <TableHead className="text-right w-[150px]">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[150px]">{t("accounting.trialBalance.credit")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -436,7 +438,7 @@ export default function TrialBalance() {
                       {/* Type Header */}
                       <TableRow className="bg-muted/30">
                         <TableCell colSpan={5} className="font-semibold uppercase text-sm">
-                          {type}s
+                          {type}
                         </TableCell>
                       </TableRow>
 
@@ -472,7 +474,7 @@ export default function TrialBalance() {
                       {/* Type Subtotal */}
                       <TableRow className="bg-muted/20">
                         <TableCell colSpan={3} className="text-right font-medium">
-                          {type.charAt(0).toUpperCase() + type.slice(1)} Subtotal:
+                          {t("accounting.trialBalance.subtotal", { type: type.charAt(0).toUpperCase() + type.slice(1) })}
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium">
                           {formatCurrencyTL(summaryByType[type].debit)}
@@ -488,7 +490,7 @@ export default function TrialBalance() {
                 {/* Grand Totals */}
                 <TableRow className="bg-primary/10 font-bold text-lg">
                   <TableCell colSpan={3} className="text-right">
-                    TOTALS:
+                    {t("accounting.trialBalance.totalLabel")}
                   </TableCell>
                   <TableCell className="text-right font-mono">
                     <div className="flex items-center justify-end gap-1">
@@ -508,7 +510,7 @@ export default function TrialBalance() {
                 {!isBalanced && (
                   <TableRow className="bg-red-100">
                     <TableCell colSpan={3} className="text-right font-medium text-red-800">
-                      DIFFERENCE:
+                      {t("accounting.trialBalance.differenceLabel")}
                     </TableCell>
                     <TableCell colSpan={2} className="text-center font-mono font-bold text-red-800">
                       {formatCurrencyTL(Math.abs(difference))}
@@ -524,8 +526,8 @@ export default function TrialBalance() {
           <CardContent className="py-12">
             <div className="text-center text-muted-foreground">
               <Scale className="h-16 w-16 mx-auto mb-4 opacity-50" />
-              <h3 className="text-lg font-medium mb-2">No Trial Balance Generated</h3>
-              <p>Select a date and click Generate to create the trial balance report</p>
+              <h3 className="text-lg font-medium mb-2">{t("accounting.trialBalance.noReport")}</h3>
+              <p>{t("accounting.trialBalance.noReportDesc")}</p>
             </div>
           </CardContent>
         </Card>

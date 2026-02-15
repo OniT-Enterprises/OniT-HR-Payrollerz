@@ -322,7 +322,7 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <SEO
-          title={`Bill - ${bill.vendorName} - OniT`}
+          title={`Bill - ${bill.vendorName} - Meza`}
           description="View bill details"
         />
         <MainNavigation />
@@ -556,7 +556,7 @@ export default function BillForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isNew ? 'New Bill - OniT' : 'Edit Bill - OniT'}
+        title={isNew ? 'New Bill - Meza' : 'Edit Bill - Meza'}
         description={isNew ? 'Create a new bill' : 'Edit bill'}
       />
       <MainNavigation />
@@ -683,7 +683,7 @@ export default function BillForm() {
                 <div className="space-y-2">
                   <Label className="flex items-center gap-1.5">
                     {t('money.bills.dueDate') || 'Due Date'}
-                    <InfoTooltip content="The date by which this bill should be paid to avoid late fees or service interruption." />
+                    <InfoTooltip content={t('money.bills.dueDateTooltip') || 'The date by which this bill should be paid to avoid late fees or service interruption.'} />
                   </Label>
                   <Input
                     type="date"

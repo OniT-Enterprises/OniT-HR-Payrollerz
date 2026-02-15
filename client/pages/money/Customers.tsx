@@ -207,7 +207,7 @@ export default function Customers() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Customers - OniT" description="Manage your customers for invoicing" />
+      <SEO title="Customers - Meza" description="Manage your customers for invoicing" />
       <MainNavigation />
 
       <div className="p-6 max-w-7xl mx-auto">
@@ -223,8 +223,8 @@ export default function Customers() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.customers.title') || 'Customers'}
                 <InfoTooltip
-                  title="Customers"
-                  content="People or businesses you invoice for goods or services. Customer records store contact info and are linked to invoices."
+                  title={t('money.customers.tooltipTitle') || 'Customers'}
+                  content={t('money.customers.tooltipContent') || 'People or businesses you invoice for goods or services. Customer records store contact info and are linked to invoices.'}
                 />
               </h1>
               <p className="text-muted-foreground">

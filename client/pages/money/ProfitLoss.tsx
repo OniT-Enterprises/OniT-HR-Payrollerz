@@ -193,7 +193,7 @@ export default function ProfitLoss() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Profit & Loss - OniT" description="View your profit and loss statement" />
+      <SEO title="Profit & Loss - Meza" description="View your profit and loss statement" />
       <MainNavigation />
 
       <div className="p-6 max-w-4xl mx-auto">
@@ -209,8 +209,8 @@ export default function ProfitLoss() {
               <h1 className="text-2xl font-bold flex items-center gap-2">
                 {t('money.profitLoss.title') || 'Profit & Loss'}
                 <InfoTooltip
-                  title="Profit & Loss Statement"
-                  content="Also called an Income Statement. Shows revenue (money earned from invoices) minus expenses (costs) to calculate net profit or loss for a period."
+                  title={t('money.profitLoss.tooltipTitle') || 'Profit & Loss Statement'}
+                  content={t('money.profitLoss.tooltipContent') || 'Also called an Income Statement. Shows revenue (money earned from invoices) minus expenses (costs) to calculate net profit or loss for a period.'}
                 />
               </h1>
               <p className="text-muted-foreground">

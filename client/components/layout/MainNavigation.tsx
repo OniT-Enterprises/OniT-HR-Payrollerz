@@ -136,12 +136,13 @@ export default function MainNavigation() {
           <div className="flex items-center gap-6">
             <button
               onClick={() => handleNavigate("/")}
-              className="flex items-center gap-2 font-bold text-lg"
+              className="flex items-center"
             >
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center">
-                <span className="text-white text-sm font-bold">HR</span>
-              </div>
-              <span className="hidden sm:inline text-foreground">OniT</span>
+              <img
+                src={isDark ? "/images/meza-logo-light-on-dark-glow.png" : "/images/meza-logo-dark-on-light.png"}
+                alt="Meza"
+                className="h-8 w-auto"
+              />
             </button>
 
             {/* Desktop Navigation - Simple tabs */}
