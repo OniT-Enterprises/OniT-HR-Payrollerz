@@ -7,6 +7,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { SEO } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Users,
   Calculator,
@@ -570,6 +571,8 @@ function ModuleSection({ module, index }: { module: typeof modules[0]; index: nu
 }
 
 export default function ProductDetails() {
+  const { t, locale, setLocale, localeLabels } = useI18n();
+  const [langOpen, setLangOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<"modules" | "tl" | "benefits">("modules");
 
   return (
@@ -579,11 +582,12 @@ export default function ProductDetails() {
         description="Comprehensive HR and Payroll system built for Timor-Leste. Full details on features, modules, and TL-specific capabilities."
       />
 
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0b]/95 backdrop-blur-xl">
+      {/* Navigation */}
+      <nav className="sticky top-0 z-50 border-b border-white/5 bg-[#0a0a0b]/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <Link to="/landing" className="flex items-center gap-3">
+            {/* Logo */}
+            <Link to="/" className="flex items-center gap-3 group">
               <img
                 src="/images/meza-logo-light-on-dark-glow.png"
                 alt="Meza"
@@ -591,20 +595,59 @@ export default function ProductDetails() {
               />
             </Link>
 
-            <div className="flex items-center gap-4">
-              <Link to="/landing" className="text-sm text-zinc-400 hover:text-white transition-colors">
-                Back to Home
+            {/* Nav Links */}
+            <div className="hidden md:flex items-center gap-8">
+              <Link to="/features" className="text-sm text-white font-medium transition-colors">
+                {t("landing.nav.features")}
               </Link>
-              <Button asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400">
+              <Link to="/landing#labor-law" className="text-sm text-zinc-400 hover:text-white transition-colors">
+                {t("landing.nav.laborLaw")}
+              </Link>
+            </div>
+
+            {/* Language & Auth */}
+            <div className="flex items-center gap-3">
+              <div className="relative hidden sm:block">
+                <button
+                  onClick={() => setLangOpen(!langOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
+                >
+                  <Languages className="h-4 w-4 text-zinc-400" />
+                  <span className="text-xs text-zinc-300 font-medium uppercase">{locale}</span>
+                  <ChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
+                </button>
+                {langOpen && (
+                  <div className="absolute top-full right-0 mt-2 py-1 rounded-lg bg-zinc-900 border border-white/10 shadow-xl z-50 min-w-[140px]">
+                    {(Object.keys(localeLabels) as Array<keyof typeof localeLabels>).map((lang) => (
+                      <button
+                        key={lang}
+                        onClick={() => {
+                          setLocale(lang);
+                          setLangOpen(false);
+                        }}
+                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/10 transition-colors ${
+                          locale === lang ? 'text-amber-400' : 'text-zinc-300'
+                        }`}
+                      >
+                        {localeLabels[lang]}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button variant="ghost" asChild className="text-zinc-300 hover:text-white hover:bg-white/5">
+                <Link to="/auth/login">{t("auth.signIn")}</Link>
+              </Button>
+              <Button asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-red-500/25">
                 <Link to="/auth/signup">
-                  Get Started
+                  {t("landing.nav.getStarted")}
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             </div>
           </div>
         </div>
-      </header>
+      </nav>
 
       {/* Hero */}
       <section className="py-16 lg:py-24 relative overflow-hidden">

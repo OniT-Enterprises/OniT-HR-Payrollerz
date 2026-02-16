@@ -30,6 +30,10 @@ import {
   Target,
   Wallet,
   Briefcase,
+  Smartphone,
+  WifiOff,
+  ShoppingBag,
+  Printer,
 } from "lucide-react";
 
 export default function Landing() {
@@ -365,16 +369,16 @@ export default function Landing() {
       <section className="py-16 lg:py-20 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center mb-12">
-            <p className="text-sm text-zinc-500 uppercase tracking-wider mb-2">Trusted by organizations across Timor-Leste</p>
-            <h2 className="text-2xl font-bold text-white">Built for businesses that need compliance</h2>
+            <p className="text-sm text-zinc-500 uppercase tracking-wider mb-2">{t("landing.segments.subtitle")}</p>
+            <h2 className="text-2xl font-bold text-white">{t("landing.segments.title")}</h2>
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { icon: Heart, label: "NGOs & INGOs", desc: "Donor compliance & audit trails", color: "text-rose-400" },
-              { icon: Landmark, label: "Government", desc: "SEFOPE reporting ready", color: "text-blue-400" },
-              { icon: BriefcaseBusiness, label: "Oil & Gas", desc: "Complex contractor payroll", color: "text-amber-400" },
-              { icon: Building2, label: "Hotels & Tourism", desc: "Seasonal staff management", color: "text-emerald-400" },
+              { icon: Heart, label: t("landing.segments.ngos.label"), desc: t("landing.segments.ngos.desc"), color: "text-rose-400" },
+              { icon: Landmark, label: t("landing.segments.government.label"), desc: t("landing.segments.government.desc"), color: "text-blue-400" },
+              { icon: BriefcaseBusiness, label: t("landing.segments.oilGas.label"), desc: t("landing.segments.oilGas.desc"), color: "text-amber-400" },
+              { icon: Building2, label: t("landing.segments.hotels.label"), desc: t("landing.segments.hotels.desc"), color: "text-emerald-400" },
             ].map((segment, i) => {
               const Icon = segment.icon;
               return (
@@ -391,18 +395,18 @@ export default function Landing() {
           <div className="mt-16 grid md:grid-cols-3 gap-6">
             <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/10">
               <div className="text-3xl mb-3">📋</div>
-              <h3 className="font-semibold text-white mb-2">Still using paper?</h3>
-              <p className="text-sm text-zinc-400">Manual calculations lead to WIT errors that cost you money. One wrong deduction = audit risk.</p>
+              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.paper.title")}</h3>
+              <p className="text-sm text-zinc-400">{t("landing.painPoints.paper.desc")}</p>
             </div>
             <div className="p-6 rounded-xl bg-amber-500/5 border border-amber-500/10">
               <div className="text-3xl mb-3">📊</div>
-              <h3 className="font-semibold text-white mb-2">Excel breaking down?</h3>
-              <p className="text-sm text-zinc-400">Formulas fail. Files corrupt. No audit trail for donors. No automatic 13th month calculations.</p>
+              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.excel.title")}</h3>
+              <p className="text-sm text-zinc-400">{t("landing.painPoints.excel.desc")}</p>
             </div>
             <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <div className="text-3xl mb-3">✅</div>
-              <h3 className="font-semibold text-white mb-2">Meza solves this</h3>
-              <p className="text-sm text-zinc-400">Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface.</p>
+              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.solution.title")}</h3>
+              <p className="text-sm text-zinc-400">{t("landing.painPoints.solution.desc")}</p>
             </div>
           </div>
         </div>
@@ -471,31 +475,55 @@ export default function Landing() {
 
           {/* Mobile Payments */}
           <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-red-500/5 via-amber-500/5 to-red-500/5 border border-amber-500/20">
-            <div className="flex flex-col md:flex-row items-center gap-6">
-              <div className="flex items-center gap-4">
+            <div className="flex items-center gap-3 mb-5">
+              <Smartphone className="h-5 w-5 text-amber-400" />
+              <h4 className="font-bold text-white text-lg">{t("landing.mobilePay.title")}</h4>
+            </div>
+            <p className="text-sm text-zinc-400 mb-5">{t("landing.mobilePay.subtitle")}</p>
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+              {/* T-PAY / Telkomcel */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
                 <img
-                  src="/images/tpay-logo.png"
-                  alt="T-PAY Mobile Money"
-                  className="h-16 w-16 rounded-full"
+                  src="/images/tpay-logo-white.png"
+                  alt="T-PAY"
+                  className="h-12 w-12 rounded-full object-contain bg-black"
                 />
                 <div>
-                  <h4 className="font-bold text-white text-lg">Mobile Money Ready</h4>
-                  <p className="text-sm text-zinc-400">Pay employees without bank accounts</p>
+                  <span className="text-sm font-semibold text-white block">T-PAY</span>
+                  <img
+                    src="/images/telkomcel-logo.png"
+                    alt="Telkomcel"
+                    className="h-4 w-auto opacity-60 mt-1"
+                  />
                 </div>
               </div>
-              <div className="flex-1 grid grid-cols-2 gap-3 w-full md:w-auto">
-                <div className="p-3 rounded-lg bg-white/5 text-center">
-                  <span className="text-sm font-medium text-white">T-PAY</span>
-                  <p className="text-xs text-zinc-500">Telkomcel</p>
+              {/* Mosan / Telemor */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5">
+                <div className="h-12 w-12 rounded-full bg-[#FF6600] flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img
+                    src="/images/telemor-logo.svg"
+                    alt="Telemor"
+                    className="h-5 w-auto"
+                  />
                 </div>
-                <div className="p-3 rounded-lg bg-white/5 text-center">
-                  <span className="text-sm font-medium text-white">Telemor</span>
-                  <p className="text-xs text-zinc-500">Coming Soon</p>
+                <div>
+                  <span className="text-sm font-semibold text-white block">Mosan</span>
+                  <span className="text-[10px] text-zinc-500">Telemor</span>
+                </div>
+              </div>
+              {/* Coming Soon */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-dashed border-white/10 col-span-2 lg:col-span-1">
+                <div className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0">
+                  <Wallet className="h-5 w-5 text-zinc-600" />
+                </div>
+                <div>
+                  <span className="text-sm font-medium text-zinc-400 block">{t("landing.mobilePay.comingSoon")}</span>
+                  <span className="text-[10px] text-zinc-600">More integrations</span>
                 </div>
               </div>
             </div>
-            <p className="mt-4 text-xs text-zinc-500 text-center md:text-left">
-              Disbursement directly to employee mobile wallets. No bank account required.
+            <p className="mt-4 text-xs text-zinc-500">
+              {t("landing.mobilePay.note")}
             </p>
           </div>
         </div>
@@ -507,30 +535,30 @@ export default function Landing() {
           <div className="text-center max-w-2xl mx-auto mb-16">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-violet-500/10 border border-violet-500/20 mb-4">
               <Settings className="h-3 w-3 text-violet-400" />
-              <span className="text-xs text-violet-400">Complete Platform</span>
+              <span className="text-xs text-violet-400">{t("landing.modules.badge")}</span>
             </div>
             <h2 className="text-3xl lg:text-4xl font-black mb-4">
-              9 Integrated Modules
+              {t("landing.modules.title")}
               <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
-                One Complete System
+                {t("landing.modules.titleAccent")}
               </span>
             </h2>
             <p className="text-zinc-400">
-              From hiring to retirement, payroll to accounting - everything your HR team needs in one place.
+              {t("landing.modules.description")}
             </p>
           </div>
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {[
-              { icon: Users, name: "People Management", desc: "Employee profiles, departments, org charts, document tracking", color: "text-emerald-400", bg: "bg-emerald-500/10" },
-              { icon: Briefcase, name: "Hiring & Recruitment", desc: "Job postings, applicant tracking, onboarding, offboarding", color: "text-violet-400", bg: "bg-violet-500/10" },
-              { icon: Clock, name: "Time & Attendance", desc: "Clock in/out, timesheets, leave requests, shift scheduling", color: "text-orange-400", bg: "bg-orange-500/10" },
-              { icon: Target, name: "Performance", desc: "Goals, reviews, training, certifications, disciplinary", color: "text-pink-400", bg: "bg-pink-500/10" },
-              { icon: Calculator, name: "Payroll", desc: "INSS, tax, overtime, bank transfers, payslips", color: "text-blue-400", bg: "bg-blue-500/10" },
-              { icon: Wallet, name: "Money (Invoicing)", desc: "Customers, invoices, bills, expenses, payments", color: "text-indigo-400", bg: "bg-indigo-500/10" },
-              { icon: Landmark, name: "Accounting", desc: "Chart of accounts, journal entries, general ledger", color: "text-slate-400", bg: "bg-slate-500/10" },
-              { icon: BarChart3, name: "Reports & Analytics", desc: "Payroll reports, HR analytics, custom report builder", color: "text-cyan-400", bg: "bg-cyan-500/10" },
-              { icon: Shield, name: "Compliance", desc: "Foreign workers, document alerts, SEPFOPE reporting", color: "text-red-400", bg: "bg-red-500/10" },
+              { icon: Users, name: t("landing.modules.people.name"), desc: t("landing.modules.people.desc"), color: "text-emerald-400", bg: "bg-emerald-500/10" },
+              { icon: Briefcase, name: t("landing.modules.hiring.name"), desc: t("landing.modules.hiring.desc"), color: "text-violet-400", bg: "bg-violet-500/10" },
+              { icon: Clock, name: t("landing.modules.time.name"), desc: t("landing.modules.time.desc"), color: "text-orange-400", bg: "bg-orange-500/10" },
+              { icon: Target, name: t("landing.modules.performance.name"), desc: t("landing.modules.performance.desc"), color: "text-pink-400", bg: "bg-pink-500/10" },
+              { icon: Calculator, name: t("landing.modules.payroll.name"), desc: t("landing.modules.payroll.desc"), color: "text-blue-400", bg: "bg-blue-500/10" },
+              { icon: Wallet, name: t("landing.modules.money.name"), desc: t("landing.modules.money.desc"), color: "text-indigo-400", bg: "bg-indigo-500/10" },
+              { icon: Landmark, name: t("landing.modules.accounting.name"), desc: t("landing.modules.accounting.desc"), color: "text-slate-400", bg: "bg-slate-500/10" },
+              { icon: BarChart3, name: t("landing.modules.reports.name"), desc: t("landing.modules.reports.desc"), color: "text-cyan-400", bg: "bg-cyan-500/10" },
+              { icon: Shield, name: t("landing.modules.compliance.name"), desc: t("landing.modules.compliance.desc"), color: "text-red-400", bg: "bg-red-500/10" },
             ].map((module, i) => {
               const Icon = module.icon;
               return (
@@ -552,10 +580,235 @@ export default function Landing() {
           <div className="text-center mt-10">
             <Button asChild variant="outline" className="border-white/10 bg-white/5 hover:bg-white/10">
               <Link to="/features">
-                View All 65+ Features
+                {t("landing.modules.viewAll")}
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Kaixa — Mobile Money & POS */}
+      <section className="py-24 lg:py-32 border-t border-white/5 relative overflow-hidden">
+        {/* Warm terracotta glow */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/3 right-1/4 w-[500px] h-[500px] bg-orange-500/[0.07] rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 left-1/3 w-[300px] h-[300px] bg-amber-600/[0.05] rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-orange-500/10 border border-orange-500/20 mb-4">
+              <Smartphone className="h-3 w-3 text-orange-400" />
+              <span className="text-xs text-orange-400">{t("landing.kaixa.badge")}</span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-black mb-2">
+              {t("landing.kaixa.title")}
+              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+                {t("landing.kaixa.titleAccent")}
+              </span>
+            </h2>
+            <p className="text-zinc-400 mt-4">
+              {t("landing.kaixa.description")}
+            </p>
+          </div>
+
+          {/* Two-column: Phone Mockup + Features */}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Phone Mockup */}
+            <div className="flex justify-center order-2 lg:order-1">
+              <div className="relative">
+                {/* Glow behind phone */}
+                <div className="absolute inset-0 bg-gradient-to-b from-orange-500/20 to-amber-600/10 rounded-[3rem] blur-2xl scale-110" />
+                {/* Phone frame */}
+                <div className="relative rounded-[2.5rem] border-[6px] border-zinc-700/80 bg-zinc-900 shadow-2xl shadow-black/50 w-[280px]">
+                  {/* Notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-zinc-800 rounded-full z-10" />
+                  {/* Screen */}
+                  <div className="rounded-[2rem] overflow-hidden bg-[#111]">
+                    {/* Status bar */}
+                    <div className="flex justify-between items-center px-6 pt-7 pb-2">
+                      <span className="text-[10px] text-zinc-500 font-medium">9:41</span>
+                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-500">
+                        <WifiOff className="h-2.5 w-2.5" />
+                        <span>100%</span>
+                      </div>
+                    </div>
+
+                    {/* App header */}
+                    <div className="px-5 pt-2 pb-3">
+                      <p className="text-orange-400 font-bold text-base tracking-wide">Kaixa</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5">Ohin loron</p>
+                    </div>
+
+                    {/* Balance card */}
+                    <div className="mx-4 p-4 rounded-2xl bg-gradient-to-br from-orange-500/20 to-amber-600/10 border border-orange-500/20 mb-3">
+                      <p className="text-[10px] text-zinc-400 mb-1">Balansu ohin</p>
+                      <p className="text-2xl font-bold text-white">$247.50</p>
+                      <div className="flex gap-4 mt-2">
+                        <div>
+                          <p className="text-[9px] text-emerald-500">&#8593; Tama</p>
+                          <p className="text-xs font-semibold text-emerald-400">$385.00</p>
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-red-500">&#8595; Sai</p>
+                          <p className="text-xs font-semibold text-red-400">$137.50</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Money In / Money Out buttons */}
+                    <div className="grid grid-cols-2 gap-2 px-4 mb-3">
+                      <div className="py-3 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-center">
+                        <div className="w-8 h-8 rounded-full bg-emerald-500/20 mx-auto mb-1.5 flex items-center justify-center">
+                          <span className="text-emerald-400 font-bold text-sm">+</span>
+                        </div>
+                        <span className="text-[11px] text-emerald-300 font-semibold block">Tama</span>
+                        <span className="text-[9px] text-zinc-500">Money In</span>
+                      </div>
+                      <div className="py-3 rounded-xl bg-red-500/15 border border-red-500/20 text-center">
+                        <div className="w-8 h-8 rounded-full bg-red-500/20 mx-auto mb-1.5 flex items-center justify-center">
+                          <span className="text-red-400 font-bold text-sm">&minus;</span>
+                        </div>
+                        <span className="text-[11px] text-red-300 font-semibold block">Sai</span>
+                        <span className="text-[9px] text-zinc-500">Money Out</span>
+                      </div>
+                    </div>
+
+                    {/* Recent transactions */}
+                    <div className="px-4 pb-6">
+                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Transasaun resente</p>
+                      <div className="space-y-1.5">
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/[0.03]">
+                          <span className="text-[10px] text-zinc-400">Kreditu telemovel</span>
+                          <span className="text-[10px] text-emerald-400 font-medium">+$85.00</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/[0.03]">
+                          <span className="text-[10px] text-zinc-400">Sosa stock</span>
+                          <span className="text-[10px] text-red-400 font-medium">&minus;$42.50</span>
+                        </div>
+                        <div className="flex justify-between items-center p-2 rounded-lg bg-white/[0.03]">
+                          <span className="text-[10px] text-zinc-400">Fa'an sigaru</span>
+                          <span className="text-[10px] text-emerald-400 font-medium">+$15.00</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Features */}
+            <div className="order-1 lg:order-2">
+              <p className="text-sm text-orange-400/80 font-medium mb-6 italic">
+                {t("landing.kaixa.tagline")}
+              </p>
+              <div className="space-y-5">
+                {[
+                  { icon: DollarSign, title: t("landing.kaixa.features.tamasai.title"), desc: t("landing.kaixa.features.tamasai.desc"), color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                  { icon: ShoppingBag, title: t("landing.kaixa.features.pos.title"), desc: t("landing.kaixa.features.pos.desc"), color: "text-orange-400", bg: "bg-orange-500/10" },
+                  { icon: WifiOff, title: t("landing.kaixa.features.offline.title"), desc: t("landing.kaixa.features.offline.desc"), color: "text-blue-400", bg: "bg-blue-500/10" },
+                  { icon: Languages, title: t("landing.kaixa.features.tetum.title"), desc: t("landing.kaixa.features.tetum.desc"), color: "text-violet-400", bg: "bg-violet-500/10" },
+                  { icon: Printer, title: t("landing.kaixa.features.bluetooth.title"), desc: t("landing.kaixa.features.bluetooth.desc"), color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                  { icon: Shield, title: t("landing.kaixa.features.vat.title"), desc: t("landing.kaixa.features.vat.desc"), color: "text-amber-400", bg: "bg-amber-500/10" },
+                ].map((feature, i) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div key={i} className="flex items-start gap-4">
+                      <div className={`p-2 rounded-lg ${feature.bg} flex-shrink-0`}>
+                        <Icon className={`h-4 w-4 ${feature.color}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
+                        <p className="text-xs text-zinc-500 leading-relaxed">{feature.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CTA */}
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-orange-500/20 to-amber-500/20 border border-orange-500/20 text-orange-300 font-medium text-sm">
+                  <Smartphone className="h-4 w-4" />
+                  {t("landing.kaixa.cta")}
+                </div>
+                <span className="text-xs text-zinc-600">{t("landing.kaixa.ctaNote")}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Two Tiers */}
+          <div className="mt-20 grid md:grid-cols-2 gap-6">
+            {/* Tier 1: Free */}
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-orange-500/20 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">{t("landing.kaixa.free.badge")}</div>
+                <h3 className="font-bold text-white text-lg">{t("landing.kaixa.free.title")}</h3>
+              </div>
+              <p className="text-sm text-zinc-400 mb-4">
+                {t("landing.kaixa.free.desc")}
+              </p>
+              <ul className="space-y-2.5">
+                {[
+                  t("landing.kaixa.free.features.moneyInOut"),
+                  t("landing.kaixa.free.features.summaries"),
+                  t("landing.kaixa.free.features.photoReceipts"),
+                  t("landing.kaixa.free.features.categories"),
+                  t("landing.kaixa.free.features.offline"),
+                  t("landing.kaixa.free.features.tetum"),
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Tier 2: Freemium */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-orange-500/[0.03] to-amber-500/[0.03] border border-orange-500/20 hover:border-orange-400/30 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-400 text-xs font-semibold border border-orange-500/20">{t("landing.kaixa.upgrade.badge")}</div>
+                <h3 className="font-bold text-white text-lg">{t("landing.kaixa.upgrade.title")}</h3>
+              </div>
+              <p className="text-sm text-zinc-400 mb-4">
+                {t("landing.kaixa.upgrade.desc")}
+              </p>
+              <ul className="space-y-2.5">
+                {[
+                  t("landing.kaixa.upgrade.features.catalog"),
+                  t("landing.kaixa.upgrade.features.tapToSell"),
+                  t("landing.kaixa.upgrade.features.inventory"),
+                  t("landing.kaixa.upgrade.features.customerTabs"),
+                  t("landing.kaixa.upgrade.features.printer"),
+                  t("landing.kaixa.upgrade.features.whatsapp"),
+                  t("landing.kaixa.upgrade.features.monthlyReport"),
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <CheckCircle2 className="h-4 w-4 text-orange-400 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Who is Kaixa for? */}
+          <div className="mt-12 grid sm:grid-cols-3 gap-4">
+            {[
+              { emoji: "🏪", name: t("landing.kaixa.personas.maria.name"), role: t("landing.kaixa.personas.maria.role"), desc: t("landing.kaixa.personas.maria.desc") },
+              { emoji: "☕", name: t("landing.kaixa.personas.ana.name"), role: t("landing.kaixa.personas.ana.role"), desc: t("landing.kaixa.personas.ana.desc") },
+              { emoji: "🛒", name: t("landing.kaixa.personas.tomas.name"), role: t("landing.kaixa.personas.tomas.role"), desc: t("landing.kaixa.personas.tomas.desc") },
+            ].map((persona, i) => (
+              <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
+                <div className="text-3xl mb-2">{persona.emoji}</div>
+                <h4 className="font-semibold text-white">{persona.name}</h4>
+                <p className="text-xs text-orange-400/70 mb-2">{persona.role}</p>
+                <p className="text-xs text-zinc-500 leading-relaxed">{persona.desc}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -747,22 +1000,21 @@ export default function Landing() {
             <div>
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 mb-4">
                 <MapPin className="h-3 w-3 text-amber-400" />
-                <span className="text-xs text-amber-400">Based in Dili</span>
+                <span className="text-xs text-amber-400">{t("landing.localSupport.badge")}</span>
               </div>
               <h2 className="text-3xl font-black mb-4">
-                Local support,
-                <span className="block text-zinc-500">iha Tetun no English</span>
+                {t("landing.localSupport.title")}
+                <span className="block text-zinc-500">{t("landing.localSupport.titleAccent")}</span>
               </h2>
               <p className="text-zinc-400 mb-6">
-                We're not a foreign company with offshore support. Meza is built in Timor-Leste,
-                for Timor-Leste. Get help from people who understand local business practices.
+                {t("landing.localSupport.description")}
               </p>
               <ul className="space-y-3">
                 {[
-                  "WhatsApp support in Tetun & English",
-                  "On-site training available in Dili",
-                  "Help with SEFOPE submissions",
-                  "Bank integration assistance (BNU, BNCTL)",
+                  t("landing.localSupport.items.whatsapp"),
+                  t("landing.localSupport.items.training"),
+                  t("landing.localSupport.items.sefope"),
+                  t("landing.localSupport.items.bank"),
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-zinc-300">
                     <CheckCircle2 className="h-4 w-4 text-amber-400 flex-shrink-0" />
@@ -778,8 +1030,8 @@ export default function Landing() {
                     🇹🇱
                   </div>
                   <div>
-                    <p className="font-semibold text-white">Need help getting started?</p>
-                    <p className="text-sm text-zinc-500">Free setup consultation</p>
+                    <p className="font-semibold text-white">{t("landing.localSupport.cta.title")}</p>
+                    <p className="text-sm text-zinc-500">{t("landing.localSupport.cta.subtitle")}</p>
                   </div>
                 </div>
                 <div className="space-y-3">

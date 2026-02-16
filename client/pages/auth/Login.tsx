@@ -154,20 +154,6 @@ export default function Login() {
           </form>
         </div>
 
-        {/* Demo credentials */}
-        <div className="mt-6 rounded-xl border border-white/5 bg-white/[0.02] p-4">
-          <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2">
-            {t("auth.demoCredentials")}
-          </h4>
-          <div className="flex flex-col gap-1 text-sm font-mono">
-            <span className="text-zinc-500">
-              {t("auth.demoEmail", { email: "demo@payrollhr.com" })}
-            </span>
-            <span className="text-zinc-500">
-              {t("auth.demoPassword", { password: "demo123" })}
-            </span>
-          </div>
-        </div>
       </div>
     </div>
   );

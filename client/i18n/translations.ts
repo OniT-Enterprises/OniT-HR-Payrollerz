@@ -390,6 +390,117 @@ export const translations = {
         "contact": "Contact"
       },
       "copyright": "© 2026 OniT Enterprises. Dili, Timor-Leste."
+    },
+    "segments": {
+      "subtitle": "Trusted by organizations across Timor-Leste",
+      "title": "Built for businesses that need compliance",
+      "ngos": { "label": "NGOs & INGOs", "desc": "Donor compliance & audit trails" },
+      "government": { "label": "Government", "desc": "SEFOPE reporting ready" },
+      "oilGas": { "label": "Oil & Gas", "desc": "Complex contractor payroll" },
+      "hotels": { "label": "Hotels & Tourism", "desc": "Seasonal staff management" }
+    },
+    "painPoints": {
+      "paper": {
+        "title": "Still using paper?",
+        "desc": "Manual calculations lead to WIT errors that cost you money. One wrong deduction = audit risk."
+      },
+      "excel": {
+        "title": "Excel breaking down?",
+        "desc": "Formulas fail. Files corrupt. No audit trail for donors. No automatic 13th month calculations."
+      },
+      "solution": {
+        "title": "Meza solves this",
+        "desc": "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface."
+      }
+    },
+    "modules": {
+      "badge": "Complete Platform",
+      "title": "9 Integrated Modules",
+      "titleAccent": "One Complete System",
+      "description": "From hiring to retirement, payroll to accounting - everything your HR team needs in one place.",
+      "people": { "name": "People Management", "desc": "Employee profiles, departments, org charts, document tracking" },
+      "hiring": { "name": "Hiring & Recruitment", "desc": "Job postings, applicant tracking, onboarding, offboarding" },
+      "time": { "name": "Time & Attendance", "desc": "Clock in/out, timesheets, leave requests, shift scheduling" },
+      "performance": { "name": "Performance", "desc": "Goals, reviews, training, certifications, disciplinary" },
+      "payroll": { "name": "Payroll", "desc": "INSS, tax, overtime, bank transfers, payslips" },
+      "money": { "name": "Money (Invoicing)", "desc": "Customers, invoices, bills, expenses, payments" },
+      "accounting": { "name": "Accounting", "desc": "Chart of accounts, journal entries, general ledger" },
+      "reports": { "name": "Reports & Analytics", "desc": "Payroll reports, HR analytics, custom report builder" },
+      "compliance": { "name": "Compliance", "desc": "Foreign workers, document alerts, SEPFOPE reporting" },
+      "viewAll": "View All 65+ Features"
+    },
+    "kaixa": {
+      "badge": "Mobile App",
+      "title": "Kaixa",
+      "titleAccent": "Your Digital Cash Box",
+      "description": "Simple money tracking and POS for everyone in Timor-Leste. From kiosk vendors to small shops — track every dollar, sell products, and print receipts. Works offline, speaks Tetum.",
+      "tagline": "\"Kaixa\" — Tetum for cash box",
+      "features": {
+        "tamasai": { "title": "Tama / Sai", "desc": "Two big buttons — money in, money out. Track every dollar that flows through your business." },
+        "pos": { "title": "Simple POS", "desc": "Product catalog, tap-to-sell, and inventory counts. Know what you have and what you sold." },
+        "offline": { "title": "Works Offline", "desc": "Full functionality without internet. Everything syncs automatically when you reconnect." },
+        "tetum": { "title": "Tetum First", "desc": "Interface iha ita-nia lian. Big touch targets designed for speed, not complexity." },
+        "bluetooth": { "title": "Bluetooth Receipts", "desc": "$30 thermal printer turns your phone into a register. Professional receipts instantly." },
+        "vat": { "title": "VAT Ready", "desc": "Built for Timor-Leste's 2027 VAT. When it becomes law, flip a switch — no update needed." }
+      },
+      "cta": "Coming Soon to Google Play",
+      "ctaNote": "Android first · Free tier available",
+      "free": {
+        "badge": "Free",
+        "title": "Money Tracking",
+        "desc": "Not accounting. **Money tracking.** Replace the notebook.",
+        "descHighlight": "Money tracking.",
+        "features": {
+          "moneyInOut": "Money In / Money Out — two buttons, that's it",
+          "summaries": "Daily, weekly, monthly summaries with charts",
+          "photoReceipts": "Photo receipts — snap the notebook page",
+          "categories": "Category tagging (stock, sales, personal)",
+          "offline": "Works fully offline, syncs on wifi",
+          "tetum": "Tetum-first UI with big touch targets"
+        }
+      },
+      "upgrade": {
+        "badge": "Upgrade",
+        "title": "Simple POS",
+        "desc": "Everything in Free, plus a **complete point-of-sale** from your phone.",
+        "descHighlight": "complete point-of-sale",
+        "features": {
+          "catalog": "Product catalog — name, price, optional photo",
+          "tapToSell": "Tap-to-sell — big product buttons, quantity, total",
+          "inventory": "Inventory — bought 50, sold 30, have 20 left",
+          "customerTabs": "Customer tabs — \"João owes me $15\"",
+          "printer": "Bluetooth thermal printer ($30) for receipts",
+          "whatsapp": "WhatsApp receipt sharing — everyone uses it",
+          "monthlyReport": "Monthly summary report — printable PDF for tax"
+        }
+      },
+      "personas": {
+        "maria": { "name": "Maria", "role": "Kiosk Owner", "desc": "Sells phone credit, snacks, cigarettes. Uses a notebook today. Needs: \"How much did I make today?\"" },
+        "ana": { "name": "Ana", "role": "Café Owner", "desc": "Runs a café with 5 staff. Uses Meza for payroll, Kaixa for daily sales. Staff use Meza Go." },
+        "tomas": { "name": "Tomas", "role": "Shop Owner", "desc": "Growing retail shop. Customer tabs, inventory tracking. Ready for VAT when it arrives." }
+      }
+    },
+    "mobilePay": {
+      "title": "Mobile Money Ready",
+      "subtitle": "Pay employees without bank accounts",
+      "comingSoon": "Coming Soon",
+      "note": "Disbursement directly to employee mobile wallets. No bank account required."
+    },
+    "localSupport": {
+      "badge": "Based in Dili",
+      "title": "Local support,",
+      "titleAccent": "iha Tetun no English",
+      "description": "We're not a foreign company with offshore support. Meza is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
+      "items": {
+        "whatsapp": "WhatsApp support in Tetun & English",
+        "training": "On-site training available in Dili",
+        "sefope": "Help with SEFOPE submissions",
+        "bank": "Bank integration assistance (BNU, BNCTL)"
+      },
+      "cta": {
+        "title": "Need help getting started?",
+        "subtitle": "Free setup consultation"
+      }
     }
   },
   "settings": {
@@ -3985,6 +4096,117 @@ export const translations = {
         "contact": "Kontaktu"
       },
       "copyright": "© 2026 OniT Enterprises. Dili, Timor-Leste."
+    },
+    "segments": {
+      "subtitle": "Fiar husi organizasaun iha Timor-Leste tomak",
+      "title": "Hadia ba empresa ne'ebe presiza konformidade",
+      "ngos": { "label": "ONG & OING", "desc": "Konformidade doador no auditoría" },
+      "government": { "label": "Governu", "desc": "Relatoriu SEFOPE prontu" },
+      "oilGas": { "label": "Mina no Gas", "desc": "Folha kontratante kompleksu" },
+      "hotels": { "label": "Hotel no Turizmu", "desc": "Jestaun staf temporariu" }
+    },
+    "painPoints": {
+      "paper": {
+        "title": "Sei uza papel?",
+        "desc": "Kalkulasaun manual lori erru WIT ne'ebe kustu osan. Dedusaun sala ida = risku auditoría."
+      },
+      "excel": {
+        "title": "Excel la servisu?",
+        "desc": "Formula sala. Ficheiru estraga. Laiha audit trail ba doador. Laiha kalkulasaun 13o mes automatik."
+      },
+      "solution": {
+        "title": "Meza rezolve ida nee",
+        "desc": "WIT/INSS automatik. Transferensia banku ba BNU/BNCTL. Relatoriu ba SEFOPE. Interface Tetun."
+      }
+    },
+    "modules": {
+      "badge": "Plataforma Kompletu",
+      "title": "Modulu Integradu 9",
+      "titleAccent": "Sistema Ida Kompletu",
+      "description": "Husi rekrutamentu to'o reforma, folha to'o kontabilidade - hotu ne'ebe ita-nia ekipa RH presiza.",
+      "people": { "name": "Jestaun Ema", "desc": "Perfil empregadu, departamentu, estrutura, kontrolu dokumentu" },
+      "hiring": { "name": "Rekrutamentu", "desc": "Anúnsiu servisu, akompaña kandidatu, onboarding, offboarding" },
+      "time": { "name": "Oras no Prezensa", "desc": "Tama/sai, timesheet, pedidu lisensa, turnos" },
+      "performance": { "name": "Desempenho", "desc": "Objetivu, avaliasaun, formasaun, sertifikasaun, disiplina" },
+      "payroll": { "name": "Folha Pagamentu", "desc": "INSS, impostu, oras extra, transferensia banku, payslip" },
+      "money": { "name": "Osan (Fatura)", "desc": "Kliente, fatura, konta, despeza, pagamentu" },
+      "accounting": { "name": "Kontabilidade", "desc": "Planu konta, lansu kontabil, livru rezaun jerál" },
+      "reports": { "name": "Relatoriu no Analítika", "desc": "Relatoriu folha, analítika RH, relatoriu personalizado" },
+      "compliance": { "name": "Konformidade", "desc": "Trabalhadór estranjeiru, alerta dokumentu, relatoriu SEFOPE" },
+      "viewAll": "Haree Fitur 65+ Hotu"
+    },
+    "kaixa": {
+      "badge": "App Movel",
+      "title": "Kaixa",
+      "titleAccent": "Ita-nia Kaixa Dijital",
+      "description": "Kontrolu osan simples no POS ba ema hotu iha Timor-Leste. Husi vendedór kiosk to'o loja ki'ik — kontrola dollar ida-ida, fa'an produtu, no imprime resibo. Servisu offline, koalia Tetun.",
+      "tagline": "\"Kaixa\" — Tetun ba kaixa osan",
+      "features": {
+        "tamasai": { "title": "Tama / Sai", "desc": "Botaun rua — osan tama, osan sai. Kontrola dollar ida-ida ne'ebe liu iha ita-nia negósiu." },
+        "pos": { "title": "POS Simples", "desc": "Katalogo produtu, toka atu fa'an, no konta stock. Hatene saida mak iha no saida mak fa'an." },
+        "offline": { "title": "Servisu Offline", "desc": "Funsiona kompletu laiha internet. Hotu sinkroniza automatik bainhira liga fali." },
+        "tetum": { "title": "Tetun Primeiru", "desc": "Interface iha ita-nia lian. Botaun boot hadia ba lalais, laos kompleksidade." },
+        "bluetooth": { "title": "Resibo Bluetooth", "desc": "Printer termal $30 transforma ita-nia telefone ba rejistru. Resibo profisionál." },
+        "vat": { "title": "VAT Prontu", "desc": "Hadia ba VAT Timor-Leste 2027. Bainhira sai lei, muda switch ida — la presiza update." }
+      },
+      "cta": "Mai Sedu ba Google Play",
+      "ctaNote": "Android primeiru · Tier gratis disponível",
+      "free": {
+        "badge": "Gratis",
+        "title": "Kontrolu Osan",
+        "desc": "Laos kontabilidade. **Kontrolu osan.** Troka kaderno.",
+        "descHighlight": "Kontrolu osan.",
+        "features": {
+          "moneyInOut": "Osan Tama / Osan Sai — botaun rua, hotu",
+          "summaries": "Rezumu loron-loron, semanal, fulan ho grafiku",
+          "photoReceipts": "Resibo foto — foto pajina kaderno",
+          "categories": "Kategoria (stock, venda, pessoal)",
+          "offline": "Servisu offline kompletu, sinkroniza iha wifi",
+          "tetum": "Interface Tetun ho botaun boot"
+        }
+      },
+      "upgrade": {
+        "badge": "Upgrade",
+        "title": "POS Simples",
+        "desc": "Hotu iha Gratis, no **POS kompletu** husi ita-nia telefone.",
+        "descHighlight": "POS kompletu",
+        "features": {
+          "catalog": "Katalogo produtu — naran, folin, foto",
+          "tapToSell": "Toka atu fa'an — botaun produtu boot, kuantidade, total",
+          "inventory": "Inventáriu — sosa 50, fa'an 30, iha 20",
+          "customerTabs": "Tab kliente — \"João deve ha'u $15\"",
+          "printer": "Printer termal Bluetooth ($30) ba resibo",
+          "whatsapp": "Partilha resibo WhatsApp — ema hotu uza",
+          "monthlyReport": "Relatoriu rezumu fulan — PDF ba impostu"
+        }
+      },
+      "personas": {
+        "maria": { "name": "Maria", "role": "Vendedór Kiosk", "desc": "Fa'an kreditu telefone, snack, sigaru. Uza kaderno ohin. Presiza: \"Ohin ha'u hetan hira?\"" },
+        "ana": { "name": "Ana", "role": "Dona Kafé", "desc": "Hala'o kafé ho staf 5. Uza Meza ba folha, Kaixa ba venda loron-loron. Staf uza Meza Go." },
+        "tomas": { "name": "Tomas", "role": "Dona Loja", "desc": "Loja varejo ne'ebe kresce. Tab kliente, kontrolu stock. Prontu ba VAT bainhira mai." }
+      }
+    },
+    "mobilePay": {
+      "title": "Osan Movel Prontu",
+      "subtitle": "Selu empregadu laiha konta banku",
+      "comingSoon": "Mai Sedu",
+      "note": "Pagamentu diretamente ba wallet movel empregadu. Laiha konta banku presiza."
+    },
+    "localSupport": {
+      "badge": "Baze iha Dili",
+      "title": "Suporte lokal,",
+      "titleAccent": "iha Tetun no Ingles",
+      "description": "Ami laos empresa estranjeiru ho suporte offshore. Meza hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
+      "items": {
+        "whatsapp": "Suporte WhatsApp iha Tetun no Ingles",
+        "training": "Treinamentu iha fatin disponível iha Dili",
+        "sefope": "Ajuda ho submisaun SEFOPE",
+        "bank": "Asistensa integrasaun banku (BNU, BNCTL)"
+      },
+      "cta": {
+        "title": "Presiza ajuda atu hahu?",
+        "subtitle": "Konsulta setup gratis"
+      }
     }
   },
   "settings": {
