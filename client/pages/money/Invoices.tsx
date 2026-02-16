@@ -33,7 +33,7 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { useAllInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
 import { useQueryClient } from '@tanstack/react-query';
-import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
+
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
@@ -190,6 +190,7 @@ export default function Invoices() {
   const handleDownloadPDF = async (invoice: Invoice) => {
     try {
       setDownloadingId(invoice.id);
+      const { downloadInvoicePDF } = await import('@/components/money/InvoicePDF');
       await downloadInvoicePDF(invoice, invoiceSettings);
       toast({
         title: t('common.success') || 'Success',

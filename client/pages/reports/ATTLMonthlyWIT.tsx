@@ -64,8 +64,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { taxFilingService } from "@/services/taxFilingService";
 import { settingsService } from "@/services/settingsService";
-import { downloadWITReturnPDF } from "@/components/reports/WITReturnPDF";
-import { downloadATTLExcel } from "@/lib/excel/attlExport";
+
+
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type {
   MonthlyWITReturn,
@@ -315,6 +315,7 @@ export default function ATTLMonthlyWIT() {
     }
 
     try {
+      const { downloadWITReturnPDF } = await import("@/components/reports/WITReturnPDF");
       await downloadWITReturnPDF(
         selectedReturn,
         company || undefined,
@@ -348,6 +349,7 @@ export default function ATTLMonthlyWIT() {
     }
 
     try {
+      const { downloadATTLExcel } = await import("@/lib/excel/attlExport");
       await downloadATTLExcel(
         selectedReturn,
         company || undefined,

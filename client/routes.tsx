@@ -21,12 +21,12 @@ export function PageLoader() {
 
 // Essential routes - eagerly loaded (first paint)
 import Login from "@/pages/auth/Login";
-import Dashboard from "@/pages/Dashboard";
-import Landing from "@/pages/Landing";
 import NotFound from "@/pages/NotFound";
-import Sitemap from "@/pages/Sitemap";
 
 // Lazy loaded routes - code split by section
+const Landing = lazy(() => import("@/pages/Landing"));
+const Dashboard = lazy(() => import("@/pages/Dashboard"));
+const Sitemap = lazy(() => import("@/pages/Sitemap"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
 const ProductDetails = lazy(() => import("@/pages/ProductDetails"));

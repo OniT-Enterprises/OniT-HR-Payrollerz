@@ -39,7 +39,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
-import { downloadInvoicePDF } from '@/components/money/InvoicePDF';
+
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
@@ -367,6 +367,7 @@ export default function InvoiceForm() {
 
     try {
       setDownloadingPdf(true);
+      const { downloadInvoicePDF } = await import('@/components/money/InvoicePDF');
       await downloadInvoicePDF(invoice, invoiceSettings);
       toast({
         title: t('common.success') || 'Success',
