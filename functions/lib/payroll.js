@@ -3,21 +3,19 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.validatePayrunInputs = exports.getPayrunInputs = exports.compilePayrunInputs = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
-const auth_1 = require("firebase-admin/auth");
 const v2_1 = require("firebase-functions/v2");
+const authz_1 = require("./authz");
 const db = (0, firestore_1.getFirestore)();
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(uid, tenantId) {
-    const userRecord = await (0, auth_1.getAuth)().getUser(uid);
-    const customClaims = userRecord.customClaims || {};
-    const tenants = customClaims.tenants || [];
-    if (!tenants.includes(tenantId)) {
-        throw new https_1.HttpsError("permission-denied", "User does not have access to this tenant");
+async function requirePayrollAccess(tenantId, uid) {
+    const member = await (0, authz_1.requireTenantMember)(tenantId, uid);
+    if (["owner", "hr-admin"].includes(String(member.role))) {
+        return;
+    }
+    if (!(0, authz_1.hasModuleAccess)(member, "payroll")) {
+        throw new https_1.HttpsError("permission-denied", "User does not have payroll access");
     }
 }
 /**
@@ -72,11 +70,9 @@ async function getLatestEmploymentSnapshot(tenantId, employeeId, asOfDate) {
  * Gathers employment snapshots and timesheet totals for all active employees
  */
 exports.compilePayrunInputs = (0, https_1.onCall)(async (request) => {
-    var _a, _b, _c;
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    var _a, _b;
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, yyyymm } = data;
     if (!tenantId || !yyyymm) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters: tenantId, yyyymm");
@@ -85,23 +81,7 @@ exports.compilePayrunInputs = (0, https_1.onCall)(async (request) => {
     if (!/^\d{4}(0[1-9]|1[0-2])$/.test(yyyymm)) {
         throw new https_1.HttpsError("invalid-argument", "Invalid month format (use YYYYMM)");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
-    // Check user has payroll permissions
-    const memberDoc = await db
-        .doc(`tenants/${tenantId}/members/${auth.uid}`)
-        .get();
-    if (!memberDoc.exists) {
-        throw new https_1.HttpsError("permission-denied", "User is not a member of this tenant");
-    }
-    const member = memberDoc.data();
-    if (!["owner", "hr-admin"].includes(member.role)) {
-        // Check if user has explicit payroll module access
-        const hasPayrollAccess = (_a = member.modules) === null || _a === void 0 ? void 0 : _a.includes("payroll");
-        if (!hasPayrollAccess) {
-            throw new https_1.HttpsError("permission-denied", "User does not have payroll access");
-        }
-    }
+    await requirePayrollAccess(tenantId, auth.uid);
     try {
         const year = parseInt(yyyymm.substring(0, 4));
         const month = parseInt(yyyymm.substring(4, 6));
@@ -190,8 +170,8 @@ exports.compilePayrunInputs = (0, https_1.onCall)(async (request) => {
                 results.push({
                     employeeId: employee.id,
                     snapshot: {
-                        position: (_b = snapshot.position) === null || _b === void 0 ? void 0 : _b.title,
-                        baseMonthlyUSD: (_c = snapshot.position) === null || _c === void 0 ? void 0 : _c.baseMonthlyUSD,
+                        position: (_a = snapshot.position) === null || _a === void 0 ? void 0 : _a.title,
+                        baseMonthlyUSD: (_b = snapshot.position) === null || _b === void 0 ? void 0 : _b.baseMonthlyUSD,
                         asOf: snapshot.asOf,
                     },
                     timesheetTotals,
@@ -261,16 +241,13 @@ exports.compilePayrunInputs = (0, https_1.onCall)(async (request) => {
  * Gets payroll inputs for a specific month
  */
 exports.getPayrunInputs = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, yyyymm } = data;
     if (!tenantId || !yyyymm) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await requirePayrollAccess(tenantId, auth.uid);
     try {
         // Get summary
         const summaryDoc = await db
@@ -303,16 +280,13 @@ exports.getPayrunInputs = (0, https_1.onCall)(async (request) => {
  * Validates payroll inputs before payrun execution
  */
 exports.validatePayrunInputs = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, yyyymm } = data;
     if (!tenantId || !yyyymm) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await requirePayrollAccess(tenantId, auth.uid);
     try {
         // Get all input records for validation
         const summaryDoc = await db

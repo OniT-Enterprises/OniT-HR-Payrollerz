@@ -1,7 +1,11 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions/v2";
+import {
+  hasModuleAccess,
+  requireAuth,
+  requireTenantMember,
+} from "./authz";
 
 const db = getFirestore();
 
@@ -9,22 +13,17 @@ const db = getFirestore();
 // HELPER FUNCTIONS
 // ============================================================================
 
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(
-  uid: string,
+async function requirePayrollAccess(
   tenantId: string,
+  uid: string,
 ): Promise<void> {
-  const userRecord = await getAuth().getUser(uid);
-  const customClaims = userRecord.customClaims || {};
-  const tenants = customClaims.tenants || [];
+  const member = await requireTenantMember(tenantId, uid);
+  if (["owner", "hr-admin"].includes(String(member.role))) {
+    return;
+  }
 
-  if (!tenants.includes(tenantId)) {
-    throw new HttpsError(
-      "permission-denied",
-      "User does not have access to this tenant",
-    );
+  if (!hasModuleAccess(member, "payroll")) {
+    throw new HttpsError("permission-denied", "User does not have payroll access");
   }
 }
 
@@ -99,11 +98,8 @@ async function getLatestEmploymentSnapshot(
  * Gathers employment snapshots and timesheet totals for all active employees
  */
 export const compilePayrunInputs = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, yyyymm } = data;
 
@@ -122,31 +118,7 @@ export const compilePayrunInputs = onCall(async (request) => {
     );
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
-
-  // Check user has payroll permissions
-  const memberDoc = await db
-    .doc(`tenants/${tenantId}/members/${auth.uid}`)
-    .get();
-  if (!memberDoc.exists) {
-    throw new HttpsError(
-      "permission-denied",
-      "User is not a member of this tenant",
-    );
-  }
-
-  const member = memberDoc.data()!;
-  if (!["owner", "hr-admin"].includes(member.role)) {
-    // Check if user has explicit payroll module access
-    const hasPayrollAccess = member.modules?.includes("payroll");
-    if (!hasPayrollAccess) {
-      throw new HttpsError(
-        "permission-denied",
-        "User does not have payroll access",
-      );
-    }
-  }
+  await requirePayrollAccess(tenantId, auth.uid);
 
   try {
     const year = parseInt(yyyymm.substring(0, 4));
@@ -338,11 +310,8 @@ export const compilePayrunInputs = onCall(async (request) => {
  * Gets payroll inputs for a specific month
  */
 export const getPayrunInputs = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, yyyymm } = data;
 
@@ -350,8 +319,7 @@ export const getPayrunInputs = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requirePayrollAccess(tenantId, auth.uid);
 
   try {
     // Get summary
@@ -394,11 +362,8 @@ export const getPayrunInputs = onCall(async (request) => {
  * Validates payroll inputs before payrun execution
  */
 export const validatePayrunInputs = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, yyyymm } = data;
 
@@ -406,8 +371,7 @@ export const validatePayrunInputs = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requirePayrollAccess(tenantId, auth.uid);
 
   try {
     // Get all input records for validation

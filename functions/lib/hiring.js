@@ -4,23 +4,12 @@ exports.validateJobApproval = exports.onOfferAccepted = exports.createEmployment
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const firestore_2 = require("firebase-admin/firestore");
-const auth_1 = require("firebase-admin/auth");
 const v2_1 = require("firebase-functions/v2");
+const authz_1 = require("./authz");
 const db = (0, firestore_2.getFirestore)();
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(uid, tenantId) {
-    const userRecord = await (0, auth_1.getAuth)().getUser(uid);
-    const customClaims = userRecord.customClaims || {};
-    const tenants = customClaims.tenants || [];
-    if (!tenants.includes(tenantId)) {
-        throw new https_1.HttpsError("permission-denied", "User does not have access to this tenant");
-    }
-}
 /**
  * Generates a ULID-like ID for consistent document IDs
  */
@@ -42,16 +31,13 @@ function getISODateString(date = new Date()) {
  * Accepts an offer and creates the corresponding contract and employment snapshot
  */
 exports.acceptOffer = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, offerId, employeeId } = data;
     if (!tenantId || !offerId || !employeeId) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters: tenantId, offerId, employeeId");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await (0, authz_1.requireTenantRoles)(tenantId, auth.uid, ["owner", "hr-admin"], "Only tenant owners or HR admins can accept offers");
     const batch = db.batch();
     try {
         // Get the offer
@@ -155,16 +141,13 @@ exports.acceptOffer = (0, https_1.onCall)(async (request) => {
  * Creates a new employment snapshot for an existing employee (e.g., promotion, transfer)
  */
 exports.createEmploymentSnapshot = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, employeeId, positionId, contractChanges, effectiveDate } = data;
     if (!tenantId || !employeeId || !positionId || !effectiveDate) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await (0, authz_1.requireTenantRoles)(tenantId, auth.uid, ["owner", "hr-admin"], "Only tenant owners or HR admins can create employment snapshots");
     try {
         // Get the employee
         const employeeDoc = await db
@@ -296,16 +279,13 @@ exports.onOfferAccepted = (0, firestore_1.onDocumentUpdated)("tenants/{tenantId}
  * Validate job posting approvals
  */
 exports.validateJobApproval = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, jobId, action } = data; // action: 'approve' | 'reject'
     if (!tenantId || !jobId || !action) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await (0, authz_1.requireTenantMember)(tenantId, auth.uid);
     try {
         // Get the job
         const jobDoc = await db.doc(`tenants/${tenantId}/jobs/${jobId}`).get();

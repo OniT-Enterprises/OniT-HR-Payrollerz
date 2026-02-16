@@ -1,33 +1,18 @@
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { onDocumentUpdated } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions/v2";
+import {
+  requireAuth,
+  requireTenantMember,
+  requireTenantRoles,
+} from "./authz";
 
 const db = getFirestore();
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(
-  uid: string,
-  tenantId: string,
-): Promise<void> {
-  const userRecord = await getAuth().getUser(uid);
-  const customClaims = userRecord.customClaims || {};
-  const tenants = customClaims.tenants || [];
-
-  if (!tenants.includes(tenantId)) {
-    throw new HttpsError(
-      "permission-denied",
-      "User does not have access to this tenant",
-    );
-  }
-}
 
 /**
  * Generates a ULID-like ID for consistent document IDs
@@ -53,11 +38,8 @@ function getISODateString(date: Date = new Date()): string {
  * Accepts an offer and creates the corresponding contract and employment snapshot
  */
 export const acceptOffer = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, offerId, employeeId } = data;
 
@@ -68,8 +50,12 @@ export const acceptOffer = onCall(async (request) => {
     );
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requireTenantRoles(
+    tenantId,
+    auth.uid,
+    ["owner", "hr-admin"],
+    "Only tenant owners or HR admins can accept offers",
+  );
 
   const batch = db.batch();
 
@@ -205,11 +191,8 @@ export const acceptOffer = onCall(async (request) => {
  * Creates a new employment snapshot for an existing employee (e.g., promotion, transfer)
  */
 export const createEmploymentSnapshot = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, employeeId, positionId, contractChanges, effectiveDate } =
     data;
@@ -218,8 +201,12 @@ export const createEmploymentSnapshot = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requireTenantRoles(
+    tenantId,
+    auth.uid,
+    ["owner", "hr-admin"],
+    "Only tenant owners or HR admins can create employment snapshots",
+  );
 
   try {
     // Get the employee
@@ -402,11 +389,8 @@ export const onOfferAccepted = onDocumentUpdated(
  * Validate job posting approvals
  */
 export const validateJobApproval = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, jobId, action } = data; // action: 'approve' | 'reject'
 
@@ -414,8 +398,7 @@ export const validateJobApproval = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requireTenantMember(tenantId, auth.uid);
 
   try {
     // Get the job

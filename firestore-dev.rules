@@ -147,7 +147,10 @@ service cloud.firestore {
       // TENANT SETTINGS SUBCOLLECTION
       // ============================================
       match /settings/{docId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || (
+          (docId == 'integrations' && isTenantAdmin(tenantId)) ||
+          (docId != 'integrations' && isTenantMember(tenantId))
+        );
         allow write: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 

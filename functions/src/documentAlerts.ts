@@ -8,6 +8,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { logger } from "firebase-functions/v2";
+import { requireAuth, requireTenantManagerOrAdmin } from "./authz";
 
 const db = getFirestore();
 
@@ -296,17 +297,16 @@ export const checkDocumentExpiry = onSchedule(
  * Can be called by HR admins to refresh alerts immediately
  */
 export const refreshDocumentAlerts = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId } = data;
 
   if (!tenantId) {
     throw new HttpsError("invalid-argument", "Missing required parameter: tenantId");
   }
+
+  await requireTenantManagerOrAdmin(tenantId, auth.uid);
 
   try {
     logger.info(`Manual document alert refresh for tenant ${tenantId}`, { uid: auth.uid });
@@ -378,17 +378,16 @@ export const refreshDocumentAlerts = onCall(async (request) => {
  * Acknowledge a document alert
  */
 export const acknowledgeDocumentAlert = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, alertId } = data;
 
   if (!tenantId || !alertId) {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
+
+  await requireTenantManagerOrAdmin(tenantId, auth.uid);
 
   try {
     const alertRef = db.doc(`tenants/${tenantId}/document_alerts/${alertId}`);

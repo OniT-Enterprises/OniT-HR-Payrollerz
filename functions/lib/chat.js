@@ -7,20 +7,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = exports.hrChat = void 0;
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
-const auth_1 = require("firebase-admin/auth");
 const v2_1 = require("firebase-functions/v2");
+const authz_1 = require("./authz");
 const db = (0, firestore_1.getFirestore)();
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(uid, tenantId) {
-    const userRecord = await (0, auth_1.getAuth)().getUser(uid);
-    const customClaims = userRecord.customClaims || {};
-    const tenants = customClaims.tenants || [];
-    if (!tenants.includes(tenantId)) {
-        throw new https_1.HttpsError("permission-denied", "User does not have access to this tenant");
-    }
-}
+const MAX_MESSAGES = 40;
+const MAX_MESSAGE_CHARS = 4000;
+const MAX_COMPLETION_TOKENS = 2000;
+const MIN_COMPLETION_TOKENS = 64;
+const APP_CHECK_ENFORCED = process.env.ENFORCE_APP_CHECK === "true";
 /**
  * Get OpenAI API key from tenant settings or global settings
  */
@@ -45,6 +39,12 @@ async function getOpenAIApiKey(tenantId) {
     }
     return null;
 }
+function sanitizeMessages(messages) {
+    return messages.slice(-MAX_MESSAGES).map((message) => ({
+        role: message.role,
+        content: message.content.slice(0, MAX_MESSAGE_CHARS),
+    }));
+}
 /**
  * HR Chat - Proxies requests to OpenAI
  * Keeps the API key secure on the server side
@@ -53,14 +53,12 @@ exports.hrChat = (0, https_1.onCall)({
     // Allow larger payloads for conversation history
     memory: "256MiB",
     timeoutSeconds: 60,
-    // Rate limiting
-    enforceAppCheck: false, // Enable in production
+    // Set ENFORCE_APP_CHECK=true in function env to enforce App Check.
+    enforceAppCheck: APP_CHECK_ENFORCED,
 }, async (request) => {
     var _a, _b, _c;
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, messages, model, maxTokens } = data;
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "Missing tenantId");
@@ -68,8 +66,18 @@ exports.hrChat = (0, https_1.onCall)({
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
         throw new https_1.HttpsError("invalid-argument", "Messages array is required");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    const messagesAreValid = messages.every((message) => message &&
+        ["system", "user", "assistant"].includes(message.role) &&
+        typeof message.content === "string");
+    if (!messagesAreValid) {
+        throw new https_1.HttpsError("invalid-argument", "Messages contain invalid role or content");
+    }
+    await (0, authz_1.requireTenantMember)(tenantId, auth.uid);
+    const sanitizedMessages = sanitizeMessages(messages);
+    const requestedCompletionTokens = Number.isFinite(maxTokens)
+        ? Math.trunc(maxTokens)
+        : 800;
+    const completionTokens = Math.min(MAX_COMPLETION_TOKENS, Math.max(MIN_COMPLETION_TOKENS, requestedCompletionTokens));
     // Get API key from Firestore (secure server-side storage)
     const apiKey = await getOpenAIApiKey(tenantId);
     if (!apiKey) {
@@ -79,7 +87,7 @@ exports.hrChat = (0, https_1.onCall)({
         v2_1.logger.info("HR Chat request", {
             tenantId,
             userId: auth.uid,
-            messageCount: messages.length,
+            messageCount: sanitizedMessages.length,
         });
         // Call OpenAI API
         const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -90,8 +98,8 @@ exports.hrChat = (0, https_1.onCall)({
             },
             body: JSON.stringify({
                 model: model || "gpt-4o-mini",
-                messages,
-                max_completion_tokens: maxTokens || 2000,
+                messages: sanitizedMessages,
+                max_completion_tokens: completionTokens,
                 response_format: { type: "json_object" },
             }),
         });

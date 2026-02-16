@@ -122,7 +122,8 @@ service cloud.firestore {
       allow create: if isSuperAdmin() ||
         (isAuthenticated() &&
          request.resource.data.tenantId != null &&
-         isTenantMember(request.resource.data.tenantId));
+         isTenantMember(request.resource.data.tenantId) &&
+         request.resource.data.userId == request.auth.uid);
 
       // Audit logs are immutable - no updates or deletes
       allow update, delete: if false;
@@ -169,7 +170,10 @@ service cloud.firestore {
       // TENANT SETTINGS SUBCOLLECTION
       // ============================================
       match /settings/{docId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || (
+          (docId == 'integrations' && isTenantAdmin(tenantId)) ||
+          (docId != 'integrations' && isTenantMember(tenantId))
+        );
         allow write: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 

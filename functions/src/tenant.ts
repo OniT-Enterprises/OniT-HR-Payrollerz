@@ -2,6 +2,12 @@ import { onCall, HttpsError } from "firebase-functions/v2/https";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions";
+import {
+  requireAuth,
+  requireSuperAdmin,
+  requireTenantAdmin,
+  TenantRole,
+} from "./authz";
 
 interface ProvisionTenantResponse {
   tenantId: string;
@@ -15,7 +21,19 @@ interface ProvisionTenantResponse {
  */
 export const provisionTenant = onCall(
   async (request): Promise<ProvisionTenantResponse> => {
-    const { name, ownerEmail, slug, config } = request.data;
+    const { name, ownerEmail, slug, config } = request.data as {
+      name?: string;
+      ownerEmail?: string;
+      slug?: string;
+      config?: {
+        branding?: Record<string, unknown>;
+        features?: Record<string, unknown>;
+        payrollPolicy?: Record<string, unknown>;
+        settings?: Record<string, unknown>;
+      };
+    };
+    const authContext = requireAuth(request);
+    await requireSuperAdmin(authContext.uid, authContext.token);
 
     // Validate input
     if (!name || name.trim().length < 2) {
@@ -24,6 +42,13 @@ export const provisionTenant = onCall(
 
     if (!ownerEmail || !ownerEmail.includes("@")) {
       throw new HttpsError("invalid-argument", "Valid owner email is required");
+    }
+
+    if (slug && !/^[a-z0-9-]{3,63}$/.test(slug)) {
+      throw new HttpsError(
+        "invalid-argument",
+        "Tenant slug must be 3-63 characters and contain only lowercase letters, numbers, and hyphens",
+      );
     }
 
     const db = getFirestore();
@@ -280,40 +305,52 @@ async function createDefaultTenantData(db: FirebaseFirestore.Firestore, tenantId
  */
 export const addTenantMember = onCall(
   async (request): Promise<{ success: boolean; message: string }> => {
-    const { tenantId, userEmail, role, modules = [] } = request.data;
+    const { tenantId, userEmail, role, modules = [] } = request.data as {
+      tenantId?: string;
+      userEmail?: string;
+      role?: TenantRole;
+      modules?: unknown[];
+    };
+    const authContext = requireAuth(request);
 
-    // Validate caller permissions (should be owner or hr-admin of the tenant)
-    if (!request.auth) {
-      throw new HttpsError("unauthenticated", "Authentication required");
+    if (!tenantId) {
+      throw new HttpsError("invalid-argument", "tenantId is required");
+    }
+
+    if (!userEmail || !userEmail.includes("@")) {
+      throw new HttpsError("invalid-argument", "Valid userEmail is required");
+    }
+
+    const allowedRoles: TenantRole[] = ["owner", "hr-admin", "manager", "viewer"];
+    if (!role || !allowedRoles.includes(role)) {
+      throw new HttpsError("invalid-argument", "Invalid role");
+    }
+
+    if (!Array.isArray(modules)) {
+      throw new HttpsError("invalid-argument", "modules must be an array");
     }
 
     const db = getFirestore();
     const auth = getAuth();
+    const normalizedEmail = userEmail.trim().toLowerCase();
+    const normalizedModules = modules.filter(
+      (module): module is string => typeof module === "string",
+    );
 
     try {
-      // Check if caller has permission to add members
-      const callerMemberDoc = await db
-        .collection(`tenants/${tenantId}/members`)
-        .doc(request.auth.uid)
-        .get();
-
-      if (!callerMemberDoc.exists) {
-        throw new HttpsError("permission-denied", "You are not a member of this tenant");
-      }
-
-      const callerMember = callerMemberDoc.data();
-      if (!callerMember || !["owner", "hr-admin"].includes(callerMember.role)) {
-        throw new HttpsError("permission-denied", "Insufficient permissions to add members");
+      const callerMember = await requireTenantAdmin(tenantId, authContext.uid);
+      if (role === "owner" && callerMember.role !== "owner") {
+        throw new HttpsError("permission-denied", "Only tenant owners can assign owner role");
       }
 
       // Find or create the user
       let targetUser;
       try {
-        targetUser = await auth.getUserByEmail(userEmail);
+        targetUser = await auth.getUserByEmail(normalizedEmail);
       } catch (error: any) {
         if (error.code === "auth/user-not-found") {
           targetUser = await auth.createUser({
-            email: userEmail,
+            email: normalizedEmail,
             emailVerified: false,
           });
         } else {
@@ -335,8 +372,8 @@ export const addTenantMember = onCall(
       const memberData = {
         uid: targetUser.uid,
         role,
-        modules,
-        email: userEmail,
+        modules: normalizedModules,
+        email: normalizedEmail,
         displayName: targetUser.displayName || null,
         joinedAt: new Date(),
         lastActiveAt: new Date(),
@@ -358,7 +395,7 @@ export const addTenantMember = onCall(
 
       return {
         success: true,
-        message: `User ${userEmail} added to tenant successfully`,
+        message: `User ${normalizedEmail} added to tenant successfully`,
       };
 
     } catch (error: any) {

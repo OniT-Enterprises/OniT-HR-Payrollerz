@@ -10,6 +10,7 @@ const scheduler_1 = require("firebase-functions/v2/scheduler");
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
 const v2_1 = require("firebase-functions/v2");
+const authz_1 = require("./authz");
 const db = (0, firestore_1.getFirestore)();
 const DOCUMENT_LABELS = {
     bi: "Bilhete de Identidade",
@@ -234,14 +235,13 @@ exports.checkDocumentExpiry = (0, scheduler_1.onSchedule)({
  * Can be called by HR admins to refresh alerts immediately
  */
 exports.refreshDocumentAlerts = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId } = data;
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameter: tenantId");
     }
+    await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
     try {
         v2_1.logger.info(`Manual document alert refresh for tenant ${tenantId}`, { uid: auth.uid });
         // Get all active employees
@@ -294,14 +294,13 @@ exports.refreshDocumentAlerts = (0, https_1.onCall)(async (request) => {
  * Acknowledge a document alert
  */
 exports.acknowledgeDocumentAlert = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, alertId } = data;
     if (!tenantId || !alertId) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
+    await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
     try {
         const alertRef = db.doc(`tenants/${tenantId}/document_alerts/${alertId}`);
         const alertDoc = await alertRef.get();

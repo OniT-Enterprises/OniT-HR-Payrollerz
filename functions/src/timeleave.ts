@@ -4,33 +4,14 @@ import {
   onDocumentUpdated,
 } from "firebase-functions/v2/firestore";
 import { getFirestore, FieldValue } from "firebase-admin/firestore";
-import { getAuth } from "firebase-admin/auth";
 import { logger } from "firebase-functions/v2";
+import { requireAuth, requireTenantManagerOrAdmin } from "./authz";
 
 const db = getFirestore();
 
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(
-  uid: string,
-  tenantId: string,
-): Promise<void> {
-  const userRecord = await getAuth().getUser(uid);
-  const customClaims = userRecord.customClaims || {};
-  const tenants = customClaims.tenants || [];
-
-  if (!tenants.includes(tenantId)) {
-    throw new HttpsError(
-      "permission-denied",
-      "User does not have access to this tenant",
-    );
-  }
-}
 
 /**
  * Gets the ISO week string for a given date
@@ -142,11 +123,8 @@ function hasAdequateRest(previousShift: any, newShift: any): boolean {
  * Creates or updates a shift with validation
  */
 export const createOrUpdateShift = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, shiftData, shiftId } = data;
 
@@ -154,8 +132,7 @@ export const createOrUpdateShift = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requireTenantManagerOrAdmin(tenantId, auth.uid);
 
   try {
     const { employeeId, date, start, end, role } = shiftData;
@@ -464,11 +441,8 @@ export const recomputeWeekTotals = async (
  * Approves or rejects a leave request
  */
 export const approveLeaveRequest = onCall(async (request) => {
-  const { auth, data } = request;
-
-  if (!auth) {
-    throw new HttpsError("unauthenticated", "User must be authenticated");
-  }
+  const auth = requireAuth(request);
+  const { data } = request;
 
   const { tenantId, requestId, approved, note } = data;
 
@@ -476,8 +450,7 @@ export const approveLeaveRequest = onCall(async (request) => {
     throw new HttpsError("invalid-argument", "Missing required parameters");
   }
 
-  // Validate tenant access
-  await validateTenantAccess(auth.uid, tenantId);
+  await requireTenantManagerOrAdmin(tenantId, auth.uid);
 
   const batch = db.batch();
 

@@ -4,23 +4,12 @@ exports.onLeaveStatusChange = exports.onShiftChange = exports.approveLeaveReques
 const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-functions/v2/firestore");
 const firestore_2 = require("firebase-admin/firestore");
-const auth_1 = require("firebase-admin/auth");
 const v2_1 = require("firebase-functions/v2");
+const authz_1 = require("./authz");
 const db = (0, firestore_2.getFirestore)();
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
-/**
- * Validates that the user has access to the specified tenant
- */
-async function validateTenantAccess(uid, tenantId) {
-    const userRecord = await (0, auth_1.getAuth)().getUser(uid);
-    const customClaims = userRecord.customClaims || {};
-    const tenants = customClaims.tenants || [];
-    if (!tenants.includes(tenantId)) {
-        throw new https_1.HttpsError("permission-denied", "User does not have access to this tenant");
-    }
-}
 /**
  * Gets the ISO week string for a given date
  */
@@ -109,16 +98,13 @@ function hasAdequateRest(previousShift, newShift) {
  * Creates or updates a shift with validation
  */
 exports.createOrUpdateShift = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, shiftData, shiftId } = data;
     if (!tenantId || !shiftData) {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
     try {
         const { employeeId, date, start, end, role } = shiftData;
         if (!employeeId || !date || !start || !end) {
@@ -355,16 +341,13 @@ exports.recomputeWeekTotals = recomputeWeekTotals;
  * Approves or rejects a leave request
  */
 exports.approveLeaveRequest = (0, https_1.onCall)(async (request) => {
-    const { auth, data } = request;
-    if (!auth) {
-        throw new https_1.HttpsError("unauthenticated", "User must be authenticated");
-    }
+    const auth = (0, authz_1.requireAuth)(request);
+    const { data } = request;
     const { tenantId, requestId, approved, note } = data;
     if (!tenantId || !requestId || typeof approved !== "boolean") {
         throw new https_1.HttpsError("invalid-argument", "Missing required parameters");
     }
-    // Validate tenant access
-    await validateTenantAccess(auth.uid, tenantId);
+    await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
     const batch = db.batch();
     try {
         // Get the leave request

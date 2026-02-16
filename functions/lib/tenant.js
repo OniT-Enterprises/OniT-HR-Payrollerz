@@ -5,18 +5,24 @@ const https_1 = require("firebase-functions/v2/https");
 const firestore_1 = require("firebase-admin/firestore");
 const auth_1 = require("firebase-admin/auth");
 const firebase_functions_1 = require("firebase-functions");
+const authz_1 = require("./authz");
 /**
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
  */
 exports.provisionTenant = (0, https_1.onCall)(async (request) => {
     const { name, ownerEmail, slug, config } = request.data;
+    const authContext = (0, authz_1.requireAuth)(request);
+    await (0, authz_1.requireSuperAdmin)(authContext.uid, authContext.token);
     // Validate input
     if (!name || name.trim().length < 2) {
         throw new https_1.HttpsError("invalid-argument", "Tenant name must be at least 2 characters");
     }
     if (!ownerEmail || !ownerEmail.includes("@")) {
         throw new https_1.HttpsError("invalid-argument", "Valid owner email is required");
+    }
+    if (slug && !/^[a-z0-9-]{3,63}$/.test(slug)) {
+        throw new https_1.HttpsError("invalid-argument", "Tenant slug must be 3-63 characters and contain only lowercase letters, numbers, and hyphens");
     }
     const db = (0, firestore_1.getFirestore)();
     const auth = (0, auth_1.getAuth)();
@@ -213,34 +219,38 @@ async function createDefaultTenantData(db, tenantId) {
  */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
     const { tenantId, userEmail, role, modules = [] } = request.data;
-    // Validate caller permissions (should be owner or hr-admin of the tenant)
-    if (!request.auth) {
-        throw new https_1.HttpsError("unauthenticated", "Authentication required");
+    const authContext = (0, authz_1.requireAuth)(request);
+    if (!tenantId) {
+        throw new https_1.HttpsError("invalid-argument", "tenantId is required");
+    }
+    if (!userEmail || !userEmail.includes("@")) {
+        throw new https_1.HttpsError("invalid-argument", "Valid userEmail is required");
+    }
+    const allowedRoles = ["owner", "hr-admin", "manager", "viewer"];
+    if (!role || !allowedRoles.includes(role)) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid role");
+    }
+    if (!Array.isArray(modules)) {
+        throw new https_1.HttpsError("invalid-argument", "modules must be an array");
     }
     const db = (0, firestore_1.getFirestore)();
     const auth = (0, auth_1.getAuth)();
+    const normalizedEmail = userEmail.trim().toLowerCase();
+    const normalizedModules = modules.filter((module) => typeof module === "string");
     try {
-        // Check if caller has permission to add members
-        const callerMemberDoc = await db
-            .collection(`tenants/${tenantId}/members`)
-            .doc(request.auth.uid)
-            .get();
-        if (!callerMemberDoc.exists) {
-            throw new https_1.HttpsError("permission-denied", "You are not a member of this tenant");
-        }
-        const callerMember = callerMemberDoc.data();
-        if (!callerMember || !["owner", "hr-admin"].includes(callerMember.role)) {
-            throw new https_1.HttpsError("permission-denied", "Insufficient permissions to add members");
+        const callerMember = await (0, authz_1.requireTenantAdmin)(tenantId, authContext.uid);
+        if (role === "owner" && callerMember.role !== "owner") {
+            throw new https_1.HttpsError("permission-denied", "Only tenant owners can assign owner role");
         }
         // Find or create the user
         let targetUser;
         try {
-            targetUser = await auth.getUserByEmail(userEmail);
+            targetUser = await auth.getUserByEmail(normalizedEmail);
         }
         catch (error) {
             if (error.code === "auth/user-not-found") {
                 targetUser = await auth.createUser({
-                    email: userEmail,
+                    email: normalizedEmail,
                     emailVerified: false,
                 });
             }
@@ -260,8 +270,8 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
         const memberData = {
             uid: targetUser.uid,
             role,
-            modules,
-            email: userEmail,
+            modules: normalizedModules,
+            email: normalizedEmail,
             displayName: targetUser.displayName || null,
             joinedAt: new Date(),
             lastActiveAt: new Date(),
@@ -276,7 +286,7 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
         }
         return {
             success: true,
-            message: `User ${userEmail} added to tenant successfully`,
+            message: `User ${normalizedEmail} added to tenant successfully`,
         };
     }
     catch (error) {
