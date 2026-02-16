@@ -5,3 +5,4 @@ export * from './lib/paths';
 export * from './lib/payroll/constants-tl';
 export * from './lib/payroll/calculations-tl';
 export * from './lib/payroll/tl-holidays';
+export * from './lib/vat';

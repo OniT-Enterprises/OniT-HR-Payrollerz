@@ -1,14 +1,15 @@
 /**
- * Kaixa — Tab Navigation Layout
- * Dark theme with Lucide icons
+ * Kaixa — Tab Navigation Layout v2
+ * Sharp, editorial dark theme. Refined tab bar with dot indicator.
  */
 import { Tabs } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
-import { Home, Wallet, ShoppingBag, User } from 'lucide-react-native';
+import { Home, Wallet, ShoppingBag, Users, User } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
 
-const ICON_SIZE = 22;
-const STROKE_WIDTH = 1.8;
+const ICON_SIZE = 21;
+const STROKE_DEFAULT = 1.6;
+const STROKE_ACTIVE = 2.2;
 
 export default function TabLayout() {
   return (
@@ -18,28 +19,30 @@ export default function TabLayout() {
           backgroundColor: colors.bg,
           shadowColor: 'transparent',
           elevation: 0,
-          borderBottomWidth: 1,
-          borderBottomColor: colors.borderSubtle,
+          borderBottomWidth: 0.5,
+          borderBottomColor: colors.border,
         },
         headerTitleStyle: {
           fontWeight: '700',
-          fontSize: 18,
+          fontSize: 17,
           color: colors.text,
+          letterSpacing: -0.3,
         },
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
-          backgroundColor: colors.bgCard,
-          borderTopColor: colors.borderSubtle,
-          borderTopWidth: 1,
-          paddingBottom: 4,
-          paddingTop: 8,
-          height: 64,
+          backgroundColor: colors.bg,
+          borderTopColor: colors.border,
+          borderTopWidth: 0.5,
+          paddingBottom: 2,
+          paddingTop: 10,
+          height: 68,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
+          fontSize: 10,
           fontWeight: '600',
-          marginTop: 2,
+          marginTop: 4,
+          letterSpacing: 0.2,
         },
         sceneStyle: {
           backgroundColor: colors.bg,
@@ -52,11 +55,12 @@ export default function TabLayout() {
           title: 'Home',
           tabBarLabel: 'Home',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <View style={styles.iconWrap}>
+              {focused && <View style={styles.activeDot} />}
               <Home
                 size={ICON_SIZE}
                 color={color}
-                strokeWidth={focused ? 2.2 : STROKE_WIDTH}
+                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
               />
             </View>
           ),
@@ -68,11 +72,29 @@ export default function TabLayout() {
           title: 'Osan',
           tabBarLabel: 'Osan',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <View style={styles.iconWrap}>
+              {focused && <View style={styles.activeDot} />}
               <Wallet
                 size={ICON_SIZE}
                 color={color}
-                strokeWidth={focused ? 2.2 : STROKE_WIDTH}
+                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
+              />
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sell"
+        options={{
+          title: 'Faan',
+          tabBarLabel: 'Faan',
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.iconWrap}>
+              {focused && <View style={styles.activeDot} />}
+              <ShoppingBag
+                size={ICON_SIZE}
+                color={color}
+                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
               />
             </View>
           ),
@@ -81,14 +103,15 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sales"
         options={{
-          title: 'Faan',
-          tabBarLabel: 'Faan',
+          title: 'Tab',
+          tabBarLabel: 'Tab',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
-              <ShoppingBag
+            <View style={styles.iconWrap}>
+              {focused && <View style={styles.activeDot} />}
+              <Users
                 size={ICON_SIZE}
                 color={color}
-                strokeWidth={focused ? 2.2 : STROKE_WIDTH}
+                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
               />
             </View>
           ),
@@ -100,11 +123,12 @@ export default function TabLayout() {
           title: 'Konta',
           tabBarLabel: 'Konta',
           tabBarIcon: ({ color, focused }) => (
-            <View style={focused ? styles.activeIconWrap : undefined}>
+            <View style={styles.iconWrap}>
+              {focused && <View style={styles.activeDot} />}
               <User
                 size={ICON_SIZE}
                 color={color}
-                strokeWidth={focused ? 2.2 : STROKE_WIDTH}
+                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
               />
             </View>
           ),
@@ -115,10 +139,17 @@ export default function TabLayout() {
 }
 
 const styles = StyleSheet.create({
-  activeIconWrap: {
-    backgroundColor: 'rgba(224, 141, 107, 0.12)',
-    borderRadius: 10,
-    padding: 4,
-    marginTop: -2,
+  iconWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  activeDot: {
+    position: 'absolute',
+    top: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.primary,
   },
 });

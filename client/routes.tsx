@@ -109,6 +109,8 @@ const INSSAnnual = lazy(() => import("@/pages/reports/INSSAnnual"));
 
 // Settings
 const SetupWizard = lazy(() => import("@/pages/settings/SetupWizard"));
+const VATSettings = lazy(() => import("@/pages/money/VATSettings"));
+const VATReturns = lazy(() => import("@/pages/money/VATReturns"));
 
 // Admin
 const SeedDatabase = lazy(() => import("@/pages/admin/SeedDatabase"));
@@ -219,6 +221,8 @@ export const moneyRoutes = (
     <Route path="/money/ar-aging" element={<ARAgingReport />} />
     <Route path="/money/ap-aging" element={<APAgingReport />} />
     <Route path="/money/bank-reconciliation" element={<BankReconciliation />} />
+    <Route path="/money/vat-settings" element={<VATSettings />} />
+    <Route path="/money/vat-returns" element={<VATReturns />} />
   </>
 );
 

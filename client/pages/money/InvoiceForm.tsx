@@ -208,12 +208,19 @@ export default function InvoiceForm() {
 
   const calculateTotals = () => {
     const items = formData.items || [];
+    const invoiceTaxRate = Number(formData.taxRate) || 0;
     const subtotal = items.reduce(
       (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
       0
     );
-    const taxRate = Number(formData.taxRate) || 0;
-    const taxAmount = (subtotal * taxRate) / 100;
+    // Per-line VAT: use item vatRate if set, otherwise fall back to invoice-level rate
+    const taxAmount = items.reduce((sum, item) => {
+      const lineTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
+      const rate = item.vatRate !== undefined && item.vatRate !== null
+        ? Number(item.vatRate)
+        : invoiceTaxRate;
+      return sum + (lineTotal * rate) / 100;
+    }, 0);
     const total = subtotal + taxAmount;
     return { subtotal, taxAmount, total };
   };
@@ -221,7 +228,7 @@ export default function InvoiceForm() {
   const { subtotal, taxAmount, total } = calculateTotals();
 
   const addLineItem = () => {
-    append({ description: '', quantity: 1, unitPrice: 0, amount: 0 });
+    append({ description: '', quantity: 1, unitPrice: 0, amount: 0, vatRate: undefined });
   };
 
   const removeLineItem = (index: number) => {
@@ -246,6 +253,7 @@ export default function InvoiceForm() {
           quantity: Number(item.quantity),
           unitPrice: Number(item.unitPrice),
           amount: Number(item.quantity) * Number(item.unitPrice),
+          ...(item.vatRate !== undefined && item.vatRate !== null && { vatRate: Number(item.vatRate) }),
         })),
         taxRate: Number(data.taxRate),
         notes: data.notes || '',
@@ -811,6 +819,17 @@ export default function InvoiceForm() {
                               className={`pl-7 ${errors.items?.[index]?.unitPrice ? 'border-red-500' : ''}`}
                             />
                           </div>
+                        </div>
+                        <div className="w-20">
+                          <Input
+                            type="number"
+                            {...register(`items.${index}.vatRate`, { valueAsNumber: true })}
+                            placeholder={`${formData.taxRate || 0}%`}
+                            min="0"
+                            max="100"
+                            step="0.5"
+                            className="text-xs"
+                          />
                         </div>
                         <div className="w-28 text-right pt-2 font-medium">
                           {formatCurrency(lineTotal)}

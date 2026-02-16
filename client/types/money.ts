@@ -1,7 +1,11 @@
 /**
  * Money Module Types
  * Simple accounting for small TL businesses
+ *
+ * VAT fields are optional on all types — only populated when
+ * tenant has vatEnabled = true in their settings.
  */
+import type { VATCategory } from '@onit/shared';
 
 // ============================================
 // CUSTOMERS
@@ -52,6 +56,13 @@ export interface InvoiceItem {
   quantity: number;
   unitPrice: number;
   amount: number;                  // quantity × unitPrice
+
+  // VAT (optional — populated when vatEnabled)
+  vatCategory?: VATCategory;       // 'standard' | 'reduced' | 'zero' | 'exempt'
+  vatRate?: number;                // Rate for this line (e.g., 10)
+  vatAmount?: number;              // VAT on this line
+  netAmount?: number;              // Amount excluding VAT
+  grossAmount?: number;            // Amount including VAT
 }
 
 export interface Invoice {
@@ -82,6 +93,17 @@ export interface Invoice {
   status: InvoiceStatus;
   amountPaid: number;
   balanceDue: number;
+
+  // VAT (optional — populated when vatEnabled)
+  vatBreakdown?: {                 // Breakdown by rate (mixed-rate invoices)
+    rate: number;
+    category: VATCategory;
+    netAmount: number;
+    vatAmount: number;
+  }[];
+  isVATInvoice?: boolean;          // Was this created with VAT enabled?
+  supplierVatId?: string;          // Seller's VAT registration
+  customerVatId?: string;          // Buyer's VAT ID (from customer.tin)
 
   // Additional info
   notes?: string;                  // "Thank you for your business"
@@ -222,6 +244,14 @@ export interface Expense {
   receiptUrl?: string;
   notes?: string;
   createdAt: Date;
+
+  // VAT (optional — input VAT tracking when vatEnabled)
+  vatRate?: number;
+  vatAmount?: number;              // Input VAT (claimable if valid invoice)
+  netAmount?: number;              // Amount excluding VAT
+  vatCategory?: VATCategory;
+  supplierVatId?: string;          // Vendor's VAT ID (required for credit)
+  hasValidVATInvoice?: boolean;    // Can we claim input VAT credit?
 }
 
 export interface ExpenseFormData {
@@ -268,6 +298,14 @@ export interface Bill {
 
   // Payments made (populated by service)
   payments?: BillPayment[];
+
+  // VAT (optional — input VAT tracking when vatEnabled)
+  vatRate?: number;
+  vatAmount?: number;              // Input VAT on this bill
+  netAmount?: number;              // Amount excluding VAT
+  vatCategory?: VATCategory;
+  supplierVatId?: string;          // Vendor's VAT ID
+  hasValidVATInvoice?: boolean;    // Valid for input credit?
 }
 
 export interface BillFormData {
@@ -387,6 +425,10 @@ export interface InvoiceSettings {
   bankName?: string;
   bankAccountName?: string;
   bankAccountNumber?: string;
+
+  // VAT (populated when vatEnabled)
+  vatRegistrationNumber?: string;  // Business VAT ID / TIN
+  pricesIncludeVAT?: boolean;      // true = shelf prices are VAT-inclusive
 }
 
 export const DEFAULT_INVOICE_SETTINGS: Partial<InvoiceSettings> = {
@@ -500,4 +542,55 @@ export interface RecurringInvoiceFormData {
   terms?: string;
   dueDays: number;
   autoSend: boolean;
+}
+
+// ============================================
+// VAT RETURN (when vatEnabled)
+// ============================================
+
+export type VATReturnStatus = 'draft' | 'reviewed' | 'filed' | 'paid';
+
+export interface VATReturn {
+  id: string;
+
+  // Period
+  periodStart: string;             // "2027-01-01"
+  periodEnd: string;               // "2027-01-31"
+  filingDeadline: string;          // periodEnd + X days
+
+  // Output VAT (from sales)
+  outputVAT: {
+    standardRate: { net: number; vat: number };
+    reducedRate?: { net: number; vat: number };
+    zeroRated: { net: number; vat: number };
+    exempt: { net: number };
+    total: number;
+  };
+
+  // Input VAT (from purchases)
+  inputVAT: {
+    domesticPurchases: { net: number; vat: number };
+    imports: { net: number; vat: number };
+    total: number;
+  };
+
+  // Net
+  netVATDue: number;               // output.total - input.total
+
+  // Status
+  status: VATReturnStatus;
+
+  // Drill-down references
+  outputInvoiceIds: string[];
+  outputTransactionIds: string[];  // Kaixa transaction IDs
+  inputBillIds: string[];
+  inputExpenseIds: string[];
+
+  // Filing
+  filedAt?: Date;
+  filedBy?: string;
+  paymentReference?: string;
+
+  createdAt: Date;
+  updatedAt: Date;
 }

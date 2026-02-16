@@ -1,8 +1,10 @@
 /**
  * Kaixa — Home Screen
  * Dark theme with gradient hero summary, Lucide icons, warm accents
+ *
+ * Wired to transaction store — shows real today's data from Firestore.
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,21 +12,31 @@ import {
   TouchableOpacity,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
+  Share,
+  Alert,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   TrendingUp,
   TrendingDown,
-  ShoppingBag,
+  Users,
   Clock,
   ArrowDownLeft,
   ArrowUpRight,
   Minus,
+  Receipt,
+  FileBarChart,
+  ShoppingBag,
 } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
+import { useTransactionStore } from '../../stores/transactionStore';
+import { useVATStore } from '../../stores/vatStore';
+import { useBusinessProfileStore } from '../../stores/businessProfileStore';
 import { colors } from '../../lib/colors';
+import { generateMonthlyReport } from '../../lib/monthlyReport';
 
 function getGreeting(): { tetum: string; english: string } {
   const hour = new Date().getHours();
@@ -46,15 +58,81 @@ function getTodayFormatted(): string {
 export default function HomeScreen() {
   const profile = useAuthStore((s) => s.profile);
   const tenantName = useTenantStore((s) => s.tenantName);
-  const [refreshing, setRefreshing] = useState(false);
+  const tenantId = useTenantStore((s) => s.tenantId);
+
+  // Transaction data
+  const {
+    loading,
+    totalIn,
+    totalOut,
+    totalNet,
+    recentTransactions,
+    loadRange,
+  } = useTransactionStore();
+
+  // VAT
+  const vatActive = useVATStore((s) => s.isVATActive());
+  const vatRate = useVATStore((s) => s.effectiveRate());
+  const periodVAT = useTransactionStore((s) => s.totalVAT());
+  const bizProfile = useBusinessProfileStore((s) => s.profile);
+
+  const [generatingReport, setGeneratingReport] = useState(false);
 
   const greeting = getGreeting();
   const firstName = profile?.displayName?.split(' ')[0] || 'User';
+  const recent = recentTransactions(5);
+
+  // Load today's transactions on mount
+  useEffect(() => {
+    if (tenantId) {
+      loadRange(tenantId, 'today');
+    }
+  }, [tenantId, loadRange]);
 
   const onRefresh = async () => {
-    setRefreshing(true);
-    // TODO: Refresh data from Firestore
-    setTimeout(() => setRefreshing(false), 1000);
+    if (tenantId) {
+      await loadRange(tenantId, 'today');
+    }
+  };
+
+  const handleMonthlyReport = async () => {
+    if (!tenantId) return;
+    setGeneratingReport(true);
+    try {
+      const { text } = await generateMonthlyReport(
+        tenantId,
+        bizProfile.businessName || tenantName || 'Kaixa'
+      );
+      await Share.share({ message: text });
+    } catch {
+      Alert.alert('Error', 'Failed to generate report');
+    } finally {
+      setGeneratingReport(false);
+    }
+  };
+
+  const formatTime = (date: Date) =>
+    date.toLocaleTimeString('en-GB', {
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Dili',
+    });
+
+  const getCategoryLabel = (key: string): string => {
+    const labels: Record<string, string> = {
+      sales: 'Venda',
+      service: 'Servisu',
+      payment_received: 'Pagamentu',
+      other_income: 'Seluk',
+      stock: 'Estoke',
+      rent: 'Alugel',
+      supplies: 'Fornese',
+      salary: 'Saláriu',
+      transport: 'Transporte',
+      food: 'Hahan',
+      other_expense: 'Seluk',
+    };
+    return labels[key] || key;
   };
 
   return (
@@ -63,7 +141,7 @@ export default function HomeScreen() {
       contentContainerStyle={styles.content}
       refreshControl={
         <RefreshControl
-          refreshing={refreshing}
+          refreshing={loading}
           onRefresh={onRefresh}
           tintColor={colors.primary}
           progressBackgroundColor={colors.bgCard}
@@ -94,7 +172,7 @@ export default function HomeScreen() {
               <Text style={styles.summaryLabel}>Tama</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.moneyIn }]}>
-              $0.00
+              ${totalIn().toFixed(2)}
             </Text>
           </View>
 
@@ -106,7 +184,7 @@ export default function HomeScreen() {
               <Text style={styles.summaryLabel}>Sai</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.moneyOut }]}>
-              $0.00
+              ${totalOut().toFixed(2)}
             </Text>
           </View>
 
@@ -118,11 +196,48 @@ export default function HomeScreen() {
               <Text style={styles.summaryLabel}>Lukru</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.text }]}>
-              $0.00
+              ${totalNet().toFixed(2)}
             </Text>
           </View>
         </View>
+
+        {/* VAT line — only when active */}
+        {vatActive && periodVAT > 0 && (
+          <View style={styles.vatLine}>
+            <Text style={styles.vatLineText}>
+              VAT simu ohin: ${periodVAT.toFixed(2)}
+            </Text>
+          </View>
+        )}
       </LinearGradient>
+
+      {/* VAT Dashboard — only when VAT is active */}
+      {vatActive && (
+        <View style={styles.vatDashboard}>
+          <View style={styles.vatDashHeader}>
+            <View style={styles.vatDashIcon}>
+              <Receipt size={16} color={colors.info} strokeWidth={2} />
+            </View>
+            <Text style={styles.vatDashTitle}>VAT {vatRate}%</Text>
+          </View>
+          <View style={styles.vatDashRow}>
+            <View style={styles.vatDashItem}>
+              <Text style={styles.vatDashLabel}>Simu ohin</Text>
+              <Text style={styles.vatDashValue}>${periodVAT.toFixed(2)}</Text>
+            </View>
+            <View style={styles.vatDashDivider} />
+            <View style={styles.vatDashItem}>
+              <Text style={styles.vatDashLabel}>Transasaun</Text>
+              <Text style={styles.vatDashValue}>
+                {recentTransactions(999).filter((t) => t.vatAmount > 0).length}
+              </Text>
+            </View>
+          </View>
+          <Text style={styles.vatDashHint}>
+            Haree Money tab ba detalle VAT
+          </Text>
+        </View>
+      )}
 
       {/* Quick Actions */}
       <Text style={styles.sectionTitle}>Aksaun Lalais</Text>
@@ -153,7 +268,7 @@ export default function HomeScreen() {
 
         <TouchableOpacity
           style={[styles.actionButton, { backgroundColor: 'rgba(224, 141, 107, 0.08)', borderColor: 'rgba(224, 141, 107, 0.15)' }]}
-          onPress={() => router.push('/(tabs)/sales')}
+          onPress={() => router.push('/(tabs)/sell')}
           activeOpacity={0.7}
         >
           <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(224, 141, 107, 0.15)' }]}>
@@ -161,6 +276,35 @@ export default function HomeScreen() {
           </View>
           <Text style={styles.actionLabel}>Faan</Text>
           <Text style={styles.actionSub}>Sell</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: 'rgba(250, 204, 21, 0.08)', borderColor: 'rgba(250, 204, 21, 0.15)' }]}
+          onPress={() => router.push('/(tabs)/sales')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(250, 204, 21, 0.15)' }]}>
+            <Users size={22} color={colors.warning} strokeWidth={2} />
+          </View>
+          <Text style={styles.actionLabel}>Tab</Text>
+          <Text style={styles.actionSub}>Credit</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: 'rgba(96, 165, 250, 0.08)', borderColor: 'rgba(96, 165, 250, 0.15)' }]}
+          onPress={handleMonthlyReport}
+          disabled={generatingReport}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(96, 165, 250, 0.15)' }]}>
+            {generatingReport ? (
+              <ActivityIndicator size="small" color={colors.info} />
+            ) : (
+              <FileBarChart size={22} color={colors.info} strokeWidth={2} />
+            )}
+          </View>
+          <Text style={styles.actionLabel}>Relatóriu</Text>
+          <Text style={styles.actionSub}>Report</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -178,15 +322,59 @@ export default function HomeScreen() {
 
       {/* Recent Transactions */}
       <Text style={styles.sectionTitle}>Movimentu Ikus</Text>
-      <View style={styles.emptyState}>
-        <View style={styles.emptyIconWrap}>
-          <Clock size={28} color={colors.textTertiary} strokeWidth={1.5} />
+      {loading ? (
+        <View style={styles.emptyState}>
+          <ActivityIndicator size="small" color={colors.primary} />
         </View>
-        <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
-        <Text style={styles.emptySubtext}>
-          Tap Money In or Money Out to start tracking
-        </Text>
-      </View>
+      ) : recent.length === 0 ? (
+        <View style={styles.emptyState}>
+          <View style={styles.emptyIconWrap}>
+            <Clock size={28} color={colors.textTertiary} strokeWidth={1.5} />
+          </View>
+          <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
+          <Text style={styles.emptySubtext}>
+            Tap Money In or Money Out to start tracking
+          </Text>
+        </View>
+      ) : (
+        <View style={styles.recentList}>
+          {recent.map((tx) => (
+            <View key={tx.id} style={styles.txRow}>
+              <View
+                style={[
+                  styles.txIndicator,
+                  {
+                    backgroundColor:
+                      tx.type === 'in' ? colors.moneyIn : colors.moneyOut,
+                  },
+                ]}
+              />
+              <View style={styles.txLeft}>
+                <Text style={styles.txCategory}>
+                  {getCategoryLabel(tx.category)}
+                </Text>
+                {tx.note ? (
+                  <Text style={styles.txNote} numberOfLines={1}>
+                    {tx.note}
+                  </Text>
+                ) : null}
+                <Text style={styles.txTime}>{formatTime(tx.timestamp)}</Text>
+              </View>
+              <Text
+                style={[
+                  styles.txAmount,
+                  {
+                    color:
+                      tx.type === 'in' ? colors.moneyIn : colors.moneyOut,
+                  },
+                ]}
+              >
+                {tx.type === 'in' ? '+' : '-'}${tx.amount.toFixed(2)}
+              </Text>
+            </View>
+          ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -266,6 +454,79 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
   },
+  vatLine: {
+    marginTop: 12,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: colors.borderSubtle,
+    alignItems: 'center',
+  },
+  vatLineText: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    fontStyle: 'italic',
+  },
+
+  // VAT Dashboard
+  vatDashboard: {
+    backgroundColor: colors.bgCard,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(96, 165, 250, 0.2)',
+  },
+  vatDashHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 12,
+  },
+  vatDashIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  vatDashTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: colors.info,
+  },
+  vatDashRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vatDashItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  vatDashDivider: {
+    width: 1,
+    height: 28,
+    backgroundColor: colors.border,
+  },
+  vatDashLabel: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    fontWeight: '500',
+    marginBottom: 2,
+  },
+  vatDashValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    fontVariant: ['tabular-nums'],
+  },
+  vatDashHint: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: 10,
+    fontStyle: 'italic',
+  },
 
   // Section Title
   sectionTitle: {
@@ -285,22 +546,22 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   actionButton: {
-    width: '47%',
+    width: '30%',
     borderRadius: 16,
-    padding: 18,
+    padding: 14,
     alignItems: 'center',
     borderWidth: 1,
   },
   actionIconWrap: {
-    width: 44,
-    height: 44,
+    width: 40,
+    height: 40,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   actionLabel: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.text,
   },
@@ -308,6 +569,52 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: colors.textTertiary,
     marginTop: 2,
+  },
+
+  // Recent Transactions
+  recentList: {
+    gap: 8,
+  },
+  txRow: {
+    backgroundColor: colors.bgCard,
+    borderRadius: 14,
+    padding: 14,
+    paddingLeft: 18,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+  },
+  txIndicator: {
+    width: 3,
+    height: 32,
+    borderRadius: 2,
+    marginRight: 12,
+  },
+  txLeft: {
+    flex: 1,
+  },
+  txCategory: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  txNote: {
+    fontSize: 13,
+    color: colors.textTertiary,
+    marginTop: 2,
+  },
+  txTime: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginTop: 4,
+    fontVariant: ['tabular-nums'],
+  },
+  txAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginLeft: 12,
+    fontVariant: ['tabular-nums'],
   },
 
   // Empty State

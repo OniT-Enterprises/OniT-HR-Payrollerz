@@ -357,6 +357,7 @@ export const invoiceFormSchema = z.object({
     quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
     unitPrice: z.coerce.number().min(0, 'Price cannot be negative'),
     amount: z.number().optional(),
+    vatRate: z.coerce.number().min(0).max(100).optional(),
   })).min(1, 'At least one item is required'),
   taxRate: z.coerce.number().min(0).max(100).default(0),
   notes: z.string().max(1000).optional().or(z.literal('')),

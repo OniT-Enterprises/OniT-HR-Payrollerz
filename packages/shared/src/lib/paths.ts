@@ -175,6 +175,15 @@ export const paths = {
   product: (tid: string, prodId: string) => `tenants/${tid}/products/${prodId}`,
   customerTabs: (tid: string) => `tenants/${tid}/customerTabs`,
   customerTab: (tid: string, tabId: string) => `tenants/${tid}/customerTabs/${tabId}`,
+
+  // Receipt counters (sequential numbering for VAT compliance)
+  receiptCounter: (tid: string, year: string) => `tenants/${tid}/receiptCounters/${year}`,
+
+  // VAT
+  vatConfig: () => 'platform/vatConfig',
+  vatSettings: (tid: string) => `tenants/${tid}/settings/vat`,
+  vatReturns: (tid: string) => `tenants/${tid}/vatReturns`,
+  vatReturn: (tid: string, periodId: string) => `tenants/${tid}/vatReturns/${periodId}`,
 } as const;
 
 // Helper functions for ID generation and validation

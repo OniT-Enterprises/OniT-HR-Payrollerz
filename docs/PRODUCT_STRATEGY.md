@@ -209,19 +209,88 @@ mobile/
 
 ---
 
+## VAT Strategy (2027)
+
+### The Opportunity
+
+Timor-Leste plans to implement VAT from **2027** (confirmed in 2026 Budget Strategy and IMF Article IV). This transforms Kaixa from "nice to have" to **legally required**:
+
+- **Before VAT:** "Would you like to track money digitally?" → competing with notebooks
+- **After VAT:** "You need digital records with VAT breakdown for every sale" → legal requirement
+
+### How VAT Changes Everything
+
+| Before VAT | After VAT |
+|---|---|
+| Money tracking is optional | Digital records are mandatory |
+| Competing with paper notebooks | Paper notebooks won't be compliant |
+| Hard to monetize kiosk owners | Compliance = willingness to pay |
+| Nice-to-have app | Must-have app |
+
+### VAT Design: Feature Flag Approach
+
+**Meza web:** VAT **disabled by default** — toggled on per tenant when law takes effect
+**Kaixa mobile:** Built **VAT-ready from day one** — data captures VAT fields even when rate = 0%
+
+When VAT goes live: flip a Firestore config, no app update needed.
+
+### Three User Levels
+
+| Level | User | What They See |
+|---|---|---|
+| **1 — Kaixa only** | Kiosk owner | "VAT collected: $47, VAT paid: $12, Net due: $35" |
+| **2 — Meza only** | Formal business | Full VAT dashboard, return builder, filing export |
+| **3 — Both** | Business with POS + back office | Kaixa sales sync to Meza, unified VAT return |
+
+### Kaixa as VAT POS
+
+The killer insight: **POS is the easiest VAT compliance path.** The cash register becomes the VAT machine. Business owners don't "do VAT" — they just sell normally and the app handles compliance.
+
+- Every sale auto-adds VAT
+- Receipt includes required VAT fields (business name, VAT ID, breakdown)
+- Sequential receipt numbering (no gaps, audit-ready)
+- Monthly VAT summary: one tap to see what's owed
+- Export filing pack when filing format is known
+
+### VAT + Import Tracking (Timor-Specific)
+
+Imports dominate TL economy. VAT paid at customs = input VAT (claimable credit). Kaixa and Meza both need:
+- Import record with customs declaration reference
+- VAT paid at border tracked as input VAT
+- Landed cost calculation
+
+### Revenue Impact
+
+| Revenue Stream | Pre-VAT | Post-VAT |
+|---|---|---|
+| Kaixa free tier | Money tracking only | VAT tracking included (stickiness) |
+| Kaixa paid tier | POS features | POS + VAT filing export (compliance value) |
+| Meza subscription | Invoicing + payroll | + VAT returns + filing |
+| Government contracts | Possible | Highly likely ("digitize VAT compliance") |
+| Accountant partnerships | None | "Accountant portal" for managing client VAT |
+
+### Full technical spec: `docs/VAT_ARCHITECTURE.md`
+
+---
+
 ## Product-Market Fit Assessment
 
-### Kaixa (Money/POS)
-- **Need:** Real but unproven — competing with paper notebooks
-- **Moat:** Tetum-first, local, no competition
-- **Risk:** Monetization from low-income users, offline engineering complexity
-- **Validation needed:** Will kiosk owners actually switch from notebooks?
+### Kaixa (Money/POS/VAT)
+- **Need:** Transforms from unproven to **legally required** once VAT implemented
+- **Moat:** First Tetum-language VAT-ready POS, no local competition
+- **Risk:** Timeline depends on government (2027 target may slip)
+- **Validation:** Build VAT-ready now, market as money tracker until law drops
 
 ### Meza Go (Employee/Manager)
-- **Need:** Direct — existing customers have asked for mobile access
+- **Need:** Direct — existing customers benefit from mobile access
 - **Moat:** Tightly integrated with Meza platform
 - **Risk:** Low — read-only views of existing data
 - **Validation needed:** Minimal — serves known customers
+
+### Meza Web (Platform)
+- **Need:** Proven — existing paying customers
+- **VAT opportunity:** Existing invoicing already 80% VAT-ready (has tax fields, TIN, amounts)
+- **Risk:** Low — incremental feature addition, not a rebuild
 
 ---
 

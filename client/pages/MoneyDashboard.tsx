@@ -641,6 +641,14 @@ export default function MoneyDashboard() {
                     <Activity className="h-3 w-3 mr-1" />
                     Reports
                   </Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/vat-settings')}>
+                    <Receipt className="h-3 w-3 mr-1" />
+                    VAT Settings
+                  </Button>
+                  <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/vat-returns')}>
+                    <FileText className="h-3 w-3 mr-1" />
+                    VAT Returns
+                  </Button>
                 </div>
               </div>
             </CardContent>

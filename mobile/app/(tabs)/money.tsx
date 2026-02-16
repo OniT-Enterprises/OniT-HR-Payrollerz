@@ -1,8 +1,11 @@
 /**
  * Kaixa — Money Screen (Osan)
  * Dark theme — gradient action buttons, dark modal, Lucide icons
+ *
+ * VAT-ready: every transaction captures VAT fields (zeroed when VAT inactive).
+ * Supports date range filtering: today / week / month.
  */
-import { useState, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +17,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
+  ActivityIndicator,
+  Linking,
+  Share,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
@@ -22,54 +28,107 @@ import {
   X,
   Check,
   FileText,
+  Share2,
+  Package,
+  Plus,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
+import { useVATStore } from '../../stores/vatStore';
+import { useTransactionStore, type DateRange } from '../../stores/transactionStore';
+import { useTenantStore } from '../../stores/tenantStore';
+import { useAuthStore } from '../../stores/authStore';
+import {
+  createTransaction,
+  INCOME_CATEGORIES,
+  EXPENSE_CATEGORIES,
+} from '../../types/transaction';
+import { inferVATCategory } from '@onit/shared';
+import { useBusinessProfileStore } from '../../stores/businessProfileStore';
+import { useProductStore, type Product } from '../../stores/productStore';
+import { generateTextReceipt, getWhatsAppShareURL } from '../../lib/receipt';
+import { getNextReceiptNumber } from '../../lib/receiptCounter';
+import type { KaixaTransaction } from '../../types/transaction';
 
 type TransactionType = 'in' | 'out';
 
-interface Transaction {
-  id: string;
-  type: TransactionType;
-  amount: number;
-  category: string;
-  note: string;
-  timestamp: Date;
-}
+const CATEGORIES_IN = INCOME_CATEGORIES.map((c) => ({
+  key: c.key,
+  label: c.labelTL || c.label,
+  labelEn: c.label,
+}));
 
-const CATEGORIES_IN = [
-  { key: 'sales', label: 'Venda', labelEn: 'Sales' },
-  { key: 'service', label: 'Servisu', labelEn: 'Service' },
-  { key: 'payment', label: 'Pagamentu', labelEn: 'Payment received' },
-  { key: 'other', label: 'Seluk', labelEn: 'Other' },
-];
+const CATEGORIES_OUT = EXPENSE_CATEGORIES.map((c) => ({
+  key: c.key,
+  label: c.labelTL || c.label,
+  labelEn: c.label,
+}));
 
-const CATEGORIES_OUT = [
-  { key: 'stock', label: 'Stogu', labelEn: 'Stock/Inventory' },
-  { key: 'rent', label: 'Alugel', labelEn: 'Rent' },
-  { key: 'supplies', label: 'Material', labelEn: 'Supplies' },
-  { key: 'salary', label: 'Salariu', labelEn: 'Salary' },
-  { key: 'transport', label: 'Transporte', labelEn: 'Transport' },
-  { key: 'food', label: 'Ai-han', labelEn: 'Food' },
-  { key: 'other', label: 'Seluk', labelEn: 'Other' },
+const PERIOD_OPTIONS: { key: DateRange; label: string; labelEn: string }[] = [
+  { key: 'today', label: 'Ohin', labelEn: 'Today' },
+  { key: 'week', label: 'Semana', labelEn: 'Week' },
+  { key: 'month', label: 'Fulan', labelEn: 'Month' },
 ];
 
 export default function MoneyScreen() {
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [txType, setTxType] = useState<TransactionType>('in');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [note, setNote] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  // Transaction store (Firestore-backed)
+  const {
+    transactions,
+    loading,
+    dateRange,
+    totalIn,
+    totalOut,
+    totalVAT,
+    transactionCount,
+    addTransaction,
+    loadRange,
+  } = useTransactionStore();
+
+  // VAT state
+  const { isVATActive, effectiveRate, config, syncFromFirestore, loadCached } =
+    useVATStore();
+  const { tenantId } = useTenantStore();
+  const { user } = useAuthStore();
+  const bizProfile = useBusinessProfileStore((s) => s.profile);
+  const { products, loadProducts, updateProduct } = useProductStore();
+
+  // Restock modal state
+  const [restockModal, setRestockModal] = useState(false);
+  const [restockQtys, setRestockQtys] = useState<Record<string, string>>({});
+  const [restocking, setRestocking] = useState(false);
+
+  const vatActive = isVATActive();
+  const vatRate = effectiveRate();
+
+  // Load transactions for current date range
+  useEffect(() => {
+    if (tenantId) {
+      loadRange(tenantId);
+      loadProducts(tenantId);
+    }
+  }, [tenantId, loadRange, loadProducts]);
+
+  // Load cached VAT config on mount, sync when online
+  useEffect(() => {
+    loadCached();
+    if (tenantId) {
+      syncFromFirestore(tenantId);
+    }
+  }, [tenantId, loadCached, syncFromFirestore]);
 
   const categories = txType === 'in' ? CATEGORIES_IN : CATEGORIES_OUT;
 
-  const todayTotal = useCallback(
-    (type: TransactionType) =>
-      transactions
-        .filter((t) => t.type === type)
-        .reduce((sum, t) => sum + t.amount, 0),
-    [transactions]
-  );
+  const switchPeriod = (range: DateRange) => {
+    if (tenantId) {
+      loadRange(tenantId, range);
+    }
+  };
 
   const openEntry = (type: TransactionType) => {
     setTxType(type);
@@ -79,7 +138,7 @@ export default function MoneyScreen() {
     setModalVisible(true);
   };
 
-  const saveTransaction = () => {
+  const saveTransaction = async () => {
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0) {
       Alert.alert('Error', 'Please enter a valid amount');
@@ -89,20 +148,56 @@ export default function MoneyScreen() {
       Alert.alert('Error', 'Please select a category');
       return;
     }
+    if (!tenantId) {
+      Alert.alert('Error', 'No business selected');
+      return;
+    }
 
-    const tx: Transaction = {
-      id: Date.now().toString(),
-      type: txType,
-      amount: Math.round(parsed * 100) / 100,
-      category,
-      note: note.trim(),
-      timestamp: new Date(),
-    };
+    setSaving(true);
+    try {
+      const vatCategory = vatActive
+        ? inferVATCategory(category, config)
+        : ('none' as const);
 
-    setTransactions((prev) => [tx, ...prev]);
-    setModalVisible(false);
+      const txData = createTransaction({
+        type: txType,
+        amount: Math.round(parsed * 100) / 100,
+        category,
+        note: note.trim(),
+        tenantId,
+        createdBy: user?.uid || 'anonymous',
+        vatRate: vatActive ? vatRate : 0,
+        vatCategory,
+      });
 
-    // TODO: Save to Firestore / local DB
+      await addTransaction(txData, tenantId);
+      setModalVisible(false);
+
+      // If this was a stock purchase, offer to update product inventory
+      if (txType === 'out' && category === 'stock' && products.length > 0) {
+        const stockProducts = products.filter((p) => p.stock !== null);
+        if (stockProducts.length > 0) {
+          Alert.alert(
+            'Atualiza Stoke?',
+            'Update product stock levels for this purchase?',
+            [
+              { text: 'Lae (No)', style: 'cancel' },
+              {
+                text: 'Sin (Yes)',
+                onPress: () => {
+                  setRestockQtys({});
+                  setRestockModal(true);
+                },
+              },
+            ]
+          );
+        }
+      }
+    } catch {
+      Alert.alert('Error', 'Failed to save. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const formatTime = (date: Date) =>
@@ -112,35 +207,183 @@ export default function MoneyScreen() {
       timeZone: 'Asia/Dili',
     });
 
+  const formatDate = (date: Date) =>
+    date.toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: 'short',
+      timeZone: 'Asia/Dili',
+    });
+
   const getCategoryLabel = (key: string) => {
     const all = [...CATEGORIES_IN, ...CATEGORIES_OUT];
     return all.find((c) => c.key === key)?.label || key;
   };
 
+  const shareReceipt = async (tx: KaixaTransaction) => {
+    let receiptNumber = tx.receiptNumber;
+    if (!receiptNumber && tenantId) {
+      try {
+        receiptNumber = await getNextReceiptNumber(tenantId);
+      } catch {
+        // Continue without receipt number
+      }
+    }
+
+    const receipt = generateTextReceipt({
+      transaction: tx,
+      businessName: bizProfile.businessName,
+      businessPhone: bizProfile.phone,
+      businessAddress: bizProfile.address,
+      vatRegNumber: bizProfile.vatRegNumber || undefined,
+      receiptNumber,
+    });
+
+    try {
+      await Share.share({ message: receipt });
+    } catch {
+      // User cancelled — that's fine
+    }
+  };
+
+  const shareViaWhatsApp = async (tx: KaixaTransaction) => {
+    let receiptNumber = tx.receiptNumber;
+    if (!receiptNumber && tenantId) {
+      try {
+        receiptNumber = await getNextReceiptNumber(tenantId);
+      } catch {
+        // Continue without receipt number
+      }
+    }
+
+    const receipt = generateTextReceipt({
+      transaction: tx,
+      businessName: bizProfile.businessName,
+      businessPhone: bizProfile.phone,
+      businessAddress: bizProfile.address,
+      vatRegNumber: bizProfile.vatRegNumber || undefined,
+      receiptNumber,
+    });
+    const url = getWhatsAppShareURL(receipt);
+    Linking.openURL(url).catch(() => {
+      Alert.alert('Error', 'WhatsApp not installed');
+    });
+  };
+
+  // ── Restock handler ─────────────────────────
+
+  const stockProducts = products.filter((p) => p.stock !== null);
+
+  const handleRestock = async () => {
+    if (!tenantId) return;
+
+    const updates: { product: Product; qty: number }[] = [];
+    for (const product of stockProducts) {
+      const raw = restockQtys[product.id];
+      if (!raw) continue;
+      const qty = parseInt(raw, 10);
+      if (isNaN(qty) || qty <= 0) continue;
+      updates.push({ product, qty });
+    }
+
+    if (updates.length === 0) {
+      setRestockModal(false);
+      return;
+    }
+
+    setRestocking(true);
+    try {
+      for (const { product, qty } of updates) {
+        await updateProduct(tenantId, product.id, {
+          stock: (product.stock ?? 0) + qty,
+        });
+      }
+      setRestockModal(false);
+      Alert.alert(
+        'Susesu!',
+        `Updated stock for ${updates.length} product${updates.length > 1 ? 's' : ''}`
+      );
+    } catch {
+      Alert.alert('Error', 'Failed to update stock');
+    } finally {
+      setRestocking(false);
+    }
+  };
+
+  const periodLabel =
+    PERIOD_OPTIONS.find((p) => p.key === dateRange)?.label || 'Ohin';
+
   return (
     <View style={styles.container}>
+      {/* Period Selector */}
+      <View style={styles.periodBar}>
+        {PERIOD_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.key}
+            style={[
+              styles.periodTab,
+              dateRange === opt.key && styles.periodTabActive,
+            ]}
+            onPress={() => switchPeriod(opt.key)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.periodTabText,
+                dateRange === opt.key && styles.periodTabTextActive,
+              ]}
+            >
+              {opt.label}
+            </Text>
+            <Text
+              style={[
+                styles.periodTabSub,
+                dateRange === opt.key && styles.periodTabSubActive,
+              ]}
+            >
+              {opt.labelEn}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
       {/* Summary Bar */}
       <View style={styles.summaryBar}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Tama</Text>
           <Text style={[styles.summaryValue, { color: colors.moneyIn }]}>
-            ${todayTotal('in').toFixed(2)}
+            ${totalIn().toFixed(2)}
           </Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Sai</Text>
           <Text style={[styles.summaryValue, { color: colors.moneyOut }]}>
-            ${todayTotal('out').toFixed(2)}
+            ${totalOut().toFixed(2)}
           </Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>Lukru</Text>
           <Text style={[styles.summaryValue, { color: colors.text }]}>
-            ${(todayTotal('in') - todayTotal('out')).toFixed(2)}
+            ${(totalIn() - totalOut()).toFixed(2)}
           </Text>
         </View>
+      </View>
+
+      {/* VAT Summary — only visible when VAT is active */}
+      {vatActive && (
+        <View style={styles.vatBar}>
+          <Text style={styles.vatBarText}>
+            VAT {vatRate}% — {periodLabel}: ${totalVAT().toFixed(2)}
+          </Text>
+        </View>
+      )}
+
+      {/* Transaction count */}
+      <View style={styles.countBar}>
+        <Text style={styles.countText}>
+          {transactionCount()} transasaun
+        </Text>
       </View>
 
       {/* Big Action Buttons */}
@@ -182,7 +425,12 @@ export default function MoneyScreen() {
 
       {/* Transaction List */}
       <ScrollView style={styles.listContainer} contentContainerStyle={styles.listContent}>
-        {transactions.length === 0 ? (
+        {loading ? (
+          <View style={styles.emptyState}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={styles.emptySubtext}>Loading...</Text>
+          </View>
+        ) : transactions.length === 0 ? (
           <View style={styles.emptyState}>
             <FileText size={24} color={colors.textTertiary} strokeWidth={1.5} />
             <Text style={styles.emptyText}>Tap iha butaun leten hodi hahu</Text>
@@ -192,7 +440,12 @@ export default function MoneyScreen() {
           </View>
         ) : (
           transactions.map((tx) => (
-            <View key={tx.id} style={styles.txRow}>
+            <TouchableOpacity
+              key={tx.id}
+              style={styles.txRow}
+              onLongPress={() => shareReceipt(tx)}
+              activeOpacity={0.7}
+            >
               <View style={[
                 styles.txIndicator,
                 { backgroundColor: tx.type === 'in' ? colors.moneyIn : colors.moneyOut },
@@ -202,17 +455,34 @@ export default function MoneyScreen() {
                 {tx.note ? (
                   <Text style={styles.txNote} numberOfLines={1}>{tx.note}</Text>
                 ) : null}
-                <Text style={styles.txTime}>{formatTime(tx.timestamp)}</Text>
+                {tx.vatAmount > 0 && (
+                  <Text style={styles.txVat}>
+                    incl. VAT ${tx.vatAmount.toFixed(2)}
+                  </Text>
+                )}
+                <Text style={styles.txTime}>
+                  {dateRange !== 'today' && `${formatDate(tx.timestamp)} · `}
+                  {formatTime(tx.timestamp)}
+                </Text>
               </View>
-              <Text
-                style={[
-                  styles.txAmount,
-                  { color: tx.type === 'in' ? colors.moneyIn : colors.moneyOut },
-                ]}
-              >
-                {tx.type === 'in' ? '+' : '-'}${tx.amount.toFixed(2)}
-              </Text>
-            </View>
+              <View style={styles.txRight}>
+                <Text
+                  style={[
+                    styles.txAmount,
+                    { color: tx.type === 'in' ? colors.moneyIn : colors.moneyOut },
+                  ]}
+                >
+                  {tx.type === 'in' ? '+' : '-'}${tx.amount.toFixed(2)}
+                </Text>
+                <TouchableOpacity
+                  onPress={() => shareViaWhatsApp(tx)}
+                  style={styles.shareBtn}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Share2 size={14} color={colors.textTertiary} strokeWidth={2} />
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
@@ -239,8 +509,16 @@ export default function MoneyScreen() {
             <Text style={styles.modalTitle}>
               {txType === 'in' ? 'Osan Tama' : 'Osan Sai'}
             </Text>
-            <TouchableOpacity onPress={saveTransaction} style={styles.modalHeaderBtn}>
-              <Check size={20} color={colors.primary} strokeWidth={2.5} />
+            <TouchableOpacity
+              onPress={saveTransaction}
+              style={styles.modalHeaderBtn}
+              disabled={saving}
+            >
+              {saving ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Check size={20} color={colors.primary} strokeWidth={2.5} />
+              )}
             </TouchableOpacity>
           </View>
 
@@ -262,6 +540,15 @@ export default function MoneyScreen() {
                 autoFocus
               />
             </View>
+            {/* VAT hint when active */}
+            {vatActive && amount && parseFloat(amount) > 0 && (
+              <Text style={styles.vatHint}>
+                incl. VAT {vatRate}%: ${(
+                  parseFloat(amount) -
+                  parseFloat(amount) / (1 + vatRate / 100)
+                ).toFixed(2)}
+              </Text>
+            )}
 
             {/* Category Selection */}
             <Text style={styles.modalLabel}>KATEGORIA</Text>
@@ -310,6 +597,75 @@ export default function MoneyScreen() {
           </ScrollView>
         </KeyboardAvoidingView>
       </Modal>
+
+      {/* Restock Modal */}
+      <Modal
+        visible={restockModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setRestockModal(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <TouchableOpacity
+              onPress={() => setRestockModal(false)}
+              style={styles.modalHeaderBtn}
+            >
+              <X size={20} color={colors.textSecondary} strokeWidth={2} />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Atualiza Stoke</Text>
+            <TouchableOpacity
+              onPress={handleRestock}
+              style={styles.modalHeaderBtn}
+              disabled={restocking}
+            >
+              {restocking ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Check size={20} color={colors.primary} strokeWidth={2.5} />
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalBody}>
+            <Text style={styles.restockHint}>
+              Enter quantity to add for each product
+            </Text>
+            {stockProducts.map((product) => (
+              <View key={product.id} style={styles.restockRow}>
+                <View style={styles.restockInfo}>
+                  <Text style={styles.restockName} numberOfLines={1}>
+                    {product.name}
+                  </Text>
+                  <Text style={styles.restockCurrent}>
+                    Current: {product.stock ?? 0}
+                  </Text>
+                </View>
+                <View style={styles.restockInputWrap}>
+                  <Plus
+                    size={14}
+                    color={colors.moneyIn}
+                    strokeWidth={2.5}
+                  />
+                  <TextInput
+                    style={styles.restockInput}
+                    value={restockQtys[product.id] || ''}
+                    onChangeText={(val) =>
+                      setRestockQtys((prev) => ({
+                        ...prev,
+                        [product.id]: val,
+                      }))
+                    }
+                    placeholder="0"
+                    placeholderTextColor={colors.textTertiary}
+                    keyboardType="number-pad"
+                  />
+                </View>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -318,6 +674,44 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
+  },
+
+  // Period Selector
+  periodBar: {
+    flexDirection: 'row',
+    backgroundColor: colors.bgCard,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+    gap: 8,
+  },
+  periodTab: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    alignItems: 'center',
+    backgroundColor: 'transparent',
+  },
+  periodTabActive: {
+    backgroundColor: colors.bgElevated,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  periodTabText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.textTertiary,
+  },
+  periodTabTextActive: {
+    color: colors.primary,
+  },
+  periodTabSub: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    marginTop: 1,
+  },
+  periodTabSubActive: {
+    color: colors.primaryMuted,
   },
 
   // Summary Bar
@@ -352,10 +746,38 @@ const styles = StyleSheet.create({
     backgroundColor: colors.border,
   },
 
+  // VAT bar (only shows when VAT is active)
+  vatBar: {
+    backgroundColor: colors.bgElevated,
+    paddingVertical: 6,
+    paddingHorizontal: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.borderSubtle,
+  },
+  vatBarText: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+
+  // Count bar
+  countBar: {
+    paddingHorizontal: 20,
+    paddingVertical: 6,
+    backgroundColor: colors.bg,
+  },
+  countText: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    fontWeight: '500',
+  },
+
   // Big Buttons
   bigButtons: {
     flexDirection: 'row',
-    padding: 16,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
     gap: 12,
   },
   bigButtonWrap: {
@@ -418,17 +840,30 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     marginTop: 2,
   },
+  txVat: {
+    fontSize: 11,
+    color: colors.textTertiary,
+    marginTop: 2,
+    fontStyle: 'italic',
+  },
   txTime: {
     fontSize: 11,
     color: colors.textTertiary,
     marginTop: 4,
     fontVariant: ['tabular-nums'],
   },
+  txRight: {
+    alignItems: 'flex-end',
+    marginLeft: 12,
+    gap: 6,
+  },
   txAmount: {
     fontSize: 18,
     fontWeight: '700',
-    marginLeft: 12,
     fontVariant: ['tabular-nums'],
+  },
+  shareBtn: {
+    padding: 4,
   },
 
   // Empty State
@@ -508,6 +943,13 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
+  vatHint: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 6,
+    textAlign: 'right',
+    fontStyle: 'italic',
+  },
 
   // Category Grid
   categoryGrid: {
@@ -543,6 +985,55 @@ const styles = StyleSheet.create({
   },
   categoryChipSubActive: {
     color: 'rgba(255,255,255,0.7)',
+  },
+
+  // Restock
+  restockHint: {
+    fontSize: 13,
+    color: colors.textTertiary,
+    marginBottom: 16,
+  },
+  restockRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgCard,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.borderSubtle,
+    padding: 12,
+    marginBottom: 8,
+  },
+  restockInfo: {
+    flex: 1,
+  },
+  restockName: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: colors.text,
+  },
+  restockCurrent: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginTop: 2,
+  },
+  restockInputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgElevated,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: 10,
+    gap: 4,
+  },
+  restockInput: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.moneyIn,
+    width: 50,
+    textAlign: 'center',
+    paddingVertical: 8,
+    fontVariant: ['tabular-nums'],
   },
 
   // Note Input

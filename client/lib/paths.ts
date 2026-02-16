@@ -167,6 +167,12 @@ export const paths = {
 
   // Money module settings
   invoiceSettings: (tid: string) => `tenants/${tid}/settings/invoice_settings`,
+
+  // VAT
+  vatConfig: () => 'platform/vatConfig',
+  vatSettings: (tid: string) => `tenants/${tid}/settings/vat`,
+  vatReturns: (tid: string) => `tenants/${tid}/vatReturns`,
+  vatReturn: (tid: string, periodId: string) => `tenants/${tid}/vatReturns/${periodId}`,
 } as const;
 
 // Helper functions for ID generation and validation
