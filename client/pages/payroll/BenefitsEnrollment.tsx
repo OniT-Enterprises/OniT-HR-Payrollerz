@@ -39,6 +39,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
@@ -128,6 +138,8 @@ export default function EmployeeAllowances() {
   const [allowances, setAllowances] = useState<BenefitEnrollment[]>([]);
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [editingAllowance, setEditingAllowance] = useState<BenefitEnrollment | null>(null);
+  const [deletingAllowance, setDeletingAllowance] = useState<BenefitEnrollment | null>(null);
   const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
@@ -303,6 +315,83 @@ export default function EmployeeAllowances() {
     setAmount(0);
     setEffectiveDate(new Date().toISOString().split("T")[0]);
     setNotes("");
+  };
+
+  // Open edit dialog
+  const handleEdit = (allowance: BenefitEnrollment) => {
+    setEditingAllowance(allowance);
+    setSelectedEmployee(allowance.employeeId);
+    setAllowanceType(allowance.benefitType);
+    setAmount(allowance.employerContribution);
+    setEffectiveDate(allowance.effectiveDate);
+    setShowAddDialog(true);
+  };
+
+  // Handle update allowance
+  const handleUpdateAllowance = async () => {
+    if (!editingAllowance || !allowanceType || amount <= 0) return;
+
+    setSaving(true);
+    try {
+      const config = getAllowanceConfig(allowanceType);
+      await payrollService.benefits.updateEnrollment(editingAllowance.id!, {
+        benefitType: allowanceType as BenefitEnrollment["benefitType"],
+        planName: config.label,
+        employerContribution: amount,
+        effectiveDate,
+      });
+
+      toast({
+        title: t("allowances.allowanceUpdated") || "Allowance Updated",
+        description: t("allowances.allowanceUpdatedDesc", { type: config.label, amount: formatCurrency(amount) }) || `${config.label} updated to ${formatCurrency(amount)}/month`,
+      });
+
+      const data = await payrollService.benefits.getAllEnrollments(tenantId);
+      setAllowances(data);
+      setShowAddDialog(false);
+      setEditingAllowance(null);
+      resetForm();
+    } catch (error) {
+      console.error("Failed to update allowance:", error);
+      toast({
+        title: t("common.error"),
+        description: t("allowances.updateError") || "Failed to update allowance",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Handle delete allowance
+  const handleDeleteAllowance = async () => {
+    if (!deletingAllowance) return;
+
+    setSaving(true);
+    try {
+      await payrollService.benefits.terminateEnrollment(
+        deletingAllowance.id!,
+        new Date().toISOString().split("T")[0]
+      );
+
+      toast({
+        title: t("allowances.allowanceRemoved") || "Allowance Removed",
+        description: t("allowances.allowanceRemovedDesc") || "The allowance has been terminated",
+      });
+
+      const data = await payrollService.benefits.getAllEnrollments(tenantId);
+      setAllowances(data);
+      setDeletingAllowance(null);
+    } catch (error) {
+      console.error("Failed to remove allowance:", error);
+      toast({
+        title: t("common.error"),
+        description: t("allowances.removeError") || "Failed to remove allowance",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   };
 
   // Set suggested amount
@@ -559,10 +648,10 @@ export default function EmployeeAllowances() {
                           <TableCell>{getStatusBadge(allowance.status)}</TableCell>
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-1">
-                              <Button variant="ghost" size="sm" title={t("common.edit")}>
+                              <Button variant="ghost" size="sm" title={t("common.edit")} onClick={() => handleEdit(allowance)}>
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="sm" title={t("common.remove")}>
+                              <Button variant="ghost" size="sm" title={t("common.remove")} onClick={() => setDeletingAllowance(allowance)}>
                                 <Trash2 className="h-4 w-4 text-red-500" />
                               </Button>
                             </div>
@@ -578,11 +667,35 @@ export default function EmployeeAllowances() {
         </Card>
       </div>
 
-      {/* Add Allowance Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      {/* Delete Confirmation */}
+      <AlertDialog open={!!deletingAllowance} onOpenChange={(open) => !open && setDeletingAllowance(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("allowances.confirmRemove") || "Remove Allowance?"}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("allowances.confirmRemoveDesc") || "This will terminate the allowance. It will no longer be included in future payroll runs."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteAllowance} className="bg-red-600 hover:bg-red-700">
+              {t("common.remove") || "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add/Edit Allowance Dialog */}
+      <Dialog open={showAddDialog} onOpenChange={(open) => {
+        setShowAddDialog(open);
+        if (!open) {
+          setEditingAllowance(null);
+          resetForm();
+        }
+      }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>{t("allowances.add")}</DialogTitle>
+            <DialogTitle>{editingAllowance ? (t("allowances.edit") || "Edit Allowance") : t("allowances.add")}</DialogTitle>
             <DialogDescription>
               {t("allowances.setMonthlyAllowance")}
             </DialogDescription>
@@ -591,7 +704,7 @@ export default function EmployeeAllowances() {
           <div className="space-y-4 py-4">
             <div>
               <Label htmlFor="employee">{t("allowances.employee")} *</Label>
-              <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
+              <Select value={selectedEmployee} onValueChange={setSelectedEmployee} disabled={!!editingAllowance}>
                 <SelectTrigger>
                   <SelectValue placeholder={t("allowances.selectEmployee")} />
                 </SelectTrigger>
@@ -692,7 +805,7 @@ export default function EmployeeAllowances() {
               {t("common.cancel")}
             </Button>
             <Button
-              onClick={handleAddAllowance}
+              onClick={editingAllowance ? handleUpdateAllowance : handleAddAllowance}
               disabled={saving}
               className="bg-teal-600 hover:bg-teal-700"
             >
@@ -700,6 +813,11 @@ export default function EmployeeAllowances() {
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   {t("common.saving")}
+                </>
+              ) : editingAllowance ? (
+                <>
+                  <Edit className="h-4 w-4 mr-2" />
+                  {t("common.save") || "Save"}
                 </>
               ) : (
                 <>

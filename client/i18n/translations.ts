@@ -97,7 +97,81 @@ export const translations = {
       "other": "Other",
       "otherDesc": "Other allowances not listed"
     },
-    "actions": "Actions"
+    "actions": "Actions",
+    "edit": "Edit Allowance",
+    "allowanceUpdated": "Allowance Updated",
+    "allowanceUpdatedDesc": "{{type}} updated to {{amount}}/month",
+    "updateError": "Failed to update allowance",
+    "confirmRemove": "Remove Allowance?",
+    "confirmRemoveDesc": "This will terminate the allowance. It will no longer be included in future payroll runs.",
+    "allowanceRemoved": "Allowance Removed",
+    "allowanceRemovedDesc": "The allowance has been terminated",
+    "removeError": "Failed to remove allowance"
+  },
+  "dashboard": {
+    "payrollStatus": "Payroll Status",
+    "days": "days",
+    "untilPayDate": "until pay date (25th)",
+    "prepared": "Prepared",
+    "notPrepared": "Not prepared",
+    "review": "Review",
+    "prepare": "Prepare",
+    "compliance": "Compliance",
+    "onTrack": "On track",
+    "needsAttention": "Needs attention",
+    "wit": "WIT",
+    "inss": "INSS",
+    "thirteenthMonth": "13th Month",
+    "teamStatus": "Team Status",
+    "present": "present",
+    "onLeaveToday": "On leave today",
+    "pendingRequests": "Pending requests",
+    "nextRecommendedAction": "Next recommended action",
+    "doItNow": "Do it now",
+    "activeEmployees": "Active Employees",
+    "monthlyPayroll": "Monthly Payroll",
+    "nextPayrollAmount": "Next Payroll Amount",
+    "quickActions": "Quick actions",
+    "runPayroll": "Run Payroll",
+    "addEmployee": "Add Employee",
+    "generateReport": "Generate Report",
+    "attentionRequired": "Attention Required",
+    "attentionRequiredDesc": "Fix these before running payroll",
+    "missingInss": "Missing INSS number",
+    "addInss": "Add INSS",
+    "contractNotUploaded": "Contract not uploaded",
+    "upload": "Upload",
+    "preparePayroll": "Prepare payroll",
+    "fixBlockingIssues": "Fix {{count}} blocking issues",
+    "reviewLeaveRequests": "Review {{count}} leave requests"
+  },
+  "documentAlerts": {
+    "title": "Document Alerts",
+    "noAlerts": "No document alerts",
+    "noAlertsDesc": "All employee documents are up to date",
+    "expiredDaysAgo": "Expired {{count}} days ago",
+    "expiresToday": "Expires today",
+    "expiresInDays": "Expires in {{count}} days",
+    "viewAllAlerts": "View all {{count}} alerts",
+    "manageAlerts": "Manage alerts",
+    "expired": "expired",
+    "critical": "critical",
+    "types": {
+      "bi": "Bilhete de Identidade",
+      "passport": "Passport",
+      "workPermit": "Work Permit",
+      "workVisa": "Work Visa (Type C)",
+      "residencePermit": "Residence Permit",
+      "electoral": "Electoral Card",
+      "inssCard": "INSS Card",
+      "contract": "Employment Contract"
+    },
+    "severity": {
+      "expired": "Expired",
+      "critical": "Critical",
+      "warning": "Warning",
+      "upcoming": "Upcoming"
+    }
   },
   "auth": {
     "loginTitle": "Sign in to Meza",
@@ -779,6 +853,24 @@ export const translations = {
       "socialSecurityDesc": "Employee: 4% | Employer: 6%"
     },
     "documents": {
+      "types": {
+        "bilheteIdentidade": {
+          "label": "Bilhete de Identidade",
+          "description": "National ID card (BI)"
+        },
+        "socialSecurityNumber": {
+          "label": "INSS Number",
+          "description": "Social Security number"
+        },
+        "electoralCard": {
+          "label": "Electoral Card",
+          "description": "Kartaun Eleitoral"
+        },
+        "passport": {
+          "label": "Passport",
+          "description": "For foreign nationals"
+        }
+      },
       "table": {
         "document": "Document",
         "number": "Number",
@@ -3428,7 +3520,81 @@ export const translations = {
       "other": "Seluk",
       "otherDesc": "Subsidiu seluk ne'ebe la lista"
     },
-    "actions": "Asaun"
+    "actions": "Asaun",
+    "edit": "Edita Subsidiu",
+    "allowanceUpdated": "Subsidiu Atualiza",
+    "allowanceUpdatedDesc": "{{type}} atualiza ba {{amount}}/fulan",
+    "updateError": "Falha atualiza subsidiu",
+    "confirmRemove": "Hasai Subsidiu?",
+    "confirmRemoveDesc": "Ida ne'e sei termina subsidiu. La sei inklui iha prosesu saláriu futuru.",
+    "allowanceRemoved": "Subsidiu Hasai Ona",
+    "allowanceRemovedDesc": "Subsidiu termina ona",
+    "removeError": "Falha hasai subsidiu"
+  },
+  "dashboard": {
+    "payrollStatus": "Status Saláriu",
+    "days": "loron",
+    "untilPayDate": "to'o loron selu (25)",
+    "prepared": "Preparadu",
+    "notPrepared": "Seidauk prepara",
+    "review": "Revizaun",
+    "prepare": "Prepara",
+    "compliance": "Kompliansa",
+    "onTrack": "La'o diak",
+    "needsAttention": "Presiza atensaun",
+    "wit": "WIT",
+    "inss": "INSS",
+    "thirteenthMonth": "Salário 13",
+    "teamStatus": "Status Ekipa",
+    "present": "prezente",
+    "onLeaveToday": "Lisensa ohin",
+    "pendingRequests": "Pedidu pendente",
+    "nextRecommendedAction": "Asaun tuir mai",
+    "doItNow": "Halo agora",
+    "activeEmployees": "Funsionáriu Ativu",
+    "monthlyPayroll": "Saláriu Mensal",
+    "nextPayrollAmount": "Saláriu Tuir Mai",
+    "quickActions": "Asaun lalais",
+    "runPayroll": "Prosesu Saláriu",
+    "addEmployee": "Tau Empregadu",
+    "generateReport": "Kria Relatóriu",
+    "attentionRequired": "Presiza Atensaun",
+    "attentionRequiredDesc": "Rezolve antes prosesu saláriu",
+    "missingInss": "Numero INSS falta",
+    "addInss": "Tau INSS",
+    "contractNotUploaded": "Kontratu seidauk upload",
+    "upload": "Upload",
+    "preparePayroll": "Prepara saláriu",
+    "fixBlockingIssues": "Rezolve problema {{count}}",
+    "reviewLeaveRequests": "Reviza pedidu lisensa {{count}}"
+  },
+  "documentAlerts": {
+    "title": "Alerta Dokumentu",
+    "noAlerts": "Laiha alerta dokumentu",
+    "noAlertsDesc": "Dokumentu funsionáriu hotu atualiza ona",
+    "expiredDaysAgo": "Espira {{count}} loron liu ba",
+    "expiresToday": "Espira ohin",
+    "expiresInDays": "Espira iha {{count}} loron",
+    "viewAllAlerts": "Haree alerta hotu {{count}}",
+    "manageAlerts": "Jere alerta",
+    "expired": "espira",
+    "critical": "kritiku",
+    "types": {
+      "bi": "Bilhete de Identidade",
+      "passport": "Pasaporte",
+      "workPermit": "Autorizasaun Servisu",
+      "workVisa": "Visa Servisu (Tipu C)",
+      "residencePermit": "Autorizasaun Residensia",
+      "electoral": "Kartaun Eleitoral",
+      "inssCard": "Kartaun INSS",
+      "contract": "Kontratu Servisu"
+    },
+    "severity": {
+      "expired": "Espira",
+      "critical": "Kritiku",
+      "warning": "Avizu",
+      "upcoming": "Besik"
+    }
   },
   "auth": {
     "loginTitle": "Tama ba Meza",
@@ -4110,6 +4276,24 @@ export const translations = {
       "socialSecurityDesc": "Empregadu: 4% | Empregador: 6%"
     },
     "documents": {
+      "types": {
+        "bilheteIdentidade": {
+          "label": "Bilhete de Identidade",
+          "description": "Kartaun identidade nasional (BI)"
+        },
+        "socialSecurityNumber": {
+          "label": "Numero INSS",
+          "description": "Numero Seguransa Sosial"
+        },
+        "electoralCard": {
+          "label": "Kartaun Eleitoral",
+          "description": "Kartaun Eleitoral"
+        },
+        "passport": {
+          "label": "Pasaporte",
+          "description": "Ba estranjeiru sira"
+        }
+      },
       "table": {
         "document": "Dokumentu",
         "number": "Numero",

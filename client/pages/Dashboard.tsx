@@ -277,16 +277,16 @@ export default function Dashboard() {
       if (!emp.documents?.socialSecurityNumber?.number) {
         issues.push({
           employee: emp,
-          issue: "Missing INSS number",
-          action: "Add INSS",
+          issue: t("dashboard.missingInss"),
+          action: t("dashboard.addInss"),
           path: `/people/employees?id=${emp.id}&edit=true`,
         });
       }
       if (!emp.documents?.workContract?.fileUrl) {
         issues.push({
           employee: emp,
-          issue: "Contract not uploaded",
-          action: "Upload",
+          issue: t("dashboard.contractNotUploaded"),
+          action: t("dashboard.upload"),
           path: `/people/employees?id=${emp.id}&tab=documents`,
         });
       }
@@ -307,13 +307,13 @@ export default function Dashboard() {
   // Next recommended action logic
   const getNextAction = () => {
     if (isPayrollUrgent && !payrollPrepared) {
-      return { label: "Prepare payroll", path: "/payroll/run", urgent: true };
+      return { label: t("dashboard.preparePayroll"), path: "/payroll/run", urgent: true };
     }
     if (getBlockingIssues.length > 0) {
-      return { label: `Fix ${getBlockingIssues.length} blocking issue${getBlockingIssues.length > 1 ? 's' : ''}`, path: getBlockingIssues[0].path, urgent: true };
+      return { label: t("dashboard.fixBlockingIssues", { count: getBlockingIssues.length }), path: getBlockingIssues[0].path, urgent: true };
     }
     if (pendingLeave > 0) {
-      return { label: `Review ${pendingLeave} leave request${pendingLeave > 1 ? 's' : ''}`, path: "/people/leave", urgent: false };
+      return { label: t("dashboard.reviewLeaveRequests", { count: pendingLeave }), path: "/people/leave", urgent: false };
     }
     return null;
   };
@@ -364,9 +364,9 @@ export default function Dashboard() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-4">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">Payroll Status</p>
-                  <p className="text-3xl font-bold">{daysUntilPayday} days</p>
-                  <p className="text-sm text-muted-foreground">until pay date (25th)</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.payrollStatus")}</p>
+                  <p className="text-3xl font-bold">{daysUntilPayday} {t("dashboard.days")}</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.untilPayDate")}</p>
                 </div>
                 <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
                   isPayrollUrgent
@@ -382,12 +382,12 @@ export default function Dashboard() {
                   {payrollPrepared ? (
                     <>
                       <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-green-600 dark:text-green-400 font-medium">Prepared</span>
+                      <span className="text-sm text-green-600 dark:text-green-400 font-medium">{t("dashboard.prepared")}</span>
                     </>
                   ) : (
                     <>
                       <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Not prepared</span>
+                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{t("dashboard.notPrepared")}</span>
                     </>
                   )}
                 </div>
@@ -399,7 +399,7 @@ export default function Dashboard() {
                   }
                   variant={isPayrollUrgent ? "default" : "outline"}
                 >
-                  {payrollPrepared ? "Review" : "Prepare"}
+                  {payrollPrepared ? t("dashboard.review") : t("dashboard.prepare")}
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -411,11 +411,11 @@ export default function Dashboard() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Compliance</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.compliance")}</p>
                   <p className="text-lg font-semibold mt-1">
                     {compliance.wit.status === 'ok' && compliance.inss.status === 'ok'
-                      ? "On track"
-                      : "Needs attention"}
+                      ? t("dashboard.onTrack")
+                      : t("dashboard.needsAttention")}
                   </p>
                 </div>
               </div>
@@ -427,7 +427,7 @@ export default function Dashboard() {
                     compliance.wit.status === 'ok' ? 'bg-green-500' :
                     compliance.wit.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-sm flex-1">WIT</span>
+                  <span className="text-sm flex-1">{t("dashboard.wit")}</span>
                   <span className="text-xs text-muted-foreground">{compliance.wit.days}d</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -435,7 +435,7 @@ export default function Dashboard() {
                     compliance.inss.status === 'ok' ? 'bg-green-500' :
                     compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-sm flex-1">INSS</span>
+                  <span className="text-sm flex-1">{t("dashboard.inss")}</span>
                   <span className="text-xs text-muted-foreground">{compliance.inss.days}d</span>
                 </div>
                 <div className="flex items-center gap-3">
@@ -443,7 +443,7 @@ export default function Dashboard() {
                     compliance.subsidio.status === 'ok' ? 'bg-green-500' :
                     compliance.subsidio.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                   }`} />
-                  <span className="text-sm flex-1">13th Month</span>
+                  <span className="text-sm flex-1">{t("dashboard.thirteenthMonth")}</span>
                   <span className="text-xs text-muted-foreground">{compliance.subsidio.days}d</span>
                 </div>
               </div>
@@ -455,9 +455,9 @@ export default function Dashboard() {
             <CardContent className="pt-6">
               <div className="flex items-start justify-between mb-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Team Status</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.teamStatus")}</p>
                   <p className="text-lg font-semibold mt-1">
-                    {activeEmployees.length - onLeaveToday} / {activeEmployees.length} present
+                    {activeEmployees.length - onLeaveToday} / {activeEmployees.length} {t("dashboard.present")}
                   </p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
@@ -467,11 +467,11 @@ export default function Dashboard() {
 
               <div className="space-y-2 text-sm">
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">On leave today</span>
+                  <span className="text-muted-foreground">{t("dashboard.onLeaveToday")}</span>
                   <span className={onLeaveToday > 0 ? "font-medium" : "text-muted-foreground"}>{onLeaveToday}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">Pending requests</span>
+                  <span className="text-muted-foreground">{t("dashboard.pendingRequests")}</span>
                   <span className={pendingLeave > 0 ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
                     {pendingLeave}
                   </span>
@@ -500,13 +500,13 @@ export default function Dashboard() {
                   <Zap className={`h-5 w-5 ${nextAction.urgent ? "" : "text-primary"}`} />
                 </div>
                 <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Next recommended action</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("dashboard.nextRecommendedAction")}</p>
                   <p className="font-semibold">{nextAction.label}</p>
                 </div>
                 <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
                   nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
                 }>
-                  Do it now
+                  {t("dashboard.doItNow")}
                   <ArrowRight className="h-4 w-4 ml-1" />
                 </Button>
               </div>
@@ -523,7 +523,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold">{activeEmployees.length}</p>
-                  <p className="text-sm text-muted-foreground">Active Employees</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.activeEmployees")}</p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Users className="h-5 w-5 text-blue-500" />
@@ -537,7 +537,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
-                  <p className="text-sm text-muted-foreground">Monthly Payroll</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.monthlyPayroll")}</p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <DollarSign className="h-5 w-5 text-green-500" />
@@ -551,7 +551,7 @@ export default function Dashboard() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
-                  <p className="text-sm text-muted-foreground">Next Payroll Amount</p>
+                  <p className="text-sm text-muted-foreground">{t("dashboard.nextPayrollAmount")}</p>
                 </div>
                 <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <CalendarDays className="h-5 w-5 text-green-500" />
@@ -567,7 +567,7 @@ export default function Dashboard() {
         <Card className="mb-6 border-border/50">
           <CardContent className="py-3">
             <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Quick actions</span>
+              <span className="text-sm text-muted-foreground">{t("dashboard.quickActions")}</span>
               <div className="h-4 w-px bg-border" />
               <div className="flex items-center gap-2">
                 <Button
@@ -580,15 +580,15 @@ export default function Dashboard() {
                   onClick={() => navigate("/payroll/run")}
                 >
                   <Play className="h-3.5 w-3.5" />
-                  Run Payroll
+                  {t("dashboard.runPayroll")}
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/people/add")}>
                   <UserPlus className="h-3.5 w-3.5" />
-                  Add Employee
+                  {t("dashboard.addEmployee")}
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports")}>
                   <FileText className="h-3.5 w-3.5" />
-                  Generate Report
+                  {t("dashboard.generateReport")}
                 </Button>
               </div>
             </div>
@@ -603,9 +603,9 @@ export default function Dashboard() {
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
                 <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Attention Required
+                {t("dashboard.attentionRequired")}
               </CardTitle>
-              <CardDescription>Fix these before running payroll</CardDescription>
+              <CardDescription>{t("dashboard.attentionRequiredDesc")}</CardDescription>
             </CardHeader>
             <CardContent className="pt-0">
               <div className="space-y-2">

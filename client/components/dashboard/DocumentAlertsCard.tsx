@@ -19,6 +19,7 @@ import {
 import { Link } from "react-router-dom";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss" | "contract";
 export type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
@@ -262,6 +263,7 @@ interface DocumentAlertsCardProps {
 
 export default function DocumentAlertsCard({ maxItems = 5, className = "" }: DocumentAlertsCardProps) {
   const tenantId = useTenantId();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
 
@@ -295,7 +297,7 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
             <FileWarning className="h-5 w-5" />
-            Document Alerts
+            {t("documentAlerts.title")}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -315,17 +317,17 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-base">
             <FileWarning className="h-5 w-5 text-amber-600" />
-            Document Alerts
+            {t("documentAlerts.title")}
           </CardTitle>
           <div className="flex gap-1">
             {counts.expired > 0 && (
               <Badge className={SEVERITY_CONFIG.expired.className}>
-                {counts.expired} expired
+                {counts.expired} {t("documentAlerts.expired")}
               </Badge>
             )}
             {counts.critical > 0 && (
               <Badge className={SEVERITY_CONFIG.critical.className}>
-                {counts.critical} critical
+                {counts.critical} {t("documentAlerts.critical")}
               </Badge>
             )}
           </div>
@@ -335,8 +337,8 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
         {alerts.length === 0 ? (
           <div className="text-center py-6 text-muted-foreground">
             <FileWarning className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No document alerts</p>
-            <p className="text-xs">All employee documents are up to date</p>
+            <p className="text-sm">{t("documentAlerts.noAlerts")}</p>
+            <p className="text-xs">{t("documentAlerts.noAlertsDesc")}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -359,10 +361,10 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
                       {alert.documentLabel}
                       {" - "}
                       {alert.daysUntilExpiry < 0
-                        ? `Expired ${Math.abs(alert.daysUntilExpiry)} days ago`
+                        ? t("documentAlerts.expiredDaysAgo", { count: Math.abs(alert.daysUntilExpiry) })
                         : alert.daysUntilExpiry === 0
-                        ? "Expires today"
-                        : `Expires in ${alert.daysUntilExpiry} days`}
+                        ? t("documentAlerts.expiresToday")
+                        : t("documentAlerts.expiresInDays", { count: alert.daysUntilExpiry })}
                     </p>
                   </div>
                   <Badge variant="outline" className={config.className}>
@@ -375,8 +377,8 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
             <Link to="/admin/document-alerts">
               <Button variant="ghost" className="w-full mt-2 text-sm">
                 {alerts.length > maxItems
-                  ? `View all ${alerts.length} alerts`
-                  : "Manage alerts"}
+                  ? t("documentAlerts.viewAllAlerts", { count: alerts.length })
+                  : t("documentAlerts.manageAlerts")}
                 <ChevronRight className="h-4 w-4 ml-1" />
               </Button>
             </Link>
