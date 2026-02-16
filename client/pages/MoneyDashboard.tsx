@@ -45,7 +45,7 @@ import {
 
 export default function MoneyDashboard() {
   const navigate = useNavigate();
-  const { t: _t } = useI18n();
+  const { t } = useI18n();
   const { session } = useTenant();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MoneyStats | null>(null);
@@ -97,17 +97,11 @@ export default function MoneyDashboard() {
     }).format(amount);
   };
 
-  const _formatTimeAgo = (date: Date) => {
-    const now = new Date();
-    const diff = now.getTime() - date.getTime();
-    const minutes = Math.floor(diff / 60000);
-    const hours = Math.floor(minutes / 60);
-    const days = Math.floor(hours / 24);
-
-    if (days > 0) return `${days} day${days > 1 ? 's' : ''} ago`;
-    if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''} ago`;
-    if (minutes > 0) return `${minutes} min ago`;
-    return 'Just now';
+  // Helper for pluralization
+  const plural = (count: number, singularKey: string, pluralKey: string, params?: Record<string, string | number>) => {
+    return count === 1
+      ? t(singularKey, { count, ...params })
+      : t(pluralKey, { count, ...params });
   };
 
   // Calculate action items
@@ -118,8 +112,8 @@ export default function MoneyDashboard() {
     actionItems.push({
       type: 'send_invoice',
       icon: <Send className="h-5 w-5 text-blue-600" />,
-      title: `Send ${stats.invoicesDraft} invoice${stats.invoicesDraft > 1 ? 's' : ''}`,
-      description: 'Ready to send to customers',
+      title: plural(stats.invoicesDraft, 'money.dashboard.sendInvoice', 'money.dashboard.sendInvoicePlural'),
+      description: t('money.dashboard.readyToSend'),
       action: () => navigate('/money/invoices?status=draft'),
       priority: 'medium',
     });
@@ -130,8 +124,8 @@ export default function MoneyDashboard() {
     actionItems.push({
       type: 'follow_up',
       icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
-      title: `Follow up on ${stats.invoicesOverdue} overdue invoice${stats.invoicesOverdue > 1 ? 's' : ''}`,
-      description: `${formatCurrency(stats.overdueAmount || 0)} past due`,
+      title: plural(stats.invoicesOverdue, 'money.dashboard.followUpOverdue', 'money.dashboard.followUpOverduePlural'),
+      description: t('money.dashboard.pastDue', { amount: formatCurrency(stats.overdueAmount || 0) }),
       action: () => navigate('/money/invoices?status=overdue'),
       priority: 'high',
     });
@@ -142,7 +136,7 @@ export default function MoneyDashboard() {
     actionItems.push({
       type: 'pay_bill',
       icon: <Clock className="h-5 w-5 text-amber-600" />,
-      title: `Pay ${payablesSummary.dueThisWeekCount} bill${payablesSummary.dueThisWeekCount > 1 ? 's' : ''} this week`,
+      title: plural(payablesSummary.dueThisWeekCount, 'money.dashboard.payBillsThisWeek', 'money.dashboard.payBillsThisWeekPlural'),
       description: formatCurrency(payablesSummary.dueThisWeek),
       action: () => navigate('/money/bills'),
       priority: 'medium',
@@ -154,8 +148,8 @@ export default function MoneyDashboard() {
     actionItems.push({
       type: 'overdue_bill',
       icon: <CircleAlert className="h-5 w-5 text-red-600" />,
-      title: `${payablesSummary.overdueCount} bill${payablesSummary.overdueCount > 1 ? 's' : ''} overdue`,
-      description: `${formatCurrency(payablesSummary.overdue)} needs payment`,
+      title: plural(payablesSummary.overdueCount, 'money.dashboard.billOverdue', 'money.dashboard.billOverduePlural'),
+      description: t('money.dashboard.needsPayment', { amount: formatCurrency(payablesSummary.overdue) }),
       action: () => navigate('/money/bills?status=overdue'),
       priority: 'high',
     });
@@ -172,10 +166,10 @@ export default function MoneyDashboard() {
         status: 'attention',
         color: 'amber',
         icon: <CircleAlert className="h-6 w-6" />,
-        message: 'Attention needed',
+        message: t('money.dashboard.attentionNeeded'),
         description: hasOverdueInvoices
-          ? `${stats?.invoicesOverdue} invoice${(stats?.invoicesOverdue || 0) > 1 ? 's' : ''} overdue`
-          : `${payablesSummary?.overdueCount} bill${(payablesSummary?.overdueCount || 0) > 1 ? 's' : ''} overdue`,
+          ? plural(stats?.invoicesOverdue || 0, 'money.dashboard.invoicesOverdue', 'money.dashboard.invoicesOverduePlural')
+          : plural(payablesSummary?.overdueCount || 0, 'money.dashboard.billsOverdue', 'money.dashboard.billsOverduePlural'),
       };
     }
 
@@ -184,8 +178,8 @@ export default function MoneyDashboard() {
         status: 'action',
         color: 'blue',
         icon: <Bell className="h-6 w-6" />,
-        message: 'Action required',
-        description: `${actionItems.length} item${actionItems.length > 1 ? 's' : ''} need attention`,
+        message: t('money.dashboard.actionRequired'),
+        description: plural(actionItems.length, 'money.dashboard.itemsNeedAttention', 'money.dashboard.itemsNeedAttentionPlural'),
       };
     }
 
@@ -193,8 +187,8 @@ export default function MoneyDashboard() {
       status: 'healthy',
       color: 'green',
       icon: <CircleCheck className="h-6 w-6" />,
-      message: 'Looking good!',
-      description: 'No urgent items',
+      message: t('money.dashboard.lookingGood'),
+      description: t('money.dashboard.noUrgentItems'),
     };
   };
 
@@ -204,15 +198,15 @@ export default function MoneyDashboard() {
   const getInvoiceStatusDisplay = (status: string) => {
     switch (status) {
       case 'draft':
-        return { label: 'Draft', icon: <CircleDashed className="h-3 w-3" />, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' };
+        return { label: t('money.dashboard.statusDraft'), icon: <CircleDashed className="h-3 w-3" />, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' };
       case 'sent':
-        return { label: 'Sent', icon: <Send className="h-3 w-3" />, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900' };
+        return { label: t('money.dashboard.statusSent'), icon: <Send className="h-3 w-3" />, color: 'text-blue-600 bg-blue-100 dark:bg-blue-900' };
       case 'viewed':
-        return { label: 'Viewed', icon: <Eye className="h-3 w-3" />, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900' };
+        return { label: t('money.dashboard.statusViewed'), icon: <Eye className="h-3 w-3" />, color: 'text-purple-600 bg-purple-100 dark:bg-purple-900' };
       case 'paid':
-        return { label: 'Paid', icon: <CheckCircle2 className="h-3 w-3" />, color: 'text-green-600 bg-green-100 dark:bg-green-900' };
+        return { label: t('money.dashboard.statusPaid'), icon: <CheckCircle2 className="h-3 w-3" />, color: 'text-green-600 bg-green-100 dark:bg-green-900' };
       case 'overdue':
-        return { label: 'Overdue', icon: <AlertTriangle className="h-3 w-3" />, color: 'text-red-600 bg-red-100 dark:bg-red-900' };
+        return { label: t('money.dashboard.statusOverdue'), icon: <AlertTriangle className="h-3 w-3" />, color: 'text-red-600 bg-red-100 dark:bg-red-900' };
       default:
         return { label: status, icon: null, color: 'text-slate-600 bg-slate-100' };
     }
@@ -247,7 +241,7 @@ export default function MoneyDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Money - Meza" description="Track who owes you money, what you need to pay, and what to do next" />
+      <SEO title={t('money.dashboard.seoTitle')} description={t('money.dashboard.subtitle')} />
       <MainNavigation />
 
       {/* Hero Section */}
@@ -260,15 +254,15 @@ export default function MoneyDashboard() {
                 <Wallet className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Money</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t('money.dashboard.title')}</h1>
                 <p className="text-muted-foreground mt-1">
-                  Track who owes you, what you need to pay, and what to do next
+                  {t('money.dashboard.subtitle')}
                 </p>
               </div>
             </div>
             <Button onClick={() => navigate('/money/invoices/new')} className="bg-indigo-600 hover:bg-indigo-700">
               <Plus className="h-4 w-4 mr-2" />
-              Create Invoice
+              {t('money.dashboard.createInvoice')}
             </Button>
           </div>
         </div>
@@ -306,18 +300,18 @@ export default function MoneyDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AlertCircle className="h-5 w-5 text-indigo-600" />
-                  <CardTitle className="text-lg">Action Required</CardTitle>
+                  <CardTitle className="text-lg">{t('money.dashboard.actionRequired')}</CardTitle>
                 </div>
                 {actionItems.length > 0 && (
                   <Badge variant="secondary" className="text-sm">
-                    {actionItems.length} thing{actionItems.length !== 1 ? 's' : ''} to do
+                    {plural(actionItems.length, 'money.dashboard.thingsToDo', 'money.dashboard.thingsToDoPlural')}
                   </Badge>
                 )}
               </div>
               <CardDescription>
                 {actionItems.length > 0
-                  ? `You need to do ${actionItems.length} thing${actionItems.length !== 1 ? 's' : ''}`
-                  : 'Things that need your attention'}
+                  ? plural(actionItems.length, 'money.dashboard.youNeedToDo', 'money.dashboard.youNeedToDoPlural')
+                  : t('money.dashboard.thingsNeedAttention')}
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -347,8 +341,8 @@ export default function MoneyDashboard() {
               ) : (
                 <div className="text-center py-6">
                   <Sparkles className="h-10 w-10 mx-auto text-green-500 mb-2" />
-                  <p className="font-medium text-green-700 dark:text-green-400">All caught up!</p>
-                  <p className="text-sm text-muted-foreground">No urgent tasks right now</p>
+                  <p className="font-medium text-green-700 dark:text-green-400">{t('money.dashboard.allCaughtUp')}</p>
+                  <p className="text-sm text-muted-foreground">{t('money.dashboard.noUrgentTasks')}</p>
                 </div>
               )}
             </CardContent>
@@ -366,12 +360,12 @@ export default function MoneyDashboard() {
                     <ArrowDownLeft className="h-5 w-5 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Money Coming In</CardTitle>
-                    <CardDescription>What customers owe you</CardDescription>
+                    <CardTitle className="text-lg">{t('money.dashboard.moneyComingIn')}</CardTitle>
+                    <CardDescription>{t('money.dashboard.whatCustomersOwe')}</CardDescription>
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/money/invoices')}>
-                  View All
+                  {t('money.dashboard.viewAll')}
                 </Button>
               </div>
             </CardHeader>
@@ -379,19 +373,19 @@ export default function MoneyDashboard() {
               {/* Summary Stats */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">You are owed</p>
+                  <p className="text-sm text-muted-foreground">{t('money.dashboard.youAreOwed')}</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
                     {formatCurrency(stats?.totalOutstanding || 0)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    from {stats?.invoicesSent || 0} unpaid invoice{(stats?.invoicesSent || 0) !== 1 ? 's' : ''}
+                    {plural(stats?.invoicesSent || 0, 'money.dashboard.fromUnpaidInvoices', 'money.dashboard.fromUnpaidInvoicesPlural')}
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Received this month</p>
+                  <p className="text-sm text-muted-foreground">{t('money.dashboard.receivedThisMonth')}</p>
                   <p className="text-2xl font-bold">{formatCurrency(stats?.revenueThisMonth || 0)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    payments collected
+                    {t('money.dashboard.paymentsCollected')}
                   </p>
                 </div>
               </div>
@@ -406,10 +400,10 @@ export default function MoneyDashboard() {
                     <AlertTriangle className="h-5 w-5 text-red-600" />
                     <div className="text-left">
                       <p className="font-medium text-sm text-red-700 dark:text-red-400">
-                        {formatCurrency(stats.overdueAmount)} overdue
+                        {formatCurrency(stats.overdueAmount)} {t('money.dashboard.overdue')}
                       </p>
                       <p className="text-xs text-red-600 dark:text-red-500">
-                        {stats.invoicesOverdue} invoice{stats.invoicesOverdue !== 1 ? 's' : ''} need follow-up
+                        {plural(stats.invoicesOverdue, 'money.dashboard.invoicesNeedFollowUp', 'money.dashboard.invoicesNeedFollowUpPlural')}
                       </p>
                     </div>
                   </div>
@@ -424,7 +418,7 @@ export default function MoneyDashboard() {
                 onClick={() => navigate('/money/invoices/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Create New Invoice
+                {t('money.dashboard.createNewInvoice')}
               </Button>
             </CardContent>
           </Card>
@@ -438,12 +432,12 @@ export default function MoneyDashboard() {
                     <ArrowUpRight className="h-5 w-5 text-red-600 dark:text-red-400" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg">Money Going Out</CardTitle>
-                    <CardDescription>Bills and expenses to pay</CardDescription>
+                    <CardTitle className="text-lg">{t('money.dashboard.moneyGoingOut')}</CardTitle>
+                    <CardDescription>{t('money.dashboard.billsAndExpenses')}</CardDescription>
                   </div>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/money/bills')}>
-                  View All
+                  {t('money.dashboard.viewAll')}
                 </Button>
               </div>
             </CardHeader>
@@ -451,19 +445,19 @@ export default function MoneyDashboard() {
               {/* Summary Stats */}
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Due this week</p>
+                  <p className="text-sm text-muted-foreground">{t('money.dashboard.dueThisWeek')}</p>
                   <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">
                     {formatCurrency(payablesSummary?.dueThisWeek || 0)}
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {payablesSummary?.dueThisWeekCount || 0} bill{(payablesSummary?.dueThisWeekCount || 0) !== 1 ? 's' : ''}
+                    {plural(payablesSummary?.dueThisWeekCount || 0, 'money.dashboard.bill', 'money.dashboard.billPlural')}
                   </p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/50">
-                  <p className="text-sm text-muted-foreground">Due later</p>
+                  <p className="text-sm text-muted-foreground">{t('money.dashboard.dueLater')}</p>
                   <p className="text-2xl font-bold">{formatCurrency(payablesSummary?.dueLater || 0)}</p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {payablesSummary?.dueLaterCount || 0} bill{(payablesSummary?.dueLaterCount || 0) !== 1 ? 's' : ''}
+                    {plural(payablesSummary?.dueLaterCount || 0, 'money.dashboard.bill', 'money.dashboard.billPlural')}
                   </p>
                 </div>
               </div>
@@ -478,10 +472,10 @@ export default function MoneyDashboard() {
                     <CircleAlert className="h-5 w-5 text-red-600" />
                     <div className="text-left">
                       <p className="font-medium text-sm text-red-700 dark:text-red-400">
-                        {formatCurrency(payablesSummary.overdue)} overdue
+                        {formatCurrency(payablesSummary.overdue)} {t('money.dashboard.overdue')}
                       </p>
                       <p className="text-xs text-red-600 dark:text-red-500">
-                        {payablesSummary.overdueCount} bill{payablesSummary.overdueCount !== 1 ? 's' : ''} past due
+                        {plural(payablesSummary.overdueCount, 'money.dashboard.billsPastDue', 'money.dashboard.billsPastDuePlural')}
                       </p>
                     </div>
                   </div>
@@ -493,7 +487,7 @@ export default function MoneyDashboard() {
               {(!payablesSummary?.overdue || payablesSummary.overdue === 0) && (
                 <div className="flex items-center gap-2 p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  <p className="text-sm text-green-700 dark:text-green-400">No overdue bills</p>
+                  <p className="text-sm text-green-700 dark:text-green-400">{t('money.dashboard.noOverdueBills')}</p>
                 </div>
               )}
 
@@ -504,7 +498,7 @@ export default function MoneyDashboard() {
                 onClick={() => navigate('/money/bills/new')}
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Record New Bill
+                {t('money.dashboard.recordNewBill')}
               </Button>
             </CardContent>
           </Card>
@@ -518,10 +512,10 @@ export default function MoneyDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Activity className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Recent Invoices</CardTitle>
+                  <CardTitle className="text-base">{t('money.dashboard.recentInvoices')}</CardTitle>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/money/invoices')}>
-                  View All
+                  {t('money.dashboard.viewAll')}
                   <ArrowRight className="h-3 w-3 ml-1" />
                 </Button>
               </div>
@@ -551,10 +545,10 @@ export default function MoneyDashboard() {
                         <div className="text-right ml-4">
                           <p className="font-semibold">{formatCurrency(invoice.total)}</p>
                           {invoice.status === 'overdue' && (
-                            <p className="text-xs text-red-600">Needs follow-up</p>
+                            <p className="text-xs text-red-600">{t('money.dashboard.needsFollowUp')}</p>
                           )}
                           {invoice.status === 'draft' && (
-                            <p className="text-xs text-blue-600">Ready to send</p>
+                            <p className="text-xs text-blue-600">{t('money.dashboard.readyToSendShort')}</p>
                           )}
                         </div>
                       </button>
@@ -564,10 +558,10 @@ export default function MoneyDashboard() {
               ) : (
                 <div className="text-center py-8">
                   <Receipt className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
-                  <p className="text-muted-foreground mb-4">No invoices yet</p>
+                  <p className="text-muted-foreground mb-4">{t('money.dashboard.noInvoicesYet')}</p>
                   <Button onClick={() => navigate('/money/invoices/new')} variant="outline">
                     <Plus className="h-4 w-4 mr-2" />
-                    Create your first invoice
+                    {t('money.dashboard.createFirstInvoice')}
                   </Button>
                 </div>
               )}
@@ -577,7 +571,7 @@ export default function MoneyDashboard() {
           {/* Quick Actions - Simplified to 3 main actions */}
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-base">Quick Actions</CardTitle>
+              <CardTitle className="text-base">{t('money.dashboard.quickActions')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2">
               <Button
@@ -588,8 +582,8 @@ export default function MoneyDashboard() {
                   <Plus className="h-4 w-4" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">Create Invoice</p>
-                  <p className="text-xs text-indigo-200">Bill a customer</p>
+                  <p className="font-medium">{t('money.dashboard.createInvoice')}</p>
+                  <p className="text-xs text-indigo-200">{t('money.dashboard.billACustomer')}</p>
                 </div>
               </Button>
 
@@ -602,8 +596,8 @@ export default function MoneyDashboard() {
                   <Receipt className="h-4 w-4 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">Record Bill</p>
-                  <p className="text-xs text-muted-foreground">Enter a bill to pay</p>
+                  <p className="font-medium">{t('money.dashboard.recordBill')}</p>
+                  <p className="text-xs text-muted-foreground">{t('money.dashboard.enterBillToPay')}</p>
                 </div>
               </Button>
 
@@ -616,38 +610,38 @@ export default function MoneyDashboard() {
                   <FileText className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div className="text-left">
-                  <p className="font-medium">View All Invoices</p>
-                  <p className="text-xs text-muted-foreground">Manage your invoices</p>
+                  <p className="font-medium">{t('money.dashboard.viewAllInvoices')}</p>
+                  <p className="text-xs text-muted-foreground">{t('money.dashboard.manageYourInvoices')}</p>
                 </div>
               </Button>
 
               {/* Collapsible more actions */}
               <div className="pt-2 border-t mt-3">
-                <p className="text-xs text-muted-foreground mb-2">More options</p>
+                <p className="text-xs text-muted-foreground mb-2">{t('money.dashboard.moreOptions')}</p>
                 <div className="grid grid-cols-2 gap-2">
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/customers')}>
                     <Users className="h-3 w-3 mr-1" />
-                    Customers
+                    {t('money.dashboard.customers')}
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/vendors')}>
                     <Users className="h-3 w-3 mr-1" />
-                    Vendors
+                    {t('money.dashboard.vendors')}
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/expenses')}>
                     <Receipt className="h-3 w-3 mr-1" />
-                    Expenses
+                    {t('money.dashboard.expenses')}
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/profit-loss')}>
                     <Activity className="h-3 w-3 mr-1" />
-                    Reports
+                    {t('money.dashboard.reports')}
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/vat-settings')}>
                     <Receipt className="h-3 w-3 mr-1" />
-                    VAT Settings
+                    {t('money.dashboard.vatSettings')}
                   </Button>
                   <Button variant="ghost" size="sm" className="justify-start text-xs" onClick={() => navigate('/money/vat-returns')}>
                     <FileText className="h-3 w-3 mr-1" />
-                    VAT Returns
+                    {t('money.dashboard.vatReturns')}
                   </Button>
                 </div>
               </div>
@@ -662,13 +656,13 @@ export default function MoneyDashboard() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Users className="h-4 w-4 text-muted-foreground" />
-                  <CardTitle className="text-base">Who Owes You Money</CardTitle>
+                  <CardTitle className="text-base">{t('money.dashboard.whoOwesYou')}</CardTitle>
                 </div>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/money/customers')}>
-                  View All Customers
+                  {t('money.dashboard.viewAllCustomers')}
                 </Button>
               </div>
-              <CardDescription>Customers with unpaid invoices</CardDescription>
+              <CardDescription>{t('money.dashboard.customersUnpaid')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -705,7 +699,7 @@ export default function MoneyDashboard() {
                           <div>
                             <p className="font-medium text-sm truncate max-w-[120px]">{customer.name}</p>
                             <p className="text-xs text-muted-foreground">
-                              {customer.invoiceCount} invoice{customer.invoiceCount !== 1 ? 's' : ''}
+                              {plural(customer.invoiceCount, 'money.dashboard.invoice', 'money.dashboard.invoicePlural')}
                             </p>
                           </div>
                         </div>
@@ -723,7 +717,7 @@ export default function MoneyDashboard() {
                           <span className={`text-xs ${
                             isOverdue ? 'text-red-600 dark:text-red-400' : needsReminder ? 'text-amber-600 dark:text-amber-400' : 'text-muted-foreground'
                           }`}>
-                            {oldestDays > 0 ? `${oldestDays} days old` : 'Recent'}
+                            {oldestDays > 0 ? t('money.dashboard.daysOld', { count: oldestDays }) : t('money.dashboard.recent')}
                           </span>
                         </div>
 
@@ -736,7 +730,7 @@ export default function MoneyDashboard() {
                             onClick={() => navigate(`/money/invoices?customer=${customer.id}`)}
                           >
                             <Bell className="h-3 w-3 mr-1" />
-                            Send reminder
+                            {t('money.dashboard.sendReminder')}
                           </Button>
                         ) : needsReminder ? (
                           <Button
@@ -746,12 +740,12 @@ export default function MoneyDashboard() {
                             onClick={() => navigate(`/money/invoices?customer=${customer.id}`)}
                           >
                             <Bell className="h-3 w-3 mr-1" />
-                            Follow up
+                            {t('money.dashboard.followUp')}
                           </Button>
                         ) : (
                           <span className="text-xs text-green-600 dark:text-green-400 flex items-center gap-1">
                             <CheckCircle2 className="h-3 w-3" />
-                            Wait
+                            {t('money.dashboard.wait')}
                           </span>
                         )}
                       </div>

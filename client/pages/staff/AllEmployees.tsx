@@ -640,17 +640,17 @@ export default function AllEmployees() {
         {/* Statistics - Quieter, data-first orientation */}
         <div className="flex items-center gap-6 mb-6 text-sm">
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Total:</span>
+            <span className="text-muted-foreground">{t("employees.stats.total")}</span>
             <span className="font-semibold">{employees.length}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Active:</span>
+            <span className="text-muted-foreground">{t("employees.stats.active")}</span>
             <span className="font-semibold text-emerald-600 dark:text-emerald-400">
               {employees.filter((emp) => emp.status === "active").length}
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">Depts:</span>
+            <span className="text-muted-foreground">{t("employees.stats.depts")}</span>
             <span className="font-semibold">
               {new Set(employees.map((emp) => emp.jobDetails.department)).size}
             </span>
@@ -661,7 +661,7 @@ export default function AllEmployees() {
               className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:underline"
             >
               <AlertTriangle className="h-3.5 w-3.5" />
-              <span>{incompleteEmployees.length} incomplete</span>
+              <span>{t("employees.stats.incomplete", { count: incompleteEmployees.length })}</span>
             </button>
           )}
         </div>
@@ -672,13 +672,13 @@ export default function AllEmployees() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
-                {complianceFilter === "missing-contract" && "Showing employees missing work contract"}
-                {complianceFilter === "missing-inss" && "Showing employees missing INSS number"}
-                {complianceFilter === "missing-bank" && "Showing employees missing bank details"}
-                {complianceFilter === "blocking-issues" && "Showing employees with payroll-blocking issues"}
+                {complianceFilter === "missing-contract" && t("employees.compliance.missingContract")}
+                {complianceFilter === "missing-inss" && t("employees.compliance.missingInss")}
+                {complianceFilter === "missing-bank" && t("employees.compliance.missingBank")}
+                {complianceFilter === "blocking-issues" && t("employees.compliance.blockingIssues")}
               </span>
               <span className="text-xs text-amber-600 dark:text-amber-400">
-                ({filteredEmployees.length} found)
+                {t("employees.compliance.found", { count: filteredEmployees.length })}
               </span>
             </div>
             <Button
@@ -690,7 +690,7 @@ export default function AllEmployees() {
               }}
               className="text-amber-700 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
             >
-              Clear filter
+              {t("employees.compliance.clearFilter")}
             </Button>
           </div>
         )}
@@ -701,7 +701,7 @@ export default function AllEmployees() {
           <div className="relative flex-1 max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, ID, or department..."
+              placeholder={t("employees.searchPlaceholder")}
               className="pl-9"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -713,10 +713,10 @@ export default function AllEmployees() {
           <div className="flex items-center gap-2">
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
               <SelectTrigger className="w-[140px] h-9">
-                <SelectValue placeholder="Department" />
+                <SelectValue placeholder={t("employees.filterLabels.department")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Depts</SelectItem>
+                <SelectItem value="all">{t("employees.quickFilters.allDepts")}</SelectItem>
                 {getUniqueValues("department").map((dept) => (
                   <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                 ))}
@@ -725,10 +725,10 @@ export default function AllEmployees() {
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger className="w-[110px] h-9">
-                <SelectValue placeholder="Status" />
+                <SelectValue placeholder={t("employees.filterLabels.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="all">{t("employees.quickFilters.allStatus")}</SelectItem>
                 {getUniqueValues("status").map((status) => (
                   <SelectItem key={status} value={status}>{getStatusLabel(status)}</SelectItem>
                 ))}
@@ -742,7 +742,7 @@ export default function AllEmployees() {
               className={hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
             >
               <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-              Advanced
+              {t("employees.buttons.advanced")}
               {activeFilterCount > 2 && ` (${activeFilterCount - 2})`}
             </Button>
           </div>
@@ -753,10 +753,10 @@ export default function AllEmployees() {
             size="sm"
             onClick={() => setShowSalary(!showSalary)}
             className="text-muted-foreground"
-            title={showSalary ? "Hide salary column" : "Show salary column"}
+            title={showSalary ? t("employees.tooltips.hideSalaryColumn") : t("employees.tooltips.showSalaryColumn")}
           >
             {showSalary ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
-            {showSalary ? "Hide salary" : "Show salary"}
+            {showSalary ? t("employees.buttons.hideSalary") : t("employees.buttons.showSalary")}
           </Button>
 
           <div className="flex-1" />
@@ -767,7 +767,7 @@ export default function AllEmployees() {
               variant="outline"
               size="sm"
               onClick={handleDownloadTemplate}
-              title="Download CSV template"
+              title={t("employees.tooltips.downloadTemplate")}
             >
               <FileText className="h-4 w-4" />
             </Button>
@@ -775,7 +775,7 @@ export default function AllEmployees() {
               variant="outline"
               size="sm"
               onClick={() => document.getElementById("csv-upload")?.click()}
-              title="Import from CSV"
+              title={t("employees.tooltips.importCsv")}
             >
               <Upload className="h-4 w-4" />
             </Button>
@@ -783,7 +783,7 @@ export default function AllEmployees() {
               variant="outline"
               size="sm"
               onClick={handleExport}
-              title="Export to CSV"
+              title={t("employees.tooltips.exportCsv")}
             >
               <Download className="h-4 w-4" />
             </Button>
@@ -793,7 +793,7 @@ export default function AllEmployees() {
               className="bg-blue-500 hover:bg-blue-600"
             >
               <Plus className="h-4 w-4 mr-1.5" />
-              Add
+              {t("employees.buttons.add")}
             </Button>
           </div>
 
@@ -1044,9 +1044,9 @@ export default function AllEmployees() {
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg">Employee Directory</CardTitle>
+                <CardTitle className="text-lg">{t("employees.directory.title")}</CardTitle>
                 <CardDescription>
-                  {filteredEmployees.length} of {employees.length} employees
+                  {t("employees.directory.countSummary", { shown: filteredEmployees.length, total: employees.length })}
                 </CardDescription>
               </div>
             </div>
@@ -1057,24 +1057,24 @@ export default function AllEmployees() {
                 <thead className="sticky top-0 bg-background border-b z-10">
                   <tr>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Employee
+                      {t("employees.table.employee")}
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Department
+                      {t("employees.table.department")}
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Position
+                      {t("employees.table.position")}
                     </th>
                     <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Status
+                      {t("employees.table.status")}
                     </th>
                     {showSalary && (
                       <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        Salary
+                        {t("employees.table.salary")}
                       </th>
                     )}
                     <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      Actions
+                      {t("employees.table.actions")}
                     </th>
                   </tr>
                 </thead>
@@ -1149,7 +1149,7 @@ export default function AllEmployees() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            title="View profile"
+                            title={t("employees.tooltips.viewProfile")}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleViewEmployee(employee);
@@ -1161,7 +1161,7 @@ export default function AllEmployees() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8"
-                            title="Edit employee"
+                            title={t("employees.tooltips.editEmployee")}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleEditEmployee(employee);
@@ -1173,7 +1173,7 @@ export default function AllEmployees() {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                            title="Offboard employee"
+                            title={t("employees.tooltips.offboardEmployee")}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDeleteEmployee(employee);
