@@ -4,6 +4,15 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
+  test: {
+    globals: true,
+    environment: 'node',
+    testTimeout: 30000,
+    hookTimeout: 30000,
+    setupFiles: ['./tests/setup.ts'],
+    include: ['tests/client/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['tests/rules/**', 'tests/functions/**', 'node_modules/**', 'dist/**'],
+  },
   server: {
     host: "::",
     port: 8080,
