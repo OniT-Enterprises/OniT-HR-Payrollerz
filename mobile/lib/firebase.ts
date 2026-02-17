@@ -7,11 +7,13 @@ import {
   initializeAuth,
   getReactNativePersistence,
   getAuth,
+  type Auth,
 } from 'firebase/auth';
 import {
   getFirestore,
   initializeFirestore,
   memoryLocalCache,
+  type Firestore,
 } from 'firebase/firestore';
 import { getFunctions } from 'firebase/functions';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -29,14 +31,27 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 // Auth with AsyncStorage persistence (not browser localStorage)
-export const auth = initializeAuth(app, {
-  persistence: getReactNativePersistence(AsyncStorage),
-});
+// Wrapped in try/catch — initializeAuth throws on hot reload if already initialized
+let auth: Auth;
+try {
+  auth = initializeAuth(app, {
+    persistence: getReactNativePersistence(AsyncStorage),
+  });
+} catch {
+  auth = getAuth(app);
+}
+export { auth };
 
 // Firestore with memory cache
-export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache(),
-});
+let db: Firestore;
+try {
+  db = initializeFirestore(app, {
+    localCache: memoryLocalCache(),
+  });
+} catch {
+  db = getFirestore(app);
+}
+export { db };
 
 // Cloud Functions
 export const functions = getFunctions(app);

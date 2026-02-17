@@ -1,15 +1,31 @@
 /**
  * Kaixa — Tab Navigation Layout v2
  * Sharp, editorial dark theme. Refined tab bar with dot indicator.
+ *
+ * Bottom tabs: Home, Osan, Faan
+ * Hidden tabs (still navigable): Tab (sales), Konta (profile)
+ * Konta accessible via top-right header icon on all screens.
  */
-import { Tabs } from 'expo-router';
-import { StyleSheet, View } from 'react-native';
-import { Home, Wallet, ShoppingBag, Users, User } from 'lucide-react-native';
+import { Tabs, router } from 'expo-router';
+import { StyleSheet, View, TouchableOpacity } from 'react-native';
+import { Home, Wallet, ShoppingBag, User } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
 
 const ICON_SIZE = 21;
 const STROKE_DEFAULT = 1.6;
 const STROKE_ACTIVE = 2.2;
+
+function KontaHeaderButton() {
+  return (
+    <TouchableOpacity
+      onPress={() => router.push('/(tabs)/profile')}
+      style={styles.headerBtn}
+      activeOpacity={0.7}
+    >
+      <User size={20} color={colors.textSecondary} strokeWidth={1.8} />
+    </TouchableOpacity>
+  );
+}
 
 export default function TabLayout() {
   return (
@@ -28,6 +44,7 @@ export default function TabLayout() {
           color: colors.text,
           letterSpacing: -0.3,
         },
+        headerRight: () => <KontaHeaderButton />,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarStyle: {
@@ -100,38 +117,21 @@ export default function TabLayout() {
           ),
         }}
       />
+      {/* Hidden from bottom tab bar — still navigable via Quick Actions */}
       <Tabs.Screen
         name="sales"
         options={{
           title: 'Tab',
-          tabBarLabel: 'Tab',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
-              <Users
-                size={ICON_SIZE}
-                color={color}
-                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
-              />
-            </View>
-          ),
+          href: null,
         }}
       />
+      {/* Hidden from bottom tab bar — accessible via top-right header icon */}
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Konta',
-          tabBarLabel: 'Konta',
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.iconWrap}>
-              {focused && <View style={styles.activeDot} />}
-              <User
-                size={ICON_SIZE}
-                color={color}
-                strokeWidth={focused ? STROKE_ACTIVE : STROKE_DEFAULT}
-              />
-            </View>
-          ),
+          href: null,
+          headerRight: undefined,
         }}
       />
     </Tabs>
@@ -151,5 +151,14 @@ const styles = StyleSheet.create({
     height: 4,
     borderRadius: 2,
     backgroundColor: colors.primary,
+  },
+  headerBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: colors.bgElevated,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
   },
 });

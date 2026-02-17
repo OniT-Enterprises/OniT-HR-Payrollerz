@@ -1,6 +1,6 @@
 /**
- * Kaixa — Profile / Settings Screen (Konta)
- * Dark theme with gradient avatar, warm accents
+ * Kaixa — Profile / Settings Screen (Konta) v2
+ * Sharp editorial dark theme. Friendly descriptions.
  *
  * Includes editable business profile section.
  */
@@ -55,14 +55,10 @@ export default function ProfileScreen() {
   const [bizPhone, setBizPhone] = useState('');
   const [bizVatReg, setBizVatReg] = useState('');
 
-  // Load business profile on mount
   useEffect(() => {
-    if (tenantId) {
-      loadBizProfile(tenantId);
-    }
+    if (tenantId) loadBizProfile(tenantId);
   }, [tenantId, loadBizProfile]);
 
-  // Sync form fields when profile loads
   useEffect(() => {
     setBizName(bizProfile.businessName);
     setBizAddress(bizProfile.address);
@@ -71,7 +67,6 @@ export default function ProfileScreen() {
   }, [bizProfile]);
 
   const startEditing = () => setEditing(true);
-
   const cancelEditing = () => {
     setBizName(bizProfile.businessName);
     setBizAddress(bizProfile.address);
@@ -99,14 +94,7 @@ export default function ProfileScreen() {
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Sign Out',
-        style: 'destructive',
-        onPress: () => {
-          clearTenant();
-          signOut();
-        },
-      },
+      { text: 'Sign Out', style: 'destructive', onPress: () => { clearTenant(); signOut(); }},
     ]);
   };
 
@@ -115,7 +103,7 @@ export default function ProfileScreen() {
       {/* Profile Card */}
       <View style={styles.profileCard}>
         <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
+          colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.avatar}
@@ -132,36 +120,24 @@ export default function ProfileScreen() {
       {tenantId && (
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Building2 size={14} color={colors.textTertiary} strokeWidth={2} />
+            <Building2 size={13} color={colors.textTertiary} strokeWidth={2} />
             <Text style={styles.sectionTitle}>NEGOSIU</Text>
+            <Text style={styles.sectionHint}>Your business details for receipts</Text>
             {!editing ? (
-              <TouchableOpacity
-                onPress={startEditing}
-                style={styles.editButton}
-                activeOpacity={0.7}
-              >
-                <Edit3 size={13} color={colors.primary} strokeWidth={2} />
+              <TouchableOpacity onPress={startEditing} style={styles.editButton} activeOpacity={0.7}>
+                <Edit3 size={12} color={colors.primary} strokeWidth={2} />
               </TouchableOpacity>
             ) : (
               <View style={styles.editActions}>
-                <TouchableOpacity
-                  onPress={cancelEditing}
-                  style={styles.cancelButton}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity onPress={cancelEditing} style={styles.cancelButton} activeOpacity={0.7}>
                   <Text style={styles.cancelText}>Cancel</Text>
                 </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={saveProfile}
-                  style={styles.saveButton}
-                  disabled={bizSaving}
-                  activeOpacity={0.7}
-                >
+                <TouchableOpacity onPress={saveProfile} style={styles.saveButton} disabled={bizSaving} activeOpacity={0.7}>
                   {bizSaving ? (
                     <ActivityIndicator size="small" color={colors.white} />
                   ) : (
                     <>
-                      <Save size={13} color={colors.white} strokeWidth={2} />
+                      <Save size={12} color={colors.white} strokeWidth={2} />
                       <Text style={styles.saveText}>Save</Text>
                     </>
                   )}
@@ -171,132 +147,70 @@ export default function ProfileScreen() {
           </View>
 
           {bizLoading ? (
-            <ActivityIndicator
-              size="small"
-              color={colors.primary}
-              style={{ paddingVertical: 20 }}
-            />
+            <ActivityIndicator size="small" color={colors.primary} style={{ paddingVertical: 20 }} />
           ) : (
             <>
-              {/* Business Name */}
               <View style={styles.fieldRow}>
                 <View style={styles.fieldIcon}>
-                  <Building2
-                    size={16}
-                    color={colors.textTertiary}
-                    strokeWidth={1.8}
-                  />
+                  <Building2 size={14} color={colors.textTertiary} strokeWidth={1.8} />
                 </View>
                 {editing ? (
-                  <TextInput
-                    style={styles.fieldInput}
-                    value={bizName}
-                    onChangeText={setBizName}
-                    placeholder="Business name"
-                    placeholderTextColor={colors.textTertiary}
-                  />
+                  <TextInput style={styles.fieldInput} value={bizName} onChangeText={setBizName} placeholder="Business name" placeholderTextColor={colors.textTertiary} />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Naran</Text>
-                    <Text style={styles.fieldValue}>
-                      {bizProfile.businessName || tenantName || '—'}
-                    </Text>
+                    <Text style={styles.fieldValue}>{bizProfile.businessName || tenantName || '—'}</Text>
                   </View>
                 )}
               </View>
 
-              {/* Address */}
               <View style={styles.fieldRow}>
                 <View style={styles.fieldIcon}>
-                  <MapPin
-                    size={16}
-                    color={colors.textTertiary}
-                    strokeWidth={1.8}
-                  />
+                  <MapPin size={14} color={colors.textTertiary} strokeWidth={1.8} />
                 </View>
                 {editing ? (
-                  <TextInput
-                    style={styles.fieldInput}
-                    value={bizAddress}
-                    onChangeText={setBizAddress}
-                    placeholder="Address"
-                    placeholderTextColor={colors.textTertiary}
-                  />
+                  <TextInput style={styles.fieldInput} value={bizAddress} onChangeText={setBizAddress} placeholder="Address" placeholderTextColor={colors.textTertiary} />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Enderesu</Text>
-                    <Text style={styles.fieldValue}>
-                      {bizProfile.address || '—'}
-                    </Text>
+                    <Text style={styles.fieldValue}>{bizProfile.address || '—'}</Text>
                   </View>
                 )}
               </View>
 
-              {/* Phone */}
               <View style={styles.fieldRow}>
                 <View style={styles.fieldIcon}>
-                  <Phone
-                    size={16}
-                    color={colors.textTertiary}
-                    strokeWidth={1.8}
-                  />
+                  <Phone size={14} color={colors.textTertiary} strokeWidth={1.8} />
                 </View>
                 {editing ? (
-                  <TextInput
-                    style={styles.fieldInput}
-                    value={bizPhone}
-                    onChangeText={setBizPhone}
-                    placeholder="Phone number"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="phone-pad"
-                  />
+                  <TextInput style={styles.fieldInput} value={bizPhone} onChangeText={setBizPhone} placeholder="Phone number" placeholderTextColor={colors.textTertiary} keyboardType="phone-pad" />
                 ) : (
                   <View style={styles.fieldDisplay}>
                     <Text style={styles.fieldLabel}>Telefone</Text>
-                    <Text style={styles.fieldValue}>
-                      {bizProfile.phone || '—'}
-                    </Text>
+                    <Text style={styles.fieldValue}>{bizProfile.phone || '—'}</Text>
                   </View>
                 )}
               </View>
 
-              {/* VAT Registration — only show when VAT is active */}
               {(vatActive || bizProfile.vatRegNumber) && (
                 <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                   <View style={styles.fieldIcon}>
-                    <FileText
-                      size={16}
-                      color={colors.textTertiary}
-                      strokeWidth={1.8}
-                    />
+                    <FileText size={14} color={colors.textTertiary} strokeWidth={1.8} />
                   </View>
                   {editing ? (
-                    <TextInput
-                      style={styles.fieldInput}
-                      value={bizVatReg}
-                      onChangeText={setBizVatReg}
-                      placeholder="VAT registration number"
-                      placeholderTextColor={colors.textTertiary}
-                    />
+                    <TextInput style={styles.fieldInput} value={bizVatReg} onChangeText={setBizVatReg} placeholder="VAT registration number" placeholderTextColor={colors.textTertiary} />
                   ) : (
                     <View style={styles.fieldDisplay}>
                       <Text style={styles.fieldLabel}>VAT No.</Text>
-                      <Text style={styles.fieldValue}>
-                        {bizProfile.vatRegNumber || '—'}
-                      </Text>
+                      <Text style={styles.fieldValue}>{bizProfile.vatRegNumber || '—'}</Text>
                     </View>
                   )}
                 </View>
               )}
 
-              {/* Role */}
               <View style={[styles.fieldRow, { borderBottomWidth: 0 }]}>
                 <View style={styles.fieldIcon}>
-                  <Info
-                    size={16}
-                    color={colors.textTertiary}
-                    strokeWidth={1.8}
-                  />
+                  <Info size={14} color={colors.textTertiary} strokeWidth={1.8} />
                 </View>
                 <View style={styles.fieldDisplay}>
                   <Text style={styles.fieldLabel}>Papel</Text>
@@ -304,21 +218,12 @@ export default function ProfileScreen() {
                 </View>
               </View>
 
-              {/* Switch business */}
-              {profile?.tenantAccess &&
-                Object.keys(profile.tenantAccess).length > 1 && (
-                  <TouchableOpacity
-                    style={styles.switchButton}
-                    activeOpacity={0.7}
-                  >
-                    <RefreshCw
-                      size={14}
-                      color={colors.primary}
-                      strokeWidth={2}
-                    />
-                    <Text style={styles.switchButtonText}>Troka Negosiu</Text>
-                  </TouchableOpacity>
-                )}
+              {profile?.tenantAccess && Object.keys(profile.tenantAccess).length > 1 && (
+                <TouchableOpacity style={styles.switchButton} activeOpacity={0.7}>
+                  <RefreshCw size={13} color={colors.primary} strokeWidth={2} />
+                  <Text style={styles.switchButtonText}>Troka Negosiu</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
         </View>
@@ -327,56 +232,40 @@ export default function ProfileScreen() {
       {/* Settings */}
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Info size={14} color={colors.textTertiary} strokeWidth={2} />
+          <Info size={13} color={colors.textTertiary} strokeWidth={2} />
           <Text style={styles.sectionTitle}>DEFINISAUN</Text>
         </View>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
           <View style={styles.menuLeft}>
-            <Globe size={18} color={colors.textSecondary} strokeWidth={1.8} />
+            <Globe size={16} color={colors.textSecondary} strokeWidth={1.8} />
             <Text style={styles.menuText}>Lian (Language)</Text>
           </View>
           <View style={styles.menuRight}>
             <Text style={styles.menuValue}>Tetun</Text>
-            <ChevronRight
-              size={16}
-              color={colors.textTertiary}
-              strokeWidth={2}
-            />
+            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
           <View style={styles.menuLeft}>
-            <DollarSign
-              size={18}
-              color={colors.textSecondary}
-              strokeWidth={1.8}
-            />
+            <DollarSign size={16} color={colors.textSecondary} strokeWidth={1.8} />
             <Text style={styles.menuText}>Moeda (Currency)</Text>
           </View>
           <View style={styles.menuRight}>
             <Text style={styles.menuValue}>USD ($)</Text>
-            <ChevronRight
-              size={16}
-              color={colors.textTertiary}
-              strokeWidth={2}
-            />
+            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
           </View>
         </TouchableOpacity>
 
         <TouchableOpacity style={styles.menuItem} activeOpacity={0.6}>
           <View style={styles.menuLeft}>
-            <Bell size={18} color={colors.textSecondary} strokeWidth={1.8} />
+            <Bell size={16} color={colors.textSecondary} strokeWidth={1.8} />
             <Text style={styles.menuText}>Notifikasaun</Text>
           </View>
           <View style={styles.menuRight}>
             <Text style={styles.menuValue}>On</Text>
-            <ChevronRight
-              size={16}
-              color={colors.textTertiary}
-              strokeWidth={2}
-            />
+            <ChevronRight size={14} color={colors.textTertiary} strokeWidth={2} />
           </View>
         </TouchableOpacity>
       </View>
@@ -389,246 +278,74 @@ export default function ProfileScreen() {
         </View>
         <View style={[styles.menuItem, { borderBottomWidth: 0 }]}>
           <Text style={styles.menuText}>Powered by</Text>
-          <Text style={[styles.menuValue, { color: colors.primary }]}>
-            Meza
-          </Text>
+          <Text style={[styles.menuValue, { color: colors.primary }]}>Meza</Text>
         </View>
       </View>
 
       {/* Sign Out */}
-      <TouchableOpacity
-        style={styles.signOutButton}
-        onPress={handleSignOut}
-        activeOpacity={0.7}
-      >
-        <LogOut size={18} color={colors.error} strokeWidth={2} />
+      <TouchableOpacity style={styles.signOutButton} onPress={handleSignOut} activeOpacity={0.7}>
+        <LogOut size={16} color={colors.moneyOut} strokeWidth={2} />
         <Text style={styles.signOutText}>Sai (Sign Out)</Text>
       </TouchableOpacity>
 
-      <Text style={styles.footer}>Kaixa by OniT - Timor-Leste</Text>
+      <Text style={styles.footer}>Kaixa by OniT — Timor-Leste</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { padding: 20, paddingBottom: 40 },
 
-  // Profile Card
   profileCard: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 20,
-    padding: 28,
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    backgroundColor: colors.bgCard, borderRadius: 12, padding: 28,
+    alignItems: 'center', marginBottom: 16, borderWidth: 0.5, borderColor: colors.border,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 14,
+    width: 64, height: 64, borderRadius: 16,
+    alignItems: 'center', justifyContent: 'center', marginBottom: 14,
   },
-  avatarText: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: colors.white,
-  },
-  name: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  email: {
-    fontSize: 14,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
+  avatarText: { fontSize: 26, fontWeight: '800', color: colors.white },
+  name: { fontSize: 20, fontWeight: '700', color: colors.text, letterSpacing: -0.3 },
+  email: { fontSize: 13, color: colors.textTertiary, marginTop: 2 },
 
-  // Sections
   section: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
+    backgroundColor: colors.bgCard, borderRadius: 10, padding: 16,
+    marginBottom: 12, borderWidth: 0.5, borderColor: colors.border,
   },
-  sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: '700',
-    color: colors.textTertiary,
-    letterSpacing: 1,
-    flex: 1,
-  },
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 12, flexWrap: 'wrap' },
+  sectionTitle: { fontSize: 10, fontWeight: '700', color: colors.textTertiary, letterSpacing: 1.5 },
+  sectionHint: { fontSize: 11, color: colors.textTertiary, flex: 1 },
 
-  // Edit / Save buttons in header
-  editButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(224, 141, 107, 0.12)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  editActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  cancelButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.bgElevated,
-  },
-  cancelText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-  saveButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: colors.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  saveText: {
-    fontSize: 12,
-    color: colors.white,
-    fontWeight: '700',
-  },
+  editButton: { width: 26, height: 26, borderRadius: 6, backgroundColor: colors.primaryGlow, alignItems: 'center', justifyContent: 'center' },
+  editActions: { flexDirection: 'row', gap: 6 },
+  cancelButton: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: colors.bgElevated },
+  cancelText: { fontSize: 11, color: colors.textSecondary, fontWeight: '600' },
+  saveButton: { paddingHorizontal: 10, paddingVertical: 5, borderRadius: 6, backgroundColor: colors.primary, flexDirection: 'row', alignItems: 'center', gap: 4 },
+  saveText: { fontSize: 11, color: colors.white, fontWeight: '700' },
 
-  // Field rows
-  fieldRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-    gap: 10,
-  },
-  fieldIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    backgroundColor: colors.bgElevated,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  fieldDisplay: {
-    flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  fieldLabel: {
-    fontSize: 15,
-    color: colors.textSecondary,
-  },
-  fieldValue: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  fieldInput: {
-    flex: 1,
-    fontSize: 15,
-    color: colors.text,
-    backgroundColor: colors.bgElevated,
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
+  fieldRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 11, borderBottomWidth: 0.5, borderBottomColor: colors.border, gap: 10 },
+  fieldIcon: { width: 30, height: 30, borderRadius: 6, backgroundColor: colors.bgElevated, alignItems: 'center', justifyContent: 'center' },
+  fieldDisplay: { flex: 1, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  fieldLabel: { fontSize: 14, color: colors.textSecondary },
+  fieldValue: { fontSize: 14, fontWeight: '600', color: colors.text },
+  fieldInput: { flex: 1, fontSize: 14, color: colors.text, backgroundColor: colors.bgElevated, borderRadius: 6, paddingHorizontal: 10, paddingVertical: 8, borderWidth: 0.5, borderColor: colors.borderMedium },
 
-  switchButton: {
-    marginTop: 14,
-    paddingVertical: 10,
-    alignItems: 'center',
-    borderRadius: 10,
-    backgroundColor: 'rgba(224, 141, 107, 0.1)',
-    borderWidth: 1,
-    borderColor: 'rgba(224, 141, 107, 0.2)',
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  switchButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.primary,
-  },
+  switchButton: { marginTop: 12, paddingVertical: 10, alignItems: 'center', borderRadius: 8, backgroundColor: colors.primaryGlow, flexDirection: 'row', justifyContent: 'center', gap: 8 },
+  switchButtonText: { fontSize: 13, fontWeight: '600', color: colors.primary },
 
-  // Menu Items
-  menuItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
-  },
-  menuLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  menuRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  menuText: {
-    fontSize: 15,
-    color: colors.text,
-  },
-  menuValue: {
-    fontSize: 14,
-    color: colors.textTertiary,
-  },
+  menuItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 13, borderBottomWidth: 0.5, borderBottomColor: colors.border },
+  menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  menuRight: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  menuText: { fontSize: 14, color: colors.text },
+  menuValue: { fontSize: 13, color: colors.textTertiary },
 
-  // Sign Out
   signOutButton: {
-    backgroundColor: colors.bgCard,
-    borderRadius: 12,
-    padding: 16,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(248, 113, 113, 0.2)',
-    marginTop: 8,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 8,
+    backgroundColor: colors.bgCard, borderRadius: 10, padding: 14,
+    alignItems: 'center', borderWidth: 0.5, borderColor: 'rgba(251, 113, 133, 0.15)',
+    marginTop: 4, flexDirection: 'row', justifyContent: 'center', gap: 8,
   },
-  signOutText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.error,
-  },
+  signOutText: { fontSize: 15, fontWeight: '600', color: colors.moneyOut },
 
-  footer: {
-    textAlign: 'center',
-    color: colors.textTertiary,
-    fontSize: 12,
-    marginTop: 24,
-  },
+  footer: { textAlign: 'center', color: colors.textTertiary, fontSize: 11, marginTop: 24, letterSpacing: 0.3 },
 });

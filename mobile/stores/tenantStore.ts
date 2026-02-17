@@ -3,8 +3,6 @@
  * Mirrors the web app's TenantContext but using Zustand
  */
 import { create } from 'zustand';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../lib/firebase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface TenantState {

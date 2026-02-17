@@ -1,6 +1,6 @@
 /**
- * Kaixa — Home Screen
- * Dark theme with gradient hero summary, Lucide icons, warm accents
+ * Kaixa — Home Screen v2
+ * Sharp editorial dark theme. Premium fintech feel.
  *
  * Wired to transaction store — shows real today's data from Firestore.
  */
@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  Image,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
@@ -96,7 +97,10 @@ export default function HomeScreen() {
   };
 
   const handleMonthlyReport = async () => {
-    if (!tenantId) return;
+    if (!tenantId) {
+      Alert.alert('Avizu', 'Log in ba atu haree relatóriu');
+      return;
+    }
     setGeneratingReport(true);
     try {
       const { text } = await generateMonthlyReport(
@@ -104,8 +108,9 @@ export default function HomeScreen() {
         bizProfile.businessName || tenantName || 'Kaixa'
       );
       await Share.share({ message: text });
-    } catch {
-      Alert.alert('Error', 'Failed to generate report');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      Alert.alert('Error', `Failed to generate report: ${msg}`);
     } finally {
       setGeneratingReport(false);
     }
@@ -148,6 +153,15 @@ export default function HomeScreen() {
         />
       }
     >
+      {/* Logo */}
+      <View style={styles.logoRow}>
+        <Image
+          source={require('../../assets/kaixa-logo-light-on-dark.png')}
+          style={styles.logo}
+          resizeMode="contain"
+        />
+      </View>
+
       {/* Greeting */}
       <View style={styles.greetingContainer}>
         <Text style={styles.greetingText}>
@@ -158,17 +172,18 @@ export default function HomeScreen() {
       </View>
 
       {/* Hero Summary Card */}
-      <LinearGradient
-        colors={[colors.bgCard, colors.bgElevated]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={styles.summaryCard}
-      >
-        <Text style={styles.summaryTitle}>OHIN (TODAY)</Text>
+      <View style={styles.summaryCard}>
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientMid, colors.gradientEnd]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.summaryGradientStrip}
+        />
+        <Text style={styles.summaryTitle}>OHIN</Text>
         <View style={styles.summaryRow}>
           <View style={styles.summaryItem}>
             <View style={styles.summaryIconRow}>
-              <ArrowDownLeft size={14} color={colors.moneyIn} strokeWidth={2.5} />
+              <ArrowDownLeft size={13} color={colors.moneyIn} strokeWidth={2.5} />
               <Text style={styles.summaryLabel}>Tama</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.moneyIn }]}>
@@ -180,7 +195,7 @@ export default function HomeScreen() {
 
           <View style={styles.summaryItem}>
             <View style={styles.summaryIconRow}>
-              <ArrowUpRight size={14} color={colors.moneyOut} strokeWidth={2.5} />
+              <ArrowUpRight size={13} color={colors.moneyOut} strokeWidth={2.5} />
               <Text style={styles.summaryLabel}>Sai</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.moneyOut }]}>
@@ -192,7 +207,7 @@ export default function HomeScreen() {
 
           <View style={styles.summaryItem}>
             <View style={styles.summaryIconRow}>
-              <Minus size={14} color={colors.primary} strokeWidth={2.5} />
+              <Minus size={13} color={colors.primary} strokeWidth={2.5} />
               <Text style={styles.summaryLabel}>Lukru</Text>
             </View>
             <Text style={[styles.summaryAmount, { color: colors.text }]}>
@@ -209,14 +224,14 @@ export default function HomeScreen() {
             </Text>
           </View>
         )}
-      </LinearGradient>
+      </View>
 
       {/* VAT Dashboard — only when VAT is active */}
       {vatActive && (
         <View style={styles.vatDashboard}>
           <View style={styles.vatDashHeader}>
             <View style={styles.vatDashIcon}>
-              <Receipt size={16} color={colors.info} strokeWidth={2} />
+              <Receipt size={14} color={colors.info} strokeWidth={2} />
             </View>
             <Text style={styles.vatDashTitle}>VAT {vatRate}%</Text>
           </View>
@@ -233,9 +248,14 @@ export default function HomeScreen() {
               </Text>
             </View>
           </View>
-          <Text style={styles.vatDashHint}>
-            Haree Money tab ba detalle VAT
-          </Text>
+          <TouchableOpacity
+            style={styles.vatDashBtn}
+            onPress={() => router.push('/tax-filing')}
+            activeOpacity={0.7}
+          >
+            <FileBarChart size={13} color={colors.info} strokeWidth={2} />
+            <Text style={styles.vatDashBtnText}>Deklarasaun VAT</Text>
+          </TouchableOpacity>
         </View>
       )}
 
@@ -243,64 +263,64 @@ export default function HomeScreen() {
       <Text style={styles.sectionTitle}>Aksaun Lalais</Text>
       <View style={styles.actionsGrid}>
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.moneyInBg, borderColor: 'rgba(74, 222, 128, 0.15)' }]}
+          style={[styles.actionButton, { backgroundColor: colors.moneyInBg }]}
           onPress={() => router.push('/(tabs)/money?type=in')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(74, 222, 128, 0.15)' }]}>
-            <TrendingUp size={22} color={colors.moneyIn} strokeWidth={2} />
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(52, 211, 153, 0.12)' }]}>
+            <TrendingUp size={20} color={colors.moneyIn} strokeWidth={2} />
           </View>
           <Text style={styles.actionLabel}>Osan Tama</Text>
           <Text style={styles.actionSub}>Money In</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: colors.moneyOutBg, borderColor: 'rgba(248, 113, 113, 0.15)' }]}
+          style={[styles.actionButton, { backgroundColor: colors.moneyOutBg }]}
           onPress={() => router.push('/(tabs)/money?type=out')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(248, 113, 113, 0.15)' }]}>
-            <TrendingDown size={22} color={colors.moneyOut} strokeWidth={2} />
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(251, 113, 133, 0.12)' }]}>
+            <TrendingDown size={20} color={colors.moneyOut} strokeWidth={2} />
           </View>
           <Text style={styles.actionLabel}>Osan Sai</Text>
           <Text style={styles.actionSub}>Money Out</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(224, 141, 107, 0.08)', borderColor: 'rgba(224, 141, 107, 0.15)' }]}
+          style={[styles.actionButton, { backgroundColor: colors.primaryGlow }]}
           onPress={() => router.push('/(tabs)/sell')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(224, 141, 107, 0.15)' }]}>
-            <ShoppingBag size={22} color={colors.primary} strokeWidth={2} />
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(224, 141, 107, 0.12)' }]}>
+            <ShoppingBag size={20} color={colors.primary} strokeWidth={2} />
           </View>
           <Text style={styles.actionLabel}>Faan</Text>
           <Text style={styles.actionSub}>Sell</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(250, 204, 21, 0.08)', borderColor: 'rgba(250, 204, 21, 0.15)' }]}
+          style={[styles.actionButton, { backgroundColor: 'rgba(250, 204, 21, 0.06)' }]}
           onPress={() => router.push('/(tabs)/sales')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(250, 204, 21, 0.15)' }]}>
-            <Users size={22} color={colors.warning} strokeWidth={2} />
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(250, 204, 21, 0.12)' }]}>
+            <Users size={20} color={colors.warning} strokeWidth={2} />
           </View>
           <Text style={styles.actionLabel}>Tab</Text>
           <Text style={styles.actionSub}>Credit</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(96, 165, 250, 0.08)', borderColor: 'rgba(96, 165, 250, 0.15)' }]}
+          style={[styles.actionButton, { backgroundColor: 'rgba(96, 165, 250, 0.06)' }]}
           onPress={handleMonthlyReport}
           disabled={generatingReport}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(96, 165, 250, 0.15)' }]}>
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(96, 165, 250, 0.12)' }]}>
             {generatingReport ? (
               <ActivityIndicator size="small" color={colors.info} />
             ) : (
-              <FileBarChart size={22} color={colors.info} strokeWidth={2} />
+              <FileBarChart size={20} color={colors.info} strokeWidth={2} />
             )}
           </View>
           <Text style={styles.actionLabel}>Relatóriu</Text>
@@ -308,15 +328,15 @@ export default function HomeScreen() {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.actionButton, { backgroundColor: 'rgba(77, 179, 163, 0.08)', borderColor: 'rgba(77, 179, 163, 0.15)' }]}
-          onPress={() => router.push('/(tabs)/money')}
+          style={[styles.actionButton, { backgroundColor: 'rgba(74, 222, 128, 0.06)' }]}
+          onPress={() => router.push('/tax-filing')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(77, 179, 163, 0.15)' }]}>
-            <Clock size={22} color={colors.secondary} strokeWidth={2} />
+          <View style={[styles.actionIconWrap, { backgroundColor: 'rgba(74, 222, 128, 0.12)' }]}>
+            <Receipt size={20} color={colors.success} strokeWidth={2} />
           </View>
-          <Text style={styles.actionLabel}>Istoria</Text>
-          <Text style={styles.actionSub}>History</Text>
+          <Text style={styles.actionLabel}>VAT</Text>
+          <Text style={styles.actionSub}>Tax Filing</Text>
         </TouchableOpacity>
       </View>
 
@@ -329,7 +349,7 @@ export default function HomeScreen() {
       ) : recent.length === 0 ? (
         <View style={styles.emptyState}>
           <View style={styles.emptyIconWrap}>
-            <Clock size={28} color={colors.textTertiary} strokeWidth={1.5} />
+            <Clock size={24} color={colors.textTertiary} strokeWidth={1.5} />
           </View>
           <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
           <Text style={styles.emptySubtext}>
@@ -342,7 +362,7 @@ export default function HomeScreen() {
             <View key={tx.id} style={styles.txRow}>
               <View
                 style={[
-                  styles.txIndicator,
+                  styles.txDot,
                   {
                     backgroundColor:
                       tx.type === 'in' ? colors.moneyIn : colors.moneyOut,
@@ -389,41 +409,64 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // Greeting
-  greetingContainer: {
+  // Logo
+  logoRow: {
     marginBottom: 20,
   },
+  logo: {
+    height: 36,
+    width: 140,
+  },
+
+  // Greeting
+  greetingContainer: {
+    marginBottom: 24,
+  },
   greetingText: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '800',
     color: colors.text,
+    letterSpacing: -0.5,
   },
   dateText: {
-    fontSize: 14,
+    fontSize: 13,
     color: colors.textTertiary,
-    marginTop: 2,
+    marginTop: 4,
+    letterSpacing: 0.1,
   },
   tenantText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.primary,
     fontWeight: '600',
-    marginTop: 4,
+    marginTop: 6,
+    letterSpacing: 0.2,
+    textTransform: 'uppercase',
   },
 
   // Summary Card
   summaryCard: {
-    borderRadius: 20,
+    borderRadius: 10,
     padding: 20,
-    marginBottom: 28,
-    borderWidth: 1,
+    marginBottom: 24,
+    borderWidth: 0.5,
     borderColor: colors.border,
+    backgroundColor: colors.bgCard,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  summaryGradientStrip: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
   },
   summaryTitle: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.textTertiary,
     marginBottom: 16,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
   },
   summaryRow: {
     flexDirection: 'row',
@@ -440,41 +483,41 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
   summaryDivider: {
-    width: 1,
-    height: 44,
-    backgroundColor: colors.border,
+    width: 0.5,
+    height: 40,
+    backgroundColor: colors.borderMedium,
   },
   summaryLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
+    fontSize: 11,
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   summaryAmount: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: '800',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.5,
   },
   vatLine: {
-    marginTop: 12,
-    paddingTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderSubtle,
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 0.5,
+    borderTopColor: colors.border,
     alignItems: 'center',
   },
   vatLineText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textTertiary,
-    fontStyle: 'italic',
   },
 
   // VAT Dashboard
   vatDashboard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 16,
+    borderRadius: 10,
     padding: 16,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(96, 165, 250, 0.2)',
+    marginBottom: 24,
+    borderWidth: 0.5,
+    borderColor: 'rgba(96, 165, 250, 0.15)',
   },
   vatDashHeader: {
     flexDirection: 'row',
@@ -483,17 +526,18 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   vatDashIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: 'rgba(96, 165, 250, 0.12)',
+    width: 26,
+    height: 26,
+    borderRadius: 6,
+    backgroundColor: 'rgba(96, 165, 250, 0.1)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   vatDashTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     color: colors.info,
+    letterSpacing: 0.3,
   },
   vatDashRow: {
     flexDirection: 'row',
@@ -504,15 +548,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   vatDashDivider: {
-    width: 1,
+    width: 0.5,
     height: 28,
-    backgroundColor: colors.border,
+    backgroundColor: colors.borderMedium,
   },
   vatDashLabel: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
     fontWeight: '500',
     marginBottom: 2,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
   },
   vatDashValue: {
     fontSize: 18,
@@ -520,130 +566,142 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontVariant: ['tabular-nums'],
   },
-  vatDashHint: {
-    fontSize: 11,
-    color: colors.textTertiary,
-    textAlign: 'center',
-    marginTop: 10,
-    fontStyle: 'italic',
+  vatDashBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    backgroundColor: 'rgba(96, 165, 250, 0.08)',
+    borderWidth: 0.5,
+    borderColor: 'rgba(96, 165, 250, 0.2)',
+  },
+  vatDashBtnText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: colors.info,
+    letterSpacing: 0.1,
   },
 
   // Section Title
   sectionTitle: {
-    fontSize: 15,
+    fontSize: 10,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     marginBottom: 12,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1.5,
   },
 
   // Quick Actions
   actionsGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 12,
+    gap: 10,
     marginBottom: 28,
   },
   actionButton: {
-    width: '30%',
-    borderRadius: 16,
+    width: '31%',
+    borderRadius: 10,
     padding: 14,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0,
   },
   actionIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,
   },
   actionLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.1,
   },
   actionSub: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
     marginTop: 2,
   },
 
   // Recent Transactions
   recentList: {
-    gap: 8,
+    gap: 2,
   },
   txRow: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 14,
-    paddingLeft: 18,
+    paddingLeft: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
   },
-  txIndicator: {
-    width: 3,
-    height: 32,
-    borderRadius: 2,
+  txDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 12,
   },
   txLeft: {
     flex: 1,
   },
   txCategory: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+    letterSpacing: -0.1,
   },
   txNote: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textTertiary,
     marginTop: 2,
   },
   txTime: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
-    marginTop: 4,
+    marginTop: 3,
     fontVariant: ['tabular-nums'],
   },
   txAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     marginLeft: 12,
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.3,
   },
 
   // Empty State
   emptyState: {
     backgroundColor: colors.bgCard,
-    borderRadius: 16,
+    borderRadius: 10,
     padding: 32,
     alignItems: 'center',
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.border,
     borderStyle: 'dashed',
   },
   emptyIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    width: 48,
+    height: 48,
+    borderRadius: 10,
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 12,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.textSecondary,
     marginBottom: 4,
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textTertiary,
     textAlign: 'center',
   },

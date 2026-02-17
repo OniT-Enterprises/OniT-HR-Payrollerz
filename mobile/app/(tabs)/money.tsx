@@ -1,6 +1,7 @@
 /**
- * Kaixa — Money Screen (Osan)
- * Dark theme — gradient action buttons, dark modal, Lucide icons
+ * Kaixa — Money Screen (Osan) v2
+ * Sharp editorial dark theme. Premium fintech feel.
+ * Friendly helper text and descriptions throughout.
  *
  * VAT-ready: every transaction captures VAT fields (zeroed when VAT inactive).
  * Supports date range filtering: today / week / month.
@@ -29,8 +30,6 @@ import {
   Check,
   FileText,
   Share2,
-  Package,
-  Plus,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
 import { useVATStore } from '../../stores/vatStore';
@@ -44,7 +43,6 @@ import {
 } from '../../types/transaction';
 import { inferVATCategory } from '@onit/shared';
 import { useBusinessProfileStore } from '../../stores/businessProfileStore';
-import { useProductStore, type Product } from '../../stores/productStore';
 import { generateTextReceipt, getWhatsAppShareURL } from '../../lib/receipt';
 import { getNextReceiptNumber } from '../../lib/receiptCounter';
 import type { KaixaTransaction } from '../../types/transaction';
@@ -77,7 +75,6 @@ export default function MoneyScreen() {
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
-  // Transaction store (Firestore-backed)
   const {
     transactions,
     loading,
@@ -90,31 +87,21 @@ export default function MoneyScreen() {
     loadRange,
   } = useTransactionStore();
 
-  // VAT state
   const { isVATActive, effectiveRate, config, syncFromFirestore, loadCached } =
     useVATStore();
   const { tenantId } = useTenantStore();
   const { user } = useAuthStore();
   const bizProfile = useBusinessProfileStore((s) => s.profile);
-  const { products, loadProducts, updateProduct } = useProductStore();
-
-  // Restock modal state
-  const [restockModal, setRestockModal] = useState(false);
-  const [restockQtys, setRestockQtys] = useState<Record<string, string>>({});
-  const [restocking, setRestocking] = useState(false);
 
   const vatActive = isVATActive();
   const vatRate = effectiveRate();
 
-  // Load transactions for current date range
   useEffect(() => {
     if (tenantId) {
       loadRange(tenantId);
-      loadProducts(tenantId);
     }
-  }, [tenantId, loadRange, loadProducts]);
+  }, [tenantId, loadRange]);
 
-  // Load cached VAT config on mount, sync when online
   useEffect(() => {
     loadCached();
     if (tenantId) {
@@ -172,27 +159,6 @@ export default function MoneyScreen() {
 
       await addTransaction(txData, tenantId);
       setModalVisible(false);
-
-      // If this was a stock purchase, offer to update product inventory
-      if (txType === 'out' && category === 'stock' && products.length > 0) {
-        const stockProducts = products.filter((p) => p.stock !== null);
-        if (stockProducts.length > 0) {
-          Alert.alert(
-            'Atualiza Stoke?',
-            'Update product stock levels for this purchase?',
-            [
-              { text: 'Lae (No)', style: 'cancel' },
-              {
-                text: 'Sin (Yes)',
-                onPress: () => {
-                  setRestockQtys({});
-                  setRestockModal(true);
-                },
-              },
-            ]
-          );
-        }
-      }
     } catch {
       Alert.alert('Error', 'Failed to save. Please try again.');
     } finally {
@@ -241,7 +207,7 @@ export default function MoneyScreen() {
     try {
       await Share.share({ message: receipt });
     } catch {
-      // User cancelled — that's fine
+      // User cancelled
     }
   };
 
@@ -267,46 +233,6 @@ export default function MoneyScreen() {
     Linking.openURL(url).catch(() => {
       Alert.alert('Error', 'WhatsApp not installed');
     });
-  };
-
-  // ── Restock handler ─────────────────────────
-
-  const stockProducts = products.filter((p) => p.stock !== null);
-
-  const handleRestock = async () => {
-    if (!tenantId) return;
-
-    const updates: { product: Product; qty: number }[] = [];
-    for (const product of stockProducts) {
-      const raw = restockQtys[product.id];
-      if (!raw) continue;
-      const qty = parseInt(raw, 10);
-      if (isNaN(qty) || qty <= 0) continue;
-      updates.push({ product, qty });
-    }
-
-    if (updates.length === 0) {
-      setRestockModal(false);
-      return;
-    }
-
-    setRestocking(true);
-    try {
-      for (const { product, qty } of updates) {
-        await updateProduct(tenantId, product.id, {
-          stock: (product.stock ?? 0) + qty,
-        });
-      }
-      setRestockModal(false);
-      Alert.alert(
-        'Susesu!',
-        `Updated stock for ${updates.length} product${updates.length > 1 ? 's' : ''}`
-      );
-    } catch {
-      Alert.alert('Error', 'Failed to update stock');
-    } finally {
-      setRestocking(false);
-    }
   };
 
   const periodLabel =
@@ -349,28 +275,28 @@ export default function MoneyScreen() {
       {/* Summary Bar */}
       <View style={styles.summaryBar}>
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Tama</Text>
+          <Text style={styles.summaryLabel}>TAMA</Text>
           <Text style={[styles.summaryValue, { color: colors.moneyIn }]}>
             ${totalIn().toFixed(2)}
           </Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Sai</Text>
+          <Text style={styles.summaryLabel}>SAI</Text>
           <Text style={[styles.summaryValue, { color: colors.moneyOut }]}>
             ${totalOut().toFixed(2)}
           </Text>
         </View>
         <View style={styles.summaryDivider} />
         <View style={styles.summaryItem}>
-          <Text style={styles.summaryLabel}>Lukru</Text>
+          <Text style={styles.summaryLabel}>LUKRU</Text>
           <Text style={[styles.summaryValue, { color: colors.text }]}>
             ${(totalIn() - totalOut()).toFixed(2)}
           </Text>
         </View>
       </View>
 
-      {/* VAT Summary — only visible when VAT is active */}
+      {/* VAT Summary */}
       {vatActive && (
         <View style={styles.vatBar}>
           <Text style={styles.vatBarText}>
@@ -394,12 +320,12 @@ export default function MoneyScreen() {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#16A34A', '#4ADE80']}
+            colors={['#059669', '#34D399']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.bigButton}
           >
-            <ArrowDownLeft size={28} color={colors.white} strokeWidth={2.5} />
+            <ArrowDownLeft size={26} color={colors.white} strokeWidth={2.5} />
             <Text style={styles.bigButtonLabel}>OSAN TAMA</Text>
             <Text style={styles.bigButtonSub}>Money In</Text>
           </LinearGradient>
@@ -411,12 +337,12 @@ export default function MoneyScreen() {
           activeOpacity={0.85}
         >
           <LinearGradient
-            colors={['#DC2626', '#F87171']}
+            colors={['#E11D48', '#FB7185']}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.bigButton}
           >
-            <ArrowUpRight size={28} color={colors.white} strokeWidth={2.5} />
+            <ArrowUpRight size={26} color={colors.white} strokeWidth={2.5} />
             <Text style={styles.bigButtonLabel}>OSAN SAI</Text>
             <Text style={styles.bigButtonSub}>Money Out</Text>
           </LinearGradient>
@@ -432,10 +358,10 @@ export default function MoneyScreen() {
           </View>
         ) : transactions.length === 0 ? (
           <View style={styles.emptyState}>
-            <FileText size={24} color={colors.textTertiary} strokeWidth={1.5} />
-            <Text style={styles.emptyText}>Tap iha butaun leten hodi hahu</Text>
+            <FileText size={22} color={colors.textTertiary} strokeWidth={1.5} />
+            <Text style={styles.emptyText}>Seidauk iha transasaun</Text>
             <Text style={styles.emptySubtext}>
-              Tap a button above to start tracking
+              Tap the green or red button above to record money coming in or going out
             </Text>
           </View>
         ) : (
@@ -447,7 +373,7 @@ export default function MoneyScreen() {
               activeOpacity={0.7}
             >
               <View style={[
-                styles.txIndicator,
+                styles.txDot,
                 { backgroundColor: tx.type === 'in' ? colors.moneyIn : colors.moneyOut },
               ]} />
               <View style={styles.txLeft}>
@@ -479,11 +405,16 @@ export default function MoneyScreen() {
                   style={styles.shareBtn}
                   hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Share2 size={14} color={colors.textTertiary} strokeWidth={2} />
+                  <Share2 size={13} color={colors.textTertiary} strokeWidth={2} />
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
           ))
+        )}
+        {transactions.length > 0 && (
+          <Text style={styles.listHint}>
+            Hold any transaction to share as a receipt
+          </Text>
         )}
       </ScrollView>
 
@@ -498,33 +429,36 @@ export default function MoneyScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
           style={styles.modalContainer}
         >
-          {/* Header */}
           <View style={styles.modalHeader}>
             <TouchableOpacity
               onPress={() => setModalVisible(false)}
               style={styles.modalHeaderBtn}
             >
-              <X size={20} color={colors.textSecondary} strokeWidth={2} />
+              <X size={18} color={colors.textSecondary} strokeWidth={2} />
             </TouchableOpacity>
             <Text style={styles.modalTitle}>
               {txType === 'in' ? 'Osan Tama' : 'Osan Sai'}
             </Text>
             <TouchableOpacity
               onPress={saveTransaction}
-              style={styles.modalHeaderBtn}
+              style={[styles.modalHeaderBtn, styles.modalSaveBtn]}
               disabled={saving}
             >
               {saving ? (
-                <ActivityIndicator size="small" color={colors.primary} />
+                <ActivityIndicator size="small" color={colors.white} />
               ) : (
-                <Check size={20} color={colors.primary} strokeWidth={2.5} />
+                <Check size={18} color={colors.white} strokeWidth={2.5} />
               )}
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalBody}>
-            {/* Amount Input */}
             <Text style={styles.modalLabel}>MONTANTE</Text>
+            <Text style={styles.modalHint}>
+              {txType === 'in'
+                ? 'How much money did you receive?'
+                : 'How much did you spend?'}
+            </Text>
             <View style={[
               styles.amountContainer,
               { borderColor: txType === 'in' ? colors.moneyIn : colors.moneyOut },
@@ -540,7 +474,6 @@ export default function MoneyScreen() {
                 autoFocus
               />
             </View>
-            {/* VAT hint when active */}
             {vatActive && amount && parseFloat(amount) > 0 && (
               <Text style={styles.vatHint}>
                 incl. VAT {vatRate}%: ${(
@@ -550,8 +483,10 @@ export default function MoneyScreen() {
               </Text>
             )}
 
-            {/* Category Selection */}
             <Text style={styles.modalLabel}>KATEGORIA</Text>
+            <Text style={styles.modalHint}>
+              What type of {txType === 'in' ? 'income' : 'expense'} is this?
+            </Text>
             <View style={styles.categoryGrid}>
               {categories.map((cat) => (
                 <TouchableOpacity
@@ -583,8 +518,10 @@ export default function MoneyScreen() {
               ))}
             </View>
 
-            {/* Note */}
             <Text style={styles.modalLabel}>NOTA</Text>
+            <Text style={styles.modalHint}>
+              Add a short note to remember what this was for
+            </Text>
             <TextInput
               style={styles.noteInput}
               value={note}
@@ -596,75 +533,6 @@ export default function MoneyScreen() {
             />
           </ScrollView>
         </KeyboardAvoidingView>
-      </Modal>
-
-      {/* Restock Modal */}
-      <Modal
-        visible={restockModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => setRestockModal(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <TouchableOpacity
-              onPress={() => setRestockModal(false)}
-              style={styles.modalHeaderBtn}
-            >
-              <X size={20} color={colors.textSecondary} strokeWidth={2} />
-            </TouchableOpacity>
-            <Text style={styles.modalTitle}>Atualiza Stoke</Text>
-            <TouchableOpacity
-              onPress={handleRestock}
-              style={styles.modalHeaderBtn}
-              disabled={restocking}
-            >
-              {restocking ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Check size={20} color={colors.primary} strokeWidth={2.5} />
-              )}
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalBody}>
-            <Text style={styles.restockHint}>
-              Enter quantity to add for each product
-            </Text>
-            {stockProducts.map((product) => (
-              <View key={product.id} style={styles.restockRow}>
-                <View style={styles.restockInfo}>
-                  <Text style={styles.restockName} numberOfLines={1}>
-                    {product.name}
-                  </Text>
-                  <Text style={styles.restockCurrent}>
-                    Current: {product.stock ?? 0}
-                  </Text>
-                </View>
-                <View style={styles.restockInputWrap}>
-                  <Plus
-                    size={14}
-                    color={colors.moneyIn}
-                    strokeWidth={2.5}
-                  />
-                  <TextInput
-                    style={styles.restockInput}
-                    value={restockQtys[product.id] || ''}
-                    onChangeText={(val) =>
-                      setRestockQtys((prev) => ({
-                        ...prev,
-                        [product.id]: val,
-                      }))
-                    }
-                    placeholder="0"
-                    placeholderTextColor={colors.textTertiary}
-                    keyboardType="number-pad"
-                  />
-                </View>
-              </View>
-            ))}
-          </ScrollView>
-        </View>
       </Modal>
     </View>
   );
@@ -682,31 +550,32 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     paddingHorizontal: 16,
     paddingTop: 8,
-    paddingBottom: 4,
-    gap: 8,
+    paddingBottom: 6,
+    gap: 6,
   },
   periodTab: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 10,
+    borderRadius: 6,
     alignItems: 'center',
     backgroundColor: 'transparent',
   },
   periodTabActive: {
     backgroundColor: colors.bgElevated,
-    borderWidth: 1,
+    borderWidth: 0.5,
     borderColor: colors.primary,
   },
   periodTabText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.textTertiary,
+    letterSpacing: -0.1,
   },
   periodTabTextActive: {
     color: colors.primary,
   },
   periodTabSub: {
-    fontSize: 10,
+    fontSize: 9,
     color: colors.textTertiary,
     marginTop: 1,
   },
@@ -720,45 +589,46 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bgCard,
     paddingVertical: 14,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
   },
   summaryItem: {
     flex: 1,
     alignItems: 'center',
   },
   summaryLabel: {
-    fontSize: 11,
+    fontSize: 9,
     color: colors.textTertiary,
-    fontWeight: '600',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
   summaryValue: {
     fontSize: 18,
     fontWeight: '800',
     marginTop: 2,
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.5,
   },
   summaryDivider: {
-    width: 1,
-    height: 36,
-    backgroundColor: colors.border,
+    width: 0.5,
+    height: 34,
+    backgroundColor: colors.borderMedium,
   },
 
-  // VAT bar (only shows when VAT is active)
+  // VAT bar
   vatBar: {
     backgroundColor: colors.bgElevated,
-    paddingVertical: 6,
+    paddingVertical: 5,
     paddingHorizontal: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
   },
   vatBarText: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
     textAlign: 'center',
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
 
   // Count bar
@@ -768,7 +638,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
   countText: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textTertiary,
     fontWeight: '500',
   },
@@ -778,28 +648,28 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     paddingHorizontal: 16,
     paddingBottom: 12,
-    gap: 12,
+    gap: 10,
   },
   bigButtonWrap: {
     flex: 1,
-    borderRadius: 18,
+    borderRadius: 10,
     overflow: 'hidden',
   },
   bigButton: {
-    borderRadius: 18,
-    padding: 22,
+    borderRadius: 10,
+    padding: 20,
     alignItems: 'center',
-    gap: 6,
+    gap: 4,
   },
   bigButtonLabel: {
     color: colors.white,
-    fontSize: 16,
+    fontSize: 15,
     fontWeight: '800',
-    letterSpacing: 0.5,
+    letterSpacing: 0.8,
   },
   bigButtonSub: {
-    color: 'rgba(255,255,255,0.65)',
-    fontSize: 12,
+    color: 'rgba(255,255,255,0.55)',
+    fontSize: 11,
   },
 
   // Transaction List
@@ -809,47 +679,51 @@ const styles = StyleSheet.create({
   },
   listContent: {
     paddingBottom: 20,
+    gap: 2,
+  },
+  listHint: {
+    fontSize: 10,
+    color: colors.textTertiary,
+    textAlign: 'center',
+    marginTop: 12,
   },
   txRow: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
+    borderRadius: 8,
     padding: 14,
-    paddingLeft: 18,
-    marginBottom: 8,
+    paddingLeft: 16,
     flexDirection: 'row',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
   },
-  txIndicator: {
-    width: 3,
-    height: 32,
-    borderRadius: 2,
+  txDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
     marginRight: 12,
   },
   txLeft: {
     flex: 1,
   },
   txCategory: {
-    fontSize: 15,
+    fontSize: 14,
     fontWeight: '600',
     color: colors.text,
+    letterSpacing: -0.1,
   },
   txNote: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textTertiary,
     marginTop: 2,
   },
   txVat: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
     marginTop: 2,
-    fontStyle: 'italic',
   },
   txTime: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
-    marginTop: 4,
+    marginTop: 3,
     fontVariant: ['tabular-nums'],
   },
   txRight: {
@@ -858,9 +732,10 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   txAmount: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     fontVariant: ['tabular-nums'],
+    letterSpacing: -0.3,
   },
   shareBtn: {
     padding: 4,
@@ -873,13 +748,16 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emptyText: {
-    fontSize: 15,
+    fontSize: 14,
     color: colors.textSecondary,
     fontWeight: '500',
   },
   emptySubtext: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.textTertiary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 18,
   },
 
   // Modal
@@ -893,32 +771,42 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 16,
     backgroundColor: colors.bgCard,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.borderSubtle,
+    borderBottomWidth: 0.5,
+    borderBottomColor: colors.border,
   },
   modalHeaderBtn: {
     width: 36,
     height: 36,
-    borderRadius: 10,
+    borderRadius: 8,
     backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  modalSaveBtn: {
+    backgroundColor: colors.primary,
+  },
   modalTitle: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.text,
+    letterSpacing: -0.2,
   },
   modalBody: {
     padding: 20,
   },
   modalLabel: {
-    fontSize: 12,
+    fontSize: 10,
     fontWeight: '700',
     color: colors.textTertiary,
-    marginBottom: 8,
+    marginBottom: 4,
     marginTop: 20,
-    letterSpacing: 1,
+    letterSpacing: 1.5,
+  },
+  modalHint: {
+    fontSize: 12,
+    color: colors.textTertiary,
+    marginBottom: 8,
+    lineHeight: 16,
   },
 
   // Amount Input
@@ -926,8 +814,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.bgCard,
-    borderRadius: 16,
-    borderWidth: 2,
+    borderRadius: 10,
+    borderWidth: 1.5,
     padding: 16,
   },
   amountPrefix: {
@@ -942,13 +830,13 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     color: colors.text,
     fontVariant: ['tabular-nums'],
+    letterSpacing: -1,
   },
   vatHint: {
-    fontSize: 12,
+    fontSize: 11,
     color: colors.textTertiary,
     marginTop: 6,
     textAlign: 'right',
-    fontStyle: 'italic',
   },
 
   // Category Grid
@@ -958,94 +846,47 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   categoryChip: {
-    borderRadius: 12,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    borderRadius: 6,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
     backgroundColor: colors.bgCard,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 0.5,
+    borderColor: colors.borderMedium,
     minWidth: '30%',
   },
   categoryChipActive: {
     backgroundColor: colors.primaryMuted,
     borderColor: colors.primary,
+    borderWidth: 1,
   },
   categoryChipText: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '600',
     color: colors.text,
+    letterSpacing: -0.1,
   },
   categoryChipTextActive: {
     color: colors.white,
   },
   categoryChipSub: {
-    fontSize: 11,
+    fontSize: 10,
     color: colors.textTertiary,
     marginTop: 1,
   },
   categoryChipSubActive: {
-    color: 'rgba(255,255,255,0.7)',
-  },
-
-  // Restock
-  restockHint: {
-    fontSize: 13,
-    color: colors.textTertiary,
-    marginBottom: 16,
-  },
-  restockRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgCard,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.borderSubtle,
-    padding: 12,
-    marginBottom: 8,
-  },
-  restockInfo: {
-    flex: 1,
-  },
-  restockName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
-  },
-  restockCurrent: {
-    fontSize: 12,
-    color: colors.textTertiary,
-    marginTop: 2,
-  },
-  restockInputWrap: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.bgElevated,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 10,
-    gap: 4,
-  },
-  restockInput: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: colors.moneyIn,
-    width: 50,
-    textAlign: 'center',
-    paddingVertical: 8,
-    fontVariant: ['tabular-nums'],
+    color: 'rgba(255,255,255,0.65)',
   },
 
   // Note Input
   noteInput: {
     backgroundColor: colors.bgCard,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderRadius: 8,
+    borderWidth: 0.5,
+    borderColor: colors.borderMedium,
     padding: 14,
-    fontSize: 15,
+    fontSize: 14,
     color: colors.text,
-    minHeight: 60,
+    minHeight: 56,
     textAlignVertical: 'top',
   },
 });
