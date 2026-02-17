@@ -1,0 +1,120 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.17",
+    "lastTouchedAt": "2026-02-17T00:00:00.000Z"
+  },
+  "auth": {
+    "profiles": {
+      "anthropic:ff": {
+        "provider": "anthropic",
+        "mode": "token"
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "workspace": "/home/node/.openclaw/workspace",
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "maxConcurrent": 2,
+      "subagents": {
+        "maxConcurrent": 4
+      }
+    },
+    "list": [
+      {
+        "id": "main",
+        "name": "Meza Assistant",
+        "tools": {
+          "allow": [
+            "meza-hr"
+          ]
+        }
+      }
+    ]
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "hooks": {
+    "internal": {
+      "enabled": true,
+      "entries": {
+        "session-memory": {
+          "enabled": true
+        }
+      }
+    }
+  },
+  "channels": {
+    "whatsapp": {
+      "dmPolicy": "allowlist",
+      "selfChatMode": true,
+      "allowFrom": [
+        "+REPLACE_WITH_PHONE_NUMBER"
+      ],
+      "groupPolicy": "allowlist",
+      "mediaMaxMb": 50,
+      "debounceMs": 0
+    }
+  },
+  "gateway": {
+    "port": 18790,
+    "mode": "local",
+    "bind": "loopback",
+    "http": {
+      "endpoints": {
+        "chatCompletions": {
+          "enabled": true
+        }
+      }
+    },
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  },
+  "tools": {
+    "media": {
+      "concurrency": 2,
+      "image": {
+        "enabled": true,
+        "maxBytes": 20971520,
+        "scope": {
+          "default": "allow"
+        },
+        "models": [
+          {
+            "provider": "anthropic",
+            "model": "claude-sonnet-4-5-20250929"
+          }
+        ]
+      }
+    }
+  },
+  "skills": {
+    "install": {
+      "nodeManager": "npm"
+    }
+  },
+  "plugins": {
+    "entries": {
+      "meza-hr": {
+        "enabled": true,
+        "config": {
+          "apiBaseUrl": "http://127.0.0.1:3201",
+          "apiKey": "REPLACE_WITH_MEZA_API_KEY",
+          "defaultTenantId": "REPLACE_WITH_TENANT_ID"
+        }
+      },
+      "whatsapp": {
+        "enabled": false
+      }
+    }
+  }
+}

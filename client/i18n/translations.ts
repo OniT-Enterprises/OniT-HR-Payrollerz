@@ -826,7 +826,17 @@ export const translations = {
       "exportCsv": "Export to CSV",
       "viewProfile": "View profile",
       "editEmployee": "Edit employee",
-      "offboardEmployee": "Offboard employee"
+      "offboardEmployee": "Offboard employee",
+      "createEkipaAccount": "Create Ekipa account"
+    },
+    "ekipaAccount": {
+      "confirmTitle": "Create Ekipa Account",
+      "confirmMessage": "Create an Ekipa account for {{name}}? A password reset email will be sent to {{email}}.",
+      "creating": "Creating account...",
+      "success": "Ekipa account created for {{name}}. Password reset email sent.",
+      "alreadyExists": "{{name}} already has an Ekipa account.",
+      "error": "Failed to create Ekipa account. Please try again.",
+      "noEmail": "This employee has no email address."
     },
     "directory": {
       "title": "Employee Directory",
@@ -4532,7 +4542,17 @@ export const translations = {
       "exportCsv": "Exporta ba CSV",
       "viewProfile": "Hare perfil",
       "editEmployee": "Edita empregadu",
-      "offboardEmployee": "Offboard empregadu"
+      "offboardEmployee": "Offboard empregadu",
+      "createEkipaAccount": "Kria konta Ekipa"
+    },
+    "ekipaAccount": {
+      "confirmTitle": "Kria Konta Ekipa",
+      "confirmMessage": "Kria konta Ekipa ba {{name}}? Email reset password sei haruka ba {{email}}.",
+      "creating": "Kria konta...",
+      "success": "Konta Ekipa kria ona ba {{name}}. Email reset password haruka ona.",
+      "alreadyExists": "{{name}} iha ona konta Ekipa.",
+      "error": "La konsege kria konta Ekipa. Favór koko fali.",
+      "noEmail": "Funsionáriu ida ne'e la iha email."
     },
     "directory": {
       "title": "Diretóriu Empregadu",

@@ -45,7 +45,22 @@ import {
   FileText,
   EyeOff,
   SlidersHorizontal,
+  Smartphone,
+  Loader2,
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { httpsCallable } from "firebase/functions";
+import { functions } from "@/lib/firebase";
+import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
 // Compliance filter types for URL params
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
@@ -83,10 +98,14 @@ export default function AllEmployees() {
   );
   const [showProfileView, setShowProfileView] = useState(false);
   const [showIncompleteProfiles, setShowIncompleteProfiles] = useState(false);
+  const [ekipaTarget, setEkipaTarget] = useState<Employee | null>(null);
+  const [ekipaCreating, setEkipaCreating] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { t } = useI18n();
+  const tenantId = useTenantId();
+  const { session } = useTenant();
 
   // Derive connection error from React Query
   const connectionError = queryError
@@ -426,6 +445,46 @@ export default function AllEmployees() {
   const handleDeleteEmployee = async (employee: Employee) => {
     // Navigate to offboarding page
     navigate(`/hiring/offboarding?employee=${employee.id}`);
+  };
+
+  const handleCreateEkipaAccount = (employee: Employee) => {
+    if (!employee.personalInfo?.email) {
+      toast({ title: t("employees.ekipaAccount.noEmail"), variant: "destructive" });
+      return;
+    }
+    setEkipaTarget(employee);
+  };
+
+  const confirmCreateEkipaAccount = async () => {
+    if (!ekipaTarget) return;
+    setEkipaCreating(true);
+    const name = `${ekipaTarget.personalInfo.firstName} ${ekipaTarget.personalInfo.lastName}`;
+    try {
+      const addMember = httpsCallable(functions, "addTenantMember");
+      await addMember({
+        tenantId,
+        userEmail: ekipaTarget.personalInfo.email,
+        role: "viewer",
+        modules: [],
+        employeeId: ekipaTarget.id,
+        tenantName: session?.config?.name || tenantId,
+      });
+      toast({
+        title: t("employees.ekipaAccount.success", { name }),
+      });
+    } catch (error: any) {
+      if (error?.code === "functions/already-exists") {
+        toast({ title: t("employees.ekipaAccount.alreadyExists", { name }) });
+      } else {
+        toast({
+          title: t("employees.ekipaAccount.error"),
+          variant: "destructive",
+        });
+      }
+    } finally {
+      setEkipaCreating(false);
+      setEkipaTarget(null);
+    }
   };
 
   const handleDownloadTemplate = () => {
@@ -1169,6 +1228,20 @@ export default function AllEmployees() {
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
+                          {employee.personalInfo?.email && employee.status === 'active' && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8"
+                              title={t("employees.tooltips.createEkipaAccount")}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleCreateEkipaAccount(employee);
+                              }}
+                            >
+                              <Smartphone className="h-4 w-4" />
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="icon"
@@ -1289,6 +1362,34 @@ export default function AllEmployees() {
           onOpenChange={setShowIncompleteProfiles}
           onEditEmployee={handleEditEmployee}
         />
+
+        {/* Create Ekipa Account Confirmation */}
+        <AlertDialog open={!!ekipaTarget} onOpenChange={(open) => !open && setEkipaTarget(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>{t("employees.ekipaAccount.confirmTitle")}</AlertDialogTitle>
+              <AlertDialogDescription>
+                {ekipaTarget && t("employees.ekipaAccount.confirmMessage", {
+                  name: `${ekipaTarget.personalInfo.firstName} ${ekipaTarget.personalInfo.lastName}`,
+                  email: ekipaTarget.personalInfo.email,
+                })}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={ekipaCreating}>{t("common.cancel")}</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmCreateEkipaAccount} disabled={ekipaCreating}>
+                {ekipaCreating ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {t("employees.ekipaAccount.creating")}
+                  </>
+                ) : (
+                  t("employees.ekipaAccount.confirmTitle")
+                )}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );

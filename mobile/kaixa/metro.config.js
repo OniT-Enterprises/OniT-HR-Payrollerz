@@ -2,16 +2,19 @@ const { getDefaultConfig } = require('expo/metro-config');
 const path = require('path');
 
 const projectRoot = __dirname;
-const monorepoRoot = path.resolve(projectRoot, '..');
+const monorepoRoot = path.resolve(projectRoot, '../..');
 
 const config = getDefaultConfig(projectRoot);
 
 // Watch the entire monorepo so Metro picks up changes in packages/shared
 config.watchFolders = [monorepoRoot];
 
-// Resolve packages from mobile first, then fall back to monorepo root
+// Resolve packages: kaixa local → mobile shared → monorepo root
+// React 19 + RN deps are hoisted to mobile/node_modules by npm workspaces
+const mobileRoot = path.resolve(projectRoot, '..');
 config.resolver.nodeModulesPaths = [
   path.resolve(projectRoot, 'node_modules'),
+  path.resolve(mobileRoot, 'node_modules'),
   path.resolve(monorepoRoot, 'node_modules'),
 ];
 

@@ -6,6 +6,7 @@ import {
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
+import { getFunctions } from "firebase/functions";
 
 /**
  * Firebase configuration loaded from environment variables.
@@ -48,5 +49,6 @@ export const db = initializeFirestore(app, {
 // Initialize other services
 export const auth = getAuth(app);
 export const storage = getStorage(app);
+export const functions = getFunctions(app);
 
 export default app;

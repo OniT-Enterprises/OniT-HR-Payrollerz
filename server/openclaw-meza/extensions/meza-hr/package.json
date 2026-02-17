@@ -1,0 +1,26 @@
+{
+  "name": "meza-hr",
+  "version": "1.0.0",
+  "description": "HR/Payroll management plugin for Meza system via OpenClaw",
+  "main": "index.ts",
+  "type": "module",
+  "scripts": {
+    "build": "tsc"
+  },
+  "keywords": [
+    "openclaw",
+    "hr",
+    "payroll",
+    "meza",
+    "whatsapp"
+  ],
+  "author": "OniT Enterprises",
+  "license": "MIT",
+  "dependencies": {
+    "@sinclair/typebox": "^0.32.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "typescript": "^5.0.0"
+  }
+}

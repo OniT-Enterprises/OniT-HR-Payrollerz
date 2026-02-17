@@ -305,11 +305,13 @@ async function createDefaultTenantData(db: FirebaseFirestore.Firestore, tenantId
  */
 export const addTenantMember = onCall(
   async (request): Promise<{ success: boolean; message: string }> => {
-    const { tenantId, userEmail, role, modules = [] } = request.data as {
+    const { tenantId, userEmail, role, modules = [], employeeId, tenantName } = request.data as {
       tenantId?: string;
       userEmail?: string;
       role?: TenantRole;
       modules?: unknown[];
+      employeeId?: string;
+      tenantName?: string;
     };
     const authContext = requireAuth(request);
 
@@ -345,6 +347,7 @@ export const addTenantMember = onCall(
 
       // Find or create the user
       let targetUser;
+      let isNewUser = false;
       try {
         targetUser = await auth.getUserByEmail(normalizedEmail);
       } catch (error: any) {
@@ -353,6 +356,7 @@ export const addTenantMember = onCall(
             email: normalizedEmail,
             emailVerified: false,
           });
+          isNewUser = true;
         } else {
           throw error;
         }
@@ -377,9 +381,40 @@ export const addTenantMember = onCall(
         displayName: targetUser.displayName || null,
         joinedAt: new Date(),
         lastActiveAt: new Date(),
+        ...(employeeId ? { employeeId } : {}),
       };
 
       await db.collection(`tenants/${tenantId}/members`).doc(targetUser.uid).set(memberData);
+
+      // Create/update user profile with tenantAccess (for Ekipa/mobile app login)
+      if (tenantName) {
+        const userRef = db.collection("users").doc(targetUser.uid);
+        const userSnap = await userRef.get();
+        const existingData = userSnap.exists ? userSnap.data() || {} : {};
+        const existingAccess = existingData.tenantAccess || {};
+        const existingIds: string[] = existingData.tenantIds || [];
+
+        const profileUpdate: Record<string, unknown> = {
+          uid: targetUser.uid,
+          email: normalizedEmail,
+          updatedAt: new Date(),
+          tenantAccess: { ...existingAccess, [tenantId]: { name: tenantName, role } },
+        };
+        if (!existingIds.includes(tenantId)) {
+          profileUpdate.tenantIds = [...existingIds, tenantId];
+        }
+        await userRef.set(profileUpdate, { merge: true });
+      }
+
+      // Send password reset email for newly created users
+      if (isNewUser) {
+        try {
+          const resetLink = await auth.generatePasswordResetLink(normalizedEmail);
+          logger.info(`Password reset link generated for ${normalizedEmail}: ${resetLink}`);
+        } catch (resetError: any) {
+          logger.warn(`Failed to generate password reset link for ${normalizedEmail}:`, resetError.message);
+        }
+      }
 
       // Update user's custom claims
       const existingClaims = targetUser.customClaims || {};

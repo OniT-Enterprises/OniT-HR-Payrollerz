@@ -218,7 +218,7 @@ async function createDefaultTenantData(db, tenantId) {
  * Cloud Function to add a user to an existing tenant
  */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
-    const { tenantId, userEmail, role, modules = [] } = request.data;
+    const { tenantId, userEmail, role, modules = [], employeeId, tenantName } = request.data;
     const authContext = (0, authz_1.requireAuth)(request);
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
@@ -244,6 +244,7 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
         }
         // Find or create the user
         let targetUser;
+        let isNewUser = false;
         try {
             targetUser = await auth.getUserByEmail(normalizedEmail);
         }
@@ -253,6 +254,7 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
                     email: normalizedEmail,
                     emailVerified: false,
                 });
+                isNewUser = true;
             }
             else {
                 throw error;
@@ -267,16 +269,36 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
             throw new https_1.HttpsError("already-exists", "User is already a member of this tenant");
         }
         // Create member document
-        const memberData = {
-            uid: targetUser.uid,
-            role,
-            modules: normalizedModules,
-            email: normalizedEmail,
-            displayName: targetUser.displayName || null,
-            joinedAt: new Date(),
-            lastActiveAt: new Date(),
-        };
+        const memberData = Object.assign({ uid: targetUser.uid, role, modules: normalizedModules, email: normalizedEmail, displayName: targetUser.displayName || null, joinedAt: new Date(), lastActiveAt: new Date() }, (employeeId ? { employeeId } : {}));
         await db.collection(`tenants/${tenantId}/members`).doc(targetUser.uid).set(memberData);
+        // Create/update user profile with tenantAccess (for Ekipa/mobile app login)
+        if (tenantName) {
+            const userRef = db.collection("users").doc(targetUser.uid);
+            const userSnap = await userRef.get();
+            const existingData = userSnap.exists ? userSnap.data() || {} : {};
+            const existingAccess = existingData.tenantAccess || {};
+            const existingIds = existingData.tenantIds || [];
+            const profileUpdate = {
+                uid: targetUser.uid,
+                email: normalizedEmail,
+                updatedAt: new Date(),
+                tenantAccess: Object.assign(Object.assign({}, existingAccess), { [tenantId]: { name: tenantName, role } }),
+            };
+            if (!existingIds.includes(tenantId)) {
+                profileUpdate.tenantIds = [...existingIds, tenantId];
+            }
+            await userRef.set(profileUpdate, { merge: true });
+        }
+        // Send password reset email for newly created users
+        if (isNewUser) {
+            try {
+                const resetLink = await auth.generatePasswordResetLink(normalizedEmail);
+                firebase_functions_1.logger.info(`Password reset link generated for ${normalizedEmail}: ${resetLink}`);
+            }
+            catch (resetError) {
+                firebase_functions_1.logger.warn(`Failed to generate password reset link for ${normalizedEmail}:`, resetError.message);
+            }
+        }
         // Update user's custom claims
         const existingClaims = targetUser.customClaims || {};
         const existingTenants = existingClaims.tenants || [];

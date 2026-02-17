@@ -195,4 +195,8 @@ firebase-emulators/
 firestore-export/
 firebaseemulator_payroll/
 service-account.json
+serviceAccountKey.json
 *-adminsdk-*.json
+
+# OpenClaw secrets
+openclaw.json
