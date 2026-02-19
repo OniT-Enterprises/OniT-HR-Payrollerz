@@ -4,7 +4,7 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
-import { leaveService, type LeaveRequest, type LeaveBalance } from '@/services/leaveService';
+import { leaveService, type LeaveRequest } from '@/services/leaveService';
 
 export const leaveKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'leave'] as const,

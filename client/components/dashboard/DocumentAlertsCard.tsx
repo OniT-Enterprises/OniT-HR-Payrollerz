@@ -390,4 +390,5 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
 }
 
 // Export for use in alerts page
+// eslint-disable-next-line react-refresh/only-export-components
 export { extractAlerts, DOCUMENT_LABELS, SEVERITY_CONFIG, calculateExpiryInfo };

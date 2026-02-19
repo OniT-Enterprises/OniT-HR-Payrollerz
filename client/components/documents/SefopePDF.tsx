@@ -465,6 +465,7 @@ export const SefopeDocument = ({ data }: SefopePDFProps) => {
 /**
  * Generate and download SEFOPE form for an employee
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const downloadSefopeForm = async (
   employee: Employee,
   company: Partial<CompanyDetails>
@@ -491,6 +492,7 @@ export const downloadSefopeForm = async (
 /**
  * Generate SEFOPE form as blob (for preview or upload)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const generateSefopeBlob = async (
   employee: Employee,
   company: Partial<CompanyDetails>
@@ -503,6 +505,7 @@ export const generateSefopeBlob = async (
 /**
  * Bulk generate SEFOPE forms for multiple employees
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const downloadBulkSefopeForms = async (
   employees: Employee[],
   company: Partial<CompanyDetails>

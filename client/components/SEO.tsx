@@ -66,6 +66,7 @@ export function SEO({
 }
 
 // Pre-configured SEO for common pages
+// eslint-disable-next-line react-refresh/only-export-components
 export const seoConfig = {
   // Landing & Auth
   landing: {

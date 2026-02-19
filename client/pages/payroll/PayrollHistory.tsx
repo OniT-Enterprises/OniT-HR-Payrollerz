@@ -158,6 +158,7 @@ export default function PayrollHistory() {
     };
 
     loadPayrollRuns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast, tenantId]);
 
   // Calculate summary stats

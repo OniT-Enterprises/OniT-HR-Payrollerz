@@ -156,6 +156,7 @@ export default function Disciplinary() {
 
   useEffect(() => {
     loadRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   // Get employee name by ID

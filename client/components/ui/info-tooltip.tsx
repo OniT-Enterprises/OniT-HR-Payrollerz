@@ -128,6 +128,7 @@ export function InfoLabel({
  * Pre-defined tooltip content for common financial terms
  * Provides consistent explanations across the Money section
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const MoneyTooltips = {
   // Invoice statuses
   invoiceStatus: {

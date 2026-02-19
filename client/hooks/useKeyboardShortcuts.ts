@@ -3,7 +3,7 @@
  * Enables quick navigation and actions without mouse
  */
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 interface ShortcutConfig {
@@ -36,14 +36,14 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
   const navigate = useNavigate();
 
   // Track if 'g' or 'n' was pressed for two-key shortcuts
-  let pendingPrefix: string | null = null;
-  let pendingTimeout: NodeJS.Timeout | null = null;
+  const pendingPrefix = useRef<string | null>(null);
+  const pendingTimeout = useRef<NodeJS.Timeout | null>(null);
 
   const clearPending = useCallback(() => {
-    pendingPrefix = null;
-    if (pendingTimeout) {
-      clearTimeout(pendingTimeout);
-      pendingTimeout = null;
+    pendingPrefix.current = null;
+    if (pendingTimeout.current) {
+      clearTimeout(pendingTimeout.current);
+      pendingTimeout.current = null;
     }
   }, []);
 
@@ -78,7 +78,7 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
     }
 
     // Two-key navigation shortcuts (g + key)
-    if (pendingPrefix === "g") {
+    if (pendingPrefix.current === "g") {
       clearPending();
       event.preventDefault();
 
@@ -105,7 +105,7 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
     }
 
     // Two-key action shortcuts (n + key = new)
-    if (pendingPrefix === "n") {
+    if (pendingPrefix.current === "n") {
       clearPending();
       event.preventDefault();
 
@@ -124,9 +124,9 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
 
     // Start two-key sequence
     if (key === "g" || key === "n") {
-      pendingPrefix = key;
+      pendingPrefix.current = key;
       // Clear after 1 second if second key not pressed
-      pendingTimeout = setTimeout(clearPending, 1000);
+      pendingTimeout.current = setTimeout(clearPending, 1000);
       return;
     }
 

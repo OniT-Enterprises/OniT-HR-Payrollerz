@@ -21,7 +21,6 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { leaveService } from "@/services/leaveService";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
-import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import {
@@ -160,7 +159,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const tenantId = useTenantId();
-  const { session } = useTenant();
+  const { session: _session } = useTenant();
   const { t } = useI18n();
   const [loading, setLoading] = useState(true);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -197,6 +196,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadData = async () => {
@@ -293,6 +293,7 @@ export default function Dashboard() {
     });
 
     return issues.slice(0, 4); // Show max 4 issues
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employees]);
 
   const daysUntilPayday = getDaysUntilPayday();

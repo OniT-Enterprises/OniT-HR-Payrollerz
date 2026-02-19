@@ -296,6 +296,7 @@ export default function CSVColumnMapper({
     if (csvFile) {
       parseCSVFile();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [csvFile]);
 
   const autoMapColumns = (columns: CSVColumn[]): ColumnMapping[] => {

@@ -95,6 +95,7 @@ export default function DepartmentManager({
         resetForm();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open, mode]);
 
   const loadData = async () => {

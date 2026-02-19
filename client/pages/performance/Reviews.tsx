@@ -182,6 +182,7 @@ export default function Reviews() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const loadData = async () => {

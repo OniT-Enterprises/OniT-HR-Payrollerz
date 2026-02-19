@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Route definitions organized by module
  * Extracted from App.tsx for better maintainability

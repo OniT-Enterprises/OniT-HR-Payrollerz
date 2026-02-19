@@ -25,7 +25,6 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
 import {
-  Building2,
   Save,
   Plus,
   Trash2,

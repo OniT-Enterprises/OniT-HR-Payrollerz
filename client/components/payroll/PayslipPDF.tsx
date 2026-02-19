@@ -757,6 +757,7 @@ export const PayslipDocument = ({
 /**
  * Generate and download a payslip PDF
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const downloadPayslip = async (
   record: PayrollRecord,
   payrollRun: PayrollRun,
@@ -800,6 +801,7 @@ export const downloadPayslip = async (
 /**
  * Generate payslip PDF as blob (for preview or other uses)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const generatePayslipBlob = async (
   record: PayrollRecord,
   payrollRun: PayrollRun,

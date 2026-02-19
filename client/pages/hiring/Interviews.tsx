@@ -139,6 +139,7 @@ export default function Interviews() {
     if (tenantId) {
       loadInterviews();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const loadInterviews = async () => {

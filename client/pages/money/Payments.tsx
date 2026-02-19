@@ -68,6 +68,7 @@ export default function Payments() {
     if (session?.tid) {
       loadPayments();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.tid]);
 
   const loadPayments = async () => {

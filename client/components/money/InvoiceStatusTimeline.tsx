@@ -117,7 +117,7 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
           }}
         />
 
-        {MAIN_FLOW.map((step, index) => {
+        {MAIN_FLOW.map((step, _index) => {
           const isComplete = STATUS_ORDER[step.status] < effectiveOrder;
           const isCurrent = step.status === invoice.status ||
             (isPartial && step.status === 'viewed') ||

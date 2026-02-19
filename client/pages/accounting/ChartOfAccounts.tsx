@@ -100,6 +100,7 @@ export default function ChartOfAccounts() {
     if (tenantId && tenantId !== "local-dev-tenant") {
       loadAccounts();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const loadAccounts = async () => {

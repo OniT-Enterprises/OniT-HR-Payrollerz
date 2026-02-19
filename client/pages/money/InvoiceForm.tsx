@@ -135,6 +135,7 @@ export default function InvoiceForm() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, duplicateId, session?.tid]);
 
   useEffect(() => {

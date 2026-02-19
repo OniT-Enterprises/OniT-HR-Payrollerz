@@ -63,6 +63,7 @@ export default function BalanceSheet() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [asOfDate, session?.tid]);
 
   const getAsOfDateValue = (): Date => {

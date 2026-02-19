@@ -211,6 +211,7 @@ export default function AddEmployee() {
     if (editEmployeeId) {
       loadEmployeeForEdit(editEmployeeId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editEmployeeId, tenantId]);
 
   const loadEmployeeForEdit = async (employeeId: string) => {

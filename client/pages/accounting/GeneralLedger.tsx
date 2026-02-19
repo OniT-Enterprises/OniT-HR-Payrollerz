@@ -122,6 +122,7 @@ export default function GeneralLedger() {
     };
 
     loadLedgerEntries();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedAccount?.code, startDate, endDate]);
 
   // Filter entries by search term

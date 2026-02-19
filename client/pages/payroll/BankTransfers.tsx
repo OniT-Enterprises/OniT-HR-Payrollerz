@@ -129,6 +129,7 @@ export default function BankTransfers() {
     };
 
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [toast, tenantId]);
 
   // Load employees and company details for bank file generation
@@ -167,6 +168,7 @@ export default function BankTransfers() {
       }
     };
     loadEmployeesAndSettings();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   // Payroll records for the selected bank file run

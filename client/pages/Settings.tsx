@@ -15,8 +15,6 @@ import { useToast } from "@/hooks/use-toast";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   TenantSettings,
-  TL_DEFAULT_PAYROLL_CONFIG,
-  TL_DEFAULT_LEAVE_POLICIES,
 } from "@/types/settings";
 import {
   Settings as SettingsIcon,

@@ -7,7 +7,6 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { settingsService } from '@/services/settingsService';
 import { holidayService, type HolidayOverride } from '@/services/holidayService';
 import type {
-  TenantSettings,
   CompanyDetails,
   CompanyStructure,
   PaymentStructure,

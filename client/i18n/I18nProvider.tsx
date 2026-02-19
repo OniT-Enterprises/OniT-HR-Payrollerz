@@ -87,6 +87,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useI18n = () => {
   const context = useContext(I18nContext);
   if (!context) {

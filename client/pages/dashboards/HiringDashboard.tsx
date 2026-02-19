@@ -25,7 +25,7 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/i18n/I18nProvider";
 
-function HiringDashboardSkeleton() {
+function _HiringDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />

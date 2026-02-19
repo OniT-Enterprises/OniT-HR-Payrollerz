@@ -85,7 +85,7 @@ export default function SetupReports() {
   }).length, [auditLog]);
 
   // Setup status
-  const setupSteps = setupProgress?.progress || {};
+  const setupSteps = useMemo(() => setupProgress?.progress || {}, [setupProgress]);
   const completedSteps = useMemo(() => Object.values(setupSteps).filter(Boolean).length, [setupSteps]);
   const totalSteps = useMemo(() => Object.keys(setupSteps).length || 5, [setupSteps]);
 

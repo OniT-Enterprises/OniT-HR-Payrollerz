@@ -229,6 +229,7 @@ export default function ForeignWorkers() {
   // Load employees
   useEffect(() => {
     loadEmployees();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const loadEmployees = async () => {

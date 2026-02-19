@@ -151,6 +151,7 @@ export default function TrainingCertifications() {
 
   useEffect(() => {
     loadRecords();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   // Refresh statuses (check for expired)

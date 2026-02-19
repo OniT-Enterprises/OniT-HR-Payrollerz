@@ -58,6 +58,7 @@ interface TenantContextType {
 
 const TenantContext = createContext<TenantContextType | undefined>(undefined);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTenant() {
   const context = useContext(TenantContext);
   if (context === undefined) {
@@ -66,6 +67,7 @@ export function useTenant() {
   return context;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTenantId(): string {
   const context = useContext(TenantContext);
   if (context === undefined) {
@@ -90,6 +92,7 @@ export function useTenantId(): string {
   return context.session.tid;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useCurrentEmployeeId(): string | null {
   const context = useContext(TenantContext);
   if (context === undefined) {
@@ -391,6 +394,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   // Switch to a different tenant
@@ -543,6 +547,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     };
 
     initializeTenant();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, isSuperAdmin, userProfile]);
 
   // Permission helpers

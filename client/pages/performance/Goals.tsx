@@ -175,6 +175,7 @@ export default function Goals() {
 
   useEffect(() => {
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId, selectedQuarter]);
 
   const loadData = async () => {

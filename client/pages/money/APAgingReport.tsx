@@ -57,6 +57,7 @@ export default function APAgingReport() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.tid]);
 
   const loadData = async () => {

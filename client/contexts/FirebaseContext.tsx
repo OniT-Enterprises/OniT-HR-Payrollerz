@@ -20,6 +20,7 @@ const FirebaseContext = createContext<FirebaseContextType | undefined>(
   undefined,
 );
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useFirebase = () => {
   const context = useContext(FirebaseContext);
   if (context === undefined) {

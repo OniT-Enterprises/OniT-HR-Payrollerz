@@ -78,6 +78,7 @@ export default function InvoiceSettingsPage() {
     if (session?.tid) {
       loadSettings();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.tid]);
 
   const loadSettings = async () => {

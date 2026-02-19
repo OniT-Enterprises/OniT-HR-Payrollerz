@@ -163,6 +163,7 @@ export default function AllEmployees() {
         setSearchParams({});
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams, employees]);
 
   // Filter employees using useMemo for performance

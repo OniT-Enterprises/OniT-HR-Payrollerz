@@ -115,6 +115,7 @@ export default function CandidateSelection() {
   // Load candidates from Firebase on component mount
   useEffect(() => {
     loadCandidates();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadCandidates = async () => {

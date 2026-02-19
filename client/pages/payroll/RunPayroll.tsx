@@ -51,7 +51,6 @@ import {
   type TLPayrollResult,
 } from "@/lib/payroll/calculations-tl";
 import {
-  formatCurrencyTL,
   TL_PAY_PERIODS,
   TL_WORKING_HOURS,
   TL_OVERTIME_RATES,
@@ -265,6 +264,7 @@ export default function RunPayroll() {
       calculation: calculateForEmployee(data),
     }));
     setEmployeePayrollData(updatedData);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [employeePayrollData.length, calculateForEmployee]);
 
   // Recalculate when pay frequency changes

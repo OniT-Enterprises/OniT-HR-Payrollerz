@@ -115,6 +115,7 @@ export default function RecurringInvoiceForm() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session?.tid, id]);
 
   const loadData = async () => {

@@ -408,6 +408,7 @@ const WITReturnDocument = ({
 /**
  * Generate WIT Return PDF as Blob
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const generateWITReturnBlob = async (
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>
@@ -426,6 +427,7 @@ export const generateWITReturnBlob = async (
 /**
  * Download WIT Return as PDF
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const downloadWITReturnPDF = async (
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,

@@ -74,6 +74,7 @@ export default function ProfitLoss() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period, session?.tid]);
 
   const getDateRange = (periodValue: string): { start: string; end: string } => {

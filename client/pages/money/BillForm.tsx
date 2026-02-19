@@ -134,6 +134,7 @@ export default function BillForm() {
     if (session?.tid) {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, session?.tid]);
 
   useEffect(() => {

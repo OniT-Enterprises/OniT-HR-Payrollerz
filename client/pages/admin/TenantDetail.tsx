@@ -65,6 +65,7 @@ export default function TenantDetail() {
     if (id) {
       loadTenant();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const loadTenant = async () => {

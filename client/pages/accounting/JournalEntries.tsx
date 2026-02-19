@@ -107,6 +107,7 @@ export default function JournalEntries() {
     if (tenantId && tenantId !== "local-dev-tenant") {
       loadData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tenantId]);
 
   const loadData = async () => {

@@ -521,6 +521,7 @@ export const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
 /**
  * Generate and download an invoice PDF
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const downloadInvoicePDF = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>
@@ -542,6 +543,7 @@ export const downloadInvoicePDF = async (
 /**
  * Generate invoice PDF as blob (for preview or email attachment)
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export const generateInvoiceBlob = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>

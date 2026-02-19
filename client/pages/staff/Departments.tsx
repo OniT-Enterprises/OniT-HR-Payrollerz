@@ -82,6 +82,7 @@ export default function Departments() {
       hasMigratedRef.current = true;
       migrateMissingDepartments(employees, departments);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, employees, departments]);
 
   const handleDepartmentChange = async () => {
