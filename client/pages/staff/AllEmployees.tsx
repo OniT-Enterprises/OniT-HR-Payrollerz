@@ -78,7 +78,10 @@ export default function AllEmployees() {
   const allQuery = useAllEmployees(500, isSearching);
 
   // Unified interface
-  const employees = isSearching ? (allQuery.data ?? []) : paginatedQuery.employees;
+  const employees = useMemo(
+    () => isSearching ? (allQuery.data ?? []) : paginatedQuery.employees,
+    [isSearching, allQuery.data, paginatedQuery.employees]
+  );
   const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
   const queryError = isSearching ? allQuery.error : paginatedQuery.error;
   const loadEmployees = isSearching ? allQuery.refetch : paginatedQuery.refetch;

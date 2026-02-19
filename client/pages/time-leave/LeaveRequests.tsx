@@ -167,12 +167,13 @@ export default function LeaveRequests() {
   const departmentsQuery = useDepartments(tenantId);
 
   // Combine data based on role
-  const leaveRequests = isEmployee
-    ? (employeeRequestsQuery.data ?? [])
-    : (allRequestsQuery.data ?? []);
-  const employees: Employee[] = employeesQuery.data ?? [];
+  const leaveRequests = useMemo(
+    () => isEmployee ? (employeeRequestsQuery.data ?? []) : (allRequestsQuery.data ?? []),
+    [isEmployee, employeeRequestsQuery.data, allRequestsQuery.data]
+  );
+  const employees: Employee[] = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data]);
   const departments: Department[] = departmentsQuery.data ?? [];
-  const leaveBalances: LeaveBalance[] = allBalancesQuery.data ?? [];
+  const leaveBalances: LeaveBalance[] = useMemo(() => allBalancesQuery.data ?? [], [allBalancesQuery.data]);
   const myBalance: LeaveBalance | null = myBalanceQuery.data ?? null;
   const loading = isEmployee
     ? (employeeRequestsQuery.isLoading || myBalanceQuery.isLoading)

@@ -39,7 +39,7 @@ import type {
   FilingDueDate,
 } from '@/types/tax-filing';
 import type { CompanyDetails } from '@/types/settings';
-import { TL_INCOME_TAX, TL_INSS } from '@/lib/payroll/constants-tl';
+import { TL_INCOME_TAX } from '@/lib/payroll/constants-tl';
 import { getTaxConfig } from '@/lib/payroll/taxConfig';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
 import { getTodayTL, parseDateISO } from '@/lib/dateUtils';
@@ -61,7 +61,7 @@ const MONTHLY_INSS_PAYMENT_DUE_DAY = 20;   // payment window ends (following mon
 /**
  * Calculate WIT for an employee based on wages
  */
-function calculateWIT(
+function _calculateWIT(
   grossWages: number,
   isResident: boolean,
   config?: { rate: number; residentThreshold: number }

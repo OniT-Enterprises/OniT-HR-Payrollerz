@@ -69,7 +69,6 @@ import {
 import { type Employee } from "@/services/employeeService";
 import {
   attendanceService,
-  type AttendanceRecord,
   type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -105,7 +104,7 @@ export default function Attendance() {
     [employeesQuery.data]
   );
   const departments = deptQuery.data ?? [];
-  const attendanceRecords = attendanceQuery.data ?? [];
+  const attendanceRecords = useMemo(() => attendanceQuery.data ?? [], [attendanceQuery.data]);
 
   // Form data
   const [formData, setFormData] = useState({
