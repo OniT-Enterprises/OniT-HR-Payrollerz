@@ -6,7 +6,7 @@
  * Note: INSS reporting is submitted via the Social Security portal.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -135,12 +135,7 @@ export default function INSSMonthly() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
 
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -164,7 +159,11 @@ export default function INSSMonthly() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, toast]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleGenerateReturn = async () => {
     const period = `${selectedYear}-${selectedMonth}`;

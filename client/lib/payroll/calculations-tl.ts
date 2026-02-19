@@ -272,11 +272,15 @@ export function calculateIncomeTax(
   taxableIncome: number,
   isResident: boolean,
   payFrequency: TLPayFrequency,
-  totalPeriodsInMonth?: number
+  totalPeriodsInMonth?: number,
+  configOverride?: { rate: number; residentThreshold: number }
 ): number {
   if (taxableIncome <= 0) return 0;
 
-  // Convert the $500 monthly threshold to the current pay period.
+  const rate = configOverride?.rate ?? TL_INCOME_TAX.rate;
+  const residentThreshold = configOverride?.residentThreshold ?? TL_INCOME_TAX.residentThreshold;
+
+  // Convert the monthly threshold to the current pay period.
   // For weekly/biweekly runs we prefer the actual number of periods in the month when provided
   // (prevents under/over-withholding in 4 vs 5-week months).
   const periods = TL_PAY_PERIODS[payFrequency];
@@ -284,15 +288,15 @@ export function calculateIncomeTax(
     (payFrequency === 'weekly' || payFrequency === 'biweekly') && totalPeriodsInMonth
       ? totalPeriodsInMonth
       : periods.periodsPerMonth;
-  const periodThreshold = divideMoney(TL_INCOME_TAX.residentThreshold, effectivePeriodsPerMonth);
+  const periodThreshold = divideMoney(residentThreshold, effectivePeriodsPerMonth);
 
   if (isResident) {
     // Only tax amount above threshold
     const taxableAmount = Math.max(0, subtractMoney(taxableIncome, periodThreshold));
-    return applyRate(taxableAmount, TL_INCOME_TAX.rate);
+    return applyRate(taxableAmount, rate);
   } else {
     // Non-residents pay on all income
-    return applyRate(taxableIncome, TL_INCOME_TAX.rate);
+    return applyRate(taxableIncome, rate);
   }
 }
 
@@ -301,13 +305,19 @@ export function calculateIncomeTax(
  * Base: Gross - absences - food allowance - per diem
  * Uses decimal.js for precise currency calculations
  */
-export function calculateINSS(inssBase: number): {
+export function calculateINSS(
+  inssBase: number,
+  configOverride?: { employeeRate: number; employerRate: number }
+): {
   employee: number;
   employer: number;
   total: number;
 } {
-  const employee = applyRate(inssBase, TL_INSS.employeeRate);
-  const employer = applyRate(inssBase, TL_INSS.employerRate);
+  const employeeRate = configOverride?.employeeRate ?? TL_INSS.employeeRate;
+  const employerRate = configOverride?.employerRate ?? TL_INSS.employerRate;
+
+  const employee = applyRate(inssBase, employeeRate);
+  const employer = applyRate(inssBase, employerRate);
 
   return {
     employee,
@@ -707,23 +717,31 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
   const voluntaryTotal = sumMoney(voluntaryDeductions.map(d => d.amount));
   const voluntaryCap = multiplyMoney(grossPay, VOLUNTARY_DEDUCTION_CAP_RATIO);
+  let finalDeductions = deductions;
 
   if (voluntaryTotal > voluntaryCap && voluntaryDeductions.length > 0) {
     warnings.push(
       `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 1/6 cap ($${voluntaryCap.toFixed(2)}). ` +
       `Excess deductions have been reduced proportionally.`
     );
-    // Proportionally reduce each voluntary deduction to fit within cap
+    // Proportionally reduce each voluntary deduction to fit within cap (immutable)
     const reductionRatio = voluntaryCap / voluntaryTotal;
-    for (const d of voluntaryDeductions) {
-      d.amount = multiplyMoney(d.amount, reductionRatio);
-    }
+    const adjustedVoluntary = voluntaryDeductions.map(d => ({
+      ...d,
+      amount: multiplyMoney(d.amount, reductionRatio),
+    }));
+    // Rebuild deductions array with adjusted voluntary amounts
+    const voluntarySet = new Set(voluntaryDeductions);
+    let volIdx = 0;
+    finalDeductions = deductions.map(d =>
+      voluntarySet.has(d) ? adjustedVoluntary[volIdx++] : d
+    );
   }
 
   // ========== FINAL CALCULATIONS ==========
   // Use decimal.js for precise final totals
 
-  const totalDeductions = sumMoney(deductions.map(d => d.amount));
+  const totalDeductions = sumMoney(finalDeductions.map(d => d.amount));
   const netPay = subtractMoney(grossPay, totalDeductions);
   const totalEmployerCost = addMoney(grossPay, inss.employer);
 
@@ -777,7 +795,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
     // Line items
     earnings,
-    deductions,
+    deductions: finalDeductions,
 
     // YTD updates (use decimal.js for precision)
     newYtdGrossPay: addMoney(input.ytdGrossPay, grossPay),

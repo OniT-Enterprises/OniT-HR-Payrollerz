@@ -40,6 +40,7 @@ import {
   File,
   ChevronDown,
 } from "lucide-react";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function CandidateSelection() {
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -227,7 +228,7 @@ export default function CandidateSelection() {
         experience: "TBD", // To be determined
         score: 0,
         status: "New",
-        appliedDate: new Date().toISOString().split("T")[0],
+        appliedDate: getTodayTL(),
         resume: uploadedFiles.cv?.name || "uploaded_resume.pdf",
         avatar: importedData.name
           .split(" ")

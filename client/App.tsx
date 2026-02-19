@@ -70,9 +70,9 @@ function HomeRoute() {
   return <Dashboard />;
 }
 
-// Optimized QueryClient with localStorage persistence for instant loading
+// Optimized QueryClient with IndexedDB persistence for instant loading
 const queryClient = createOptimizedQueryClient();
-hydrateQueryClient(queryClient); // Load cached data immediately
+hydrateQueryClient(queryClient); // Async — hydrates cache in background
 setupQueryPersistence(queryClient); // Save data as it loads
 
 const App = () => (

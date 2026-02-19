@@ -30,6 +30,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { useTenant } from '@/contexts/TenantContext';
 import type { Invoice, PaymentMethod } from '@/types/money';
 import { Loader2, DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // Payment methods relevant for Timor-Leste
 const PAYMENT_METHODS = [
@@ -62,7 +63,7 @@ export function RecordPaymentModal({
   // Form state
   const [amount, setAmount] = useState(remainingBalance.toString());
   const [isPartial, setIsPartial] = useState(false);
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [paymentDate, setPaymentDate] = useState(getTodayTL());
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer');
   const [reference, setReference] = useState('');
   const [notes, setNotes] = useState('');

@@ -2,7 +2,8 @@
  * React Query hooks for bill data fetching
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   billService,
@@ -30,13 +31,14 @@ export function useBills(filters: BillFilters = {}) {
   });
 }
 
-export function useAllBills(maxResults: number = 500) {
+export function useAllBills(maxResults: number = 500, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: billKeys.list(tenantId, { pageSize: maxResults }),
     queryFn: () => billService.getBills(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
     select: (data: PaginatedResult<Bill>) => data.data,
   });
 }
@@ -100,4 +102,41 @@ export function useRecordBillPayment() {
       queryClient.invalidateQueries({ queryKey: billKeys.lists(tenantId) });
     },
   });
+}
+
+/**
+ * Server-side paginated bills using infinite query
+ */
+export function usePaginatedBills(
+  filters: Omit<BillFilters, 'startAfterDoc'> = {}
+) {
+  const tenantId = useTenantId();
+  return useInfiniteQuery({
+    queryKey: [...billKeys.lists(tenantId), 'paginated', filters] as const,
+    queryFn: async ({ pageParam }) => {
+      return billService.getBills(tenantId, {
+        ...filters,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      });
+    },
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Helper hook to flatten paginated bill results
+ */
+export function useFlattenedPaginatedBills(
+  filters: Omit<BillFilters, 'startAfterDoc'> = {}
+) {
+  const query = usePaginatedBills(filters);
+  return {
+    ...query,
+    bills: query.data?.pages.flatMap(page => page.data) ?? [],
+    totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
 }

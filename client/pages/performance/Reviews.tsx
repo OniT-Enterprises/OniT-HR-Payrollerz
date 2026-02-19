@@ -72,6 +72,7 @@ import {
   Send,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
 // ============================================
 // Rating Stars Component
@@ -140,9 +141,9 @@ interface ReviewFormData {
 const defaultFormData: ReviewFormData = {
   employeeId: "",
   reviewType: "annual",
-  reviewPeriodStart: new Date(new Date().getFullYear(), 0, 1).toISOString().split("T")[0],
-  reviewPeriodEnd: new Date().toISOString().split("T")[0],
-  reviewDate: new Date().toISOString().split("T")[0],
+  reviewPeriodStart: toDateStringTL(new Date(new Date().getFullYear(), 0, 1)),
+  reviewPeriodEnd: getTodayTL(),
+  reviewDate: getTodayTL(),
   overallRating: 3,
   competencies: DEFAULT_COMPETENCIES.map((name) => ({ name, rating: 3 as RatingValue })),
   strengths: "",

@@ -62,6 +62,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { toDateStringTL } from "@/lib/dateUtils";
 
 // Types for enhanced shift scheduling
 interface Employee {
@@ -242,7 +243,7 @@ export default function ShiftScheduling() {
   function getWeekString(date: Date) {
     const startOfWeek = new Date(date);
     startOfWeek.setDate(date.getDate() - date.getDay()); // Start on Sunday
-    return startOfWeek.toISOString().split("T")[0];
+    return toDateStringTL(startOfWeek);
   }
 
   // Mock data - in production, these would come from Firebase
@@ -864,7 +865,7 @@ export default function ShiftScheduling() {
     const weekStart = new Date(selectedWeek);
     const targetDate = new Date(weekStart);
     targetDate.setDate(weekStart.getDate() + dayOffset);
-    const dateString = targetDate.toISOString().split("T")[0];
+    const dateString = toDateStringTL(targetDate);
 
     return getWeekShifts().filter((shift) => shift.date === dateString);
   };

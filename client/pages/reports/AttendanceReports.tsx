@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
 export default function AttendanceReports() {
   const [dateRange, setDateRange] = useState("30");
@@ -47,10 +48,10 @@ export default function AttendanceReports() {
   const dateParams = useMemo(() => {
     const today = new Date();
     const startDate = new Date();
-    startDate.setDate(startDate.getDate() - parseInt(dateRange));
+    startDate.setDate(startDate.getDate() - parseInt(dateRange, 10));
     return {
-      startDate: startDate.toISOString().split("T")[0],
-      endDate: today.toISOString().split("T")[0],
+      startDate: toDateStringTL(startDate),
+      endDate: toDateStringTL(today),
     };
   }, [dateRange]);
 
@@ -97,7 +98,7 @@ export default function AttendanceReports() {
 
   // Get today's status
   const todayOnLeave = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayTL();
     return leaveRequests.filter(
       (r) =>
         r.status === "approved" &&
@@ -137,7 +138,7 @@ export default function AttendanceReports() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `${filename}_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({

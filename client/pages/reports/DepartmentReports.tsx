@@ -34,6 +34,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { getTodayTL } from "@/lib/dateUtils";
 
 interface DepartmentStats {
   department: Department;
@@ -57,7 +58,7 @@ export default function DepartmentReports() {
   // Calculate stats per department
   const departmentStats = useMemo((): DepartmentStats[] => {
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange, 10));
 
     const stats: DepartmentStats[] = departments.map((dept) => {
       const deptEmployees = employees.filter(
@@ -150,7 +151,7 @@ export default function DepartmentReports() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `${filename}_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({

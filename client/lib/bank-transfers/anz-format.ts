@@ -9,6 +9,7 @@ import {
   formatDateYYYYMMDD,
   formatAmount,
 } from './index';
+import { getTodayTL } from '@/lib/dateUtils';
 
 /**
  * ANZ CSV Format:
@@ -25,7 +26,7 @@ export function generateANZFile(
 
   // File header block
   lines.push('ANZ BULK PAYMENT FILE');
-  lines.push(`Date Generated,${new Date().toISOString().split('T')[0]}`);
+  lines.push(`Date Generated,${getTodayTL()}`);
   lines.push(`Company Name,${companyName}`);
   lines.push(`Debit Account,${companyAccountNumber}`);
   lines.push(`Value Date,${summary.valueDate}`);

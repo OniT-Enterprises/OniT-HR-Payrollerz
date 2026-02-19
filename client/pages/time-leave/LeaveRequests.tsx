@@ -7,7 +7,8 @@
  * - Paternity: 5 days
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -76,8 +77,8 @@ import {
   Baby,
   Heart,
 } from "lucide-react";
-import { employeeService, Employee } from "@/services/employeeService";
-import { departmentService, Department } from "@/services/departmentService";
+import type { Employee } from "@/services/employeeService";
+import type { Department } from "@/services/departmentService";
 import {
   leaveService,
   LeaveRequest,
@@ -89,7 +90,20 @@ import {
 } from "@/services/leaveService";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenant, useTenantId, useCurrentEmployeeId } from "@/contexts/TenantContext";
+import { getTodayTL } from "@/lib/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
+import {
+  useLeaveRequests,
+  useEmployeeLeaveRequests,
+  useLeaveBalance,
+  useAllLeaveBalances,
+  useCreateLeaveRequest,
+  useApproveLeaveRequest,
+  useRejectLeaveRequest,
+  leaveKeys,
+} from "@/hooks/useLeaveRequests";
 
 type ViewRole = "admin" | "manager" | "employee";
 
@@ -113,19 +127,14 @@ export default function LeaveRequests() {
   const isManager = viewRole === "manager";
   const isEmployee = viewRole === "employee";
 
+  const queryClient = useQueryClient();
+
   const [activeTab, setActiveTab] = useState("all");
   const [showRequestDialog, setShowRequestDialog] = useState(false);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [selectedRequest, setSelectedRequest] = useState<LeaveRequest | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Data
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
-  const [leaveBalances, setLeaveBalances] = useState<LeaveBalance[]>([]);
 
   // Form data
   const [formData, setFormData] = useState({
@@ -139,70 +148,40 @@ export default function LeaveRequests() {
     hasCertificate: false,
   });
 
-  // Employee's own leave balance (for employee/manager self-service view)
-  const [myBalance, setMyBalance] = useState<LeaveBalance | null>(null);
+  // --- React Query hooks (role-aware via `enabled` conditions) ---
 
-  // Load initial data - role-aware
-  useEffect(() => {
-    const loadData = async () => {
-      setLoading(true);
-      try {
-        if (isEmployee && currentEmployeeId) {
-          // Employee view: only their own data
-          const [requestsData, balance] = await Promise.all([
-            leaveService.getEmployeeRequests(tenantId, currentEmployeeId),
-            leaveService.getLeaveBalance(tenantId, currentEmployeeId),
-          ]);
-          setLeaveRequests(requestsData);
-          setMyBalance(balance);
-          setEmployees([]);
-          setDepartments([]);
-        } else if (isManager) {
-          // Manager view: department requests + own requests
-          const departmentId = session?.member?.departmentId;
-          const [empData, deptData, requestsData, balancesData] = await Promise.all([
-            employeeService.getAllEmployees(tenantId),
-            departmentService.getAllDepartments(tenantId),
-            departmentId
-              ? leaveService.getLeaveRequests(tenantId, { departmentId })
-              : leaveService.getLeaveRequests(tenantId),
-            leaveService.getAllBalances(tenantId),
-          ]);
-          setEmployees(empData);
-          setDepartments(deptData);
-          setLeaveRequests(requestsData);
-          setLeaveBalances(balancesData);
-          if (currentEmployeeId) {
-            const balance = await leaveService.getLeaveBalance(tenantId, currentEmployeeId);
-            setMyBalance(balance);
-          }
-        } else {
-          // Admin view: all data
-          const [empData, deptData, requestsData, balancesData] = await Promise.all([
-            employeeService.getAllEmployees(tenantId),
-            departmentService.getAllDepartments(tenantId),
-            leaveService.getLeaveRequests(tenantId),
-            leaveService.getAllBalances(tenantId),
-          ]);
-          setEmployees(empData);
-          setDepartments(deptData);
-          setLeaveRequests(requestsData);
-          setLeaveBalances(balancesData);
-        }
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast({
-          title: t("timeLeave.leaveRequests.toast.errorTitle"),
-          description: t("timeLeave.leaveRequests.toast.loadFailed"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Manager departmentId for filtered requests
+  const managerDepartmentId = isManager ? session?.member?.departmentId : undefined;
 
-    loadData();
-  }, [tenantId, viewRole, currentEmployeeId]);
+  // Employee view: own requests + own balance
+  const employeeRequestsQuery = useEmployeeLeaveRequests(isEmployee ? (currentEmployeeId ?? undefined) : undefined);
+  const myBalanceQuery = useLeaveBalance((isEmployee || isManager) ? (currentEmployeeId ?? undefined) : undefined);
+
+  // Manager/Admin view: all requests (optionally filtered by department), employees, departments, balances
+  // For employees this hook still runs (enabled: !!tenantId) but the data is not used
+  const allRequestsQuery = useLeaveRequests(
+    managerDepartmentId ? { departmentId: managerDepartmentId } : undefined
+  );
+  const allBalancesQuery = useAllLeaveBalances();
+  const employeesQuery = useAllEmployees();
+  const departmentsQuery = useDepartments(tenantId);
+
+  // Combine data based on role
+  const leaveRequests = isEmployee
+    ? (employeeRequestsQuery.data ?? [])
+    : (allRequestsQuery.data ?? []);
+  const employees: Employee[] = employeesQuery.data ?? [];
+  const departments: Department[] = departmentsQuery.data ?? [];
+  const leaveBalances: LeaveBalance[] = allBalancesQuery.data ?? [];
+  const myBalance: LeaveBalance | null = myBalanceQuery.data ?? null;
+  const loading = isEmployee
+    ? (employeeRequestsQuery.isLoading || myBalanceQuery.isLoading)
+    : (allRequestsQuery.isLoading || employeesQuery.isLoading || departmentsQuery.isLoading || allBalancesQuery.isLoading);
+
+  // Mutation hooks
+  const createLeaveRequest = useCreateLeaveRequest();
+  const approveLeaveRequest = useApproveLeaveRequest();
+  const rejectLeaveRequest = useRejectLeaveRequest();
 
   // Calculate duration when dates change
   const calculatedDuration = useMemo(() => {
@@ -232,7 +211,7 @@ export default function LeaveRequests() {
 
   // Stats
   const stats = useMemo(() => {
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayTL();
     return {
       pending: leaveRequests.filter((r) => r.status === "pending").length,
       approved: leaveRequests.filter((r) => r.status === "approved").length,
@@ -295,7 +274,7 @@ export default function LeaveRequests() {
         || session?.member?.departmentId
         || t("timeLeave.leaveRequests.dialog.unassigned");
 
-      await leaveService.createLeaveRequest(tenantId, {
+      await createLeaveRequest.mutateAsync({
         employeeId: effectiveEmployeeId,
         employeeName,
         department: departmentName,
@@ -310,29 +289,12 @@ export default function LeaveRequests() {
         reason: formData.reason,
         hasCertificate: formData.hasCertificate,
         certificateType: leaveType?.certificateType,
-      });
+      } as any);
 
       toast({
         title: t("timeLeave.leaveRequests.toast.successTitle"),
         description: t("timeLeave.leaveRequests.toast.successDesc"),
       });
-
-      // Refresh data (role-aware)
-      if (isEmployee && currentEmployeeId) {
-        const [requestsData, balance] = await Promise.all([
-          leaveService.getEmployeeRequests(tenantId, currentEmployeeId),
-          leaveService.getLeaveBalance(tenantId, currentEmployeeId),
-        ]);
-        setLeaveRequests(requestsData);
-        setMyBalance(balance);
-      } else {
-        const [requestsData, balancesData] = await Promise.all([
-          leaveService.getLeaveRequests(tenantId),
-          leaveService.getAllBalances(tenantId),
-        ]);
-        setLeaveRequests(requestsData);
-        setLeaveBalances(balancesData);
-      }
 
       // Reset form
       setFormData({
@@ -362,12 +324,11 @@ export default function LeaveRequests() {
   const handleApprove = async (request: LeaveRequest) => {
     setSaving(true);
     try {
-      await leaveService.approveLeaveRequest(
-        tenantId,
-        request.id!,
-        user?.uid || "admin",
-        user?.displayName || user?.email || "HR Admin"
-      );
+      await approveLeaveRequest.mutateAsync({
+        requestId: request.id!,
+        approverId: user?.uid || "admin",
+        approverName: user?.displayName || user?.email || "HR Admin",
+      });
 
       toast({
         title: t("timeLeave.leaveRequests.toast.approvedTitle"),
@@ -375,10 +336,6 @@ export default function LeaveRequests() {
           name: request.employeeName,
         }),
       });
-
-      // Refresh data
-      const requestsData = await leaveService.getLeaveRequests(tenantId);
-      setLeaveRequests(requestsData);
     } catch (error) {
       console.error("Error approving request:", error);
       toast({
@@ -404,13 +361,12 @@ export default function LeaveRequests() {
 
     setSaving(true);
     try {
-      await leaveService.rejectLeaveRequest(
-        tenantId,
-        selectedRequest.id!,
-        user?.uid || "admin",
-        user?.displayName || user?.email || "HR Admin",
-        rejectionReason
-      );
+      await rejectLeaveRequest.mutateAsync({
+        requestId: selectedRequest.id!,
+        approverId: user?.uid || "admin",
+        approverName: user?.displayName || user?.email || "HR Admin",
+        reason: rejectionReason,
+      });
 
       toast({
         title: t("timeLeave.leaveRequests.toast.rejectedTitle"),
@@ -418,10 +374,6 @@ export default function LeaveRequests() {
           name: selectedRequest.employeeName,
         }),
       });
-
-      // Refresh data
-      const requestsData = await leaveService.getLeaveRequests(tenantId);
-      setLeaveRequests(requestsData);
 
       setShowRejectDialog(false);
       setSelectedRequest(null);
@@ -1120,10 +1072,7 @@ export default function LeaveRequests() {
                                   onClick={async () => {
                                     try {
                                       await leaveService.cancelLeaveRequest(tenantId, request.id!);
-                                      const requestsData = currentEmployeeId
-                                        ? await leaveService.getEmployeeRequests(tenantId, currentEmployeeId)
-                                        : await leaveService.getLeaveRequests(tenantId);
-                                      setLeaveRequests(requestsData);
+                                      queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
                                       toast({ title: "Leave request cancelled" });
                                     } catch {
                                       toast({ title: "Failed to cancel", variant: "destructive" });

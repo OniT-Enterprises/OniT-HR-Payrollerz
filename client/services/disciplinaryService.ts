@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { fileUploadService } from './fileUploadService';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // ============================================
 // Types
@@ -357,7 +358,7 @@ class DisciplinaryService {
   ): Promise<void> {
     await this.updateRecord(tenantId, recordId, {
       status: 'closed',
-      closedDate: new Date().toISOString().split('T')[0],
+      closedDate: getTodayTL(),
       closedBy,
       ...(actionTaken && { actionTaken }),
     });

@@ -42,10 +42,13 @@ import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
-import { useAllExpenses, expenseKeys } from '@/hooks/useExpenses';
+import { useFlattenedPaginatedExpenses, useAllExpenses, expenseKeys } from '@/hooks/useExpenses';
+import { useDebounce } from '@/hooks/useDebounce';
 import { useActiveVendors } from '@/hooks/useVendors';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
+import { getTodayTL } from '@/lib/dateUtils';
 import {
   Receipt,
   Plus,
@@ -98,11 +101,13 @@ export default function Expenses() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const isSearching = debouncedSearchTerm.length > 0;
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
   const [formData, setFormData] = useState<ExpenseFormData>({
-    date: new Date().toISOString().split('T')[0],
+    date: getTodayTL(),
     description: '',
     amount: 0,
     category: 'other',
@@ -115,8 +120,16 @@ export default function Expenses() {
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
-  // Use React Query for data fetching
-  const { data: expenses = [], isLoading: expensesLoading } = useAllExpenses();
+  // Both hooks always called (React rules), only one enabled at a time
+  const paginatedQuery = useFlattenedPaginatedExpenses();
+  const allQuery = useAllExpenses(500, isSearching);
+
+  const expenses = isSearching ? (allQuery.data ?? []) : paginatedQuery.expenses;
+  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
+  const fetchNextPage = paginatedQuery.fetchNextPage;
+  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
+  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
+  const expensesLoading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
   const { data: vendors = [], isLoading: vendorsLoading } = useActiveVendors();
   const loading = expensesLoading || vendorsLoading;
 
@@ -324,7 +337,7 @@ export default function Expenses() {
 
   const resetForm = () => {
     setFormData({
-      date: new Date().toISOString().split('T')[0],
+      date: getTodayTL(),
       description: '',
       amount: 0,
       category: 'other',
@@ -565,6 +578,13 @@ export default function Expenses() {
                 </CardContent>
               </Card>
             ))}
+
+            {/* Infinite scroll trigger */}
+            <InfiniteScrollTrigger
+              onLoadMore={() => fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              isLoading={isFetchingNextPage}
+            />
           </div>
         )}
 
@@ -575,6 +595,11 @@ export default function Expenses() {
             {filteredExpenses.length === 1
               ? t('money.expenses.expense') || 'expense'
               : t('money.expenses.expenses') || 'expenses'}
+            {totalLoaded > filteredExpenses.length && (
+              <span>
+                {' '}({t('common.of') || 'of'} {totalLoaded} {t('common.loaded') || 'loaded'})
+              </span>
+            )}
           </p>
         )}
       </div>

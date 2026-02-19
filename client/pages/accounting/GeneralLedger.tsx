@@ -47,6 +47,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
 export default function GeneralLedger() {
   const tenantId = useTenantId();
@@ -62,10 +63,10 @@ export default function GeneralLedger() {
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
-    return date.toISOString().split('T')[0];
+    return toDateStringTL(date);
   });
   const [endDate, setEndDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
+    return getTodayTL();
   });
 
   // Search

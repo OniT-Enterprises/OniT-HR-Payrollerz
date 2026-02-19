@@ -330,7 +330,7 @@ export default function InvoiceSettingsPage() {
                   <Input
                     type="number"
                     value={settings.nextNumber || 1}
-                    onChange={(e) => updateField('nextNumber', parseInt(e.target.value) || 1)}
+                    onChange={(e) => updateField('nextNumber', parseInt(e.target.value, 10) || 1)}
                     min={1}
                   />
                 </div>
@@ -338,7 +338,7 @@ export default function InvoiceSettingsPage() {
                   <Label>{t('money.settings.defaultDueDays') || 'Default Due Days'}</Label>
                   <Select
                     value={String(settings.defaultDueDays || 30)}
-                    onValueChange={(value) => updateField('defaultDueDays', parseInt(value))}
+                    onValueChange={(value) => updateField('defaultDueDays', parseInt(value, 10))}
                   >
                     <SelectTrigger>
                       <SelectValue />

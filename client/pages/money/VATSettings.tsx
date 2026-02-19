@@ -4,7 +4,7 @@
  * Only visible when platform VAT is active or when accessed directly.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -71,14 +71,7 @@ export default function VATSettingsPage() {
   const [settings, setSettings] = useState<VATSettingsData>(DEFAULT_VAT_SETTINGS);
   const [platformActive, setPlatformActive] = useState(false);
 
-  useEffect(() => {
-    if (session?.tid) {
-      loadSettings();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid]);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     if (!session?.tid) return;
     setLoading(true);
     try {
@@ -114,7 +107,13 @@ export default function VATSettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.tid, toast]);
+
+  useEffect(() => {
+    if (session?.tid) {
+      loadSettings();
+    }
+  }, [session?.tid, loadSettings]);
 
   const saveSettings = async () => {
     if (!session?.tid) return;

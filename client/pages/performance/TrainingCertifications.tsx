@@ -80,6 +80,7 @@ import {
   TRAINING_CATEGORIES,
   isExpiringSoon,
 } from "@/services/trainingService";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function TrainingCertifications() {
   const { toast } = useToast();
@@ -407,7 +408,7 @@ export default function TrainingCertifications() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `training_records_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `training_records_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 

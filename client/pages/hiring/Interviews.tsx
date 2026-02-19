@@ -82,6 +82,7 @@ import {
   Eye,
   MessageSquare,
 } from "lucide-react";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function Interviews() {
   const { t } = useI18n();
@@ -159,7 +160,7 @@ export default function Interviews() {
     let filtered = [...interviews];
 
     // Tab filter
-    const today = new Date().toISOString().split("T")[0];
+    const today = getTodayTL();
     if (activeTab === "upcoming") {
       filtered = filtered.filter(
         (i) => i.interviewDate >= today && i.status === "scheduled"
@@ -492,7 +493,7 @@ export default function Interviews() {
     total: interviews.length,
     upcoming: interviews.filter(
       (i) =>
-        i.interviewDate >= new Date().toISOString().split("T")[0] &&
+        i.interviewDate >= getTodayTL() &&
         i.status === "scheduled"
     ).length,
     completed: interviews.filter((i) => i.status === "completed").length,

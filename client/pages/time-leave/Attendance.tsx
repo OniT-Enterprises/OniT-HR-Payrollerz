@@ -3,7 +3,8 @@
  * Track and manage employee attendance with fingerprint import support
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,43 +59,58 @@ import {
   FileUp,
   Loader2,
 } from "lucide-react";
-import { employeeService, Employee } from "@/services/employeeService";
-import { departmentService, Department } from "@/services/departmentService";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
+import {
+  useAttendanceByDate,
+  useMarkAttendance,
+  attendanceKeys,
+} from "@/hooks/useAttendance";
+import { type Employee } from "@/services/employeeService";
 import {
   attendanceService,
-  AttendanceRecord,
-  AttendanceStatus,
+  type AttendanceRecord,
+  type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function Attendance() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
 
   // Today's date as default
-  const today = new Date().toISOString().split("T")[0];
+  const today = getTodayTL();
   const [selectedDate, setSelectedDate] = useState(today);
   const [_viewMode, _setViewMode] = useState<"calendar" | "table">("table");
   const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
 
   // Is today selected?
   const isToday = selectedDate === today;
 
-  // Data
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [attendanceRecords, setAttendanceRecords] = useState<AttendanceRecord[]>([]);
+  // Data fetching via React Query
+  const employeesQuery = useAllEmployees();
+  const deptQuery = useDepartments(tenantId);
+  const attendanceQuery = useAttendanceByDate(selectedDate);
+  const markAttendanceMutation = useMarkAttendance();
+
+  const loading = employeesQuery.isLoading || deptQuery.isLoading || attendanceQuery.isLoading;
+  const employees = useMemo(
+    () => (employeesQuery.data ?? []).filter((e: Employee) => e.status === 'active'),
+    [employeesQuery.data]
+  );
+  const departments = deptQuery.data ?? [];
+  const attendanceRecords = attendanceQuery.data ?? [];
 
   // Form data
   const [formData, setFormData] = useState({
     employeeId: "",
-    date: new Date().toISOString().split("T")[0],
+    date: getTodayTL(),
     clockIn: "",
     clockOut: "",
     notes: "",
@@ -103,36 +119,6 @@ export default function Attendance() {
   // Import data
   const [importFile, setImportFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
-
-  // Load initial data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-
-        const [emps, depts, records] = await Promise.all([
-          employeeService.getAllEmployees(tenantId),
-          departmentService.getAllDepartments(tenantId),
-          attendanceService.getAttendanceByDate(tenantId, selectedDate),
-        ]);
-
-        setEmployees(emps.filter(e => e.status === 'active'));
-        setDepartments(depts);
-        setAttendanceRecords(records);
-      } catch (error) {
-        console.error("Error loading data:", error);
-        toast({
-          title: t("timeLeave.attendance.toast.errorTitle"),
-          description: t("timeLeave.attendance.toast.loadFailed"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-  }, [selectedDate, toast]);
 
   // Format date for display
   const formatDateLabel = (dateStr: string) => {
@@ -258,10 +244,8 @@ export default function Attendance() {
       return;
     }
 
-    try {
-      setSaving(true);
-
-      await attendanceService.markAttendance(tenantId, {
+    markAttendanceMutation.mutate(
+      {
         employeeId: formData.employeeId,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department: employee.jobDetails.department,
@@ -270,34 +254,31 @@ export default function Attendance() {
         clockOut: formData.clockOut || undefined,
         source: "manual",
         notes: formData.notes || undefined,
-      });
-
-      toast({
-        title: t("timeLeave.attendance.toast.successTitle"),
-        description: t("timeLeave.attendance.toast.successDesc"),
-      });
-
-      // Reload records
-      const records = await attendanceService.getAttendanceByDate(tenantId, selectedDate);
-      setAttendanceRecords(records);
-
-      setFormData({
-        employeeId: "",
-        date: new Date().toISOString().split("T")[0],
-        clockIn: "",
-        clockOut: "",
-        notes: "",
-      });
-      setShowMarkDialog(false);
-    } catch {
-      toast({
-        title: t("timeLeave.attendance.toast.errorTitle"),
-        description: t("timeLeave.attendance.toast.saveFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("timeLeave.attendance.toast.successTitle"),
+            description: t("timeLeave.attendance.toast.successDesc"),
+          });
+          setFormData({
+            employeeId: "",
+            date: getTodayTL(),
+            clockIn: "",
+            clockOut: "",
+            notes: "",
+          });
+          setShowMarkDialog(false);
+        },
+        onError: () => {
+          toast({
+            title: t("timeLeave.attendance.toast.errorTitle"),
+            description: t("timeLeave.attendance.toast.saveFailed"),
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   const handleExportCSV = () => {
@@ -427,9 +408,8 @@ export default function Attendance() {
         }),
       });
 
-      // Reload records
-      const updatedRecords = await attendanceService.getAttendanceByDate(tenantId, selectedDate);
-      setAttendanceRecords(updatedRecords);
+      // Invalidate attendance queries to refetch
+      queryClient.invalidateQueries({ queryKey: attendanceKeys.all(tenantId) });
 
       setImportFile(null);
       setShowImportDialog(false);
@@ -657,8 +637,8 @@ export default function Attendance() {
                       >
                         {t("timeLeave.attendance.actions.cancel")}
                       </Button>
-                      <Button type="submit" disabled={saving}>
-                        {saving ? (
+                      <Button type="submit" disabled={markAttendanceMutation.isPending}>
+                        {markAttendanceMutation.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             {t("timeLeave.attendance.mark.saving")}

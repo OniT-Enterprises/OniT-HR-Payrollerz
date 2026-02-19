@@ -20,6 +20,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
+import { chunkArray } from '@/lib/utils';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -103,41 +104,43 @@ class PayrollRunService {
   }
 
   /**
-   * Create a payroll run with its records atomically using a Firestore batch.
-   * This prevents corrupt state if the browser crashes mid-operation.
-   * Either all writes succeed or none do.
+   * Create a payroll run with its records using Firestore batches.
+   * The first batch writes the run doc + up to 498 records (499 ops).
+   * Subsequent batches write up to 499 records each.
+   *
+   * Note: Multi-batch writes are NOT atomic — if batch 2 fails, batch 1 is
+   * already committed. This is acceptable because payrolls with 500+ employees
+   * are rare in the TL market, and partial state is recoverable.
    */
   async createPayrollRunWithRecords(
     payrollRun: Omit<PayrollRun, 'id'>,
     records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[],
     audit?: AuditContext
   ): Promise<{ runId: string; recordIds: string[] }> {
-    // SEC-3: Firestore batch limit is 500 operations (1 run doc + N records)
-    if (records.length > 499) {
-      throw new Error(`Too many payroll records (${records.length}). Maximum is 499 per batch.`);
-    }
+    const BATCH_LIMIT = 499; // Firestore max 500 ops per batch
 
-    const batch = writeBatch(db);
-
-    // Create the payroll run document
+    // First batch: run doc (1 op) + up to 498 records
+    const firstBatch = writeBatch(db);
     const runRef = doc(this.collectionRef);
     const runId = runRef.id;
 
-    batch.set(runRef, {
+    firstBatch.set(runRef, {
       ...payrollRun,
       status: payrollRun.status || 'draft',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    // Create all payroll records with reference to the run
     const recordIds: string[] = [];
     const recordsCollection = collection(db, 'payrollRecords');
+    const firstChunkSize = BATCH_LIMIT - 1; // 498 records in first batch (run doc takes 1 slot)
+    const firstChunk = records.slice(0, firstChunkSize);
+    const remaining = records.slice(firstChunkSize);
 
-    for (const record of records) {
+    for (const record of firstChunk) {
       const recordRef = doc(recordsCollection);
       recordIds.push(recordRef.id);
-      batch.set(recordRef, {
+      firstBatch.set(recordRef, {
         ...record,
         payrollRunId: runId,
         createdAt: serverTimestamp(),
@@ -145,8 +148,24 @@ class PayrollRunService {
       });
     }
 
-    // Atomic commit - all or nothing
-    await batch.commit();
+    await firstBatch.commit();
+
+    // Subsequent batches: up to 499 records each
+    const chunks = chunkArray(remaining, BATCH_LIMIT);
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const record of chunk) {
+        const recordRef = doc(recordsCollection);
+        recordIds.push(recordRef.id);
+        batch.set(recordRef, {
+          ...record,
+          payrollRunId: runId,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    }
 
     // Log to audit trail if context provided
     if (audit) {
@@ -406,20 +425,24 @@ class PayrollRecordService {
   }
 
   async createPayrollRecordsBatch(records: Omit<PayrollRecord, 'id'>[]): Promise<string[]> {
-    const batch = writeBatch(db);
+    const BATCH_LIMIT = 499;
     const ids: string[] = [];
+    const chunks = chunkArray(records, BATCH_LIMIT);
 
-    for (const record of records) {
-      const docRef = doc(this.collectionRef);
-      ids.push(docRef.id);
-      batch.set(docRef, {
-        ...record,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const record of chunk) {
+        const docRef = doc(this.collectionRef);
+        ids.push(docRef.id);
+        batch.set(docRef, {
+          ...record,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      }
+      await batch.commit();
     }
 
-    await batch.commit();
     return ids;
   }
 

@@ -19,6 +19,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { fileUploadService } from './fileUploadService';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // ============================================
 // Types
@@ -109,7 +110,7 @@ export function calculateTrainingStatus(
   completionDate?: string,
   expiryDate?: string
 ): TrainingStatus {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayTL();
 
   // If completed and has expiry date, check if expired
   if (completionDate && expiryDate) {

@@ -4,7 +4,7 @@
  * Shows output VAT (collected) vs input VAT (paid) and net due.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -42,6 +42,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { toDateStringTL } from '@/lib/dateUtils';
 import {
   Receipt,
   ArrowLeft,
@@ -109,14 +110,7 @@ export default function VATReturnsPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
-  useEffect(() => {
-    if (session?.tid && selectedPeriod) {
-      loadPeriodData();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid, selectedPeriod]);
-
-  const loadPeriodData = async () => {
+  const loadPeriodData = useCallback(async () => {
     if (!session?.tid) return;
     setLoading(true);
 
@@ -129,8 +123,8 @@ export default function VATReturnsPage() {
       const invoicesRef = collection(db, paths.invoices(session.tid));
       const invoiceQuery = query(
         invoicesRef,
-        where('issueDate', '>=', periodStart.toISOString().split('T')[0]),
-        where('issueDate', '<', periodEnd.toISOString().split('T')[0]),
+        where('issueDate', '>=', toDateStringTL(periodStart)),
+        where('issueDate', '<', toDateStringTL(periodEnd)),
         orderBy('issueDate', 'desc')
       );
       const invoiceSnap = await getDocs(invoiceQuery);
@@ -150,8 +144,8 @@ export default function VATReturnsPage() {
       const expensesRef = collection(db, paths.expenses(session.tid));
       const expenseQuery = query(
         expensesRef,
-        where('date', '>=', periodStart.toISOString().split('T')[0]),
-        where('date', '<', periodEnd.toISOString().split('T')[0])
+        where('date', '>=', toDateStringTL(periodStart)),
+        where('date', '<', toDateStringTL(periodEnd))
       );
       const expenseSnap = await getDocs(expenseQuery);
 
@@ -170,8 +164,8 @@ export default function VATReturnsPage() {
       const billsRef = collection(db, paths.bills(session.tid));
       const billQuery = query(
         billsRef,
-        where('date', '>=', periodStart.toISOString().split('T')[0]),
-        where('date', '<', periodEnd.toISOString().split('T')[0])
+        where('date', '>=', toDateStringTL(periodStart)),
+        where('date', '<', toDateStringTL(periodEnd))
       );
       const billSnap = await getDocs(billQuery);
 
@@ -216,7 +210,13 @@ export default function VATReturnsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [session?.tid, selectedPeriod, toast]);
+
+  useEffect(() => {
+    if (session?.tid && selectedPeriod) {
+      loadPeriodData();
+    }
+  }, [session?.tid, selectedPeriod, loadPeriodData]);
 
   const saveReturn = async (markAsFiled = false) => {
     if (!session?.tid || !summary) return;

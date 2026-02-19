@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toast } from "sonner";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function PayrollReports() {
   const { data: employees = [], isLoading: loading } = useAllEmployees(500);
@@ -167,7 +168,7 @@ export default function PayrollReports() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `payroll-report-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `payroll-report-${getTodayTL()}.csv`;
     link.click();
     toast.success("Payroll report exported successfully");
   };

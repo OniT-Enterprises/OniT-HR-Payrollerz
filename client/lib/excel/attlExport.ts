@@ -10,6 +10,7 @@
 import ExcelJS from "exceljs";
 import type { MonthlyWITReturn } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
+import { getTodayTL } from "@/lib/dateUtils";
 
 // ============================================
 // TYPES
@@ -89,7 +90,7 @@ export async function generateATTLExcel(
     totalWITWithheld: Math.round(witReturn.totalWITWithheld), // Whole dollars
     declarantName: additionalData?.declarantName,
     declarantPhone: additionalData?.declarantPhone,
-    declarationDate: additionalData?.declarationDate || new Date().toISOString().split("T")[0],
+    declarationDate: additionalData?.declarationDate || getTodayTL(),
     ...additionalData,
   };
 

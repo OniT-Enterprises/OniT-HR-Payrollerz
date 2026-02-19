@@ -41,6 +41,7 @@ import { vendorService } from '@/services/vendorService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { Bill, BillFormData, BillPayment, Vendor, ExpenseCategory, PaymentMethod } from '@/types/money';
+import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
 import {
   ArrowLeft,
   Save,
@@ -116,8 +117,8 @@ export default function BillForm() {
     defaultValues: {
       billNumber: '',
       vendorId: preselectedVendorId || '',
-      billDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      billDate: getTodayTL(),
+      dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
       description: '',
       amount: 0,
       taxRate: 0,
@@ -277,7 +278,7 @@ export default function BillForm() {
     try {
       setSaving(true);
       await billService.recordPayment(session.tid, bill.id, {
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayTL(),
         amount,
         method: paymentMethod as PaymentMethod,
         notes: paymentNotes,

@@ -31,8 +31,9 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { useAllInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
-import { useQueryClient } from '@tanstack/react-query';
+import { useFlattenedPaginatedInvoices, useAllInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
+import { useDebounce } from '@/hooks/useDebounce';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
@@ -77,16 +78,26 @@ export default function Invoices() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
-  const _queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const isSearching = debouncedSearchTerm.length > 0;
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
 
-  // Use React Query hooks instead of manual state management
-  const { data: invoices = [], isLoading: loading, refetch: loadInvoices } = useAllInvoices();
+  // Both hooks always called (React rules), only one enabled at a time
+  const paginatedQuery = useFlattenedPaginatedInvoices();
+  const allQuery = useAllInvoices(500, isSearching);
+
+  const invoices = isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices;
+  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
+  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
+  const loadInvoices = isSearching ? allQuery.refetch : paginatedQuery.refetch;
+  const fetchNextPage = paginatedQuery.fetchNextPage;
+  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
+  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
   const { data: invoiceSettings = {} } = useInvoiceSettings();
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -467,6 +478,13 @@ export default function Invoices() {
                 </CardContent>
               </Card>
             ))}
+
+            {/* Infinite scroll trigger */}
+            <InfiniteScrollTrigger
+              onLoadMore={() => fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              isLoading={isFetchingNextPage}
+            />
           </div>
         )}
 
@@ -477,6 +495,11 @@ export default function Invoices() {
             {filteredInvoices.length === 1
               ? t('money.invoices.invoice') || 'invoice'
               : t('money.invoices.invoices') || 'invoices'}
+            {totalLoaded > filteredInvoices.length && (
+              <span>
+                {' '}({t('money.invoices.of') || 'of'} {totalLoaded} {t('money.invoices.loaded') || 'loaded'})
+              </span>
+            )}
           </p>
         )}
       </div>

@@ -53,6 +53,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import { addEmployeeFormSchema, type AddEmployeeFormData } from "@/lib/validations";
+import { toDateStringTL } from "@/lib/dateUtils";
 import {
   UserPlus,
   User,
@@ -362,7 +363,7 @@ export default function AddEmployee() {
           employeeId,
           department: data.department,
           position: data.jobTitle,
-          hireDate: data.startDate || currentDate.toISOString().split("T")[0],
+          hireDate: data.startDate || toDateStringTL(currentDate),
           employmentType: data.employmentType,
           workLocation: "Office",
           manager: data.manager || "",
@@ -370,8 +371,8 @@ export default function AddEmployee() {
           sefopeRegistrationDate: data.sefopeRegistrationDate || undefined,
         },
         compensation: {
-          monthlySalary: parseInt(data.salary || "0") || 0,
-          annualLeaveDays: parseInt(data.leaveDays) || 25,
+          monthlySalary: parseInt(data.salary || "0", 10) || 0,
+          annualLeaveDays: parseInt(data.leaveDays, 10) || 25,
           benefitsPackage: data.benefits || "standard",
           isResident: data.isResident,
         },

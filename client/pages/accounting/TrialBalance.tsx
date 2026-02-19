@@ -43,6 +43,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL } from "@/lib/dateUtils";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -66,7 +67,7 @@ export default function TrialBalance() {
 
   // Date filter
   const [asOfDate, setAsOfDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
+    return getTodayTL();
   });
 
   // Options

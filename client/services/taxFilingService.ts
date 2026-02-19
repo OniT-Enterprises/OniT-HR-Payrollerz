@@ -40,6 +40,7 @@ import type {
 } from '@/types/tax-filing';
 import type { CompanyDetails } from '@/types/settings';
 import { TL_INCOME_TAX, TL_INSS } from '@/lib/payroll/constants-tl';
+import { getTaxConfig } from '@/lib/payroll/taxConfig';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
 import { getTodayTL, parseDateISO } from '@/lib/dateUtils';
 
@@ -60,19 +61,24 @@ const MONTHLY_INSS_PAYMENT_DUE_DAY = 20;   // payment window ends (following mon
 /**
  * Calculate WIT for an employee based on wages
  */
-function calculateWIT(grossWages: number, isResident: boolean): { taxableWages: number; wit: number } {
+function calculateWIT(
+  grossWages: number,
+  isResident: boolean,
+  config?: { rate: number; residentThreshold: number }
+): { taxableWages: number; wit: number } {
+  const rate = config?.rate ?? TL_INCOME_TAX.rate;
+  const threshold = config?.residentThreshold ?? TL_INCOME_TAX.residentThreshold;
+
   if (isResident) {
-    // Residents: 10% on income above $500/month
-    const taxableWages = Math.max(0, grossWages - TL_INCOME_TAX.residentThreshold);
+    const taxableWages = Math.max(0, grossWages - threshold);
     return {
       taxableWages,
-      wit: taxableWages * TL_INCOME_TAX.rate,
+      wit: taxableWages * rate,
     };
   } else {
-    // Non-residents: 10% on all income
     return {
       taxableWages: grossWages,
-      wit: grossWages * TL_INCOME_TAX.rate,
+      wit: grossWages * rate,
     };
   }
 }
@@ -248,6 +254,9 @@ class TaxFilingService {
     company: Partial<CompanyDetails>,
     tenantId: string
   ): Promise<MonthlyWITReturn> {
+    // Fetch dynamic tax config (falls back to static constants)
+    const taxConfig = await getTaxConfig();
+
     // Get all employees
     const employees = await employeeService.getAllEmployees(tenantId);
 
@@ -295,8 +304,8 @@ class TaxFilingService {
       if (grossWages === 0) continue; // Skip employees with no pay this period
 
       const isResident = employee.compensation?.isResident ?? true;
-      const taxableWages = TL_INCOME_TAX.rate > 0
-        ? Math.round((witWithheld / TL_INCOME_TAX.rate) * 100) / 100
+      const taxableWages = taxConfig.incomeTax.rate > 0
+        ? Math.round((witWithheld / taxConfig.incomeTax.rate) * 100) / 100
         : 0;
 
       employeeRecords.push({
@@ -355,6 +364,9 @@ class TaxFilingService {
     company: Partial<CompanyDetails>,
     tenantId: string
   ): Promise<MonthlyINSSReturn> {
+    // Fetch dynamic tax config (falls back to static constants)
+    const taxConfig = await getTaxConfig();
+
     const employees = await employeeService.getAllEmployees(tenantId);
 
     const payrollRuns = await payrollService.runs.getAllPayrollRuns(
@@ -379,8 +391,8 @@ class TaxFilingService {
 
       const employeeINSS = getRecordINSSEmployee(record);
       const employerINSS = getRecordINSSEmployer(record);
-      const contributionBase = TL_INSS.employeeRate > 0
-        ? Math.round((employeeINSS / TL_INSS.employeeRate) * 100) / 100
+      const contributionBase = taxConfig.inss.employeeRate > 0
+        ? Math.round((employeeINSS / taxConfig.inss.employeeRate) * 100) / 100
         : 0;
 
       const existing = totalsByEmployee.get(employeeId) || {

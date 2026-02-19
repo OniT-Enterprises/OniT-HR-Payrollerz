@@ -18,6 +18,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
 
 // ============================================
 // Types
@@ -332,8 +333,8 @@ class InterviewService {
    * Get upcoming interviews (next 7 days)
    */
   async getUpcomingInterviews(tenantId: string): Promise<Interview[]> {
-    const today = new Date().toISOString().split('T')[0];
-    const nextWeek = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    const today = getTodayTL();
+    const nextWeek = toDateStringTL(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
 
     return this.getInterviews(tenantId, {
       status: 'scheduled',
@@ -346,7 +347,7 @@ class InterviewService {
    * Get today's interviews
    */
   async getTodayInterviews(tenantId: string): Promise<Interview[]> {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getTodayTL();
     const all = await this.getInterviews(tenantId);
     return all.filter((i) => i.interviewDate === today && i.status === 'scheduled');
   }

@@ -70,6 +70,7 @@ import {
   Clock,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { getTodayTL } from "@/lib/dateUtils";
 
 // ============================================
 // Helper Components
@@ -160,7 +161,7 @@ export default function Goals() {
     description: "",
     department: "",
     priority: "medium" as GoalPriority,
-    startDate: new Date().toISOString().split("T")[0],
+    startDate: getTodayTL(),
     endDate: "",
     milestones: [{ title: "", description: "", dueDate: "", assigneeId: "" }],
   });
@@ -180,7 +181,7 @@ export default function Goals() {
     try {
       setLoading(true);
       const [quarter, yearStr] = selectedQuarter.split(" ");
-      const year = parseInt(yearStr);
+      const year = parseInt(yearStr, 10);
 
       const [okrsData, goalsData, okrStatsData, goalStatsData] = await Promise.all([
         goalsService.getOKRs(tenantId, { quarter, year }),
@@ -253,7 +254,7 @@ export default function Goals() {
     setSaving(true);
     try {
       const [quarter, yearStr] = okrFormData.quarter.split(" ");
-      const year = parseInt(yearStr);
+      const year = parseInt(yearStr, 10);
       const owner = employees.find((e) => e.id === okrFormData.ownerId);
 
       const okrData = {
@@ -331,7 +332,7 @@ export default function Goals() {
         description: "",
         department: "",
         priority: "medium",
-        startDate: new Date().toISOString().split("T")[0],
+        startDate: getTodayTL(),
         endDate: "",
         milestones: [{ title: "", description: "", dueDate: "", assigneeId: "" }],
       });

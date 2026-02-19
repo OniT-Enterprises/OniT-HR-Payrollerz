@@ -71,15 +71,19 @@ export function formatDateISO(date: Date | string | null | undefined): string {
 
   if (isNaN(dateObj.getTime())) return '';
 
-  // Format in TL timezone, then extract date parts
+  // Use formatToParts for cross-browser safety (avoids locale-dependent separators)
   const parts = new Intl.DateTimeFormat('en-CA', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
     timeZone: TL_TIMEZONE,
-  }).format(dateObj);
+  }).formatToParts(dateObj);
 
-  return parts; // Returns YYYY-MM-DD format
+  const year = parts.find(p => p.type === 'year')!.value;
+  const month = parts.find(p => p.type === 'month')!.value;
+  const day = parts.find(p => p.type === 'day')!.value;
+
+  return `${year}-${month}-${day}`;
 }
 
 /**
@@ -141,6 +145,14 @@ export function toUTCEndOfDay(date: Date | string): Date {
  */
 export function getTodayTL(): string {
   return formatDateISO(new Date());
+}
+
+/**
+ * Convert any date to an ISO date string (YYYY-MM-DD) in TL timezone.
+ * Use this instead of `date.toISOString().split("T")[0]` to avoid UTC midnight shift.
+ */
+export function toDateStringTL(date: Date | string): string {
+  return formatDateISO(date);
 }
 
 /**

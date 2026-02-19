@@ -18,6 +18,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // ============================================
 // Types
@@ -191,7 +192,7 @@ export function calculateGoalProgress(milestones: Milestone[]): number {
  * Update milestone statuses based on dates
  */
 export function updateMilestoneStatuses(milestones: Milestone[]): Milestone[] {
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayTL();
 
   return milestones.map((m) => {
     if (m.status === 'completed') return m;

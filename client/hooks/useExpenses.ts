@@ -2,7 +2,8 @@
  * React Query hooks for expense data fetching
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   expenseService,
@@ -29,13 +30,14 @@ export function useExpenses(filters: ExpenseFilters = {}) {
   });
 }
 
-export function useAllExpenses(maxResults: number = 500) {
+export function useAllExpenses(maxResults: number = 500, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: expenseKeys.list(tenantId, { pageSize: maxResults }),
     queryFn: () => expenseService.getExpenses(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
     select: (data: PaginatedResult<Expense>) => data.data,
   });
 }
@@ -87,4 +89,41 @@ export function useDeleteExpense() {
       queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
     },
   });
+}
+
+/**
+ * Server-side paginated expenses using infinite query
+ */
+export function usePaginatedExpenses(
+  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {}
+) {
+  const tenantId = useTenantId();
+  return useInfiniteQuery({
+    queryKey: [...expenseKeys.lists(tenantId), 'paginated', filters] as const,
+    queryFn: async ({ pageParam }) => {
+      return expenseService.getExpenses(tenantId, {
+        ...filters,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      });
+    },
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Helper hook to flatten paginated expense results
+ */
+export function useFlattenedPaginatedExpenses(
+  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {}
+) {
+  const query = usePaginatedExpenses(filters);
+  return {
+    ...query,
+    expenses: query.data?.pages.flatMap(page => page.data) ?? [],
+    totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
 }

@@ -32,6 +32,7 @@ import {
   Database,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function SetupReports() {
   const { session } = useTenant();
@@ -110,7 +111,7 @@ export default function SetupReports() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `${filename}_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({

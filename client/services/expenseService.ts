@@ -268,8 +268,9 @@ class ExpenseService {
         );
       }
     } catch (error) {
-      // Log but don't fail - accounting integration is optional
-      console.warn('Could not create journal entry for expense:', error);
+      // Compensating rollback: delete the expense doc to maintain consistency
+      await deleteDoc(doc(db, paths.expense(tenantId, docRef.id)));
+      throw new Error(`Expense rolled back — journal entry failed: ${error instanceof Error ? error.message : error}`);
     }
 
     return docRef.id;

@@ -32,7 +32,9 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
-import { useAllBills, billKeys } from '@/hooks/useBills';
+import { useFlattenedPaginatedBills, useAllBills, billKeys } from '@/hooks/useBills';
+import { useDebounce } from '@/hooks/useDebounce';
+import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, BillStatus } from '@/types/money';
 import {
@@ -65,10 +67,20 @@ export default function Bills() {
   const tenantId = useTenantId();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState('');
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const isSearching = debouncedSearchTerm.length > 0;
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Use React Query for data fetching
-  const { data: bills = [], isLoading: loading } = useAllBills();
+  // Both hooks always called (React rules), only one enabled at a time
+  const paginatedQuery = useFlattenedPaginatedBills();
+  const allQuery = useAllBills(500, isSearching);
+
+  const bills = isSearching ? (allQuery.data ?? []) : paginatedQuery.bills;
+  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
+  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
+  const fetchNextPage = paginatedQuery.fetchNextPage;
+  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
+  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
 
   const filteredBills = bills.filter((bill) => {
     const matchesSearch =
@@ -367,13 +379,20 @@ export default function Bills() {
                 </CardContent>
               </Card>
             ))}
+
+            <InfiniteScrollTrigger
+              onLoadMore={() => fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              isLoading={isFetchingNextPage}
+            />
           </div>
         )}
 
         {/* Bill count */}
         {filteredBills.length > 0 && (
           <p className="text-sm text-muted-foreground mt-4">
-            {t('money.bills.showing') || 'Showing'} {filteredBills.length}{' '}
+            {t('money.bills.showing') || 'Showing'} {filteredBills.length}
+            {filteredBills.length !== totalLoaded && ` of ${totalLoaded} loaded`}{' '}
             {filteredBills.length === 1
               ? t('money.bills.bill') || 'bill'
               : t('money.bills.bills') || 'bills'}

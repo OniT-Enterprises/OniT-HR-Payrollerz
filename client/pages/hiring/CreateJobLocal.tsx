@@ -141,8 +141,8 @@ export default function CreateJobLocal() {
         contractDuration: formData.contractDuration || undefined,
         probationPeriod: formData.probationPeriod || undefined,
         status: "open" as const,
-        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin) : undefined,
-        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax) : undefined,
+        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin, 10) : undefined,
+        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax, 10) : undefined,
       };
 
       await jobService.createJob(tenantId, jobData);

@@ -62,6 +62,7 @@ import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL } from "@/lib/dateUtils";
 
 interface EntryLineForm {
   accountId: string;
@@ -94,7 +95,7 @@ export default function JournalEntries() {
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
 
   // New entry form
-  const [entryDate, setEntryDate] = useState(new Date().toISOString().split("T")[0]);
+  const [entryDate, setEntryDate] = useState(getTodayTL());
   const [entryDescription, setEntryDescription] = useState("");
   const [entryLines, setEntryLines] = useState<EntryLineForm[]>([
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
@@ -381,7 +382,7 @@ export default function JournalEntries() {
   };
 
   const resetForm = () => {
-    setEntryDate(new Date().toISOString().split("T")[0]);
+    setEntryDate(getTodayTL());
     setEntryDescription("");
     setEntryLines([
       { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },

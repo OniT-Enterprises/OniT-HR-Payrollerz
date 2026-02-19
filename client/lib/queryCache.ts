@@ -1,23 +1,23 @@
 /**
  * Query Cache Persistence
- * Saves React Query cache to sessionStorage for instant loading during session.
- * Data is automatically cleared when the browser tab/window closes.
+ * Saves React Query cache to IndexedDB (via idb-keyval) for instant loading.
+ * IndexedDB provides ~hundreds of MB vs sessionStorage's ~5MB limit.
  *
  * SECURITY:
- * 1. Uses sessionStorage instead of localStorage - data cleared on tab close
- * 2. Uses ALLOW-LIST approach - only explicitly safe data is persisted
- * 3. Prevents PII/financial data leakage by secure-by-default design
+ * 1. Uses ALLOW-LIST approach - only explicitly safe data is persisted
+ * 2. Prevents PII/financial data leakage by secure-by-default design
  */
 
 import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
+import { get, set, del } from 'idb-keyval';
 
 const CACHE_KEY = 'onit-query-cache';
-const CACHE_VERSION = 4; // Bumped: v3 allow-list, v4 switched to sessionStorage
+const CACHE_VERSION = 5; // v5: migrated from sessionStorage to IndexedDB
 const MAX_AGE = 1000 * 60 * 30; // 30 minutes
 
 /**
- * ALLOW-LIST: Only these query key patterns are safe to persist to sessionStorage.
+ * ALLOW-LIST: Only these query key patterns are safe to persist.
  * Everything else is excluded by default.
  *
  * This is safer than a deny-list because:
@@ -66,57 +66,54 @@ function isSafeToPersist(queryKey: string): boolean {
 }
 
 /**
- * Save specific query data to sessionStorage
+ * Save specific query data to IndexedDB
  * SECURITY: Only persists data that matches the allow-list
  */
-export function persistQueryData(queryKey: string, data: unknown): void {
-  // Only persist if explicitly allowed - secure by default
+export async function persistQueryData(queryKey: string, data: unknown): Promise<void> {
   if (!isSafeToPersist(queryKey)) {
     return;
   }
 
   try {
-    const store = loadCacheStore();
+    const store = await loadCacheStore();
     store.entries[queryKey] = {
       data,
       timestamp: Date.now(),
       queryKey,
     };
-    sessionStorage.setItem(CACHE_KEY, JSON.stringify(store));
-  } catch (e) {
-    // Storage full or other error - silently ignore
-    console.warn('Failed to persist query cache:', e);
+    await set(CACHE_KEY, store);
+  } catch {
+    // Storage error - silently ignore
   }
 }
 
 /**
- * Load cache store from sessionStorage
+ * Load cache store from IndexedDB
  * Cleans up expired entries and any that no longer match the allow-list
  */
-function loadCacheStore(): CacheStore {
+async function loadCacheStore(): Promise<CacheStore> {
   try {
-    const raw = sessionStorage.getItem(CACHE_KEY);
-    if (raw) {
-      const store = JSON.parse(raw) as CacheStore;
-      if (store.version === CACHE_VERSION) {
-        // Clean up expired entries AND entries no longer in allow-list
-        const now = Date.now();
-        let needsUpdate = false;
-        Object.keys(store.entries).forEach((key) => {
-          if (
-            now - store.entries[key].timestamp > MAX_AGE ||
-            !isSafeToPersist(key)
-          ) {
-            delete store.entries[key];
-            needsUpdate = true;
-          }
-        });
-        // Save cleaned store back to sessionStorage
-        if (needsUpdate) {
-          sessionStorage.setItem(CACHE_KEY, JSON.stringify(store));
+    const store = await get<CacheStore>(CACHE_KEY);
+    if (store && store.version === CACHE_VERSION) {
+      const now = Date.now();
+      let needsUpdate = false;
+      Object.keys(store.entries).forEach((key) => {
+        if (
+          now - store.entries[key].timestamp > MAX_AGE ||
+          !isSafeToPersist(key)
+        ) {
+          delete store.entries[key];
+          needsUpdate = true;
         }
-        return store;
+      });
+      if (needsUpdate) {
+        await set(CACHE_KEY, store);
       }
+      return store;
+    }
+    // Version mismatch — clear old data
+    if (store) {
+      await del(CACHE_KEY);
     }
   } catch {
     // Corrupted cache - ignore
@@ -127,8 +124,8 @@ function loadCacheStore(): CacheStore {
 /**
  * Get cached data for a query key
  */
-export function getCachedData<T>(queryKey: string): T | undefined {
-  const store = loadCacheStore();
+export async function getCachedData<T>(queryKey: string): Promise<T | undefined> {
+  const store = await loadCacheStore();
   const entry = store.entries[queryKey];
   if (entry && Date.now() - entry.timestamp < MAX_AGE) {
     return entry.data as T;
@@ -171,14 +168,14 @@ export function createOptimizedQueryClient(): QueryClient {
 }
 
 /**
- * Hydrate QueryClient with persisted cache on app load
+ * Hydrate QueryClient with persisted cache on app load.
+ * Async — call at startup but the app renders immediately; cache arrives shortly after.
  */
-export function hydrateQueryClient(queryClient: QueryClient): void {
-  const store = loadCacheStore();
+export async function hydrateQueryClient(queryClient: QueryClient): Promise<void> {
+  const store = await loadCacheStore();
 
   Object.values(store.entries).forEach((entry) => {
     try {
-      // Parse the query key back to array format
       const queryKey = JSON.parse(entry.queryKey);
       queryClient.setQueryData(queryKey, entry.data);
     } catch {
@@ -198,7 +195,7 @@ export function setupQueryPersistence(queryClient: QueryClient): () => void {
       const { queryKey, state } = event.query;
       const keyString = JSON.stringify(queryKey);
 
-      // persistQueryData will only save if key matches allow-list
+      // persistQueryData will only save if key matches allow-list (fire-and-forget)
       persistQueryData(keyString, state.data);
     }
   });

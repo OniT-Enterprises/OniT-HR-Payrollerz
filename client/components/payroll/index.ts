@@ -9,3 +9,6 @@ export { TaxInfoBanner } from './TaxInfoBanner';
 export { PayrollSummaryCards } from './PayrollSummaryCards';
 export { PayrollEmployeeRow, type EmployeePayrollRowData } from './PayrollEmployeeRow';
 export { TaxSummaryCard } from './TaxSummaryCard';
+export { PayrollPeriodConfig } from './PayrollPeriodConfig';
+export { PayrollComplianceCard } from './PayrollComplianceCard';
+export { PayrollDialogs } from './PayrollDialogs';

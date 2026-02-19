@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Papa from "papaparse";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -208,9 +210,9 @@ export default function CustomReports() {
       } else if (config.dataSource === "attendance") {
         const today = new Date();
         const startDate = new Date();
-        startDate.setDate(startDate.getDate() - parseInt(config.filters.dateRange || "30"));
-        const startDateStr = startDate.toISOString().split("T")[0];
-        const endDateStr = today.toISOString().split("T")[0];
+        startDate.setDate(startDate.getDate() - parseInt(config.filters.dateRange || "30", 10));
+        const startDateStr = toDateStringTL(startDate);
+        const endDateStr = toDateStringTL(today);
         // Try React Query cache first
         let attendance = queryClient.getQueryData<AttendanceRecord[]>(['attendance', startDateStr, endDateStr]);
         if (!attendance) {
@@ -311,22 +313,19 @@ export default function CustomReports() {
   const exportToCSV = () => {
     if (!previewData || !previewColumns.length) return;
 
-    const headers = previewColumns.map((c) => c.label).join(",");
     const rows = previewData.map((item) =>
-      previewColumns
-        .map((c) => {
-          const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-          const strValue = String(value ?? "").replace(/,/g, ";");
-          return `"${strValue}"`;
-        })
-        .join(",")
+      previewColumns.reduce((row, c) => {
+        const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
+        row[c.label] = String(value ?? "");
+        return row;
+      }, {} as Record<string, string>)
     );
-    const csv = [headers, ...rows].join("\n");
+    const csv = Papa.unparse(rows);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `custom_report_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `custom_report_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({

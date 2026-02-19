@@ -70,6 +70,7 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function BankTransfers() {
   const { toast } = useToast();
@@ -232,7 +233,7 @@ export default function BankTransfers() {
         ? bankFileRecords
         : await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
 
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayTL();
 
       for (const bankCode of selectedBanks) {
         const result = generateBankFile(bankCode, {
@@ -503,7 +504,7 @@ export default function BankTransfers() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `bank-transfers-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `bank-transfers-${getTodayTL()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

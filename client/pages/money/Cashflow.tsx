@@ -23,6 +23,7 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
+import { toDateStringTL } from '@/lib/dateUtils';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -106,8 +107,8 @@ export default function Cashflow() {
     try {
       setLoading(true);
       const { start, end } = getDateRange(period);
-      const startStr = start.toISOString().split('T')[0];
-      const endStr = end.toISOString().split('T')[0];
+      const startStr = toDateStringTL(start);
+      const endStr = toDateStringTL(end);
 
       const [invoices, bills, expenses] = await Promise.all([
         invoiceService.getAllInvoices(session.tid),

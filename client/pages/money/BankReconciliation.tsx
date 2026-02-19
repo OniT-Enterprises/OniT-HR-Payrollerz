@@ -35,6 +35,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
 import type { BankTransaction } from '@/types/money';
+import { toDateStringTL } from '@/lib/dateUtils';
 import { BankReconciliationSummary } from '@/components/money/BankReconciliationSummary';
 import { BankMatchDialog, type MatchOption } from '@/components/money/BankMatchDialog';
 import {
@@ -170,7 +171,7 @@ export default function BankReconciliation() {
               id: inv.id,
               description: `${inv.invoiceNumber} - ${inv.customerName}`,
               amount: inv.total,
-              date: inv.paidAt?.toISOString().split('T')[0] || inv.issueDate,
+              date: inv.paidAt ? toDateStringTL(inv.paidAt) : inv.issueDate,
             });
           });
       } else {
@@ -188,7 +189,7 @@ export default function BankReconciliation() {
               id: bill.id,
               description: `Bill: ${bill.description} - ${bill.vendorName}`,
               amount: -bill.total,
-              date: bill.paidAt?.toISOString().split('T')[0] || bill.billDate,
+              date: bill.paidAt ? toDateStringTL(bill.paidAt) : bill.billDate,
             });
           });
 

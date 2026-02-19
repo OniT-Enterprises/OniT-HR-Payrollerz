@@ -65,6 +65,7 @@ import { formatCurrency, DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function DeductionsAdvances() {
   const { toast } = useToast();
@@ -86,7 +87,7 @@ export default function DeductionsAdvances() {
   const [isPercentage, setIsPercentage] = useState(false);
   const [percentage, setPercentage] = useState(0);
   const [isPreTax, setIsPreTax] = useState(false);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(getTodayTL());
   const [endDate, setEndDate] = useState("");
   const [totalAmount, setTotalAmount] = useState(0);
   const [frequency, setFrequency] = useState<PayFrequency | "per_paycheck">("per_paycheck");
@@ -338,7 +339,7 @@ export default function DeductionsAdvances() {
     setIsPercentage(false);
     setPercentage(0);
     setIsPreTax(false);
-    setStartDate(new Date().toISOString().split("T")[0]);
+    setStartDate(getTodayTL());
     setEndDate("");
     setTotalAmount(0);
     setFrequency("per_paycheck");

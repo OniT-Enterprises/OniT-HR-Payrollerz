@@ -82,6 +82,7 @@ import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
+import { getTodayTL } from "@/lib/dateUtils";
 
 // Allowance type icons mapping
 const ALLOWANCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -149,7 +150,7 @@ export default function EmployeeAllowances() {
   const [allowanceType, setAllowanceType] = useState("");
   const [amount, setAmount] = useState(0);
   const [effectiveDate, setEffectiveDate] = useState(
-    new Date().toISOString().split("T")[0]
+    getTodayTL()
   );
   const [_notes, setNotes] = useState("");
 
@@ -313,7 +314,7 @@ export default function EmployeeAllowances() {
     setSelectedEmployee("");
     setAllowanceType("");
     setAmount(0);
-    setEffectiveDate(new Date().toISOString().split("T")[0]);
+    setEffectiveDate(getTodayTL());
     setNotes("");
   };
 
@@ -371,7 +372,7 @@ export default function EmployeeAllowances() {
     try {
       await payrollService.benefits.terminateEnrollment(
         deletingAllowance.id!,
-        new Date().toISOString().split("T")[0]
+        getTodayTL()
       );
 
       toast({

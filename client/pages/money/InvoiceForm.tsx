@@ -44,6 +44,7 @@ import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline'
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { Invoice, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
+import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
 import {
   FileText,
   Plus,
@@ -112,8 +113,8 @@ export default function InvoiceForm() {
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
       customerId: preselectedCustomerId || '',
-      issueDate: new Date().toISOString().split('T')[0],
-      dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      issueDate: getTodayTL(),
+      dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
       items: [{ description: '', quantity: 1, unitPrice: 0, amount: 0 }],
       taxRate: 0,
       notes: '',
@@ -185,8 +186,8 @@ export default function InvoiceForm() {
         if (sourceInvoice) {
           reset({
             customerId: sourceInvoice.customerId,
-            issueDate: new Date().toISOString().split('T')[0],
-            dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+            issueDate: getTodayTL(),
+            dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
             items: sourceInvoice.items,
             taxRate: sourceInvoice.taxRate,
             notes: sourceInvoice.notes || '',
@@ -320,7 +321,7 @@ export default function InvoiceForm() {
     try {
       setSaving(true);
       await invoiceService.recordPayment(session!.tid, invoice.id, {
-        date: new Date().toISOString().split('T')[0],
+        date: getTodayTL(),
         amount,
         method: paymentMethod as 'cash' | 'bank_transfer' | 'check' | 'other',
         notes: paymentNotes,

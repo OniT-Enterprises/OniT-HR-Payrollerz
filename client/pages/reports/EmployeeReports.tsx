@@ -1,4 +1,6 @@
 import React, { useState, useMemo } from "react";
+import Papa from "papaparse";
+import { getTodayTL } from "@/lib/dateUtils";
 import {
   Card,
   CardContent,
@@ -52,7 +54,7 @@ export default function EmployeeReports() {
   // Get new hires (based on date range)
   const newHires = useMemo(() => {
     const cutoffDate = new Date();
-    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange));
+    cutoffDate.setDate(cutoffDate.getDate() - parseInt(dateRange, 10));
     return employees.filter((emp) => {
       const hireDate = emp.jobDetails?.hireDate
         ? new Date(emp.jobDetails.hireDate)
@@ -70,22 +72,19 @@ export default function EmployeeReports() {
 
   // Export to CSV
   const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
-    const headers = columns.map((c) => c.label).join(",");
     const rows = data.map((item) =>
-      columns
-        .map((c) => {
-          const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-          const strValue = String(value || "").replace(/,/g, ";");
-          return `"${strValue}"`;
-        })
-        .join(",")
+      columns.reduce((row, c) => {
+        const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
+        row[c.label] = String(value ?? "");
+        return row;
+      }, {} as Record<string, string>)
     );
-    const csv = [headers, ...rows].join("\n");
+    const csv = Papa.unparse(rows);
     const blob = new Blob([csv], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `${filename}_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `${filename}_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
     toast({

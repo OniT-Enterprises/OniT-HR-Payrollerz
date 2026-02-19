@@ -17,15 +17,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -33,14 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -48,14 +31,10 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Calculator,
   Users,
-  FileText,
   Save,
   CheckCircle,
   AlertTriangle,
-  Loader2,
-  ChevronDown,
   Search,
-  Lock,
   Calendar,
   Eye,
   Pencil,
@@ -83,6 +62,7 @@ import type { TLPayFrequency } from "@/lib/payroll/constants-tl";
 import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { sumMoney } from "@/lib/currency";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
@@ -91,111 +71,19 @@ import {
   PayrollSummaryCards,
   PayrollEmployeeRow,
   TaxSummaryCard,
+  PayrollPeriodConfig,
+  PayrollComplianceCard,
+  PayrollDialogs,
 } from "@/components/payroll";
 
-interface EmployeePayrollData {
-  employee: Employee;
-  regularHours: number;
-  overtimeHours: number;
-  nightShiftHours: number;
-  holidayHours: number;
-  sickDays: number;
-  perDiem: number;
-  bonus: number;
-  allowances: number;
-  calculation: TLPayrollResult | null;
-  // Track if row has been edited
-  isEdited: boolean;
-  // Store original values for reset
-  originalValues: {
-    regularHours: number;
-    overtimeHours: number;
-    nightShiftHours: number;
-    bonus: number;
-    perDiem: number;
-    allowances: number;
-  };
-}
-
-const mapTLEarningTypeToPayrollEarningType = (
-  type: string
-): PayrollRecord["earnings"][number]["type"] => {
-  switch (type) {
-    case "regular":
-      return "regular";
-    case "overtime":
-      return "overtime";
-    case "holiday":
-      return "holiday";
-    case "bonus":
-      return "bonus";
-    case "subsidio_anual":
-      return "subsidio_anual";
-    case "commission":
-      return "commission";
-    case "reimbursement":
-      return "reimbursement";
-    case "per_diem":
-    case "food_allowance":
-    case "transport_allowance":
-    case "housing_allowance":
-    case "travel_allowance":
-      return "allowance";
-    default:
-      return "other";
-  }
-};
-
-const mapTLDeductionTypeToPayrollDeductionType = (
-  type: string
-): PayrollRecord["deductions"][number]["type"] => {
-  switch (type) {
-    case "income_tax":
-      return "federal_tax";
-    case "inss_employee":
-      return "social_security";
-    case "advance_repayment":
-      return "advance";
-    case "court_order":
-      return "garnishment";
-    default:
-      return "other";
-  }
-};
-
-const getPayPeriodsInPayMonth = (
-  payDateIso: string,
-  payFrequency: TLPayFrequency
-): number | undefined => {
-  if (!payDateIso) return undefined;
-  if (payFrequency !== "weekly" && payFrequency !== "biweekly") return undefined;
-
-  const intervalDays = payFrequency === "weekly" ? 7 : 14;
-  const payDate = new Date(`${payDateIso}T00:00:00`);
-  if (Number.isNaN(payDate.getTime())) return undefined;
-
-  const targetYear = payDate.getFullYear();
-  const targetMonth = payDate.getMonth();
-
-  // Walk backwards to find the first pay date in the month for this cadence.
-  let cursor = new Date(payDate);
-  while (true) {
-    const previous = new Date(cursor);
-    previous.setDate(previous.getDate() - intervalDays);
-    if (previous.getFullYear() !== targetYear || previous.getMonth() !== targetMonth) break;
-    cursor = previous;
-  }
-
-  // Count pay dates forward within the same month.
-  let count = 0;
-  const iter = new Date(cursor);
-  while (iter.getFullYear() === targetYear && iter.getMonth() === targetMonth) {
-    count += 1;
-    iter.setDate(iter.getDate() + intervalDays);
-  }
-
-  return count > 0 ? count : undefined;
-};
+import type { EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
+import {
+  mapTLEarningTypeToPayrollEarningType,
+  mapTLDeductionTypeToPayrollDeductionType,
+  getPayPeriodsInPayMonth,
+  formatPayPeriod,
+  formatPayDate,
+} from "@/lib/payroll/run-payroll-helpers";
 
 export default function RunPayroll() {
   const navigate = useNavigate();
@@ -239,9 +127,9 @@ export default function RunPayroll() {
     const lastDay = new Date(year, month + 1, 0);
     const payDay = new Date(year, month + 1, 5); // 5th of next month
 
-    setPeriodStart(firstDay.toISOString().split("T")[0]);
-    setPeriodEnd(lastDay.toISOString().split("T")[0]);
-    setPayDate(payDay.toISOString().split("T")[0]);
+    setPeriodStart(toDateStringTL(firstDay));
+    setPeriodEnd(toDateStringTL(lastDay));
+    setPayDate(toDateStringTL(payDay));
   }, []);
 
   // Load employees
@@ -298,7 +186,6 @@ export default function RunPayroll() {
 
   /**
    * Calculate payroll for a single employee data object.
-   * Extracted to avoid code duplication and enable inline calculation.
    */
   const calculateForEmployee = useCallback((data: EmployeePayrollData): TLPayrollResult | null => {
     const monthlySalary = data.employee.compensation.monthlySalary || 0;
@@ -306,23 +193,23 @@ export default function RunPayroll() {
     const hourlyRate = monthlySalary / monthlyHours;
     const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
     const monthsWorkedThisYear = asOfDate.getMonth() + 1;
-	    const hireDate = data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0];
-	    const subsidioAnual = includeSubsidioAnual
-	      ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
-	      : 0;
-	    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
-	    const isResident =
-	      data.employee.compensation?.isResident ??
-	      (data.employee.documents?.residencyStatus
+    const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
+    const subsidioAnual = includeSubsidioAnual
+      ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
+      : 0;
+    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
+    const isResident =
+      data.employee.compensation?.isResident ??
+      (data.employee.documents?.residencyStatus
         ? data.employee.documents.residencyStatus !== "foreign_worker"
         : true);
 
-	    const input: TLPayrollInput = {
-	      employeeId: data.employee.id || "",
-	      monthlySalary,
-	      payFrequency,
-	      totalPeriodsInMonth,
-	      isHourly: false,
+    const input: TLPayrollInput = {
+      employeeId: data.employee.id || "",
+      monthlySalary,
+      payFrequency,
+      totalPeriodsInMonth,
+      isHourly: false,
       hourlyRate,
       regularHours: data.regularHours,
       overtimeHours: data.overtimeHours,
@@ -406,7 +293,6 @@ export default function RunPayroll() {
   const hasComplianceIssues = complianceIssues.length > 0;
 
   // Calculate totals (excluding excluded employees)
-  // Uses sumMoney for precise currency arithmetic (avoids floating-point drift)
   const totals = useMemo(() => {
     const includedData = employeePayrollData
       .filter(data => !excludedEmployees.has(data.employee.id || "") && data.calculation);
@@ -441,7 +327,7 @@ export default function RunPayroll() {
       if (d.overtimeHours > maxMonthlyOT) {
         warnings.push({ employeeName: name, message: `${d.overtimeHours} OT hours exceeds max ${maxMonthlyOT}/month (${TL_WORKING_HOURS.maxOvertimePerWeek}/week)`, type: "hours" });
       }
-      const totalDailyHoursEquiv = (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22; // ~22 working days
+      const totalDailyHoursEquiv = (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22;
       if (totalDailyHoursEquiv > 12) {
         warnings.push({ employeeName: name, message: `Averaging ${totalDailyHoursEquiv.toFixed(1)} hours/day — exceeds safe limits`, type: "hours" });
       }
@@ -466,7 +352,7 @@ export default function RunPayroll() {
       const hourlyRate = monthlySalary / monthlyHours;
       const asOfDate = payDate ? new Date(`${payDate}T00:00:00`) : new Date();
       const monthsWorkedThisYear = asOfDate.getMonth() + 1;
-      const hireDate = data.employee.jobDetails.hireDate || new Date().toISOString().split('T')[0];
+      const hireDate = data.employee.jobDetails.hireDate || getTodayTL();
       const subsidioAnual = includeSubsidioAnual
         ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
         : 0;
@@ -521,7 +407,7 @@ export default function RunPayroll() {
     return allErrors;
   }, [payDate, payFrequency, includeSubsidioAnual]);
 
-  // Helper: build PayrollRun object (avoids duplication between save/process)
+  // Helper: build PayrollRun object
   const buildPayrollRun = useCallback((includedData: EmployeePayrollData[]): Omit<PayrollRun, "id"> => ({
     tenantId,
     periodStart,
@@ -619,10 +505,10 @@ export default function RunPayroll() {
     const moneyFields = ["bonus", "perDiem", "allowances"];
 
     if (hourFields.includes(field)) {
-      if (value < 0 || value > 744) return; // Max hours in a month (31 * 24)
+      if (value < 0 || value > 744) return;
     }
     if (moneyFields.includes(field)) {
-      if (value < 0 || value > 100000) return; // Reasonable cap
+      if (value < 0 || value > 100000) return;
     }
 
     setEmployeePayrollData((prev) =>
@@ -631,7 +517,6 @@ export default function RunPayroll() {
 
         const updated = { ...d, [field]: value };
 
-        // Check if any value differs from original
         const isEdited =
           updated.regularHours !== d.originalValues.regularHours ||
           updated.overtimeHours !== d.originalValues.overtimeHours ||
@@ -679,37 +564,12 @@ export default function RunPayroll() {
     });
   };
 
-  // Format pay period
-  const formatPayPeriod = (start: string, end: string): string => {
-    const startDate = new Date(start);
-    const endDate = new Date(end);
-    return `${startDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-    })} – ${endDate.toLocaleDateString("en-US", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    })}`;
-  };
-
-  // Format pay date nicely
-  const formatPayDate = (date: string): string => {
-    return new Date(date).toLocaleDateString("en-US", {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-    });
-  };
-
   // Save as draft
   const handleSaveDraft = async () => {
     setSaving(true);
     try {
       const includedData = getIncludedData();
 
-      // Validate all employees before saving
       const validationErrors = validateAllEmployees(includedData);
       if (validationErrors.length > 0) {
         toast({
@@ -775,10 +635,10 @@ export default function RunPayroll() {
         return;
       }
 
-      // SEC-6: Date range validation — limit to reasonable bounds
+      // SEC-6: Date range validation
       const now = new Date();
-      const twoYearsAgo = new Date(now.getFullYear() - 2, now.getMonth(), 1).toISOString().split("T")[0];
-      const oneMonthAhead = new Date(now.getFullYear(), now.getMonth() + 2, 0).toISOString().split("T")[0];
+      const twoYearsAgo = toDateStringTL(new Date(now.getFullYear() - 2, now.getMonth(), 1));
+      const oneMonthAhead = toDateStringTL(new Date(now.getFullYear(), now.getMonth() + 2, 0));
       if (periodStart < twoYearsAgo || periodEnd > oneMonthAhead) {
         toast({
           title: "Date range out of bounds",
@@ -810,7 +670,6 @@ export default function RunPayroll() {
 
       const includedData = getIncludedData();
 
-      // CALC-5: Validate all employee inputs before processing
       const validationErrors = validateAllEmployees(includedData);
       if (validationErrors.length > 0) {
         toast({
@@ -842,7 +701,6 @@ export default function RunPayroll() {
       setShowFinalConfirmDialog(false);
       setShowApproveDialog(false);
 
-      // Navigate to history/success page
       navigate("/payroll/history");
     } catch (error) {
       console.error("Failed to process payroll:", error);
@@ -906,9 +764,7 @@ export default function RunPayroll() {
 
       <div className="max-w-7xl mx-auto px-6 py-6">
 
-        {/* ════════════════════════════════════════════════════════════════
-            PAY PERIOD BANNER - Critical info, must be prominent
-        ════════════════════════════════════════════════════════════════ */}
+        {/* Pay Period Banner */}
         <Card className="mb-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 animate-fade-up stagger-1">
           <CardContent className="p-5">
             <div className="flex items-center justify-between">
@@ -947,236 +803,33 @@ export default function RunPayroll() {
         {/* TL Tax Info Banner */}
         <TaxInfoBanner />
 
-        {/* Compliance Notice - Shows when employees need documents */}
-        {hasComplianceIssues && (
-          <Card className="mb-6 border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10 animate-fade-up">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
-                <div className="p-1.5 rounded-lg bg-amber-500/10">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                </div>
-                {complianceIssues.length} Employee{complianceIssues.length > 1 ? "s" : ""} Need Documents
-              </CardTitle>
-              <CardDescription className="text-amber-700 dark:text-amber-400">
-                These employees need contracts or INSS numbers. You can still run payroll and add documents later.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Issue List */}
-              <div className="space-y-2">
-                {complianceIssues.slice(0, showAllCompliance ? undefined : 5).map(({ employee, issues }) => (
-                  <div
-                    key={employee.id}
-                    className="flex items-center justify-between p-2 rounded-lg bg-background border border-amber-200 dark:border-amber-800"
-                  >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={excludedEmployees.has(employee.id || "")}
-                        onCheckedChange={(checked) => {
-                          const newExcluded = new Set(excludedEmployees);
-                          if (checked) {
-                            newExcluded.add(employee.id || "");
-                          } else {
-                            newExcluded.delete(employee.id || "");
-                          }
-                          setExcludedEmployees(newExcluded);
-                        }}
-                        className="data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                      />
-                      <div className="h-7 w-7 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center flex-shrink-0">
-                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-300">
-                          {employee.personalInfo.firstName[0]}{employee.personalInfo.lastName[0]}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {employee.personalInfo.firstName} {employee.personalInfo.lastName}
-                        </p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400">
-                          {issues.join(", ")}
-                        </p>
-                      </div>
-                    </div>
-                    <Badge className={
-                      excludedEmployees.has(employee.id || "")
-                        ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 text-xs"
-                        : "bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 text-xs"
-                    }>
-                      {excludedEmployees.has(employee.id || "") ? "Excluded" : "Included"}
-                    </Badge>
-                  </div>
-                ))}
-                {complianceIssues.length > 5 && !showAllCompliance && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllCompliance(true)}
-                    className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
-                  >
-                    Show {complianceIssues.length - 5} more employee{complianceIssues.length - 5 > 1 ? "s" : ""}
-                    <ChevronDown className="h-3 w-3 ml-1" />
-                  </Button>
-                )}
-                {showAllCompliance && complianceIssues.length > 5 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setShowAllCompliance(false)}
-                    className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
-                  >
-                    Show less
-                    <ChevronDown className="h-3 w-3 ml-1 rotate-180" />
-                  </Button>
-                )}
-              </div>
-
-              {/* Override Acknowledgment */}
-              {excludedEmployees.size < complianceIssues.length && (
-                <div className="p-3 rounded-lg border border-amber-300 dark:border-amber-700 bg-amber-100/50 dark:bg-amber-900/20">
-                  <div className="flex items-start gap-3 cursor-pointer" onClick={() => setComplianceAcknowledged(!complianceAcknowledged)}>
-                    <Checkbox
-                      checked={complianceAcknowledged}
-                      onCheckedChange={(checked) => setComplianceAcknowledged(!!checked)}
-                      className="mt-0.5 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                    />
-                    <span className="text-sm text-amber-800 dark:text-amber-200">
-                      I understand these employees need documents for full compliance.
-                      I will add the missing contracts/INSS numbers within 30 days.
-                    </span>
-                  </div>
-                  {complianceAcknowledged && (
-                    <div className="mt-3">
-                      <Label className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                        Reason for proceeding (required for audit trail)
-                      </Label>
-                      <Input
-                        value={complianceOverrideReason}
-                        onChange={(e) => setComplianceOverrideReason(e.target.value)}
-                        placeholder="e.g., INSS office closed, waiting for contract from legal..."
-                        className="mt-1 text-sm border-amber-300 border-border/50"
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Summary */}
-              <div className="flex items-center justify-between text-sm pt-2 border-t border-amber-200 dark:border-amber-800">
-                <span className="text-amber-700 dark:text-amber-400">
-                  {employees.length - excludedEmployees.size} of {employees.length} employees will be included in payroll
-                </span>
-                {excludedEmployees.size > 0 && (
-                  <Button
-                    variant="link"
-                    size="sm"
-                    onClick={() => setExcludedEmployees(new Set())}
-                    className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-200 h-auto p-0"
-                  >
-                    Include all
-                  </Button>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Compliance Notice */}
+        <PayrollComplianceCard
+          complianceIssues={complianceIssues}
+          excludedEmployees={excludedEmployees}
+          setExcludedEmployees={setExcludedEmployees}
+          complianceAcknowledged={complianceAcknowledged}
+          setComplianceAcknowledged={setComplianceAcknowledged}
+          complianceOverrideReason={complianceOverrideReason}
+          setComplianceOverrideReason={setComplianceOverrideReason}
+          showAllCompliance={showAllCompliance}
+          setShowAllCompliance={setShowAllCompliance}
+          totalEmployees={employees.length}
+        />
 
         {/* Period Settings */}
-        <Card className="mb-6 border-border/50 animate-fade-up stagger-2">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                <Calculator className="h-4 w-4 text-green-600 dark:text-green-400" />
-              </div>
-              Pay Period Configuration
-            </CardTitle>
-            <CardDescription>
-              Configure the payroll period and pay date
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="pay-frequency" className="flex items-center gap-1.5 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  Pay Frequency
-                </Label>
-                <Select
-                  value={payFrequency}
-                  onValueChange={(v) => setPayFrequency(v as TLPayFrequency)}
-                >
-                  <SelectTrigger className="border-border/50">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="weekly">
-                      {TL_PAY_PERIODS.weekly.label} (Weekly)
-                    </SelectItem>
-                    <SelectItem value="biweekly">
-                      {TL_PAY_PERIODS.biweekly.label} (Bi-Weekly)
-                    </SelectItem>
-                    <SelectItem value="monthly">
-                      {TL_PAY_PERIODS.monthly.label} (Monthly)
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="period-start" className="flex items-center gap-1.5 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  Period Start
-                </Label>
-                <Input
-                  id="period-start"
-                  type="date"
-                  value={periodStart}
-                  onChange={(e) => setPeriodStart(e.target.value)}
-                  className="border-border/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="period-end" className="flex items-center gap-1.5 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  Period End
-                </Label>
-                <Input
-                  id="period-end"
-                  type="date"
-                  value={periodEnd}
-                  onChange={(e) => setPeriodEnd(e.target.value)}
-                  className="border-border/50"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="pay-date" className="flex items-center gap-1.5 text-sm">
-                  <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                  Pay Date
-                </Label>
-                <Input
-                  id="pay-date"
-                  type="date"
-                  value={payDate}
-                  onChange={(e) => setPayDate(e.target.value)}
-                  className="border-border/50"
-                />
-              </div>
-              <div className="md:col-span-4 pt-2">
-                <div className="flex items-start gap-3 cursor-pointer" onClick={() => setIncludeSubsidioAnual(!includeSubsidioAnual)}>
-                  <Checkbox
-                    checked={includeSubsidioAnual}
-                    onCheckedChange={(checked) => setIncludeSubsidioAnual(!!checked)}
-                    className="mt-0.5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                  />
-                  <div className="text-sm">
-                    Include Subsidio Anual (13th month) in this run
-                    <p className="text-xs text-muted-foreground mt-0.5">
-                      Adds a pro-rated 13th month salary and includes it in WIT and INSS.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <PayrollPeriodConfig
+          payFrequency={payFrequency}
+          setPayFrequency={setPayFrequency}
+          periodStart={periodStart}
+          setPeriodStart={setPeriodStart}
+          periodEnd={periodEnd}
+          setPeriodEnd={setPeriodEnd}
+          payDate={payDate}
+          setPayDate={setPayDate}
+          includeSubsidioAnual={includeSubsidioAnual}
+          setIncludeSubsidioAnual={setIncludeSubsidioAnual}
+        />
 
         {/* Summary Cards */}
         <div className="animate-fade-up stagger-2">
@@ -1188,7 +841,7 @@ export default function RunPayroll() {
           <TaxSummaryCard totals={totals} />
         </div>
 
-        {/* Payroll Warnings - Minimum wage and hours violations */}
+        {/* Payroll Warnings */}
         {payrollWarnings.length > 0 && (
           <Card className="mb-6 border-red-500/30 bg-red-50/30 dark:bg-red-950/10 animate-fade-up">
             <CardHeader className="pb-3">
@@ -1213,9 +866,7 @@ export default function RunPayroll() {
           </Card>
         )}
 
-        {/* ════════════════════════════════════════════════════════════════
-            EMPLOYEE PAYROLL TABLE - With edit indicators
-        ════════════════════════════════════════════════════════════════ */}
+        {/* Employee Payroll Table */}
         <Card className="border-border/50 animate-fade-up stagger-4">
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -1308,240 +959,29 @@ export default function RunPayroll() {
           </CardContent>
         </Card>
 
-        {/* Bottom spacing */}
         <div className="h-8" />
       </div>
 
-      {/* Save Draft Dialog */}
-      <Dialog open={showSaveDialog} onOpenChange={setShowSaveDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                <Save className="h-4 w-4 text-green-600" />
-              </div>
-              Save Payroll Draft
-            </DialogTitle>
-            <DialogDescription>
-              Save the current payroll as a draft. You can edit and process it later.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Period</p>
-                <p className="font-semibold text-sm mt-0.5">
-                  {periodStart && periodEnd
-                    ? formatPayPeriod(periodStart, periodEnd)
-                    : "Not set"}
-                </p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Employees</p>
-                <p className="font-semibold text-sm mt-0.5">{employees.length}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Total Gross</p>
-                <p className="font-semibold text-sm mt-0.5">{formatCurrencyTL(totals.grossPay)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
-                <p className="text-xs text-muted-foreground">Total Net</p>
-                <p className="font-semibold text-sm text-emerald-600 mt-0.5">{formatCurrencyTL(totals.netPay)}</p>
-              </div>
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSaveDraft} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="h-4 w-4 mr-2" />
-                  Save Draft
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ════════════════════════════════════════════════════════════════
-          APPROVE DIALOG - First step: Review summary
-      ════════════════════════════════════════════════════════════════ */}
-      <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                <CheckCircle className="h-4 w-4 text-green-600" />
-              </div>
-              {t("runPayroll.reviewTitle")}
-            </DialogTitle>
-            <DialogDescription>
-              {t("runPayroll.reviewDescription")}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {/* Period highlight */}
-            <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2 mb-2">
-                <Calendar className="h-4 w-4 text-green-600" />
-                <span className="text-sm font-medium text-green-800 dark:text-green-200">{t("runPayroll.payPeriod")}</span>
-              </div>
-              <p className="font-semibold text-lg">
-                {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : "Not set"}
-              </p>
-              <p className="text-sm text-muted-foreground mt-1">
-                {t("runPayroll.payDateLabel")} {payDate ? formatPayDate(payDate) : "Not set"}
-              </p>
-            </div>
-
-            {/* Summary */}
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">{t("runPayroll.employees")}</p>
-                <p className="text-lg font-bold tracking-tight">{employees.length}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">{t("runPayroll.totalGross")}</p>
-                <p className="text-lg font-bold tracking-tight">{formatCurrencyTL(totals.grossPay)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-red-50/50 dark:bg-red-950/10 border border-red-500/10">
-                <p className="text-xs text-muted-foreground">{t("runPayroll.totalDeductions")}</p>
-                <p className="text-lg font-bold tracking-tight text-red-600">{formatCurrencyTL(totals.totalDeductions)}</p>
-              </div>
-              <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
-                <p className="text-xs text-muted-foreground">{t("runPayroll.netToEmployees")}</p>
-                <p className="text-lg font-bold tracking-tight text-emerald-600">{formatCurrencyTL(totals.netPay)}</p>
-              </div>
-            </div>
-
-            {/* Total employer cost */}
-            <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10 border border-amber-500/10">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-muted-foreground">{t("runPayroll.totalEmployerCost")}</p>
-                  <p className="text-[10px] text-muted-foreground/60">{t("runPayroll.employerCostHint")}</p>
-                </div>
-                <p className="text-lg font-bold tracking-tight text-amber-600">{formatCurrencyTL(totals.totalEmployerCost)}</p>
-              </div>
-            </div>
-
-            {editedCount > 0 && (
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                <Pencil className="h-4 w-4 text-amber-600" />
-                <span className="text-sm text-amber-700 dark:text-amber-300">
-                  {t("runPayroll.manuallyAdjusted", { count: String(editedCount) })}
-                </span>
-              </div>
-            )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
-              {t("runPayroll.backToEdit")}
-            </Button>
-            <Button
-              onClick={() => {
-                setShowApproveDialog(false);
-                setShowFinalConfirmDialog(true);
-              }}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
-            >
-              {t("runPayroll.continueToConfirm")}
-              <ChevronDown className="h-4 w-4 ml-2 rotate-[-90deg]" />
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* ════════════════════════════════════════════════════════════════
-          FINAL CONFIRM DIALOG - Point of no return
-      ════════════════════════════════════════════════════════════════ */}
-      <Dialog open={showFinalConfirmDialog} onOpenChange={setShowFinalConfirmDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-amber-500/10">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-              </div>
-              <span className="text-amber-700 dark:text-amber-400">{t("runPayroll.submitForApprovalTitle")}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {/* Warning banner */}
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border-2 border-amber-300 dark:border-amber-700">
-              <p className="font-semibold text-amber-800 dark:text-amber-200 mb-3">
-                {t("runPayroll.aboutToSubmit", { count: String(employees.length) })}
-              </p>
-              <div className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
-                <div className="flex justify-between">
-                  <span>{t("runPayroll.payDateLabel")}</span>
-                  <span className="font-medium">{payDate ? formatPayDate(payDate) : "Not set"}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t("runPayroll.totalNetPay")}</span>
-                  <span className="font-medium">{formatCurrencyTL(totals.netPay)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Consequences */}
-            <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
-              <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">
-                {t("runPayroll.thisActionWill")}
-              </p>
-              <ul className="space-y-1.5 text-sm text-amber-700 dark:text-amber-300">
-                <li className="flex items-start gap-2">
-                  <Lock className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  {t("runPayroll.submitForReview")}
-                </li>
-                <li className="flex items-start gap-2">
-                  <FileText className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  {t("runPayroll.differentAdminApprove")}
-                </li>
-                <li className="flex items-start gap-2">
-                  <Calculator className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  {t("runPayroll.journalEntriesCreated")}
-                </li>
-              </ul>
-            </div>
-          </div>
-          <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowFinalConfirmDialog(false);
-                setShowApproveDialog(true);
-              }}
-            >
-              {t("runPayroll.back")}
-            </Button>
-            <Button
-              onClick={handleProcessPayroll}
-              disabled={processing}
-              className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/25"
-            >
-              {processing ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  {t("runPayroll.submitting")}
-                </>
-              ) : (
-                <>
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  {t("runPayroll.submitForApproval")}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* Dialogs */}
+      <PayrollDialogs
+        showSaveDialog={showSaveDialog}
+        setShowSaveDialog={setShowSaveDialog}
+        handleSaveDraft={handleSaveDraft}
+        saving={saving}
+        showApproveDialog={showApproveDialog}
+        setShowApproveDialog={setShowApproveDialog}
+        showFinalConfirmDialog={showFinalConfirmDialog}
+        setShowFinalConfirmDialog={setShowFinalConfirmDialog}
+        handleProcessPayroll={handleProcessPayroll}
+        processing={processing}
+        periodStart={periodStart}
+        periodEnd={periodEnd}
+        payDate={payDate}
+        employeeCount={employees.length}
+        editedCount={editedCount}
+        totals={totals}
+        t={t}
+      />
     </div>
   );
 }

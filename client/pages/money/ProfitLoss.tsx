@@ -24,6 +24,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { ExpenseCategory } from '@/types/money';
+import { toDateStringTL } from '@/lib/dateUtils';
 import {
   TrendingUp,
   TrendingDown,
@@ -109,8 +110,8 @@ export default function ProfitLoss() {
     }
 
     return {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      start: toDateStringTL(start),
+      end: toDateStringTL(end),
     };
   };
 
@@ -124,7 +125,7 @@ export default function ProfitLoss() {
       const invoices = await invoiceService.getAllInvoices(session.tid);
       const paidInvoices = invoices.filter((inv) => {
         if (inv.status !== 'paid' || !inv.paidAt) return false;
-        const paidDate = inv.paidAt.toISOString().split('T')[0];
+        const paidDate = toDateStringTL(inv.paidAt);
         return paidDate >= start && paidDate <= end;
       });
 

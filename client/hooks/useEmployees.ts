@@ -41,13 +41,14 @@ export function useEmployees(filters: EmployeeFilters = {}) {
  * Fetch all employees (convenience hook for components that need all data)
  * Fetches a large batch for client-side filtering
  */
-export function useAllEmployees(maxResults: number = 500) {
+export function useAllEmployees(maxResults: number = 500, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: employeeKeys.list(tenantId, { pageSize: maxResults }),
     queryFn: () => employeeService.getEmployees(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
     select: (data: PaginatedResult<Employee>) => data.data, // Return just the array
   });
 }

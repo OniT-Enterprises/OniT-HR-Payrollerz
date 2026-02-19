@@ -20,6 +20,7 @@ import {
   formatSefopeDate,
   formatSefopeCurrency,
 } from '@/lib/documents/sefope-form';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // PDF Styles
 const styles = StyleSheet.create({
@@ -478,7 +479,7 @@ export const downloadSefopeForm = async (
 
   // Generate filename
   const safeName = `${employee.personalInfo.firstName}_${employee.personalInfo.lastName}`.replace(/[^a-zA-Z0-9]/g, '_');
-  const today = new Date().toISOString().split('T')[0];
+  const today = getTodayTL();
   link.download = `SEFOPE_${safeName}_${today}.pdf`;
 
   document.body.appendChild(link);

@@ -13,6 +13,7 @@ import {
 import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, deleteDoc, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
+import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
 // ============================================
 // SEED DATA DEFINITIONS
@@ -959,7 +960,7 @@ export default function SeedDatabase() {
         const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit, 0);
         const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit, 0);
 
-        const entryDate = entry.date.toISOString().split('T')[0];
+        const entryDate = toDateStringTL(entry.date);
         const fiscalYear = entry.date.getFullYear();
         const fiscalPeriod = entry.date.getMonth() + 1;
 
@@ -1608,7 +1609,7 @@ export default function SeedDatabase() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `audit-report-${new Date().toISOString().split('T')[0]}.txt`;
+      a.download = `audit-report-${getTodayTL()}.txt`;
       a.click();
       URL.revokeObjectURL(url);
     }

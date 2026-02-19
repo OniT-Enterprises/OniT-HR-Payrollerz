@@ -17,6 +17,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { getTodayTL } from '@/lib/dateUtils';
 
 // ============================================
 // Types
@@ -267,7 +268,7 @@ class LeaveService {
         tenantId,
         duration,
         status: 'pending' as LeaveStatus,
-        requestDate: new Date().toISOString().split('T')[0],
+        requestDate: getTodayTL(),
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -388,7 +389,7 @@ class LeaveService {
         status: 'approved',
         approverId,
         approverName,
-        approvedDate: new Date().toISOString().split('T')[0],
+        approvedDate: getTodayTL(),
         updatedAt: serverTimestamp(),
       });
 
@@ -680,7 +681,7 @@ class LeaveService {
   async getLeaveStats(tenantId: string): Promise<LeaveStats> {
     try {
       const allRequests = await this.getLeaveRequests(tenantId);
-      const today = new Date().toISOString().split('T')[0];
+      const today = getTodayTL();
 
       const pendingRequests = allRequests.filter(r => r.status === 'pending').length;
       const approvedRequests = allRequests.filter(r => r.status === 'approved').length;

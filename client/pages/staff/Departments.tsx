@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,11 +20,13 @@ import {
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService, type Employee } from "@/services/employeeService";
+import type { Employee } from "@/services/employeeService";
 import {
   departmentService,
   type Department,
 } from "@/services/departmentService";
+import { useAllEmployees, employeeKeys } from "@/hooks/useEmployees";
+import { useDepartments, departmentKeys } from "@/hooks/useDepartments";
 import DepartmentManager from "@/components/DepartmentManager";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import { useToast } from "@/hooks/use-toast";
@@ -44,9 +47,16 @@ import {
 export default function Departments() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  // React Query hooks for data fetching
+  const employeesQuery = useAllEmployees();
+  const departmentsQuery = useDepartments(tenantId);
+
+  const employees = employeesQuery.data ?? [];
+  const departments = departmentsQuery.data ?? [];
+  const loading = employeesQuery.isLoading || departmentsQuery.isLoading;
+
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
   const [selectedDepartment, setSelectedDepartment] = useState<any>(null);
@@ -58,37 +68,28 @@ export default function Departments() {
   const { toast } = useToast();
   const { t } = useI18n();
 
+  // Track whether migration has already run to avoid repeated attempts
+  const hasMigratedRef = useRef(false);
+
+  // Auto-migrate departments that exist in employee records but not in departments collection
   useEffect(() => {
-    loadData();
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [employeesData, departmentsData] = await Promise.all([
-        employeeService.getAllEmployees(tenantId),
-        departmentService.getAllDepartments(tenantId),
-      ]);
-      setEmployees(employeesData);
-      setDepartments(departmentsData);
-
-      // Auto-migrate departments that exist in employee records but not in departments collection
-      await migrateMissingDepartments(employeesData, departmentsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: t("departments.toast.errorTitle"),
-        description: t("departments.toast.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
+    if (
+      !loading &&
+      !hasMigratedRef.current &&
+      employees.length > 0 &&
+      departments.length === 0
+    ) {
+      hasMigratedRef.current = true;
+      migrateMissingDepartments(employees, departments);
     }
-  };
+  }, [loading, employees, departments]);
 
   const handleDepartmentChange = async () => {
-    // Reload data and notify about updates
-    await loadData();
+    // Invalidate queries to refetch and notify about updates
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: departmentKeys.all }),
+      queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) }),
+    ]);
     toast({
       title: t("departments.toast.updatedTitle"),
       description: t("departments.toast.updatedDesc"),
@@ -96,7 +97,7 @@ export default function Departments() {
   };
 
   const migrateMissingDepartments = async (
-    employees: Employee[],
+    employeeList: Employee[],
     existingDepartments: Department[],
   ) => {
     try {
@@ -107,7 +108,7 @@ export default function Departments() {
 
       // Get unique department names from employees
       const employeeDepartments = [
-        ...new Set(employees.map((emp) => emp.jobDetails.department)),
+        ...new Set(employeeList.map((emp) => emp.jobDetails.department)),
       ];
 
       // Filter out empty department names
@@ -126,9 +127,8 @@ export default function Departments() {
           });
         }
 
-        // Reload the data after initial migration
-        const updatedDepartments = await departmentService.getAllDepartments(tenantId);
-        setDepartments(updatedDepartments);
+        // Invalidate department queries to refetch after migration
+        await queryClient.invalidateQueries({ queryKey: departmentKeys.all });
 
         toast({
           title: t("departments.toast.migratedTitle"),

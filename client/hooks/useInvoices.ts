@@ -2,7 +2,8 @@
  * React Query hooks for invoice data fetching
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   invoiceService,
@@ -29,13 +30,14 @@ export function useInvoices(filters: InvoiceFilters = {}) {
   });
 }
 
-export function useAllInvoices(maxResults: number = 500) {
+export function useAllInvoices(maxResults: number = 500, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: invoiceKeys.list(tenantId, { pageSize: maxResults }),
     queryFn: () => invoiceService.getInvoices(tenantId, { pageSize: maxResults }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
     select: (data: PaginatedResult<Invoice>) => data.data,
   });
 }
@@ -84,4 +86,41 @@ export function useInvoiceSettings() {
     staleTime: 10 * 60 * 1000,
     gcTime: 60 * 60 * 1000,
   });
+}
+
+/**
+ * Server-side paginated invoices using infinite query
+ */
+export function usePaginatedInvoices(
+  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {}
+) {
+  const tenantId = useTenantId();
+  return useInfiniteQuery({
+    queryKey: [...invoiceKeys.lists(tenantId), 'paginated', filters] as const,
+    queryFn: async ({ pageParam }) => {
+      return invoiceService.getInvoices(tenantId, {
+        ...filters,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      });
+    },
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    getNextPageParam: (lastPage) =>
+      lastPage.hasMore ? lastPage.lastDoc : undefined,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Helper hook to flatten paginated invoice results
+ */
+export function useFlattenedPaginatedInvoices(
+  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {}
+) {
+  const query = usePaginatedInvoices(filters);
+  return {
+    ...query,
+    invoices: query.data?.pages.flatMap(page => page.data) ?? [],
+    totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
 }

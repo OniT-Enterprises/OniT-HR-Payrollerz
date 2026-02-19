@@ -34,6 +34,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
 import type { RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
+import { getTodayTL } from '@/lib/dateUtils';
 import {
   Repeat,
   ArrowLeft,
@@ -87,7 +88,7 @@ export default function RecurringInvoiceForm() {
     defaultValues: {
       customerId: '',
       frequency: 'monthly',
-      startDate: new Date().toISOString().split('T')[0],
+      startDate: getTodayTL(),
       endType: 'never',
       endDate: '',
       endAfterOccurrences: undefined,
@@ -599,7 +600,7 @@ export default function RecurringInvoiceForm() {
                     name="dueDays"
                     control={control}
                     render={({ field }) => (
-                      <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseInt(v))}>
+                      <Select value={String(field.value)} onValueChange={(v) => field.onChange(parseInt(v, 10))}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>

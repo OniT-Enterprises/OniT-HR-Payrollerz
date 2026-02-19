@@ -84,6 +84,7 @@ import {
   getSeverityName,
   getStatusName,
 } from "@/services/disciplinaryService";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function Disciplinary() {
   const { toast } = useToast();
@@ -290,7 +291,7 @@ export default function Disciplinary() {
           summary: formData.summary,
           fullDetails: formData.fullDetails || undefined,
           createdBy: user?.email || "Unknown",
-          createdDate: new Date().toISOString().split("T")[0],
+          createdDate: getTodayTL(),
         },
         evidenceFile || undefined
       );
@@ -456,7 +457,7 @@ export default function Disciplinary() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `disciplinary_records_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `disciplinary_records_${getTodayTL()}.csv`;
     a.click();
     URL.revokeObjectURL(url);
 

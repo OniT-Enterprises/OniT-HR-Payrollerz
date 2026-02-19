@@ -16,6 +16,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
+import { getTodayTL } from "@/lib/dateUtils";
 import {
   UserPlus,
   FileText,
@@ -641,7 +642,7 @@ export default function Onboarding() {
                             ...prev,
                             signed: checked === true,
                             signatureDate: checked === true
-                              ? new Date().toISOString().split("T")[0]
+                              ? getTodayTL()
                               : "",
                           }))
                         }

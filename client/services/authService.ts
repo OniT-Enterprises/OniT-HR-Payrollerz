@@ -57,6 +57,8 @@ class AuthService {
 
   async signOut(): Promise<void> {
     try {
+      sessionStorage.removeItem("impersonatingTenantId");
+      sessionStorage.removeItem("impersonatingTenantName");
       await signOut(auth);
     } catch (error) {
       console.error("Error signing out:", error);

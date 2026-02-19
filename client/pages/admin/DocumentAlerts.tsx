@@ -53,6 +53,7 @@ import {
   SEVERITY_CONFIG,
 } from "@/components/dashboard/DocumentAlertsCard";
 import { SEO } from "@/components/SEO";
+import { getTodayTL } from "@/lib/dateUtils";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
@@ -154,7 +155,7 @@ export default function DocumentAlerts() {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.download = `document-alerts-${new Date().toISOString().split("T")[0]}.csv`;
+    link.download = `document-alerts-${getTodayTL()}.csv`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

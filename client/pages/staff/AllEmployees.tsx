@@ -21,15 +21,18 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { type Employee } from "@/services/employeeService";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useFlattenedPaginatedEmployees, useAllEmployees } from "@/hooks/useEmployees";
+import { useDebounce } from "@/hooks/useDebounce";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
+import { InfiniteScrollTrigger } from "@/components/ui/InfiniteScrollTrigger";
 import {
   getIncompleteEmployees,
 } from "@/lib/employeeUtils";
 import { useToast } from "@/hooks/use-toast";
+import { getTodayTL } from "@/lib/dateUtils";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -66,17 +69,22 @@ import { useTenantId, useTenant } from "@/contexts/TenantContext";
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
 
 export default function AllEmployees() {
-  // React Query for data fetching with caching
-  const {
-    data: employees = [],
-    isLoading: loading,
-    error: queryError,
-    refetch: loadEmployees,
-  } = useAllEmployees(500);
-
   const [searchTerm, setSearchTerm] = useState("");
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(20);
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const isSearching = debouncedSearchTerm.length > 0;
+
+  // Both hooks always called (React rules), only one enabled at a time
+  const paginatedQuery = useFlattenedPaginatedEmployees();
+  const allQuery = useAllEmployees(500, isSearching);
+
+  // Unified interface
+  const employees = isSearching ? (allQuery.data ?? []) : paginatedQuery.employees;
+  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
+  const queryError = isSearching ? allQuery.error : paginatedQuery.error;
+  const loadEmployees = isSearching ? allQuery.refetch : paginatedQuery.refetch;
+  const fetchNextPage = paginatedQuery.fetchNextPage;
+  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
+  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
 
   // URL params for deep linking from Dashboard/PayrollHub
   const [searchParams, setSearchParams] = useSearchParams();
@@ -214,8 +222,8 @@ export default function AllEmployees() {
         employee.compensation.monthlySalary ||
         Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
         0;
-      const matchesMinSalary = !minSalary || salary >= parseInt(minSalary);
-      const matchesMaxSalary = !maxSalary || salary <= parseInt(maxSalary);
+      const matchesMinSalary = !minSalary || salary >= parseInt(minSalary, 10);
+      const matchesMaxSalary = !maxSalary || salary <= parseInt(maxSalary, 10);
 
       // Compliance filter (for links from Dashboard/PayrollHub)
       let matchesCompliance = true;
@@ -256,21 +264,6 @@ export default function AllEmployees() {
     return filtered;
   }, [
     employees,
-    searchTerm,
-    departmentFilter,
-    positionFilter,
-    employmentTypeFilter,
-    workLocationFilter,
-    statusFilter,
-    complianceFilter,
-    minSalary,
-    maxSalary,
-  ]);
-
-  // Reset to first page when filters change
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [
     searchTerm,
     departmentFilter,
     positionFilter,
@@ -402,7 +395,7 @@ export default function AllEmployees() {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `employees_${new Date().toISOString().split("T")[0]}.csv`;
+    a.download = `employees_${getTodayTL()}.csv`;
     a.click();
     window.URL.revokeObjectURL(url);
 
@@ -413,14 +406,6 @@ export default function AllEmployees() {
       }),
     });
   };
-
-  // Pagination
-  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEmployees = filteredEmployees.slice(
-    startIndex,
-    startIndex + itemsPerPage,
-  );
 
   const formatSalary = (monthlySalary: number) => {
     return new Intl.NumberFormat("en-US", {
@@ -1138,7 +1123,7 @@ export default function AllEmployees() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {paginatedEmployees.map((employee) => (
+                  {filteredEmployees.map((employee) => (
                     <tr
                       key={employee.id}
                       className="hover:bg-muted/50 transition-colors cursor-pointer group"
@@ -1265,7 +1250,7 @@ export default function AllEmployees() {
               {loading && <TableSkeleton />}
 
               {/* Empty State */}
-              {paginatedEmployees.length === 0 && !loading && (
+              {filteredEmployees.length === 0 && !loading && (
                 <div className="text-center py-12 px-4">
                   {connectionError ? (
                     <>
@@ -1302,49 +1287,12 @@ export default function AllEmployees() {
               )}
             </div>
 
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex items-center justify-between mt-4">
-                <div className="text-sm text-muted-foreground">
-                  {t("employees.pagination.showing", {
-                    start: startIndex + 1,
-                    end: Math.min(
-                      startIndex + itemsPerPage,
-                      filteredEmployees.length,
-                    ),
-                    total: filteredEmployees.length,
-                  })}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.max(1, prev - 1))
-                    }
-                    disabled={currentPage === 1}
-                  >
-                    {t("employees.pagination.previous")}
-                  </Button>
-                  <span className="text-sm">
-                    {t("employees.pagination.pageOf", {
-                      page: currentPage,
-                      total: totalPages,
-                    })}
-                  </span>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-                    }
-                    disabled={currentPage === totalPages}
-                  >
-                    {t("employees.pagination.next")}
-                  </Button>
-                </div>
-              </div>
-            )}
+            {/* Infinite Scroll Trigger */}
+            <InfiniteScrollTrigger
+              onLoadMore={() => fetchNextPage()}
+              hasMore={hasNextPage ?? false}
+              isLoading={isFetchingNextPage}
+            />
           </CardContent>
         </Card>
 
