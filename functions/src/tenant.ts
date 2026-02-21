@@ -157,14 +157,19 @@ export const provisionTenant = onCall(
       // Commit the batch
       await batch.commit();
 
-      // Step 8: Set custom claims for the owner
+      // Step 8: Set custom claims for the owner (map format for firestore.rules fast-path)
       const existingClaims = ownerUser.customClaims || {};
-      const existingTenants = existingClaims.tenants || [];
-      
+      const existingTenantsMap = existingClaims.tenants || {};
+
+      // Migrate legacy array format to map
+      const tenantsMap: Record<string, string> = Array.isArray(existingTenantsMap)
+        ? Object.fromEntries(existingTenantsMap.map((tid: string) => [tid, "member"]))
+        : { ...existingTenantsMap };
+      tenantsMap[tenantId] = "owner";
+
       const newClaims = {
         ...existingClaims,
-        tenants: [...existingTenants, tenantId],
-        role: "owner",
+        tenants: tenantsMap,
       };
 
       await auth.setCustomUserClaims(ownerUser.uid, newClaims);
@@ -416,14 +421,20 @@ export const addTenantMember = onCall(
         }
       }
 
-      // Update user's custom claims
+      // Update user's custom claims (map format for firestore.rules fast-path)
       const existingClaims = targetUser.customClaims || {};
-      const existingTenants = existingClaims.tenants || [];
+      const existingTenantsMap = existingClaims.tenants || {};
 
-      if (!existingTenants.includes(tenantId)) {
+      // Migrate legacy array format to map
+      const tenantsMap: Record<string, string> = Array.isArray(existingTenantsMap)
+        ? Object.fromEntries(existingTenantsMap.map((tid: string) => [tid, "member"]))
+        : { ...existingTenantsMap };
+
+      if (!tenantsMap[tenantId]) {
+        tenantsMap[tenantId] = role;
         const newClaims = {
           ...existingClaims,
-          tenants: [...existingTenants, tenantId],
+          tenants: tenantsMap,
         };
         await auth.setCustomUserClaims(targetUser.uid, newClaims);
       }

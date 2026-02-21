@@ -36,6 +36,7 @@ import type {
 } from '@/types/money';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService } from './accountingService';
+import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
 import { firestoreBillSchema } from '@/lib/validations';
 
 /**
@@ -293,15 +294,29 @@ class BillService {
     const hasAccounts = accounts.length > 0;
 
     if (hasAccounts) {
+      // Pre-resolve account IDs BEFORE the transaction (getDocs queries are not transaction-safe)
+      const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[data.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+      const [expenseAccount, apAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, expenseMapping.code),
+        accountService.getAccountByCode(tenantId, '2110'),
+      ]);
+      if (!expenseAccount?.id) throw new Error(`Missing account for code ${expenseMapping.code}`);
+      if (!apAccount?.id) throw new Error(`Missing account for code 2110`);
+      const resolvedAccounts: Record<string, { id: string; name: string }> = {
+        [expenseMapping.code]: { id: expenseAccount.id, name: expenseAccount.name },
+        '2110': { id: apAccount.id, name: apAccount.name },
+      };
+
       // ATOMIC: Create bill + journal entry in a single transaction.
       const billDocRef = doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
-        // Journal entry (reads settings, writes journal + GL)
+        // Journal entry (only transaction.get for entry number, writes journal + GL)
         await journalEntryService.createFromBill(
           tenantId,
           { ...bill, id: billDocRef.id },
           userId || 'system',
-          transaction
+          transaction,
+          resolvedAccounts
         );
         // Write bill in same transaction
         transaction.set(billDocRef, {

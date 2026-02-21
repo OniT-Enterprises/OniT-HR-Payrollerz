@@ -101,9 +101,9 @@ export interface TenantMember {
 }
 
 // Custom claims structure for Firebase Auth
+// tenants is a map of { tenantId: role } for firestore.rules fast-path authorization
 export interface CustomClaims {
-  tenants: string[];
-  role?: TenantRole;
+  tenants: Record<string, TenantRole>;
   [key: string]: any;
 }
 

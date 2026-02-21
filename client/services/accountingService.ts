@@ -808,13 +808,16 @@ class JournalEntryService {
     tenantId: string,
     bill: Bill,
     createdBy: string,
-    txn?: Transaction
+    txn?: Transaction,
+    resolvedAccounts?: Record<string, { id: string; name: string }>
   ): Promise<string> {
     const year = new Date(bill.billDate).getFullYear();
     const month = new Date(bill.billDate).getMonth() + 1;
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
+    // Use pre-resolved accounts (transaction-safe) or fall back to query (non-transaction path)
     const getAccountId = async (code: string) => {
+      if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
@@ -955,13 +958,16 @@ class JournalEntryService {
     tenantId: string,
     expense: Expense,
     createdBy: string,
-    txn?: Transaction
+    txn?: Transaction,
+    resolvedAccounts?: Record<string, { id: string; name: string }>
   ): Promise<string> {
     const year = new Date(expense.date).getFullYear();
     const month = new Date(expense.date).getMonth() + 1;
     const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
+    // Use pre-resolved accounts (transaction-safe) or fall back to query (non-transaction path)
     const getAccountId = async (code: string) => {
+      if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);

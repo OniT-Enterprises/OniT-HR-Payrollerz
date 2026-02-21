@@ -29,6 +29,7 @@ import { getTodayTL } from '@/lib/dateUtils';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService } from './accountingService';
+import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
 
 /**
  * Filter options for expense queries
@@ -258,17 +259,30 @@ class ExpenseService {
     const hasAccounts = accounts.length > 0;
 
     if (hasAccounts) {
+      // Pre-resolve account IDs BEFORE the transaction (getDocs queries are not transaction-safe)
+      const expenseMapping = EXPENSE_CATEGORY_TO_ACCOUNT[data.category] || EXPENSE_CATEGORY_TO_ACCOUNT.other;
+      const cashCode = data.paymentMethod === 'cash' ? '1110' : '1120';
+      const [expenseAccount, cashAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, expenseMapping.code),
+        accountService.getAccountByCode(tenantId, cashCode),
+      ]);
+      if (!expenseAccount?.id) throw new Error(`Missing account for code ${expenseMapping.code}`);
+      if (!cashAccount?.id) throw new Error(`Missing account for code ${cashCode}`);
+      const resolvedAccounts: Record<string, { id: string; name: string }> = {
+        [expenseMapping.code]: { id: expenseAccount.id, name: expenseAccount.name },
+        [cashCode]: { id: cashAccount.id, name: cashAccount.name },
+      };
+
       // ATOMIC: Create expense + journal entry in a single transaction.
-      // All reads (account lookups, entry number query) happen inside createFromExpense
-      // before any transactional writes, satisfying Firestore's read-before-write rule.
       const expenseDocRef = doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
-        // Journal entry (reads settings, writes journal + GL)
+        // Journal entry (only transaction.get for entry number, writes journal + GL)
         await journalEntryService.createFromExpense(
           tenantId,
           { ...expense, id: expenseDocRef.id },
           userId || 'system',
-          transaction
+          transaction,
+          resolvedAccounts
         );
         // Write expense in same transaction
         transaction.set(expenseDocRef, {

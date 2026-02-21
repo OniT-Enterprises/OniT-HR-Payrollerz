@@ -10,8 +10,6 @@ import { User } from "firebase/auth";
 import {
   doc,
   getDoc,
-  updateDoc,
-  serverTimestamp,
 } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -164,8 +162,14 @@ export function TenantProvider({ children }: TenantProviderProps) {
       // FALLBACK: Use custom claims + individual fetches (N×2 reads)
       // This path is for backwards compatibility until tenantAccess is populated
       const { claims } = await getCurrentUserAndClaims();
-      if (claims?.tenants && Array.isArray(claims.tenants)) {
-        const tenantPromises = claims.tenants.map(async (tid: string) => {
+      // Support both map format { tenantId: role } and legacy array format [tenantId]
+      const claimTenantIds = claims?.tenants
+        ? (Array.isArray(claims.tenants)
+            ? claims.tenants as string[]
+            : Object.keys(claims.tenants))
+        : [];
+      if (claimTenantIds.length > 0) {
+        const tenantPromises = claimTenantIds.map(async (tid: string) => {
           try {
             // Get tenant config and member doc in parallel
             const [tenantDoc, memberDoc] = await Promise.all([
@@ -316,25 +320,12 @@ export function TenantProvider({ children }: TenantProviderProps) {
       const impersonatedSession = await loadTenantSession(tenantId, user, true);
 
       if (impersonatedSession) {
-        // Update user profile in Firestore
-        if (db && userProfile) {
-          const userRef = doc(db, paths.user(user.uid));
-          await updateDoc(userRef, {
-            impersonating: {
-              tenantId,
-              tenantName,
-              startedAt: serverTimestamp(),
-            },
-            updatedAt: serverTimestamp(),
-          });
-        }
-
         setSession(impersonatedSession);
         setIsImpersonating(true);
         setImpersonatedTenantId(tenantId);
         setImpersonatedTenantName(tenantName);
 
-        // Store in sessionStorage (expires on browser close — SEC-8 safety)
+        // Session-only: expires when browser closes (no Firestore write — prevents cross-device lock-in)
         sessionStorage.setItem("impersonatingTenantId", tenantId);
         sessionStorage.setItem("impersonatingTenantName", tenantName);
       }
@@ -345,7 +336,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [user, isSuperAdmin, userProfile]);
+  }, [user, isSuperAdmin]);
 
   // Stop impersonation
   const stopImpersonation = useCallback(async () => {
@@ -354,22 +345,13 @@ export function TenantProvider({ children }: TenantProviderProps) {
     try {
       setLoading(true);
 
-      // Clear impersonation in Firestore
-      if (db) {
-        const userRef = doc(db, paths.user(user.uid));
-        await updateDoc(userRef, {
-          impersonating: null,
-          updatedAt: serverTimestamp(),
-        });
-      }
-
       // Clear local state
       setIsImpersonating(false);
       setImpersonatedTenantId(null);
       setImpersonatedTenantName(null);
       setSession(null);
 
-      // Clear localStorage
+      // Clear sessionStorage
       sessionStorage.removeItem("impersonatingTenantId");
       sessionStorage.removeItem("impersonatingTenantName");
 
@@ -475,22 +457,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setLoading(true);
         setError(null);
 
-        // Check if superadmin is impersonating (from user profile or sessionStorage)
-        if (isSuperAdmin && userProfile?.impersonating) {
-          const { tenantId, tenantName } = userProfile.impersonating;
-          const impersonatedSession = await loadTenantSession(tenantId, user, true);
-
-          if (impersonatedSession) {
-            setSession(impersonatedSession);
-            setIsImpersonating(true);
-            setImpersonatedTenantId(tenantId);
-            setImpersonatedTenantName(tenantName || tenantId);
-            setLoading(false);
-            return;
-          }
-        }
-
-        // Check sessionStorage for persisted impersonation
+        // Check sessionStorage for persisted impersonation (session-only, no Firestore)
         const savedImpersonatingId = sessionStorage.getItem("impersonatingTenantId");
         const savedImpersonatingName = sessionStorage.getItem("impersonatingTenantName");
 

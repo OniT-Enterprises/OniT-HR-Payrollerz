@@ -438,6 +438,7 @@ export default function AddEmployee() {
       }
 
       navigate("/people/employees");
+      return; // Component unmounts — skip setIsSubmitting(false)
     } catch (error) {
       console.error("Error saving employee:", error);
       toast({
@@ -445,7 +446,6 @@ export default function AddEmployee() {
         description: t("addEmployee.toast.saveFailed"),
         variant: "destructive",
       });
-    } finally {
       setIsSubmitting(false);
     }
   };
