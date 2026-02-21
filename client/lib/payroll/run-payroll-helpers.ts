@@ -113,10 +113,12 @@ export const formatPayPeriod = (start: string, end: string): string => {
   return `${startDate.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
+    timeZone: 'Asia/Dili',
   })} – ${endDate.toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'Asia/Dili',
   })}`;
 };
 
@@ -126,5 +128,43 @@ export const formatPayDate = (date: string): string => {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
+    timeZone: 'Asia/Dili',
   });
 };
+
+/**
+ * Calculate pro-rated hours for mid-period hires.
+ * If the employee's hire date falls within [periodStart, periodEnd],
+ * returns prorated hours based on calendar days worked vs total days in period.
+ * If hired before the period, returns the full defaultHours unchanged.
+ */
+export function calculateProRataHours(
+  hireDate: string,
+  periodStart: string,
+  periodEnd: string,
+  defaultHours: number,
+): number {
+  if (!hireDate || !periodStart || !periodEnd) return defaultHours;
+
+  const hire = new Date(`${hireDate}T00:00:00`);
+  const start = new Date(`${periodStart}T00:00:00`);
+  const end = new Date(`${periodEnd}T00:00:00`);
+
+  // If any date is invalid, return full hours
+  if (isNaN(hire.getTime()) || isNaN(start.getTime()) || isNaN(end.getTime())) {
+    return defaultHours;
+  }
+
+  // Hired before or on period start — full hours
+  if (hire <= start) return defaultHours;
+
+  // Hired after period end — zero hours (shouldn't normally happen for active employees)
+  if (hire > end) return 0;
+
+  // Mid-period hire: prorate by calendar days
+  const totalDays = Math.round((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+  const daysWorked = Math.round((end.getTime() - hire.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+
+  // Round to 2 decimal places
+  return Math.round((defaultHours * daysWorked / totalDays) * 100) / 100;
+}

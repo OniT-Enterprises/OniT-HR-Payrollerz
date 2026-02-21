@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -141,9 +142,9 @@ export default function TenantDetail() {
   const formatDate = (date: any): string => {
     if (!date) return "-";
     if (date.toDate) {
-      return date.toDate().toLocaleDateString();
+      return formatDateTL(date.toDate()) || "-";
     }
-    return new Date(date).toLocaleDateString();
+    return formatDateTL(new Date(date)) || "-";
   };
 
   if (loading) {

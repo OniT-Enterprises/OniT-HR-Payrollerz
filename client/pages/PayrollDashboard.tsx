@@ -20,6 +20,7 @@ import { employeeService } from "@/services/employeeService";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
 import { adjustToNextBusinessDayTL } from "@/lib/payroll/tl-holidays";
+import { formatDateTL } from "@/lib/dateUtils";
 import {
   Calculator,
   DollarSign,
@@ -65,7 +66,7 @@ interface PayrollChecklistItem {
 
 export default function PayrollDashboard() {
   const navigate = useNavigate();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const { user } = useAuth();
   const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
@@ -170,12 +171,12 @@ export default function PayrollDashboard() {
       wit: {
         days: witDays,
         status: witDays > 7 ? 'ok' : witDays > 3 ? 'warning' : 'urgent',
-        date: witDate.toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
+        date: formatDateTL(witDate, { month: "short", day: "numeric" }),
       },
       inss: {
         days: inssDays,
         status: inssDays > 7 ? 'ok' : inssDays > 3 ? 'warning' : 'urgent',
-        date: inssDate.toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric" }),
+        date: formatDateTL(inssDate, { month: "short", day: "numeric" }),
       },
     };
   };
@@ -189,8 +190,6 @@ export default function PayrollDashboard() {
 
   const loadStats = async () => {
     try {
-      const dateLocale = locale === "tet" ? "pt-PT" : "en-US";
-
       const [employees, leaveStats] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
         leaveService.getLeaveStats(tenantId),
@@ -227,7 +226,7 @@ export default function PayrollDashboard() {
       }
 
       const daysUntilPayday = Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const payrollMonth = nextPay.toLocaleDateString(dateLocale, { month: "long", year: "numeric" });
+      const payrollMonth = formatDateTL(nextPay, { month: "long", year: "numeric" });
 
       setStats({
         totalEmployees: activeEmployees.length,
@@ -235,8 +234,8 @@ export default function PayrollDashboard() {
         employerINSS,
         employeeINSS,
         estimatedNet,
-        nextPayDate: nextPay.toLocaleDateString(dateLocale, { month: "short", day: "numeric" }),
-        lastPayrollDate: new Date(2025, 11, 25).toLocaleDateString(dateLocale, {
+        nextPayDate: formatDateTL(nextPay, { month: "short", day: "numeric" }),
+        lastPayrollDate: formatDateTL(new Date(2025, 11, 25), {
           month: "short",
           day: "numeric",
           year: "numeric",
@@ -1001,7 +1000,7 @@ export default function PayrollDashboard() {
         {/* ===================== */}
         <div className="mt-6 text-center">
           <p className="text-xs text-muted-foreground">
-            {t("payrollDashboard.lastReviewedBy", { name: user?.displayName || "Admin" })} &bull; {new Date().toLocaleDateString(locale === "tet" ? "pt-PT" : "en-US", { month: "short", day: "numeric", year: "numeric" })}
+            {t("payrollDashboard.lastReviewedBy", { name: user?.displayName || "Admin" })} &bull; {formatDateTL(new Date(), { month: "short", day: "numeric", year: "numeric" })}
           </p>
         </div>
       </div>

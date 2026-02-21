@@ -246,6 +246,7 @@ export function formatSefopeDate(dateString: string | undefined): string {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
+      timeZone: 'Asia/Dili',
     });
   } catch {
     return dateString;

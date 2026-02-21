@@ -31,7 +31,9 @@ export function useBills(filters: BillFilters = {}) {
   });
 }
 
-export function useAllBills(maxResults: number = 500, enabled: boolean = true) {
+const SEARCH_FETCH_LIMIT = 2000;
+
+export function useAllBills(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: billKeys.list(tenantId, { pageSize: maxResults }),
@@ -108,7 +110,8 @@ export function useRecordBillPayment() {
  * Server-side paginated bills using infinite query
  */
 export function usePaginatedBills(
-  filters: Omit<BillFilters, 'startAfterDoc'> = {}
+  filters: Omit<BillFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
   const tenantId = useTenantId();
   return useInfiniteQuery({
@@ -124,6 +127,7 @@ export function usePaginatedBills(
       lastPage.hasMore ? lastPage.lastDoc : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -131,12 +135,34 @@ export function usePaginatedBills(
  * Helper hook to flatten paginated bill results
  */
 export function useFlattenedPaginatedBills(
-  filters: Omit<BillFilters, 'startAfterDoc'> = {}
+  filters: Omit<BillFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
-  const query = usePaginatedBills(filters);
+  const query = usePaginatedBills(filters, enabled);
   return {
     ...query,
     bills: query.data?.pages.flatMap(page => page.data) ?? [],
     totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
+}
+
+/**
+ * Combined hook that switches between paginated browsing and full-fetch searching.
+ * Only one query is active at a time (via `enabled`), preventing the memory leak
+ * of keeping a 500-item cache mounted alongside an infinite query.
+ */
+export function useSmartBills(isSearching: boolean) {
+  const paginatedQuery = useFlattenedPaginatedBills({}, !isSearching);
+  const allQuery = useAllBills(SEARCH_FETCH_LIMIT, isSearching);
+
+  return {
+    bills: isSearching ? (allQuery.data ?? []) : paginatedQuery.bills,
+    totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
+    isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
+    fetchNextPage: paginatedQuery.fetchNextPage,
+    hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
+    isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
+    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
   };
 }

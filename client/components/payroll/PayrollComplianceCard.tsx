@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/card';
 import { AlertTriangle, ChevronDown } from 'lucide-react';
 import type { Employee } from '@/services/employeeService';
+import { useI18n } from '@/i18n/I18nProvider';
 
 interface ComplianceIssue {
   employee: Employee;
@@ -47,6 +48,8 @@ export function PayrollComplianceCard({
   setShowAllCompliance,
   totalEmployees,
 }: PayrollComplianceCardProps) {
+  const { t } = useI18n();
+
   if (complianceIssues.length === 0) return null;
 
   return (
@@ -56,10 +59,10 @@ export function PayrollComplianceCard({
           <div className="p-1.5 rounded-lg bg-amber-500/10">
             <AlertTriangle className="h-4 w-4 text-amber-600" />
           </div>
-          {complianceIssues.length} Employee{complianceIssues.length > 1 ? 's' : ''} Need Documents
+          {t('runPayroll.employeesNeedDocs', { count: String(complianceIssues.length) })}
         </CardTitle>
         <CardDescription className="text-amber-700 dark:text-amber-400">
-          These employees need contracts or INSS numbers. You can still run payroll and add documents later.
+          {t('runPayroll.needDocsDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -103,7 +106,7 @@ export function PayrollComplianceCard({
                   ? 'bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 text-xs'
                   : 'bg-green-500/10 text-green-600 dark:text-green-400 border border-green-500/20 text-xs'
               }>
-                {excludedEmployees.has(employee.id || '') ? 'Excluded' : 'Included'}
+                {excludedEmployees.has(employee.id || '') ? t('runPayroll.excluded') : t('runPayroll.included')}
               </Badge>
             </div>
           ))}
@@ -114,7 +117,7 @@ export function PayrollComplianceCard({
               onClick={() => setShowAllCompliance(true)}
               className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
             >
-              Show {complianceIssues.length - 5} more employee{complianceIssues.length - 5 > 1 ? 's' : ''}
+              {t('runPayroll.showMore', { count: String(complianceIssues.length - 5) })}
               <ChevronDown className="h-3 w-3 ml-1" />
             </Button>
           )}
@@ -125,7 +128,7 @@ export function PayrollComplianceCard({
               onClick={() => setShowAllCompliance(false)}
               className="w-full text-xs text-amber-600 hover:text-amber-800 hover:bg-amber-100/50 dark:text-amber-400 dark:hover:text-amber-200 dark:hover:bg-amber-900/20 h-8"
             >
-              Show less
+              {t('runPayroll.showLess')}
               <ChevronDown className="h-3 w-3 ml-1 rotate-180" />
             </Button>
           )}
@@ -141,19 +144,18 @@ export function PayrollComplianceCard({
                 className="mt-0.5 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
               />
               <span className="text-sm text-amber-800 dark:text-amber-200">
-                I understand these employees need documents for full compliance.
-                I will add the missing contracts/INSS numbers within 30 days.
+                {t('runPayroll.complianceAckText')}
               </span>
             </div>
             {complianceAcknowledged && (
               <div className="mt-3">
                 <Label className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                  Reason for proceeding (required for audit trail)
+                  {t('runPayroll.overrideReasonLabel')}
                 </Label>
                 <Input
                   value={complianceOverrideReason}
                   onChange={(e) => setComplianceOverrideReason(e.target.value)}
-                  placeholder="e.g., INSS office closed, waiting for contract from legal..."
+                  placeholder={t('runPayroll.overrideReasonPlaceholder')}
                   className="mt-1 text-sm border-amber-300 border-border/50"
                 />
               </div>
@@ -164,7 +166,7 @@ export function PayrollComplianceCard({
         {/* Summary */}
         <div className="flex items-center justify-between text-sm pt-2 border-t border-amber-200 dark:border-amber-800">
           <span className="text-amber-700 dark:text-amber-400">
-            {totalEmployees - excludedEmployees.size} of {totalEmployees} employees will be included in payroll
+            {t('runPayroll.employeesIncluded', { included: String(totalEmployees - excludedEmployees.size), total: String(totalEmployees) })}
           </span>
           {excludedEmployees.size > 0 && (
             <Button
@@ -173,7 +175,7 @@ export function PayrollComplianceCard({
               onClick={() => setExcludedEmployees(new Set())}
               className="text-amber-600 hover:text-amber-800 dark:hover:text-amber-200 h-auto p-0"
             >
-              Include all
+              {t('runPayroll.includeAll')}
             </Button>
           )}
         </div>

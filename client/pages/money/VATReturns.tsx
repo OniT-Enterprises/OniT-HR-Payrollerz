@@ -42,7 +42,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import { toDateStringTL } from '@/lib/dateUtils';
+import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
   Receipt,
   ArrowLeft,
@@ -81,7 +81,7 @@ function getMonthOptions(): { value: string; label: string }[] {
   for (let i = 0; i < 12; i++) {
     const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
     const value = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const label = d.toLocaleDateString('en-GB', {
+    const label = formatDateTL(d, {
       month: 'long',
       year: 'numeric',
     });
@@ -329,7 +329,7 @@ export default function VATReturnsPage() {
                     <CheckCircle className="h-3 w-3" />
                     Filed
                     {savedReturn.filedAt &&
-                      ` on ${savedReturn.filedAt.toLocaleDateString('en-GB')}`}
+                      ` on ${formatDateTL(savedReturn.filedAt)}`}
                   </Badge>
                 ) : (
                   <Badge variant="secondary" className="gap-1">

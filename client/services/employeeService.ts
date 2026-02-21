@@ -5,7 +5,6 @@ import {
   getDoc,
   addDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -309,11 +308,41 @@ class EmployeeService {
     return mapEmployee(docSnap);
   }
 
+  /**
+   * Find employees by their employeeId field (e.g., National ID / BI number).
+   * Searches across ALL statuses including terminated.
+   */
+  async findByEmployeeId(tenantId: string, employeeId: string): Promise<Employee[]> {
+    const q = query(
+      this.collectionRef(tenantId),
+      where("jobDetails.employeeId", "==", employeeId),
+      limit(5)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(mapEmployee);
+  }
+
   async addEmployee(
     tenantId: string,
     employee: Omit<Employee, "id">,
     audit?: AuditContext
   ): Promise<string> {
+    // Uniqueness check: prevent duplicate employeeId (National ID / BI number)
+    const empId = employee.jobDetails?.employeeId;
+    if (empId && !empId.startsWith("TEMP")) {
+      const existing = await this.findByEmployeeId(tenantId, empId);
+      if (existing.length > 0) {
+        const terminated = existing.find(e => e.status === "terminated");
+        const active = existing.find(e => e.status === "active" || e.status === "inactive");
+        if (active) {
+          throw new Error(`Employee ID "${empId}" is already assigned to ${active.personalInfo.firstName} ${active.personalInfo.lastName}. Please use a different ID.`);
+        }
+        if (terminated) {
+          throw new Error(`Employee ID "${empId}" belongs to terminated employee ${terminated.personalInfo.firstName} ${terminated.personalInfo.lastName}. Reactivate them instead of creating a new record.`);
+        }
+      }
+    }
+
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...employee,
       createdAt: serverTimestamp(),
@@ -379,22 +408,25 @@ class EmployeeService {
   }
 
   async deleteEmployee(tenantId: string, id: string, audit?: AuditContext): Promise<boolean> {
-    // Get employee info for audit trail before deletion
-    let employee: Employee | null = null;
-    if (audit) {
-      employee = await this.getEmployeeById(tenantId, id);
-    }
+    // Soft delete: set status to terminated instead of destroying the document.
+    // Hard deletes break historical payroll records, journal entries, and tax reports.
+    const employee = await this.getEmployeeById(tenantId, id);
+    if (!employee) throw new Error("Employee not found");
 
     const docRef = doc(db, paths.employee(tenantId, id));
-    await deleteDoc(docRef);
+    await updateDoc(docRef, {
+      status: "terminated",
+      terminatedAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    });
 
     // Log to audit trail if context provided
-    if (audit && employee) {
+    if (audit) {
       const employeeName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
       await auditLogService.logEmployeeAction({
         ...audit,
         tenantId,
-        action: "employee.delete",
+        action: "employee.terminate",
         employeeId: id,
         employeeName,
       }).catch(err => console.error("Audit log failed:", err));

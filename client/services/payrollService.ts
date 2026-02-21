@@ -118,22 +118,26 @@ class PayrollRunService {
     audit?: AuditContext
   ): Promise<{ runId: string; recordIds: string[] }> {
     const BATCH_LIMIT = 499; // Firestore max 500 ops per batch
-
-    // First batch: run doc (1 op) + up to 498 records
-    const firstBatch = writeBatch(db);
+    const targetStatus = payrollRun.status || 'draft';
     const runRef = doc(this.collectionRef);
     const runId = runRef.id;
+    const recordsCollection = collection(db, 'payrollRecords');
+    const recordIds: string[] = [];
 
+    // Step 1: Write the run doc with intermediate status + expected count.
+    // If the client disconnects during record batches, this doc is
+    // detectable as "stuck" and repairable.
+    const firstBatch = writeBatch(db);
     firstBatch.set(runRef, {
       ...payrollRun,
-      status: payrollRun.status || 'draft',
+      status: 'writing_records',
+      expectedRecordCount: records.length,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
 
-    const recordIds: string[] = [];
-    const recordsCollection = collection(db, 'payrollRecords');
-    const firstChunkSize = BATCH_LIMIT - 1; // 498 records in first batch (run doc takes 1 slot)
+    // Pack up to 498 records into the first batch (run doc takes 1 slot)
+    const firstChunkSize = BATCH_LIMIT - 1;
     const firstChunk = records.slice(0, firstChunkSize);
     const remaining = records.slice(firstChunkSize);
 
@@ -150,7 +154,7 @@ class PayrollRunService {
 
     await firstBatch.commit();
 
-    // Subsequent batches: up to 499 records each
+    // Step 2: Subsequent batches for remaining records
     const chunks = chunkArray(remaining, BATCH_LIMIT);
     for (const chunk of chunks) {
       const batch = writeBatch(db);
@@ -166,6 +170,13 @@ class PayrollRunService {
       }
       await batch.commit();
     }
+
+    // Step 3: All records written — finalize the run with the intended status.
+    // This is the "commit point": only runs that reach this update are complete.
+    await updateDoc(runRef, {
+      status: targetStatus,
+      updatedAt: serverTimestamp(),
+    });
 
     // Log to audit trail if context provided
     if (audit) {
@@ -187,6 +198,39 @@ class PayrollRunService {
     }
 
     return { runId, recordIds };
+  }
+
+  /**
+   * Detect and repair a payroll run stuck in 'writing_records' status.
+   * Compares expectedRecordCount to actual records written.
+   * - If all records present → finalize to 'processing'.
+   * - If records missing → delete orphaned records and the run doc.
+   */
+  async repairStuckRun(runId: string): Promise<'repaired' | 'deleted'> {
+    const run = await this.getPayrollRunById(runId);
+    if (!run) throw new Error('Payroll run not found');
+    if (run.status !== 'writing_records') {
+      throw new Error(`Run is not stuck (status: ${run.status})`);
+    }
+
+    const records = await payrollRecordService.getPayrollRecordsByRunId(runId, run.tenantId);
+    const expected = run.expectedRecordCount ?? 0;
+
+    if (records.length >= expected && expected > 0) {
+      // All records made it — finalize the run
+      const runRef = doc(db, 'payrollRuns', runId);
+      await updateDoc(runRef, {
+        status: 'processing',
+        updatedAt: serverTimestamp(),
+      });
+      return 'repaired';
+    }
+
+    // Incomplete — clean up orphaned records and the run
+    await payrollRecordService.deletePayrollRecordsByRunId(runId);
+    const runRef = doc(db, 'payrollRuns', runId);
+    await deleteDoc(runRef);
+    return 'deleted';
   }
 
   async updatePayrollRun(id: string, updates: Partial<PayrollRun>): Promise<boolean> {
@@ -457,15 +501,18 @@ class PayrollRecordService {
 
   async deletePayrollRecordsByRunId(payrollRunId: string): Promise<boolean> {
     const records = await this.getPayrollRecordsByRunId(payrollRunId);
-    const batch = writeBatch(db);
+    const BATCH_LIMIT = 499;
+    const chunks = chunkArray(records, BATCH_LIMIT);
 
-    for (const record of records) {
-      if (record.id) {
-        batch.delete(doc(db, 'payrollRecords', record.id));
+    for (const chunk of chunks) {
+      const batch = writeBatch(db);
+      for (const record of chunk) {
+        if (record.id) {
+          batch.delete(doc(db, 'payrollRecords', record.id));
+        }
       }
+      await batch.commit();
     }
-
-    await batch.commit();
     return true;
   }
 

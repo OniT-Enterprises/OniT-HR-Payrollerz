@@ -18,6 +18,7 @@ import {
   startAfter,
   serverTimestamp,
   deleteField,
+  runTransaction,
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
@@ -252,27 +253,37 @@ class ExpenseService {
       createdAt: new Date(),
     };
 
+    // Check if chart of accounts is set up (read before transaction)
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+
+    if (hasAccounts) {
+      // ATOMIC: Create expense + journal entry in a single transaction.
+      // All reads (account lookups, entry number query) happen inside createFromExpense
+      // before any transactional writes, satisfying Firestore's read-before-write rule.
+      const expenseDocRef = doc(this.collectionRef(tenantId));
+      await runTransaction(db, async (transaction) => {
+        // Journal entry (reads settings, writes journal + GL)
+        await journalEntryService.createFromExpense(
+          tenantId,
+          { ...expense, id: expenseDocRef.id },
+          userId || 'system',
+          transaction
+        );
+        // Write expense in same transaction
+        transaction.set(expenseDocRef, {
+          ...expense,
+          createdAt: serverTimestamp(),
+        });
+      });
+      return expenseDocRef.id;
+    }
+
+    // No accounting setup — just create expense
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...expense,
       createdAt: serverTimestamp(),
     });
-
-    // Create accounting journal entry (if chart of accounts is set up)
-    try {
-      const accounts = await accountService.getAllAccounts(tenantId);
-      if (accounts.length > 0) {
-        await journalEntryService.createFromExpense(
-          tenantId,
-          { ...expense, id: docRef.id },
-          userId || 'system'
-        );
-      }
-    } catch (error) {
-      // Compensating rollback: delete the expense doc to maintain consistency
-      await deleteDoc(doc(db, paths.expense(tenantId, docRef.id)));
-      throw new Error(`Expense rolled back — journal entry failed: ${error instanceof Error ? error.message : error}`);
-    }
-
     return docRef.id;
   }
 

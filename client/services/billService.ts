@@ -25,6 +25,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
+import { addMoney, subtractMoney } from '@/lib/currency';
 import type {
   Bill,
   BillFormData,
@@ -287,27 +288,37 @@ class BillService {
       updatedAt: new Date(),
     };
 
+    // Check if chart of accounts is set up (read before transaction)
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+
+    if (hasAccounts) {
+      // ATOMIC: Create bill + journal entry in a single transaction.
+      const billDocRef = doc(this.collectionRef(tenantId));
+      await runTransaction(db, async (transaction) => {
+        // Journal entry (reads settings, writes journal + GL)
+        await journalEntryService.createFromBill(
+          tenantId,
+          { ...bill, id: billDocRef.id },
+          userId || 'system',
+          transaction
+        );
+        // Write bill in same transaction
+        transaction.set(billDocRef, {
+          ...bill,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
+        });
+      });
+      return billDocRef.id;
+    }
+
+    // No accounting setup — just create bill
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...bill,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-
-    // Create accounting journal entry (if chart of accounts is set up)
-    try {
-      const accounts = await accountService.getAllAccounts(tenantId);
-      if (accounts.length > 0) {
-        await journalEntryService.createFromBill(
-          tenantId,
-          { ...bill, id: docRef.id },
-          userId || 'system'
-        );
-      }
-    } catch (error) {
-      // Log but don't fail - accounting integration is optional
-      console.warn('Could not create journal entry for bill:', error);
-    }
-
     return docRef.id;
   }
 
@@ -452,21 +463,16 @@ class BillService {
         throw new Error('Payment exceeds remaining bill balance');
       }
 
-      // Calculate new values
-      const currentPaidCents = Math.round((bill.amountPaid || 0) * 100);
-      const paymentCents = Math.round(payment.amount * 100);
-      const totalCents = Math.round((bill.total || 0) * 100);
-      const newAmountPaidCents = currentPaidCents + paymentCents;
-      const newBalanceDueCents = totalCents - newAmountPaidCents;
+      // Calculate new values using Decimal.js for precision
+      const newAmountPaid = addMoney(bill.amountPaid || 0, payment.amount);
+      const newBalanceDue = subtractMoney(bill.total || 0, newAmountPaid);
 
-      if (newBalanceDueCents < 0) {
+      if (newBalanceDue < 0) {
         throw new Error('Payment exceeds remaining bill balance');
       }
 
-      const newAmountPaid = newAmountPaidCents / 100;
-      const newBalanceDue = newBalanceDueCents / 100;
       const newStatus: BillStatus =
-        newBalanceDueCents === 0 ? 'paid' : 'partial';
+        newBalanceDue === 0 ? 'paid' : 'partial';
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));

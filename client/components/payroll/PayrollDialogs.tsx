@@ -89,50 +89,50 @@ export function PayrollDialogs({
               <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                 <Save className="h-4 w-4 text-green-600" />
               </div>
-              Save Payroll Draft
+              {t('runPayroll.saveDraftTitle')}
             </DialogTitle>
             <DialogDescription>
-              Save the current payroll as a draft. You can edit and process it later.
+              {t('runPayroll.saveDraftDesc')}
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Period</p>
+                <p className="text-xs text-muted-foreground">{t('runPayroll.period')}</p>
                 <p className="font-semibold text-sm mt-0.5">
                   {periodStart && periodEnd
                     ? formatPayPeriod(periodStart, periodEnd)
-                    : 'Not set'}
+                    : t('runPayroll.notSet')}
                 </p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Employees</p>
+                <p className="text-xs text-muted-foreground">{t('runPayroll.employees')}</p>
                 <p className="font-semibold text-sm mt-0.5">{employeeCount}</p>
               </div>
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
-                <p className="text-xs text-muted-foreground">Total Gross</p>
+                <p className="text-xs text-muted-foreground">{t('runPayroll.totalGross')}</p>
                 <p className="font-semibold text-sm mt-0.5">{formatCurrencyTL(totals.grossPay)}</p>
               </div>
               <div className="p-3 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/10 border border-emerald-500/10">
-                <p className="text-xs text-muted-foreground">Total Net</p>
+                <p className="text-xs text-muted-foreground">{t('runPayroll.totalNet')}</p>
                 <p className="font-semibold text-sm text-emerald-600 mt-0.5">{formatCurrencyTL(totals.netPay)}</p>
               </div>
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowSaveDialog(false)}>
-              Cancel
+              {t('common.cancel')}
             </Button>
             <Button onClick={handleSaveDraft} disabled={saving}>
               {saving ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {t('runPayroll.savingDraft')}
                 </>
               ) : (
                 <>
                   <Save className="h-4 w-4 mr-2" />
-                  Save Draft
+                  {t('runPayroll.saveDraft')}
                 </>
               )}
             </Button>
@@ -162,10 +162,10 @@ export function PayrollDialogs({
                 <span className="text-sm font-medium text-green-800 dark:text-green-200">{t('runPayroll.payPeriod')}</span>
               </div>
               <p className="font-semibold text-lg">
-                {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : 'Not set'}
+                {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : t('runPayroll.notSet')}
               </p>
               <p className="text-sm text-muted-foreground mt-1">
-                {t('runPayroll.payDateLabel')} {payDate ? formatPayDate(payDate) : 'Not set'}
+                {t('runPayroll.payDateLabel')} {payDate ? formatPayDate(payDate) : t('runPayroll.notSet')}
               </p>
             </div>
 
@@ -247,7 +247,7 @@ export function PayrollDialogs({
               <div className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
                 <div className="flex justify-between">
                   <span>{t('runPayroll.payDateLabel')}</span>
-                  <span className="font-medium">{payDate ? formatPayDate(payDate) : 'Not set'}</span>
+                  <span className="font-medium">{payDate ? formatPayDate(payDate) : t('runPayroll.notSet')}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>{t('runPayroll.totalNetPay')}</span>

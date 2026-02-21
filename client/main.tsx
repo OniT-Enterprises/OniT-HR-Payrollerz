@@ -2,6 +2,11 @@ import React from "react";
 import { createRoot } from "react-dom/client";
 import * as Sentry from "@sentry/react";
 import App from "./App";
+import {
+  createOptimizedQueryClient,
+  hydrateQueryClient,
+  setupQueryPersistence,
+} from "@/lib/queryCache";
 
 // Initialize Sentry for production error tracking
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
@@ -30,5 +35,10 @@ if (!root) {
   containerWithRoot._reactRoot = root;
 }
 
-// Render the app
-root.render(<App />);
+// Create QueryClient, hydrate from IndexedDB, then render
+const queryClient = createOptimizedQueryClient();
+setupQueryPersistence(queryClient);
+
+hydrateQueryClient(queryClient).finally(() => {
+  root.render(<App queryClient={queryClient} />);
+});

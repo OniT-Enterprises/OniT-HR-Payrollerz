@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { FileText, Lock } from "lucide-react";
 import { formatCurrencyTL, TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
+import { useI18n } from "@/i18n/I18nProvider";
 
 interface TaxSummaryTotals {
   incomeTax: number;
@@ -21,6 +22,7 @@ interface TaxSummaryCardProps {
 }
 
 export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
+  const { t } = useI18n();
   return (
     <Card className="mb-6 border-border/50">
       <CardHeader>
@@ -28,13 +30,13 @@ export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
           <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
             <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
-          Tax & INSS Summary
+          {t('runPayroll.taxInssTitle')}
           <Badge variant="outline" className="ml-2 text-xs font-normal">
             <Lock className="h-3 w-3 mr-1" />
-            System calculated
+            {t('runPayroll.systemCalculated')}
           </Badge>
         </CardTitle>
-        <CardDescription>Income tax and social security contributions (read-only)</CardDescription>
+        <CardDescription>{t('runPayroll.taxSummaryDesc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -44,7 +46,7 @@ export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
               {TL_DEDUCTION_TYPE_LABELS.income_tax.tl}
             </p>
             <p className="text-xs text-muted-foreground/70">
-              Income Tax (10%)
+              {t('runPayroll.incomeTaxRate')}
             </p>
             <p className="text-lg font-semibold text-red-600 mt-1">
               {formatCurrencyTL(totals.incomeTax)}
@@ -56,7 +58,7 @@ export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
               {TL_DEDUCTION_TYPE_LABELS.inss_employee.tl}
             </p>
             <p className="text-xs text-muted-foreground/70">
-              INSS Employee (4%)
+              {t('runPayroll.inssEmployeeLabel')}
             </p>
             <p className="text-lg font-semibold text-red-600 mt-1">
               {formatCurrencyTL(totals.inssEmployee)}
@@ -68,7 +70,7 @@ export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
               {TL_DEDUCTION_TYPE_LABELS.inss_employer.tl}
             </p>
             <p className="text-xs text-muted-foreground/70">
-              INSS Employer (6%)
+              {t('runPayroll.inssEmployerLabel')}
             </p>
             <p className="text-lg font-semibold text-amber-600 mt-1">
               {formatCurrencyTL(totals.inssEmployer)}
@@ -77,10 +79,10 @@ export function TaxSummaryCard({ totals }: TaxSummaryCardProps) {
           <div className="p-4 rounded-lg relative border border-emerald-500/15 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/20 dark:to-teal-950/20 hover:shadow-md transition-all duration-200">
             <Lock className="h-3 w-3 text-muted-foreground/40 absolute top-3 right-3" />
             <p className="text-sm font-medium text-muted-foreground">
-              Total Employer Cost
+              {t('runPayroll.totalEmployerCost')}
             </p>
             <p className="text-xs text-muted-foreground/70">
-              Gross + INSS Employer
+              {t('runPayroll.grossPlusInss')}
             </p>
             <p className="text-lg font-semibold text-emerald-600 mt-1">
               {formatCurrencyTL(totals.totalEmployerCost)}

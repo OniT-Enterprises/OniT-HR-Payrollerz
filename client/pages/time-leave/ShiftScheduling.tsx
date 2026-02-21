@@ -62,7 +62,7 @@ import {
   BarChart3,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
-import { toDateStringTL } from "@/lib/dateUtils";
+import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 
 // Types for enhanced shift scheduling
 interface Employee {
@@ -171,7 +171,7 @@ export default function ShiftScheduling() {
     department: "",
   });
 
-  const dateLocale = locale === "tet" ? "pt-PT" : "en-US";
+  const _dateLocale = locale === "tet" ? "pt-PT" : "en-US";
 
   const departmentLabels: Record<string, string> = {
     Operations: t("timeLeave.shiftScheduling.data.departments.operations"),
@@ -874,7 +874,7 @@ export default function ShiftScheduling() {
     const weekStart = new Date(selectedWeek);
     const targetDate = new Date(weekStart);
     targetDate.setDate(weekStart.getDate() + dayOffset);
-    return targetDate.toLocaleDateString(dateLocale, {
+    return formatDateTL(targetDate, {
       weekday: "short",
       month: "short",
       day: "numeric",
@@ -1657,6 +1657,21 @@ export default function ShiftScheduling() {
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
+
+          {/* Demo Banner */}
+          <div className="mb-6 -mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  {t("timeLeave.shiftScheduling.demoBanner") || "Preview Mode — Sample Data"}
+                </p>
+                <p className="text-sm text-amber-700/80 dark:text-amber-400/80">
+                  {t("timeLeave.shiftScheduling.demoBannerDesc") || "This page shows sample data for demonstration purposes. Shift scheduling with live data is coming soon."}
+                </p>
+              </div>
+            </div>
+          </div>
 
           {/* Controls */}
           <Card className="mb-6 border-border/50 -mt-8 shadow-lg">

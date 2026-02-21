@@ -393,6 +393,13 @@ export const TL_PAYROLL_STATUS_CONFIG = {
     bgClass: 'bg-gray-100',
     textClass: 'text-gray-800',
   },
+  writing_records: {
+    label: 'Salva hela...',
+    labelEn: 'Saving...',
+    color: 'yellow',
+    bgClass: 'bg-yellow-100',
+    textClass: 'text-yellow-800',
+  },
   processing: {
     label: 'Prosesamentu',
     labelEn: 'Processing',

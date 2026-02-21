@@ -41,7 +41,8 @@ import { vendorService } from '@/services/vendorService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { Bill, BillFormData, BillPayment, Vendor, ExpenseCategory, PaymentMethod } from '@/types/money';
-import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
+import { getTodayTL, toDateStringTL, formatDateTL } from '@/lib/dateUtils';
+import { percentOf, addMoney } from '@/lib/currency';
 import {
   ArrowLeft,
   Save,
@@ -191,8 +192,8 @@ export default function BillForm() {
   };
 
   const calculateTotals = () => {
-    const taxAmount = formData.amount * (formData.taxRate / 100);
-    const total = formData.amount + taxAmount;
+    const taxAmount = percentOf(formData.amount, formData.taxRate);
+    const total = addMoney(formData.amount, taxAmount);
     return { taxAmount, total };
   };
 
@@ -208,11 +209,7 @@ export default function BillForm() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const onSubmit = async (data: BillFormSchemaData) => {

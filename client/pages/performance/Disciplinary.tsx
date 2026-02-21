@@ -84,7 +84,7 @@ import {
   getSeverityName,
   getStatusName,
 } from "@/services/disciplinaryService";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function Disciplinary() {
   const { toast } = useToast();
@@ -454,7 +454,7 @@ export default function Disciplinary() {
       ),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -474,7 +474,7 @@ export default function Disciplinary() {
 
   const formatDate = (dateStr?: string) => {
     if (!dateStr) return "N/A";
-    return new Date(dateStr).toLocaleDateString();
+    return formatDateTL(dateStr);
   };
 
   if (loading || employeesLoading) {

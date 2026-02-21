@@ -221,6 +221,7 @@ export const SefopeDocument = ({ data }: SefopePDFProps) => {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
+    timeZone: 'Asia/Dili',
   });
 
   return (
@@ -479,7 +480,8 @@ export const downloadSefopeForm = async (
   link.href = url;
 
   // Generate filename
-  const safeName = `${employee.personalInfo.firstName}_${employee.personalInfo.lastName}`.replace(/[^a-zA-Z0-9]/g, '_');
+  const safeName = `${employee.personalInfo.firstName}_${employee.personalInfo.lastName}`
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
   const today = getTodayTL();
   link.download = `SEFOPE_${safeName}_${today}.pdf`;
 

@@ -4,7 +4,7 @@
  * NOT a full QuickBooks replacement - supports payroll, audits, reports
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -44,6 +44,12 @@ import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { useTenantId } from "@/contexts/TenantContext";
+import { journalEntryService, trialBalanceService } from "@/services/accountingService";
+import { getTodayTL } from "@/lib/dateUtils";
+import { formatDateTL } from "@/lib/dateUtils";
+import { useToast } from "@/hooks/use-toast";
+import type { JournalEntry } from "@/types/accounting";
 
 const _theme = sectionThemes.accounting;
 
@@ -143,38 +149,92 @@ function AccountingDashboardSkeleton() {
 export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { toast } = useToast();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [toolsOpen, setToolsOpen] = useState(true);
 
-  // Simulate loading delay for data fetch
-  React.useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 100);
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Simulated data - in production, fetch from accounting service
-  const accountingStatus = {
-    payrollPosted: true,
+  const [accountingStatus, setAccountingStatus] = useState({
+    payrollPosted: false,
     trialBalanced: true,
-    pendingEntries: 3,
-    lastReconciliation: "Jan 25, 2026",
-    lastPayrollAmount: 124350,
-    lastPayrollDate: "Jan 25, 2026",
-  };
+    pendingEntries: 0,
+    lastPayrollAmount: 0,
+    lastPayrollDate: "",
+  });
 
-  // Last payroll journal entry details
-  const lastPayrollEntry = {
-    payrollRun: "January 2026",
-    date: "Jan 25, 2026",
-    totalAmount: 124350,
-    entries: [
-      { account: "Salary Expense", type: "debit", amount: 110000 },
-      { account: "INSS Employer", type: "debit", amount: 8000 },
-      { account: "Cash / Bank", type: "credit", amount: 95000 },
-      { account: "WIT Payable", type: "credit", amount: 12000 },
-      { account: "INSS Payable", type: "credit", amount: 11000 },
-    ],
-  };
+  const [lastPayrollEntry, setLastPayrollEntry] = useState<{
+    payrollRun: string;
+    date: string;
+    totalAmount: number;
+    entries: { account: string; type: string; amount: number }[];
+  } | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchData() {
+      try {
+        const today = getTodayTL();
+        const currentYear = new Date().getFullYear();
+        const currentMonth = new Date().getMonth(); // 0-indexed
+
+        // Fetch posted and draft journal entries in parallel
+        const [postedEntries, draftEntries, trialBalance] = await Promise.all([
+          journalEntryService.getAllJournalEntries(tenantId, { status: 'posted' }),
+          journalEntryService.getAllJournalEntries(tenantId, { status: 'draft' }),
+          trialBalanceService.generateTrialBalance(tenantId, today, currentYear),
+        ]);
+
+        if (cancelled) return;
+
+        // Find latest payroll journal entry
+        const payrollEntries = postedEntries.filter((e: JournalEntry) => e.source === 'payroll');
+        const latestPayroll = payrollEntries[0] || null; // already sorted desc by date
+
+        // Check if payroll posted for current month
+        const payrollPosted = payrollEntries.some((e: JournalEntry) => {
+          const entryDate = new Date(e.date);
+          return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonth;
+        });
+
+        setAccountingStatus({
+          payrollPosted,
+          trialBalanced: trialBalance.isBalanced,
+          pendingEntries: draftEntries.length,
+          lastPayrollAmount: latestPayroll?.totalDebit ?? 0,
+          lastPayrollDate: latestPayroll?.date
+            ? formatDateTL(new Date(latestPayroll.date), { year: 'numeric', month: 'short', day: 'numeric' })
+            : "",
+        });
+
+        if (latestPayroll) {
+          setLastPayrollEntry({
+            payrollRun: latestPayroll.description || latestPayroll.sourceRef || 'Payroll',
+            date: formatDateTL(new Date(latestPayroll.date), { year: 'numeric', month: 'short', day: 'numeric' }),
+            totalAmount: latestPayroll.totalDebit,
+            entries: latestPayroll.lines.map((line) => ({
+              account: line.accountName,
+              type: line.debit > 0 ? 'debit' : 'credit',
+              amount: line.debit > 0 ? line.debit : line.credit,
+            })),
+          });
+        }
+      } catch (_err) {
+        if (!cancelled) {
+          toast({
+            title: t("accounting.dashboard.errorTitle") || "Error",
+            description: t("accounting.dashboard.errorLoading") || "Failed to load accounting data",
+            variant: "destructive",
+          });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    fetchData();
+    return () => { cancelled = true; };
+  }, [tenantId, t, toast]);
 
   // Attention items (only show if there are issues)
   const attentionItems = accountingStatus.pendingEntries > 0
@@ -406,7 +466,7 @@ export default function AccountingDashboard() {
                 <CardDescription>{t("accounting.dashboard.lastPayrollEntry")}</CardDescription>
               </div>
               <Badge variant="secondary" className="text-xs">
-                {lastPayrollEntry.date}
+                {lastPayrollEntry?.date || "—"}
               </Badge>
             </div>
           </CardHeader>
@@ -416,50 +476,57 @@ export default function AccountingDashboard() {
               {t("accounting.dashboard.payrollAutoPost")}
             </p>
 
-            <div className="space-y-3">
-              {/* Payroll run info */}
-              <div className="flex items-center justify-between text-sm pb-3 border-b border-border/50">
-                <span className="font-medium">{lastPayrollEntry.payrollRun}</span>
-                <span className="font-bold">{formatCurrencyTL(lastPayrollEntry.totalAmount)}</span>
-              </div>
+            {lastPayrollEntry ? (
+              <div className="space-y-3">
+                {/* Payroll run info */}
+                <div className="flex items-center justify-between text-sm pb-3 border-b border-border/50">
+                  <span className="font-medium">{lastPayrollEntry.payrollRun}</span>
+                  <span className="font-bold">{formatCurrencyTL(lastPayrollEntry.totalAmount)}</span>
+                </div>
 
-              {/* Journal entries breakdown */}
-              <div className="space-y-2">
-                {lastPayrollEntry.entries.map((entry, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between text-sm py-1.5"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className={`w-14 text-xs font-medium px-2 py-0.5 rounded ${
-                        entry.type === "debit"
-                          ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
-                          : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
-                      }`}>
-                        {entry.type === "debit" ? t("accounting.dashboard.debit") : t("accounting.dashboard.credit")}
+                {/* Journal entries breakdown */}
+                <div className="space-y-2">
+                  {lastPayrollEntry.entries.map((entry, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between text-sm py-1.5"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className={`w-14 text-xs font-medium px-2 py-0.5 rounded ${
+                          entry.type === "debit"
+                            ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                            : "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300"
+                        }`}>
+                          {entry.type === "debit" ? t("accounting.dashboard.debit") : t("accounting.dashboard.credit")}
+                        </span>
+                        <span className="text-muted-foreground">{entry.account}</span>
+                      </div>
+                      <span className="font-medium tabular-nums">
+                        {formatCurrencyTL(entry.amount)}
                       </span>
-                      <span className="text-muted-foreground">{entry.account}</span>
                     </div>
-                    <span className="font-medium tabular-nums">
-                      {formatCurrencyTL(entry.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              {/* View full entry link */}
-              <div className="pt-3 border-t border-border/50">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground hover:text-foreground -ml-2"
-                  onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
-                >
-                  {t("accounting.dashboard.viewAllPayrollEntries")}
-                  <ChevronRight className="h-4 w-4 ml-1" />
-                </Button>
+                {/* View full entry link */}
+                <div className="pt-3 border-t border-border/50">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-muted-foreground hover:text-foreground -ml-2"
+                    onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
+                  >
+                    {t("accounting.dashboard.viewAllPayrollEntries")}
+                    <ChevronRight className="h-4 w-4 ml-1" />
+                  </Button>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div className="text-center py-6 text-muted-foreground">
+                <Calculator className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">{t("accounting.dashboard.noPayrollEntries") || "No payroll entries yet"}</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -553,10 +620,12 @@ export default function AccountingDashboard() {
           </Card>
         </Collapsible>
 
-        {/* Last reconciliation note */}
-        <p className="text-xs text-muted-foreground text-center mt-6">
-          {t("accounting.dashboard.lastReconciliation", { date: accountingStatus.lastReconciliation })}
-        </p>
+        {/* Last payroll date note */}
+        {accountingStatus.lastPayrollDate && (
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            {t("accounting.dashboard.lastReconciliation", { date: accountingStatus.lastPayrollDate })}
+          </p>
+        )}
       </div>
     </div>
   );

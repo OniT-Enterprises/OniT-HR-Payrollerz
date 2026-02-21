@@ -406,7 +406,7 @@ const formatCurrency = (amount: number): string => {
 // Format date — I18N-2: Use dd/mm/yyyy convention (TL standard)
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Dili' });
 };
 
 // Format pay period
@@ -414,7 +414,7 @@ const formatPayPeriod = (startDate: string, endDate: string): string => {
   const start = new Date(startDate);
   const end = new Date(endDate);
   const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  return `${start.toLocaleDateString('en-GB', options)} - ${end.toLocaleDateString('en-GB', { ...options, year: 'numeric' })}`;
+  return `${start.toLocaleDateString('en-GB', { ...options, timeZone: 'Asia/Dili' })} - ${end.toLocaleDateString('en-GB', { ...options, year: 'numeric', timeZone: 'Asia/Dili' })}`;
 };
 
 interface PayslipPDFProps {
@@ -788,8 +788,9 @@ export const downloadPayslip = async (
 
   // Generate filename
   const payDate = new Date(payrollRun.payDate);
-  const monthYear = payDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric' }).replace(' ', '');
-  const safeName = record.employeeName.replace(/[^a-zA-Z0-9]/g, '_');
+  const monthYear = payDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'Asia/Dili' }).replace(' ', '');
+  const safeName = record.employeeName
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
   link.download = `Payslip_${safeName}_${monthYear}.pdf`;
 
   document.body.appendChild(link);

@@ -35,6 +35,7 @@ import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
 import type { RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
 import { getTodayTL } from '@/lib/dateUtils';
+import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
   Repeat,
   ArrowLeft,
@@ -198,14 +199,12 @@ export default function RecurringInvoiceForm() {
 
   const calculateSubtotal = () => {
     const items = formData.items || [];
-    return items.reduce((sum, item) => {
-      const qty = Number(item.quantity) || 0;
-      const price = Number(item.unitPrice) || 0;
-      return sum + (qty * price);
-    }, 0);
+    return sumMoney(
+      items.map((item) => multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0))
+    );
   };
-  const calculateTax = () => calculateSubtotal() * ((Number(formData.taxRate) || 0) / 100);
-  const calculateTotal = () => calculateSubtotal() + calculateTax();
+  const calculateTax = () => percentOf(calculateSubtotal(), Number(formData.taxRate) || 0);
+  const calculateTotal = () => addMoney(calculateSubtotal(), calculateTax());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

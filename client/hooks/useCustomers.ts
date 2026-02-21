@@ -30,7 +30,9 @@ export function useCustomers(filters: CustomerFilters = {}) {
   });
 }
 
-export function useAllCustomers(maxResults: number = 500) {
+const SEARCH_FETCH_LIMIT = 2000;
+
+export function useAllCustomers(maxResults: number = SEARCH_FETCH_LIMIT) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: customerKeys.list(tenantId, { pageSize: maxResults }),
@@ -45,7 +47,7 @@ export function useActiveCustomers() {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: customerKeys.list(tenantId, { isActive: true }),
-    queryFn: () => customerService.getCustomers(tenantId, { isActive: true, pageSize: 500 }),
+    queryFn: () => customerService.getCustomers(tenantId, { isActive: true, pageSize: SEARCH_FETCH_LIMIT }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     select: (data: PaginatedResult<Customer>) => data.data,

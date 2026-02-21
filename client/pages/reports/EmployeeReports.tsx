@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from "react";
 import Papa from "papaparse";
-import { getTodayTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
 import {
   Card,
   CardContent,
@@ -80,7 +80,7 @@ export default function EmployeeReports() {
       }, {} as Record<string, string>)
     );
     const csv = Papa.unparse(rows);
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -437,7 +437,7 @@ export default function EmployeeReports() {
                         <td className="p-3">{emp.jobDetails?.position || "-"}</td>
                         <td className="p-3">
                           {emp.jobDetails?.hireDate
-                            ? new Date(emp.jobDetails.hireDate).toLocaleDateString()
+                            ? formatDateTL(emp.jobDetails.hireDate)
                             : "-"}
                         </td>
                         <td className="p-3 text-center">

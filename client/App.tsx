@@ -5,11 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClientProvider } from "@tanstack/react-query";
-import {
-  createOptimizedQueryClient,
-  hydrateQueryClient,
-  setupQueryPersistence,
-} from "@/lib/queryCache";
+import type { QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
@@ -70,12 +66,7 @@ function HomeRoute() {
   return <Dashboard />;
 }
 
-// Optimized QueryClient with IndexedDB persistence for instant loading
-const queryClient = createOptimizedQueryClient();
-hydrateQueryClient(queryClient); // Async — hydrates cache in background
-setupQueryPersistence(queryClient); // Save data as it loads
-
-const App = () => (
+const App = ({ queryClient }: { queryClient: QueryClient }) => (
   <HelmetProvider>
     <QueryClientProvider client={queryClient}>
       <I18nProvider>

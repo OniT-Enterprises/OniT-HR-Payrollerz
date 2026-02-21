@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -112,12 +113,12 @@ export default function UserList() {
   const formatDate = (date: any): string => {
     if (!date) return "-";
     if (date.toDate) {
-      return date.toDate().toLocaleDateString();
+      return formatDateTL(date.toDate()) || "-";
     }
     if (date.seconds) {
-      return new Date(date.seconds * 1000).toLocaleDateString();
+      return formatDateTL(new Date(date.seconds * 1000)) || "-";
     }
-    return new Date(date).toLocaleDateString();
+    return formatDateTL(new Date(date)) || "-";
   };
 
   const superadminCount = users.filter((u) => u.isSuperAdmin).length;

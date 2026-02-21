@@ -13,7 +13,7 @@ import {
 import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, deleteDoc, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
-import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { getTodayTL, toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 
 // ============================================
 // SEED DATA DEFINITIONS
@@ -776,7 +776,7 @@ export default function SeedDatabase() {
       await setDoc(payrunRef, {
         id: payrunRef.id,
         period: `${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`,
-        periodLabel: thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+        periodLabel: formatDateTL(thisMonth, { month: 'long', year: 'numeric' }),
         status: "completed",
         employeeCount: EMPLOYEES.length,
         totalGross,
@@ -874,7 +874,7 @@ export default function SeedDatabase() {
       {
         date: thisMonth,
         reference: `PAY-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}`,
-        description: `Payroll for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+        description: `Payroll for ${formatDateTL(thisMonth, { month: 'long', year: 'numeric' })}`,
         source: "payroll",
         lines: [
           { accountCode: "5110", accountName: "Wages & Salaries", debit: 293000, credit: 0 },
@@ -944,7 +944,7 @@ export default function SeedDatabase() {
       {
         date: new Date(thisMonth.getFullYear(), thisMonth.getMonth(), 25),
         reference: `PMT-${thisMonth.getFullYear()}-${String(thisMonth.getMonth() + 1).padStart(2, '0')}-001`,
-        description: `Salary payment for ${thisMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}`,
+        description: `Salary payment for ${formatDateTL(thisMonth, { month: 'long', year: 'numeric' })}`,
         source: "payment",
         lines: [
           { accountCode: "2200", accountName: "Salaries Payable", debit: 264540, credit: 0 },
@@ -1023,7 +1023,7 @@ export default function SeedDatabase() {
           id: periodKey,
           year: currentYear,
           month: month + 1,
-          name: startDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+          name: formatDateTL(startDate, { month: 'long', year: 'numeric' }),
           startDate: Timestamp.fromDate(startDate),
           endDate: Timestamp.fromDate(endDate),
           status: month < new Date().getMonth() ? "closed" : (month === new Date().getMonth() ? "open" : "future"),

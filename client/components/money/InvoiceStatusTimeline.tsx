@@ -6,6 +6,7 @@
 import { Check, Send, Eye, DollarSign, AlertCircle, Clock, XCircle } from 'lucide-react';
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import { cn } from '@/lib/utils';
+import { formatDateTL } from '@/lib/dateUtils';
 
 interface StatusStep {
   status: InvoiceStatus;
@@ -159,17 +160,17 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
               {/* Timestamp below label */}
               {isComplete && step.status === 'sent' && invoice.sentAt && (
                 <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {new Date(invoice.sentAt).toLocaleDateString()}
+                  {formatDateTL(invoice.sentAt)}
                 </span>
               )}
               {isCurrent && step.status === 'viewed' && invoice.viewedAt && (
                 <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {new Date(invoice.viewedAt).toLocaleDateString()}
+                  {formatDateTL(invoice.viewedAt)}
                 </span>
               )}
               {isCurrent && step.status === 'paid' && invoice.paidAt && (
                 <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {new Date(invoice.paidAt).toLocaleDateString()}
+                  {formatDateTL(invoice.paidAt)}
                 </span>
               )}
             </div>
@@ -181,7 +182,7 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
       {isOverdue && (
         <div className="mt-4 text-center">
           <span className="text-sm text-red-600 dark:text-red-400 font-medium">
-            Payment overdue since {new Date(invoice.dueDate).toLocaleDateString()}
+            Payment overdue since {formatDateTL(invoice.dueDate)}
           </span>
         </div>
       )}

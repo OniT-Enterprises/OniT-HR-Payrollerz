@@ -18,6 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { invoiceService } from '@/services/invoiceService';
 import { useTenant } from '@/contexts/TenantContext';
 import type { Invoice } from '@/types/money';
+import { formatDateTL } from '@/lib/dateUtils';
 import { Loader2, Bell, AlertTriangle } from 'lucide-react';
 
 interface SendReminderDialogProps {
@@ -72,7 +73,7 @@ export function SendReminderDialog({
   };
 
   const formatDate = (date: Date) => {
-    return date.toLocaleDateString('en-US', {
+    return formatDateTL(date, {
       month: 'short',
       day: 'numeric',
       year: 'numeric',

@@ -23,7 +23,7 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
-import { toDateStringTL } from '@/lib/dateUtils';
+import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -176,7 +176,7 @@ export default function Cashflow() {
   const getPeriodLabel = () => {
     const { start, end } = getDateRange(period);
     const formatOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-    return `${start.toLocaleDateString('en-US', formatOptions)} - ${end.toLocaleDateString('en-US', formatOptions)}`;
+    return `${formatDateTL(start, formatOptions)} - ${formatDateTL(end, formatOptions)}`;
   };
 
   if (loading) {

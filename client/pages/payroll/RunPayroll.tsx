@@ -36,7 +36,6 @@ import {
   AlertTriangle,
   Search,
   Calendar,
-  Eye,
   Pencil,
   AlertCircle,
 } from "lucide-react";
@@ -75,7 +74,7 @@ import {
   PayrollDialogs,
 } from "@/components/payroll";
 
-import type { EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
+import { calculateProRataHours, type EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
 import {
   mapTLEarningTypeToPayrollEarningType,
   mapTLDeductionTypeToPayrollDeductionType,
@@ -145,34 +144,40 @@ export default function RunPayroll() {
         const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
         const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
 
-        const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => ({
-          employee: emp,
-          regularHours: defaultHours,
-          overtimeHours: 0,
-          nightShiftHours: 0,
-          holidayHours: 0,
-          sickDays: 0,
-          perDiem: 0,
-          bonus: 0,
-          allowances: 0,
-          calculation: null,
-          isEdited: false,
-          originalValues: {
-            regularHours: defaultHours,
+        const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => {
+          // Auto-prorate hours for mid-period hires
+          const hireDate = emp.jobDetails.hireDate || '';
+          const empHours = calculateProRataHours(hireDate, periodStart, periodEnd, defaultHours);
+
+          return {
+            employee: emp,
+            regularHours: empHours,
             overtimeHours: 0,
             nightShiftHours: 0,
-            bonus: 0,
+            holidayHours: 0,
+            sickDays: 0,
             perDiem: 0,
+            bonus: 0,
             allowances: 0,
-          },
-        }));
+            calculation: null,
+            isEdited: false,
+            originalValues: {
+              regularHours: empHours,
+              overtimeHours: 0,
+              nightShiftHours: 0,
+              bonus: 0,
+              perDiem: 0,
+              allowances: 0,
+            },
+          };
+        });
 
         setEmployeePayrollData(initialData);
       } catch (error) {
         console.error("Failed to load employees:", error);
         toast({
-          title: "Error",
-          description: "Failed to load employees. Please refresh the page.",
+          title: t("common.error"),
+          description: t("runPayroll.toastLoadFailed"),
           variant: "destructive",
         });
       } finally {
@@ -181,7 +186,7 @@ export default function RunPayroll() {
     };
 
     loadEmployees();
-  }, [toast, payFrequency, tenantId]);
+  }, [toast, payFrequency, tenantId, periodStart, periodEnd, t]);
 
   /**
    * Calculate payroll for a single employee data object.
@@ -284,11 +289,11 @@ export default function RunPayroll() {
   const complianceIssues = useMemo(() => {
     return employees.map(emp => {
       const issues: string[] = [];
-      if (!emp.documents?.workContract?.fileUrl) issues.push("Contract needed");
-      if (!emp.documents?.socialSecurityNumber?.number) issues.push("INSS needed");
+      if (!emp.documents?.workContract?.fileUrl) issues.push(t("runPayroll.contractNeeded"));
+      if (!emp.documents?.socialSecurityNumber?.number) issues.push(t("runPayroll.inssNeeded"));
       return { employee: emp, issues };
     }).filter(item => item.issues.length > 0);
-  }, [employees]);
+  }, [employees, t]);
 
   const hasComplianceIssues = complianceIssues.length > 0;
 
@@ -322,18 +327,18 @@ export default function RunPayroll() {
       const name = `${d.employee.personalInfo.firstName} ${d.employee.personalInfo.lastName}`;
       const salary = d.employee.compensation.monthlySalary || 0;
       if (salary > 0 && salary < TL_MINIMUM_WAGE.monthly) {
-        warnings.push({ employeeName: name, message: `Salary $${salary} is below minimum wage ($${TL_MINIMUM_WAGE.monthly}/month)`, type: "wage" });
+        warnings.push({ employeeName: name, message: t("runPayroll.warningBelowMinWage", { salary: String(salary), min: String(TL_MINIMUM_WAGE.monthly) }), type: "wage" });
       }
       if (d.overtimeHours > maxMonthlyOT) {
-        warnings.push({ employeeName: name, message: `${d.overtimeHours} OT hours exceeds max ${maxMonthlyOT}/month (${TL_WORKING_HOURS.maxOvertimePerWeek}/week)`, type: "hours" });
+        warnings.push({ employeeName: name, message: t("runPayroll.warningOTExceeds", { hours: String(d.overtimeHours), max: String(maxMonthlyOT), weekly: String(TL_WORKING_HOURS.maxOvertimePerWeek) }), type: "hours" });
       }
       const totalDailyHoursEquiv = (d.regularHours + d.overtimeHours + d.nightShiftHours) / 22;
       if (totalDailyHoursEquiv > 12) {
-        warnings.push({ employeeName: name, message: `Averaging ${totalDailyHoursEquiv.toFixed(1)} hours/day — exceeds safe limits`, type: "hours" });
+        warnings.push({ employeeName: name, message: t("runPayroll.warningExcessiveHours", { hours: totalDailyHoursEquiv.toFixed(1) }), type: "hours" });
       }
     }
     return warnings;
-  }, [employeePayrollData, excludedEmployees]);
+  }, [employeePayrollData, excludedEmployees, t]);
 
   // Helper: get employees included in the payroll run
   const getIncludedData = useCallback(() =>
@@ -573,7 +578,7 @@ export default function RunPayroll() {
       const validationErrors = validateAllEmployees(includedData);
       if (validationErrors.length > 0) {
         toast({
-          title: "Validation errors",
+          title: t("runPayroll.toastValidationErrors"),
           description: validationErrors.slice(0, 3).join("\n") +
             (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
           variant: "destructive",
@@ -587,16 +592,16 @@ export default function RunPayroll() {
       await payrollService.runs.createPayrollRunWithRecords(payrollRun, records);
 
       toast({
-        title: "Success",
-        description: "Payroll draft saved successfully.",
+        title: t("common.success"),
+        description: t("runPayroll.toastDraftSaved"),
       });
 
       setShowSaveDialog(false);
     } catch (error) {
       console.error("Failed to save payroll:", error);
       toast({
-        title: "Error",
-        description: "Failed to save payroll. Please try again.",
+        title: t("common.error"),
+        description: t("runPayroll.toastSaveFailed"),
         variant: "destructive",
       });
     } finally {
@@ -610,8 +615,8 @@ export default function RunPayroll() {
     try {
       if (!periodStart || !periodEnd || !payDate) {
         toast({
-          title: "Dates required",
-          description: "Set pay period and pay date before processing.",
+          title: t("runPayroll.toastDatesRequired"),
+          description: t("runPayroll.toastDatesRequiredDesc"),
           variant: "destructive",
         });
         return;
@@ -619,8 +624,8 @@ export default function RunPayroll() {
 
       if (periodStart >= periodEnd) {
         toast({
-          title: "Invalid period",
-          description: "Period start must be before period end.",
+          title: t("runPayroll.toastInvalidPeriod"),
+          description: t("runPayroll.toastInvalidPeriodDesc"),
           variant: "destructive",
         });
         return;
@@ -628,8 +633,8 @@ export default function RunPayroll() {
 
       if (payDate < periodEnd) {
         toast({
-          title: "Invalid pay date",
-          description: "Pay date should be on or after the period end date.",
+          title: t("runPayroll.toastInvalidPayDate"),
+          description: t("runPayroll.toastInvalidPayDateDesc"),
           variant: "destructive",
         });
         return;
@@ -641,8 +646,8 @@ export default function RunPayroll() {
       const oneMonthAhead = toDateStringTL(new Date(now.getFullYear(), now.getMonth() + 2, 0));
       if (periodStart < twoYearsAgo || periodEnd > oneMonthAhead) {
         toast({
-          title: "Date range out of bounds",
-          description: "Pay period must be within the past 2 years and no more than 1 month in the future.",
+          title: t("runPayroll.toastDateOutOfBounds"),
+          description: t("runPayroll.toastDateOutOfBoundsDesc"),
           variant: "destructive",
         });
         return;
@@ -652,16 +657,16 @@ export default function RunPayroll() {
       if (hasComplianceIssues && excludedEmployees.size < complianceIssues.length) {
         if (!complianceAcknowledged) {
           toast({
-            title: "Compliance acknowledgment required",
-            description: "Please acknowledge the compliance issues before proceeding.",
+            title: t("runPayroll.toastComplianceRequired"),
+            description: t("runPayroll.toastComplianceRequiredDesc"),
             variant: "destructive",
           });
           return;
         }
         if (complianceOverrideReason.trim().length < 10) {
           toast({
-            title: "Override reason too short",
-            description: "Please provide at least 10 characters explaining why you are proceeding without full compliance.",
+            title: t("runPayroll.toastOverrideShort"),
+            description: t("runPayroll.toastOverrideShortDesc"),
             variant: "destructive",
           });
           return;
@@ -673,7 +678,7 @@ export default function RunPayroll() {
       const validationErrors = validateAllEmployees(includedData);
       if (validationErrors.length > 0) {
         toast({
-          title: "Validation errors",
+          title: t("runPayroll.toastValidationErrors"),
           description: validationErrors.slice(0, 3).join("\n") +
             (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
           variant: "destructive",
@@ -734,10 +739,10 @@ export default function RunPayroll() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                  Run Payroll
+                  {t("runPayroll.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  Process payroll for {employees.length} active employees
+                  {t("runPayroll.processPayrollFor", { count: String(employees.length) })}
                 </p>
               </div>
             </div>
@@ -747,15 +752,15 @@ export default function RunPayroll() {
                 onClick={() => navigate("/payroll")}
                 className="text-muted-foreground shadow-sm"
               >
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button variant="outline" onClick={() => setShowSaveDialog(true)} className="shadow-sm">
                 <Save className="h-4 w-4 mr-2" />
-                Save Draft
+                {t("runPayroll.saveDraft")}
               </Button>
               <Button onClick={() => setShowApproveDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600 shadow-lg shadow-green-500/25">
                 <CheckCircle className="h-4 w-4 mr-2" />
-                Submit for Approval
+                {t("runPayroll.submitForApproval")}
               </Button>
             </div>
           </div>
@@ -775,26 +780,26 @@ export default function RunPayroll() {
                 <div>
                   <div className="flex items-center gap-2">
                     <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 text-sm px-3 py-1">
-                      Pay Period
+                      {t("runPayroll.payPeriod")}
                     </Badge>
                     <Badge variant="outline" className="text-xs font-normal capitalize">
-                      {payFrequency}
+                      {t(`runPayroll.${payFrequency}`)}
                     </Badge>
                     {editedCount > 0 && (
                       <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-xs">
                         <Pencil className="h-3 w-3 mr-1" />
-                        {editedCount} edited
+                        {t("runPayroll.edited", { count: String(editedCount) })}
                       </Badge>
                     )}
                   </div>
                   <p className="text-xl font-bold mt-1">
-                    {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : "Not set"}
+                    {periodStart && periodEnd ? formatPayPeriod(periodStart, periodEnd) : t("runPayroll.notSet")}
                   </p>
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">Pay Date</p>
-                <p className="text-lg font-semibold">{payDate ? formatPayDate(payDate) : "Not set"}</p>
+                <p className="text-sm text-muted-foreground">{t("runPayroll.payDateBanner")}</p>
+                <p className="text-lg font-semibold">{payDate ? formatPayDate(payDate) : t("runPayroll.notSet")}</p>
               </div>
             </div>
           </CardContent>
@@ -849,7 +854,7 @@ export default function RunPayroll() {
                 <div className="p-1.5 rounded-lg bg-red-500/10">
                   <AlertTriangle className="h-4 w-4 text-red-600" />
                 </div>
-                {payrollWarnings.length} Payroll Warning{payrollWarnings.length > 1 ? "s" : ""}
+                {t("runPayroll.payrollWarnings", { count: String(payrollWarnings.length) })}
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-0">
@@ -875,35 +880,25 @@ export default function RunPayroll() {
                   <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
                     <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
                   </div>
-                  Employee Payroll
+                  {t("runPayroll.employeePayroll")}
                   <Badge variant="outline" className="text-xs font-normal tabular-nums ml-1">
                     {filteredData.length}{filteredData.length !== employeePayrollData.length ? ` / ${employeePayrollData.length}` : ''}
                   </Badge>
                   {editedCount > 0 && (
                     <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
-                      {editedCount} modified
+                      {t("runPayroll.modified", { count: String(editedCount) })}
                     </Badge>
                   )}
                 </CardTitle>
                 <CardDescription>
-                  Adjust hours and additional pay for each employee
+                  {t("runPayroll.adjustHoursDesc")}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-3">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  disabled
-                  className="text-muted-foreground"
-                  title="Coming soon"
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Preview Payslips
-                </Button>
                 <div className="relative w-64">
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Search employees..."
+                    placeholder={t("runPayroll.searchEmployees")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-9 border-border/50"
@@ -918,15 +913,15 @@ export default function RunPayroll() {
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-8"></TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider">Employee</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider">Department</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Hours</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">OT</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Night</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Bonus</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Gross</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Deductions</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">Net Pay</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.employee")}</TableHead>
+                    <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.department")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.hours")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.ot")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.night")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.bonus")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.gross")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.deductions")}</TableHead>
+                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.netPay")}</TableHead>
                     <TableHead className="w-10"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -950,9 +945,9 @@ export default function RunPayroll() {
                 <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/20 dark:to-emerald-950/10 flex items-center justify-center mb-4">
                   <Search className="h-7 w-7 text-green-400" />
                 </div>
-                <p className="font-medium text-foreground mb-1">No employees found</p>
+                <p className="font-medium text-foreground mb-1">{t("runPayroll.noEmployeesFound")}</p>
                 <p className="text-sm text-muted-foreground">
-                  Try adjusting your search term or clear the filter
+                  {t("runPayroll.tryAdjustSearch")}
                 </p>
               </div>
             )}

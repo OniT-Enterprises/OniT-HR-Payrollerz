@@ -53,7 +53,7 @@ import {
   SEVERITY_CONFIG,
 } from "@/components/dashboard/DocumentAlertsCard";
 import { SEO } from "@/components/SEO";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
@@ -151,7 +151,7 @@ export default function DocumentAlerts() {
       ...rows.map(row => row.map(cell => `"${cell}"`).join(",")),
     ].join("\n");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -409,7 +409,7 @@ export default function DocumentAlerts() {
                         <TableCell>
                           <div className="flex items-center gap-2">
                             <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {new Date(alert.expiryDate).toLocaleDateString()}
+                            {formatDateTL(new Date(alert.expiryDate))}
                           </div>
                         </TableCell>
                         <TableCell>

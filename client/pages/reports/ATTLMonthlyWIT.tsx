@@ -289,7 +289,7 @@ export default function ATTLMonthlyWIT() {
     ].join("\n");
 
     // Download
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -886,6 +886,10 @@ export default function ATTLMonthlyWIT() {
                   <li>4. Submit via e-Tax portal or deliver 3 copies to BNU bank</li>
                   <li>5. Mark as filed with receipt number for your records</li>
                 </ul>
+                <p className="mt-3 text-xs text-amber-600 dark:text-amber-400">
+                  The Official Form export uses the 2024/2025 ATTL template format.
+                  If the Ministry of Finance updates the form layout, this export may need updating.
+                </p>
                 <p className="mt-3 text-muted-foreground">
                   <strong className="text-foreground">Due Date:</strong> 15th of the month following the pay period.
                   <br />

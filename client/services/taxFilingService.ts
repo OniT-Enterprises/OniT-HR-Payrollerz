@@ -43,6 +43,7 @@ import { TL_INCOME_TAX } from '@/lib/payroll/constants-tl';
 import { getTaxConfig } from '@/lib/payroll/taxConfig';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
 import { getTodayTL, parseDateISO } from '@/lib/dateUtils';
+import { roundMoney, divideMoney, maxMoney, subtractMoney, applyRate, addMoney } from '@/lib/currency';
 
 // ============================================
 // CONSTANTS
@@ -70,15 +71,15 @@ function _calculateWIT(
   const threshold = config?.residentThreshold ?? TL_INCOME_TAX.residentThreshold;
 
   if (isResident) {
-    const taxableWages = Math.max(0, grossWages - threshold);
+    const taxableWages = maxMoney(0, subtractMoney(grossWages, threshold));
     return {
       taxableWages,
-      wit: taxableWages * rate,
+      wit: applyRate(taxableWages, rate),
     };
   } else {
     return {
       taxableWages: grossWages,
-      wit: grossWages * rate,
+      wit: applyRate(grossWages, rate),
     };
   }
 }
@@ -284,8 +285,8 @@ class TaxFilingService {
 
       const existing = totalsByEmployee.get(employeeId) || { grossWages: 0, witWithheld: 0 };
       totalsByEmployee.set(employeeId, {
-        grossWages: existing.grossWages + getRecordGrossPay(record),
-        witWithheld: existing.witWithheld + getRecordWITWithheld(record),
+        grossWages: addMoney(existing.grossWages, getRecordGrossPay(record)),
+        witWithheld: addMoney(existing.witWithheld, getRecordWITWithheld(record)),
       });
     });
 
@@ -305,7 +306,7 @@ class TaxFilingService {
 
       const isResident = employee.compensation?.isResident ?? true;
       const taxableWages = taxConfig.incomeTax.rate > 0
-        ? Math.round((witWithheld / taxConfig.incomeTax.rate) * 100) / 100
+        ? divideMoney(witWithheld, taxConfig.incomeTax.rate)
         : 0;
 
       employeeRecords.push({
@@ -313,14 +314,14 @@ class TaxFilingService {
         fullName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         tinNumber: undefined, // TL employees typically don't have individual TINs
         isResident,
-        grossWages: Math.round(grossWages * 100) / 100,
+        grossWages: roundMoney(grossWages),
         taxableWages,
-        witWithheld: Math.round(witWithheld * 100) / 100,
+        witWithheld: roundMoney(witWithheld),
       });
 
-      totalGrossWages += grossWages;
-      totalTaxableWages += taxableWages;
-      totalWITWithheld += witWithheld;
+      totalGrossWages = addMoney(totalGrossWages, grossWages);
+      totalTaxableWages = addMoney(totalTaxableWages, taxableWages);
+      totalWITWithheld = addMoney(totalWITWithheld, witWithheld);
 
       if (isResident) {
         residentCount++;
@@ -345,9 +346,9 @@ class TaxFilingService {
       totalEmployees: employeeRecords.length,
       totalResidentEmployees: residentCount,
       totalNonResidentEmployees: nonResidentCount,
-      totalGrossWages: Math.round(totalGrossWages * 100) / 100,
-      totalTaxableWages: Math.round(totalTaxableWages * 100) / 100,
-      totalWITWithheld: Math.round(totalWITWithheld * 100) / 100,
+      totalGrossWages: roundMoney(totalGrossWages),
+      totalTaxableWages: roundMoney(totalTaxableWages),
+      totalWITWithheld: roundMoney(totalWITWithheld),
       employees: employeeRecords,
     };
   }
@@ -392,7 +393,7 @@ class TaxFilingService {
       const employeeINSS = getRecordINSSEmployee(record);
       const employerINSS = getRecordINSSEmployer(record);
       const contributionBase = taxConfig.inss.employeeRate > 0
-        ? Math.round((employeeINSS / taxConfig.inss.employeeRate) * 100) / 100
+        ? divideMoney(employeeINSS, taxConfig.inss.employeeRate)
         : 0;
 
       const existing = totalsByEmployee.get(employeeId) || {
@@ -403,10 +404,10 @@ class TaxFilingService {
       };
 
       totalsByEmployee.set(employeeId, {
-        grossWages: existing.grossWages + getRecordGrossPay(record),
-        employeeINSS: existing.employeeINSS + employeeINSS,
-        employerINSS: existing.employerINSS + employerINSS,
-        contributionBase: existing.contributionBase + contributionBase,
+        grossWages: addMoney(existing.grossWages, getRecordGrossPay(record)),
+        employeeINSS: addMoney(existing.employeeINSS, employeeINSS),
+        employerINSS: addMoney(existing.employerINSS, employerINSS),
+        contributionBase: addMoney(existing.contributionBase, contributionBase),
       });
     });
 
@@ -421,10 +422,10 @@ class TaxFilingService {
       const totals = totalsByEmployee.get(employee.id);
       if (!totals) continue;
 
-      const employeeContribution = Math.round(totals.employeeINSS * 100) / 100;
-      const employerContribution = Math.round(totals.employerINSS * 100) / 100;
-      const contributionBase = Math.round(totals.contributionBase * 100) / 100;
-      const totalContribution = Math.round((employeeContribution + employerContribution) * 100) / 100;
+      const employeeContribution = roundMoney(totals.employeeINSS);
+      const employerContribution = roundMoney(totals.employerINSS);
+      const contributionBase = roundMoney(totals.contributionBase);
+      const totalContribution = addMoney(employeeContribution, employerContribution);
 
       if (employeeContribution === 0 && employerContribution === 0) continue;
 
@@ -438,9 +439,9 @@ class TaxFilingService {
         totalContribution,
       });
 
-      totalContributionBase += contributionBase;
-      totalEmployeeContributions += employeeContribution;
-      totalEmployerContributions += employerContribution;
+      totalContributionBase = addMoney(totalContributionBase, contributionBase);
+      totalEmployeeContributions = addMoney(totalEmployeeContributions, employeeContribution);
+      totalEmployerContributions = addMoney(totalEmployerContributions, employerContribution);
     }
 
     const [year, month] = period.split('-').map(Number);
@@ -448,7 +449,7 @@ class TaxFilingService {
     const lastDay = new Date(year, month, 0).getDate();
     const periodEndDate = `${period}-${lastDay}`;
 
-    const totalContributions = totalEmployeeContributions + totalEmployerContributions;
+    const totalContributions = addMoney(totalEmployeeContributions, totalEmployerContributions);
 
     return {
       employerTIN: company.tinNumber || '',
@@ -458,10 +459,10 @@ class TaxFilingService {
       periodStartDate,
       periodEndDate,
       totalEmployees: employeeRecords.length,
-      totalContributionBase: Math.round(totalContributionBase * 100) / 100,
-      totalEmployeeContributions: Math.round(totalEmployeeContributions * 100) / 100,
-      totalEmployerContributions: Math.round(totalEmployerContributions * 100) / 100,
-      totalContributions: Math.round(totalContributions * 100) / 100,
+      totalContributionBase: roundMoney(totalContributionBase),
+      totalEmployeeContributions: roundMoney(totalEmployeeContributions),
+      totalEmployerContributions: roundMoney(totalEmployerContributions),
+      totalContributions: roundMoney(totalContributions),
       employees: employeeRecords,
     };
   }
@@ -509,12 +510,12 @@ class TaxFilingService {
           monthsWorked: new Set<number>(),
         };
 
-        existing.totalGrossWages += record.totalGrossPay || 0;
+        existing.totalGrossWages = addMoney(existing.totalGrossWages, record.totalGrossPay || 0);
         // Find WIT deduction from deductions array (check type and description)
         const witDeduction = record.deductions?.find(d =>
           d.type === 'federal_tax' || d.description?.toLowerCase().includes('wit') || d.description?.toLowerCase().includes('income tax')
         );
-        existing.totalWIT += witDeduction?.amount || 0;
+        existing.totalWIT = addMoney(existing.totalWIT, witDeduction?.amount || 0);
         existing.monthsWorked.add(runMonth);
 
         employeeAggregates.set(record.employeeId, existing);
@@ -545,12 +546,12 @@ class TaxFilingService {
         startDate,
         endDate,
         monthsWorked: monthsWorked.size,
-        totalGrossWages: Math.round(totalGrossWages * 100) / 100,
-        totalWITWithheld: Math.round(totalWIT * 100) / 100,
+        totalGrossWages: roundMoney(totalGrossWages),
+        totalWITWithheld: roundMoney(totalWIT),
       });
 
-      totalGrossWagesPaid += totalGrossWages;
-      totalWITWithheld += totalWIT;
+      totalGrossWagesPaid = addMoney(totalGrossWagesPaid, totalGrossWages);
+      totalWITWithheld = addMoney(totalWITWithheld, totalWIT);
     }
 
     return {
@@ -559,8 +560,8 @@ class TaxFilingService {
       employerAddress: company.registeredAddress || '',
       taxYear,
       totalEmployeesInYear: employeeRecords.length,
-      totalGrossWagesPaid: Math.round(totalGrossWagesPaid * 100) / 100,
-      totalWITWithheld: Math.round(totalWITWithheld * 100) / 100,
+      totalGrossWagesPaid: roundMoney(totalGrossWagesPaid),
+      totalWITWithheld: roundMoney(totalWITWithheld),
       employees: employeeRecords,
     };
   }

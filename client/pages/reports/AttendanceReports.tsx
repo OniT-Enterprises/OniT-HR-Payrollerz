@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { formatDateTL } from "@/lib/dateUtils";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -134,7 +135,7 @@ export default function AttendanceReports() {
         .join(",")
     );
     const csv = [headers, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -529,7 +530,7 @@ export default function AttendanceReports() {
                       .map((record) => (
                         <tr key={record.id} className="border-b hover:bg-muted/50">
                           <td className="p-3">
-                            {new Date(record.date).toLocaleDateString()}
+                            {formatDateTL(record.date)}
                           </td>
                           <td className="p-3">
                             <div className="font-medium">{record.employeeName}</div>

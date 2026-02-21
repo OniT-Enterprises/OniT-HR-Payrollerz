@@ -182,7 +182,7 @@ export function downloadBankFile(result: BankFileResult): void {
  */
 function formatPeriod(startDate: string, endDate: string): string {
   const end = new Date(endDate);
-  return `${end.toLocaleDateString('en-US', { month: 'short' }).toUpperCase()}${end.getFullYear()}`;
+  return `${end.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' }).toUpperCase()}${end.getFullYear()}`;
 }
 
 /**

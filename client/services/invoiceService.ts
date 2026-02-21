@@ -26,6 +26,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
+import { addMoney, subtractMoney } from '@/lib/currency';
 import type {
   Invoice,
   InvoiceFormData,
@@ -641,21 +642,16 @@ class InvoiceService {
         throw new Error('Payment exceeds remaining invoice balance');
       }
 
-      // Calculate new values
-      const currentPaidCents = Math.round((invoice.amountPaid || 0) * 100);
-      const paymentCents = Math.round(payment.amount * 100);
-      const totalCents = Math.round((invoice.total || 0) * 100);
-      const newAmountPaidCents = currentPaidCents + paymentCents;
-      const newBalanceDueCents = totalCents - newAmountPaidCents;
+      // Calculate new values using Decimal.js for precision
+      const newAmountPaid = addMoney(invoice.amountPaid || 0, payment.amount);
+      const newBalanceDue = subtractMoney(invoice.total || 0, newAmountPaid);
 
-      if (newBalanceDueCents < 0) {
+      if (newBalanceDue < 0) {
         throw new Error('Payment exceeds remaining invoice balance');
       }
 
-      const newAmountPaid = newAmountPaidCents / 100;
-      const newBalanceDue = newBalanceDueCents / 100;
       const newStatus: InvoiceStatus =
-        newBalanceDueCents === 0 ? 'paid' : 'partial';
+        newBalanceDue === 0 ? 'paid' : 'partial';
 
       // Create payment record within transaction
       const paymentDocRef = doc(this.paymentsRef(tenantId));
@@ -857,7 +853,7 @@ class InvoiceService {
     for (let i = 5; i >= 0; i--) {
       const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = formatDateISO(monthDate).slice(0, 7);
-      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short' });
+      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' });
 
       const received = paidInvoices
         .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(monthKey))

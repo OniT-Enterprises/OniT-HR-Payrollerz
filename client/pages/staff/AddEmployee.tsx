@@ -455,7 +455,7 @@ export default function AddEmployee() {
     const headers = ["firstName", "lastName", "email", "phone", "department", "jobTitle", "startDate", "employmentType", "salary", "leaveDays"];
     const sample = ["John", "Doe", "john@company.com", "+670123456", "Engineering", "Developer", "2024-02-01", "Full-time", "1500", "25"];
     const csv = [headers, sample].map(r => r.map(c => `"${c}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;

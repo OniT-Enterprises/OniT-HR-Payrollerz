@@ -21,7 +21,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { type Employee } from "@/services/employeeService";
-import { useFlattenedPaginatedEmployees, useAllEmployees } from "@/hooks/useEmployees";
+import { useSmartEmployees } from "@/hooks/useEmployees";
 import { useDebounce } from "@/hooks/useDebounce";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
 import IncompleteProfilesDialog from "@/components/IncompleteProfilesDialog";
@@ -73,21 +73,7 @@ export default function AllEmployees() {
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
 
-  // Both hooks always called (React rules), only one enabled at a time
-  const paginatedQuery = useFlattenedPaginatedEmployees();
-  const allQuery = useAllEmployees(500, isSearching);
-
-  // Unified interface
-  const employees = useMemo(
-    () => isSearching ? (allQuery.data ?? []) : paginatedQuery.employees,
-    [isSearching, allQuery.data, paginatedQuery.employees]
-  );
-  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
-  const queryError = isSearching ? allQuery.error : paginatedQuery.error;
-  const loadEmployees = isSearching ? allQuery.refetch : paginatedQuery.refetch;
-  const fetchNextPage = paginatedQuery.fetchNextPage;
-  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
-  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
+  const { employees, isLoading: loading, error: queryError, refetch: loadEmployees, fetchNextPage, hasNextPage, isFetchingNextPage, searchLimitReached } = useSmartEmployees(isSearching);
 
   // URL params for deep linking from Dashboard/PayrollHub
   const [searchParams, setSearchParams] = useSearchParams();
@@ -395,7 +381,7 @@ export default function AllEmployees() {
     ].join("\n");
 
     // Download CSV
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -528,7 +514,7 @@ export default function AllEmployees() {
     const csvContent = [headers.join(","), exampleRow.join(",")].join("\n");
 
     // Download template
-    const blob = new Blob([csvContent], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -1095,6 +1081,11 @@ export default function AllEmployees() {
                 <CardTitle className="text-lg">{t("employees.directory.title")}</CardTitle>
                 <CardDescription>
                   {t("employees.directory.countSummary", { shown: filteredEmployees.length, total: employees.length })}
+                  {searchLimitReached && (
+                    <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">
+                      — Search results may be incomplete. Try a more specific search term.
+                    </span>
+                  )}
                 </CardDescription>
               </div>
             </div>

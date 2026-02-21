@@ -28,6 +28,7 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
+import { formatDateTL } from '@/lib/dateUtils';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   Download,
@@ -93,7 +94,7 @@ export function QuickBooksExportDialog({
 
   // Format date
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
+    return formatDateTL(dateStr, {
       year: 'numeric',
       month: 'long',
       day: 'numeric',

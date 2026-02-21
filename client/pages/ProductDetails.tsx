@@ -26,7 +26,6 @@ import {
   Target,
   Wallet,
   MessageCircle,
-  WifiOff,
   Lock,
   Cloud,
   Smartphone,
@@ -902,7 +901,7 @@ export default function ProductDetails() {
               <div className="grid md:grid-cols-4 gap-4">
                 {[
                   { icon: Cloud, label: "Cloud Hosted", desc: "99.9% uptime SLA" },
-                  { icon: WifiOff, label: "Offline Capable", desc: "Works without internet" },
+                  { icon: Zap, label: "Data Cached", desc: "Fast loads with local caching" },
                   { icon: Lock, label: "Secure", desc: "End-to-end encryption" },
                   { icon: Smartphone, label: "Mobile Ready", desc: "Responsive design" },
                 ].map((item, i) => {

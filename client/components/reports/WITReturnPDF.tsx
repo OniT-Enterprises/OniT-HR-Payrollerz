@@ -223,7 +223,7 @@ const formatCurrency = (amount: number): string => {
 const formatPeriod = (period: string): string => {
   const [year, month] = period.split("-");
   const date = new Date(parseInt(year), parseInt(month) - 1);
-  return date.toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  return date.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "Asia/Dili" });
 };
 
 interface WITReturnDocumentProps {
@@ -394,8 +394,8 @@ const WITReturnDocument = ({
       {/* Footer */}
       <View style={styles.footer}>
         <Text style={styles.footerText}>
-          Generated: {generatedDate.toLocaleDateString()} at{" "}
-          {generatedDate.toLocaleTimeString()}
+          Generated: {generatedDate.toLocaleDateString("en-GB", { timeZone: "Asia/Dili" })} at{" "}
+          {generatedDate.toLocaleTimeString("en-GB", { timeZone: "Asia/Dili" })}
         </Text>
         <Text style={styles.footerText}>
           Meza - ATTL Monthly WIT Return

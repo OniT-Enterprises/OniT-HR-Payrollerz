@@ -19,6 +19,7 @@ import { type Employee } from "@/services/employeeService";
 import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { CompanyDetails } from "@/types/settings";
+import { formatDateTL } from "@/lib/dateUtils";
 
 // Lazy load PDF generation to avoid loading react-pdf in main bundle
 const downloadSefopeForm = async (
@@ -580,9 +581,7 @@ export default function EmployeeProfileView({
                         {employee.documents?.workContract?.uploadDate && (
                           <p className="text-xs text-muted-foreground mt-1">
                             Uploaded:{" "}
-                            {new Date(
-                              employee.documents?.workContract?.uploadDate,
-                            ).toLocaleDateString()}
+                            {formatDateTL(employee.documents?.workContract?.uploadDate)}
                           </p>
                         )}
                       </div>

@@ -31,6 +31,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import type { Invoice, PaymentMethod } from '@/types/money';
 import { Loader2, DollarSign, Calendar, CreditCard, FileText } from 'lucide-react';
 import { getTodayTL } from '@/lib/dateUtils';
+import { subtractMoney } from '@/lib/currency';
 
 // Payment methods relevant for Timor-Leste
 const PAYMENT_METHODS = [
@@ -58,7 +59,7 @@ export function RecordPaymentModal({
   const [saving, setSaving] = useState(false);
 
   // Calculate remaining balance
-  const remainingBalance = invoice.total - (invoice.amountPaid || 0);
+  const remainingBalance = subtractMoney(invoice.total, invoice.amountPaid || 0);
 
   // Form state
   const [amount, setAmount] = useState(remainingBalance.toString());

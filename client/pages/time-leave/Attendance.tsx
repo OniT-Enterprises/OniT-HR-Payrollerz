@@ -72,7 +72,7 @@ import {
   type AttendanceStatus,
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function Attendance() {
   const { toast } = useToast();
@@ -122,8 +122,8 @@ export default function Attendance() {
   // Format date for display
   const formatDateLabel = (dateStr: string) => {
     const date = new Date(dateStr + 'T00:00:00');
-    const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    const dayName = formatDateTL(date, { weekday: 'long' });
+    const monthDay = formatDateTL(date, { month: 'short', day: 'numeric' });
     return `${dayName}, ${monthDay}`;
   };
 
@@ -306,7 +306,7 @@ export default function Attendance() {
     ]);
 
     const csv = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;

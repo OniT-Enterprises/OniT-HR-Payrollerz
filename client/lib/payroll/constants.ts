@@ -146,6 +146,12 @@ export const PAYROLL_STATUS_CONFIG = {
     bgClass: 'bg-gray-100',
     textClass: 'text-gray-800',
   },
+  writing_records: {
+    label: 'Saving...',
+    color: 'yellow',
+    bgClass: 'bg-yellow-100',
+    textClass: 'text-yellow-800',
+  },
   processing: {
     label: 'Processing',
     color: 'blue',

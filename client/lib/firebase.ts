@@ -2,7 +2,8 @@
 import { initializeApp } from "firebase/app";
 import {
   initializeFirestore,
-  memoryLocalCache,
+  persistentLocalCache,
+  persistentMultipleTabManager,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
@@ -40,10 +41,10 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 
-// Initialize Firestore with memory cache (avoids Safari IndexedDB issues)
-// Using memory cache for better cross-browser compatibility
+// Initialize Firestore with persistent cache for offline reads and faster repeat loads
+// Safari 15+ (2021) has stable IndexedDB; Firebase SDK v11 handles edge cases
 export const db = initializeFirestore(app, {
-  localCache: memoryLocalCache()
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 
 // Initialize other services

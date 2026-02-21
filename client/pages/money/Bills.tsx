@@ -32,10 +32,11 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
-import { useFlattenedPaginatedBills, useAllBills, billKeys } from '@/hooks/useBills';
+import { useSmartBills, billKeys } from '@/hooks/useBills';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { formatDateTL } from '@/lib/dateUtils';
 import type { Bill, BillStatus } from '@/types/money';
 import {
   FileText,
@@ -71,16 +72,7 @@ export default function Bills() {
   const isSearching = debouncedSearchTerm.length > 0;
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
-  // Both hooks always called (React rules), only one enabled at a time
-  const paginatedQuery = useFlattenedPaginatedBills();
-  const allQuery = useAllBills(500, isSearching);
-
-  const bills = isSearching ? (allQuery.data ?? []) : paginatedQuery.bills;
-  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
-  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
-  const fetchNextPage = paginatedQuery.fetchNextPage;
-  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
-  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
+  const { bills, totalLoaded, isLoading: loading, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartBills(isSearching);
 
   const filteredBills = bills.filter((bill) => {
     const matchesSearch =
@@ -101,11 +93,7 @@ export default function Bills() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   // Calculate stats

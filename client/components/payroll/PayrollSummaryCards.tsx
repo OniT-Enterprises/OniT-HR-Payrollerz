@@ -7,6 +7,7 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { DollarSign, Users, TrendingDown } from "lucide-react";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { useI18n } from "@/i18n/I18nProvider";
 
 interface PayrollTotals {
   grossPay: number;
@@ -20,6 +21,7 @@ interface PayrollSummaryCardsProps {
 }
 
 export function PayrollSummaryCards({ totals, employeeCount }: PayrollSummaryCardsProps) {
+  const { t } = useI18n();
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
       <Card className="relative overflow-hidden border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
@@ -28,10 +30,10 @@ export function PayrollSummaryCards({ totals, employeeCount }: PayrollSummaryCar
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Total Gross Pay
+                {t('runPayroll.totalGrossPay')}
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Before deductions
+                {t('runPayroll.beforeDeductions')}
               </p>
               <p className="text-2xl font-bold tracking-tight mt-2">
                 {formatCurrencyTL(totals.grossPay)}
@@ -50,10 +52,10 @@ export function PayrollSummaryCards({ totals, employeeCount }: PayrollSummaryCar
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Employee Deductions
+                {t('runPayroll.employeeDeductions')}
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Tax + INSS (4%)
+                {t('runPayroll.taxPlusInss')}
               </p>
               <p className="text-2xl font-bold tracking-tight text-red-600 mt-2">
                 {formatCurrencyTL(totals.totalDeductions)}
@@ -72,10 +74,10 @@ export function PayrollSummaryCards({ totals, employeeCount }: PayrollSummaryCar
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Net Pay to Employees
+                {t('runPayroll.netPayToEmployees')}
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Take-home pay
+                {t('runPayroll.takeHomePay')}
               </p>
               <p className="text-2xl font-bold tracking-tight text-emerald-600 mt-2">
                 {formatCurrencyTL(totals.netPay)}
@@ -94,10 +96,10 @@ export function PayrollSummaryCards({ totals, employeeCount }: PayrollSummaryCar
           <div className="flex items-start justify-between">
             <div className="space-y-1">
               <p className="text-sm font-medium text-muted-foreground">
-                Employees
+                {t('runPayroll.employees')}
               </p>
               <p className="text-xs text-muted-foreground/70">
-                Active in payroll
+                {t('runPayroll.activeInPayroll')}
               </p>
               <p className="text-2xl font-bold tracking-tight mt-2">
                 {employeeCount}

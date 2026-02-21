@@ -181,6 +181,7 @@ export async function sendPayslipEmail(
     const periodMonth = periodStart.toLocaleDateString("en-US", {
       month: "long",
       year: "numeric",
+      timeZone: "Asia/Dili",
     });
 
     // Queue email
@@ -245,6 +246,9 @@ export async function sendPayslipEmail(
   }
 }
 
+/** Maximum employees per bulk send to prevent OOM from client-side PDF generation */
+const MAX_BULK_PAYSLIP_BATCH = 50;
+
 /**
  * Send payslips to multiple employees
  */
@@ -260,6 +264,12 @@ export async function sendBulkPayslipEmails(
   userId: string,
   onProgress?: (current: number, total: number) => void
 ): Promise<SendPayslipsResult> {
+  if (payslipData.length > MAX_BULK_PAYSLIP_BATCH) {
+    throw new Error(
+      `Batch size ${payslipData.length} exceeds maximum of ${MAX_BULK_PAYSLIP_BATCH}. Please send in smaller batches.`
+    );
+  }
+
   const result: SendPayslipsResult = {
     total: payslipData.length,
     sent: 0,

@@ -24,7 +24,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { ExpenseCategory } from '@/types/money';
-import { toDateStringTL } from '@/lib/dateUtils';
+import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
   TrendingUp,
   TrendingDown,
@@ -175,7 +175,7 @@ export default function ProfitLoss() {
     const endDate = new Date(end);
 
     const formatOptions: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-    return `${startDate.toLocaleDateString('en-US', formatOptions)} - ${endDate.toLocaleDateString('en-US', formatOptions)}`;
+    return `${formatDateTL(startDate, formatOptions)} - ${formatDateTL(endDate, formatOptions)}`;
   };
 
   const profitMargin = data.revenue > 0 ? ((data.profit / data.revenue) * 100).toFixed(1) : '0';

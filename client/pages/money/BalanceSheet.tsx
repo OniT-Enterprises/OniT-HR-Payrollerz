@@ -22,6 +22,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
+import { formatDateTL } from '@/lib/dateUtils';
 import {
   Scale,
   Calendar,
@@ -161,7 +162,7 @@ export default function BalanceSheet() {
 
   const getAsOfLabel = () => {
     const date = getAsOfDateValue();
-    return date.toLocaleDateString('en-US', {
+    return formatDateTL(date, {
       month: 'long',
       day: 'numeric',
       year: 'numeric'

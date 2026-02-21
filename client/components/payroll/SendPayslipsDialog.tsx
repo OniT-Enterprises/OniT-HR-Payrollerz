@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDateTL } from "@/lib/dateUtils";
 import {
   Mail,
   Loader2,
@@ -454,7 +455,7 @@ export function SendPayslipsDialog({
           </DialogTitle>
           <DialogDescription>
             Email payslips to employees for{" "}
-            {new Date(payrollRun.periodStart).toLocaleDateString("en-US", {
+            {formatDateTL(payrollRun.periodStart, {
               month: "long",
               year: "numeric",
             })}

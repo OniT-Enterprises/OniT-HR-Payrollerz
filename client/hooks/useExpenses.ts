@@ -30,7 +30,9 @@ export function useExpenses(filters: ExpenseFilters = {}) {
   });
 }
 
-export function useAllExpenses(maxResults: number = 500, enabled: boolean = true) {
+const SEARCH_FETCH_LIMIT = 2000;
+
+export function useAllExpenses(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: expenseKeys.list(tenantId, { pageSize: maxResults }),
@@ -95,7 +97,8 @@ export function useDeleteExpense() {
  * Server-side paginated expenses using infinite query
  */
 export function usePaginatedExpenses(
-  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {}
+  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
   const tenantId = useTenantId();
   return useInfiniteQuery({
@@ -111,6 +114,7 @@ export function usePaginatedExpenses(
       lastPage.hasMore ? lastPage.lastDoc : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -118,12 +122,34 @@ export function usePaginatedExpenses(
  * Helper hook to flatten paginated expense results
  */
 export function useFlattenedPaginatedExpenses(
-  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {}
+  filters: Omit<ExpenseFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
-  const query = usePaginatedExpenses(filters);
+  const query = usePaginatedExpenses(filters, enabled);
   return {
     ...query,
     expenses: query.data?.pages.flatMap(page => page.data) ?? [],
     totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
+}
+
+/**
+ * Combined hook that switches between paginated browsing and full-fetch searching.
+ * Only one query is active at a time (via `enabled`), preventing the memory leak
+ * of keeping a 500-item cache mounted alongside an infinite query.
+ */
+export function useSmartExpenses(isSearching: boolean) {
+  const paginatedQuery = useFlattenedPaginatedExpenses({}, !isSearching);
+  const allQuery = useAllExpenses(SEARCH_FETCH_LIMIT, isSearching);
+
+  return {
+    expenses: isSearching ? (allQuery.data ?? []) : paginatedQuery.expenses,
+    totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
+    isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
+    fetchNextPage: paginatedQuery.fetchNextPage,
+    hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
+    isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
+    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
   };
 }

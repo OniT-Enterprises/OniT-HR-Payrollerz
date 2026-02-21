@@ -20,25 +20,44 @@ service cloud.firestore {
     }
 
     // Check if user is a member of the specified tenant
+    // Uses custom claims fast-path (zero-cost) before falling back to document reads
     function isTenantMember(tenantId) {
-      return isAuthenticated() &&
-        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+      return isAuthenticated() && (
+        // Fast path: check custom claims token (zero Firestore reads)
+        (request.auth.token.tenants is map && tenantId in request.auth.token.tenants) ||
+        // Fallback: check member document (1 Firestore read)
+        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid))
+      );
     }
 
-    // Get the user's role in the specified tenant
+    // Get the user's role in the specified tenant (from claims or document)
     function getTenantRole(tenantId) {
-      return get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role;
+      return (request.auth.token.tenants is map && tenantId in request.auth.token.tenants)
+        ? request.auth.token.tenants[tenantId]
+        : get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role;
     }
 
     // Check if user is owner or hr-admin in the tenant
+    // Uses custom claims fast-path to avoid document reads when possible
     function isTenantAdmin(tenantId) {
-      let role = getTenantRole(tenantId);
-      return role == 'owner' || role == 'hr-admin';
+      return isAuthenticated() && (
+        // Fast path: check custom claims (zero reads)
+        (request.auth.token.tenants is map &&
+         tenantId in request.auth.token.tenants &&
+         request.auth.token.tenants[tenantId] in ['owner', 'hr-admin']) ||
+        // Fallback: check member document
+        getTenantRole(tenantId) in ['owner', 'hr-admin']
+      );
     }
 
     // Check if user is the tenant owner
     function isTenantOwner(tenantId) {
-      return getTenantRole(tenantId) == 'owner';
+      return isAuthenticated() && (
+        (request.auth.token.tenants is map &&
+         tenantId in request.auth.token.tenants &&
+         request.auth.token.tenants[tenantId] == 'owner') ||
+        getTenantRole(tenantId) == 'owner'
+      );
     }
 
     // ============================================
@@ -56,12 +75,6 @@ service cloud.firestore {
         request.auth.uid == userId &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isSuperAdmin']);
 
-      // BOOTSTRAP: Allow user to upgrade themselves to superadmin if bootstrap not done
-      allow update: if isAuthenticated() &&
-        request.auth.uid == userId &&
-        request.resource.data.isSuperAdmin == true &&
-        !exists(/databases/$(database)/documents/_bootstrap/initialized);
-
       // Superadmins can update any user (including isSuperAdmin)
       allow update: if isSuperAdmin();
 
@@ -70,13 +83,6 @@ service cloud.firestore {
         request.auth.uid == userId &&
         request.resource.data.isSuperAdmin == false;
 
-      // BOOTSTRAP: Allow first user to create themselves as superadmin
-      // This only works if _bootstrap document does NOT exist
-      allow create: if isAuthenticated() &&
-        request.auth.uid == userId &&
-        request.resource.data.isSuperAdmin == true &&
-        !exists(/databases/$(database)/documents/_bootstrap/initialized);
-
       // Superadmins can create any profile
       allow create: if isSuperAdmin();
 
@@ -84,12 +90,10 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
-    // Bootstrap document - once created, bootstrap is disabled
+    // Bootstrap document - locked. Superadmin setup is handled via Firebase Admin SDK.
     match /_bootstrap/{docId} {
       allow read: if isAuthenticated();
-      allow create: if isAuthenticated() &&
-        !exists(/databases/$(database)/documents/_bootstrap/initialized);
-      allow update, delete: if false;
+      allow write: if false;
     }
 
     // ============================================
@@ -161,9 +165,10 @@ service cloud.firestore {
         allow delete: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
 
         // Users can update their own member record (limited fields)
+        // Blocks role, modules, AND permissions to prevent privilege escalation
         allow update: if isAuthenticated() &&
           request.auth.uid == memberId &&
-          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'modules']);
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'modules', 'permissions']);
       }
 
       // ============================================
@@ -256,7 +261,15 @@ service cloud.firestore {
       // ============================================
       match /payruns/{payrunId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Prevent createdBy tampering + two-person approval rule
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.createdBy == resource.data.createdBy &&
+          (request.resource.data.status != 'approved' ||
+           request.resource.data.approvedBy != resource.data.createdBy)
+        );
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
 
         // Payslips under payrun
         match /payslips/{payslipId} {
@@ -338,12 +351,17 @@ service cloud.firestore {
 
       match /journalEntries/{entryId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Enforce double-entry integrity: totalDebit must equal totalCredit
+        allow create: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
+          request.resource.data.totalDebit == request.resource.data.totalCredit;
         // Draft entries can be edited and posted, but posted/void entries are immutable.
+        // Balance must be maintained when posting.
         allow update: if isSuperAdmin() || (
           isTenantAdmin(tenantId) &&
           resource.data.status == 'draft' &&
-          request.resource.data.status in ['draft', 'posted']
+          request.resource.data.status in ['draft', 'posted'] &&
+          (request.resource.data.status == 'draft' ||
+           request.resource.data.totalDebit == request.resource.data.totalCredit)
         );
         allow delete: if isSuperAdmin() || (
           isTenantAdmin(tenantId) &&
@@ -530,9 +548,17 @@ service cloud.firestore {
         (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId) &&
+        // Prevent createdBy tampering + two-person approval rule
+        request.resource.data.createdBy == resource.data.createdBy &&
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy != resource.data.createdBy)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
 
@@ -558,6 +584,8 @@ service cloud.firestore {
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId) &&
+        // Prevent createdBy tampering - field is immutable after creation
+        request.resource.data.createdBy == resource.data.createdBy &&
         // Two-person rule: approver must differ from creator
         (request.resource.data.status != 'approved' ||
          request.resource.data.approvedBy != resource.data.createdBy)
@@ -711,6 +739,26 @@ service cloud.firestore {
       allow read, write: if isSuperAdmin();
     }
 
+    // ============================================
+    // EMAIL QUEUE (Firebase Trigger Email extension)
+    // ============================================
+    match /mail/{emailId} {
+      // Tenant admins can queue emails for their tenant
+      allow create: if isAuthenticated() &&
+        request.resource.data.tenantId != null &&
+        isTenantAdmin(request.resource.data.tenantId);
+
+      // Tenant admins can read email history for their tenant
+      allow read: if isSuperAdmin() || (
+        isAuthenticated() &&
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+
+      // Only the extension (Admin SDK) updates delivery status — no client writes
+      allow update, delete: if false;
+    }
+
     // Money module collections
     match /customers/{docId} {
       // Legacy global money collections are no longer used by the app; restrict to superadmins.
@@ -739,6 +787,14 @@ service cloud.firestore {
 
     match /expenses/{docId} {
       allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // CONNECTION TEST (used by FirebaseContext health check)
+    // ============================================
+    match /_connection_test/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Read-only — app only queries, never writes
     }
   }
 }

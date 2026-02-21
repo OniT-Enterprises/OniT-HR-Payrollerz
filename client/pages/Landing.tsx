@@ -34,6 +34,9 @@ import {
   WifiOff,
   ShoppingBag,
   Printer,
+  Zap,
+  HardDrive,
+  Feather,
 } from "lucide-react";
 
 export default function Landing() {
@@ -114,10 +117,10 @@ export default function Landing() {
   ];
 
   const banks = [
-    { name: "BNU", full: "Banco Nacional Ultramarino" },
-    { name: "MANDIRI", full: "Bank Mandiri Timor-Leste" },
-    { name: "ANZ", full: "ANZ Bank" },
-    { name: "BNCTL", full: "Banco Nacional de Comercio" },
+    { name: "BNU", full: "Banco Nacional Ultramarino", format: t("landing.banks.bnu"), key: "bnu" },
+    { name: "BNCTL", full: "Banco Nacional de Comercio", format: t("landing.banks.bnctl"), key: "bnctl" },
+    { name: "MANDIRI", full: "Bank Mandiri Timor-Leste", format: t("landing.banks.mandiri"), key: "mandiri" },
+    { name: "ANZ", full: "ANZ Bank", format: t("landing.banks.anz"), key: "anz" },
   ];
 
 
@@ -455,22 +458,31 @@ export default function Landing() {
             })}
           </div>
 
-          {/* Banks */}
-          <div className="mt-12 p-6 rounded-2xl bg-white/[0.02] border border-white/5">
-            <div className="flex items-center gap-3 mb-4">
-              <Landmark className="h-5 w-5 text-amber-400" />
-              <span className="font-medium text-white">
-                {t("landing.banks.title")}
-              </span>
+          {/* Banks — Killer Feature */}
+          <div className="mt-12 p-6 rounded-2xl bg-gradient-to-r from-amber-500/[0.04] via-white/[0.02] to-amber-500/[0.04] border border-amber-500/20">
+            <div className="flex items-center gap-3 mb-2">
+              <div className="p-2 rounded-lg bg-amber-500/10">
+                <Landmark className="h-5 w-5 text-amber-400" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white text-lg">{t("landing.banks.title")}</h3>
+                <p className="text-sm text-zinc-400">{t("landing.banks.subtitle")}</p>
+              </div>
             </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-5">
               {banks.map((bank, i) => (
-                <div key={i} className="flex flex-col items-center gap-1 p-4 rounded-xl bg-white/5">
-                  <span className="font-bold text-white">{bank.name}</span>
-                  <span className="text-xs text-zinc-500 text-center">{bank.full}</span>
+                <div key={i} className="flex flex-col items-center gap-2 p-4 rounded-xl bg-white/5 border border-white/5">
+                  <span className="font-bold text-white text-lg">{bank.name}</span>
+                  <span className="text-[11px] text-zinc-500 text-center">{bank.full}</span>
+                  <span className="mt-1 px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 text-[11px] font-medium border border-amber-500/20">
+                    {bank.format}
+                  </span>
                 </div>
               ))}
             </div>
+            <p className="mt-4 text-sm text-amber-400/70 text-center font-medium">
+              {t("landing.banks.tagline")}
+            </p>
           </div>
 
           {/* Mobile Payments */}
@@ -584,6 +596,41 @@ export default function Landing() {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Built for TL Internet */}
+      <section className="py-16 lg:py-20 border-t border-white/5">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="max-w-3xl mx-auto">
+            <div className="p-8 rounded-2xl bg-gradient-to-r from-cyan-500/[0.04] via-white/[0.02] to-blue-500/[0.04] border border-cyan-500/15">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                  <Zap className="h-3 w-3 text-cyan-400" />
+                  <span className="text-xs text-cyan-400">{t("landing.performance.badge")}</span>
+                </div>
+              </div>
+              <h3 className="text-2xl font-black text-white mt-4 mb-2">{t("landing.performance.title")}</h3>
+              <p className="text-sm text-zinc-400 mb-6">{t("landing.performance.description")}</p>
+              <div className="grid sm:grid-cols-3 gap-4">
+                {[
+                  { icon: HardDrive, text: t("landing.performance.features.cache"), color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                  { icon: Feather, text: t("landing.performance.features.lazy"), color: "text-blue-400", bg: "bg-blue-500/10" },
+                  { icon: Zap, text: t("landing.performance.features.small"), color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                ].map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                      <div className={`p-1.5 rounded-md ${item.bg} flex-shrink-0`}>
+                        <Icon className={`h-3.5 w-3.5 ${item.color}`} />
+                      </div>
+                      <span className="text-xs text-zinc-300 leading-relaxed">{item.text}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       </section>

@@ -325,7 +325,7 @@ const formatCurrency = (amount: number): string => {
 // Format date
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
-  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Dili' });
 };
 
 interface InvoicePDFProps {

@@ -30,7 +30,9 @@ export function useInvoices(filters: InvoiceFilters = {}) {
   });
 }
 
-export function useAllInvoices(maxResults: number = 500, enabled: boolean = true) {
+const SEARCH_FETCH_LIMIT = 2000;
+
+export function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: invoiceKeys.list(tenantId, { pageSize: maxResults }),
@@ -92,7 +94,8 @@ export function useInvoiceSettings() {
  * Server-side paginated invoices using infinite query
  */
 export function usePaginatedInvoices(
-  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {}
+  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
   const tenantId = useTenantId();
   return useInfiniteQuery({
@@ -108,6 +111,7 @@ export function usePaginatedInvoices(
       lastPage.hasMore ? lastPage.lastDoc : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -115,12 +119,34 @@ export function usePaginatedInvoices(
  * Helper hook to flatten paginated invoice results
  */
 export function useFlattenedPaginatedInvoices(
-  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {}
+  filters: Omit<InvoiceFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
-  const query = usePaginatedInvoices(filters);
+  const query = usePaginatedInvoices(filters, enabled);
   return {
     ...query,
     invoices: query.data?.pages.flatMap(page => page.data) ?? [],
     totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
+}
+
+/**
+ * Combined hook that switches between paginated browsing and full-fetch searching.
+ * Only one query is active at a time (via `enabled`), preventing the memory leak
+ * of keeping a 500-item cache mounted alongside an infinite query.
+ */
+export function useSmartInvoices(isSearching: boolean) {
+  const paginatedQuery = useFlattenedPaginatedInvoices({}, !isSearching);
+  const allQuery = useAllInvoices(SEARCH_FETCH_LIMIT, isSearching);
+
+  return {
+    invoices: isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices,
+    totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
+    isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
+    fetchNextPage: paginatedQuery.fetchNextPage,
+    hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
+    isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
+    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
   };
 }

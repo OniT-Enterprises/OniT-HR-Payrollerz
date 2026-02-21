@@ -25,6 +25,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
+import { formatDateTL } from '@/lib/dateUtils';
 import type { PaymentReceived } from '@/types/money';
 import {
   DollarSign,
@@ -108,11 +109,7 @@ export default function Payments() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   // Calculate summary stats

@@ -31,7 +31,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { useFlattenedPaginatedInvoices, useAllInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
+import { useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 
@@ -40,6 +40,7 @@ import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
 import { SendReminderDialog } from '@/components/money/SendReminderDialog';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { formatDateTL } from '@/lib/dateUtils';
 import type { Invoice, InvoiceStatus } from '@/types/money';
 import {
   FileText,
@@ -87,17 +88,7 @@ export default function Invoices() {
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
 
-  // Both hooks always called (React rules), only one enabled at a time
-  const paginatedQuery = useFlattenedPaginatedInvoices();
-  const allQuery = useAllInvoices(500, isSearching);
-
-  const invoices = isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices;
-  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
-  const loading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
-  const loadInvoices = isSearching ? allQuery.refetch : paginatedQuery.refetch;
-  const fetchNextPage = paginatedQuery.fetchNextPage;
-  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
-  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
+  const { invoices, totalLoaded, isLoading: loading, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(isSearching);
   const { data: invoiceSettings = {} } = useInvoiceSettings();
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -118,11 +109,7 @@ export default function Invoices() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const handleSend = async (invoice: Invoice) => {

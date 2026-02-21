@@ -62,7 +62,7 @@ import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 interface EntryLineForm {
   accountId: string;
@@ -769,7 +769,7 @@ export default function JournalEntries() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {[2026, 2025, 2024].map((y) => (
+                      {Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i).map((y) => (
                         <SelectItem key={y} value={y.toString()}>
                           {y}
                         </SelectItem>
@@ -837,7 +837,7 @@ export default function JournalEntries() {
 
                                 {/* Date */}
                                 <div className="col-span-1 text-sm text-muted-foreground">
-                                  {new Date(entry.date).toLocaleDateString()}
+                                  {formatDateTL(entry.date)}
                                 </div>
 
                                 {/* Description */}
@@ -979,7 +979,7 @@ export default function JournalEntries() {
                 <div>
                   <p className="text-sm text-gray-500">{t("accounting.journalEntries.dateLabel")}</p>
                   <p className="font-medium">
-                    {new Date(selectedEntry.date).toLocaleDateString()}
+                    {formatDateTL(selectedEntry.date)}
                   </p>
                 </div>
                 <div>

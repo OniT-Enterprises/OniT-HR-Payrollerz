@@ -17,9 +17,11 @@ import {
   serverTimestamp,
   writeBatch,
   runTransaction,
+  Transaction,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
+import { addMoney, subtractMoney, sumMoney, toDecimal, toMoney } from '@/lib/currency';
 import type {
   Account,
   JournalEntry,
@@ -165,7 +167,8 @@ class JournalEntryService {
 
   async createJournalEntry(
     tenantId: string,
-    entry: Omit<JournalEntry, 'id' | 'createdAt'>
+    entry: Omit<JournalEntry, 'id' | 'createdAt'>,
+    txn?: Transaction
   ): Promise<string> {
     if (!Array.isArray(entry.lines) || entry.lines.length === 0) {
       throw new Error('Journal entry must include at least one line');
@@ -190,21 +193,21 @@ class JournalEntryService {
     }
 
     if (
-      Math.abs(lineDebitTotal - entry.totalDebit) > 0.01 ||
-      Math.abs(lineCreditTotal - entry.totalCredit) > 0.01
+      toDecimal(lineDebitTotal).minus(entry.totalDebit).abs().greaterThan(0.01) ||
+      toDecimal(lineCreditTotal).minus(entry.totalCredit).abs().greaterThan(0.01)
     ) {
       throw new Error('Journal entry totals do not match line amounts');
     }
 
     // Validate that debits = credits
-    if (Math.abs(entry.totalDebit - entry.totalCredit) > 0.01) {
+    if (toDecimal(entry.totalDebit).minus(entry.totalCredit).abs().greaterThan(0.01)) {
       throw new Error('Journal entry must balance: debits must equal credits');
     }
 
     const journalDocRef = doc(this.collectionRef(tenantId));
 
     // Write journal + GL entries atomically so books cannot drift.
-    await runTransaction(db, async (transaction) => {
+    const doWrite = (transaction: Transaction) => {
       transaction.set(journalDocRef, {
         ...entry,
         createdAt: serverTimestamp(),
@@ -230,7 +233,13 @@ class JournalEntryService {
           });
         }
       }
-    });
+    };
+
+    if (txn) {
+      doWrite(txn);
+    } else {
+      await runTransaction(db, async (transaction) => doWrite(transaction));
+    }
 
     return journalDocRef.id;
   }
@@ -342,32 +351,15 @@ class JournalEntryService {
   /**
    * Generate next entry number
    */
-  async getNextEntryNumber(tenantId: string, year: number): Promise<string> {
-    const q = query(
-      this.collectionRef(tenantId),
-      where('fiscalYear', '==', year),
-      orderBy('entryNumber', 'desc'),
-      limit(1)
-    );
-    const snapshot = await getDocs(q);
-
-    let maxFromLedger = 0;
-    if (!snapshot.empty) {
-      const lastEntry = snapshot.docs[0].data() as JournalEntry;
-      const match = lastEntry.entryNumber.match(/^[A-Z]+-\d{4}-(\d+)$/);
-      if (match) {
-        maxFromLedger = parseInt(match[1], 10) || 0;
-      }
-    }
-
+  async getNextEntryNumber(tenantId: string, year: number, txn?: Transaction): Promise<string> {
     const settingsRef = doc(db, paths.accountingSettings(tenantId));
     const currentYear = parseInt(getTodayTL().slice(0, 4), 10);
 
-    return runTransaction(db, async (transaction) => {
+    const doWork = async (transaction: Transaction) => {
       const settingsSnap = await transaction.get(settingsRef);
 
       let prefix = 'JE';
-      let nextNum = maxFromLedger + 1;
+      let nextNum = 1;
 
       if (settingsSnap.exists()) {
         const settings = settingsSnap.data() as Partial<AccountingSettings> & {
@@ -384,7 +376,7 @@ class JournalEntryService {
         } else if (
           year === currentYear &&
           typeof settings.nextJournalNumber === 'number' &&
-          settings.nextJournalNumber > nextNum
+          settings.nextJournalNumber > 0
         ) {
           nextNum = Math.floor(settings.nextJournalNumber);
         }
@@ -401,16 +393,21 @@ class JournalEntryService {
       } else {
         transaction.set(settingsRef, {
           journalEntryPrefix: 'JE',
-          nextJournalNumber: year === currentYear ? nextNum + 1 : 1,
+          nextJournalNumber: year === currentYear ? 2 : 1,
           nextJournalNumberByYear: {
-            [String(year)]: nextNum + 1,
+            [String(year)]: 2,
           },
           updatedAt: serverTimestamp(),
         }, { merge: true });
       }
 
       return `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
-    });
+    };
+
+    if (txn) {
+      return doWork(txn);
+    }
+    return runTransaction(db, doWork);
   }
 
   /**
@@ -810,11 +807,12 @@ class JournalEntryService {
   async createFromBill(
     tenantId: string,
     bill: Bill,
-    createdBy: string
+    createdBy: string,
+    txn?: Transaction
   ): Promise<string> {
     const year = new Date(bill.billDate).getFullYear();
     const month = new Date(bill.billDate).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
     const getAccountId = async (code: string) => {
       const account = await accountService.getAccountByCode(tenantId, code);
@@ -867,7 +865,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(tenantId, journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry, txn);
   }
 
   /**
@@ -956,11 +954,12 @@ class JournalEntryService {
   async createFromExpense(
     tenantId: string,
     expense: Expense,
-    createdBy: string
+    createdBy: string,
+    txn?: Transaction
   ): Promise<string> {
     const year = new Date(expense.date).getFullYear();
     const month = new Date(expense.date).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
     const getAccountId = async (code: string) => {
       const account = await accountService.getAccountByCode(tenantId, code);
@@ -1016,7 +1015,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(tenantId, journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry, txn);
   }
 }
 
@@ -1099,7 +1098,7 @@ class GeneralLedgerService {
     // Calculate running balance
     let runningBalance = 0;
     entries = entries.map(entry => {
-      runningBalance += entry.debit - entry.credit;
+      runningBalance = addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
       return { ...entry, balance: runningBalance };
     });
 
@@ -1143,7 +1142,7 @@ class GeneralLedgerService {
       entries = entries.filter(e => e.entryDate <= asOfDate);
     }
 
-    return entries.reduce((sum, e) => sum + e.debit - e.credit, 0);
+    return sumMoney(entries.map(e => subtractMoney(e.debit, e.credit)));
   }
 }
 
@@ -1162,10 +1161,10 @@ class TrialBalanceService {
       const balance = await generalLedgerService.getAccountBalance(tenantId, account.id!, account.code, asOfDate);
 
       // Skip zero balances for cleaner report
-      if (Math.abs(balance) < 0.01) continue;
+      if (toDecimal(balance).abs().lessThan(0.01)) continue;
 
       const debitBalance = balance > 0 ? balance : 0;
-      const creditBalance = balance < 0 ? Math.abs(balance) : 0;
+      const creditBalance = balance < 0 ? toMoney(toDecimal(balance).abs()) : 0;
 
       rows.push({
         accountId: account.id!,
@@ -1184,8 +1183,8 @@ class TrialBalanceService {
     // Sort by account code
     rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
 
-    const totalDebit = rows.reduce((sum, r) => sum + r.closingDebit, 0);
-    const totalCredit = rows.reduce((sum, r) => sum + r.closingCredit, 0);
+    const totalDebit = sumMoney(rows.map(r => r.closingDebit));
+    const totalCredit = sumMoney(rows.map(r => r.closingCredit));
 
     return {
       asOfDate,
@@ -1194,7 +1193,7 @@ class TrialBalanceService {
       rows,
       totalDebit,
       totalCredit,
-      isBalanced: Math.abs(totalDebit - totalCredit) < 0.01,
+      isBalanced: toDecimal(totalDebit).minus(totalCredit).abs().lessThan(0.01),
       generatedAt: new Date(),
       generatedBy: 'system',
     };

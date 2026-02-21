@@ -6,7 +6,7 @@
 import { FirestoreTimestamp } from './firebase';
 
 // Payroll Run Status
-export type PayrollStatus = 'draft' | 'processing' | 'approved' | 'paid' | 'cancelled' | 'rejected';
+export type PayrollStatus = 'draft' | 'writing_records' | 'processing' | 'approved' | 'paid' | 'cancelled' | 'rejected';
 
 // Pay frequency
 export type PayFrequency = 'weekly' | 'biweekly' | 'semimonthly' | 'monthly';
@@ -87,6 +87,9 @@ export interface PayrollRun {
 
   // Accounting linkage (optional)
   journalEntryId?: string;
+
+  // Batch write tracking — used to detect/repair interrupted multi-batch writes
+  expectedRecordCount?: number;
 
   updatedAt?: FirestoreTimestamp;
 }

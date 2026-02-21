@@ -45,6 +45,7 @@ import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
 import type { Invoice, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
 import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
+import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
   FileText,
   Plus,
@@ -211,19 +212,20 @@ export default function InvoiceForm() {
   const calculateTotals = () => {
     const items = formData.items || [];
     const invoiceTaxRate = Number(formData.taxRate) || 0;
-    const subtotal = items.reduce(
-      (sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
-      0
+    const subtotal = sumMoney(
+      items.map((item) => multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0))
     );
     // Per-line VAT: use item vatRate if set, otherwise fall back to invoice-level rate
-    const taxAmount = items.reduce((sum, item) => {
-      const lineTotal = (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0);
-      const rate = item.vatRate !== undefined && item.vatRate !== null
-        ? Number(item.vatRate)
-        : invoiceTaxRate;
-      return sum + (lineTotal * rate) / 100;
-    }, 0);
-    const total = subtotal + taxAmount;
+    const taxAmount = sumMoney(
+      items.map((item) => {
+        const lineTotal = multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0);
+        const rate = item.vatRate !== undefined && item.vatRate !== null
+          ? Number(item.vatRate)
+          : invoiceTaxRate;
+        return percentOf(lineTotal, rate);
+      })
+    );
+    const total = addMoney(subtotal, taxAmount);
     return { subtotal, taxAmount, total };
   };
 

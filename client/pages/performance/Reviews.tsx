@@ -72,7 +72,7 @@ import {
   Send,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
-import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { getTodayTL, toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 
 // ============================================
 // Rating Stars Component
@@ -626,7 +626,7 @@ export default function Reviews() {
                                     </Badge>
                                     {lastReview && (
                                       <Badge variant="secondary" className="text-xs">
-                                        Last: {new Date(lastReview.reviewDate).toLocaleDateString()}
+                                        Last: {formatDateTL(lastReview.reviewDate)}
                                       </Badge>
                                     )}
                                   </div>
@@ -732,7 +732,7 @@ export default function Reviews() {
                                 <div className="flex items-center gap-3 text-sm text-muted-foreground">
                                   <span>{getReviewTypeName(review.reviewType)}</span>
                                   <span>•</span>
-                                  <span>{new Date(review.reviewDate).toLocaleDateString()}</span>
+                                  <span>{formatDateTL(review.reviewDate)}</span>
                                   <span>•</span>
                                   <div className="flex items-center gap-1">
                                     <Star className="h-3 w-3 fill-yellow-400 text-yellow-400" />
@@ -1007,11 +1007,11 @@ export default function Reviews() {
                 <div className="text-right">
                   <p className="text-sm text-muted-foreground">Review Date</p>
                   <p className="font-medium">
-                    {new Date(selectedReview.reviewDate).toLocaleDateString()}
+                    {formatDateTL(selectedReview.reviewDate)}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Period: {new Date(selectedReview.reviewPeriodStart).toLocaleDateString()} -{" "}
-                    {new Date(selectedReview.reviewPeriodEnd).toLocaleDateString()}
+                    Period: {formatDateTL(selectedReview.reviewPeriodStart)} -{" "}
+                    {formatDateTL(selectedReview.reviewPeriodEnd)}
                   </p>
                 </div>
               </div>
@@ -1099,12 +1099,12 @@ export default function Reviews() {
                 {selectedReview.acknowledgedAt && (
                   <p>
                     Acknowledged:{" "}
-                    {new Date(selectedReview.acknowledgedAt).toLocaleDateString()}
+                    {formatDateTL(selectedReview.acknowledgedAt)}
                   </p>
                 )}
                 {selectedReview.completedAt && (
                   <p>
-                    Completed: {new Date(selectedReview.completedAt).toLocaleDateString()}
+                    Completed: {formatDateTL(selectedReview.completedAt)}
                   </p>
                 )}
               </div>

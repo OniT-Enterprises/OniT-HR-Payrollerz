@@ -63,6 +63,7 @@ import { employeeService, Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import type { WorkPermitStatus } from "@/types/tax-filing";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatDateTL } from "@/lib/dateUtils";
 
 // ============================================
 // TYPES
@@ -684,7 +685,7 @@ export default function ForeignWorkers() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 {getVisaExpiry(worker)
-                                  ? new Date(getVisaExpiry(worker)!).toLocaleDateString()
+                                  ? formatDateTL(getVisaExpiry(worker)!)
                                   : t("admin.foreignWorkers.noVisaOnFile")}
                               </TooltipContent>
                             </Tooltip>
@@ -705,7 +706,7 @@ export default function ForeignWorkers() {
                               </TooltipTrigger>
                               <TooltipContent>
                                 {getPermitExpiry(worker)
-                                  ? new Date(getPermitExpiry(worker)!).toLocaleDateString()
+                                  ? formatDateTL(getPermitExpiry(worker)!)
                                   : t("admin.foreignWorkers.noPermitOnFile")}
                               </TooltipContent>
                             </Tooltip>

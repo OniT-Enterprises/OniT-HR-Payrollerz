@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import Papa from "papaparse";
-import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -321,7 +321,7 @@ export default function CustomReports() {
       }, {} as Record<string, string>)
     );
     const csv = Papa.unparse(rows);
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -636,11 +636,11 @@ export default function CustomReports() {
                       </p>
                       <div className="flex items-center justify-between text-xs text-muted-foreground mb-3">
                         <span>
-                          Created {new Date(report.createdAt).toLocaleDateString()}
+                          Created {formatDateTL(report.createdAt)}
                         </span>
                         {report.lastRun && (
                           <span>
-                            Last run {new Date(report.lastRun).toLocaleDateString()}
+                            Last run {formatDateTL(report.lastRun)}
                           </span>
                         )}
                       </div>

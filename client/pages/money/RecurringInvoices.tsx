@@ -24,6 +24,7 @@ import { useTenant } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import { formatDateTL } from '@/lib/dateUtils';
 import type { RecurringInvoice, RecurringStatus } from '@/types/money';
 import {
   Repeat,
@@ -177,11 +178,7 @@ export default function RecurringInvoices() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const calculateTotal = (item: RecurringInvoice) => {

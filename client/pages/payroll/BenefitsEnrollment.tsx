@@ -82,7 +82,7 @@ import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 // Allowance type icons mapping
 const ALLOWANCE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
@@ -645,7 +645,7 @@ export default function EmployeeAllowances() {
                             {formatCurrency(allowance.employerContribution)}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
-                            {new Date(allowance.effectiveDate).toLocaleDateString()}
+                            {formatDateTL(allowance.effectiveDate)}
                           </TableCell>
                           <TableCell>{getStatusBadge(allowance.status)}</TableCell>
                           <TableCell className="text-right">

@@ -83,19 +83,23 @@ export function formatDateISO(date: Date | string | null | undefined): string {
 }
 
 /**
- * Parse an ISO date string to a Date at start of day in TL timezone
- * Use this when reading date-only fields from forms
+ * Parse an ISO date string (YYYY-MM-DD) to a Date object.
+ *
+ * Anchored at noon UTC so the calendar date is identical in every timezone
+ * from UTC-12 to UTC+12 (the full inhabited range). This prevents a common
+ * bug where midnight UTC shifts to the previous day in western timezones.
+ *
+ * Timor-Leste (UTC+9, no DST) is well within this safe window.
+ *
+ * For date comparisons, prefer comparing ISO strings directly
+ * ("2026-02-21" > "2026-02-20") instead of Date objects.
  */
 export function parseDateISO(dateString: string): Date {
   if (!dateString) return new Date();
 
-  // Parse as local date in TL timezone
   const [year, month, day] = dateString.split('-').map(Number);
 
-  // Create date at noon to avoid DST issues
-  const date = new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
-
-  return date;
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0));
 }
 
 /**

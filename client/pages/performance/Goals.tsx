@@ -70,7 +70,7 @@ import {
   Clock,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 // ============================================
 // Helper Components
@@ -756,7 +756,7 @@ export default function Goals() {
                                       <div className="flex items-center gap-2">
                                         {getStatusBadge(kr.status, "keyresult")}
                                         <span className="text-xs text-muted-foreground">
-                                          Due: {new Date(kr.dueDate).toLocaleDateString()}
+                                          Due: {formatDateTL(kr.dueDate)}
                                         </span>
                                       </div>
                                     </div>
@@ -832,8 +832,8 @@ export default function Goals() {
                               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                 <span>Department: {goal.department}</span>
                                 <span>
-                                  Timeline: {new Date(goal.startDate).toLocaleDateString()} -{" "}
-                                  {new Date(goal.endDate).toLocaleDateString()}
+                                  Timeline: {formatDateTL(goal.startDate)} -{" "}
+                                  {formatDateTL(goal.endDate)}
                                 </span>
                               </div>
                               <div className="flex items-center gap-2">
@@ -865,7 +865,7 @@ export default function Goals() {
                                           {milestone.title}
                                         </span>
                                         <span className="text-muted-foreground">
-                                          (Due: {new Date(milestone.dueDate).toLocaleDateString()})
+                                          (Due: {formatDateTL(milestone.dueDate)})
                                         </span>
                                       </div>
                                     ))}

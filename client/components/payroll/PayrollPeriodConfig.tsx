@@ -16,6 +16,7 @@ import {
 import { Calculator, Calendar } from 'lucide-react';
 import { TL_PAY_PERIODS } from '@/lib/payroll/constants-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
+import { useI18n } from '@/i18n/I18nProvider';
 
 interface PayrollPeriodConfigProps {
   payFrequency: TLPayFrequency;
@@ -42,6 +43,7 @@ export function PayrollPeriodConfig({
   includeSubsidioAnual,
   setIncludeSubsidioAnual,
 }: PayrollPeriodConfigProps) {
+  const { t } = useI18n();
   return (
     <Card className="mb-6 border-border/50 animate-fade-up stagger-2">
       <CardHeader>
@@ -49,10 +51,10 @@ export function PayrollPeriodConfig({
           <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
             <Calculator className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
-          Pay Period Configuration
+          {t('runPayroll.periodConfig')}
         </CardTitle>
         <CardDescription>
-          Configure the payroll period and pay date
+          {t('runPayroll.configureDesc')}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -60,7 +62,7 @@ export function PayrollPeriodConfig({
           <div className="space-y-2">
             <Label htmlFor="pay-frequency" className="flex items-center gap-1.5 text-sm">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              Pay Frequency
+              {t('runPayroll.payFrequency')}
             </Label>
             <Select
               value={payFrequency}
@@ -71,13 +73,13 @@ export function PayrollPeriodConfig({
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="weekly">
-                  {TL_PAY_PERIODS.weekly.label} (Weekly)
+                  {TL_PAY_PERIODS.weekly.label} ({t('runPayroll.weekly')})
                 </SelectItem>
                 <SelectItem value="biweekly">
-                  {TL_PAY_PERIODS.biweekly.label} (Bi-Weekly)
+                  {TL_PAY_PERIODS.biweekly.label} ({t('runPayroll.biweekly')})
                 </SelectItem>
                 <SelectItem value="monthly">
-                  {TL_PAY_PERIODS.monthly.label} (Monthly)
+                  {TL_PAY_PERIODS.monthly.label} ({t('runPayroll.monthly')})
                 </SelectItem>
               </SelectContent>
             </Select>
@@ -85,7 +87,7 @@ export function PayrollPeriodConfig({
           <div className="space-y-2">
             <Label htmlFor="period-start" className="flex items-center gap-1.5 text-sm">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              Period Start
+              {t('runPayroll.periodStart')}
             </Label>
             <Input
               id="period-start"
@@ -98,7 +100,7 @@ export function PayrollPeriodConfig({
           <div className="space-y-2">
             <Label htmlFor="period-end" className="flex items-center gap-1.5 text-sm">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              Period End
+              {t('runPayroll.periodEnd')}
             </Label>
             <Input
               id="period-end"
@@ -111,7 +113,7 @@ export function PayrollPeriodConfig({
           <div className="space-y-2">
             <Label htmlFor="pay-date" className="flex items-center gap-1.5 text-sm">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-              Pay Date
+              {t('runPayroll.payDate')}
             </Label>
             <Input
               id="pay-date"
@@ -129,9 +131,9 @@ export function PayrollPeriodConfig({
                 className="mt-0.5 data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
               />
               <div className="text-sm">
-                Include Subsidio Anual (13th month) in this run
+                {t('runPayroll.includeSubsidio')}
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  Adds a pro-rated 13th month salary and includes it in WIT and INSS.
+                  {t('runPayroll.subsidioDesc')}
                 </p>
               </div>
             </div>

@@ -97,6 +97,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { formatDateTL } from "@/lib/dateUtils";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
@@ -194,6 +195,39 @@ export default function PayrollHistory() {
     };
   }, [payrollRuns]);
 
+  // Detect stuck runs (writing_records for more than 2 minutes)
+  const stuckRuns = useMemo(() => {
+    const TWO_MINUTES_MS = 2 * 60 * 1000;
+    const now = Date.now();
+    return payrollRuns.filter((run) => {
+      if (run.status !== 'writing_records') return false;
+      const created = run.createdAt instanceof Date ? run.createdAt : new Date(String(run.createdAt));
+      return now - created.getTime() > TWO_MINUTES_MS;
+    });
+  }, [payrollRuns]);
+
+  const [repairingRunId, setRepairingRunId] = useState<string | null>(null);
+
+  const handleRepairRun = async (runId: string) => {
+    setRepairingRunId(runId);
+    try {
+      const result = await payrollService.runs.repairStuckRun(runId);
+      if (result === 'repaired') {
+        toast({ title: "Payroll Repaired", description: "All records were present. Run has been recovered." });
+      } else {
+        toast({ title: "Incomplete Run Removed", description: "The interrupted payroll run and its partial records have been cleaned up." });
+      }
+      // Reload runs
+      const runs = await payrollService.runs.getAllPayrollRuns({ tenantId });
+      setPayrollRuns(runs);
+    } catch (error) {
+      console.error("Failed to repair run:", error);
+      toast({ title: "Repair Failed", description: "Could not repair the payroll run. Please try again.", variant: "destructive" });
+    } finally {
+      setRepairingRunId(null);
+    }
+  };
+
   // Filter payroll runs
   const filteredRuns = useMemo(() => {
     return payrollRuns.filter((run) => {
@@ -228,6 +262,7 @@ export default function PayrollHistory() {
     const config = PAYROLL_STATUS_CONFIG[status];
     const icons: Record<PayrollStatus, React.ReactNode> = {
       draft: <FileText className="h-3 w-3 mr-1" />,
+      writing_records: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
       processing: <Clock className="h-3 w-3 mr-1" />,
       approved: <CheckCircle className="h-3 w-3 mr-1" />,
       paid: <CheckCircle className="h-3 w-3 mr-1" />,
@@ -712,6 +747,44 @@ export default function PayrollHistory() {
             </CardContent>
           </Card>
 
+          {/* Stuck run banner */}
+          {stuckRuns.length > 0 && (
+            <Card className="border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-700">
+              <CardContent className="py-4">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 shrink-0" />
+                  <div className="flex-1">
+                    <p className="font-medium text-amber-800 dark:text-amber-200">
+                      {stuckRuns.length === 1 ? "An interrupted payroll run was detected" : `${stuckRuns.length} interrupted payroll runs were detected`}
+                    </p>
+                    <p className="text-sm text-amber-700 dark:text-amber-300 mt-1">
+                      This can happen if the browser was closed during save. You can attempt to recover or clean up.
+                    </p>
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {stuckRuns.map((run) => (
+                        <Button
+                          key={run.id}
+                          size="sm"
+                          variant="outline"
+                          className="border-amber-400 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900"
+                          disabled={repairingRunId === run.id}
+                          onClick={() => run.id && handleRepairRun(run.id)}
+                        >
+                          {repairingRunId === run.id ? (
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          ) : (
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                          )}
+                          Repair {formatDateTL(run.periodStart, { month: 'short', day: 'numeric' })} – {formatDateTL(run.periodEnd, { month: 'short', day: 'numeric' })}
+                        </Button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Tabs: Pending Approval | All Runs */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="mb-4">
@@ -774,7 +847,7 @@ export default function PayrollHistory() {
                                   </div>
                                 </TableCell>
                                 <TableCell>
-                                  {new Date(run.payDate).toLocaleDateString()}
+                                  {formatDateTL(run.payDate)}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {run.employeeCount}
@@ -892,7 +965,7 @@ export default function PayrollHistory() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {new Date(run.payDate).toLocaleDateString()}
+                                {formatDateTL(run.payDate)}
                               </TableCell>
                               <TableCell className="text-right">
                                 {run.employeeCount}

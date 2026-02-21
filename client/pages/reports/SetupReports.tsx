@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { formatDateTL } from "@/lib/dateUtils";
 import { useQuery } from "@tanstack/react-query";
 import {
   Card,
@@ -107,7 +108,7 @@ export default function SetupReports() {
         .join(",")
     );
     const csv = [headers, ...rows].join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -514,10 +515,7 @@ export default function SetupReports() {
                   <span className="text-muted-foreground">Latest</span>
                   <span className="text-xs">
                     {auditLog[0]
-                      ? new Date(
-                          auditLog[0].timestamp?.toDate?.() ||
-                            String(auditLog[0].timestamp)
-                        ).toLocaleDateString()
+                      ? formatDateTL(auditLog[0].timestamp?.toDate?.() || String(auditLog[0].timestamp))
                       : "-"}
                   </span>
                 </div>
@@ -586,9 +584,7 @@ export default function SetupReports() {
                         </td>
                         <td className="p-3 text-center text-sm text-muted-foreground">
                           {u.createdAt
-                            ? new Date(
-                                (typeof u.createdAt?.toDate === 'function' ? u.createdAt.toDate() : u.createdAt) as Date
-                              ).toLocaleDateString()
+                            ? formatDateTL((typeof u.createdAt?.toDate === 'function' ? u.createdAt.toDate() : u.createdAt) as Date)
                             : "-"}
                         </td>
                       </tr>

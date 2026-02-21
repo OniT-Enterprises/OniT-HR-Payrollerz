@@ -70,7 +70,7 @@ import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
-import { getTodayTL } from "@/lib/dateUtils";
+import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function BankTransfers() {
   const { toast } = useToast();
@@ -414,7 +414,7 @@ export default function BankTransfers() {
 
       const newTransfer: Omit<BankTransfer, "id" | "createdAt" | "updatedAt"> = {
         payrollRunId: formData.payrollRunId,
-        payrollPeriod: `${new Date(selectedRun.periodStart).toLocaleDateString("en-US", { month: "long", year: "numeric" })}`,
+        payrollPeriod: formatDateTL(selectedRun.periodStart, { month: "long", year: "numeric" }),
         amount: selectedRun.totalNetPay,
         employeeCount: selectedRun.employeeCount,
         transferDate: formData.transferDate,
@@ -502,7 +502,7 @@ export default function BankTransfers() {
     ].join("\n");
 
     // Download file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
@@ -794,7 +794,7 @@ export default function BankTransfers() {
                                 .filter(r => r.status === "approved" || r.status === "paid")
                                 .map((run) => (
                                   <SelectItem key={run.id} value={run.id || ""}>
-                                    {new Date(run.periodStart).toLocaleDateString("en-US", {
+                                    {formatDateTL(run.periodStart, {
                                       month: "long",
                                       year: "numeric",
                                     })}{" "}
@@ -923,10 +923,7 @@ export default function BankTransfers() {
                             <SelectContent>
                               {availablePayrollRuns.map((run) => (
                                 <SelectItem key={run.id} value={run.id || ""}>
-                                  {new Date(run.periodStart).toLocaleDateString(
-                                    "en-US",
-                                    { month: "long", year: "numeric" }
-                                  )}{" "}
+                                  {formatDateTL(run.periodStart, { month: "long", year: "numeric" })}{" "}
                                   - {formatCurrency(run.totalNetPay)}
                                 </SelectItem>
                               ))}
@@ -1049,7 +1046,7 @@ export default function BankTransfers() {
                         </TableCell>
                         <TableCell>{transfer.employeeCount}</TableCell>
                         <TableCell>
-                          {new Date(transfer.transferDate).toLocaleDateString()}
+                          {formatDateTL(transfer.transferDate)}
                         </TableCell>
                         <TableCell>{transfer.bankAccountName}</TableCell>
                         <TableCell>{getStatusBadge(transfer.status)}</TableCell>

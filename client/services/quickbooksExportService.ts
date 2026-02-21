@@ -27,6 +27,7 @@ import type {
   QBExportLog,
   QBExportOptions,
 } from '@/types/quickbooks';
+import { addMoney, roundMoney, sumMoney, multiplyMoney } from '@/lib/currency';
 
 // ============================================
 // JOURNAL ENTRY BUILDER
@@ -73,48 +74,48 @@ function aggregatePayrollTotals(
     const grossPay = isTLRecord
       ? (record as TLPayrollRecord).grossPay
       : (record as PayrollRecord).totalGrossPay;
-    totals.grossPay += grossPay;
+    totals.grossPay = addMoney(totals.grossPay, grossPay);
 
     // Base salary vs overtime
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
-      totals.baseSalary += tlRecord.monthlySalary || 0;
-      totals.overtime += (tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0) * 1.5;
+      totals.baseSalary = addMoney(totals.baseSalary, tlRecord.monthlySalary || 0);
+      totals.overtime = addMoney(totals.overtime, multiplyMoney((tlRecord.overtimeHours || 0) * (tlRecord.hourlyRate || 0), 1.5));
     } else {
       const genRecord = record as PayrollRecord;
       const regularPay = genRecord.earnings?.find(e => e.type === 'regular')?.amount || 0;
       const overtimePay = genRecord.earnings?.find(e => e.type === 'overtime')?.amount || 0;
-      totals.baseSalary += regularPay;
-      totals.overtime += overtimePay;
+      totals.baseSalary = addMoney(totals.baseSalary, regularPay);
+      totals.overtime = addMoney(totals.overtime, overtimePay);
     }
 
     // Allowances (estimate from the difference)
     const allowances = isTLRecord ? 0 : 0; // Will need to enhance if tracking allowances
-    totals.allowances += allowances;
+    totals.allowances = addMoney(totals.allowances, allowances);
 
     // Tax deductions
     if (isTLRecord) {
       const tlRecord = record as TLPayrollRecord;
-      totals.wit += tlRecord.incomeTax || 0;
-      totals.inssEmployee += tlRecord.inssEmployee || 0;
-      totals.inssEmployer += tlRecord.inssEmployer || 0;
+      totals.wit = addMoney(totals.wit, tlRecord.incomeTax || 0);
+      totals.inssEmployee = addMoney(totals.inssEmployee, tlRecord.inssEmployee || 0);
+      totals.inssEmployer = addMoney(totals.inssEmployer, tlRecord.inssEmployer || 0);
     } else {
       // Generic record - map federal tax to WIT, social security to INSS
       const genRecord = record as PayrollRecord;
       const federalTax = genRecord.deductions?.find(d => d.type === 'federal_tax')?.amount || 0;
       const socialSecurity = genRecord.deductions?.find(d => d.type === 'social_security')?.amount || 0;
-      totals.wit += federalTax;
-      totals.inssEmployee += socialSecurity;
+      totals.wit = addMoney(totals.wit, federalTax);
+      totals.inssEmployee = addMoney(totals.inssEmployee, socialSecurity);
       // Employer contributions
       const employerSS = genRecord.employerTaxes?.find(t => t.type === 'social_security')?.amount || 0;
-      totals.inssEmployer += employerSS;
+      totals.inssEmployer = addMoney(totals.inssEmployer, employerSS);
     }
 
     // Net pay
     const netPay = isTLRecord
       ? (record as TLPayrollRecord).netPay
       : (record as PayrollRecord).netPay;
-    totals.netPay += netPay;
+    totals.netPay = addMoney(totals.netPay, netPay);
 
     // Department grouping
     if (groupByDepartment && totals.byDepartment) {
@@ -133,8 +134,8 @@ function aggregatePayrollTotals(
         });
       }
       const deptTotals = totals.byDepartment.get(dept)!;
-      deptTotals.grossPay += grossPay;
-      deptTotals.netPay += netPay;
+      deptTotals.grossPay = addMoney(deptTotals.grossPay, grossPay);
+      deptTotals.netPay = addMoney(deptTotals.netPay, netPay);
       deptTotals.employeeCount += 1;
       // Add other fields as needed
     }
@@ -165,7 +166,7 @@ function buildJournalLines(
     lines.push({
       accountCode: '5110',
       accountName: getAccountName('5110'),
-      debit: roundCurrency(totals.baseSalary),
+      debit: roundMoney(totals.baseSalary),
       credit: 0,
       memo: 'Base salaries',
       className: 'Payroll',
@@ -177,7 +178,7 @@ function buildJournalLines(
     lines.push({
       accountCode: '5120',
       accountName: getAccountName('5120'),
-      debit: roundCurrency(totals.overtime),
+      debit: roundMoney(totals.overtime),
       credit: 0,
       memo: 'Overtime pay (150%)',
       className: 'Payroll',
@@ -189,7 +190,7 @@ function buildJournalLines(
     lines.push({
       accountCode: '5160',
       accountName: getAccountName('5160'),
-      debit: roundCurrency(totals.allowances),
+      debit: roundMoney(totals.allowances),
       credit: 0,
       memo: 'Allowances',
       className: 'Payroll',
@@ -201,7 +202,7 @@ function buildJournalLines(
     lines.push({
       accountCode: '5150',
       accountName: getAccountName('5150'),
-      debit: roundCurrency(totals.inssEmployer),
+      debit: roundMoney(totals.inssEmployer),
       credit: 0,
       memo: 'INSS employer contribution (6%)',
       className: 'Payroll',
@@ -216,7 +217,7 @@ function buildJournalLines(
       accountCode: '2220',
       accountName: getAccountName('2220'),
       debit: 0,
-      credit: roundCurrency(totals.wit),
+      credit: roundMoney(totals.wit),
       memo: 'WIT withholding (10%)',
       className: 'Payroll',
     });
@@ -228,7 +229,7 @@ function buildJournalLines(
       accountCode: '2230',
       accountName: getAccountName('2230'),
       debit: 0,
-      credit: roundCurrency(totals.inssEmployee),
+      credit: roundMoney(totals.inssEmployee),
       memo: 'INSS employee (4%)',
       className: 'Payroll',
     });
@@ -240,7 +241,7 @@ function buildJournalLines(
       accountCode: '2240',
       accountName: getAccountName('2240'),
       debit: 0,
-      credit: roundCurrency(totals.inssEmployer),
+      credit: roundMoney(totals.inssEmployer),
       memo: 'INSS employer (6%)',
       className: 'Payroll',
     });
@@ -252,7 +253,7 @@ function buildJournalLines(
       accountCode: '2210',
       accountName: getAccountName('2210'),
       debit: 0,
-      credit: roundCurrency(totals.netPay),
+      credit: roundMoney(totals.netPay),
       memo: `Net pay (${totals.employeeCount} employees)`,
       className: 'Payroll',
     });
@@ -274,8 +275,8 @@ export function buildJournalEntry(
   const lines = buildJournalLines(totals, mappings, options.includeEmployeeDetail);
 
   // Calculate totals
-  const totalDebits = lines.reduce((sum, l) => sum + l.debit, 0);
-  const totalCredits = lines.reduce((sum, l) => sum + l.credit, 0);
+  const totalDebits = sumMoney(lines.map(l => l.debit));
+  const totalCredits = sumMoney(lines.map(l => l.credit));
 
   // Format reference number
   const payDate = new Date(payrollRun.payDate);
@@ -289,8 +290,8 @@ export function buildJournalEntry(
     txnDate: payrollRun.payDate,
     memo: `${periodName} Payroll - ${totals.employeeCount} employees`,
     lines,
-    totalDebits: roundCurrency(totalDebits),
-    totalCredits: roundCurrency(totalCredits),
+    totalDebits: roundMoney(totalDebits),
+    totalCredits: roundMoney(totalCredits),
   };
 }
 
@@ -649,9 +650,7 @@ export async function getExportHistoryForTenant(
 // HELPER FUNCTIONS
 // ============================================
 
-function roundCurrency(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+// roundMoney imported from @/lib/currency
 
 function formatDateForQB(dateStr: string): string {
   // Convert YYYY-MM-DD to MM/DD/YYYY

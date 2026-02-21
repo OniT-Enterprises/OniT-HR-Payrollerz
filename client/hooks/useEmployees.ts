@@ -38,10 +38,18 @@ export function useEmployees(filters: EmployeeFilters = {}) {
 }
 
 /**
+ * Max records fetched for client-side search.
+ * Firestore has no native full-text search, so we fetch up to this many
+ * records and filter locally. If a tenant exceeds this, a server-side
+ * search solution (Algolia/Typesense) is needed.
+ */
+const SEARCH_FETCH_LIMIT = 2000;
+
+/**
  * Fetch all employees (convenience hook for components that need all data)
  * Fetches a large batch for client-side filtering
  */
-export function useAllEmployees(maxResults: number = 500, enabled: boolean = true) {
+export function useAllEmployees(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: employeeKeys.list(tenantId, { pageSize: maxResults }),
@@ -114,7 +122,9 @@ export function useUpdateEmployee() {
 }
 
 /**
- * Mutation for deleting an employee
+ * Mutation for terminating (soft-deleting) an employee
+ * Sets status to "terminated" instead of destroying the document,
+ * preserving references in payroll history, journal entries, and tax reports.
  */
 export function useDeleteEmployee() {
   const queryClient = useQueryClient();
@@ -158,7 +168,8 @@ export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClie
  * const employees = data?.pages.flatMap(page => page.data) ?? [];
  */
 export function usePaginatedEmployees(
-  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {}
+  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
   const tenantId = useTenantId();
   return useInfiniteQuery({
@@ -174,6 +185,7 @@ export function usePaginatedEmployees(
       lastPage.hasMore ? lastPage.lastDoc : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -182,9 +194,10 @@ export function usePaginatedEmployees(
  * Returns employees array plus pagination controls
  */
 export function useFlattenedPaginatedEmployees(
-  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {}
+  filters: Omit<EmployeeFilters, 'startAfterDoc'> = {},
+  enabled: boolean = true,
 ) {
-  const query = usePaginatedEmployees(filters);
+  const query = usePaginatedEmployees(filters, enabled);
 
   return {
     ...query,
@@ -192,5 +205,27 @@ export function useFlattenedPaginatedEmployees(
     employees: query.data?.pages.flatMap(page => page.data) ?? [],
     // Total count across all loaded pages
     totalLoaded: query.data?.pages.reduce((sum, page) => sum + page.data.length, 0) ?? 0,
+  };
+}
+
+/**
+ * Combined hook that switches between paginated browsing and full-fetch searching.
+ * Only one query is active at a time (via `enabled`), preventing memory waste.
+ */
+export function useSmartEmployees(isSearching: boolean) {
+  const paginatedQuery = useFlattenedPaginatedEmployees({}, !isSearching);
+  const allQuery = useAllEmployees(SEARCH_FETCH_LIMIT, isSearching);
+
+  return {
+    employees: isSearching ? (allQuery.data ?? []) : paginatedQuery.employees,
+    totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
+    isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    error: isSearching ? allQuery.error : paginatedQuery.error,
+    refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
+    fetchNextPage: paginatedQuery.fetchNextPage,
+    hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),
+    isFetchingNextPage: isSearching ? false : paginatedQuery.isFetchingNextPage,
+    /** True when search results may be truncated at the fetch limit */
+    searchLimitReached: isSearching && (allQuery.data?.length ?? 0) >= SEARCH_FETCH_LIMIT,
   };
 }

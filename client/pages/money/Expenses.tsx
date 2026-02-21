@@ -42,13 +42,13 @@ import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { expenseService } from '@/services/expenseService';
 import { fileUploadService } from '@/services/fileUploadService';
-import { useFlattenedPaginatedExpenses, useAllExpenses, expenseKeys } from '@/hooks/useExpenses';
+import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
-import { getTodayTL } from '@/lib/dateUtils';
+import { getTodayTL, formatDateTL } from '@/lib/dateUtils';
 import {
   Receipt,
   Plus,
@@ -120,16 +120,7 @@ export default function Expenses() {
   const [existingReceiptUrl, setExistingReceiptUrl] = useState<string | null>(null);
   const [uploadingReceipt, setUploadingReceipt] = useState(false);
 
-  // Both hooks always called (React rules), only one enabled at a time
-  const paginatedQuery = useFlattenedPaginatedExpenses();
-  const allQuery = useAllExpenses(500, isSearching);
-
-  const expenses = isSearching ? (allQuery.data ?? []) : paginatedQuery.expenses;
-  const totalLoaded = isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded;
-  const fetchNextPage = paginatedQuery.fetchNextPage;
-  const hasNextPage = isSearching ? false : (paginatedQuery.hasNextPage ?? false);
-  const isFetchingNextPage = isSearching ? false : paginatedQuery.isFetchingNextPage;
-  const expensesLoading = isSearching ? allQuery.isLoading : paginatedQuery.isLoading;
+  const { expenses, totalLoaded, isLoading: expensesLoading, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartExpenses(isSearching);
   const { data: vendors = [], isLoading: vendorsLoading } = useActiveVendors();
   const loading = expensesLoading || vendorsLoading;
 
@@ -170,11 +161,7 @@ export default function Expenses() {
   };
 
   const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return formatDateTL(dateStr, { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   const getCategoryLabel = (category: ExpenseCategory) => {

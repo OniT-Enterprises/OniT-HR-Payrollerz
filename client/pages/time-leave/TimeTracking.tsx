@@ -827,6 +827,22 @@ export default function TimeTracking() {
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
+
+          {/* Demo Banner */}
+          <div className="mb-6 -mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+              <div>
+                <p className="font-medium text-amber-800 dark:text-amber-200">
+                  {t("timeLeave.timeTracking.demoBanner") || "Preview Mode — Sample Data"}
+                </p>
+                <p className="text-sm text-amber-700/80 dark:text-amber-400/80">
+                  {t("timeLeave.timeTracking.demoBannerDesc") || "This page shows sample data for demonstration purposes. Time tracking with live data is coming soon."}
+                </p>
+              </div>
+            </div>
+          </div>
+
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="daily" className="mt-6">
               <div className="flex flex-col space-y-6">
