@@ -4,8 +4,13 @@
  */
 import { create } from 'zustand';
 import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { db } from '../lib/firebase';
+import { t } from '../lib/i18n';
 import type { Payslip, PayslipEarning, PayslipDeduction } from '../types/payslip';
+
+const PAYSLIP_CACHE_KEY = '@ekipa/payslips_cache';
+const MAX_CACHED_PAYSLIPS = 6;
 
 const MONTHS_TO_FETCH = 12;
 
@@ -24,11 +29,7 @@ interface PayslipState {
 function formatPeriodLabel(yyyymm: string): string {
   const year = yyyymm.substring(0, 4);
   const month = parseInt(yyyymm.substring(4, 6), 10);
-  const months = [
-    'January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December',
-  ];
-  return `${months[month - 1]} ${year}`;
+  return `${t(`month.${month}`)} ${year}`;
 }
 
 function getRecentPeriods(count: number): string[] {
@@ -46,10 +47,10 @@ function getRecentPeriods(count: number): string[] {
 function mapPayslipDoc(docId: string, data: any, period: string): Payslip {
   // Build earnings breakdown
   const earnings: PayslipEarning[] = [];
-  if (data.baseSalary) earnings.push({ label: 'Base salary', amount: data.baseSalary });
-  if (data.overtimePay) earnings.push({ label: 'Overtime', amount: data.overtimePay });
-  if (data.allowances) earnings.push({ label: 'Allowances', amount: data.allowances });
-  if (data.otherEarnings) earnings.push({ label: 'Other', amount: data.otherEarnings });
+  if (data.baseSalary) earnings.push({ label: t('payslips.baseSalary'), amount: data.baseSalary });
+  if (data.overtimePay) earnings.push({ label: t('payslips.overtime'), amount: data.overtimePay });
+  if (data.allowances) earnings.push({ label: t('payslips.allowances'), amount: data.allowances });
+  if (data.otherEarnings) earnings.push({ label: t('payslips.other'), amount: data.otherEarnings });
 
   // Also check for itemized earnings/deductions arrays
   if (data.earnings && Array.isArray(data.earnings)) {
@@ -59,9 +60,9 @@ function mapPayslipDoc(docId: string, data: any, period: string): Payslip {
   }
 
   const deductions: PayslipDeduction[] = [];
-  if (data.witAmount) deductions.push({ label: 'WIT', amount: data.witAmount });
-  if (data.inssEmployee) deductions.push({ label: 'INSS (employee)', amount: data.inssEmployee });
-  if (data.otherDeductions) deductions.push({ label: 'Other', amount: data.otherDeductions });
+  if (data.witAmount) deductions.push({ label: t('payslips.wit'), amount: data.witAmount });
+  if (data.inssEmployee) deductions.push({ label: t('payslips.inss'), amount: data.inssEmployee });
+  if (data.otherDeductions) deductions.push({ label: t('payslips.other'), amount: data.otherDeductions });
 
   if (data.deductions && Array.isArray(data.deductions)) {
     for (const d of data.deductions) {
@@ -86,7 +87,7 @@ function mapPayslipDoc(docId: string, data: any, period: string): Payslip {
     otherDeductions: data.otherDeductions || 0,
     totalDeductions: data.totalDeductions || 0,
     netPay: data.netPay || 0,
-    earnings: earnings.length > 0 ? earnings : [{ label: 'Base salary', amount: data.grossPay || 0 }],
+    earnings: earnings.length > 0 ? earnings : [{ label: t('payslips.baseSalary'), amount: data.grossPay || 0 }],
     deductions: deductions.length > 0 ? deductions : [],
     status: data.status || 'processed',
     processedAt: data.processedAt instanceof Timestamp ? data.processedAt.toDate() : data.processedAt,
@@ -129,8 +130,27 @@ export const usePayslipStore = create<PayslipState>((set) => ({
       // Sort by period descending (most recent first)
       results.sort((a, b) => b.period.localeCompare(a.period));
 
+      // Cache the latest payslips for offline access
+      try {
+        const toCache = results.slice(0, MAX_CACHED_PAYSLIPS);
+        await AsyncStorage.setItem(PAYSLIP_CACHE_KEY, JSON.stringify(toCache));
+      } catch {
+        // Cache write failure is non-critical
+      }
+
       set({ payslips: results, loading: false });
     } catch {
+      // On network failure, try to load from cache
+      try {
+        const cached = await AsyncStorage.getItem(PAYSLIP_CACHE_KEY);
+        if (cached) {
+          const parsed = JSON.parse(cached) as Payslip[];
+          set({ payslips: parsed, loading: false, error: null });
+          return;
+        }
+      } catch {
+        // Cache read also failed
+      }
       set({ payslips: [], loading: false, error: 'fetchError' });
     }
   },

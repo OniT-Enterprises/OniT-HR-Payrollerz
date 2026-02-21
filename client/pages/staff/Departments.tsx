@@ -604,7 +604,7 @@ export default function Departments() {
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
                                     <AvatarImage
-                                      src="/placeholder.svg"
+                                      src=""
                                       alt={employee.personalInfo.firstName}
                                     />
                                     <AvatarFallback className="text-xs">

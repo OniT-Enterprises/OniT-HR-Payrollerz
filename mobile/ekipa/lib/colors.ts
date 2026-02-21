@@ -1,57 +1,78 @@
 /**
- * Ekipa Light Theme
- * Clean, professional light palette — teal primary, navy accents.
- * Designed for employee self-service: approachable and readable.
+ * Ekipa Dark Theme — Meza-inspired
+ * Premium dark palette with module-specific accent colors.
+ * Matches the Meza web dashboard design language.
  */
 
 export const colors = {
   // ── Backgrounds ──────────────────────────────────
-  bg: '#F8FAFC',           // slate-50
-  bgCard: '#FFFFFF',       // white cards
-  bgElevated: '#FFFFFF',   // modals, elevated
-  bgSubtle: '#F1F5F9',    // slate-100 — slight differentiation
-  bgFloat: '#FFFFFF',      // floating elements
+  bg: '#09090B',            // near-black base (zinc-950)
+  bgCard: '#18181B',        // zinc-900 — card surfaces
+  bgElevated: '#27272A',    // zinc-800 — raised surfaces
+  bgSubtle: '#131316',      // subtle differentiation
+  bgFloat: '#27272A',       // floating elements
 
   // ── Borders ──────────────────────────────────────
-  border: '#E2E8F0',       // slate-200
-  borderMedium: '#CBD5E1', // slate-300
-  borderAccent: '#0D9488', // teal-600
+  border: 'rgba(63, 63, 70, 0.5)',    // zinc-700 at 50% — subtle
+  borderMedium: '#3F3F46',             // zinc-700 — medium emphasis
+  borderAccent: '#22C55E',             // green accent border
 
   // ── Text ─────────────────────────────────────────
-  text: '#0F172A',         // slate-900
-  textSecondary: '#475569', // slate-600
-  textTertiary: '#94A3B8', // slate-400
-  textInverse: '#FFFFFF',  // for text on teal buttons
+  text: '#F1F5F9',          // slate-100 — primary text
+  textSecondary: '#94A3B8', // slate-400 — secondary
+  textTertiary: '#64748B',  // slate-500 — muted
+  textInverse: '#09090B',   // text on colored buttons
 
-  // ── Brand — Teal ─────────────────────────────────
-  primary: '#0D9488',      // teal-600
-  primaryLight: '#14B8A6', // teal-500
-  primaryDark: '#0F766E',  // teal-700
-  primaryBg: '#F0FDFA',   // teal-50 — subtle teal wash
+  // ── Brand — Green (Meza) ─────────────────────────
+  primary: '#22C55E',        // green-500
+  primaryLight: '#4ADE80',   // green-400
+  primaryDark: '#16A34A',    // green-600
+  primaryBg: 'rgba(34, 197, 94, 0.10)',
 
-  // ── Secondary — Navy ─────────────────────────────
-  secondary: '#1E3A5F',    // navy
-  secondaryLight: '#2D5286',
+  // ── Module Accents ─────────────────────────────
+  // Each tab/section uses its own accent color (like Meza)
+  blue: '#3B82F6',
+  blueBg: 'rgba(59, 130, 246, 0.10)',
+  violet: '#8B5CF6',
+  violetBg: 'rgba(139, 92, 246, 0.10)',
+  orange: '#F97316',
+  orangeBg: 'rgba(249, 115, 22, 0.10)',
+  emerald: '#10B981',
+  emeraldBg: 'rgba(16, 185, 129, 0.10)',
+  cyan: '#06B6D4',
+  cyanBg: 'rgba(6, 182, 212, 0.10)',
+
+  // ── Secondary ────────────────────────────────────
+  secondary: '#27272A',      // zinc-800
+  secondaryLight: '#3F3F46', // zinc-700
 
   // ── Semantic ─────────────────────────────────────
-  success: '#16A34A',      // green-600
-  successBg: '#F0FDF4',   // green-50
-  warning: '#D97706',      // amber-600
-  warningBg: '#FFFBEB',   // amber-50
-  error: '#DC2626',        // red-600
-  errorBg: '#FEF2F2',     // red-50
-  info: '#2563EB',         // blue-600
-  infoBg: '#EFF6FF',      // blue-50
+  success: '#10B981',        // emerald-500
+  successBg: 'rgba(16, 185, 129, 0.12)',
+  warning: '#F59E0B',        // amber-500
+  warningBg: 'rgba(245, 158, 11, 0.12)',
+  error: '#EF4444',          // red-500
+  errorBg: 'rgba(239, 68, 68, 0.12)',
+  info: '#3B82F6',           // blue-500
+  infoBg: 'rgba(59, 130, 246, 0.12)',
 
   // ── Leave status ─────────────────────────────────
-  pending: '#D97706',      // amber
-  pendingBg: '#FFFBEB',
-  approved: '#16A34A',     // green
-  approvedBg: '#F0FDF4',
-  rejected: '#DC2626',     // red
-  rejectedBg: '#FEF2F2',
-  cancelled: '#6B7280',    // gray
-  cancelledBg: '#F9FAFB',
+  pending: '#F59E0B',
+  pendingBg: 'rgba(245, 158, 11, 0.12)',
+  approved: '#10B981',
+  approvedBg: 'rgba(16, 185, 129, 0.12)',
+  rejected: '#EF4444',
+  rejectedBg: 'rgba(239, 68, 68, 0.12)',
+  cancelled: '#64748B',
+  cancelledBg: 'rgba(100, 116, 139, 0.12)',
+
+  // ── New module accents ────────────────────────────
+  amber: '#F59E0B',
+  amberBg: 'rgba(245, 158, 11, 0.10)',
+  teal: '#0D9488',
+  tealBg: 'rgba(13, 148, 136, 0.10)',
+  red: '#EF4444',
+  redBg: 'rgba(239, 68, 68, 0.10)',
 
   // ── Raw values ───────────────────────────────────
   white: '#FFFFFF',

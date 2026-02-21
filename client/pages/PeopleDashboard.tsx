@@ -50,6 +50,8 @@ import {
   Award,
   GraduationCap,
   Shield,
+  Megaphone,
+  MessageSquare,
   ChevronRight,
   ChevronDown,
   Search,
@@ -62,12 +64,9 @@ import {
   Plus,
   Globe,
 } from "lucide-react";
-import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
-
-const _theme = sectionThemes.people;
 
 function PeopleDashboardSkeleton() {
   return (
@@ -232,6 +231,7 @@ export default function PeopleDashboard() {
   const [orgOpen, setOrgOpen] = useState(false);
   const [hiringOpen, setHiringOpen] = useState(false);
   const [performanceOpen, setPerformanceOpen] = useState(false);
+  const [commsOpen, setCommsOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -988,6 +988,65 @@ export default function PeopleDashboard() {
                         label: "Disciplinary",
                         path: "/people/disciplinary",
                         icon: Shield,
+                      },
+                    ].map((link) => (
+                      <Button
+                        key={link.path}
+                        variant="ghost"
+                        className="justify-start h-9 text-sm"
+                        onClick={() => navigate(link.path)}
+                      >
+                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                        {link.label}
+                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
+                      </Button>
+                    ))}
+                  </div>
+                </CardContent>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+
+          {/* Communications & Feedback (Ekipa-powered) */}
+          <Collapsible open={commsOpen} onOpenChange={setCommsOpen}>
+            <Card className="border border-border/40 shadow-none">
+              <CollapsibleTrigger asChild>
+                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
+                        <Megaphone className="h-4 w-4 text-muted-foreground" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-sm font-medium">
+                          Communications
+                        </CardTitle>
+                        <CardDescription className="text-[11px]">
+                          Announcements & employee feedback via Ekipa
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <ChevronDown
+                      className={`h-4 w-4 text-muted-foreground transition-transform ${
+                        commsOpen ? "rotate-180" : ""
+                      }`}
+                    />
+                  </div>
+                </CardHeader>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <CardContent className="pt-0 pb-3 px-4">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
+                    {[
+                      {
+                        label: "Announcements",
+                        path: "/people/announcements",
+                        icon: Megaphone,
+                      },
+                      {
+                        label: "Grievance Inbox",
+                        path: "/people/grievances",
+                        icon: MessageSquare,
                       },
                     ].map((link) => (
                       <Button

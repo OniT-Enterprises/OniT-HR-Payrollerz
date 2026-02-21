@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from "react";
-import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -290,7 +289,7 @@ export default function CSVColumnMapper({
   const [mappings, setMappings] = useState<ColumnMapping[]>([]);
   const [unmappedColumns, setUnmappedColumns] = useState<CSVColumn[]>([]);
   const [step, setStep] = useState<"upload" | "map" | "preview">("upload");
-  const [, setLoading] = useState(false);
+
 
   useEffect(() => {
     if (csvFile) {
@@ -322,7 +321,6 @@ export default function CSVColumnMapper({
   const parseCSVFile = async () => {
     if (!csvFile) return;
 
-    setLoading(true);
     try {
       const text = await csvFile.text();
 
@@ -331,7 +329,8 @@ export default function CSVColumnMapper({
       // - Handles escaped quotes within quoted fields
       // - Handles different line endings (CRLF vs LF)
       // - Handles newlines within quoted fields
-      const result = Papa.parse<Record<string, string>>(text, {
+      const { default: PapaParse } = await import("papaparse");
+      const result = PapaParse.parse<Record<string, string>>(text, {
         header: true,
         skipEmptyLines: true,
         transformHeader: (header) => header.trim(),
@@ -375,8 +374,6 @@ export default function CSVColumnMapper({
     } catch (error) {
       console.error("Error parsing CSV:", error);
       alert("Error parsing CSV file. Please check the file format.");
-    } finally {
-      setLoading(false);
     }
   };
 

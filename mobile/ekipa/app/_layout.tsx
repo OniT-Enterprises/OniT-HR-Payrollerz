@@ -1,7 +1,7 @@
 /**
  * Ekipa — Root Layout
  * Auth gate + tenant/employee resolution
- * Light theme StatusBar
+ * Dark theme StatusBar
  */
 import { useEffect } from 'react';
 import { View, Text, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
@@ -72,7 +72,7 @@ export default function RootLayout() {
     return (
       <View style={styles.splash}>
         <ActivityIndicator size="large" color={colors.primary} />
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
       </View>
     );
   }
@@ -81,7 +81,7 @@ export default function RootLayout() {
   if (user && profile && !profile.tenantAccess) {
     return (
       <View style={styles.splash}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <Text style={styles.errorTitle}>{t('login.error.noAccess')}</Text>
         <Text style={styles.errorSub}>
           Contact your HR administrator to get access.
@@ -97,7 +97,7 @@ export default function RootLayout() {
   if (user && tenantId && tenantError === 'noEmployee') {
     return (
       <View style={styles.splash}>
-        <StatusBar style="dark" />
+        <StatusBar style="light" />
         <Text style={styles.errorTitle}>{t('login.error.noAccess')}</Text>
         <Text style={styles.errorSub}>
           Your account is not linked to an employee record.
@@ -111,7 +111,7 @@ export default function RootLayout() {
 
   return (
     <>
-      <StatusBar style="dark" />
+      <StatusBar style="light" />
       <Stack
         screenOptions={{
           headerShown: false,
@@ -134,6 +134,166 @@ export default function RootLayout() {
           options={{
             presentation: 'modal',
             animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/CrewClockIn"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/CrewClockOut"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/QRScanner"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'fullScreenModal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/SyncQueue"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/CrewHistory"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/AttendanceHistory"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/DigitalIDCard"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/EmploymentLetterRequest"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/Announcements"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/EditProfile"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/ShiftSchedule"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/ExpenseForm"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/Expenses"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/TaxSummary"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/HolidayCalendar"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/ManagerApprovals"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/Recognition"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/Directory"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
+          }}
+        />
+        <Stack.Screen
+          name="screens/GrievanceReport"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'modal',
+            animation: 'slide_from_bottom',
+          }}
+        />
+        <Stack.Screen
+          name="screens/WageAlerts"
+          redirect={!user || !employeeId}
+          options={{
+            presentation: 'card',
+            animation: 'slide_from_right',
           }}
         />
         <Stack.Screen name="(auth)" redirect={!!user} />

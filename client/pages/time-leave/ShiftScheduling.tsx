@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -63,79 +63,45 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
+import { useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
+import {
+  useShiftsByRange,
+  useCreateShift,
+  useUpdateShift,
+  useDeleteShift,
+  usePublishDraftShifts,
+  useShiftTemplates,
+} from "@/hooks/useShifts";
+import type { ShiftRecord, ShiftTemplate } from "@/services/shiftService";
 
-// Types for enhanced shift scheduling
-interface Employee {
+// UI-mapped employee type
+interface MappedEmployee {
   id: string;
   name: string;
   email: string;
   phone: string;
   department: string;
   position: string;
-  skills: string[];
-  availability: {
-    [key: string]: { start: string; end: string }[]; // day of week -> time slots
-  };
   maxHoursPerWeek: number;
   hourlyRate: number;
   isActive: boolean;
 }
 
-interface Department {
+// UI-mapped department type
+interface MappedDepartment {
   id: string;
   name: string;
   manager: string;
   color: string;
   minStaffing: number;
-  positions: Position[];
-}
-
-interface Position {
-  id: string;
-  title: string;
-  requiredSkills: string[];
-  minExperience: number;
-  hourlyRate: { min: number; max: number };
-}
-
-interface Shift {
-  id: string;
-  employeeId: string;
-  employeeName: string;
-  department: string;
-  position: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  hours: number;
-  status: "draft" | "published" | "confirmed" | "cancelled";
-  location: string;
-  notes: string;
-  createdBy: string;
-  createdAt: string;
-  lastModified: string;
-}
-
-interface ShiftTemplate {
-  id: string;
-  name: string;
-  department: string;
-  shifts: Omit<
-    Shift,
-    | "id"
-    | "date"
-    | "employeeId"
-    | "employeeName"
-    | "status"
-    | "createdBy"
-    | "createdAt"
-    | "lastModified"
-  >[];
 }
 
 export default function ShiftScheduling() {
   const { toast } = useToast();
-  const { t, locale } = useI18n();
+  const { t } = useI18n();
   const [activeTab, setActiveTab] = useState("schedule");
   const [selectedWeek, setSelectedWeek] = useState(getWeekString(new Date()));
   const [selectedDepartment, setSelectedDepartment] = useState("");
@@ -143,17 +109,8 @@ export default function ShiftScheduling() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
-  const [selectedShift, setSelectedShift] = useState<Shift | null>(null);
+  const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
-  const [loading, setLoading] = useState(true);
-
-  // Simulate initial data loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
 
   const [formData, setFormData] = useState({
     employee: "",
@@ -166,12 +123,51 @@ export default function ShiftScheduling() {
     notes: "",
   });
 
-  const [_templateData, _setTemplateData] = useState({
-    name: "",
-    department: "",
-  });
+  // Real data hooks
+  const tenantId = useTenantId();
+  const { user } = useAuth();
+  const { data: realEmployees = [], isLoading: empLoading } = useAllEmployees();
+  const { data: realDepartments = [], isLoading: deptLoading } = useDepartments(tenantId);
 
-  const _dateLocale = locale === "tet" ? "pt-PT" : "en-US";
+  const weekEndDate = useMemo(() => {
+    const start = new Date(selectedWeek);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    return toDateStringTL(end);
+  }, [selectedWeek]);
+
+  const { data: shifts = [], isLoading: shiftsLoading } = useShiftsByRange(selectedWeek, weekEndDate);
+  const { data: shiftTemplates = [] } = useShiftTemplates();
+  const createShiftMutation = useCreateShift();
+  const updateShiftMutation = useUpdateShift();
+  const deleteShiftMutation = useDeleteShift();
+  const publishMutation = usePublishDraftShifts();
+
+  const loading = empLoading || deptLoading || shiftsLoading;
+
+  // Map real employees for UI
+  const employees: MappedEmployee[] = useMemo(() => realEmployees
+    .filter((e) => e.status === 'active')
+    .map((e) => ({
+      id: e.id!,
+      name: `${e.personalInfo.firstName} ${e.personalInfo.lastName}`,
+      email: e.personalInfo.email,
+      phone: e.personalInfo.phone,
+      department: e.jobDetails.department,
+      position: e.jobDetails.position,
+      maxHoursPerWeek: 44, // TL standard
+      hourlyRate: e.compensation.monthlySalary > 0 ? Math.round(e.compensation.monthlySalary / 176) : 0,
+      isActive: true,
+    })), [realEmployees]);
+
+  // Map real departments for UI
+  const departments: MappedDepartment[] = useMemo(() => realDepartments.map((d, i) => ({
+    id: d.id!,
+    name: d.name,
+    manager: d.manager || '',
+    color: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'][i % 6],
+    minStaffing: 3,
+  })), [realDepartments]);
 
   const departmentLabels: Record<string, string> = {
     Operations: t("timeLeave.shiftScheduling.data.departments.operations"),
@@ -190,20 +186,6 @@ export default function ShiftScheduling() {
     "Sales Manager": t("timeLeave.shiftScheduling.data.positions.salesManager"),
     "Senior Sales Rep": t("timeLeave.shiftScheduling.data.positions.seniorSalesRep"),
     "Sales Associate": t("timeLeave.shiftScheduling.data.positions.salesAssociate"),
-  };
-
-  const skillLabels: Record<string, string> = {
-    Leadership: t("timeLeave.shiftScheduling.data.skills.leadership"),
-    Operations: t("timeLeave.shiftScheduling.data.skills.operations"),
-    Communication: t("timeLeave.shiftScheduling.data.skills.communication"),
-    "Technical Skills": t("timeLeave.shiftScheduling.data.skills.technicalSkills"),
-    "Customer Service": t("timeLeave.shiftScheduling.data.skills.customerService"),
-    Sales: t("timeLeave.shiftScheduling.data.skills.sales"),
-    "Project Management": t("timeLeave.shiftScheduling.data.skills.projectManagement"),
-    Negotiation: t("timeLeave.shiftScheduling.data.skills.negotiation"),
-    "Problem Solving": t("timeLeave.shiftScheduling.data.skills.problemSolving"),
-    Analysis: t("timeLeave.shiftScheduling.data.skills.analysis"),
-    "Customer Relations": t("timeLeave.shiftScheduling.data.skills.customerRelations"),
   };
 
   const locationLabels: Record<string, string> = {
@@ -234,7 +216,6 @@ export default function ShiftScheduling() {
   const getDepartmentLabel = (department: string) =>
     departmentLabels[department] || department;
   const getPositionLabel = (position: string) => positionLabels[position] || position;
-  const getSkillLabel = (skill: string) => skillLabels[skill] || skill;
   const getLocationLabel = (location: string) => locationLabels[location] || location;
   const getNoteLabel = (note: string) => noteLabels[note] || note;
   const getTemplateLabel = (name: string) => templateLabels[name] || name;
@@ -246,100 +227,6 @@ export default function ShiftScheduling() {
     return toDateStringTL(startOfWeek);
   }
 
-  // Mock data - in production, these would come from Firebase
-  const departments: Department[] = [
-    {
-      id: "1",
-      name: "Operations",
-      manager: "John Smith",
-      color: "#3B82F6",
-      minStaffing: 5,
-      positions: [
-        {
-          id: "p1",
-          title: "Operations Manager",
-          requiredSkills: ["Leadership", "Operations"],
-          minExperience: 3,
-          hourlyRate: { min: 25, max: 35 },
-        },
-        {
-          id: "p2",
-          title: "Team Lead",
-          requiredSkills: ["Leadership", "Communication"],
-          minExperience: 2,
-          hourlyRate: { min: 20, max: 28 },
-        },
-        {
-          id: "p3",
-          title: "Specialist",
-          requiredSkills: ["Technical Skills"],
-          minExperience: 1,
-          hourlyRate: { min: 18, max: 25 },
-        },
-      ],
-    },
-    {
-      id: "2",
-      name: "Customer Service",
-      manager: "Sarah Johnson",
-      color: "#10B981",
-      minStaffing: 8,
-      positions: [
-        {
-          id: "p4",
-          title: "Customer Service Manager",
-          requiredSkills: ["Customer Service", "Leadership"],
-          minExperience: 3,
-          hourlyRate: { min: 22, max: 30 },
-        },
-        {
-          id: "p5",
-          title: "Senior Representative",
-          requiredSkills: ["Customer Service", "Communication"],
-          minExperience: 2,
-          hourlyRate: { min: 16, max: 22 },
-        },
-        {
-          id: "p6",
-          title: "Representative",
-          requiredSkills: ["Customer Service"],
-          minExperience: 0,
-          hourlyRate: { min: 14, max: 18 },
-        },
-      ],
-    },
-    {
-      id: "3",
-      name: "Sales",
-      manager: "Mike Davis",
-      color: "#F59E0B",
-      minStaffing: 6,
-      positions: [
-        {
-          id: "p7",
-          title: "Sales Manager",
-          requiredSkills: ["Sales", "Leadership"],
-          minExperience: 3,
-          hourlyRate: { min: 28, max: 40 },
-        },
-        {
-          id: "p8",
-          title: "Senior Sales Rep",
-          requiredSkills: ["Sales", "Communication"],
-          minExperience: 2,
-          hourlyRate: { min: 18, max: 25 },
-        },
-        {
-          id: "p9",
-          title: "Sales Associate",
-          requiredSkills: ["Sales"],
-          minExperience: 0,
-          hourlyRate: { min: 15, max: 20 },
-        },
-      ],
-    },
-  ];
-
   const locations = [
     "Main Office - Floor 1",
     "Main Office - Floor 2",
@@ -349,329 +236,6 @@ export default function ShiftScheduling() {
     "Remote Work",
     "Client Site A",
     "Client Site B",
-  ];
-
-  const employees: Employee[] = [
-    {
-      id: "1",
-      name: "John Smith",
-      email: "john.smith@company.com",
-      phone: "(555) 123-4567",
-      department: "Operations",
-      position: "Operations Manager",
-      skills: ["Leadership", "Operations", "Project Management"],
-      availability: {
-        Monday: [{ start: "08:00", end: "18:00" }],
-        Tuesday: [{ start: "08:00", end: "18:00" }],
-        Wednesday: [{ start: "08:00", end: "18:00" }],
-        Thursday: [{ start: "08:00", end: "18:00" }],
-        Friday: [{ start: "08:00", end: "17:00" }],
-      },
-      maxHoursPerWeek: 45,
-      hourlyRate: 32,
-      isActive: true,
-    },
-    {
-      id: "2",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@company.com",
-      phone: "(555) 234-5678",
-      department: "Customer Service",
-      position: "Customer Service Manager",
-      skills: ["Customer Service", "Leadership", "Communication"],
-      availability: {
-        Monday: [{ start: "09:00", end: "17:00" }],
-        Tuesday: [{ start: "09:00", end: "17:00" }],
-        Wednesday: [{ start: "09:00", end: "17:00" }],
-        Thursday: [{ start: "09:00", end: "17:00" }],
-        Friday: [{ start: "09:00", end: "16:00" }],
-      },
-      maxHoursPerWeek: 40,
-      hourlyRate: 26,
-      isActive: true,
-    },
-    {
-      id: "3",
-      name: "Mike Davis",
-      email: "mike.davis@company.com",
-      phone: "(555) 345-6789",
-      department: "Sales",
-      position: "Sales Manager",
-      skills: ["Sales", "Leadership", "Communication", "Negotiation"],
-      availability: {
-        Monday: [{ start: "08:00", end: "18:00" }],
-        Tuesday: [{ start: "08:00", end: "18:00" }],
-        Wednesday: [{ start: "08:00", end: "18:00" }],
-        Thursday: [{ start: "08:00", end: "18:00" }],
-        Friday: [{ start: "08:00", end: "17:00" }],
-        Saturday: [{ start: "10:00", end: "14:00" }],
-      },
-      maxHoursPerWeek: 50,
-      hourlyRate: 35,
-      isActive: true,
-    },
-    {
-      id: "4",
-      name: "Emily Brown",
-      email: "emily.brown@company.com",
-      phone: "(555) 456-7890",
-      department: "Customer Service",
-      position: "Senior Representative",
-      skills: ["Customer Service", "Communication", "Problem Solving"],
-      availability: {
-        Monday: [{ start: "10:00", end: "18:00" }],
-        Tuesday: [{ start: "10:00", end: "18:00" }],
-        Wednesday: [{ start: "10:00", end: "18:00" }],
-        Thursday: [{ start: "10:00", end: "18:00" }],
-        Friday: [{ start: "10:00", end: "18:00" }],
-      },
-      maxHoursPerWeek: 40,
-      hourlyRate: 20,
-      isActive: true,
-    },
-    {
-      id: "5",
-      name: "Alex Wilson",
-      email: "alex.wilson@company.com",
-      phone: "(555) 567-8901",
-      department: "Operations",
-      position: "Team Lead",
-      skills: ["Leadership", "Technical Skills", "Communication"],
-      availability: {
-        Monday: [{ start: "07:00", end: "15:00" }],
-        Tuesday: [{ start: "07:00", end: "15:00" }],
-        Wednesday: [{ start: "07:00", end: "15:00" }],
-        Thursday: [{ start: "07:00", end: "15:00" }],
-        Friday: [{ start: "07:00", end: "15:00" }],
-      },
-      maxHoursPerWeek: 40,
-      hourlyRate: 24,
-      isActive: true,
-    },
-    {
-      id: "6",
-      name: "Lisa Chen",
-      email: "lisa.chen@company.com",
-      phone: "(555) 678-9012",
-      department: "Sales",
-      position: "Senior Sales Rep",
-      skills: ["Sales", "Communication", "Customer Relations"],
-      availability: {
-        Tuesday: [{ start: "09:00", end: "17:00" }],
-        Wednesday: [{ start: "09:00", end: "17:00" }],
-        Thursday: [{ start: "09:00", end: "17:00" }],
-        Friday: [{ start: "09:00", end: "17:00" }],
-        Saturday: [{ start: "09:00", end: "17:00" }],
-      },
-      maxHoursPerWeek: 40,
-      hourlyRate: 22,
-      isActive: true,
-    },
-    {
-      id: "7",
-      name: "David Rodriguez",
-      email: "david.rodriguez@company.com",
-      phone: "(555) 789-0123",
-      department: "Customer Service",
-      position: "Representative",
-      skills: ["Customer Service", "Communication"],
-      availability: {
-        Monday: [{ start: "14:00", end: "22:00" }],
-        Tuesday: [{ start: "14:00", end: "22:00" }],
-        Wednesday: [{ start: "14:00", end: "22:00" }],
-        Thursday: [{ start: "14:00", end: "22:00" }],
-        Friday: [{ start: "14:00", end: "22:00" }],
-      },
-      maxHoursPerWeek: 40,
-      hourlyRate: 16,
-      isActive: true,
-    },
-    {
-      id: "8",
-      name: "Anna Garcia",
-      email: "anna.garcia@company.com",
-      phone: "(555) 890-1234",
-      department: "Operations",
-      position: "Specialist",
-      skills: ["Technical Skills", "Analysis"],
-      availability: {
-        Monday: [{ start: "09:00", end: "17:00" }],
-        Tuesday: [{ start: "09:00", end: "17:00" }],
-        Thursday: [{ start: "09:00", end: "17:00" }],
-        Friday: [{ start: "09:00", end: "17:00" }],
-        Saturday: [{ start: "08:00", end: "12:00" }],
-      },
-      maxHoursPerWeek: 36,
-      hourlyRate: 21,
-      isActive: true,
-    },
-  ];
-
-  const shifts: Shift[] = [
-    {
-      id: "1",
-      employeeId: "1",
-      employeeName: "John Smith",
-      department: "Operations",
-      position: "Operations Manager",
-      date: "2024-11-18",
-      startTime: "08:00",
-      endTime: "17:00",
-      hours: 9,
-      status: "published",
-      location: "Main Office - Floor 1",
-      notes: "Team meeting at 10 AM",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "2",
-      employeeId: "2",
-      employeeName: "Sarah Johnson",
-      department: "Customer Service",
-      position: "Customer Service Manager",
-      date: "2024-11-18",
-      startTime: "09:00",
-      endTime: "17:00",
-      hours: 8,
-      status: "published",
-      location: "Customer Service Center",
-      notes: "Training new representatives",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "3",
-      employeeId: "3",
-      employeeName: "Mike Davis",
-      department: "Sales",
-      position: "Sales Manager",
-      date: "2024-11-18",
-      startTime: "08:00",
-      endTime: "17:00",
-      hours: 9,
-      status: "confirmed",
-      location: "Main Office - Floor 2",
-      notes: "Client presentation at 2 PM",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "4",
-      employeeId: "4",
-      employeeName: "Emily Brown",
-      department: "Customer Service",
-      position: "Senior Representative",
-      date: "2024-11-18",
-      startTime: "10:00",
-      endTime: "18:00",
-      hours: 8,
-      status: "published",
-      location: "Customer Service Center",
-      notes: "",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "5",
-      employeeId: "5",
-      employeeName: "Alex Wilson",
-      department: "Operations",
-      position: "Team Lead",
-      date: "2024-11-18",
-      startTime: "07:00",
-      endTime: "15:00",
-      hours: 8,
-      status: "draft",
-      location: "Warehouse A",
-      notes: "Inventory check",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "6",
-      employeeId: "6",
-      employeeName: "Lisa Chen",
-      department: "Sales",
-      position: "Senior Sales Rep",
-      date: "2024-11-19",
-      startTime: "09:00",
-      endTime: "17:00",
-      hours: 8,
-      status: "published",
-      location: "Client Site A",
-      notes: "Client meeting",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "7",
-      employeeId: "7",
-      employeeName: "David Rodriguez",
-      department: "Customer Service",
-      position: "Representative",
-      date: "2024-11-19",
-      startTime: "14:00",
-      endTime: "22:00",
-      hours: 8,
-      status: "published",
-      location: "Customer Service Center",
-      notes: "Evening shift coverage",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-    {
-      id: "8",
-      employeeId: "8",
-      employeeName: "Anna Garcia",
-      department: "Operations",
-      position: "Specialist",
-      date: "2024-11-20",
-      startTime: "09:00",
-      endTime: "17:00",
-      hours: 8,
-      status: "draft",
-      location: "Main Office - Floor 1",
-      notes: "Data analysis project",
-      createdBy: "admin",
-      createdAt: "2024-11-15T09:00:00Z",
-      lastModified: "2024-11-15T09:00:00Z",
-    },
-  ];
-
-  const shiftTemplates: ShiftTemplate[] = [
-    {
-      id: "1",
-      name: "Standard Operations Week",
-      department: "Operations",
-      shifts: [
-        {
-          department: "Operations",
-          position: "Operations Manager",
-          startTime: "08:00",
-          endTime: "17:00",
-          hours: 9,
-          location: "Main Office - Floor 1",
-          notes: "",
-        },
-        {
-          department: "Operations",
-          position: "Team Lead",
-          startTime: "07:00",
-          endTime: "15:00",
-          hours: 8,
-          location: "Warehouse A",
-          notes: "",
-        },
-      ],
-    },
   ];
 
   const handleInputChange = (field: string, value: string) => {
@@ -707,7 +271,6 @@ export default function ShiftScheduling() {
 
     if (
       !formData.employee ||
-      !formData.position ||
       !formData.date ||
       !formData.startTime ||
       !formData.endTime ||
@@ -722,10 +285,24 @@ export default function ShiftScheduling() {
       return;
     }
 
-    const _employee = employees.find((e) => e.id === formData.employee);
-    const _hours = calculateHours(formData.startTime, formData.endTime);
+    const employee = employees.find((emp) => emp.id === formData.employee);
+    const hours = calculateHours(formData.startTime, formData.endTime);
 
     try {
+      await createShiftMutation.mutateAsync({
+        employeeId: formData.employee,
+        employeeName: employee?.name || '',
+        department: formData.department,
+        position: formData.position,
+        date: formData.date,
+        startTime: formData.startTime,
+        endTime: formData.endTime,
+        hours,
+        status: 'draft',
+        location: formData.location,
+        notes: formData.notes,
+        createdBy: user?.email || 'unknown',
+      });
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.createSuccessDesc"),
@@ -742,7 +319,7 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleEditShift = (shift: Shift) => {
+  const handleEditShift = (shift: ShiftRecord) => {
     setSelectedShift(shift);
     setFormData({
       employee: shift.employeeId,
@@ -759,8 +336,27 @@ export default function ShiftScheduling() {
 
   const handleUpdateShift = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedShift?.id) return;
+
+    const employee = employees.find((emp) => emp.id === formData.employee);
+    const hours = calculateHours(formData.startTime, formData.endTime);
 
     try {
+      await updateShiftMutation.mutateAsync({
+        shiftId: selectedShift.id,
+        data: {
+          employeeId: formData.employee,
+          employeeName: employee?.name || '',
+          department: formData.department,
+          position: formData.position,
+          date: formData.date,
+          startTime: formData.startTime,
+          endTime: formData.endTime,
+          hours,
+          location: formData.location,
+          notes: formData.notes,
+        },
+      });
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.updateSuccessDesc"),
@@ -778,8 +374,9 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleDeleteShift = async (_shiftId: string) => {
+  const handleDeleteShift = async (shiftId: string) => {
     try {
+      await deleteShiftMutation.mutateAsync(shiftId);
       toast({
         title: t("timeLeave.shiftScheduling.toast.successTitle"),
         description: t("timeLeave.shiftScheduling.toast.deleteSuccessDesc"),
@@ -802,16 +399,22 @@ export default function ShiftScheduling() {
     });
   };
 
-  const handlePublishSchedule = () => {
-    const weekShifts = getWeekShifts();
-    const draftShifts = weekShifts.filter((shift) => shift.status === "draft");
-
-    toast({
-      title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
-      description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", {
-        count: draftShifts.length,
-      }),
-    });
+  const handlePublishSchedule = async () => {
+    try {
+      const count = await publishMutation.mutateAsync({ startDate: selectedWeek, endDate: weekEndDate });
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.schedulePublishedTitle"),
+        description: t("timeLeave.shiftScheduling.toast.schedulePublishedDesc", {
+          count,
+        }),
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.createErrorDesc"),
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExportPDF = () => {
@@ -842,13 +445,7 @@ export default function ShiftScheduling() {
   };
 
   const getWeekShifts = () => {
-    const weekStart = new Date(selectedWeek);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekStart.getDate() + 6);
-
     return shifts.filter((shift) => {
-      const shiftDate = new Date(shift.date);
-      const matchesWeek = shiftDate >= weekStart && shiftDate <= weekEnd;
       const matchesDepartment =
         !selectedDepartment ||
         selectedDepartment === "all" ||
@@ -857,7 +454,7 @@ export default function ShiftScheduling() {
         !selectedLocation ||
         selectedLocation === "all" ||
         shift.location === selectedLocation;
-      return matchesWeek && matchesDepartment && matchesLocation;
+      return matchesDepartment && matchesLocation;
     });
   };
 
@@ -881,7 +478,7 @@ export default function ShiftScheduling() {
     });
   };
 
-  const getStatusBadge = (status: Shift["status"]) => {
+  const getStatusBadge = (status: ShiftRecord["status"]) => {
     switch (status) {
       case "draft":
         return (
@@ -1265,13 +862,10 @@ export default function ShiftScheduling() {
                             </div>
                             <div>
                               <span className="text-gray-500">
-                                {t("timeLeave.shiftScheduling.employees.skills")}
+                                {t("timeLeave.shiftScheduling.employees.department")}
                               </span>
                               <p className="font-medium">
-                                {employee.skills
-                                  .slice(0, 2)
-                                  .map((skill) => getSkillLabel(skill))
-                                  .join(", ")}
+                                {getDepartmentLabel(employee.department)}
                               </p>
                             </div>
                           </div>
@@ -1395,14 +989,14 @@ export default function ShiftScheduling() {
                 </span>
                 <span className="font-medium">
                   $
-                  {Math.round(
+                  {getWeekShifts().length > 0 ? Math.round(
                     getWeekShifts().reduce((sum, shift) => {
                       const employee = employees.find(
                         (e) => e.id === shift.employeeId,
                       );
                       return sum + (employee?.hourlyRate || 0);
                     }, 0) / getWeekShifts().length,
-                  )}
+                  ) : 0}
                 </span>
               </div>
               <div className="flex justify-between">
@@ -1432,7 +1026,7 @@ export default function ShiftScheduling() {
                   {t("timeLeave.shiftScheduling.analytics.publishedRate")}
                 </span>
                 <span className="font-medium text-green-600">
-                  {Math.round((stats.publishedCount / stats.totalShifts) * 100)}
+                  {stats.totalShifts > 0 ? Math.round((stats.publishedCount / stats.totalShifts) * 100) : 0}
                   %
                 </span>
               </div>
@@ -1441,7 +1035,7 @@ export default function ShiftScheduling() {
                   {t("timeLeave.shiftScheduling.analytics.confirmedRate")}
                 </span>
                 <span className="font-medium text-blue-600">
-                  {Math.round((stats.confirmedCount / stats.totalShifts) * 100)}
+                  {stats.totalShifts > 0 ? Math.round((stats.confirmedCount / stats.totalShifts) * 100) : 0}
                   %
                 </span>
               </div>
@@ -1658,23 +1252,8 @@ export default function ShiftScheduling() {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
 
-          {/* Demo Banner */}
-          <div className="mb-6 -mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-amber-800 dark:text-amber-200">
-                  {t("timeLeave.shiftScheduling.demoBanner") || "Preview Mode — Sample Data"}
-                </p>
-                <p className="text-sm text-amber-700/80 dark:text-amber-400/80">
-                  {t("timeLeave.shiftScheduling.demoBannerDesc") || "This page shows sample data for demonstration purposes. Shift scheduling with live data is coming soon."}
-                </p>
-              </div>
-            </div>
-          </div>
-
           {/* Controls */}
-          <Card className="mb-6 border-border/50 -mt-8 shadow-lg">
+          <Card className="mb-6 border-border/50 shadow-lg">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Filter className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
@@ -1835,33 +1414,16 @@ export default function ShiftScheduling() {
                           <Label htmlFor="position">
                             {t("timeLeave.shiftScheduling.create.position")}
                           </Label>
-                          <Select
+                          <Input
+                            id="position"
                             value={formData.position}
-                            onValueChange={(value) =>
-                              handleInputChange("position", value)
+                            onChange={(e) =>
+                              handleInputChange("position", e.target.value)
                             }
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={t(
-                                  "timeLeave.shiftScheduling.create.positionPlaceholder",
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {formData.department &&
-                                departments
-                                  .find((d) => d.name === formData.department)
-                                  ?.positions.map((position) => (
-                                    <SelectItem
-                                      key={position.id}
-                                      value={position.title}
-                                    >
-                                      {getPositionLabel(position.title)}
-                                    </SelectItem>
-                                  ))}
-                            </SelectContent>
-                          </Select>
+                            placeholder={t(
+                              "timeLeave.shiftScheduling.create.positionPlaceholder",
+                            )}
+                          />
                         </div>
                         <div>
                           <Label htmlFor="shift-date">
@@ -2057,30 +1619,16 @@ export default function ShiftScheduling() {
                   <Label htmlFor="edit-position">
                     {t("timeLeave.shiftScheduling.edit.position")}
                   </Label>
-                  <Select
+                  <Input
+                    id="edit-position"
                     value={formData.position}
-                    onValueChange={(value) =>
-                      handleInputChange("position", value)
+                    onChange={(e) =>
+                      handleInputChange("position", e.target.value)
                     }
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.edit.positionPlaceholder",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {formData.department &&
-                        departments
-                          .find((d) => d.name === formData.department)
-                          ?.positions.map((position) => (
-                            <SelectItem key={position.id} value={position.title}>
-                              {getPositionLabel(position.title)}
-                            </SelectItem>
-                          ))}
-                    </SelectContent>
-                  </Select>
+                    placeholder={t(
+                      "timeLeave.shiftScheduling.edit.positionPlaceholder",
+                    )}
+                  />
                 </div>
                 <div>
                   <Label htmlFor="edit-date">
@@ -2191,7 +1739,7 @@ export default function ShiftScheduling() {
                         </AlertDialogCancel>
                         <AlertDialogAction
                           onClick={() => {
-                            if (selectedShift) {
+                            if (selectedShift?.id) {
                               handleDeleteShift(selectedShift.id);
                             }
                             setShowEditDialog(false);

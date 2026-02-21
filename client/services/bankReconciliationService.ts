@@ -15,7 +15,6 @@ import {
   where,
   Timestamp,
 } from 'firebase/firestore';
-import Papa from 'papaparse';
 import { db } from '@/lib/firebase';
 import { formatDateISO } from '@/lib/dateUtils';
 import type {
@@ -26,9 +25,6 @@ import type {
 // Get tenant-scoped collection
 const getCollection = (tenantId: string) =>
   collection(db, 'tenants', tenantId, 'bankTransactions');
-
-const _getReconciliationsCollection = (tenantId: string) =>
-  collection(db, 'tenants', tenantId, 'bankReconciliations');
 
 class BankReconciliationService {
   private tenantId: string | null = null;
@@ -52,7 +48,8 @@ class BankReconciliationService {
    * - Different line endings (CRLF vs LF)
    * - Newlines within quoted fields
    */
-  parseCSV(csvContent: string): Omit<BankTransaction, 'id' | 'createdAt' | 'status'>[] {
+  async parseCSV(csvContent: string): Promise<Omit<BankTransaction, 'id' | 'createdAt' | 'status'>[]> {
+    const { default: Papa } = await import('papaparse');
     // Use papaparse for robust CSV parsing
     const result = Papa.parse<string[]>(csvContent, {
       skipEmptyLines: true,
@@ -198,7 +195,7 @@ class BankReconciliationService {
     csvContent: string
   ): Promise<{ imported: number; errors: string[] }> {
     const tenantId = this.ensureTenant();
-    const parsed = this.parseCSV(csvContent);
+    const parsed = await this.parseCSV(csvContent);
     const errors: string[] = [];
     let imported = 0;
 

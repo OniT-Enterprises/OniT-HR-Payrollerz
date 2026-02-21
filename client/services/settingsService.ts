@@ -4,10 +4,15 @@
  */
 
 import {
+  collection,
   doc,
   getDoc,
+  getDocs,
   setDoc,
   updateDoc,
+  query,
+  where,
+  orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -346,13 +351,18 @@ export const hrAdminService = {
    * Get all HR admins for a tenant
    */
   async getAdmins(tenantId: string): Promise<HRAdmin[]> {
-    // For now, return from tenant settings
-    // In production, this would query a separate collection
-    const settings = await settingsService.getSettings(tenantId);
-    if (!settings) return [];
-
-    // TODO: Implement proper HR admin collection query
-    return [];
+    const q = query(
+      collection(db, HR_ADMINS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      orderBy('createdAt', 'desc'),
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((d) => ({
+      ...d.data(),
+      id: d.id,
+      createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
+      updatedAt: d.data().updatedAt?.toDate?.() ?? new Date(),
+    })) as HRAdmin[];
   },
 
   /**

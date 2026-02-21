@@ -650,7 +650,7 @@ export default function OrganizationChart() {
                                       <div className="flex justify-center mb-2">
                                         <Avatar className="h-12 w-12 border-2 border-primary/60">
                                           <AvatarImage
-                                            src="/placeholder.svg"
+                                            src=""
                                             alt={exec.name}
                                           />
                                           <AvatarFallback className="bg-primary/20 text-primary font-bold text-sm">
@@ -750,7 +750,7 @@ export default function OrganizationChart() {
                                           <div className="flex justify-center mb-2">
                                             <Avatar className="h-10 w-10 border border-border">
                                               <AvatarImage
-                                                src="/placeholder.svg"
+                                                src=""
                                                 alt={group.head.name}
                                               />
                                               <AvatarFallback className="bg-muted text-foreground font-semibold text-xs">
@@ -790,7 +790,7 @@ export default function OrganizationChart() {
                                                 <div className="flex justify-center mb-1">
                                                   <Avatar className="h-8 w-8 border border-primary/40">
                                                     <AvatarImage
-                                                      src="/placeholder.svg"
+                                                      src=""
                                                       alt={member.name}
                                                     />
                                                     <AvatarFallback className="bg-primary/20 text-primary font-medium text-xs">

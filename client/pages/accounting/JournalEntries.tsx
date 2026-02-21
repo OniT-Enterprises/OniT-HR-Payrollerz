@@ -61,6 +61,7 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
@@ -77,6 +78,7 @@ export default function JournalEntries() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [entries, setEntries] = useState<JournalEntry[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -352,7 +354,7 @@ export default function JournalEntries() {
         status: asDraft ? "draft" : "posted",
         fiscalYear: year,
         fiscalPeriod: month,
-        createdBy: "current-user", // TODO: Get from auth
+        createdBy: user?.email || user?.uid || "unknown",
       };
 
       if (!asDraft) {

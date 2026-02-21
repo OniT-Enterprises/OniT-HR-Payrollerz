@@ -1,9 +1,10 @@
 /**
  * Ekipa — Payslips Tab
- * Month list with gross/net, tap for detail
+ * Premium dark theme with blue (#3B82F6) module accent.
+ * Month list with gross/net, tap for detail.
  */
-import { useEffect, useCallback } from 'react';
-import { View, Text, FlatList, ActivityIndicator, StyleSheet } from 'react-native';
+import { useEffect, useCallback, useState } from 'react';
+import { View, Text, FlatList, ActivityIndicator, StyleSheet, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { FileText } from 'lucide-react-native';
 import { useTenantStore } from '../../stores/tenantStore';
@@ -23,10 +24,19 @@ export default function PayslipsScreen() {
   const fetchPayslips = usePayslipStore((s) => s.fetchPayslips);
   const selectPayslip = usePayslipStore((s) => s.selectPayslip);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     if (tenantId && employeeId) {
       fetchPayslips(tenantId, employeeId);
     }
+  }, [tenantId, employeeId, fetchPayslips]);
+
+  const onRefresh = useCallback(async () => {
+    if (!tenantId || !employeeId) return;
+    setRefreshing(true);
+    await fetchPayslips(tenantId, employeeId);
+    setRefreshing(false);
   }, [tenantId, employeeId, fetchPayslips]);
 
   const handlePress = useCallback((payslip: Payslip) => {
@@ -37,7 +47,7 @@ export default function PayslipsScreen() {
   if (loading && payslips.length === 0) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color={colors.primary} />
+        <ActivityIndicator size="large" color={colors.blue} />
       </View>
     );
   }
@@ -52,12 +62,17 @@ export default function PayslipsScreen() {
       )}
       contentContainerStyle={payslips.length === 0 ? styles.emptyContainer : styles.list}
       ItemSeparatorComponent={() => <View style={styles.separator} />}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.blue} />
+      }
       ListHeaderComponent={
         payslips.length > 0 ? (
           <View style={styles.listHeader}>
-            <FileText size={14} color={colors.primary} strokeWidth={2} />
+            <View style={styles.iconBadge}>
+              <FileText size={13} color={colors.blue} strokeWidth={2.5} />
+            </View>
             <Text style={styles.listHeaderText}>
-              {payslips.length} {payslips.length === 1 ? 'payslip' : 'payslips'}
+              {payslips.length} {payslips.length === 1 ? t('payslips.countOne') : t('payslips.count')}
             </Text>
           </View>
         ) : null
@@ -91,14 +106,23 @@ const styles = StyleSheet.create({
   listHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 12,
+    gap: 8,
+    marginBottom: 14,
+    marginTop: 4,
+  },
+  iconBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: colors.blueBg,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   listHeaderText: {
     fontSize: 13,
-    fontWeight: '600',
+    fontWeight: '700',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
 });

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,399 +53,127 @@ import {
   Plus,
   Download,
   Clock,
-  MapPin,
-  Shield,
-  User,
-  Building,
+  Users,
   AlertTriangle,
   Timer,
   FileText,
+  Building,
+  User,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
-
-// Types for security company operations
-interface SecuritySite {
-  id: string;
-  name: string;
-  address: string;
-  clientId: string;
-  type: "office" | "retail" | "industrial" | "residential" | "event";
-  riskLevel: "low" | "medium" | "high";
-}
-
-interface Client {
-  id: string;
-  name: string;
-  contactPerson: string;
-  phone: string;
-  billingCode: string;
-}
-
-interface SecurityGuard {
-  id: string;
-  name: string;
-  badgeNumber: string;
-  shift: "day" | "night" | "swing";
-  supervisor: string;
-  certifications: string[];
-}
-
-interface TimeEntry {
-  id: number;
-  employeeId: string;
-  employeeName: string;
-  badgeNumber: string;
-  date: string;
-  shiftType: "day" | "night" | "swing" | "overtime";
-  siteId: string;
-  siteName: string;
-  clientId: string;
-  clockIn: string;
-  clockOut: string;
-  breakMinutes: number;
-  totalHours: number;
-  activities: string[];
-  incidents: string;
-  equipmentChecked: string[];
-  notes: string;
-  status: "pending" | "approved" | "rejected";
-  supervisorId?: string;
-  approvedAt?: string;
-}
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useDepartments } from "@/hooks/useDepartments";
+import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
+import { useTenantId } from "@/contexts/TenantContext";
+import { toDateStringTL } from "@/lib/dateUtils";
 
 export default function TimeTracking() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const tenantId = useTenantId();
   const [activeTab, setActiveTab] = useState("daily");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
+  const [selectedDate, setSelectedDate] = useState(() => toDateStringTL(new Date()));
   const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [selectedSite, setSelectedSite] = useState("");
-  const [selectedClient, setSelectedClient] = useState("");
+  const [selectedDepartment, setSelectedDepartment] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [_entryType, _setEntryType] = useState<"daily" | "hourly">("daily");
   const [currentPage, setCurrentPage] = useState(1);
-  const [loading, setLoading] = useState(true);
   const itemsPerPage = 20;
 
-  // Simulate initial data loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+  // Real data hooks
+  const { data: realEmployees = [], isLoading: empLoading } = useAllEmployees();
+  const { data: departments = [] } = useDepartments(tenantId);
+  const { data: attendanceRecords = [], isLoading: attendanceLoading } = useAttendanceByDate(selectedDate);
+  const markAttendanceMutation = useMarkAttendance();
+  const loading = empLoading || attendanceLoading;
+
+  // Map real employees for dropdowns
+  const employees = useMemo(() => realEmployees
+    .filter(e => e.status === 'active')
+    .map(e => ({
+      id: e.id!,
+      name: `${e.personalInfo.firstName} ${e.personalInfo.lastName}`,
+      department: e.jobDetails.department,
+      position: e.jobDetails.position,
+    })), [realEmployees]);
+
+  // Map attendance records to UI-friendly format
+  const timeEntries = useMemo(() => attendanceRecords.map((r) => ({
+    id: r.id || '',
+    employeeId: r.employeeId,
+    employeeName: r.employeeName,
+    department: r.department,
+    date: r.date,
+    clockIn: r.clockIn || '--:--',
+    clockOut: r.clockOut || '--:--',
+    totalHours: r.totalHours,
+    regularHours: r.regularHours,
+    overtimeHours: r.overtimeHours,
+    status: r.status,
+    source: r.source,
+    lateMinutes: r.lateMinutes,
+    notes: r.notes || '',
+  })), [attendanceRecords]);
+
+  // Computed stats from real data
+  const totalPresent = useMemo(() =>
+    timeEntries.filter(e => e.status === 'present' || e.status === 'late').length,
+    [timeEntries]);
+  const totalLate = useMemo(() =>
+    timeEntries.filter(e => e.status === 'late').length,
+    [timeEntries]);
+  const totalAbsent = useMemo(() =>
+    timeEntries.filter(e => e.status === 'absent').length,
+    [timeEntries]);
+  const totalHoursToday = useMemo(() =>
+    timeEntries.reduce((sum, e) => sum + e.totalHours, 0),
+    [timeEntries]);
 
   const [formData, setFormData] = useState({
     employee: "",
     date: "",
-    shiftType: "day" as const,
-    site: "",
     clockIn: "",
     clockOut: "",
-    breakMinutes: 30,
-    activities: [] as string[],
-    incidents: "",
-    equipmentChecked: [] as string[],
     notes: "",
   });
 
-  // Mock data for security company
-  const securityGuards: SecurityGuard[] = [
-    {
-      id: "1",
-      name: "John Martinez",
-      badgeNumber: "SEC001",
-      shift: "day",
-      supervisor: "SUP001",
-      certifications: ["CPR", "First Aid", "Security License"],
-    },
-    {
-      id: "2",
-      name: "Sarah Williams",
-      badgeNumber: "SEC002",
-      shift: "night",
-      supervisor: "SUP001",
-      certifications: ["CPR", "Security License"],
-    },
-    {
-      id: "3",
-      name: "Mike Rodriguez",
-      badgeNumber: "SEC003",
-      shift: "swing",
-      supervisor: "SUP002",
-      certifications: ["CPR", "First Aid", "Security License", "Armed Guard"],
-    },
-    {
-      id: "4",
-      name: "Lisa Chen",
-      badgeNumber: "SEC004",
-      shift: "day",
-      supervisor: "SUP001",
-      certifications: ["CPR", "Security License"],
-    },
-    {
-      id: "5",
-      name: "David Johnson",
-      badgeNumber: "SEC005",
-      shift: "night",
-      supervisor: "SUP002",
-      certifications: ["CPR", "First Aid", "Security License", "Armed Guard"],
-    },
-  ];
-
-  const clients: Client[] = [
-    {
-      id: "CLI001",
-      name: "Metro Shopping Center",
-      contactPerson: "Tom Wilson",
-      phone: "(555) 123-4567",
-      billingCode: "MSC-2024",
-    },
-    {
-      id: "CLI002",
-      name: "Downtown Office Complex",
-      contactPerson: "Jennifer Davis",
-      phone: "(555) 234-5678",
-      billingCode: "DOC-2024",
-    },
-    {
-      id: "CLI003",
-      name: "Riverside Industrial Park",
-      contactPerson: "Mark Thompson",
-      phone: "(555) 345-6789",
-      billingCode: "RIP-2024",
-    },
-    {
-      id: "CLI004",
-      name: "Sunset Residential Community",
-      contactPerson: "Anna Garcia",
-      phone: "(555) 456-7890",
-      billingCode: "SRC-2024",
-    },
-  ];
-
-  const securitySites: SecuritySite[] = [
-    {
-      id: "SITE001",
-      name: "Metro Mall - Main Entrance",
-      address: "123 Commerce St",
-      clientId: "CLI001",
-      type: "retail",
-      riskLevel: "medium",
-    },
-    {
-      id: "SITE002",
-      name: "Metro Mall - Parking Garage",
-      address: "123 Commerce St",
-      clientId: "CLI001",
-      type: "retail",
-      riskLevel: "high",
-    },
-    {
-      id: "SITE003",
-      name: "Downtown Tower A - Lobby",
-      address: "456 Business Ave",
-      clientId: "CLI002",
-      type: "office",
-      riskLevel: "low",
-    },
-    {
-      id: "SITE004",
-      name: "Downtown Tower B - Security Desk",
-      address: "458 Business Ave",
-      clientId: "CLI002",
-      type: "office",
-      riskLevel: "low",
-    },
-    {
-      id: "SITE005",
-      name: "Industrial Gate - North",
-      address: "789 Industrial Blvd",
-      clientId: "CLI003",
-      type: "industrial",
-      riskLevel: "high",
-    },
-    {
-      id: "SITE006",
-      name: "Residential Patrol Route 1",
-      address: "321 Sunset Dr",
-      clientId: "CLI004",
-      type: "residential",
-      riskLevel: "medium",
-    },
-  ];
-
-  const activityOptions = [
-    { key: "perimeterPatrol", label: t("timeLeave.timeTracking.activities.perimeterPatrol") },
-    { key: "accessControl", label: t("timeLeave.timeTracking.activities.accessControl") },
-    { key: "visitorScreening", label: t("timeLeave.timeTracking.activities.visitorScreening") },
-    { key: "incidentResponse", label: t("timeLeave.timeTracking.activities.incidentResponse") },
-    { key: "equipmentCheck", label: t("timeLeave.timeTracking.activities.equipmentCheck") },
-    { key: "reportWriting", label: t("timeLeave.timeTracking.activities.reportWriting") },
-    { key: "cameraMonitoring", label: t("timeLeave.timeTracking.activities.cameraMonitoring") },
-    { key: "alarmResponse", label: t("timeLeave.timeTracking.activities.alarmResponse") },
-    { key: "emergencyEvacuation", label: t("timeLeave.timeTracking.activities.emergencyEvacuation") },
-    { key: "trafficControl", label: t("timeLeave.timeTracking.activities.trafficControl") },
-    { key: "lostFound", label: t("timeLeave.timeTracking.activities.lostFound") },
-    { key: "maintenanceCoordination", label: t("timeLeave.timeTracking.activities.maintenanceCoordination") },
-  ];
-
-  const equipmentOptions = [
-    { key: "radio", label: t("timeLeave.timeTracking.equipment.radio") },
-    { key: "flashlight", label: t("timeLeave.timeTracking.equipment.flashlight") },
-    { key: "keys", label: t("timeLeave.timeTracking.equipment.keys") },
-    { key: "accessCards", label: t("timeLeave.timeTracking.equipment.accessCards") },
-    { key: "firstAid", label: t("timeLeave.timeTracking.equipment.firstAid") },
-    { key: "fireExtinguisher", label: t("timeLeave.timeTracking.equipment.fireExtinguisher") },
-    { key: "aed", label: t("timeLeave.timeTracking.equipment.aed") },
-    { key: "cameraSystem", label: t("timeLeave.timeTracking.equipment.cameraSystem") },
-    { key: "metalDetector", label: t("timeLeave.timeTracking.equipment.metalDetector") },
-    { key: "patrolVehicle", label: t("timeLeave.timeTracking.equipment.patrolVehicle") },
-  ];
-
-  const timeEntries: TimeEntry[] = [
-    {
-      id: 1,
-      employeeId: "1",
-      employeeName: "John Martinez",
-      badgeNumber: "SEC001",
-      date: "2024-11-15",
-      shiftType: "day",
-      siteId: "SITE001",
-      siteName: "Metro Mall - Main Entrance",
-      clientId: "CLI001",
-      clockIn: "08:00",
-      clockOut: "16:00",
-      breakMinutes: 30,
-      totalHours: 7.5,
-      activities: ["Perimeter patrol", "Access control", "Visitor screening"],
-      incidents:
-        "Minor altercation between customers at 14:30, resolved peacefully",
-      equipmentChecked: ["Radio", "Flashlight", "Keys", "First aid kit"],
-      notes:
-        "Busy day with high foot traffic. All equipment functioning normally.",
-      status: "approved",
-      supervisorId: "SUP001",
-      approvedAt: "2024-11-15T17:00:00Z",
-    },
-    {
-      id: 2,
-      employeeId: "2",
-      employeeName: "Sarah Williams",
-      badgeNumber: "SEC002",
-      date: "2024-11-15",
-      shiftType: "night",
-      siteId: "SITE003",
-      siteName: "Downtown Tower A - Lobby",
-      clientId: "CLI002",
-      clockIn: "22:00",
-      clockOut: "06:00",
-      breakMinutes: 30,
-      totalHours: 7.5,
-      activities: ["Building monitoring", "Access control", "Report writing"],
-      incidents:
-        "False alarm at 02:15 - building maintenance issue triggered sensor",
-      equipmentChecked: [
-        "Radio",
-        "Flashlight",
-        "Access cards",
-        "Security camera system",
-      ],
-      notes: "Quiet night shift. Completed hourly building checks.",
-      status: "pending",
-    },
-    {
-      id: 3,
-      employeeId: "3",
-      employeeName: "Mike Rodriguez",
-      badgeNumber: "SEC003",
-      date: "2024-11-14",
-      shiftType: "swing",
-      siteId: "SITE005",
-      siteName: "Industrial Gate - North",
-      clientId: "CLI003",
-      clockIn: "16:00",
-      clockOut: "00:00",
-      breakMinutes: 60,
-      totalHours: 7,
-      activities: [
-        "Gate security",
-        "Vehicle inspection",
-        "Patrol",
-        "Incident response",
-      ],
-      incidents:
-        "Attempted unauthorized entry at 19:45. Individual detained and released to local authorities.",
-      equipmentChecked: [
-        "Radio",
-        "Flashlight",
-        "Keys",
-        "Metal detector",
-        "Patrol vehicle",
-      ],
-      notes:
-        "High security alert maintained throughout shift. Additional patrols conducted.",
-      status: "approved",
-      supervisorId: "SUP002",
-      approvedAt: "2024-11-14T08:00:00Z",
-    },
-  ];
-
-  const shiftLabels = {
-    day: t("timeLeave.timeTracking.shiftTypes.day"),
-    night: t("timeLeave.timeTracking.shiftTypes.night"),
-    swing: t("timeLeave.timeTracking.shiftTypes.swing"),
-    overtime: t("timeLeave.timeTracking.shiftTypes.overtime"),
-  };
-
-  const shiftOptionLabels = {
-    day: t("timeLeave.timeTracking.shiftTypes.dayWithTime"),
-    swing: t("timeLeave.timeTracking.shiftTypes.swingWithTime"),
-    night: t("timeLeave.timeTracking.shiftTypes.nightWithTime"),
-    overtime: t("timeLeave.timeTracking.shiftTypes.overtime"),
-  };
-
-  const activityLabelMap: Record<string, string> = {
-    "Perimeter patrol": t("timeLeave.timeTracking.activities.perimeterPatrol"),
-    "Access control": t("timeLeave.timeTracking.activities.accessControl"),
-    "Visitor screening": t("timeLeave.timeTracking.activities.visitorScreening"),
-    "Incident response": t("timeLeave.timeTracking.activities.incidentResponse"),
-    "Equipment check": t("timeLeave.timeTracking.activities.equipmentCheck"),
-    "Report writing": t("timeLeave.timeTracking.activities.reportWriting"),
-    "Camera monitoring": t("timeLeave.timeTracking.activities.cameraMonitoring"),
-    "Alarm response": t("timeLeave.timeTracking.activities.alarmResponse"),
-    "Emergency evacuation": t("timeLeave.timeTracking.activities.emergencyEvacuation"),
-    "Traffic control": t("timeLeave.timeTracking.activities.trafficControl"),
-    "Lost & found": t("timeLeave.timeTracking.activities.lostFound"),
-    "Building maintenance coordination": t("timeLeave.timeTracking.activities.maintenanceCoordination"),
-    "Building monitoring": t("timeLeave.timeTracking.activities.buildingMonitoring"),
-    "Gate security": t("timeLeave.timeTracking.activities.gateSecurity"),
-    "Vehicle inspection": t("timeLeave.timeTracking.activities.vehicleInspection"),
-    Patrol: t("timeLeave.timeTracking.activities.patrol"),
-  };
-
-  const getActivityLabel = (activity: string) =>
-    activityLabelMap[activity] || activity;
-
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "approved":
+      case "present":
         return (
           <Badge className="bg-green-100 text-green-800">
             {t("timeLeave.timeTracking.status.approved")}
           </Badge>
         );
-      case "pending":
+      case "late":
         return (
           <Badge className="bg-yellow-100 text-yellow-800">
             {t("timeLeave.timeTracking.status.pending")}
           </Badge>
         );
-      case "rejected":
+      case "absent":
         return (
           <Badge className="bg-red-100 text-red-800">
             {t("timeLeave.timeTracking.status.rejected")}
+          </Badge>
+        );
+      case "half_day":
+        return (
+          <Badge className="bg-orange-100 text-orange-800">
+            Half Day
+          </Badge>
+        );
+      case "leave":
+        return (
+          <Badge className="bg-blue-100 text-blue-800">
+            On Leave
+          </Badge>
+        );
+      case "holiday":
+        return (
+          <Badge className="bg-purple-100 text-purple-800">
+            Holiday
           </Badge>
         );
       default:
@@ -453,88 +181,32 @@ export default function TimeTracking() {
     }
   };
 
-  const getRiskLevelBadge = (level: string) => {
-    switch (level) {
-      case "high":
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            {t("timeLeave.timeTracking.risk.high")}
-          </Badge>
-        );
-      case "medium":
-        return (
-          <Badge className="bg-yellow-100 text-yellow-800">
-            {t("timeLeave.timeTracking.risk.medium")}
-          </Badge>
-        );
-      case "low":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            {t("timeLeave.timeTracking.risk.low")}
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{level}</Badge>;
-    }
-  };
-
-  const calculateTotalHours = (
-    clockIn: string,
-    clockOut: string,
-    breakMinutes: number,
-  ) => {
-    if (!clockIn || !clockOut) return 0;
-
-    let start = new Date(`2000-01-01 ${clockIn}`);
-    let end = new Date(`2000-01-01 ${clockOut}`);
-
-    // Handle overnight shifts
-    if (end <= start) {
-      end = new Date(`2000-01-02 ${clockOut}`);
-    }
-
-    const diff = end.getTime() - start.getTime();
-    const hours = diff / (1000 * 60 * 60);
-    const totalHours = hours - breakMinutes / 60;
-
-    return Math.round(totalHours * 100) / 100;
+  const getSourceBadge = (source: string) => {
+    const colors: Record<string, string> = {
+      manual: "bg-gray-100 text-gray-800",
+      fingerprint: "bg-blue-100 text-blue-800",
+      mobile_app: "bg-green-100 text-green-800",
+      qr_code: "bg-violet-100 text-violet-800",
+      facial: "bg-cyan-100 text-cyan-800",
+    };
+    return (
+      <Badge className={colors[source] || "bg-gray-100 text-gray-800"}>
+        {source.replace('_', ' ')}
+      </Badge>
+    );
   };
 
   const handleInputChange = (
     field: string,
-    value: string | string[] | number,
+    value: string,
   ) => {
-    setFormData((prev) => {
-      const updated = { ...prev, [field]: value };
-
-      // Auto-calculate total hours when times change
-      if (
-        field === "clockIn" ||
-        field === "clockOut" ||
-        field === "breakMinutes"
-      ) {
-        const _totalHours = calculateTotalHours(
-          field === "clockIn" ? (value as string) : updated.clockIn,
-          field === "clockOut" ? (value as string) : updated.clockOut,
-          field === "breakMinutes" ? (value as number) : updated.breakMinutes,
-        );
-        // Store total hours if needed for display
-      }
-
-      return updated;
-    });
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (
-      !formData.employee ||
-      !formData.date ||
-      !formData.site ||
-      !formData.clockIn ||
-      !formData.clockOut
-    ) {
+    if (!formData.employee || !formData.date) {
       toast({
         title: t("timeLeave.timeTracking.toast.validationTitle"),
         description: t("timeLeave.timeTracking.toast.validationDesc"),
@@ -543,13 +215,18 @@ export default function TimeTracking() {
       return;
     }
 
+    const emp = realEmployees.find(e => e.id === formData.employee);
     try {
-      const _totalHours = calculateTotalHours(
-        formData.clockIn,
-        formData.clockOut,
-        formData.breakMinutes,
-      );
-
+      await markAttendanceMutation.mutateAsync({
+        employeeId: formData.employee,
+        employeeName: emp ? `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}` : '',
+        department: emp?.jobDetails.department || '',
+        date: formData.date,
+        clockIn: formData.clockIn || undefined,
+        clockOut: formData.clockOut || undefined,
+        source: 'manual',
+        notes: formData.notes || undefined,
+      });
       toast({
         title: t("timeLeave.timeTracking.toast.successTitle"),
         description: t("timeLeave.timeTracking.toast.successDesc"),
@@ -558,14 +235,8 @@ export default function TimeTracking() {
       setFormData({
         employee: "",
         date: "",
-        shiftType: "day",
-        site: "",
         clockIn: "",
         clockOut: "",
-        breakMinutes: 30,
-        activities: [],
-        incidents: "",
-        equipmentChecked: [],
         notes: "",
       });
       setShowAddDialog(false);
@@ -579,6 +250,10 @@ export default function TimeTracking() {
   };
 
   const handleFilter = () => {
+    // When the user applies a date filter, update selectedDate to refetch attendance
+    if (startDate) {
+      setSelectedDate(startDate);
+    }
     toast({
       title: t("timeLeave.timeTracking.toast.filterTitle"),
       description: t("timeLeave.timeTracking.toast.filterDesc", {
@@ -589,31 +264,38 @@ export default function TimeTracking() {
   };
 
   const handleExportCSV = () => {
-    const _csvData = timeEntries.map((entry) => ({
-      [t("timeLeave.timeTracking.csv.badgeNumber")]: entry.badgeNumber,
-      [t("timeLeave.timeTracking.csv.employeeName")]: entry.employeeName,
-      [t("timeLeave.timeTracking.csv.date")]: entry.date,
-      [t("timeLeave.timeTracking.csv.shiftType")]:
-        shiftLabels[entry.shiftType] || entry.shiftType,
-      [t("timeLeave.timeTracking.csv.site")]: entry.siteName,
-      [t("timeLeave.timeTracking.csv.client")]:
-        clients.find((c) => c.id === entry.clientId)?.name || "",
-      [t("timeLeave.timeTracking.csv.clockIn")]: entry.clockIn,
-      [t("timeLeave.timeTracking.csv.clockOut")]: entry.clockOut,
-      [t("timeLeave.timeTracking.csv.totalHours")]: entry.totalHours,
-      [t("timeLeave.timeTracking.csv.activities")]: entry.activities
-        .map(getActivityLabel)
-        .join(", "),
-      [t("timeLeave.timeTracking.csv.incidents")]: entry.incidents,
-      [t("timeLeave.timeTracking.csv.status")]:
-        entry.status === "approved"
-          ? t("timeLeave.timeTracking.status.approved")
-          : entry.status === "pending"
-            ? t("timeLeave.timeTracking.status.pending")
-            : entry.status === "rejected"
-              ? t("timeLeave.timeTracking.status.rejected")
-              : entry.status,
-    }));
+    // Build CSV from real data
+    const csvHeaders = [
+      t("timeLeave.timeTracking.csv.employeeName"),
+      t("timeLeave.timeTracking.csv.date"),
+      t("timeLeave.timeTracking.csv.clockIn"),
+      t("timeLeave.timeTracking.csv.clockOut"),
+      t("timeLeave.timeTracking.csv.totalHours"),
+      "Status",
+      "Source",
+    ];
+
+    const csvRows = timeEntries.map((entry) => [
+      entry.employeeName,
+      entry.date,
+      entry.clockIn,
+      entry.clockOut,
+      entry.totalHours.toString(),
+      entry.status,
+      entry.source,
+    ]);
+
+    const csvContent = [csvHeaders, ...csvRows]
+      .map(row => row.map(cell => `"${cell}"`).join(","))
+      .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `attendance-${selectedDate}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
 
     toast({
       title: t("timeLeave.timeTracking.toast.exportTitle"),
@@ -621,128 +303,40 @@ export default function TimeTracking() {
     });
   };
 
+  // Apply client-side filters
+  const filteredEntries = useMemo(() => {
+    let entries = timeEntries;
+    if (selectedEmployee && selectedEmployee !== "all") {
+      entries = entries.filter(e => e.employeeId === selectedEmployee);
+    }
+    if (selectedDepartment && selectedDepartment !== "all") {
+      entries = entries.filter(e => e.department === selectedDepartment);
+    }
+    return entries;
+  }, [timeEntries, selectedEmployee, selectedDepartment]);
+
   // Pagination
-  const totalPages = Math.ceil(timeEntries.length / itemsPerPage);
+  const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
-  const paginatedEntries = timeEntries.slice(
+  const paginatedEntries = filteredEntries.slice(
     startIndex,
     startIndex + itemsPerPage,
   );
 
-  // Removed renderDailyView function - content moved inline
-  const _renderDailyView_unused = () => (
-    <div className="flex flex-col space-y-6">
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("timeLeave.timeTracking.stats.guardsOnDuty")}
-            </CardTitle>
-            <Shield className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">127</div>
-            <p className="text-xs text-muted-foreground">
-              {t("timeLeave.timeTracking.stats.currentlyActive")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("timeLeave.timeTracking.stats.sitesCovered")}
-            </CardTitle>
-            <MapPin className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">
-              {t("timeLeave.timeTracking.stats.activeLocations")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("timeLeave.timeTracking.stats.pendingApprovals")}
-            </CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">
-              {t("timeLeave.timeTracking.stats.awaitingReview")}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t("timeLeave.timeTracking.stats.totalHours")}
-            </CardTitle>
-            <Timer className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">956</div>
-            <p className="text-xs text-muted-foreground">
-              {t("timeLeave.timeTracking.stats.thisWeek")}
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Recent Entries */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("timeLeave.timeTracking.recent.title")}</CardTitle>
-          <CardDescription>
-            {t("timeLeave.timeTracking.recent.description")}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {timeEntries.slice(0, 3).map((entry) => {
-              const site = securitySites.find((s) => s.id === entry.siteId);
-              const client = clients.find((c) => c.id === entry.clientId);
-              return (
-                <div
-                  key={entry.id}
-                  className="flex items-center justify-between p-4 border rounded-lg"
-                >
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-medium">{entry.employeeName}</p>
-                      <Badge variant="outline">{entry.badgeNumber}</Badge>
-                      <Badge className="bg-blue-100 text-blue-800">
-                        {shiftLabels[entry.shiftType] || entry.shiftType}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      {site?.name} • {client?.name}
-                    </p>
-                    <p className="text-sm text-gray-500">
-                      {entry.clockIn} - {entry.clockOut} ({entry.totalHours}h)
-                    </p>
-                    {entry.incidents && (
-                      <div className="flex items-center gap-1 text-sm text-orange-600">
-                        <AlertTriangle className="h-4 w-4" />
-                        <span>{t("timeLeave.timeTracking.recent.incident")}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="text-right space-y-1">
-                    <p className="text-sm text-gray-500">{entry.date}</p>
-                    {getStatusBadge(entry.status)}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+  // Department summary for reports tab
+  const departmentSummary = useMemo(() => {
+    const deptMap = new Map<string, { present: number; late: number; absent: number; totalHours: number }>();
+    for (const entry of timeEntries) {
+      const dept = entry.department || 'Unassigned';
+      const current = deptMap.get(dept) || { present: 0, late: 0, absent: 0, totalHours: 0 };
+      if (entry.status === 'present') current.present++;
+      if (entry.status === 'late') current.late++;
+      if (entry.status === 'absent') current.absent++;
+      current.totalHours += entry.totalHours;
+      deptMap.set(dept, current);
+    }
+    return Array.from(deptMap.entries()).map(([name, stats]) => ({ name, ...stats }));
+  }, [timeEntries]);
 
   if (loading) {
     return (
@@ -828,26 +422,25 @@ export default function TimeTracking() {
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
 
-          {/* Demo Banner */}
-          <div className="mb-6 -mt-4 p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
-              <div>
-                <p className="font-medium text-amber-800 dark:text-amber-200">
-                  {t("timeLeave.timeTracking.demoBanner") || "Preview Mode — Sample Data"}
-                </p>
-                <p className="text-sm text-amber-700/80 dark:text-amber-400/80">
-                  {t("timeLeave.timeTracking.demoBannerDesc") || "This page shows sample data for demonstration purposes. Time tracking with live data is coming soon."}
-                </p>
-              </div>
-            </div>
+          {/* Date Selector */}
+          <div className="mb-6 flex items-center gap-3">
+            <Label htmlFor="attendance-date" className="text-sm font-medium">
+              Date:
+            </Label>
+            <Input
+              id="attendance-date"
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="w-48"
+            />
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsContent value="daily" className="mt-6">
               <div className="flex flex-col space-y-6">
                 {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 -mt-14">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
                     <CardContent className="pt-6">
                       <div className="flex items-center justify-between">
@@ -855,13 +448,13 @@ export default function TimeTracking() {
                           <p className="text-sm text-muted-foreground">
                             {t("timeLeave.timeTracking.stats.guardsOnDuty")}
                           </p>
-                          <p className="text-2xl font-bold">127</p>
+                          <p className="text-2xl font-bold">{totalPresent}</p>
                           <p className="text-xs text-muted-foreground">
                             {t("timeLeave.timeTracking.stats.currentlyActive")}
                           </p>
                         </div>
                         <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                          <Shield className="h-6 w-6 text-white" />
+                          <Users className="h-6 w-6 text-white" />
                         </div>
                       </div>
                     </CardContent>
@@ -871,15 +464,15 @@ export default function TimeTracking() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.sitesCovered")}
+                            Late Arrivals
                           </p>
-                          <p className="text-2xl font-bold">45</p>
+                          <p className="text-2xl font-bold">{totalLate}</p>
                           <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.activeLocations")}
+                            Today
                           </p>
                         </div>
-                        <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
-                          <MapPin className="h-6 w-6 text-white" />
+                        <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
+                          <AlertTriangle className="h-6 w-6 text-white" />
                         </div>
                       </div>
                     </CardContent>
@@ -889,14 +482,14 @@ export default function TimeTracking() {
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="text-sm text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.pendingApprovals")}
+                            Absent
                           </p>
-                          <p className="text-2xl font-bold">23</p>
+                          <p className="text-2xl font-bold">{totalAbsent}</p>
                           <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.awaitingReview")}
+                            Today
                           </p>
                         </div>
-                        <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
+                        <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
                           <Clock className="h-6 w-6 text-white" />
                         </div>
                       </div>
@@ -909,7 +502,7 @@ export default function TimeTracking() {
                           <p className="text-sm text-muted-foreground">
                             {t("timeLeave.timeTracking.stats.totalHours")}
                           </p>
-                          <p className="text-2xl font-bold">956</p>
+                          <p className="text-2xl font-bold">{totalHoursToday.toFixed(1)}</p>
                           <p className="text-xs text-muted-foreground">
                             {t("timeLeave.timeTracking.stats.thisWeek")}
                           </p>
@@ -950,15 +543,14 @@ export default function TimeTracking() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {timeEntries.slice(0, 3).map((entry) => {
-                        const site = securitySites.find(
-                          (s) => s.id === entry.siteId,
-                        );
-                        const client = clients.find(
-                          (c) => c.id === entry.clientId,
-                        );
-                        return (
+                    {timeEntries.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Clock className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                        <p className="text-sm">No attendance records for {selectedDate}</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {timeEntries.slice(0, 5).map((entry) => (
                           <div
                             key={entry.id}
                             className="flex items-center justify-between p-4 border rounded-lg"
@@ -968,27 +560,19 @@ export default function TimeTracking() {
                                 <p className="font-medium">
                                   {entry.employeeName}
                                 </p>
-                                <Badge variant="outline">
-                                  {entry.badgeNumber}
-                                </Badge>
-                                <Badge className="bg-blue-100 text-blue-800">
-                                  {shiftLabels[entry.shiftType] ||
-                                    entry.shiftType}
-                                </Badge>
+                                {getSourceBadge(entry.source)}
                               </div>
                               <p className="text-sm text-gray-600">
-                                {site?.name} • {client?.name}
+                                {entry.department}
                               </p>
                               <p className="text-sm text-gray-500">
                                 {entry.clockIn} - {entry.clockOut} (
-                                {entry.totalHours}h)
+                                {entry.totalHours.toFixed(1)}h)
                               </p>
-                              {entry.incidents && (
+                              {entry.lateMinutes > 0 && (
                                 <div className="flex items-center gap-1 text-sm text-orange-600">
                                   <AlertTriangle className="h-4 w-4" />
-                                  <span>
-                                    {t("timeLeave.timeTracking.recent.incident")}
-                                  </span>
+                                  <span>Late by {entry.lateMinutes} min</span>
                                 </div>
                               )}
                             </div>
@@ -999,9 +583,9 @@ export default function TimeTracking() {
                               {getStatusBadge(entry.status)}
                             </div>
                           </div>
-                        );
-                      })}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -1017,7 +601,7 @@ export default function TimeTracking() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
                     <div>
                       <Label htmlFor="start-date">
                         {t("timeLeave.timeTracking.filters.startDate")}
@@ -1057,59 +641,30 @@ export default function TimeTracking() {
                           <SelectItem value="all">
                             {t("timeLeave.timeTracking.filters.allGuards")}
                           </SelectItem>
-                          {securityGuards.map((guard) => (
-                            <SelectItem key={guard.id} value={guard.id}>
-                              {guard.name} ({guard.badgeNumber})
+                          {employees.map((emp) => (
+                            <SelectItem key={emp.id} value={emp.id}>
+                              {emp.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="site-filter">
-                        {t("timeLeave.timeTracking.filters.site")}
+                      <Label htmlFor="department-filter">
+                        Department
                       </Label>
                       <Select
-                        value={selectedSite}
-                        onValueChange={setSelectedSite}
+                        value={selectedDepartment}
+                        onValueChange={setSelectedDepartment}
                       >
                         <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("timeLeave.timeTracking.filters.allSites")}
-                          />
+                          <SelectValue placeholder="All Departments" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="all">
-                            {t("timeLeave.timeTracking.filters.allSites")}
-                          </SelectItem>
-                          {securitySites.map((site) => (
-                            <SelectItem key={site.id} value={site.id}>
-                              {site.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="client-filter">
-                        {t("timeLeave.timeTracking.filters.client")}
-                      </Label>
-                      <Select
-                        value={selectedClient}
-                        onValueChange={setSelectedClient}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("timeLeave.timeTracking.filters.allClients")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="all">
-                            {t("timeLeave.timeTracking.filters.allClients")}
-                          </SelectItem>
-                          {clients.map((client) => (
-                            <SelectItem key={client.id} value={client.id}>
-                              {client.name}
+                          <SelectItem value="all">All Departments</SelectItem>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.name}>
+                              {dept.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -1137,7 +692,7 @@ export default function TimeTracking() {
                       <CardDescription>
                         {t("timeLeave.timeTracking.entries.showing", {
                           shown: paginatedEntries.length,
-                          total: timeEntries.length,
+                          total: filteredEntries.length,
                         })}
                       </CardDescription>
                     </div>
@@ -1183,12 +738,12 @@ export default function TimeTracking() {
                                     />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    {securityGuards.map((guard) => (
+                                    {employees.map((emp) => (
                                       <SelectItem
-                                        key={guard.id}
-                                        value={guard.id}
+                                        key={emp.id}
+                                        value={emp.id}
                                       >
-                                        {guard.name} ({guard.badgeNumber})
+                                        {emp.name} — {emp.department}
                                       </SelectItem>
                                     ))}
                                   </SelectContent>
@@ -1212,63 +767,6 @@ export default function TimeTracking() {
 
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <Label htmlFor="shift-type">
-                                  {t("timeLeave.timeTracking.dialog.shiftType")}
-                                </Label>
-                                <Select
-                                  value={formData.shiftType}
-                                  onValueChange={(value) =>
-                                    handleInputChange("shiftType", value)
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="day">
-                                      {shiftOptionLabels.day}
-                                    </SelectItem>
-                                    <SelectItem value="swing">
-                                      {shiftOptionLabels.swing}
-                                    </SelectItem>
-                                    <SelectItem value="night">
-                                      {shiftOptionLabels.night}
-                                    </SelectItem>
-                                    <SelectItem value="overtime">
-                                      {shiftOptionLabels.overtime}
-                                    </SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div>
-                                <Label htmlFor="site">
-                                  {t("timeLeave.timeTracking.dialog.site")}
-                                </Label>
-                                <Select
-                                  value={formData.site}
-                                  onValueChange={(value) =>
-                                    handleInputChange("site", value)
-                                  }
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue
-                                      placeholder={t("timeLeave.timeTracking.dialog.sitePlaceholder")}
-                                    />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {securitySites.map((site) => (
-                                      <SelectItem key={site.id} value={site.id}>
-                                        {site.name} -{" "}
-                                        {getRiskLevelBadge(site.riskLevel)}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                            </div>
-
-                            <div className="grid grid-cols-3 gap-4">
-                              <div>
                                 <Label htmlFor="clock-in">
                                   {t("timeLeave.timeTracking.dialog.clockIn")}
                                 </Label>
@@ -1279,7 +777,6 @@ export default function TimeTracking() {
                                   onChange={(e) =>
                                     handleInputChange("clockIn", e.target.value)
                                   }
-                                  required
                                 />
                               </div>
                               <div>
@@ -1296,123 +793,8 @@ export default function TimeTracking() {
                                       e.target.value,
                                     )
                                   }
-                                  required
                                 />
                               </div>
-                              <div>
-                                <Label htmlFor="break-minutes">
-                                  {t("timeLeave.timeTracking.dialog.break")}
-                                </Label>
-                                <Input
-                                  id="break-minutes"
-                                  type="number"
-                                  value={formData.breakMinutes}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "breakMinutes",
-                                      Number(e.target.value),
-                                    )
-                                  }
-                                  min="0"
-                                  max="120"
-                                />
-                              </div>
-                            </div>
-
-                            {formData.clockIn && formData.clockOut && (
-                              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded">
-                                {t("timeLeave.timeTracking.dialog.totalHours")}:{" "}
-                                {calculateTotalHours(
-                                  formData.clockIn,
-                                  formData.clockOut,
-                                  formData.breakMinutes,
-                                )}
-                              </div>
-                            )}
-
-                            <div>
-                              <Label htmlFor="activities">
-                                {t("timeLeave.timeTracking.dialog.activities")}
-                              </Label>
-                              <div className="grid grid-cols-3 gap-2 mt-2">
-                                {activityOptions.map((activity) => (
-                                  <label
-                                    key={activity.key}
-                                    className="flex items-center space-x-2 text-sm"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={formData.activities.includes(activity.label)}
-                                      onChange={(e) => {
-                                        const activities = e.target.checked
-                                          ? [...formData.activities, activity.label]
-                                          : formData.activities.filter(
-                                              (a) => a !== activity.label,
-                                            );
-                                        handleInputChange(
-                                          "activities",
-                                          activities,
-                                        );
-                                      }}
-                                      className="rounded"
-                                    />
-                                    <span>{activity.label}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="equipment">
-                                {t("timeLeave.timeTracking.dialog.equipment")}
-                              </Label>
-                              <div className="grid grid-cols-3 gap-2 mt-2">
-                                {equipmentOptions.map((equipment) => (
-                                  <label
-                                    key={equipment.key}
-                                    className="flex items-center space-x-2 text-sm"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      checked={formData.equipmentChecked.includes(
-                                        equipment.label,
-                                      )}
-                                      onChange={(e) => {
-                                        const equipmentChecked = e.target
-                                          .checked
-                                          ? [
-                                              ...formData.equipmentChecked,
-                                              equipment.label,
-                                            ]
-                                          : formData.equipmentChecked.filter(
-                                              (eq) => eq !== equipment.label,
-                                            );
-                                        handleInputChange(
-                                          "equipmentChecked",
-                                          equipmentChecked,
-                                        );
-                                      }}
-                                      className="rounded"
-                                    />
-                                    <span>{equipment.label}</span>
-                                  </label>
-                                ))}
-                              </div>
-                            </div>
-
-                            <div>
-                              <Label htmlFor="incidents">
-                                {t("timeLeave.timeTracking.dialog.incidents")}
-                              </Label>
-                              <Textarea
-                                id="incidents"
-                                value={formData.incidents}
-                                onChange={(e) =>
-                                  handleInputChange("incidents", e.target.value)
-                                }
-                                placeholder={t("timeLeave.timeTracking.dialog.incidentsPlaceholder")}
-                                rows={3}
-                              />
                             </div>
 
                             <div>
@@ -1439,8 +821,14 @@ export default function TimeTracking() {
                               >
                                 {t("timeLeave.timeTracking.dialog.cancel")}
                               </Button>
-                              <Button type="submit" className="flex-1">
-                                {t("timeLeave.timeTracking.dialog.submit")}
+                              <Button
+                                type="submit"
+                                className="flex-1"
+                                disabled={markAttendanceMutation.isPending}
+                              >
+                                {markAttendanceMutation.isPending
+                                  ? "Saving..."
+                                  : t("timeLeave.timeTracking.dialog.submit")}
                               </Button>
                             </div>
                           </form>
@@ -1450,41 +838,40 @@ export default function TimeTracking() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.guard")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.dateShift")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.site")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.hours")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.activities")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.incidents")}
-                        </TableHead>
-                        <TableHead>
-                          {t("timeLeave.timeTracking.table.status")}
-                        </TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paginatedEntries.map((entry) => {
-                        const site = securitySites.find(
-                          (s) => s.id === entry.siteId,
-                        );
-                        const client = clients.find(
-                          (c) => c.id === entry.clientId,
-                        );
-                        return (
+                  {filteredEntries.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Clock className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                      <p className="text-sm">No attendance records found for this date</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>
+                            {t("timeLeave.timeTracking.table.guard")}
+                          </TableHead>
+                          <TableHead>
+                            {t("timeLeave.timeTracking.table.dateShift")}
+                          </TableHead>
+                          <TableHead>
+                            Department
+                          </TableHead>
+                          <TableHead>
+                            {t("timeLeave.timeTracking.table.hours")}
+                          </TableHead>
+                          <TableHead>
+                            Source
+                          </TableHead>
+                          <TableHead>
+                            Notes
+                          </TableHead>
+                          <TableHead>
+                            {t("timeLeave.timeTracking.table.status")}
+                          </TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {paginatedEntries.map((entry) => (
                           <TableRow key={entry.id}>
                             <TableCell>
                               <div>
@@ -1492,73 +879,49 @@ export default function TimeTracking() {
                                   {entry.employeeName}
                                 </p>
                                 <p className="text-sm text-gray-500">
-                                  {entry.badgeNumber}
+                                  ID: {entry.employeeId.slice(0, 8)}...
                                 </p>
                               </div>
                             </TableCell>
                             <TableCell>
                               <div>
                                 <p className="font-medium">{entry.date}</p>
-                                <Badge className="bg-blue-100 text-blue-800 text-xs">
-                                  {shiftLabels[entry.shiftType] ||
-                                    entry.shiftType}
-                                </Badge>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium text-sm">
-                                  {site?.name}
-                                </p>
                                 <p className="text-xs text-gray-500">
-                                  {client?.name}
-                                </p>
-                                {site && getRiskLevelBadge(site.riskLevel)}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">
-                                  {entry.totalHours}h
-                                </p>
-                                <p className="text-sm text-gray-500">
                                   {entry.clockIn} - {entry.clockOut}
                                 </p>
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="max-w-32">
-                                <p className="text-sm truncate">
-                                  {entry.activities
-                                    .slice(0, 2)
-                                    .map(getActivityLabel)
-                                    .join(", ")}
-                                  {entry.activities.length > 2 && "..."}
+                              <p className="text-sm">{entry.department}</p>
+                            </TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">
+                                  {entry.totalHours.toFixed(1)}h
                                 </p>
+                                {entry.overtimeHours > 0 && (
+                                  <p className="text-xs text-orange-600">
+                                    +{entry.overtimeHours.toFixed(1)}h OT
+                                  </p>
+                                )}
                               </div>
                             </TableCell>
                             <TableCell>
-                              {entry.incidents ? (
-                                <div className="flex items-center gap-1">
-                                  <AlertTriangle className="h-4 w-4 text-orange-500" />
-                                  <span className="text-sm">
-                                    {t("timeLeave.timeTracking.table.incidentYes")}
-                                  </span>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400">
-                                  {t("timeLeave.timeTracking.table.incidentNone")}
-                                </span>
-                              )}
+                              {getSourceBadge(entry.source)}
+                            </TableCell>
+                            <TableCell>
+                              <p className="text-sm max-w-32 truncate">
+                                {entry.notes || "—"}
+                              </p>
                             </TableCell>
                             <TableCell>
                               {getStatusBadge(entry.status)}
                             </TableCell>
                           </TableRow>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
 
                   {/* Pagination */}
                   {totalPages > 1 && (
@@ -1647,19 +1010,6 @@ export default function TimeTracking() {
                       onClick={() =>
                         toast({
                           title: t("timeLeave.timeTracking.toast.reportTitle"),
-                          description: t("timeLeave.timeTracking.toast.reportIncident"),
-                        })
-                      }
-                      variant="outline"
-                      className="w-full justify-start"
-                    >
-                      <AlertTriangle className="h-4 w-4 mr-2" />
-                      {t("timeLeave.timeTracking.reports.incidentSummary")}
-                    </Button>
-                    <Button
-                      onClick={() =>
-                        toast({
-                          title: t("timeLeave.timeTracking.toast.reportTitle"),
                           description: t("timeLeave.timeTracking.toast.reportPerformance"),
                         })
                       }
@@ -1682,41 +1032,43 @@ export default function TimeTracking() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-4">
-                      {clients.map((client) => {
-                        const clientSites = securitySites.filter(
-                          (s) => s.clientId === client.id,
-                        );
-                        const activeGuards = Math.floor(Math.random() * 8) + 1; // Mock data
-                        return (
-                          <div
-                            key={client.id}
-                            className="flex items-center justify-between p-3 border rounded"
-                          >
-                            <div>
-                              <p className="font-medium">{client.name}</p>
-                              <p className="text-sm text-gray-500">
-                                {t("timeLeave.timeTracking.reports.coverageSites", {
-                                  count: clientSites.length,
-                                })}{" "}
-                                •{" "}
-                                {client.billingCode}
-                              </p>
+                    {departmentSummary.length === 0 ? (
+                      <div className="text-center py-6 text-muted-foreground">
+                        <p className="text-sm">No department data for this date</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-4">
+                        {departmentSummary.map((dept) => {
+                          const totalInDept = dept.present + dept.late + dept.absent;
+                          return (
+                            <div
+                              key={dept.name}
+                              className="flex items-center justify-between p-3 border rounded"
+                            >
+                              <div>
+                                <p className="font-medium">{dept.name}</p>
+                                <p className="text-sm text-gray-500">
+                                  {totalInDept} employee{totalInDept !== 1 ? 's' : ''} tracked
+                                </p>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-medium">
+                                  {dept.totalHours.toFixed(1)}h total
+                                </p>
+                                <Badge className="bg-green-100 text-green-800">
+                                  {dept.present} present
+                                </Badge>
+                                {dept.late > 0 && (
+                                  <Badge className="ml-1 bg-yellow-100 text-yellow-800">
+                                    {dept.late} late
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-medium">
-                                {t("timeLeave.timeTracking.reports.coverageGuards", {
-                                  count: activeGuards,
-                                })}
-                              </p>
-                              <Badge className="bg-green-100 text-green-800">
-                                {t("timeLeave.timeTracking.reports.coverageStatus")}
-                              </Badge>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                          );
+                        })}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>

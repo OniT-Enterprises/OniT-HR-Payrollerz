@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import Papa from "papaparse";
 import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
 import {
   Card,
@@ -71,7 +70,8 @@ export default function EmployeeReports() {
   }, {} as Record<string, number>), [employees]);
 
   // Export to CSV
-  const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+  const exportToCSV = async (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    const { default: Papa } = await import("papaparse");
     const rows = data.map((item) =>
       columns.reduce((row, c) => {
         const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);

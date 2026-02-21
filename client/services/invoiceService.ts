@@ -565,8 +565,36 @@ class InvoiceService {
       updatedAt: serverTimestamp(),
     });
 
-    // TODO: Integrate with email service to send actual reminder
-    // For now, just track that a reminder was sent
+    // Queue reminder email via Firestore mail collection
+    if (invoice.customerEmail) {
+      const mailRef = collection(db, 'mail');
+      await addDoc(mailRef, {
+        tenantId,
+        to: [invoice.customerEmail],
+        subject: `Payment Reminder: Invoice ${invoice.invoiceNumber}`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #1e40af;">Payment Reminder</h2>
+            <p>Dear ${invoice.customerName},</p>
+            <p>This is a friendly reminder that invoice <strong>${invoice.invoiceNumber}</strong> is outstanding.</p>
+            <ul style="list-style: none; padding: 0;">
+              <li>Invoice Number: ${invoice.invoiceNumber}</li>
+              <li>Due Date: ${invoice.dueDate}</li>
+              <li>Amount Due: $${(invoice.totalAmount - (invoice.amountPaid || 0)).toFixed(2)}</li>
+            </ul>
+            <p>Please arrange payment at your earliest convenience.</p>
+            <p style="color: #666; font-size: 12px; margin-top: 20px;">
+              This is an automated reminder. If you have already made payment, please disregard this message.
+            </p>
+          </div>
+        `,
+        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${(invoice.totalAmount - (invoice.amountPaid || 0)).toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
+        status: 'pending',
+        purpose: 'notification',
+        relatedId: id,
+        createdAt: serverTimestamp(),
+      });
+    }
 
     return true;
   }

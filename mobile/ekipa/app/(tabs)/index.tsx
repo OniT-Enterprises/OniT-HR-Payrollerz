@@ -1,18 +1,23 @@
 /**
  * Ekipa — Home Dashboard
- * Greeting, next payday hero, leave summary, quick actions
+ * Landing-page style: hero greeting, payday countdown, pay card, status section.
  */
-import { useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { useEffect, useState, useCallback } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, RefreshControl, Dimensions } from 'react-native';
 import { router } from 'expo-router';
-import { FileText, Calendar, Clock, ArrowRight } from 'lucide-react-native';
+import { FileText, Calendar, Clock, CalendarClock, ChevronRight, ArrowRight } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { usePayslipStore } from '../../stores/payslipStore';
 import { useLeaveStore } from '../../stores/leaveStore';
-import { useT } from '../../lib/i18n';
+import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { formatCurrency } from '../../lib/currency';
+
+const SCREEN_W = Dimensions.get('window').width;
+const PAIR_GAP = 12;
+const PAIR_W = (SCREEN_W - 40 - PAIR_GAP) / 2;
 
 function getGreeting(t: (k: string) => string): string {
   const hour = new Date().getHours();
@@ -32,6 +37,7 @@ function getDaysUntilPayday(): number {
 
 export default function HomeScreen() {
   const t = useT();
+  const language = useI18nStore((s) => s.language);
   const profile = useAuthStore((s) => s.profile);
   const employee = useEmployeeStore((s) => s.employee);
   const tenantId = useTenantStore((s) => s.tenantId);
@@ -41,11 +47,23 @@ export default function HomeScreen() {
   const balance = useLeaveStore((s) => s.balance);
   const fetchBalance = useLeaveStore((s) => s.fetchBalance);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     if (tenantId && employeeId) {
       fetchPayslips(tenantId, employeeId);
       fetchBalance(tenantId, employeeId);
     }
+  }, [tenantId, employeeId, fetchPayslips, fetchBalance]);
+
+  const onRefresh = useCallback(async () => {
+    if (!tenantId || !employeeId) return;
+    setRefreshing(true);
+    await Promise.all([
+      fetchPayslips(tenantId, employeeId),
+      fetchBalance(tenantId, employeeId),
+    ]);
+    setRefreshing(false);
   }, [tenantId, employeeId, fetchPayslips, fetchBalance]);
 
   const displayName = employee
@@ -57,305 +75,327 @@ export default function HomeScreen() {
   const annualRemaining = balance?.annual?.remaining ?? '--';
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Greeting */}
-      <Text style={styles.greeting}>{getGreeting(t)}</Text>
-      <Text style={styles.name}>{displayName}</Text>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />
+      }
+    >
+      {/* ══ Hero — greeting ════════════════════════ */}
+      <View style={styles.hero}>
+        <Text style={styles.greeting}>{getGreeting(t)}</Text>
+        <Text style={styles.name}>{displayName}</Text>
+      </View>
 
-      {/* Payday Hero Card */}
-      <View style={styles.payDayCard}>
-        <View style={styles.payDayDecor1} />
-        <View style={styles.payDayDecor2} />
-        <View style={styles.payDayInner}>
-          <Text style={styles.payDayLabel}>{t('home.nextPayday')}</Text>
-          <View style={styles.payDayRow}>
-            <Text style={styles.payDayNumber}>{daysUntilPayday}</Text>
-            <Text style={styles.payDayUnit}>{t('home.days')}</Text>
-          </View>
+      {/* ══ Payday countdown — full-width block ═══ */}
+      <View style={styles.paydayBlock}>
+        <View style={styles.paydayLeft}>
+          <Text style={styles.paydayLabel}>{t('home.paydayTitle')}</Text>
+          <Text style={styles.paydaySub}>
+            {daysUntilPayday} {t('home.paydaySub')}
+          </Text>
+        </View>
+        <View style={styles.paydayBadge}>
+          <Text style={styles.paydayNumber}>{daysUntilPayday}</Text>
         </View>
       </View>
 
-      {/* Stats row */}
-      <View style={styles.statsRow}>
-        {/* Leave balance */}
-        <TouchableOpacity
-          style={styles.statCard}
-          activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/leave')}
-        >
-          <View style={[styles.statIconWrap, { backgroundColor: colors.primaryBg }]}>
-            <Calendar size={16} color={colors.primary} strokeWidth={2} />
-          </View>
-          <Text style={styles.statLabel}>{t('home.leaveBalance')}</Text>
-          <Text style={styles.statValue}>{annualRemaining}</Text>
-          <Text style={styles.statUnit}>{t('home.daysRemaining')}</Text>
-        </TouchableOpacity>
+      {/* ══ Latest pay — featured card ════════════ */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('home.payTitle')}</Text>
+        <Text style={styles.sectionSub}>{t('home.paySub')}</Text>
 
-        {/* Latest payslip */}
         <TouchableOpacity
-          style={styles.statCard}
-          activeOpacity={0.7}
-          onPress={() => router.push('/(tabs)/payslips')}
-        >
-          <View style={[styles.statIconWrap, { backgroundColor: colors.successBg }]}>
-            <FileText size={16} color={colors.success} strokeWidth={2} />
-          </View>
-          <Text style={styles.statLabel}>{t('home.recentPayslip')}</Text>
-          <Text style={styles.statValue}>
-            {latestPayslip ? `$${latestPayslip.netPay.toFixed(0)}` : '--'}
-          </Text>
-          <Text style={styles.statUnit}>
-            {latestPayslip ? latestPayslip.periodLabel : ''}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Quick actions */}
-      <Text style={styles.sectionTitle}>{t('home.quickActions')}</Text>
-      <View style={styles.actionsColumn}>
-        <TouchableOpacity
-          style={styles.actionRow}
+          style={styles.payCard}
           onPress={() => router.push('/(tabs)/payslips')}
           activeOpacity={0.7}
         >
-          <View style={[styles.actionIcon, { backgroundColor: colors.primaryBg }]}>
-            <FileText size={20} color={colors.primary} strokeWidth={1.8} />
+          <View style={styles.payTop}>
+            <View style={[styles.payIcon, { backgroundColor: colors.blueBg }]}>
+              <FileText size={20} color={colors.blue} strokeWidth={1.8} />
+            </View>
+            <Text style={styles.payPeriod}>
+              {latestPayslip
+                ? latestPayslip.periodLabel
+                : '--'}
+            </Text>
           </View>
-          <View style={styles.actionContent}>
-            <Text style={styles.actionLabel}>{t('home.viewPayslips')}</Text>
-            <Text style={styles.actionSub}>View earnings & deductions</Text>
-          </View>
-          <ArrowRight size={16} color={colors.textTertiary} strokeWidth={2} />
-        </TouchableOpacity>
+          <Text style={styles.payAmount} numberOfLines={1}>
+            {latestPayslip
+              ? formatCurrency(latestPayslip.netPay, language, employee?.currency || 'USD')
+              : t('home.noPayslip')}
+          </Text>
+          <Text style={styles.payLabel}>{t('payslips.netPay')}</Text>
 
-        <TouchableOpacity
-          style={styles.actionRow}
-          onPress={() => router.push('/screens/LeaveRequestForm')}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: colors.infoBg }]}>
-            <Calendar size={20} color={colors.info} strokeWidth={1.8} />
+          <View style={styles.payBtn}>
+            <Text style={styles.payBtnText}>{t('home.viewDetails')}</Text>
+            <ArrowRight size={14} color={colors.blue} strokeWidth={2.5} />
           </View>
-          <View style={styles.actionContent}>
-            <Text style={styles.actionLabel}>{t('home.requestLeave')}</Text>
-            <Text style={styles.actionSub}>Submit a leave request</Text>
-          </View>
-          <ArrowRight size={16} color={colors.textTertiary} strokeWidth={2} />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={styles.actionRow}
-          onPress={() => router.push('/(tabs)/profile')}
-          activeOpacity={0.7}
-        >
-          <View style={[styles.actionIcon, { backgroundColor: colors.successBg }]}>
-            <Clock size={20} color={colors.success} strokeWidth={1.8} />
-          </View>
-          <View style={styles.actionContent}>
-            <Text style={styles.actionLabel}>{t('profile.attendance')}</Text>
-            <Text style={styles.actionSub}>Check your attendance record</Text>
-          </View>
-          <ArrowRight size={16} color={colors.textTertiary} strokeWidth={2} />
         </TouchableOpacity>
       </View>
+
+      {/* ══ At a glance — status section ══════════ */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{t('home.statusTitle')}</Text>
+
+        {/* Leave + Attendance pair */}
+        <View style={styles.pair}>
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => router.push('/(tabs)/leave')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statIcon, { backgroundColor: colors.violetBg }]}>
+              <Calendar size={18} color={colors.violet} strokeWidth={2} />
+            </View>
+            <Text style={styles.statValue}>{annualRemaining}</Text>
+            <Text style={styles.statLabel}>{t('home.daysLeft')}</Text>
+            <Text style={styles.statCaption}>{t('home.leaveBalance')}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.statCard}
+            onPress={() => router.push('/screens/AttendanceHistory')}
+            activeOpacity={0.7}
+          >
+            <View style={[styles.statIcon, { backgroundColor: colors.emeraldBg }]}>
+              <Clock size={18} color={colors.emerald} strokeWidth={2} />
+            </View>
+            <Text style={styles.statValue}>--</Text>
+            <Text style={styles.statLabel}>{t('home.attendance')}</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Next shift — compact row */}
+        <TouchableOpacity
+          style={styles.shiftRow}
+          onPress={() => router.push('/screens/ShiftSchedule')}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.shiftIcon, { backgroundColor: colors.orangeBg }]}>
+            <CalendarClock size={18} color={colors.orange} strokeWidth={1.8} />
+          </View>
+          <View style={styles.shiftText}>
+            <Text style={styles.shiftLabel}>{t('home.nextShift')}</Text>
+            <Text style={styles.shiftValue}>--</Text>
+          </View>
+          <ChevronRight size={16} color={colors.textTertiary} strokeWidth={2} />
+        </TouchableOpacity>
+      </View>
+
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.bg,
-  },
-  content: {
-    padding: 20,
-    paddingBottom: 40,
-  },
+  container: { flex: 1, backgroundColor: colors.bg },
+  content: { paddingBottom: 48 },
 
+  /* ── Hero ─────────────────────────────────── */
+  hero: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 4,
+  },
   greeting: {
-    fontSize: 16,
+    fontSize: 15,
     color: colors.textSecondary,
-    marginTop: 8,
     fontWeight: '500',
+    letterSpacing: 0.2,
+    marginBottom: 2,
   },
   name: {
     fontSize: 30,
     fontWeight: '800',
     color: colors.text,
-    letterSpacing: -0.7,
-    marginBottom: 24,
+    letterSpacing: -0.8,
   },
 
-  // Payday card
-  payDayCard: {
-    backgroundColor: colors.primary,
-    borderRadius: 20,
-    overflow: 'hidden',
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: colors.primaryDark,
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.3,
-        shadowRadius: 12,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  payDayDecor1: {
-    position: 'absolute',
-    top: -20,
-    right: -20,
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: 'rgba(255,255,255,0.08)',
-  },
-  payDayDecor2: {
-    position: 'absolute',
-    bottom: -30,
-    left: -10,
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255,255,255,0.05)',
-  },
-  payDayInner: {
-    padding: 20,
-  },
-  payDayLabel: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.75)',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-  },
-  payDayRow: {
+  /* ── Payday countdown ────────────────────── */
+  paydayBlock: {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    marginTop: 8,
-  },
-  payDayNumber: {
-    fontSize: 44,
-    fontWeight: '800',
-    color: colors.white,
-    letterSpacing: -1,
-  },
-  payDayUnit: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
-  },
-
-  // Stats
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 28,
-  },
-  statCard: {
-    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 20,
+    marginBottom: 32,
     backgroundColor: colors.bgCard,
     borderRadius: 16,
-    padding: 16,
+    padding: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
   },
-  statIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
+  paydayLeft: { flex: 1 },
+  paydayLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.2,
+    marginBottom: 2,
+  },
+  paydaySub: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: colors.textTertiary,
+  },
+  paydayBadge: {
+    width: 52,
+    height: 52,
+    borderRadius: 14,
+    backgroundColor: colors.primaryBg,
+    borderWidth: 1,
+    borderColor: 'rgba(34, 197, 94, 0.25)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 10,
   },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textTertiary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 4,
-  },
-  statValue: {
-    fontSize: 26,
+  paydayNumber: {
+    fontSize: 22,
     fontWeight: '800',
-    color: colors.text,
+    color: colors.primary,
     letterSpacing: -0.5,
   },
-  statUnit: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginTop: 2,
+
+  /* ── Section ─────────────────────────────── */
+  section: {
+    paddingHorizontal: 20,
+    marginBottom: 32,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: colors.text,
+    letterSpacing: -0.3,
+    marginBottom: 4,
+  },
+  sectionSub: {
+    fontSize: 13,
     fontWeight: '500',
+    color: colors.textTertiary,
+    marginBottom: 14,
+    lineHeight: 18,
   },
 
-  // Quick actions — list style
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.3,
-    marginBottom: 12,
-  },
-  actionsColumn: {
-    gap: 10,
-  },
-  actionRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  /* ── Pay card ────────────────────────────── */
+  payCard: {
     backgroundColor: colors.bgCard,
-    borderRadius: 14,
-    padding: 14,
+    borderRadius: 16,
+    padding: 20,
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
   },
-  actionIcon: {
+  payTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  payIcon: {
     width: 44,
     height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  actionContent: {
-    flex: 1,
-    marginLeft: 14,
-  },
-  actionLabel: {
-    fontSize: 15,
+  payPeriod: {
+    fontSize: 13,
     fontWeight: '600',
-    color: colors.text,
+    color: colors.textTertiary,
   },
-  actionSub: {
+  payAmount: {
+    fontSize: 32,
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -1,
+    marginBottom: 2,
+  },
+  payLabel: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.textTertiary,
+    marginBottom: 16,
+  },
+  payBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 6,
+  },
+  payBtnText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.blue,
+  },
+
+  /* ── Stat cards (2-up) ───────────────────── */
+  pair: {
+    flexDirection: 'row',
+    gap: PAIR_GAP,
+    marginBottom: 10,
+  },
+  statCard: {
+    width: PAIR_W,
+    backgroundColor: colors.bgCard,
+    borderRadius: 14,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 14,
+  },
+  statValue: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: colors.text,
+    letterSpacing: -0.6,
+    marginBottom: 1,
+  },
+  statLabel: {
     fontSize: 12,
+    fontWeight: '600',
+    color: colors.textSecondary,
+  },
+  statCaption: {
+    fontSize: 11,
+    fontWeight: '500',
     color: colors.textTertiary,
     marginTop: 2,
+  },
+
+  /* ── Shift row ───────────────────────────── */
+  shiftRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgCard,
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  shiftIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  shiftText: { flex: 1 },
+  shiftLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 1,
+  },
+  shiftValue: {
+    fontSize: 12,
     fontWeight: '500',
+    color: colors.textTertiary,
   },
 });

@@ -1,9 +1,13 @@
 /**
  * PayslipRow — single row in the payslip list
+ * Dark card with blue (#3B82F6) left accent bar, border only (no shadows).
  */
-import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { ChevronRight } from 'lucide-react-native';
 import { colors } from '../lib/colors';
+import { useI18nStore, useT } from '../lib/i18n';
+import { formatCurrency } from '../lib/currency';
+import { useEmployeeStore } from '../stores/employeeStore';
 import type { Payslip } from '../types/payslip';
 
 interface PayslipRowProps {
@@ -11,27 +15,27 @@ interface PayslipRowProps {
   onPress: () => void;
 }
 
-function formatMoney(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
-
 export function PayslipRow({ payslip, onPress }: PayslipRowProps) {
+  const t = useT();
+  const language = useI18nStore((s) => s.language);
+  const currency = useEmployeeStore((s) => s.employee?.currency || 'USD');
+
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.7} style={styles.row}>
-      {/* Teal accent bar */}
+      {/* Blue accent bar */}
       <View style={styles.accent} />
 
       <View style={styles.body}>
         <View style={styles.left}>
           <Text style={styles.period}>{payslip.periodLabel}</Text>
           <View style={styles.amounts}>
-            <Text style={styles.grossLabel}>Gross </Text>
-            <Text style={styles.grossValue}>{formatMoney(payslip.grossPay)}</Text>
+            <Text style={styles.grossLabel}>{t('payslips.gross')} </Text>
+            <Text style={styles.grossValue}>{formatCurrency(payslip.grossPay, language, currency)}</Text>
           </View>
         </View>
         <View style={styles.right}>
-          <Text style={styles.netValue}>{formatMoney(payslip.netPay)}</Text>
-          <Text style={styles.netLabel}>Net Pay</Text>
+          <Text style={styles.netValue}>{formatCurrency(payslip.netPay, language, currency)}</Text>
+          <Text style={styles.netLabel}>{t('payslips.netPay')}</Text>
         </View>
         <ChevronRight size={18} color={colors.textTertiary} strokeWidth={2} />
       </View>
@@ -48,21 +52,10 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
   },
   accent: {
     width: 4,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.blue,
   },
   body: {
     flex: 1,
@@ -74,10 +67,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   period: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '700',
     color: colors.text,
     marginBottom: 4,
+    letterSpacing: -0.1,
   },
   amounts: {
     flexDirection: 'row',
@@ -89,7 +83,7 @@ const styles = StyleSheet.create({
   },
   grossValue: {
     fontSize: 13,
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     fontWeight: '500',
   },
   right: {
@@ -99,7 +93,7 @@ const styles = StyleSheet.create({
   netValue: {
     fontSize: 18,
     fontWeight: '800',
-    color: colors.primary,
+    color: colors.blue,
     letterSpacing: -0.3,
   },
   netLabel: {

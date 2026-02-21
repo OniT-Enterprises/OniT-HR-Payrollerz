@@ -13,6 +13,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   Timestamp,
   serverTimestamp,
 } from 'firebase/firestore';
@@ -91,11 +92,14 @@ export const useLeaveStore = create<LeaveState>((set, get) => ({
   fetchRequests: async (tenantId: string, employeeId: string) => {
     set({ loading: true, error: null });
     try {
+      const yearStart = `${new Date().getFullYear()}-01-01`;
       const q = query(
         collection(db, 'leave_requests'),
         where('tenantId', '==', tenantId),
         where('employeeId', '==', employeeId),
-        orderBy('requestDate', 'desc')
+        where('requestDate', '>=', yearStart),
+        orderBy('requestDate', 'desc'),
+        limit(50)
       );
       const snap = await getDocs(q);
       const requests: LeaveRequest[] = snap.docs.map((d) => {

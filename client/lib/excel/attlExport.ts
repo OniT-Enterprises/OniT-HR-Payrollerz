@@ -7,7 +7,7 @@
  * Based on: https://attl.gov.tl/wp-content/uploads/2021/03/Form_Pay_eng.xlsx
  */
 
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 import type { MonthlyWITReturn } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { getTodayTL } from "@/lib/dateUtils";
@@ -94,8 +94,11 @@ export async function generateATTLExcel(
     ...additionalData,
   };
 
+  // Lazy-load ExcelJS (~750KB) only when generating a report
+  const { default: ExcelJSLib } = await import("exceljs");
+
   // Create workbook
-  const wb = new ExcelJS.Workbook();
+  const wb = new ExcelJSLib.Workbook();
 
   // Create main form sheet
   createFormSheet(wb, formData);

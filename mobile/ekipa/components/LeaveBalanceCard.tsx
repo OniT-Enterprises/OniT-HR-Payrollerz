@@ -1,7 +1,8 @@
 /**
- * LeaveBalanceCard — shows entitled/used/remaining with progress bar and accent
+ * LeaveBalanceCard — Dark premium card with colored left border,
+ * large remaining number, progress bar, and clean stat dots.
  */
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../lib/colors';
 import type { LeaveBalanceItem } from '../types/leave';
 
@@ -17,16 +18,14 @@ export function LeaveBalanceCard({ label, balance, color = colors.primary }: Lea
     : 0;
 
   return (
-    <View style={styles.card}>
-      {/* Colored accent bar */}
-      <View style={[styles.accent, { backgroundColor: color }]} />
-
+    <View style={[styles.card, { borderLeftColor: color }]}>
       <View style={styles.body}>
+        {/* Header: label + large remaining */}
         <View style={styles.header}>
           <Text style={styles.label}>{label}</Text>
           <View style={styles.remainingWrap}>
             <Text style={[styles.remainingValue, { color }]}>{balance.remaining}</Text>
-            <Text style={styles.remainingUnit}> / {balance.entitled}</Text>
+            <Text style={styles.remainingUnit}>/ {balance.entitled}</Text>
           </View>
         </View>
 
@@ -40,16 +39,19 @@ export function LeaveBalanceCard({ label, balance, color = colors.primary }: Lea
           />
         </View>
 
+        {/* Stat dots */}
         <View style={styles.stats}>
           <View style={styles.statItem}>
             <View style={[styles.statDot, { backgroundColor: color }]} />
-            <Text style={styles.stat}>Used: {balance.used}</Text>
+            <Text style={styles.statLabel}>Used</Text>
+            <Text style={styles.statValue}>{balance.used}</Text>
           </View>
           {balance.pending > 0 && (
             <View style={styles.statItem}>
               <View style={[styles.statDot, { backgroundColor: colors.warning }]} />
-              <Text style={[styles.stat, { color: colors.warning }]}>
-                Pending: {balance.pending}
+              <Text style={styles.statLabel}>Pending</Text>
+              <Text style={[styles.statValue, { color: colors.warning }]}>
+                {balance.pending}
               </Text>
             </View>
           )}
@@ -61,61 +63,48 @@ export function LeaveBalanceCard({ label, balance, color = colors.primary }: Lea
 
 const styles = StyleSheet.create({
   card: {
-    flexDirection: 'row',
     backgroundColor: colors.bgCard,
     borderRadius: 14,
-    overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
-  },
-  accent: {
-    width: 4,
+    borderLeftWidth: 4,
+    overflow: 'hidden',
   },
   body: {
-    flex: 1,
-    padding: 14,
+    padding: 16,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   label: {
     fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    letterSpacing: 0.2,
   },
   remainingWrap: {
     flexDirection: 'row',
     alignItems: 'baseline',
+    gap: 4,
   },
   remainingValue: {
+    fontSize: 24,
     fontWeight: '800',
-    fontSize: 18,
   },
   remainingUnit: {
-    color: colors.textTertiary,
     fontSize: 13,
     fontWeight: '500',
+    color: colors.textTertiary,
   },
   progressTrack: {
     height: 6,
-    backgroundColor: colors.bgSubtle,
+    backgroundColor: '#1A2332',
     borderRadius: 3,
     overflow: 'hidden',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   progressFill: {
     height: '100%',
@@ -123,21 +112,26 @@ const styles = StyleSheet.create({
   },
   stats: {
     flexDirection: 'row',
-    gap: 16,
+    gap: 20,
   },
   statItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 6,
   },
   statDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
   },
-  stat: {
+  statLabel: {
     fontSize: 12,
-    color: colors.textSecondary,
     fontWeight: '500',
+    color: colors.textTertiary,
+  },
+  statValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.textSecondary,
   },
 });

@@ -37,19 +37,21 @@ export class FileUploadService {
   /**
    * Upload employee document
    * @param file - The file to upload
+   * @param tenantId - Tenant ID for storage isolation
    * @param employeeId - Employee ID
    * @param documentType - Type of document (workContract, workingVisa, etc.)
    * @returns Promise with download URL
    */
   async uploadEmployeeDocument(
     file: File,
+    tenantId: string,
     employeeId: string,
     documentType: string,
   ): Promise<string> {
     const timestamp = Date.now();
     const fileExtension = file.name.split(".").pop();
     const fileName = `${documentType}_${timestamp}.${fileExtension}`;
-    const path = `employees/${employeeId}/documents/${fileName}`;
+    const path = `tenants/${tenantId}/employees/${employeeId}/documents/${fileName}`;
 
     return this.uploadFile(file, path);
   }
@@ -78,14 +80,15 @@ export class FileUploadService {
   /**
    * Upload expense receipt
    * @param file - The receipt file (image or PDF)
+   * @param tenantId - Tenant ID for storage isolation
    * @param expenseId - Expense ID (use 'temp' prefix for new expenses)
    * @returns Promise with download URL
    */
-  async uploadExpenseReceipt(file: File, expenseId: string): Promise<string> {
+  async uploadExpenseReceipt(file: File, tenantId: string, expenseId: string): Promise<string> {
     const timestamp = Date.now();
     const fileExtension = file.name.split(".").pop();
     const fileName = `receipt_${timestamp}.${fileExtension}`;
-    const path = `expenses/${expenseId}/receipts/${fileName}`;
+    const path = `tenants/${tenantId}/expenses/${expenseId}/receipts/${fileName}`;
 
     return this.uploadFile(file, path);
   }

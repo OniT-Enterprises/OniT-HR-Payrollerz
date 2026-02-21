@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import Papa from "papaparse";
 import { formatDateTL, getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -310,9 +309,10 @@ export default function CustomReports() {
     });
   };
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (!previewData || !previewColumns.length) return;
 
+    const { default: Papa } = await import("papaparse");
     const rows = previewData.map((item) =>
       previewColumns.reduce((row, c) => {
         const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);

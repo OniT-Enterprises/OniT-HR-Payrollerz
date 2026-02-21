@@ -355,7 +355,7 @@ export const invoiceFormSchema = z.object({
   items: z.array(z.object({
     description: z.string().min(1, 'Description is required').max(500),
     quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
-    unitPrice: z.coerce.number().min(0, 'Price cannot be negative'),
+    unitPrice: z.coerce.number().refine(v => v > 0, { message: 'Unit price is required' }),
     amount: z.number().optional(),
     vatRate: z.coerce.number().min(0).max(100).optional(),
   })).min(1, 'At least one item is required'),
@@ -383,7 +383,7 @@ export const recurringInvoiceFormSchema = z.object({
     id: z.string().optional(),
     description: z.string().min(1, 'Description is required'),
     quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
-    unitPrice: z.coerce.number().min(0, 'Price cannot be negative'),
+    unitPrice: z.coerce.number().refine(v => v > 0, { message: 'Unit price is required' }),
     amount: z.number().optional(),
   })).min(1, 'At least one item is required'),
   taxRate: z.coerce.number().min(0).max(100).default(0),

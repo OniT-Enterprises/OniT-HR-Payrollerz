@@ -40,7 +40,6 @@ import {
   Clock,
   FilePlus,
 } from "lucide-react";
-import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
@@ -50,8 +49,6 @@ import { getTodayTL } from "@/lib/dateUtils";
 import { formatDateTL } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
 import type { JournalEntry } from "@/types/accounting";
-
-const _theme = sectionThemes.accounting;
 
 function AccountingDashboardSkeleton() {
   return (

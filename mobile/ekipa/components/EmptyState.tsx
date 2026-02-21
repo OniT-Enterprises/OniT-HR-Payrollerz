@@ -1,5 +1,6 @@
 /**
- * EmptyState — friendly placeholder for empty lists
+ * EmptyState — friendly placeholder for empty lists.
+ * Dark theme: icon in elevated circle (#283548), green icon, white title, muted subtitle.
  */
 import { View, Text, StyleSheet } from 'react-native';
 import { Inbox } from 'lucide-react-native';
@@ -34,7 +35,7 @@ const styles = StyleSheet.create({
     width: 72,
     height: 72,
     borderRadius: 36,
-    backgroundColor: colors.primaryBg,
+    backgroundColor: colors.bgElevated,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 8,

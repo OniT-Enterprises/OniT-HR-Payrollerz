@@ -1,5 +1,6 @@
 /**
  * StatusBadge — colored badge for leave status, attendance status, etc.
+ * Dark theme: 1px border matching text color at 20% opacity for definition.
  */
 import { View, Text, StyleSheet } from 'react-native';
 import { colors } from '../lib/colors';
@@ -21,11 +22,27 @@ const statusColors: Record<StatusType, { bg: string; text: string }> = {
   absent: { bg: colors.errorBg, text: colors.error },
 };
 
+/** Convert hex color to rgba with given opacity */
+function hexToRgba(hex: string, opacity: number): string {
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
+
 export function StatusBadge({ status, label }: StatusBadgeProps) {
   const c = statusColors[status] || statusColors.pending;
 
   return (
-    <View style={[styles.badge, { backgroundColor: c.bg }]}>
+    <View
+      style={[
+        styles.badge,
+        {
+          backgroundColor: c.bg,
+          borderColor: hexToRgba(c.text, 0.2),
+        },
+      ]}
+    >
       <View style={[styles.dot, { backgroundColor: c.text }]} />
       <Text style={[styles.text, { color: c.text }]}>{label}</Text>
     </View>
@@ -41,6 +58,7 @@ const styles = StyleSheet.create({
     paddingVertical: 5,
     borderRadius: 20,
     alignSelf: 'flex-start',
+    borderWidth: 1,
   },
   dot: {
     width: 5,

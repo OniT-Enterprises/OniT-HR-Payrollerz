@@ -96,7 +96,7 @@ export default function IncompleteProfilesDialog({
                     <div className="flex items-center gap-3">
                       <Avatar>
                         <AvatarImage
-                          src="/placeholder.svg"
+                          src=""
                           alt={employee.personalInfo.firstName}
                         />
                         <AvatarFallback>

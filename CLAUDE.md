@@ -83,6 +83,21 @@ npm run build        # Production build
 npm run typecheck    # TypeScript check
 ```
 
+## Ekipa Mobile App (Expo)
+
+**Expo account**: `naroman`
+
+```bash
+# Dev server
+cd mobile/ekipa && npx expo start --clear
+
+# Build APK (Android preview)
+cd mobile/ekipa && eas build --platform android --profile preview
+
+# Build production AAB
+cd mobile/ekipa && eas build --platform android --profile production
+```
+
 ## Meza Bot (Server)
 
 The Meza AI assistant lets HR managers query company data via WhatsApp and a web dashboard.

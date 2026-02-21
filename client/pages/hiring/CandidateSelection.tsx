@@ -59,52 +59,6 @@ export default function CandidateSelection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  const [_showFilterPanel, _setShowFilterPanel] = useState(false);
-
-  // Sample realistic candidate data for AI extraction
-  const sampleCandidates = [
-    {
-      name: "Alexandra Chen",
-      email: "alexandra.chen@gmail.com",
-      phone: "+1 (555) 0891",
-    },
-    {
-      name: "Marcus Rodriguez",
-      email: "m.rodriguez@outlook.com",
-      phone: "+1 (555) 0742",
-    },
-    {
-      name: "Priya Patel",
-      email: "priya.patel.dev@gmail.com",
-      phone: "+1 (555) 0963",
-    },
-    {
-      name: "James Wilson",
-      email: "james.wilson2024@email.com",
-      phone: "+1 (555) 0854",
-    },
-    {
-      name: "Sofia Andersson",
-      email: "sofia.andersson@proton.me",
-      phone: "+1 (555) 0721",
-    },
-    {
-      name: "David Kim",
-      email: "dkim.engineer@gmail.com",
-      phone: "+1 (555) 0638",
-    },
-    {
-      name: "Isabella Martinez",
-      email: "isabella.martinez.dev@outlook.com",
-      phone: "+1 (555) 0917",
-    },
-    {
-      name: "Ryan O'Connor",
-      email: "ryan.oconnor.tech@gmail.com",
-      phone: "+1 (555) 0582",
-    },
-  ];
-
   // State for managing candidates list
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(true);
@@ -175,21 +129,29 @@ export default function CandidateSelection() {
     setStatusFilter("");
   };
 
-  // AI extraction function - simulates real AI processing with realistic data
+  // Extract candidate name hint from uploaded file name
   const extractInfoFromFiles = async (
-    _cvFile?: File,
+    cvFile?: File,
     _coverLetterFile?: File,
   ) => {
     setIsProcessing(true);
 
-    // Simulate AI processing delay
-    await new Promise((resolve) => setTimeout(resolve, 2000));
+    // Derive a name hint from the CV file name (e.g. "John_Doe_CV.pdf" -> "John Doe")
+    let nameHint = "";
+    if (cvFile) {
+      const baseName = cvFile.name.replace(/\.[^.]+$/, ""); // strip extension
+      nameHint = baseName
+        .replace(/[_-]/g, " ")
+        .replace(/\b(cv|resume|curriculum|vitae|cover|letter)\b/gi, "")
+        .replace(/\s+/g, " ")
+        .trim();
+    }
 
-    // Get a random candidate from sample data to simulate AI extraction
-    const randomCandidate =
-      sampleCandidates[Math.floor(Math.random() * sampleCandidates.length)];
-
-    setImportedData(randomCandidate);
+    setImportedData({
+      name: nameHint,
+      email: "",
+      phone: "",
+    });
     setIsProcessing(false);
   };
 
@@ -236,11 +198,11 @@ export default function CandidateSelection() {
           .map((n) => n[0])
           .join("")
           .toUpperCase(),
-        cvQuality: Math.floor(Math.random() * 3) + 7, // Random score 7-9
-        coverLetter: Math.floor(Math.random() * 3) + 7, // Random score 7-9
-        technicalSkills: Math.floor(Math.random() * 3) + 7, // Random score 7-9
+        cvQuality: 0,
+        coverLetter: 0,
+        technicalSkills: 0,
         interviewScore: null,
-        totalScore: Math.floor(Math.random() * 2) + 7.5, // Random score 7.5-8.5
+        totalScore: 0,
       };
 
       const candidateId = await candidateService.addCandidate(tenantId, newCandidate);
@@ -823,7 +785,7 @@ export default function CandidateSelection() {
                           <div className="flex items-center gap-3">
                             <Avatar>
                               <AvatarImage
-                                src={`/placeholder.svg`}
+                                src=""
                                 alt={candidate.name}
                               />
                               <AvatarFallback>

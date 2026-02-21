@@ -39,11 +39,8 @@ import {
   History,
   Landmark,
 } from "lucide-react";
-import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
-
-const _theme = sectionThemes.reports;
 
 function ReportsDashboardSkeleton() {
   return (

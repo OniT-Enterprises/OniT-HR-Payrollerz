@@ -43,6 +43,8 @@ const AllEmployees = lazy(() => import("@/pages/staff/AllEmployees"));
 const AddEmployee = lazy(() => import("@/pages/staff/AddEmployee"));
 const Departments = lazy(() => import("@/pages/staff/Departments"));
 const OrganizationChart = lazy(() => import("@/pages/staff/OrganizationChart"));
+const Announcements = lazy(() => import("@/pages/staff/Announcements"));
+const GrievanceInbox = lazy(() => import("@/pages/staff/GrievanceInbox"));
 
 // People - Hiring
 const CreateJobLocal = lazy(() => import("@/pages/hiring/CreateJobLocal"));
@@ -156,6 +158,8 @@ export const peopleRoutes = (
     <Route path="/people/add" element={<AddEmployee />} />
     <Route path="/people/departments" element={<Departments />} />
     <Route path="/people/org-chart" element={<OrganizationChart />} />
+    <Route path="/people/announcements" element={<Announcements />} />
+    <Route path="/people/grievances" element={<GrievanceInbox />} />
 
     {/* Hiring */}
     <Route path="/people/jobs" element={<CreateJobLocal />} />
@@ -237,7 +241,7 @@ export const accountingRoutes = (
     <Route path="/accounting/journal-entries" element={<JournalEntries />} />
     <Route path="/accounting/general-ledger" element={<GeneralLedger />} />
     <Route path="/accounting/trial-balance" element={<TrialBalance />} />
-    {/* TODO: Add Financial Reports page */}
+    {/* Reuses PayrollReports until a dedicated accounting reports page is built */}
     <Route path="/accounting/reports" element={<PayrollReports />} />
   </>
 );

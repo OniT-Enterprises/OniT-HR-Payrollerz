@@ -1128,7 +1128,7 @@ export default function AllEmployees() {
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
                             <AvatarImage
-                              src="/placeholder.svg"
+                              src=""
                               alt={employee.personalInfo.firstName}
                             />
                             <AvatarFallback className="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600">

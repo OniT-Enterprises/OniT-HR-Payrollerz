@@ -1,8 +1,9 @@
 /**
  * Ekipa — Leave Tab
- * Balance cards with progress bars, request history with status badges
+ * Premium dark theme with violet (#8B5CF6) module accent.
+ * Balance cards with progress bars, request history with status badges.
  */
-import { useEffect } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,6 +12,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { router } from 'expo-router';
 import { Plus, Calendar } from 'lucide-react-native';
@@ -22,6 +24,7 @@ import { LeaveBalanceCard } from '../../components/LeaveBalanceCard';
 import { StatusBadge } from '../../components/StatusBadge';
 import { EmptyState } from '../../components/EmptyState';
 
+
 export default function LeaveScreen() {
   const t = useT();
   const tenantId = useTenantStore((s) => s.tenantId);
@@ -32,6 +35,8 @@ export default function LeaveScreen() {
   const fetchBalance = useLeaveStore((s) => s.fetchBalance);
   const fetchRequests = useLeaveStore((s) => s.fetchRequests);
 
+  const [refreshing, setRefreshing] = useState(false);
+
   useEffect(() => {
     if (tenantId && employeeId) {
       fetchBalance(tenantId, employeeId);
@@ -39,14 +44,30 @@ export default function LeaveScreen() {
     }
   }, [tenantId, employeeId, fetchBalance, fetchRequests]);
 
+  const onRefresh = useCallback(async () => {
+    if (!tenantId || !employeeId) return;
+    setRefreshing(true);
+    await Promise.all([
+      fetchBalance(tenantId, employeeId),
+      fetchRequests(tenantId, employeeId),
+    ]);
+    setRefreshing(false);
+  }, [tenantId, employeeId, fetchBalance, fetchRequests]);
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/* Balance section */}
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.violet} />
+      }
+    >
+      {/* ── Balance section ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionHeaderLeft}>
-          <Calendar size={14} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>{t('leave.balance')}</Text>
+        <View style={styles.iconBadge}>
+          <Calendar size={14} color={colors.violet} strokeWidth={2.5} />
         </View>
+        <Text style={styles.sectionTitle}>{t('leave.balance')}</Text>
       </View>
 
       {balance ? (
@@ -78,11 +99,11 @@ export default function LeaveScreen() {
         </View>
       ) : (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator size="small" color={colors.violet} />
         </View>
       )}
 
-      {/* Request button */}
+      {/* ── Request button ── */}
       <TouchableOpacity
         style={styles.requestBtn}
         onPress={() => router.push('/screens/LeaveRequestForm')}
@@ -92,24 +113,24 @@ export default function LeaveScreen() {
         <Text style={styles.requestBtnText}>{t('leave.request')}</Text>
       </TouchableOpacity>
 
-      {/* History section */}
+      {/* ── History section ── */}
       <View style={styles.sectionHeader}>
-        <View style={styles.sectionHeaderLeft}>
-          <Calendar size={14} color={colors.primary} strokeWidth={2} />
-          <Text style={styles.sectionTitle}>{t('leave.history')}</Text>
+        <View style={styles.iconBadge}>
+          <Calendar size={14} color={colors.violet} strokeWidth={2.5} />
         </View>
+        <Text style={styles.sectionTitle}>{t('leave.history')}</Text>
       </View>
 
       {loading && requests.length === 0 ? (
         <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color={colors.primary} />
+          <ActivityIndicator size="small" color={colors.violet} />
         </View>
       ) : requests.length === 0 ? (
         <EmptyState title={t('leave.empty')} />
       ) : (
         <View style={styles.requestsList}>
           {requests.map((req) => (
-            <View key={req.id} style={styles.requestRow}>
+            <View key={req.id} style={styles.requestCard}>
               <View style={styles.requestLeft}>
                 <Text style={styles.requestType}>{req.leaveTypeLabel}</Text>
                 <Text style={styles.requestDates}>
@@ -140,52 +161,59 @@ const styles = StyleSheet.create({
     padding: 16,
     paddingBottom: 40,
   },
+
+  // ── Section headers ──
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    gap: 10,
+    marginBottom: 14,
     marginTop: 8,
   },
-  sectionHeaderLeft: {
-    flexDirection: 'row',
+  iconBadge: {
+    width: 30,
+    height: 30,
+    borderRadius: 8,
+    backgroundColor: colors.violetBg,
     alignItems: 'center',
-    gap: 6,
+    justifyContent: 'center',
   },
   sectionTitle: {
     fontSize: 14,
     fontWeight: '700',
     color: colors.textSecondary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
+
+  // ── Loading ──
   loadingWrap: {
     padding: 24,
     alignItems: 'center',
   },
 
-  // Balance
+  // ── Balance grid ──
   balanceGrid: {
     gap: 10,
     marginBottom: 16,
   },
-
-  // Request button
+  // ── Request button ──
   requestBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.violet,
     borderRadius: 14,
-    padding: 16,
-    marginBottom: 24,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 28,
     ...Platform.select({
       ios: {
-        shadowColor: colors.primaryDark,
+        shadowColor: colors.violet,
         shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
+        shadowOpacity: 0.20,
+        shadowRadius: 10,
       },
       android: {
         elevation: 4,
@@ -196,13 +224,14 @@ const styles = StyleSheet.create({
     color: colors.white,
     fontSize: 16,
     fontWeight: '700',
+    letterSpacing: 0.3,
   },
 
-  // Request list
+  // ── Request history cards ──
   requestsList: {
     gap: 10,
   },
-  requestRow: {
+  requestCard: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -211,20 +240,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.04,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 1,
-      },
-    }),
   },
   requestLeft: {
     flex: 1,
+    marginRight: 12,
   },
   requestType: {
     fontSize: 15,
@@ -233,14 +252,14 @@ const styles = StyleSheet.create({
   },
   requestDates: {
     fontSize: 13,
-    color: colors.textSecondary,
-    marginTop: 3,
     fontWeight: '500',
+    color: colors.textSecondary,
+    marginTop: 4,
   },
   requestDuration: {
     fontSize: 12,
+    fontWeight: '500',
     color: colors.textTertiary,
     marginTop: 2,
-    fontWeight: '500',
   },
 });

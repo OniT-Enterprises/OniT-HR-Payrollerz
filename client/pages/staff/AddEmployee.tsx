@@ -124,7 +124,6 @@ export default function AddEmployee() {
     handleSubmit,
     watch,
     reset,
-    trigger: _trigger,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(addEmployeeFormSchema),
@@ -401,7 +400,7 @@ export default function AddEmployee() {
 
       if (additionalInfo.workContract) {
         try {
-          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workContract, employeeIdForUpload, "workContract");
+          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workContract, tenantId, employeeIdForUpload, "workContract");
           newEmployee.documents.workContract.fileUrl = url;
         } catch (e) {
           console.error("Work contract upload failed:", e);
@@ -410,7 +409,7 @@ export default function AddEmployee() {
 
       if (additionalInfo.workingVisaFile) {
         try {
-          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workingVisaFile, employeeIdForUpload, "workingVisa");
+          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.workingVisaFile, tenantId, employeeIdForUpload, "workingVisa");
           newEmployee.documents.workingVisaResidency.fileUrl = url;
         } catch (e) {
           console.error("Visa upload failed:", e);

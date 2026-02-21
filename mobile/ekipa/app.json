@@ -25,10 +25,36 @@
       },
       "package": "tl.onit.ekipa",
       "edgeToEdgeEnabled": true,
-      "navigationBarColor": "#FFFFFF"
+      "navigationBarColor": "#FFFFFF",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
+      ]
     },
     "plugins": [
-      "expo-router"
-    ]
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Ekipa needs camera access to take crew attendance photos and scan QR badges."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Ekipa needs your location to record where crew attendance was taken."
+        }
+      ],
+      "expo-sqlite"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "99fc7d0b-459a-4d81-86df-a23506814a58"
+      }
+    },
+    "owner": "naroman"
   }
 }

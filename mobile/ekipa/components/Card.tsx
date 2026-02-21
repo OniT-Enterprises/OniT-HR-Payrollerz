@@ -1,7 +1,9 @@
 /**
- * Card — elevated card container with shadow for Ekipa light theme
+ * Card — dark theme card container for Ekipa.
+ * Default: dark card (#1F2937), subtle border, no shadows.
+ * Subtle: slightly different dark (#1A2332), no border.
  */
-import { View, StyleSheet, Platform, type ViewProps } from 'react-native';
+import { View, StyleSheet, type ViewProps } from 'react-native';
 import { colors } from '../lib/colors';
 
 interface CardProps extends ViewProps {
@@ -30,29 +32,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderWidth: 1,
     borderColor: colors.border,
-    // Shadow
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
   },
   subtle: {
     backgroundColor: colors.bgSubtle,
+    borderWidth: 0,
     borderColor: colors.transparent,
-    ...Platform.select({
-      ios: {
-        shadowOpacity: 0,
-      },
-      android: {
-        elevation: 0,
-      },
-    }),
   },
 });

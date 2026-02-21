@@ -164,7 +164,7 @@ export default function EmployeeProfileView({
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage
-                src="/placeholder.svg"
+                src=""
                 alt={employee.personalInfo.firstName}
               />
               <AvatarFallback>

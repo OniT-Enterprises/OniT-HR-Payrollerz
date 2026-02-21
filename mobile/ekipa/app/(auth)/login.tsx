@@ -1,6 +1,7 @@
 /**
- * Ekipa — Login Screen
- * Premium feel with teal hero section
+ * Ekipa -- Login Screen
+ * Premium dark theme with green (#22C55E) hero section
+ * Glass-morphism shield icon, elevated form card overlapping hero
  */
 import { useState } from 'react';
 import {
@@ -14,10 +15,12 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
+import { router } from 'expo-router';
 import { ArrowRight, Shield } from 'lucide-react-native';
 import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
@@ -48,28 +51,35 @@ export default function LoginScreen() {
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        {/* Hero Section */}
+        {/* ── Hero Section ─────────────────────────────── */}
         <View style={styles.hero}>
+          {/* Decorative circles */}
           <View style={styles.heroPattern}>
             <View style={styles.heroCircle1} />
             <View style={styles.heroCircle2} />
+            <View style={styles.heroCircle3} />
           </View>
+
           <View style={styles.heroContent}>
-            <View style={styles.logoWrap}>
-              <Shield size={28} color={colors.white} strokeWidth={2} />
+            {/* Glass-morphism shield icon */}
+            <View style={styles.logoGlass}>
+              <View style={styles.logoInner}>
+                <Shield size={30} color={colors.white} strokeWidth={2} />
+              </View>
             </View>
+
             <Text style={styles.brandName}>Ekipa</Text>
             <Text style={styles.brandTagline}>{t('login.tagline')}</Text>
           </View>
         </View>
 
-        {/* Form Section */}
+        {/* ── Form Section ─────────────────────────────── */}
         <View style={styles.formWrap}>
-          <View style={styles.formContainer}>
-            <Text style={styles.welcomeText}>{t('login.signIn')}</Text>
-
+          <View style={styles.formCard}>
+            <Text style={styles.signInTitle}>{t('login.signIn')}</Text>
+            {/* Error */}
             {errorMessage && (
-              <View style={styles.errorContainer}>
+              <View style={styles.errorCard}>
                 <Text style={styles.errorText}>{errorMessage}</Text>
                 <TouchableOpacity onPress={clearError} hitSlop={12}>
                   <Text style={styles.errorDismiss}>{'\u2715'}</Text>
@@ -77,6 +87,7 @@ export default function LoginScreen() {
               </View>
             )}
 
+            {/* Email */}
             <Text style={styles.label}>{t('login.email')}</Text>
             <TextInput
               style={styles.input}
@@ -90,6 +101,7 @@ export default function LoginScreen() {
               returnKeyType="next"
             />
 
+            {/* Password */}
             <Text style={styles.label}>{t('login.password')}</Text>
             <TextInput
               style={styles.input}
@@ -103,6 +115,16 @@ export default function LoginScreen() {
               onSubmitEditing={handleLogin}
             />
 
+            {/* Forgot password */}
+            <TouchableOpacity
+              onPress={() => router.push('/(auth)/forgot-password')}
+              activeOpacity={0.7}
+              style={styles.forgotBtn}
+            >
+              <Text style={styles.forgotText}>{t('forgot.title')}</Text>
+            </TouchableOpacity>
+
+            {/* Sign In button */}
             <TouchableOpacity
               onPress={handleLogin}
               disabled={loading || !email.trim() || !password.trim()}
@@ -131,6 +153,7 @@ export default function LoginScreen() {
   );
 }
 
+/* ── Styles ─────────────────────────────────────────── */
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -140,11 +163,11 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
 
-  // Hero
+  /* ── Hero ─────────────────────────────────────────── */
   hero: {
     backgroundColor: colors.primary,
     paddingTop: 80,
-    paddingBottom: 48,
+    paddingBottom: 56,
     alignItems: 'center',
     overflow: 'hidden',
     borderBottomLeftRadius: 32,
@@ -155,85 +178,111 @@ const styles = StyleSheet.create({
   },
   heroCircle1: {
     position: 'absolute',
-    top: -40,
-    right: -60,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: 'rgba(255,255,255,0.06)',
+    top: -50,
+    right: -70,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   heroCircle2: {
     position: 'absolute',
-    bottom: -30,
-    left: -40,
-    width: 160,
-    height: 160,
-    borderRadius: 80,
+    bottom: -40,
+    left: -50,
+    width: 180,
+    height: 180,
+    borderRadius: 90,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  heroCircle3: {
+    position: 'absolute',
+    top: 30,
+    left: 40,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     backgroundColor: 'rgba(255,255,255,0.04)',
   },
   heroContent: {
     alignItems: 'center',
     zIndex: 1,
   },
-  logoWrap: {
+
+  /* Glass-morphism logo */
+  logoGlass: {
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.20)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 18,
+  },
+  logoInner: {
     width: 56,
     height: 56,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.15)',
+    backgroundColor: 'rgba(255,255,255,0.10)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 16,
   },
+
   brandName: {
-    fontSize: 40,
-    fontWeight: '800',
+    fontSize: 46,
+    fontWeight: '900',
     color: colors.white,
-    letterSpacing: -1.5,
+    letterSpacing: -2,
   },
   brandTagline: {
     fontSize: 15,
-    color: 'rgba(255,255,255,0.75)',
+    color: 'rgba(255,255,255,0.70)',
     marginTop: 6,
     fontWeight: '500',
+    letterSpacing: 0.2,
   },
 
-  // Form
+  /* ── Form ─────────────────────────────────────────── */
   formWrap: {
     flex: 1,
     paddingHorizontal: 24,
-    marginTop: -20,
+    marginTop: -24,
   },
-  formContainer: {
+  formCard: {
     backgroundColor: colors.bgCard,
     borderRadius: 20,
     padding: 24,
+    borderWidth: 1,
+    borderColor: colors.border,
     ...Platform.select({
       ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.18,
+        shadowRadius: 20,
       },
       android: {
-        elevation: 6,
+        elevation: 8,
       },
     }),
   },
-  welcomeText: {
-    fontSize: 20,
+  signInTitle: {
+    fontSize: 22,
     fontWeight: '800',
     color: colors.text,
     marginBottom: 4,
     letterSpacing: -0.3,
   },
+
   label: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    fontSize: 11,
+    fontWeight: '700',
+    color: colors.textTertiary,
     marginBottom: 6,
-    marginTop: 18,
+    marginTop: 20,
     textTransform: 'uppercase',
-    letterSpacing: 0.5,
+    letterSpacing: 1,
   },
   input: {
     borderWidth: 1.5,
@@ -245,7 +294,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // Button
+  /* Forgot password */
+  forgotBtn: {
+    alignSelf: 'flex-end',
+    marginTop: 12,
+  },
+  forgotText: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: colors.primary,
+  },
+
+  /* Button */
   button: {
     marginTop: 24,
     borderRadius: 14,
@@ -254,18 +314,18 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     ...Platform.select({
       ios: {
-        shadowColor: colors.primaryDark,
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 8,
+        shadowColor: colors.primary,
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.35,
+        shadowRadius: 12,
       },
       android: {
-        elevation: 4,
+        elevation: 6,
       },
     }),
   },
   buttonDisabled: {
-    opacity: 0.5,
+    opacity: 0.45,
     ...Platform.select({
       ios: { shadowOpacity: 0 },
       android: { elevation: 0 },
@@ -282,8 +342,8 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 
-  // Error
-  errorContainer: {
+  /* Error */
+  errorCard: {
     backgroundColor: colors.errorBg,
     borderRadius: 12,
     padding: 14,
@@ -292,7 +352,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 16,
     borderWidth: 1,
-    borderColor: 'rgba(220, 38, 38, 0.15)',
+    borderColor: 'rgba(239, 68, 68, 0.18)',
   },
   errorText: {
     color: colors.error,

@@ -1,30 +1,34 @@
 /**
  * Ekipa — Payslip Detail Screen
- * Full earnings + deductions breakdown with PDF share
+ * Premium dark theme with blue (#3B82F6) module accent.
+ * Full earnings + deductions breakdown with PDF share.
  */
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { ArrowLeft, Share2, TrendingUp, TrendingDown } from 'lucide-react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
 import { usePayslipStore } from '../../stores/payslipStore';
-import { useT } from '../../lib/i18n';
+import { useEmployeeStore } from '../../stores/employeeStore';
+import { useI18nStore, useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
+import { formatCurrency } from '../../lib/currency';
 import { Card } from '../../components/Card';
-
-function formatMoney(amount: number): string {
-  return `$${amount.toFixed(2)}`;
-}
+import { PayslipFunnel } from '../../components/PayslipFunnel';
 
 export default function PayslipDetail() {
   const t = useT();
+  const language = useI18nStore((s) => s.language);
+  const currency = useEmployeeStore((s) => s.employee?.currency || 'USD');
+  const insets = useSafeAreaInsets();
   const payslip = usePayslipStore((s) => s.selectedPayslip);
   const clearSelection = usePayslipStore((s) => s.clearSelection);
 
   if (!payslip) {
     return (
       <View style={styles.container}>
-        <View style={styles.header}>
+        <View style={[styles.header, { paddingTop: insets.top + 12 }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={22} color={colors.white} strokeWidth={2} />
           </TouchableOpacity>
@@ -56,27 +60,27 @@ export default function PayslipDetail() {
             td:last-child { text-align: right; font-weight: 600; }
             .section { font-weight: 700; font-size: 13px; color: #475569; text-transform: uppercase; letter-spacing: 0.5px; padding: 12px 0 4px; }
             .total { font-weight: 800; font-size: 16px; border-top: 2px solid #0F172A; }
-            .net { color: #0D9488; }
+            .net { color: #22C55E; }
           </style>
         </head>
         <body>
-          <h1>${payslip.employeeName || 'Payslip'}</h1>
+          <h1>${payslip.employeeName || t('payslips.title')}</h1>
           <h2>${payslip.periodLabel}</h2>
 
-          <div class="section">Earnings</div>
+          <div class="section">${t('payslips.earnings')}</div>
           <table>
-            ${payslip.earnings.map((e) => `<tr><td>${e.label}</td><td>${formatMoney(e.amount)}</td></tr>`).join('')}
-            <tr class="total"><td>Gross Pay</td><td>${formatMoney(payslip.grossPay)}</td></tr>
+            ${payslip.earnings.map((e) => `<tr><td>${e.label}</td><td>${formatCurrency(e.amount, language, currency)}</td></tr>`).join('')}
+            <tr class="total"><td>${t('payslips.grossPay')}</td><td>${formatCurrency(payslip.grossPay, language, currency)}</td></tr>
           </table>
 
-          <div class="section">Deductions</div>
+          <div class="section">${t('payslips.deductions')}</div>
           <table>
-            ${payslip.deductions.map((d) => `<tr><td>${d.label}</td><td>-${formatMoney(d.amount)}</td></tr>`).join('')}
-            <tr class="total"><td>Total Deductions</td><td>-${formatMoney(payslip.totalDeductions)}</td></tr>
+            ${payslip.deductions.map((d) => `<tr><td>${d.label}</td><td>-${formatCurrency(d.amount, language, currency)}</td></tr>`).join('')}
+            <tr class="total"><td>${t('payslips.totalDeductions')}</td><td>-${formatCurrency(payslip.totalDeductions, language, currency)}</td></tr>
           </table>
 
           <table>
-            <tr class="total net"><td>Net Pay</td><td>${formatMoney(payslip.netPay)}</td></tr>
+            <tr class="total net"><td>${t('payslips.netPay')}</td><td>${formatCurrency(payslip.netPay, language, currency)}</td></tr>
           </table>
         </body>
         </html>
@@ -85,56 +89,66 @@ export default function PayslipDetail() {
       const { uri } = await Print.printToFileAsync({ html });
       await Sharing.shareAsync(uri, {
         mimeType: 'application/pdf',
-        dialogTitle: `Payslip ${payslip.periodLabel}`,
+        dialogTitle: `${t('payslips.title')} ${payslip.periodLabel}`,
       });
     } catch {
-      Alert.alert('Error', 'Could not generate PDF');
+      Alert.alert(t('common.error'), t('payslips.pdfError'));
     }
   };
 
   return (
     <View style={styles.container}>
-      {/* Teal header with net pay hero */}
+      {/* Blue hero header with decorative circles */}
       <View style={styles.heroHeader}>
         <View style={styles.heroDecor1} />
         <View style={styles.heroDecor2} />
-        <View style={styles.headerRow}>
+        <View style={styles.heroDecor3} />
+        <View style={[styles.headerRow, { paddingTop: insets.top + 12 }]}>
           <TouchableOpacity onPress={handleBack} style={styles.backBtn} activeOpacity={0.7}>
             <ArrowLeft size={22} color={colors.white} strokeWidth={2} />
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <Text style={styles.headerTitleWhite}>{payslip.periodLabel}</Text>
           </View>
-          <TouchableOpacity onPress={handleShare} style={styles.shareBtn} activeOpacity={0.7}>
-            <Share2 size={20} color={colors.white} strokeWidth={2} />
+          <TouchableOpacity onPress={handleShare} style={styles.shareBtnActive} activeOpacity={0.7}>
+            <Share2 size={20} color={colors.blue} strokeWidth={2} />
           </TouchableOpacity>
         </View>
         <View style={styles.heroContent}>
           <Text style={styles.heroLabel}>{t('payslips.net')}</Text>
-          <Text style={styles.heroAmount}>{formatMoney(payslip.netPay)}</Text>
+          <Text style={styles.heroAmount}>{formatCurrency(payslip.netPay, language, currency)}</Text>
         </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content}>
-        {/* Gross / Deductions summary row */}
+        {/* Gross / Deductions summary row — dark cards with colored left borders */}
         <View style={styles.summaryRow}>
-          <View style={[styles.summaryCard, { backgroundColor: colors.successBg }]}>
-            <TrendingUp size={14} color={colors.success} strokeWidth={2} />
-            <Text style={styles.summaryCardLabel}>{t('payslips.gross')}</Text>
-            <Text style={[styles.summaryCardValue, { color: colors.success }]}>
-              {formatMoney(payslip.grossPay)}
-            </Text>
+          <View style={styles.summaryCard}>
+            <View style={[styles.summaryBorderLeft, { backgroundColor: colors.emerald }]} />
+            <View style={styles.summaryCardInner}>
+              <TrendingUp size={16} color={colors.emerald} strokeWidth={2} />
+              <Text style={styles.summaryCardLabel}>{t('payslips.gross')}</Text>
+              <Text style={[styles.summaryCardValue, { color: colors.emerald }]}>
+                {formatCurrency(payslip.grossPay, language, currency)}
+              </Text>
+            </View>
           </View>
-          <View style={[styles.summaryCard, { backgroundColor: colors.errorBg }]}>
-            <TrendingDown size={14} color={colors.error} strokeWidth={2} />
-            <Text style={styles.summaryCardLabel}>{t('payslips.deductions')}</Text>
-            <Text style={[styles.summaryCardValue, { color: colors.error }]}>
-              -{formatMoney(payslip.totalDeductions)}
-            </Text>
+          <View style={styles.summaryCard}>
+            <View style={[styles.summaryBorderLeft, { backgroundColor: colors.error }]} />
+            <View style={styles.summaryCardInner}>
+              <TrendingDown size={16} color={colors.error} strokeWidth={2} />
+              <Text style={styles.summaryCardLabel}>{t('payslips.deductions')}</Text>
+              <Text style={[styles.summaryCardValue, { color: colors.error }]}>
+                -{formatCurrency(payslip.totalDeductions, language, currency)}
+              </Text>
+            </View>
           </View>
         </View>
 
-        {/* Earnings */}
+        {/* Visual funnel breakdown */}
+        <PayslipFunnel payslip={payslip} language={language} currency={currency} />
+
+        {/* Earnings line items */}
         <Text style={styles.sectionTitle}>{t('payslips.earnings')}</Text>
         <Card>
           {payslip.earnings.map((e, i) => (
@@ -146,12 +160,12 @@ export default function PayslipDetail() {
               ]}
             >
               <Text style={styles.lineLabel}>{e.label}</Text>
-              <Text style={styles.lineValue}>{formatMoney(e.amount)}</Text>
+              <Text style={styles.lineValue}>{formatCurrency(e.amount, language, currency)}</Text>
             </View>
           ))}
         </Card>
 
-        {/* Deductions */}
+        {/* Deductions line items */}
         <Text style={styles.sectionTitle}>{t('payslips.deductions')}</Text>
         <Card>
           {payslip.deductions.map((d, i) => (
@@ -164,7 +178,7 @@ export default function PayslipDetail() {
             >
               <Text style={styles.lineLabel}>{d.label}</Text>
               <Text style={[styles.lineValue, { color: colors.error }]}>
-                -{formatMoney(d.amount)}
+                -{formatCurrency(d.amount, language, currency)}
               </Text>
             </View>
           ))}
@@ -180,44 +194,51 @@ const styles = StyleSheet.create({
     backgroundColor: colors.bg,
   },
 
-  // Teal hero header
+  // ── Blue hero header ──────────────────────────────
   heroHeader: {
-    backgroundColor: colors.primary,
-    paddingBottom: 28,
+    backgroundColor: colors.blue,
+    paddingBottom: 32,
     overflow: 'hidden',
   },
   heroDecor1: {
     position: 'absolute',
-    top: -30,
-    right: -30,
-    width: 140,
-    height: 140,
-    borderRadius: 70,
-    backgroundColor: 'rgba(255,255,255,0.08)',
+    top: -40,
+    right: -40,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
+    backgroundColor: 'rgba(255,255,255,0.07)',
   },
   heroDecor2: {
     position: 'absolute',
-    bottom: -20,
-    left: 20,
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    bottom: -24,
+    left: 16,
+    width: 110,
+    height: 110,
+    borderRadius: 55,
     backgroundColor: 'rgba(255,255,255,0.05)',
+  },
+  heroDecor3: {
+    position: 'absolute',
+    top: 30,
+    left: -20,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
     paddingBottom: 4,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingTop: 56,
     paddingBottom: 12,
-    backgroundColor: colors.primary,
+    backgroundColor: colors.blue,
   },
   backBtn: {
     width: 40,
@@ -225,6 +246,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.12)',
   },
   headerCenter: {
     flex: 1,
@@ -243,22 +265,30 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  shareBtnActive: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.15)',
+  },
   heroContent: {
     alignItems: 'center',
-    paddingTop: 8,
+    paddingTop: 12,
   },
   heroLabel: {
     fontSize: 13,
     fontWeight: '600',
-    color: 'rgba(255,255,255,0.7)',
+    color: 'rgba(255,255,255,0.65)',
     textTransform: 'uppercase',
-    letterSpacing: 0.8,
+    letterSpacing: 1,
   },
   heroAmount: {
-    fontSize: 44,
+    fontSize: 48,
     fontWeight: '800',
     color: colors.white,
-    letterSpacing: -1,
+    letterSpacing: -1.5,
     marginTop: 4,
   },
 
@@ -267,7 +297,7 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
 
-  // Summary row
+  // ── Summary row — dark cards with colored left borders ──
   summaryRow: {
     flexDirection: 'row',
     gap: 10,
@@ -276,51 +306,52 @@ const styles = StyleSheet.create({
   },
   summaryCard: {
     flex: 1,
+    backgroundColor: colors.bgCard,
     borderRadius: 14,
+    overflow: 'hidden',
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  summaryBorderLeft: {
+    width: 3,
+  },
+  summaryCardInner: {
+    flex: 1,
     padding: 14,
     gap: 4,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#0F172A',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
   },
   summaryCardLabel: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
   summaryCardValue: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: '800',
     letterSpacing: -0.3,
   },
 
-  // Sections
+  // ── Sections ──────────────────────────────────────
   sectionTitle: {
     fontSize: 13,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: colors.textTertiary,
     textTransform: 'uppercase',
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
     marginBottom: 8,
-    marginTop: 16,
+    marginTop: 20,
   },
 
-  // Line items
+  // ── Line items ────────────────────────────────────
   lineRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 12,
-    borderBottomWidth: 0.5,
+    alignItems: 'center',
+    paddingVertical: 13,
+    borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
   lineRowLast: {
@@ -332,8 +363,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   lineValue: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '700',
     color: colors.text,
   },
 });

@@ -1,16 +1,83 @@
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
-    // Employee documents (work contracts, visas, etc.)
-    match /employees/{employeeId}/documents/{document} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    // Check if the user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user belongs to this tenant (via custom claims fast-path)
+    function isTenantMember(tenantId) {
+      return isAuthenticated() &&
+        request.auth.token.tenants is map &&
+        tenantId in request.auth.token.tenants;
+    }
+
+    // Check if user is admin (owner or hr-admin) for this tenant
+    function isTenantAdmin(tenantId) {
+      return isTenantMember(tenantId) &&
+        request.auth.token.tenants[tenantId] in ['owner', 'hr-admin'];
+    }
+
+    // File size limit: 10 MB
+    function isUnderSizeLimit() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+
+    // Allowed document MIME types (images, PDFs, common office docs)
+    function isAllowedDocType() {
+      return request.resource.contentType.matches('image/.*') ||
+        request.resource.contentType == 'application/pdf' ||
+        request.resource.contentType == 'application/msword' ||
+        request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    // ============================================
+    // TENANT-SCOPED RULES
+    // ============================================
+
+    // Employee documents (work contracts, visas, IDs, medical certs)
+    match /tenants/{tenantId}/employees/{employeeId}/documents/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
     }
 
     // Expense receipts
+    match /tenants/{tenantId}/expenses/{expenseId}/receipts/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantMember(tenantId) && isUnderSizeLimit();
+    }
+
+    // Payslip PDFs
+    match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit();
+    }
+
+    // Attendance photos (supervisor crew clock-in)
+    match /attendance_photos/{tenantId}/{date}/{fileName} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantMember(tenantId)
+        && request.resource.size < 2 * 1024 * 1024
+        && request.resource.contentType.matches('image/jpeg');
+    }
+
+    // ============================================
+    // LEGACY PATHS (pre-tenant-isolation, read-only for migration)
+    // Remove once all existing files are migrated
+    // ============================================
+    match /employees/{employeeId}/documents/{document} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
     match /expenses/{expenseId}/{document} {
-      allow read: if request.auth != null;
-      allow write: if request.auth != null;
+      allow read: if isAuthenticated();
+      allow write: if false;
     }
 
     // Deny everything else

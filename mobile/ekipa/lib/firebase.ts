@@ -52,4 +52,8 @@ try {
 }
 export { db };
 
+// Storage for attendance photos
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+export const storage: FirebaseStorage = getStorage(app);
+
 export default app;

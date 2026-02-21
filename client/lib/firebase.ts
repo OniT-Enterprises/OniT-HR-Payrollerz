@@ -8,6 +8,7 @@ import {
 import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 import { getFunctions } from "firebase/functions";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 /**
  * Firebase configuration loaded from environment variables.
@@ -51,5 +52,15 @@ export const db = initializeFirestore(app, {
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 export const functions = getFunctions(app);
+
+// Initialize App Check (protects Firebase APIs from abuse)
+// Requires VITE_RECAPTCHA_ENTERPRISE_KEY env var; skipped in dev if not set
+const recaptchaKey = import.meta.env.VITE_RECAPTCHA_ENTERPRISE_KEY;
+if (recaptchaKey) {
+  initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider(recaptchaKey),
+    isTokenAutoRefreshEnabled: true,
+  });
+}
 
 export default app;

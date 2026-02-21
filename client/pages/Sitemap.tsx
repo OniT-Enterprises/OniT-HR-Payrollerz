@@ -102,6 +102,18 @@ const sitemapData: SitemapSection[] = [
         description: 'Manage work permits and visa compliance for foreign employees',
         badge: 'TL Compliance',
       },
+      {
+        name: 'Announcements',
+        path: '/people/announcements',
+        description: 'Broadcast company news, policy updates, and notices to all employees via Ekipa',
+        badge: 'Ekipa',
+      },
+      {
+        name: 'Grievance Inbox',
+        path: '/people/grievances',
+        description: 'Review anonymous employee concerns and complaints submitted via Ekipa',
+        badge: 'Ekipa',
+      },
     ],
   },
   {

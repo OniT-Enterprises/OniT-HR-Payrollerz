@@ -1,0 +1,800 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Check if user is a superadmin (via custom claims or user document)
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        request.auth.token.superadmin == true ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true)
+      );
+    }
+
+    // Check if user is a member of the specified tenant
+    // Uses custom claims fast-path (zero-cost) before falling back to document reads
+    function isTenantMember(tenantId) {
+      return isAuthenticated() && (
+        // Fast path: check custom claims token (zero Firestore reads)
+        (request.auth.token.tenants is map && tenantId in request.auth.token.tenants) ||
+        // Fallback: check member document (1 Firestore read)
+        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid))
+      );
+    }
+
+    // Get the user's role in the specified tenant (from claims or document)
+    function getTenantRole(tenantId) {
+      return (request.auth.token.tenants is map && tenantId in request.auth.token.tenants)
+        ? request.auth.token.tenants[tenantId]
+        : get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role;
+    }
+
+    // Check if user is owner or hr-admin in the tenant
+    // Uses custom claims fast-path to avoid document reads when possible
+    function isTenantAdmin(tenantId) {
+      return isAuthenticated() && (
+        // Fast path: check custom claims (zero reads)
+        (request.auth.token.tenants is map &&
+         tenantId in request.auth.token.tenants &&
+         request.auth.token.tenants[tenantId] in ['owner', 'hr-admin']) ||
+        // Fallback: check member document
+        getTenantRole(tenantId) in ['owner', 'hr-admin']
+      );
+    }
+
+    // Check if user is the tenant owner
+    function isTenantOwner(tenantId) {
+      return isAuthenticated() && (
+        (request.auth.token.tenants is map &&
+         tenantId in request.auth.token.tenants &&
+         request.auth.token.tenants[tenantId] == 'owner') ||
+        getTenantRole(tenantId) == 'owner'
+      );
+    }
+
+    // ============================================
+    // USER PROFILES (Global, not tenant-scoped)
+    // ============================================
+    match /users/{userId} {
+      // Users can read their own profile
+      allow read: if isAuthenticated() && request.auth.uid == userId;
+
+      // Superadmins can read any user profile
+      allow read: if isSuperAdmin();
+
+      // Users can update their own profile (except isSuperAdmin field)
+      allow update: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isSuperAdmin']);
+
+      // Superadmins can update any user (including isSuperAdmin)
+      allow update: if isSuperAdmin();
+
+      // Users can create their own profile (but not as superadmin)
+      allow create: if isAuthenticated() &&
+        request.auth.uid == userId &&
+        request.resource.data.isSuperAdmin == false;
+
+      // Superadmins can create any profile
+      allow create: if isSuperAdmin();
+
+      // Only superadmins can delete user profiles
+      allow delete: if isSuperAdmin();
+    }
+
+    // Bootstrap document - locked. Superadmin setup is handled via Firebase Admin SDK.
+    match /_bootstrap/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ============================================
+    // ADMIN AUDIT LOG (superadmin actions)
+    // ============================================
+    match /adminAuditLog/{entryId} {
+      // Only superadmins can read audit logs
+      allow read: if isSuperAdmin();
+
+      // Only superadmins can create audit entries
+      allow create: if isSuperAdmin();
+
+      // Audit logs are immutable
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // AUDIT LOGS (tenant-level compliance trail)
+    // ============================================
+    match /audit_logs/{entryId} {
+      // Superadmins can read all audit logs
+      allow read: if isSuperAdmin();
+
+      // Tenant members can read their tenant's audit logs
+      allow read: if isAuthenticated() &&
+        resource.data.tenantId != null &&
+        isTenantMember(resource.data.tenantId);
+
+      // Limit creates to superadmins or valid tenant members writing for their own tenant.
+      allow create: if isSuperAdmin() ||
+        (isAuthenticated() &&
+         request.resource.data.tenantId != null &&
+         isTenantMember(request.resource.data.tenantId) &&
+         request.resource.data.userId == request.auth.uid);
+
+      // Audit logs are immutable - no updates or deletes
+      allow update, delete: if false;
+    }
+
+    // ============================================
+    // TENANTS ROOT COLLECTION
+    // ============================================
+    match /tenants/{tenantId} {
+      // Superadmins can do anything with tenants
+      allow read, write: if isSuperAdmin();
+
+      // Tenant members can read their tenant config
+      allow read: if isTenantMember(tenantId);
+
+      // Only tenant owners can update config (but not status/plan/limits)
+      allow update: if isTenantOwner(tenantId) &&
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'plan', 'limits', 'stripeCustomerId']);
+
+      // Creating new tenants requires authentication (self-service signup)
+      allow create: if isAuthenticated();
+
+      // ============================================
+      // TENANT MEMBERS SUBCOLLECTION
+      // ============================================
+      match /members/{memberId} {
+        // Superadmins can do anything
+        allow read, write: if isSuperAdmin();
+
+        // Tenant members can read member list
+        allow read: if isTenantMember(tenantId);
+
+        // Only tenant admins can manage members (but not their own membership)
+        allow create, update: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
+        allow delete: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
+
+        // Users can update their own member record (limited fields)
+        // Blocks role, modules, AND permissions to prevent privilege escalation
+        allow update: if isAuthenticated() &&
+          request.auth.uid == memberId &&
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'modules', 'permissions']);
+      }
+
+      // ============================================
+      // TENANT SETTINGS SUBCOLLECTION
+      // ============================================
+      match /settings/{docId} {
+        allow read: if isSuperAdmin() || (
+          (docId == 'integrations' && isTenantAdmin(tenantId)) ||
+          (docId != 'integrations' && isTenantMember(tenantId))
+        );
+        allow write: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // EMPLOYEES SUBCOLLECTION
+      // ============================================
+      match /employees/{employeeId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // DEPARTMENTS SUBCOLLECTION
+      // ============================================
+      match /departments/{departmentId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // POSITIONS SUBCOLLECTION
+      // ============================================
+      match /positions/{positionId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // JOBS SUBCOLLECTION
+      // ============================================
+      match /jobs/{jobId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // CANDIDATES SUBCOLLECTION
+      // ============================================
+      match /candidates/{candidateId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // INTERVIEWS SUBCOLLECTION
+      // ============================================
+      match /interviews/{interviewId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // CONTRACTS SUBCOLLECTION
+      // ============================================
+      match /contracts/{contractId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // LEAVE REQUESTS SUBCOLLECTION
+      // ============================================
+      match /leaveRequests/{requestId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create: if isSuperAdmin() || isTenantMember(tenantId);
+        allow update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // TIMESHEETS SUBCOLLECTION
+      // ============================================
+      match /timesheets/{timesheetId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // PAYROLL RUNS SUBCOLLECTION
+      // ============================================
+      match /payruns/{payrunId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Prevent createdBy tampering + two-person approval rule
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          request.resource.data.createdBy == resource.data.createdBy &&
+          (request.resource.data.status != 'approved' ||
+           request.resource.data.approvedBy != resource.data.createdBy)
+        );
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+
+        // Payslips under payrun
+        match /payslips/{payslipId} {
+          allow read: if isSuperAdmin() || isTenantMember(tenantId);
+          allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        }
+      }
+
+      // ============================================
+      // GOALS SUBCOLLECTION
+      // ============================================
+      match /goals/{goalId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // REVIEWS SUBCOLLECTION
+      // ============================================
+      match /reviews/{reviewId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // TRAININGS SUBCOLLECTION
+      // ============================================
+      match /trainings/{trainingId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // DISCIPLINE SUBCOLLECTION
+      // ============================================
+      match /discipline/{disciplineId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // AUDIT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /auditLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Audit logs are immutable in-client
+        allow update, delete: if false;
+      }
+
+      // ============================================
+      // ARCHIVES SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /archives/{archiveId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Permanent deletion reserved for superadmins
+        allow delete: if isSuperAdmin();
+      }
+
+      // ============================================
+      // QUICKBOOKS EXPORT LOGS SUBCOLLECTION (Tenant-scoped)
+      // ============================================
+      match /qbExportLogs/{logId} {
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Export logs are immutable
+        allow update, delete: if false;
+      }
+
+      // ============================================
+      // ACCOUNTING MODULE SUBCOLLECTIONS
+      // ============================================
+      match /accounts/{accountId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /journalEntries/{entryId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        // Enforce double-entry integrity: totalDebit must equal totalCredit
+        allow create: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
+          request.resource.data.totalDebit == request.resource.data.totalCredit;
+        // Draft entries can be edited and posted, but posted/void entries are immutable.
+        // Balance must be maintained when posting.
+        allow update: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          resource.data.status == 'draft' &&
+          request.resource.data.status in ['draft', 'posted'] &&
+          (request.resource.data.status == 'draft' ||
+           request.resource.data.totalDebit == request.resource.data.totalCredit)
+        );
+        allow delete: if isSuperAdmin() || (
+          isTenantAdmin(tenantId) &&
+          resource.data.status == 'draft'
+        );
+      }
+
+      match /generalLedger/{glId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        // Ledger rows are append-only.
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow update, delete: if false;
+      }
+
+      match /fiscalYears/{yearId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /fiscalPeriods/{periodId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
+      // ============================================
+      match /{collection}/{docId} {
+        // Catch-all must not override explicit rules above.
+        allow read: if (isSuperAdmin() || isTenantMember(tenantId)) &&
+          ![
+            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
+            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
+            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
+            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
+            'fiscalYears', 'fiscalPeriods'
+          ].hasAny([collection]);
+        allow write: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
+          ![
+            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
+            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
+            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
+            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
+            'fiscalYears', 'fiscalPeriods'
+          ].hasAny([collection]);
+      }
+    }
+
+    // ============================================
+    // REFERENCE DATA (Global, read-only for users)
+    // ============================================
+    match /reference/{document=**} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // LEGACY COLLECTIONS (for migration)
+    // These collections store tenantId on each document.
+    // SECURITY: Enforce tenant isolation via tenantId field checks.
+    // TODO: Migrate to tenant-scoped paths under /tenants/{tenantId}/
+    // ============================================
+    match /employees/{employeeId} {
+      // Legacy global collection is no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /departments/{departmentId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /candidates/{candidateId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /jobs/{jobId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /tenant_settings/{docId} {
+      // Legacy (pre-tenant-scoped) settings were keyed by tenantId as the document id.
+      allow read: if isSuperAdmin() || isTenantMember(docId);
+      allow write: if isSuperAdmin() || isTenantAdmin(docId);
+    }
+
+    match /leave_requests/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /leave_balances/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /timesheets/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /goals/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /reviews/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /trainings/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /payruns/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId) &&
+        // Prevent createdBy tampering + two-person approval rule
+        request.resource.data.createdBy == resource.data.createdBy &&
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy != resource.data.createdBy)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+
+      match /payslips/{payslipId} {
+        allow read: if isSuperAdmin() ||
+          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
+           isTenantMember(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
+        allow write: if isSuperAdmin() ||
+          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
+           isTenantAdmin(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
+      }
+    }
+
+    // Payroll module collections
+    match /payrollRuns/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId) &&
+        // Prevent createdBy tampering - field is immutable after creation
+        request.resource.data.createdBy == resource.data.createdBy &&
+        // Two-person rule: approver must differ from creator
+        (request.resource.data.status != 'approved' ||
+         request.resource.data.approvedBy != resource.data.createdBy)
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /payrollRecords/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /benefitEnrollments/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /recurringDeductions/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /taxReports/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /bankTransfers/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Tax filings (TL WIT + INSS tracking)
+    match /taxFilings/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Attendance tracking
+    match /attendance/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Attendance import batches
+    match /attendanceImports/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // Accounting module collections
+    match /accounts/{docId} {
+      // Legacy global accounting collections are no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /journalEntries/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /generalLedger/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /fiscalYears/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /fiscalPeriods/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /settings/{docId} {
+      // Legacy global settings collection is no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // EMAIL QUEUE (Firebase Trigger Email extension)
+    // ============================================
+    match /mail/{emailId} {
+      // Tenant admins can queue emails for their tenant
+      allow create: if isAuthenticated() &&
+        request.resource.data.tenantId != null &&
+        isTenantAdmin(request.resource.data.tenantId);
+
+      // Tenant admins can read email history for their tenant
+      allow read: if isSuperAdmin() || (
+        isAuthenticated() &&
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+
+      // Only the extension (Admin SDK) updates delivery status — no client writes
+      allow update, delete: if false;
+    }
+
+    // Money module collections
+    match /customers/{docId} {
+      // Legacy global money collections are no longer used by the app; restrict to superadmins.
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /invoices/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /payments_received/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /vendors/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /bills/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /bill_payments/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    match /expenses/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // CONNECTION TEST (used by FirebaseContext health check)
+    // ============================================
+    match /_connection_test/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if false; // Read-only — app only queries, never writes
+    }
+  }
+}

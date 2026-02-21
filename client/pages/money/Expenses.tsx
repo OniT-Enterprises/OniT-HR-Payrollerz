@@ -234,7 +234,7 @@ export default function Expenses() {
         setUploadingReceipt(true);
         try {
           const expenseId = editingExpense?.id || fileUploadService.generateTempExpenseId();
-          receiptUrl = await fileUploadService.uploadExpenseReceipt(receiptFile, expenseId);
+          receiptUrl = await fileUploadService.uploadExpenseReceipt(receiptFile, tenantId, expenseId);
         } catch (uploadError) {
           console.error('Error uploading receipt:', uploadError);
           toast({

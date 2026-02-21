@@ -438,8 +438,6 @@ export function generateIIF(journalEntry: QBJournalEntry): string {
 // SETTINGS MANAGEMENT
 // ============================================
 
-const _SETTINGS_DOC_ID = 'quickbooks_export_settings';
-
 /**
  * Get QuickBooks export settings
  */
