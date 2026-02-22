@@ -924,6 +924,277 @@ router.get('/expenses/this-month', async (req, res) => {
 });
 
 // ============================================================================
+// JOURNAL ENTRIES (Accounting)
+// ============================================================================
+
+/**
+ * GET /api/tenants/:tenantId/journal-entries
+ * Query: status, source, limit
+ */
+router.get('/journal-entries', async (req, res) => {
+  try {
+    const { status, source, limit: limitStr } = req.query;
+    const maxResults = Math.min(parseInt(limitStr) || 50, 200);
+
+    let query = tenantCol(req.tenantId, 'journalEntries').orderBy('date', 'desc');
+    if (status) {
+      query = query.where('status', '==', status);
+    }
+    if (source) {
+      query = query.where('source', '==', source);
+    }
+    query = query.limit(maxResults);
+
+    const snapshot = await query.get();
+    const entries = mapDocs(snapshot);
+    res.json({ success: true, count: entries.length, entries });
+  } catch (error) {
+    console.error('[journal-entries]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/journal-entries
+ * Creates a journal entry and corresponding GL entries atomically.
+ *
+ * Body: { date, description, reference?, source?, sourceId?, lines: [{ accountId, accountCode?, accountName?, debit, credit, description? }] }
+ * Lines must balance (sum of debits == sum of credits).
+ * Entry is created with status 'posted' and GL entries are written in the same transaction.
+ */
+router.post('/journal-entries', async (req, res) => {
+  try {
+    const { date, description, reference, source, sourceId, lines } = req.body;
+
+    // Validate required fields
+    if (!date || !description) {
+      return res.status(400).json({ success: false, message: 'date and description are required' });
+    }
+    if (!Array.isArray(lines) || lines.length < 2) {
+      return res.status(400).json({ success: false, message: 'At least 2 journal lines are required' });
+    }
+
+    // Validate lines and compute totals
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const line of lines) {
+      if (!line.accountId) {
+        return res.status(400).json({ success: false, message: 'Each line must have an accountId' });
+      }
+      const debit = Number(line.debit) || 0;
+      const credit = Number(line.credit) || 0;
+      if (debit < 0 || credit < 0) {
+        return res.status(400).json({ success: false, message: 'Line amounts cannot be negative' });
+      }
+      if ((debit > 0) === (credit > 0)) {
+        return res.status(400).json({ success: false, message: 'Each line must have either a debit or a credit, not both' });
+      }
+      totalDebit += debit;
+      totalCredit += credit;
+    }
+
+    // Verify balance
+    if (Math.abs(totalDebit - totalCredit) > 0.01) {
+      return res.status(400).json({ success: false, message: `Entry does not balance: debit=${totalDebit}, credit=${totalCredit}` });
+    }
+
+    const entryDate = date.split('T')[0]; // YYYY-MM-DD
+    const year = parseInt(entryDate.slice(0, 4), 10);
+    const month = parseInt(entryDate.slice(5, 7), 10);
+    const tid = req.tenantId;
+
+    // Atomic transaction: generate entry number + write journal + write GL
+    const result = await db.runTransaction(async (transaction) => {
+      // --- Generate next entry number ---
+      const settingsRef = db.doc(`tenants/${tid}/settings/accounting`);
+      const settingsSnap = await transaction.get(settingsRef);
+
+      let prefix = 'JE';
+      let nextNum = 1;
+
+      if (settingsSnap.exists) {
+        const settings = settingsSnap.data() || {};
+        prefix = settings.journalEntryPrefix || 'JE';
+        const byYear = settings.nextJournalNumberByYear || {};
+        const yearKey = String(year);
+
+        if (typeof byYear[yearKey] === 'number' && byYear[yearKey] > 0) {
+          nextNum = Math.floor(byYear[yearKey]);
+        } else if (typeof settings.nextJournalNumber === 'number' && settings.nextJournalNumber > 0) {
+          nextNum = Math.floor(settings.nextJournalNumber);
+        }
+
+        transaction.set(settingsRef, {
+          journalEntryPrefix: prefix,
+          nextJournalNumber: nextNum + 1,
+          nextJournalNumberByYear: {
+            ...byYear,
+            [yearKey]: nextNum + 1,
+          },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      } else {
+        transaction.set(settingsRef, {
+          journalEntryPrefix: 'JE',
+          nextJournalNumber: 2,
+          nextJournalNumberByYear: { [String(year)]: 2 },
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        }, { merge: true });
+      }
+
+      const entryNumber = `${prefix}-${year}-${String(nextNum).padStart(4, '0')}`;
+
+      // --- Write journal entry ---
+      const journalRef = db.collection(`tenants/${tid}/journalEntries`).doc();
+
+      const numberedLines = lines.map((line, idx) => ({
+        lineNumber: idx + 1,
+        accountId: line.accountId,
+        accountCode: line.accountCode || '',
+        accountName: line.accountName || '',
+        debit: Number(line.debit) || 0,
+        credit: Number(line.credit) || 0,
+        description: line.description || '',
+      }));
+
+      transaction.set(journalRef, {
+        entryNumber,
+        date: entryDate,
+        description,
+        reference: reference || '',
+        source: source || 'rezerva',
+        sourceId: sourceId || null,
+        sourceRef: reference || '',
+        lines: numberedLines,
+        totalDebit,
+        totalCredit,
+        status: 'posted',
+        postedAt: admin.firestore.FieldValue.serverTimestamp(),
+        postedBy: 'rezerva-sync',
+        fiscalYear: year,
+        fiscalPeriod: month,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+
+      // --- Write GL entries ---
+      for (const line of numberedLines) {
+        const glRef = db.collection(`tenants/${tid}/generalLedger`).doc();
+        transaction.set(glRef, {
+          accountId: line.accountId,
+          accountCode: line.accountCode,
+          accountName: line.accountName,
+          journalEntryId: journalRef.id,
+          entryNumber,
+          entryDate,
+          description: line.description || description,
+          debit: line.debit,
+          credit: line.credit,
+          balance: 0, // Calculated on retrieval
+          fiscalYear: year,
+          fiscalPeriod: month,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      }
+
+      return { id: journalRef.id, entryNumber };
+    });
+
+    console.log(`[journal-entries] Created ${result.entryNumber} for tenant ${tid} (source: ${source || 'rezerva'})`);
+    res.status(201).json({ success: true, id: result.id, entryNumber: result.entryNumber });
+  } catch (error) {
+    console.error('[journal-entries] POST error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/accounts
+ * Returns chart of accounts
+ */
+router.get('/accounts', async (req, res) => {
+  try {
+    const snapshot = await tenantCol(req.tenantId, 'accounts').orderBy('code', 'asc').get();
+    const accounts = mapDocs(snapshot);
+    res.json({ success: true, count: accounts.length, accounts });
+  } catch (error) {
+    console.error('[accounts]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/trial-balance
+ * Computes trial balance from GL entries
+ */
+router.get('/trial-balance', async (req, res) => {
+  try {
+    const glSnap = await tenantCol(req.tenantId, 'generalLedger').get();
+    const balances = {};
+
+    glSnap.docs.forEach((doc) => {
+      const d = doc.data();
+      const key = d.accountId || d.accountCode;
+      if (!balances[key]) {
+        balances[key] = {
+          accountId: d.accountId || '',
+          accountCode: d.accountCode || '',
+          accountName: d.accountName || '',
+          accountType: '',
+          debit: 0,
+          credit: 0,
+        };
+      }
+      balances[key].debit += d.debit || 0;
+      balances[key].credit += d.credit || 0;
+    });
+
+    // Enrich with account type from chart of accounts
+    const accountsSnap = await tenantCol(req.tenantId, 'accounts').get();
+    const accountMap = {};
+    accountsSnap.docs.forEach((doc) => {
+      const a = doc.data();
+      accountMap[doc.id] = a;
+      if (a.code) accountMap[a.code] = a;
+    });
+
+    const rows = Object.values(balances).map((row) => {
+      const acct = accountMap[row.accountId] || accountMap[row.accountCode] || {};
+      return {
+        ...row,
+        accountType: acct.type || acct.subType || '',
+        accountName: row.accountName || acct.name || '',
+      };
+    });
+
+    rows.sort((a, b) => (a.accountCode || '').localeCompare(b.accountCode || ''));
+    res.json(rows);
+  } catch (error) {
+    console.error('[trial-balance]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/journals
+ * Alias for journal-entries (used by Rezerva frontend)
+ */
+router.get('/journals', async (req, res) => {
+  try {
+    const { limit: limitStr } = req.query;
+    const maxResults = Math.min(parseInt(limitStr) || 50, 200);
+    const snapshot = await tenantCol(req.tenantId, 'journalEntries')
+      .orderBy('date', 'desc')
+      .limit(maxResults)
+      .get();
+    const entries = mapDocs(snapshot);
+    res.json(entries);
+  } catch (error) {
+    console.error('[journals]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
 // COMPANY STATS (Aggregated Overview)
 // ============================================================================
 

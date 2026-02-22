@@ -37,6 +37,11 @@ import {
   Zap,
   HardDrive,
   Feather,
+  UtensilsCrossed,
+  HardHat,
+  BookOpen,
+  MonitorSmartphone,
+  FileSpreadsheet,
 } from "lucide-react";
 
 export default function Landing() {
@@ -235,9 +240,9 @@ export default function Landing() {
             {/* Subheadline */}
             <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-6 leading-relaxed">
               {t("landing.hero.subheadline.before")}
-              <span className="text-white"> {t("landing.hero.subheadline.labor")}</span>
+              <span className="text-white"> {t("landing.hero.subheadline.highlight1")}</span>
               {t("landing.hero.subheadline.middle")}
-              <span className="text-white"> {t("landing.hero.subheadline.annual")}</span>
+              <span className="text-white"> {t("landing.hero.subheadline.highlight2")}</span>
               {t("landing.hero.subheadline.after")}
             </p>
 
@@ -254,6 +259,10 @@ export default function Landing() {
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 rounded-full bg-amber-400" />
                 <span>{t("landing.hero.points.languages")}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-indigo-400" />
+                <span>{t("landing.hero.points.accounting")}</span>
               </div>
             </div>
 
@@ -376,12 +385,14 @@ export default function Landing() {
             <h2 className="text-2xl font-bold text-white">{t("landing.segments.title")}</h2>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {[
+              { icon: Shield, label: t("landing.segments.security.label"), desc: t("landing.segments.security.desc"), color: "text-red-400" },
+              { icon: UtensilsCrossed, label: t("landing.segments.restaurants.label"), desc: t("landing.segments.restaurants.desc"), color: "text-orange-400" },
               { icon: Heart, label: t("landing.segments.ngos.label"), desc: t("landing.segments.ngos.desc"), color: "text-rose-400" },
-              { icon: Landmark, label: t("landing.segments.government.label"), desc: t("landing.segments.government.desc"), color: "text-blue-400" },
-              { icon: BriefcaseBusiness, label: t("landing.segments.oilGas.label"), desc: t("landing.segments.oilGas.desc"), color: "text-amber-400" },
               { icon: Building2, label: t("landing.segments.hotels.label"), desc: t("landing.segments.hotels.desc"), color: "text-emerald-400" },
+              { icon: BriefcaseBusiness, label: t("landing.segments.consulting.label"), desc: t("landing.segments.consulting.desc"), color: "text-blue-400" },
+              { icon: HardHat, label: t("landing.segments.construction.label"), desc: t("landing.segments.construction.desc"), color: "text-amber-400" },
             ].map((segment, i) => {
               const Icon = segment.icon;
               return (
@@ -395,7 +406,7 @@ export default function Landing() {
           </div>
 
           {/* Pain points - Why switch */}
-          <div className="mt-16 grid md:grid-cols-3 gap-6">
+          <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/10">
               <div className="text-3xl mb-3">📋</div>
               <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.paper.title")}</h3>
@@ -405,6 +416,11 @@ export default function Landing() {
               <div className="text-3xl mb-3">📊</div>
               <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.excel.title")}</h3>
               <p className="text-sm text-zinc-400">{t("landing.painPoints.excel.desc")}</p>
+            </div>
+            <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
+              <div className="text-3xl mb-3">🌐</div>
+              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.foreign.title")}</h3>
+              <p className="text-sm text-zinc-400">{t("landing.painPoints.foreign.desc")}</p>
             </div>
             <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
               <div className="text-3xl mb-3">✅</div>
@@ -1037,6 +1053,50 @@ export default function Landing() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Accounting Section */}
+      <section className="py-24 lg:py-32 border-t border-white/5 bg-gradient-to-b from-transparent via-slate-500/[0.03] to-transparent">
+        <div className="max-w-7xl mx-auto px-6 lg:px-8">
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-500/10 border border-slate-500/20 mb-4">
+              <BookOpen className="h-3 w-3 text-slate-400" />
+              <span className="text-xs text-slate-400">
+                {t("landing.accounting.badge")}
+              </span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-black mb-4">
+              {t("landing.accounting.title")}
+              <span className="block bg-gradient-to-r from-slate-300 to-zinc-400 bg-clip-text text-transparent">
+                {t("landing.accounting.titleAccent")}
+              </span>
+            </h2>
+          </div>
+
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              { icon: BookOpen, title: t("landing.accounting.features.doubleEntry.title"), desc: t("landing.accounting.features.doubleEntry.desc"), color: "text-slate-300", bg: "bg-slate-500/10" },
+              { icon: FileSpreadsheet, title: t("landing.accounting.features.glTrial.title"), desc: t("landing.accounting.features.glTrial.desc"), color: "text-zinc-300", bg: "bg-zinc-500/10" },
+              { icon: Zap, title: t("landing.accounting.features.autoPost.title"), desc: t("landing.accounting.features.autoPost.desc"), color: "text-amber-400", bg: "bg-amber-500/10" },
+              { icon: MonitorSmartphone, title: t("landing.accounting.features.qbExport.title"), desc: t("landing.accounting.features.qbExport.desc"), color: "text-blue-400", bg: "bg-blue-500/10" },
+            ].map((feature, i) => {
+              const Icon = feature.icon;
+              return (
+                <div key={i} className="p-6 rounded-xl bg-white/[0.02] border border-white/5 hover:border-slate-500/20 transition-colors">
+                  <div className="p-2.5 rounded-lg bg-white/5 inline-flex mb-4">
+                    <Icon className={`h-5 w-5 ${feature.color}`} />
+                  </div>
+                  <h3 className="font-semibold text-white mb-2">{feature.title}</h3>
+                  <p className="text-sm text-zinc-400 leading-relaxed">{feature.desc}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-8 text-center text-sm text-zinc-500 italic max-w-2xl mx-auto">
+            {t("landing.accounting.description")}
+          </p>
         </div>
       </section>
 

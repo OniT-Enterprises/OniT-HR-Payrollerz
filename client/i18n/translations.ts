@@ -205,19 +205,20 @@ export const translations = {
     "hero": {
       "badge": "Built for",
       "badgeHighlight": "Timor-Leste",
-      "headline": "HR & Payroll",
-      "headlineAccent": "For Timor-Leste",
+      "headline": "The Operating System",
+      "headlineAccent": "For TL Businesses",
       "subheadline": {
-        "before": "The only HR platform built specifically for Timor-Leste. Full compliance with",
-        "labor": "Lei Trabalho",
-        "middle": ", WIT tax rules, INSS social security, and",
-        "annual": "Subsidio Anual",
+        "before": "HR, payroll, accounting & invoicing — built specifically for Timor-Leste. Full compliance with",
+        "highlight1": "Lei Trabalho",
+        "middle": ", WIT/INSS, and",
+        "highlight2": "real double-entry accounting",
         "after": "."
       },
       "points": {
         "labor": "Lei Trabalho compliant",
         "tax": "WIT & INSS built-in",
-        "languages": "Tetun, English, Portuguese"
+        "languages": "Tetun, English, Portuguese",
+        "accounting": "Double-entry accounting"
       },
       "ctaPrimary": "Start Now",
       "trust": {
@@ -410,10 +411,12 @@ export const translations = {
     "segments": {
       "subtitle": "Trusted by organizations across Timor-Leste",
       "title": "Built for businesses that need compliance",
+      "security": { "label": "Security Companies", "desc": "Large rosters, shift scheduling" },
+      "restaurants": { "label": "Restaurants & Cafés", "desc": "Tips, overtime, high turnover" },
       "ngos": { "label": "NGOs & INGOs", "desc": "Donor compliance & audit trails" },
-      "government": { "label": "Government", "desc": "SEFOPE reporting ready" },
-      "oilGas": { "label": "Oil & Gas", "desc": "Complex contractor payroll" },
-      "hotels": { "label": "Hotels & Tourism", "desc": "Seasonal staff management" }
+      "hotels": { "label": "Hotels & Tourism", "desc": "Seasonal staff management" },
+      "consulting": { "label": "Consulting & IT", "desc": "Project billing, multi-currency" },
+      "construction": { "label": "Construction", "desc": "Day labor, safety tracking" }
     },
     "painPoints": {
       "paper": {
@@ -423,6 +426,10 @@ export const translations = {
       "excel": {
         "title": "Excel breaking down?",
         "desc": "Formulas fail. Files corrupt. No audit trail for donors. No automatic 13th month calculations."
+      },
+      "foreign": {
+        "title": "Foreign software that doesn't fit?",
+        "desc": "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours."
       },
       "solution": {
         "title": "Meza solves this",
@@ -440,7 +447,7 @@ export const translations = {
       "performance": { "name": "Performance", "desc": "Goals, reviews, training, certifications, disciplinary" },
       "payroll": { "name": "Payroll", "desc": "INSS, tax, overtime, bank transfers, payslips" },
       "money": { "name": "Money (Invoicing)", "desc": "Customers, invoices, bills, expenses, payments" },
-      "accounting": { "name": "Accounting", "desc": "Chart of accounts, journal entries, general ledger" },
+      "accounting": { "name": "Accounting", "desc": "Double-entry ledger, trial balance, QuickBooks export" },
       "reports": { "name": "Reports & Analytics", "desc": "Payroll reports, HR analytics, custom report builder" },
       "compliance": { "name": "Compliance", "desc": "Foreign workers, document alerts, SEPFOPE reporting" },
       "viewAll": "View All 65+ Features"
@@ -516,6 +523,18 @@ export const translations = {
       "cta": {
         "title": "Need help getting started?",
         "subtitle": "Free setup consultation"
+      }
+    },
+    "accounting": {
+      "badge": "Real Accounting",
+      "title": "Accounting that actually",
+      "titleAccent": "understands TL",
+      "description": "Keep QuickBooks for inventory if you want — Meza handles the TL compliance side.",
+      "features": {
+        "doubleEntry": { "title": "True Double-Entry", "desc": "Every transaction creates balanced debits and credits. Audit-ready from day one." },
+        "glTrial": { "title": "GL & Trial Balance", "desc": "Full general ledger, chart of accounts, and trial balance — the reports your accountant actually needs." },
+        "autoPost": { "title": "Payroll Auto-Posts", "desc": "Run payroll and the journal entries write themselves. WIT liability, INSS payable, salary expense — all posted." },
+        "qbExport": { "title": "QuickBooks Export", "desc": "Export IIF or CSV for businesses that keep QuickBooks for inventory or group reporting." }
       }
     }
   },
@@ -4043,19 +4062,20 @@ export const translations = {
     "hero": {
       "badge": "Hadia ba",
       "badgeHighlight": "Timor-Leste",
-      "headline": "RH no Folha",
-      "headlineAccent": "Ba Timor-Leste",
+      "headline": "Sistema Operasaun",
+      "headlineAccent": "Ba Empresa TL",
       "subheadline": {
-        "before": "Plataforma RH ida deit ne'ebe hadi'a ba Timor-Leste. Komformidade ho",
-        "labor": "Lei Trabalho",
-        "middle": ", regra WIT, seguransa sosial INSS, no",
-        "annual": "Subsidiu Anual",
+        "before": "RH, folha, kontabilidade no fatura — hadi'a ba Timor-Leste. Komformidade ho",
+        "highlight1": "Lei Trabalho",
+        "middle": ", WIT/INSS, no",
+        "highlight2": "kontabilidade double-entry",
         "after": "."
       },
       "points": {
         "labor": "Kompativel Lei Trabalho",
         "tax": "WIT no INSS iha ona",
-        "languages": "Tetun, Ingles, Portugues"
+        "languages": "Tetun, Ingles, Portugues",
+        "accounting": "Kontabilidade double-entry"
       },
       "ctaPrimary": "Hahu Agora",
       "trust": {
@@ -4248,10 +4268,12 @@ export const translations = {
     "segments": {
       "subtitle": "Fiar husi organizasaun iha Timor-Leste tomak",
       "title": "Hadia ba empresa ne'ebe presiza konformidade",
+      "security": { "label": "Empresa Seguransa", "desc": "Roster boot, turnos" },
+      "restaurants": { "label": "Restaurante & Kafé", "desc": "Gorjeta, oras extra, rotasaun" },
       "ngos": { "label": "ONG & OING", "desc": "Konformidade doador no auditoría" },
-      "government": { "label": "Governu", "desc": "Relatoriu SEFOPE prontu" },
-      "oilGas": { "label": "Mina no Gas", "desc": "Folha kontratante kompleksu" },
-      "hotels": { "label": "Hotel no Turizmu", "desc": "Jestaun staf temporariu" }
+      "hotels": { "label": "Hotel no Turizmu", "desc": "Jestaun staf temporariu" },
+      "consulting": { "label": "Konsultoria & TI", "desc": "Fatura projetu, multi-moeda" },
+      "construction": { "label": "Konstrusaun", "desc": "Trabalhador diário, seguransa" }
     },
     "painPoints": {
       "paper": {
@@ -4261,6 +4283,10 @@ export const translations = {
       "excel": {
         "title": "Excel la servisu?",
         "desc": "Formula sala. Ficheiru estraga. Laiha audit trail ba doador. Laiha kalkulasaun 13o mes automatik."
+      },
+      "foreign": {
+        "title": "Software estranjeiru la adekuadu?",
+        "desc": "Lansu kontabil manual ba WIT fulan-fulan. Laiha relatoriu SEFOPE. Laiha Tetun. Hadia ba merkadu seluk."
       },
       "solution": {
         "title": "Meza rezolve ida nee",
@@ -4278,7 +4304,7 @@ export const translations = {
       "performance": { "name": "Desempenho", "desc": "Objetivu, avaliasaun, formasaun, sertifikasaun, disiplina" },
       "payroll": { "name": "Folha Pagamentu", "desc": "INSS, impostu, oras extra, transferensia banku, payslip" },
       "money": { "name": "Osan (Fatura)", "desc": "Kliente, fatura, konta, despeza, pagamentu" },
-      "accounting": { "name": "Kontabilidade", "desc": "Planu konta, lansu kontabil, livru rezaun jerál" },
+      "accounting": { "name": "Kontabilidade", "desc": "Livru rezaun double-entry, balansu prova, esporta QuickBooks" },
       "reports": { "name": "Relatoriu no Analítika", "desc": "Relatoriu folha, analítika RH, relatoriu personalizado" },
       "compliance": { "name": "Konformidade", "desc": "Trabalhadór estranjeiru, alerta dokumentu, relatoriu SEFOPE" },
       "viewAll": "Haree Fitur 65+ Hotu"
@@ -4354,6 +4380,18 @@ export const translations = {
       "cta": {
         "title": "Presiza ajuda atu hahu?",
         "subtitle": "Konsulta setup gratis"
+      }
+    },
+    "accounting": {
+      "badge": "Kontabilidade Real",
+      "title": "Kontabilidade ne'ebe",
+      "titleAccent": "komprende TL",
+      "description": "Uza QuickBooks ba inventáriu se hakarak — Meza rezolve konformidade TL.",
+      "features": {
+        "doubleEntry": { "title": "Double-Entry Loos", "desc": "Transasaun ida-ida kria debitu no kreditu balansadu. Prontu ba auditoría husi loron primeiru." },
+        "glTrial": { "title": "GL no Balansu Prova", "desc": "Livru rezaun jerál kompletu, planu konta, no balansu prova — relatoriu ne'ebe ita-nia kontabilista presiza." },
+        "autoPost": { "title": "Folha Auto-Post", "desc": "Halo folha no lansu kontabil hakerek rasik. WIT, INSS, despeza salariu — hotu postadu." },
+        "qbExport": { "title": "Esporta QuickBooks", "desc": "Esporta IIF ka CSV ba empresa ne'ebe uza QuickBooks ba inventáriu ka relatoriu grupu." }
       }
     }
   },
