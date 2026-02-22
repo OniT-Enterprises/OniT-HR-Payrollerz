@@ -200,3 +200,6 @@ serviceAccountKey.json
 
 # OpenClaw secrets
 openclaw.json
+
+# Working directory (source PNGs, scratch files)
+working/
