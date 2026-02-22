@@ -557,7 +557,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
     <TenantContext.Provider value={value}>
       {loading ? (
         <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+          <div className="flex flex-col items-center gap-4">
+            <img src="/images/meza-logo-dark-on-light.png" alt="Meza" className="h-10 w-auto dark:hidden" />
+            <img src="/images/meza-logo-light-on-dark-glow.png" alt="Meza" className="h-10 w-auto hidden dark:block" />
+            <div className="animate-spin h-7 w-7 border-[3px] border-primary/20 border-t-primary rounded-full" />
+          </div>
         </div>
       ) : children}
     </TenantContext.Provider>
