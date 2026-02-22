@@ -87,7 +87,14 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Splash screen shown instantly while JS loads — replaced when React mounts -->
+      <div id="splash" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#09090b;flex-direction:column;gap:16px">
+        <img src="/images/meza-logo-light-on-dark-glow.png" alt="Meza" style="height:48px;width:auto" />
+        <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:#818cf8;border-radius:50%;animation:sp .7s linear infinite"></div>
+      </div>
+      <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+    </div>
 
     <script type="module" src="/client/main.tsx"></script>
   </body>
