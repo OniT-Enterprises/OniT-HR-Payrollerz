@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -160,13 +161,6 @@ function calculateStatus(checklist: OffboardingChecklist): OffboardingStatus {
   if (progress === 100) return 'completed';
   if (progress > 0) return 'in_progress';
   return 'pending';
-}
-
-/**
- * Get departure reason display name
- */
-function getReasonName(reason: DepartureReason): string {
-  return DEPARTURE_REASONS.find((r) => r.id === reason)?.name || reason;
 }
 
 // ============================================
@@ -532,7 +526,7 @@ class OffboardingService {
   /**
    * Map Firestore document to OffboardingCase
    */
-  private mapDocToCase(id: string, data: Record<string, any>): OffboardingCase {
+  private mapDocToCase(id: string, data: DocumentData): OffboardingCase {
     return {
       id,
       tenantId: data.tenantId,

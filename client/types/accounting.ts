@@ -604,8 +604,8 @@ export interface AccountingAuditLog {
 
   // Details
   description: string;
-  oldValue?: any;
-  newValue?: any;
+  oldValue?: unknown;
+  newValue?: unknown;
 
   // User
   userId: string;

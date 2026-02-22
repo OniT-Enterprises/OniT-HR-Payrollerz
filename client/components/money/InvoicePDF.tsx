@@ -336,6 +336,7 @@ interface InvoicePDFProps {
 /**
  * InvoiceDocument - The actual PDF document component
  */
+// eslint-disable-next-line react-refresh/only-export-components
 const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
   const statusStyles = getStatusStyles(invoice.status);
 
@@ -521,7 +522,6 @@ const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
 /**
  * Generate invoice PDF as blob (for preview or email attachment)
  */
-// eslint-disable-next-line react-refresh/only-export-components
 export const generateInvoiceBlob = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>
@@ -533,7 +533,7 @@ export const generateInvoiceBlob = async (
 /**
  * Generate and download an invoice PDF
  */
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export const downloadInvoicePDF = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>

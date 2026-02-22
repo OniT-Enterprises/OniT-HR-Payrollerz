@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService } from "@/services/employeeService";
+import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { departmentService, Department } from "@/services/departmentService";
 import { attendanceService, AttendanceRecord } from "@/services/attendanceService";
@@ -150,7 +150,7 @@ export default function CustomReports() {
 
   const [savedReports, setSavedReports] = useState<ReportConfig[]>(SAMPLE_REPORTS);
   const [isBuilderOpen, setIsBuilderOpen] = useState(false);
-  const [previewData, setPreviewData] = useState<any[] | null>(null);
+  const [previewData, setPreviewData] = useState<Record<string, unknown>[] | null>(null);
   const [previewColumns, setPreviewColumns] = useState<ColumnOption[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -191,11 +191,11 @@ export default function CustomReports() {
   const runReport = async (config: ReportConfig) => {
     setLoading(true);
     try {
-      let data: any[] = [];
+      let data: Record<string, unknown>[] = [];
 
       if (config.dataSource === "employees") {
         // Try React Query cache first, then fetch
-        let employees = queryClient.getQueryData<any[]>(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }]);
+        let employees = queryClient.getQueryData<Employee[]>(['tenants', tenantId, 'employees', 'list', { pageSize: 500 }]);
         if (!employees) {
           const result = await employeeService.getEmployees(tenantId, { pageSize: 500 });
           employees = result.data;
@@ -206,7 +206,7 @@ export default function CustomReports() {
           if (config.filters.department && e.jobDetails?.department !== config.filters.department)
             return false;
           return true;
-        });
+        }) as unknown as Record<string, unknown>[];
       } else if (config.dataSource === "attendance") {
         const today = new Date();
         const startDate = new Date();
@@ -224,9 +224,9 @@ export default function CustomReports() {
           );
           queryClient.setQueryData(['attendance', startDateStr, endDateStr], attendance);
         }
-        data = config.filters.department
+        data = (config.filters.department
           ? attendance.filter((a) => a.department === config.filters.department)
-          : attendance;
+          : attendance) as unknown as Record<string, unknown>[];
       } else if (config.dataSource === "departments") {
         // Try React Query cache first
         let depts = queryClient.getQueryData<Department[]>(['departments', 'list', { maxResults: 100 }]);
@@ -234,7 +234,7 @@ export default function CustomReports() {
           depts = await departmentService.getAllDepartments(tenantId);
           queryClient.setQueryData(['departments', 'list', { maxResults: 100 }], depts);
         }
-        data = depts;
+        data = depts as unknown as Record<string, unknown>[];
       }
 
       const columns = config.columns
@@ -709,7 +709,7 @@ export default function CustomReports() {
                           {previewColumns.map((col) => {
                             const value = col.key
                               .split(".")
-                              .reduce((obj, key) => obj?.[key], row);
+                              .reduce<unknown>((obj, key) => (obj as Record<string, unknown>)?.[key], row);
                             return (
                               <td key={col.key} className="p-3">
                                 {value !== undefined && value !== null

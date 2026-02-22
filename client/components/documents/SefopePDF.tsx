@@ -216,6 +216,7 @@ interface SefopePDFProps {
 /**
  * SEFOPE Document Component - The actual PDF document
  */
+// eslint-disable-next-line react-refresh/only-export-components
 const SefopeDocument = ({ data }: SefopePDFProps) => {
   const today = new Date().toLocaleDateString('pt-TL', {
     day: '2-digit',
@@ -466,7 +467,6 @@ const SefopeDocument = ({ data }: SefopePDFProps) => {
 /**
  * Generate SEFOPE form as blob (for preview or upload)
  */
-// eslint-disable-next-line react-refresh/only-export-components
 export const generateSefopeBlob = async (
   employee: Employee,
   company: Partial<CompanyDetails>
@@ -479,7 +479,7 @@ export const generateSefopeBlob = async (
 /**
  * Generate and download SEFOPE form for an employee
  */
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export const downloadSefopeForm = async (
   employee: Employee,
   company: Partial<CompanyDetails>
@@ -494,20 +494,4 @@ export const downloadSefopeForm = async (
   downloadBlob(blob, `SEFOPE_${safeName}_${today}.pdf`);
 };
 
-/**
- * Bulk generate SEFOPE forms for multiple employees
- */
-// eslint-disable-next-line react-refresh/only-export-components
-const downloadBulkSefopeForms = async (
-  employees: Employee[],
-  company: Partial<CompanyDetails>
-): Promise<void> => {
-  // For bulk download, generate each form and trigger individual downloads
-  // In a more sophisticated implementation, these could be zipped together
-  for (const employee of employees) {
-    await downloadSefopeForm(employee, company);
-    // Small delay to prevent browser blocking multiple downloads
-    await new Promise(resolve => setTimeout(resolve, 200));
-  }
-};
 

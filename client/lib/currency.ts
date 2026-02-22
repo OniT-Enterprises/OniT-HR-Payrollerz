@@ -99,40 +99,10 @@ export function roundMoney(value: number): number {
 }
 
 /**
- * Compare two currency values
- * Returns: -1 if a < b, 0 if equal, 1 if a > b
- */
-function compareMoney(a: number, b: number): -1 | 0 | 1 {
-  const comparison = toDecimal(a).comparedTo(toDecimal(b));
-  return comparison as -1 | 0 | 1;
-}
-
-/**
- * Check if value is positive
- */
-function isPositive(value: number): boolean {
-  return toDecimal(value).isPositive();
-}
-
-/**
- * Check if value is negative
- */
-function isNegative(value: number): boolean {
-  return toDecimal(value).isNegative();
-}
-
-/**
  * Get maximum of currency values
  */
 export function maxMoney(...values: number[]): number {
   return toMoney(Decimal.max(...values.map(toDecimal)));
-}
-
-/**
- * Get minimum of currency values
- */
-function minMoney(...values: number[]): number {
-  return toMoney(Decimal.min(...values.map(toDecimal)));
 }
 
 /**
@@ -144,14 +114,3 @@ export function proRata(amount: number, numerator: number, denominator: number):
   return toMoney(toDecimal(amount).times(numerator).dividedBy(denominator));
 }
 
-/**
- * Format currency for display
- */
-function formatMoney(value: number, currency: string = 'USD'): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}

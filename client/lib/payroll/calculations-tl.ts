@@ -808,24 +808,6 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 }
 
 /**
- * Calculate weekly sub-payroll as portion of monthly
- * Used when company pays some workers weekly but tracks monthly
- * Uses decimal.js for precise currency calculations
- *
- * NOTE: For guaranteed reconciliation (sum of weeks = monthly salary),
- * use calculateMonthlyWeeklyPayrolls() instead.
- */
-function calculateWeeklySubPayroll(
-  monthlySalary: number,
-  weekNumber: number,  // 1-5 (some months have 5 weeks)
-  daysInWeek: number,  // Working days this week (typically 5-6)
-  totalWorkingDaysInMonth: number
-): number {
-  // Pro-rate based on actual working days
-  return proRata(monthlySalary, daysInWeek, totalWorkingDaysInMonth);
-}
-
-/**
  * Weekly payroll breakdown with reconciliation
  */
 export interface WeeklyPayrollBreakdown {
@@ -904,21 +886,6 @@ export function calculateMonthlyWeeklyPayrolls(
   }
 
   return result;
-}
-
-/**
- * Calculate the final week's payment to reconcile with monthly salary
- * Use this when you've already paid some weeks and need to calculate the remainder
- *
- * @param monthlySalary - The employee's monthly salary
- * @param alreadyPaid - Sum of payments already made for previous weeks
- * @returns The amount to pay for the final week
- */
-function calculateFinalWeekReconciliation(
-  monthlySalary: number,
-  alreadyPaid: number
-): number {
-  return subtractMoney(monthlySalary, alreadyPaid);
 }
 
 /**

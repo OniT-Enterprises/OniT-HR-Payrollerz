@@ -431,15 +431,6 @@ export interface InvoiceSettings {
   pricesIncludeVAT?: boolean;      // true = shelf prices are VAT-inclusive
 }
 
-const DEFAULT_INVOICE_SETTINGS: Partial<InvoiceSettings> = {
-  prefix: 'INV',
-  nextNumber: 1,
-  defaultTaxRate: 0,
-  defaultTerms: 'Payment due within 30 days',
-  defaultNotes: 'Thank you for your business',
-  defaultDueDays: 30,
-};
-
 // ============================================
 // BANK RECONCILIATION
 // ============================================

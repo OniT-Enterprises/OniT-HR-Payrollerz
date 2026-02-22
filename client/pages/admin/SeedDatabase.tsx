@@ -1314,7 +1314,7 @@ export default function SeedDatabase() {
 
       for (const inv of invoices) {
         const items = inv.items || [];
-        const calcSubtotal = items.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+        const calcSubtotal = items.reduce((sum: number, item: { quantity?: number; unitPrice?: number; description?: string }) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
         const storedSubtotal = inv.subtotal || 0;
         const storedTotal = inv.total || 0;
         const storedPaid = inv.amountPaid || 0;
@@ -1322,8 +1322,8 @@ export default function SeedDatabase() {
         const calcBalance = storedTotal - storedPaid;
 
         // Get payments for this invoice
-        const invPayments = paymentsReceived.filter((p: any) => p.invoiceId === inv.id);
-        const sumPayments = invPayments.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const invPayments = paymentsReceived.filter((p) => p.invoiceId === inv.id);
+        const sumPayments = invPayments.reduce((sum: number, p) => sum + ((p.amount as number) || 0), 0);
 
         report += `  ┌─ ${inv.invoiceNumber || 'NO NUMBER'} ─────────────────────────────────────────────────────────────────\n`;
         report += `  │ Customer:    ${inv.customerName || 'Unknown'}\n`;
@@ -1367,15 +1367,15 @@ export default function SeedDatabase() {
         if (Math.abs(sumPayments - storedPaid) > 0.01) invoiceIssues.push(`${inv.invoiceNumber}: payment sum mismatch`);
       }
 
-      const draftCount = invoices.filter((i: any) => i.status === 'draft').length;
+      const draftCount = invoices.filter((i) => i.status === 'draft').length;
       const postedCount = invoices.length - draftCount;
       report += '  ╔' + '═'.repeat(98) + '╗\n';
       report += `  ║  AR SUMMARY (excludes ${draftCount} draft invoice${draftCount !== 1 ? 's' : ''})                                                                 ║\n`;
       report += '  ╠' + '═'.repeat(98) + '╣\n';
       report += `  ║  Posted Invoices:${String(postedCount).padEnd(5)}    Total Invoiced: ${fmt(totalInvoiced).padEnd(15)}                                       ║\n`;
-      report += `  ║  Paid Invoices:  ${String(invoices.filter((i: any) => i.status === 'paid').length).padEnd(5)}    Total Collected: ${fmt(totalPaidInvoices).padEnd(15)}                                      ║\n`;
-      report += `  ║  Outstanding:    ${String(invoices.filter((i: any) => (i.balanceDue || 0) > 0 && i.status !== 'draft').length).padEnd(5)}    Outstanding AR:  ${fmt(totalOutstandingAR).padEnd(15)}                                       ║\n`;
-      report += `  ║  Overdue:        ${String(invoices.filter((i: any) => i.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
+      report += `  ║  Paid Invoices:  ${String(invoices.filter((i) => i.status === 'paid').length).padEnd(5)}    Total Collected: ${fmt(totalPaidInvoices).padEnd(15)}                                      ║\n`;
+      report += `  ║  Outstanding:    ${String(invoices.filter((i) => ((i.balanceDue as number) || 0) > 0 && i.status !== 'draft').length).padEnd(5)}    Outstanding AR:  ${fmt(totalOutstandingAR).padEnd(15)}                                       ║\n`;
+      report += `  ║  Overdue:        ${String(invoices.filter((i) => i.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
       report += '  ╚' + '═'.repeat(98) + '╝\n\n';
 
       // BILLS SECTION
@@ -1390,15 +1390,15 @@ export default function SeedDatabase() {
 
       for (const bill of bills) {
         const items = bill.items || [];
-        const calcSubtotal = items.reduce((sum: number, item: any) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
+        const calcSubtotal = items.reduce((sum: number, item: { quantity?: number; unitPrice?: number; description?: string }) => sum + ((item.quantity || 0) * (item.unitPrice || 0)), 0);
         const storedSubtotal = bill.subtotal || 0;
         const storedTotal = bill.total || 0;
         const storedPaid = bill.amountPaid || 0;
         const storedBalance = bill.balanceDue || 0;
         const calcBalance = storedTotal - storedPaid;
 
-        const billPays = billPayments.filter((p: any) => p.billId === bill.id);
-        const sumPayments = billPays.reduce((sum: number, p: any) => sum + (p.amount || 0), 0);
+        const billPays = billPayments.filter((p) => p.billId === bill.id);
+        const sumPayments = billPays.reduce((sum: number, p) => sum + ((p.amount as number) || 0), 0);
 
         report += `  ┌─ ${bill.billNumber || 'NO NUMBER'} ─────────────────────────────────────────────────────────────\n`;
         report += `  │ Vendor:      ${bill.vendorName || 'Unknown'}\n`;
@@ -1435,9 +1435,9 @@ export default function SeedDatabase() {
       report += `  ║  AP SUMMARY                                                                                      ║\n`;
       report += '  ╠' + '═'.repeat(98) + '╣\n';
       report += `  ║  Total Bills:    ${String(bills.length).padEnd(5)}    Total Billed:    ${fmt(totalBilled).padEnd(15)}                                       ║\n`;
-      report += `  ║  Paid Bills:     ${String(bills.filter((b: any) => b.status === 'paid').length).padEnd(5)}    Total Paid:      ${fmt(totalPaidBills).padEnd(15)}                                       ║\n`;
-      report += `  ║  Outstanding:    ${String(bills.filter((b: any) => ['pending', 'partial', 'overdue'].includes(b.status)).length).padEnd(5)}    Outstanding AP:  ${fmt(totalOutstandingAP).padEnd(15)}                                       ║\n`;
-      report += `  ║  Overdue:        ${String(bills.filter((b: any) => b.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
+      report += `  ║  Paid Bills:     ${String(bills.filter((b) => b.status === 'paid').length).padEnd(5)}    Total Paid:      ${fmt(totalPaidBills).padEnd(15)}                                       ║\n`;
+      report += `  ║  Outstanding:    ${String(bills.filter((b) => ['pending', 'partial', 'overdue'].includes(b.status as string)).length).padEnd(5)}    Outstanding AP:  ${fmt(totalOutstandingAP).padEnd(15)}                                       ║\n`;
+      report += `  ║  Overdue:        ${String(bills.filter((b) => b.status === 'overdue').length).padEnd(5)}                                                                             ║\n`;
       report += '  ╚' + '═'.repeat(98) + '╝\n\n';
 
       // EXPENSES

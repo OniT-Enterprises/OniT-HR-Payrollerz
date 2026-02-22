@@ -9,6 +9,8 @@ import {
   serverTimestamp,
   setDoc,
   Timestamp,
+  type QueryDocumentSnapshot,
+  type DocumentData,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -26,8 +28,8 @@ export interface HolidayOverride {
   updatedBy?: string;
 }
 
-function mapOverride(docSnap: any): HolidayOverride {
-  const data = docSnap.data?.() ?? docSnap.data;
+function mapOverride(docSnap: QueryDocumentSnapshot<DocumentData>): HolidayOverride {
+  const data = docSnap.data();
   const createdAt = data?.createdAt instanceof Timestamp ? data.createdAt.toDate() : undefined;
   const updatedAt = data?.updatedAt instanceof Timestamp ? data.updatedAt.toDate() : undefined;
 

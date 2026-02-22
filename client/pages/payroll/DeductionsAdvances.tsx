@@ -61,7 +61,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { employeeService, Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { payrollService } from "@/services/payrollService";
-import { formatCurrency, DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants";
+import { formatCurrency } from "@/lib/payroll/constants";
+import { TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -94,8 +95,9 @@ export default function DeductionsAdvances() {
 
   // Translated arrays (inside component so t() is available)
   const DEDUCTION_TYPES: { value: DeductionType; label: string }[] = [
-    { value: "garnishment", label: t("deductions.typeGarnishment") },
-    { value: "advance", label: t("deductions.typeAdvance") },
+    { value: "court_order", label: t("deductions.typeGarnishment") },
+    { value: "advance_repayment", label: t("deductions.typeAdvance") },
+    { value: "loan_repayment", label: t("deductions.typeLoanRepayment") || "Loan Repayment" },
     { value: "other", label: t("deductions.typeOther") },
   ];
 
@@ -136,9 +138,9 @@ export default function DeductionsAdvances() {
   // Calculate stats
   const stats = useMemo(() => {
     const active = deductions.filter((d) => d.status === "active");
-    const advances = active.filter((d) => d.type === "advance");
-    const garnishments = active.filter((d) => d.type === "garnishment");
-    const other = active.filter((d) => d.type === "other");
+    const advances = active.filter((d) => d.type === "advance_repayment");
+    const garnishments = active.filter((d) => d.type === "court_order");
+    const other = active.filter((d) => !["advance_repayment", "court_order"].includes(d.type));
 
     const totalActive = active.reduce((sum, d) => sum + d.amount, 0);
     const totalAdvances = advances.reduce((sum, d) => sum + d.amount, 0);
@@ -159,9 +161,9 @@ export default function DeductionsAdvances() {
   const filteredDeductions = useMemo(() => {
     return deductions.filter((deduction) => {
       // Tab filter
-      if (activeTab === "advances" && deduction.type !== "advance") return false;
-      if (activeTab === "garnishments" && deduction.type !== "garnishment") return false;
-      if (activeTab === "other" && !["advance", "garnishment"].includes(deduction.type) === false) return false;
+      if (activeTab === "advances" && deduction.type !== "advance_repayment") return false;
+      if (activeTab === "garnishments" && deduction.type !== "court_order") return false;
+      if (activeTab === "other" && ["advance_repayment", "court_order"].includes(deduction.type)) return false;
 
       // Search filter
       if (searchTerm) {
@@ -210,14 +212,16 @@ export default function DeductionsAdvances() {
   // Get type badge
   const getTypeBadge = (type: DeductionType) => {
     const configs: Record<string, { icon: React.ElementType; className: string }> = {
-      advance: { icon: ArrowUpCircle, className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
-      garnishment: { icon: ArrowDownCircle, className: "bg-red-500/10 text-red-600 dark:text-red-400" },
+      advance_repayment: { icon: ArrowUpCircle, className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+      loan_repayment: { icon: ArrowUpCircle, className: "bg-blue-500/10 text-blue-600 dark:text-blue-400" },
+      court_order: { icon: ArrowDownCircle, className: "bg-red-500/10 text-red-600 dark:text-red-400" },
       other: { icon: CreditCard, className: "bg-muted text-muted-foreground" },
     };
 
     const config = configs[type] || configs.other;
     const Icon = config.icon;
-    const label = DEDUCTION_TYPE_LABELS[type] || type;
+    const tlLabel = TL_DEDUCTION_TYPE_LABELS[type as keyof typeof TL_DEDUCTION_TYPE_LABELS];
+    const label = tlLabel ? tlLabel.en : type;
 
     return (
       <Badge className={config.className}>
@@ -250,8 +254,8 @@ export default function DeductionsAdvances() {
         isPreTax,
         startDate,
         endDate: endDate || undefined,
-        totalAmount: deductionType === "advance" ? totalAmount : undefined,
-        remainingBalance: deductionType === "advance" ? totalAmount : undefined,
+        totalAmount: deductionType === "advance_repayment" ? totalAmount : undefined,
+        remainingBalance: deductionType === "advance_repayment" ? totalAmount : undefined,
         frequency,
         status: "active",
       };
@@ -589,7 +593,7 @@ export default function DeductionsAdvances() {
                                 ) : (
                                   formatCurrency(deduction.amount)
                                 )}
-                                {deduction.type === "advance" && deduction.remainingBalance !== undefined && (
+                                {deduction.type === "advance_repayment" && deduction.remainingBalance !== undefined && (
                                   <p className="text-xs text-muted-foreground">
                                     {t("deductions.remaining", { amount: formatCurrency(deduction.remainingBalance) })}
                                   </p>
@@ -734,7 +738,7 @@ export default function DeductionsAdvances() {
               </div>
             )}
 
-            {deductionType === "advance" && (
+            {deductionType === "advance_repayment" && (
               <div>
                 <Label htmlFor="total-amount">{t("deductions.totalAdvanceAmount")}</Label>
                 <Input

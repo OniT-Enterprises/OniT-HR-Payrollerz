@@ -7,8 +7,6 @@
  * - Labor Code: Law 4/2012
  */
 
-import { getTLPublicHolidays } from "@/lib/payroll/tl-holidays";
-
 // ============================================
 // WITHHOLDING INCOME TAX (WIT - Impostu Retidu)
 // ============================================
@@ -209,63 +207,6 @@ export const TL_SICK_LEAVE = {
 };
 
 // ============================================
-// MATERNITY LEAVE
-// ============================================
-
-/**
- * Maternity Leave (Labor Code Article 44)
- */
-const TL_MATERNITY_LEAVE = {
-  // Duration
-  totalDays: 90,  // 12 weeks
-
-  // Before birth
-  preNatalDays: 30,
-
-  // After birth
-  postNatalDays: 60,
-
-  // Payment rate
-  payRate: 1.0,  // 100% paid
-
-  // INSS may cover portion - check current rules
-};
-
-// ============================================
-// ANNUAL LEAVE / HOLIDAYS
-// ============================================
-
-/**
- * Annual Leave (Labor Code Article 38)
- */
-const TL_ANNUAL_LEAVE = {
-  // Minimum annual leave days
-  minimumDays: 12,
-
-  // After 3 years of service
-  after3Years: 15,
-
-  // After 6 years of service
-  after6Years: 18,
-
-  // After 9 years of service
-  after9Years: 22,
-
-  // Probation period before leave accrual
-  probationMonths: 6,  // Typical, but company can define
-};
-
-// ============================================
-// PUBLIC HOLIDAYS (Timor-Leste)
-// ============================================
-
-/**
- * Keep a concrete year list for backwards compatibility in the codebase.
- * Prefer `getTLPublicHolidays(year)` for new code.
- */
-const TL_PUBLIC_HOLIDAYS_2025 = getTLPublicHolidays(2025);
-
-// ============================================
 // CONTRACT TYPES
 // ============================================
 
@@ -274,50 +215,6 @@ export type TLContractType =
   | 'prazo_certo'          // Fixed-term
   | 'agencia'              // Agency / Temporary
   | 'prestacao_servicos';  // Service provider / Contractor
-
-const TL_CONTRACT_TYPES = {
-  prazo_indeterminado: {
-    label: 'Prazo Indeterminado',
-    labelEn: 'Open-ended / Permanent',
-    description: 'No end date, standard employment',
-  },
-  prazo_certo: {
-    label: 'Prazo Certo',
-    labelEn: 'Fixed-term',
-    description: 'Contract with defined end date',
-    maxDuration: 24,  // Maximum 24 months
-    maxRenewals: 2,   // Can be renewed twice
-  },
-  agencia: {
-    label: 'Agência',
-    labelEn: 'Agency / Temporary',
-    description: 'Through employment agency',
-  },
-  prestacao_servicos: {
-    label: 'Prestação de Serviços',
-    labelEn: 'Service Provider',
-    description: 'Independent contractor',
-  },
-};
-
-// ============================================
-// TERMINATION & SEVERANCE
-// ============================================
-
-/**
- * Severance Pay (Labor Code Article 51)
- * For dismissal without just cause or redundancy
- */
-const TL_SEVERANCE = {
-  // Days of salary per year of service
-  daysPerYear: 30,
-
-  // Minimum service for severance
-  minimumMonths: 3,
-
-  // Notice period (days)
-  noticePeriodDays: 30,
-};
 
 // ============================================
 // PAY FREQUENCY
@@ -366,70 +263,6 @@ export const formatCurrencyTL = (amount: number): string => {
   }).format(amount);
 };
 
-const formatNumberTL = (num: number, decimals: number = 2): string => {
-  return new Intl.NumberFormat(TL_CURRENCY.locale, {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  }).format(num);
-};
-
-const formatPercentTL = (decimal: number): string => {
-  return new Intl.NumberFormat(TL_CURRENCY.locale, {
-    style: 'percent',
-    minimumFractionDigits: 1,
-    maximumFractionDigits: 2,
-  }).format(decimal);
-};
-
-// ============================================
-// STATUS LABELS (Bilingual)
-// ============================================
-
-const TL_PAYROLL_STATUS_CONFIG = {
-  draft: {
-    label: 'Rascunho',
-    labelEn: 'Draft',
-    color: 'gray',
-    bgClass: 'bg-gray-100',
-    textClass: 'text-gray-800',
-  },
-  writing_records: {
-    label: 'Salva hela...',
-    labelEn: 'Saving...',
-    color: 'yellow',
-    bgClass: 'bg-yellow-100',
-    textClass: 'text-yellow-800',
-  },
-  processing: {
-    label: 'Prosesamentu',
-    labelEn: 'Processing',
-    color: 'blue',
-    bgClass: 'bg-blue-100',
-    textClass: 'text-blue-800',
-  },
-  approved: {
-    label: 'Aprovadu',
-    labelEn: 'Approved',
-    color: 'green',
-    bgClass: 'bg-green-100',
-    textClass: 'text-green-800',
-  },
-  paid: {
-    label: 'Selu Ona',
-    labelEn: 'Paid',
-    color: 'emerald',
-    bgClass: 'bg-emerald-100',
-    textClass: 'text-emerald-800',
-  },
-  cancelled: {
-    label: 'Kanseladu',
-    labelEn: 'Cancelled',
-    color: 'red',
-    bgClass: 'bg-red-100',
-    textClass: 'text-red-800',
-  },
-};
-
 // ============================================
 // DEDUCTION & EARNING LABELS (Bilingual)
 // ============================================
@@ -447,40 +280,6 @@ export const TL_DEDUCTION_TYPE_LABELS: Record<string, { tl: string; en: string }
   late_arrival: { tl: 'Tarde Mai', en: 'Late Arrival' },
   other: { tl: 'Seluk', en: 'Other Deduction' },
 };
-
-const TL_EARNING_TYPE_LABELS: Record<string, { tl: string; en: string }> = {
-  regular: { tl: 'Saláriu Regular', en: 'Regular Salary' },
-  overtime: { tl: 'Oras Extra', en: 'Overtime' },
-  night_shift: { tl: 'Turnu Kalan', en: 'Night Shift' },
-  holiday: { tl: 'Feriadu', en: 'Holiday Pay' },
-  bonus: { tl: 'Bónus', en: 'Bonus' },
-  commission: { tl: 'Komisaun', en: 'Commission' },
-  per_diem: { tl: 'Per Diem', en: 'Per Diem' },
-  food_allowance: { tl: 'Subsidiu Ai-han', en: 'Food Allowance' },
-  transport_allowance: { tl: 'Subsidiu Transporte', en: 'Transport Allowance' },
-  subsidio_anual: { tl: 'Subsídiu Anual', en: '13th Month Salary' },
-  reimbursement: { tl: 'Reembolsu', en: 'Reimbursement' },
-  other: { tl: 'Seluk', en: 'Other Earning' },
-};
-
-// ============================================
-// MONTHS (Tetun/Portuguese)
-// ============================================
-
-const TL_MONTHS = [
-  { en: 'January', tl: 'Janeiru' },
-  { en: 'February', tl: 'Fevereiru' },
-  { en: 'March', tl: 'Marsu' },
-  { en: 'April', tl: 'Abril' },
-  { en: 'May', tl: 'Maiu' },
-  { en: 'June', tl: 'Junhu' },
-  { en: 'July', tl: 'Julhu' },
-  { en: 'August', tl: 'Agostu' },
-  { en: 'September', tl: 'Setembru' },
-  { en: 'October', tl: 'Outubru' },
-  { en: 'November', tl: 'Novembru' },
-  { en: 'December', tl: 'Dezembru' },
-];
 
 // ============================================
 // BANKS IN TIMOR-LESTE
@@ -501,50 +300,4 @@ export const TL_MINIMUM_WAGE = {
   monthly: 115,  // $115 USD (as of 2023)
   lastUpdated: '2023-01-01',
   // Note: Check for updates annually
-};
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Check if a date is a public holiday
- */
-const isPublicHoliday = (date: Date | string, year: number = new Date().getFullYear()): boolean => {
-  const dateStr = typeof date === 'string'
-    ? date
-    : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const holidays = getTLPublicHolidays(year);
-  return holidays.some(h => h.date === dateStr);
-};
-
-/**
- * Get public holiday name if date is a holiday
- */
-const getHolidayName = (date: Date | string): string | null => {
-  const dateStr = typeof date === 'string'
-    ? date
-    : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  const year = parseInt(dateStr.substring(0, 4), 10);
-  const holiday = getTLPublicHolidays(year).find(h => h.date === dateStr);
-  return holiday?.name ?? null;
-};
-
-/**
- * Calculate annual leave entitlement based on years of service
- */
-const calculateAnnualLeave = (yearsOfService: number): number => {
-  if (yearsOfService >= 9) return TL_ANNUAL_LEAVE.after9Years;
-  if (yearsOfService >= 6) return TL_ANNUAL_LEAVE.after6Years;
-  if (yearsOfService >= 3) return TL_ANNUAL_LEAVE.after3Years;
-  return TL_ANNUAL_LEAVE.minimumDays;
-};
-
-/**
- * Calculate sick pay for a given day number (1-12)
- */
-const calculateSickPayRate = (dayNumber: number, usedDays: number): number => {
-  if (dayNumber > TL_SICK_LEAVE.totalDays) return 0;  // Beyond 12 days
-  if (usedDays < TL_SICK_LEAVE.fullPayDays) return TL_SICK_LEAVE.fullPayRate;
-  return TL_SICK_LEAVE.reducedPayRate;
 };

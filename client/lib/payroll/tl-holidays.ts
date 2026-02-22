@@ -87,18 +87,6 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
   return [...fixed, ...movable].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-function isTLPublicHoliday(date: Date | string): boolean {
-  const iso = normalizeISODate(date);
-  const year = parseInt(iso.slice(0, 4), 10);
-  return getTLPublicHolidays(year).some((h) => h.date === iso);
-}
-
-function getTLHolidayName(date: Date | string): string | null {
-  const iso = normalizeISODate(date);
-  const year = parseInt(iso.slice(0, 4), 10);
-  return getTLPublicHolidays(year).find((h) => h.date === iso)?.name ?? null;
-}
-
 export function adjustToNextBusinessDayTL(
   isoDate: string,
   overrides?: {

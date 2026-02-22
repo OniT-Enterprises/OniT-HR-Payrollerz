@@ -56,10 +56,6 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     ytdNetPay: 'YTD Net Pay',
     ytdWIT: 'YTD WIT',
     ytdINSS: 'YTD INSS (Employee)',
-    ytdFederalTax: 'YTD Federal Tax',
-    ytdStateTax: 'YTD State Tax',
-    ytdSocialSecurity: 'YTD Social Security',
-    ytdMedicare: 'YTD Medicare',
     employerContributions: 'Employer Contributions',
     employerINSS: 'INSS Employer (6%)',
     totalEmployerCost: 'Total Employer Cost',
@@ -105,10 +101,6 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     ytdNetPay: 'Líkidu Tinan Tomak',
     ytdWIT: 'WIT Tinan Tomak',
     ytdINSS: 'INSS Tinan Tomak (Trabalhador)',
-    ytdFederalTax: 'Impostu Federal Tinan Tomak',
-    ytdStateTax: 'Impostu Estadu Tinan Tomak',
-    ytdSocialSecurity: 'Seguransa Sosiál Tinan Tomak',
-    ytdMedicare: 'Medicare Tinan Tomak',
     employerContributions: 'Kontribuisaun Empreza',
     employerINSS: 'INSS Empreza (6%)',
     totalEmployerCost: 'Kustu Totál Empreza',
@@ -430,6 +422,7 @@ interface PayslipPDFProps {
 /**
  * PayslipDocument - The actual PDF document component
  */
+// eslint-disable-next-line react-refresh/only-export-components
 const PayslipDocument = ({
   record,
   payrollRun,
@@ -445,17 +438,11 @@ const PayslipDocument = ({
   const _taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
   const _nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
 
-  const isTimorLestePayslip = record.deductions.some((d) =>
-    /\b(inss|wit)\b/i.test(d.description || "")
-  );
-
   const showYtd = [
     record.ytdGrossPay,
     record.ytdNetPay,
-    record.ytdFederalTax,
-    record.ytdStateTax,
-    record.ytdSocialSecurity,
-    record.ytdMedicare,
+    record.ytdIncomeTax,
+    record.ytdINSSEmployee,
   ].some((value) => Math.abs(value || 0) > 0.0001);
 
   const hourItems = [
@@ -468,15 +455,10 @@ const PayslipDocument = ({
   ].filter((item) => item.label === s.regular || item.value > 0);
 
   // Group deductions
-  const taxDeductions = record.deductions.filter(d =>
-    ['federal_tax', 'state_tax', 'local_tax', 'social_security', 'medicare'].includes(d.type)
-  );
-  const preTaxDeductions = record.deductions.filter(d =>
-    d.isPreTax && !['federal_tax', 'state_tax', 'local_tax', 'social_security', 'medicare'].includes(d.type)
-  );
-  const postTaxDeductions = record.deductions.filter(d =>
-    !d.isPreTax && !['federal_tax', 'state_tax', 'local_tax', 'social_security', 'medicare'].includes(d.type)
-  );
+  const taxTypes = ['income_tax', 'inss_employee'];
+  const taxDeductions = record.deductions.filter(d => taxTypes.includes(d.type));
+  const preTaxDeductions = record.deductions.filter(d => d.isPreTax && !taxTypes.includes(d.type));
+  const postTaxDeductions = record.deductions.filter(d => !d.isPreTax && !taxTypes.includes(d.type));
 
   return (
     <Document>
@@ -681,7 +663,7 @@ const PayslipDocument = ({
         )}
 
         {/* 13th Month Accrual (TL payslips only — informational) */}
-        {isTimorLestePayslip && record.totalGrossPay > 0 && (
+        {record.totalGrossPay > 0 && (
           <View style={styles.employerSection}>
             <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
             <Text style={styles.employerNote}>{s.subsidioAnualNote}</Text>
@@ -708,37 +690,14 @@ const PayslipDocument = ({
                 <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
               </View>
 
-              {isTimorLestePayslip ? (
-                <>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdWIT}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
-                  </View>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
-                  </View>
-                </>
-              ) : (
-                <>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdFederalTax}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdFederalTax)}</Text>
-                  </View>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdStateTax}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdStateTax)}</Text>
-                  </View>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdSocialSecurity}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdSocialSecurity)}</Text>
-                  </View>
-                  <View style={styles.ytdItem}>
-                    <Text style={styles.ytdLabel}>{s.ytdMedicare}</Text>
-                    <Text style={styles.ytdValue}>{formatCurrency(record.ytdMedicare)}</Text>
-                  </View>
-                </>
-              )}
+              <View style={styles.ytdItem}>
+                <Text style={styles.ytdLabel}>{s.ytdWIT}</Text>
+                <Text style={styles.ytdValue}>{formatCurrency(record.ytdIncomeTax)}</Text>
+              </View>
+              <View style={styles.ytdItem}>
+                <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
+                <Text style={styles.ytdValue}>{formatCurrency(record.ytdINSSEmployee)}</Text>
+              </View>
             </View>
           </View>
         )}
@@ -757,7 +716,6 @@ const PayslipDocument = ({
 /**
  * Generate and download a payslip PDF
  */
-// eslint-disable-next-line react-refresh/only-export-components
 export const downloadPayslip = async (
   record: PayrollRecord,
   payrollRun: PayrollRun,
@@ -783,7 +741,7 @@ export const downloadPayslip = async (
 /**
  * Generate payslip PDF as blob (for preview or other uses)
  */
-// eslint-disable-next-line react-refresh/only-export-components
+ 
 export const generatePayslipBlob = async (
   record: PayrollRecord,
   payrollRun: PayrollRun,

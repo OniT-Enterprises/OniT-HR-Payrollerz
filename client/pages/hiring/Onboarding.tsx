@@ -854,7 +854,7 @@ export default function Onboarding() {
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
                     { title: "Health Insurance", desc: "Medical, dental, and vision coverage", status: "Eligible after 30 days" },
-                    { title: "Retirement Plan", desc: "401(k) with company matching", status: "Eligible after 90 days" },
+                    { title: "Retirement Plan", desc: "INSS retirement contributions", status: "Enrolled from start date" },
                     { title: "Paid Time Off", desc: "Annual leave, sick days, holidays", status: "Available immediately" },
                     { title: "Life Insurance", desc: "Basic life insurance coverage", status: "Eligible after 30 days" },
                   ].map((benefit) => (

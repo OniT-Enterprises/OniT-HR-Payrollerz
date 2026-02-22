@@ -4,15 +4,10 @@
  */
 
 import {
-  collection,
   doc,
   getDoc,
-  getDocs,
   setDoc,
   updateDoc,
-  query,
-  where,
-  orderBy,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -26,13 +21,11 @@ import {
   PaymentStructure,
   TimeOffPolicies,
   PayrollConfig,
-  HRAdmin,
   TL_DEFAULT_PAYROLL_CONFIG,
   TL_DEFAULT_LEAVE_POLICIES,
 } from '@/types/settings';
 
 const LEGACY_SETTINGS_COLLECTION = 'tenant_settings';
-const HR_ADMINS_COLLECTION = 'hr_admins';
 
 // ============================================
 // Tenant Settings
@@ -342,107 +335,3 @@ export const settingsService = {
   },
 };
 
-// ============================================
-// HR Admin Management
-// ============================================
-
-const hrAdminService = {
-  /**
-   * Get all HR admins for a tenant
-   */
-  async getAdmins(tenantId: string): Promise<HRAdmin[]> {
-    const q = query(
-      collection(db, HR_ADMINS_COLLECTION),
-      where('tenantId', '==', tenantId),
-      orderBy('createdAt', 'desc'),
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map((d) => ({
-      ...d.data(),
-      id: d.id,
-      createdAt: d.data().createdAt?.toDate?.() ?? new Date(),
-      updatedAt: d.data().updatedAt?.toDate?.() ?? new Date(),
-    })) as HRAdmin[];
-  },
-
-  /**
-   * Add HR admin
-   */
-  async addAdmin(tenantId: string, admin: Omit<HRAdmin, 'id' | 'createdAt' | 'updatedAt'>): Promise<HRAdmin> {
-    try {
-      const adminId = `admin_${Date.now()}`;
-      const newAdmin: HRAdmin = {
-        ...admin,
-        id: adminId,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      const docRef = doc(db, HR_ADMINS_COLLECTION, adminId);
-      await setDoc(docRef, {
-        ...newAdmin,
-        tenantId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      // Add to tenant settings
-      const settingsRef = doc(db, paths.settings(tenantId));
-      const settings = await settingsService.getSettings(tenantId);
-      if (settings) {
-        await updateDoc(settingsRef, {
-          hrAdminIds: [...settings.hrAdminIds, adminId],
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      return newAdmin;
-    } catch (error) {
-      console.error('Error adding HR admin:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Update HR admin
-   */
-  async updateAdmin(adminId: string, updates: Partial<HRAdmin>): Promise<void> {
-    try {
-      const docRef = doc(db, HR_ADMINS_COLLECTION, adminId);
-      await updateDoc(docRef, {
-        ...updates,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error updating HR admin:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Remove HR admin
-   */
-  async removeAdmin(tenantId: string, adminId: string): Promise<void> {
-    try {
-      // Update tenant settings to remove admin
-      const settings = await settingsService.getSettings(tenantId);
-      if (settings) {
-        const settingsRef = doc(db, paths.settings(tenantId));
-        await updateDoc(settingsRef, {
-          hrAdminIds: settings.hrAdminIds.filter((id) => id !== adminId),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      // Mark admin as inactive (soft delete)
-      const adminRef = doc(db, HR_ADMINS_COLLECTION, adminId);
-      await updateDoc(adminRef, {
-        isActive: false,
-        updatedAt: serverTimestamp(),
-      });
-    } catch (error) {
-      console.error('Error removing HR admin:', error);
-      throw error;
-    }
-  },
-};

@@ -21,6 +21,7 @@ import {
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/utils';
+import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
 import type {
@@ -28,7 +29,6 @@ import type {
   PayrollRecord,
   BenefitEnrollment,
   RecurringDeduction,
-  TaxReport,
   BankTransfer,
   ListPayrollRunsOptions,
 } from '@/types/payroll';
@@ -432,7 +432,7 @@ class PayrollRecordService {
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
+      const data = normalizeLegacyRecord({ ...doc.data() });
       return {
         id: doc.id,
         ...data,
@@ -450,7 +450,7 @@ class PayrollRecordService {
       return null;
     }
 
-    const data = docSnap.data();
+    const data = normalizeLegacyRecord({ ...docSnap.data() });
     return {
       id: docSnap.id,
       ...data,
@@ -527,7 +527,7 @@ class PayrollRecordService {
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
+      const data = normalizeLegacyRecord({ ...doc.data() });
       return {
         id: doc.id,
         ...data,
@@ -540,10 +540,8 @@ class PayrollRecordService {
   async getEmployeeYTDTotals(employeeId: string, year: number): Promise<{
     ytdGrossPay: number;
     ytdNetPay: number;
-    ytdFederalTax: number;
-    ytdStateTax: number;
-    ytdSocialSecurity: number;
-    ytdMedicare: number;
+    ytdIncomeTax: number;
+    ytdINSSEmployee: number;
   }> {
     const records = await this.getEmployeePayrollHistory(employeeId, 500);
     const runIds = Array.from(new Set(records.map((r) => r.payrollRunId).filter(Boolean)));
@@ -571,18 +569,14 @@ class PayrollRecordService {
       (acc, record) => ({
         ytdGrossPay: acc.ytdGrossPay + record.totalGrossPay,
         ytdNetPay: acc.ytdNetPay + record.netPay,
-        ytdFederalTax: acc.ytdFederalTax + (record.ytdFederalTax || 0),
-        ytdStateTax: acc.ytdStateTax + (record.ytdStateTax || 0),
-        ytdSocialSecurity: acc.ytdSocialSecurity + (record.ytdSocialSecurity || 0),
-        ytdMedicare: acc.ytdMedicare + (record.ytdMedicare || 0),
+        ytdIncomeTax: acc.ytdIncomeTax + (record.ytdIncomeTax || 0),
+        ytdINSSEmployee: acc.ytdINSSEmployee + (record.ytdINSSEmployee || 0),
       }),
       {
         ytdGrossPay: 0,
         ytdNetPay: 0,
-        ytdFederalTax: 0,
-        ytdStateTax: 0,
-        ytdSocialSecurity: 0,
-        ytdMedicare: 0,
+        ytdIncomeTax: 0,
+        ytdINSSEmployee: 0,
       }
     );
 
@@ -767,84 +761,6 @@ class RecurringDeductionService {
 }
 
 // ============================================
-// TAX REPORTS
-// ============================================
-
-class TaxReportService {
-  private get collectionRef() {
-    return collection(db, 'taxReports');
-  }
-
-  async getAllTaxReports(tenantId: string, maxResults: number = 500): Promise<TaxReport[]> {
-    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'), limit(maxResults));
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as TaxReport;
-    });
-  }
-
-  async getTaxReportsByYear(tenantId: string, year: number): Promise<TaxReport[]> {
-    const q = query(
-      this.collectionRef,
-      where('tenantId', '==', tenantId),
-      where('year', '==', year),
-      orderBy('createdAt', 'desc')
-    );
-
-    const querySnapshot = await getDocs(q);
-
-    return querySnapshot.docs.map((doc) => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date(),
-        updatedAt: data.updatedAt?.toDate() || new Date(),
-      } as TaxReport;
-    });
-  }
-
-  async createTaxReport(tenantId: string, report: Omit<TaxReport, 'id' | 'tenantId'>): Promise<string> {
-    const docRef = await addDoc(this.collectionRef, {
-      ...report,
-      tenantId,
-      status: 'draft',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    return docRef.id;
-  }
-
-  async updateTaxReport(id: string, updates: Partial<TaxReport>): Promise<boolean> {
-    const docRef = doc(db, 'taxReports', id);
-    await updateDoc(docRef, {
-      ...updates,
-      updatedAt: serverTimestamp(),
-    });
-    return true;
-  }
-
-  async markAsGenerated(id: string): Promise<boolean> {
-    return this.updateTaxReport(id, { status: 'generated' });
-  }
-
-  async markAsFiled(id: string, confirmationNumber: string): Promise<boolean> {
-    return this.updateTaxReport(id, {
-      status: 'filed',
-      filedDate: getTodayTL(),
-      confirmationNumber,
-    });
-  }
-}
-
-// ============================================
 // BANK TRANSFERS (extends existing functionality)
 // ============================================
 
@@ -915,7 +831,6 @@ const payrollRunService = new PayrollRunService();
 const payrollRecordService = new PayrollRecordService();
 const benefitEnrollmentService = new BenefitEnrollmentService();
 const recurringDeductionService = new RecurringDeductionService();
-const taxReportService = new TaxReportService();
 const bankTransferService = new BankTransferService();
 
 // Combined export for convenience
@@ -924,6 +839,5 @@ export const payrollService = {
   records: payrollRecordService,
   benefits: benefitEnrollmentService,
   deductions: recurringDeductionService,
-  taxReports: taxReportService,
   transfers: bankTransferService,
 };

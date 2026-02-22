@@ -74,10 +74,9 @@ import {
   PayrollDialogs,
 } from "@/components/payroll";
 
-import { calculateProRataHours, type EmployeePayrollData } from "@/lib/payroll/run-payroll-helpers";
 import {
-  mapTLEarningTypeToPayrollEarningType,
-  mapTLDeductionTypeToPayrollDeductionType,
+  calculateProRataHours,
+  type EmployeePayrollData,
   getPayPeriodsInPayMonth,
   formatPayPeriod,
   formatPayDate,
@@ -448,7 +447,11 @@ export default function RunPayroll() {
       hourlyRate: (d.employee.compensation.monthlySalary || 0) / ((TL_WORKING_HOURS.standardWeeklyHours * 52) / 12),
       overtimeRate: TL_OVERTIME_RATES.standard,
       earnings: d.calculation!.earnings.map((earning) => ({
-        type: mapTLEarningTypeToPayrollEarningType(earning.type),
+        type: (['regular','overtime','double_time','holiday','bonus','subsidio_anual','commission','tip','reimbursement','allowance'].includes(earning.type)
+          ? earning.type
+          : ['per_diem','food_allowance','transport_allowance','housing_allowance','travel_allowance'].includes(earning.type)
+            ? 'allowance'
+            : 'other') as PayrollRecord['earnings'][number]['type'],
         description: earning.description,
         hours: earning.hours,
         rate: earning.rate,
@@ -456,7 +459,7 @@ export default function RunPayroll() {
       })),
       totalGrossPay: d.calculation!.grossPay,
       deductions: d.calculation!.deductions.map((deduction) => ({
-        type: mapTLDeductionTypeToPayrollDeductionType(deduction.type),
+        type: deduction.type as PayrollRecord['deductions'][number]['type'],
         description: deduction.description,
         amount: deduction.amount,
         isPreTax: false,
@@ -466,7 +469,7 @@ export default function RunPayroll() {
       employerContributions: [],
       totalEmployerContributions: 0,
       employerTaxes: [{
-        type: "social_security" as const,
+        type: "inss_employer" as const,
         description: TL_DEDUCTION_TYPE_LABELS.inss_employer.en,
         amount: d.calculation!.inssEmployer,
       }],
@@ -475,10 +478,8 @@ export default function RunPayroll() {
       totalEmployerCost: d.calculation!.totalEmployerCost,
       ytdGrossPay: 0,
       ytdNetPay: 0,
-      ytdFederalTax: 0,
-      ytdStateTax: 0,
-      ytdSocialSecurity: 0,
-      ytdMedicare: 0,
+      ytdIncomeTax: 0,
+      ytdINSSEmployee: 0,
     })),
     [tenantId]
   );

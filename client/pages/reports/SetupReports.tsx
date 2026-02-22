@@ -92,13 +92,13 @@ export default function SetupReports() {
   const completedSteps = useMemo(() => Object.values(setupSteps).filter(Boolean).length, [setupSteps]);
   const totalSteps = useMemo(() => Object.keys(setupSteps).length || 5, [setupSteps]);
 
-  const doExport = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+  const doExport = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
     toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
   };
 
   const exportAuditLog = () => {
-    doExport(auditLog, "audit_log", [
+    doExport(auditLog as unknown as Record<string, unknown>[], "audit_log", [
       { key: "timestamp", label: "Timestamp" },
       { key: "action", label: "Action" },
       { key: "actorEmail", label: "Actor Email" },

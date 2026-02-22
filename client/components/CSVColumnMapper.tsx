@@ -38,14 +38,14 @@ interface EmployeeField {
   options?: string[];
 }
 
-interface ColumnMapping {
+export interface ColumnMapping {
   csvColumn: string;
   employeeField: string;
 }
 
 interface CSVColumnMapperProps {
   csvFile: File | null;
-  onMappingComplete: (mappings: ColumnMapping[], csvData: any[]) => void;
+  onMappingComplete: (mappings: ColumnMapping[], csvData: Record<string, string>[]) => void;
   onCancel: () => void;
 }
 
@@ -285,7 +285,7 @@ export default function CSVColumnMapper({
   onCancel,
 }: CSVColumnMapperProps) {
   const [csvColumns, setCsvColumns] = useState<CSVColumn[]>([]);
-  const [csvData, setCsvData] = useState<any[]>([]);
+  const [csvData, setCsvData] = useState<Record<string, string>[]>([]);
   const [mappings, setMappings] = useState<ColumnMapping[]>([]);
   const [unmappedColumns, setUnmappedColumns] = useState<CSVColumn[]>([]);
   const [step, setStep] = useState<"upload" | "map" | "preview">("upload");

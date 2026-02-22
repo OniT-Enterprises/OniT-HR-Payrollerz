@@ -82,49 +82,6 @@ export function InfoTooltip({
 }
 
 /**
- * InfoLabel - A label with an integrated info tooltip
- * Useful for form fields and data displays
- */
-interface InfoLabelProps {
-  /** The main label text */
-  label: string;
-  /** Tooltip content */
-  tooltip: React.ReactNode;
-  /** Optional tooltip title */
-  tooltipTitle?: string;
-  /** Whether the field is required */
-  required?: boolean;
-  /** Additional className for the label */
-  className?: string;
-  /** HTML for attribute */
-  htmlFor?: string;
-}
-
-function InfoLabel({
-  label,
-  tooltip,
-  tooltipTitle,
-  required,
-  className,
-  htmlFor,
-}: InfoLabelProps) {
-  return (
-    <label
-      htmlFor={htmlFor}
-      className={cn(
-        'text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
-        'flex items-center gap-1.5',
-        className
-      )}
-    >
-      {label}
-      {required && <span className="text-destructive">*</span>}
-      <InfoTooltip content={tooltip} title={tooltipTitle} />
-    </label>
-  );
-}
-
-/**
  * Pre-defined tooltip content for common financial terms
  * Provides consistent explanations across the Money section
  */

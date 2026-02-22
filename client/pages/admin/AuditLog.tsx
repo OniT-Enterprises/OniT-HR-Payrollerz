@@ -131,15 +131,17 @@ export default function AuditLog() {
     return matchesSearch && matchesAction;
   });
 
-  const formatTimestamp = (timestamp: any): string => {
+  type FirestoreTimestampLike = { toDate: () => Date } | { seconds: number } | Date | string | null | undefined;
+
+  const formatTimestamp = (timestamp: FirestoreTimestampLike): string => {
     if (!timestamp) return "-";
     let date: Date;
-    if (timestamp.toDate) {
+    if (typeof timestamp === "object" && "toDate" in timestamp) {
       date = timestamp.toDate();
-    } else if (timestamp.seconds) {
+    } else if (typeof timestamp === "object" && "seconds" in timestamp) {
       date = new Date(timestamp.seconds * 1000);
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as Date | string);
     }
 
     return new Intl.DateTimeFormat("en-US", {
@@ -152,15 +154,15 @@ export default function AuditLog() {
     }).format(date);
   };
 
-  const getRelativeTime = (timestamp: any): string => {
+  const getRelativeTime = (timestamp: FirestoreTimestampLike): string => {
     if (!timestamp) return "";
     let date: Date;
-    if (timestamp.toDate) {
+    if (typeof timestamp === "object" && "toDate" in timestamp) {
       date = timestamp.toDate();
-    } else if (timestamp.seconds) {
+    } else if (typeof timestamp === "object" && "seconds" in timestamp) {
       date = new Date(timestamp.seconds * 1000);
     } else {
-      date = new Date(timestamp);
+      date = new Date(timestamp as Date | string);
     }
 
     const now = new Date();

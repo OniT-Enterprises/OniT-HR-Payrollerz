@@ -6,13 +6,9 @@
 import {
   collection,
   doc,
-  getDocs,
   getDoc,
   setDoc,
   addDoc,
-  query,
-  orderBy,
-  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -102,13 +98,13 @@ function aggregatePayrollTotals(
     } else {
       // Generic record - map federal tax to WIT, social security to INSS
       const genRecord = record as PayrollRecord;
-      const federalTax = genRecord.deductions?.find(d => d.type === 'federal_tax')?.amount || 0;
-      const socialSecurity = genRecord.deductions?.find(d => d.type === 'social_security')?.amount || 0;
-      totals.wit = addMoney(totals.wit, federalTax);
-      totals.inssEmployee = addMoney(totals.inssEmployee, socialSecurity);
+      const incomeTax = genRecord.deductions?.find(d => d.type === 'income_tax')?.amount || 0;
+      const inssEmployee = genRecord.deductions?.find(d => d.type === 'inss_employee')?.amount || 0;
+      totals.wit = addMoney(totals.wit, incomeTax);
+      totals.inssEmployee = addMoney(totals.inssEmployee, inssEmployee);
       // Employer contributions
-      const employerSS = genRecord.employerTaxes?.find(t => t.type === 'social_security')?.amount || 0;
-      totals.inssEmployer = addMoney(totals.inssEmployer, employerSS);
+      const employerINSS = genRecord.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0;
+      totals.inssEmployer = addMoney(totals.inssEmployer, employerINSS);
     }
 
     // Net pay
@@ -326,56 +322,6 @@ function generateCSV(journalEntry: QBJournalEntry): string {
   return rows.map(row => row.join(',')).join('\n');
 }
 
-/**
- * Generate CSV with QB Online native format (TRNS/SPL/ENDTRNS)
- */
-function generateCSVNative(journalEntry: QBJournalEntry): string {
-  const lines: string[] = [];
-
-  // Header line markers
-  lines.push('!TRNS,DATE,ACCNT,NAME,CLASS,AMOUNT,DOCNUM,MEMO');
-  lines.push('!SPL,DATE,ACCNT,NAME,CLASS,AMOUNT,DOCNUM,MEMO');
-  lines.push('!ENDTRNS');
-
-  const txnDate = formatDateForQB(journalEntry.txnDate);
-
-  // First line is TRNS (first debit entry)
-  const firstDebit = journalEntry.lines.find(l => l.debit > 0);
-  if (firstDebit) {
-    lines.push([
-      'TRNS',
-      txnDate,
-      escapeCSV(firstDebit.accountName),
-      '',
-      'Payroll',
-      firstDebit.debit.toFixed(2),
-      journalEntry.refNumber,
-      escapeCSV(journalEntry.memo),
-    ].join(','));
-  }
-
-  // Remaining lines are SPL
-  for (const line of journalEntry.lines) {
-    if (line === firstDebit) continue;
-
-    const amount = line.debit > 0 ? line.debit : -line.credit;
-    lines.push([
-      'SPL',
-      txnDate,
-      escapeCSV(line.accountName),
-      '',
-      'Payroll',
-      amount.toFixed(2),
-      journalEntry.refNumber,
-      escapeCSV(line.memo),
-    ].join(','));
-  }
-
-  lines.push('ENDTRNS');
-
-  return lines.join('\n');
-}
-
 // ============================================
 // IIF EXPORT (QuickBooks Desktop)
 // ============================================
@@ -437,31 +383,6 @@ function generateIIF(journalEntry: QBJournalEntry): string {
 // ============================================
 // SETTINGS MANAGEMENT
 // ============================================
-
-/**
- * Get QuickBooks export settings
- */
-async function getExportSettings(): Promise<QBExportSettings> {
-  try {
-    console.warn('getExportSettings() called without tenantId; returning defaults.');
-    return {
-      defaultFormat: 'csv',
-      includeEmployeeDetail: false,
-      groupByDepartment: false,
-      accountMappings: getDefaultMappings(),
-    };
-  } catch {
-    // no-op
-  }
-
-  // Return defaults
-  return {
-    defaultFormat: 'csv',
-    includeEmployeeDetail: false,
-    groupByDepartment: false,
-    accountMappings: getDefaultMappings(),
-  };
-}
 
 /**
  * Get QuickBooks export settings (tenant-scoped)
@@ -603,45 +524,6 @@ async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<st
     createdAt: serverTimestamp(),
   });
   return docRef.id;
-}
-
-/**
- * Get export history for a payroll run
- */
-async function getExportHistory(payrollRunId?: string, _maxResults: number = 20): Promise<QBExportLog[]> {
-  console.warn('getExportHistory() called without tenantId; returning empty list.');
-  return [];
-}
-
-/**
- * Get export history for a payroll run (tenant-scoped)
- */
-async function getExportHistoryForTenant(
-  tenantId: string,
-  payrollRunId?: string,
-  maxResults: number = 20
-): Promise<QBExportLog[]> {
-  let q = query(
-    collection(db, paths.qbExportLogs(tenantId)),
-    orderBy('createdAt', 'desc'),
-    limit(maxResults)
-  );
-
-  // Note: Firestore requires a composite index for multiple where clauses
-  // For now, we filter in memory if payrollRunId is provided
-
-  const querySnapshot = await getDocs(q);
-  const logs = querySnapshot.docs.map(doc => ({
-    id: doc.id,
-    ...doc.data(),
-    createdAt: doc.data().createdAt?.toDate(),
-  })) as QBExportLog[];
-
-  if (payrollRunId) {
-    return logs.filter(log => log.payrollRunId === payrollRunId);
-  }
-
-  return logs;
 }
 
 // ============================================

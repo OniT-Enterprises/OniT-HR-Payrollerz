@@ -142,16 +142,18 @@ export default function Signup() {
 
       // 7. Navigate to dashboard
       navigate("/");
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Signup error:", err);
-      if (err.code === "auth/email-already-in-use") {
+      const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
+      const errMessage = err instanceof Error ? err.message : "Failed to create account. Please try again.";
+      if (errCode === "auth/email-already-in-use") {
         setError("An account with this email already exists. Please log in instead.");
-      } else if (err.code === "auth/weak-password") {
+      } else if (errCode === "auth/weak-password") {
         setError("Password is too weak. Please use a stronger password.");
-      } else if (err.code === "auth/invalid-email") {
+      } else if (errCode === "auth/invalid-email") {
         setError("Invalid email address.");
       } else {
-        setError(err.message || "Failed to create account. Please try again.");
+        setError(errMessage);
       }
     } finally {
       setLoading(false);

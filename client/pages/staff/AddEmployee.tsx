@@ -48,7 +48,7 @@ import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWi
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
-import CSVColumnMapper from "@/components/CSVColumnMapper";
+import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -71,7 +71,7 @@ import {
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 // Helper function to get monthly salary with fallback
-const getMonthlySalary = (compensation: any): number => {
+const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?: number }): number => {
   return compensation.monthlySalary || Math.round((compensation.annualSalary || 0) / 12) || 0;
 };
 
@@ -486,7 +486,7 @@ export default function AddEmployee() {
     }
   };
 
-  const handleMappingComplete = async (mappings: any[], csvData: any[]) => {
+  const handleMappingComplete = async (mappings: ColumnMapping[], csvData: Record<string, string>[]) => {
     // Bulk import logic (simplified for wizard focus)
     setShowColumnMapper(false);
     setImportFile(null);

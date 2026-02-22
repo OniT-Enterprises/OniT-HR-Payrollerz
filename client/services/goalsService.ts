@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
@@ -656,7 +657,7 @@ class GoalsService {
   // Helper Methods
   // ----------------------------------------
 
-  private mapDocToOKR(id: string, data: Record<string, any>): OKR {
+  private mapDocToOKR(id: string, data: DocumentData): OKR {
     return {
       id,
       tenantId: data.tenantId,
@@ -679,7 +680,7 @@ class GoalsService {
     };
   }
 
-  private mapDocToGoal(id: string, data: Record<string, any>): Goal {
+  private mapDocToGoal(id: string, data: DocumentData): Goal {
     return {
       id,
       tenantId: data.tenantId,

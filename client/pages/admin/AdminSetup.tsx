@@ -73,9 +73,9 @@ export default function AdminSetup() {
       setTimeout(() => {
         navigate("/");
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Setup error:", err);
-      const message = err?.message || err?.details || "Failed to complete setup";
+      const message = err instanceof Error ? err.message : "Failed to complete setup";
       setError(message);
     } finally {
       setLoading(false);

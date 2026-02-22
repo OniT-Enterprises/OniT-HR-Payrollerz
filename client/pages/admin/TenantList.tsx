@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { adminService } from "@/services/adminService";
 import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
+import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
@@ -128,12 +129,15 @@ export default function TenantList() {
       tenant.slug?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatDate = (date: any): string => {
+  const formatDate = (date: OptionalTimestamp): string => {
     if (!date) return "-";
-    if (date.toDate) {
+    if (typeof date === "object" && "toDate" in date) {
       return formatDateTL(date.toDate()) || "-";
     }
-    return formatDateTL(new Date(date)) || "-";
+    if (date instanceof Date) {
+      return formatDateTL(date) || "-";
+    }
+    return "-";
   };
 
   return (

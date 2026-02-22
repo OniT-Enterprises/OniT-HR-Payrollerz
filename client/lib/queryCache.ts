@@ -133,18 +133,6 @@ async function loadCacheStore(): Promise<CacheStore> {
 }
 
 /**
- * Get cached data for a query key
- */
-async function getCachedData<T>(queryKey: string): Promise<T | undefined> {
-  const store = await loadCacheStore();
-  const entry = store.entries[queryKey];
-  if (entry && Date.now() - entry.timestamp < MAX_AGE) {
-    return entry.data as T;
-  }
-  return undefined;
-}
-
-/**
  * Create QueryClient with optimized settings for snappy UX
  */
 export function createOptimizedQueryClient(): QueryClient {

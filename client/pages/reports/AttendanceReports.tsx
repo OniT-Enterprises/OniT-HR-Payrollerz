@@ -123,13 +123,13 @@ export default function AttendanceReports() {
       return acc;
     }, {} as Record<string, number>), [leaveRequests]);
 
-  const doExport = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+  const doExport = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
     toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
   };
 
   const exportAttendance = () => {
-    doExport(attendanceRecords, "attendance_report", [
+    doExport(attendanceRecords as unknown as Record<string, unknown>[], "attendance_report", [
       { key: "date", label: "Date" },
       { key: "employeeName", label: "Employee Name" },
       { key: "department", label: "Department" },
@@ -168,7 +168,7 @@ export default function AttendanceReports() {
 
   const exportOvertime = () => {
     const overtimeRecords = attendanceRecords.filter((r) => r.overtimeHours > 0);
-    doExport(overtimeRecords, "overtime_report", [
+    doExport(overtimeRecords as unknown as Record<string, unknown>[], "overtime_report", [
       { key: "date", label: "Date" },
       { key: "employeeName", label: "Employee Name" },
       { key: "department", label: "Department" },

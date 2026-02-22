@@ -246,7 +246,7 @@ export const seoConfig = {
   benefits: {
     title: 'Benefits Enrollment',
     description: 'Manage employee benefits enrollment and administration.',
-    keywords: 'benefits, health insurance, 401k, employee benefits',
+    keywords: 'benefits, health insurance, INSS, WIT, employee benefits',
     url: '/payroll/benefits',
   },
   deductions: {

@@ -147,22 +147,6 @@ export function generateBankFile(
 }
 
 /**
- * Generate files for all banks with employees
- */
-function generateAllBankFiles(input: BankTransferInput): BankFileResult[] {
-  const results: BankFileResult[] = [];
-  const grouped = groupRecordsByBank(input.records, input.employees);
-
-  for (const bankCode of Object.keys(grouped) as BankCode[]) {
-    if (grouped[bankCode].length > 0) {
-      results.push(generateBankFile(bankCode, input));
-    }
-  }
-
-  return results;
-}
-
-/**
  * Download a bank file
  */
 export function downloadBankFile(result: BankFileResult): void {

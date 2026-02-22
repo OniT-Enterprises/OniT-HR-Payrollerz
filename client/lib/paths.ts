@@ -175,67 +175,10 @@ export const paths = {
   vatReturn: (tid: string, periodId: string) => `tenants/${tid}/vatReturns/${periodId}`,
 } as const;
 
-// Helper functions for ID generation and validation
-const idHelpers = {
-  // Generate timesheet ID: {empId}_{ISOweek}
-  timesheetId: (empId: string, weekIso: string) => `${empId}_${weekIso}`,
-  
-  // Generate leave balance ID: {empId}_{year}
-  leaveBalanceId: (empId: string, year: string) => `${empId}_${year}`,
-  
-  // Generate roster year-month key: YYYY-MM
-  rosterYearMonth: (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${year}-${month}`;
-  },
-  
-  // Generate payrun ID: YYYYMM
-  payrunId: (date: Date) => {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    return `${year}${month}`;
-  },
-  
-  // Generate promotion signals key: YYYY_Q
-  promotionSignalsKey: (year: number, quarter: number) => `${year}_${quarter}`,
-  
-  // Parse timesheet ID
-  parseTimesheetId: (id: string) => {
-    const [empId, weekIso] = id.split('_');
-    return { empId, weekIso };
-  },
-  
-  // Parse leave balance ID
-  parseLeaveBalanceId: (id: string) => {
-    const [empId, year] = id.split('_');
-    return { empId, year };
-  },
-} as const;
-
 // Type definitions for better TypeScript support
 export type TenantPath = ReturnType<typeof paths.tenant>;
 export type DepartmentPath = ReturnType<typeof paths.departments>;
 export type EmployeePath = ReturnType<typeof paths.employees>;
 export type JobPath = ReturnType<typeof paths.jobs>;
 
-// Validation helpers
-const pathValidators = {
-  isTenantPath: (path: string): boolean => {
-    return path.startsWith('tenants/') && path.split('/').length >= 2;
-  },
-  
-  extractTenantId: (path: string): string | null => {
-    const parts = path.split('/');
-    if (parts[0] === 'tenants' && parts[1]) {
-      return parts[1];
-    }
-    return null;
-  },
-  
-  isValidTenantId: (tid: string): boolean => {
-    // Basic validation - adjust as needed for your ID format
-    return /^[a-zA-Z0-9_-]+$/.test(tid) && tid.length >= 3 && tid.length <= 50;
-  },
-} as const;
 

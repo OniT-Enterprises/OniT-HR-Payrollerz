@@ -205,45 +205,6 @@ export function calculateWorkingDays(startDate: string, endDate: string): number
   return workingDays;
 }
 
-/**
- * Calculate sick leave pay based on TL law
- * First 6 days: 100% pay
- * Days 7-12: 50% pay
- * Beyond 12: Unpaid (but job protected up to 30 days)
- */
-function calculateSickLeavePayment(
-  days: number,
-  dailyRate: number
-): { paidDays: number; totalPay: number; breakdown: { fullPay: number; halfPay: number; unpaid: number } } {
-  const fullPayDays = Math.min(days, 6);
-  const halfPayDays = Math.min(Math.max(days - 6, 0), 6);
-  const unpaidDays = Math.max(days - 12, 0);
-
-  const fullPay = fullPayDays * dailyRate;
-  const halfPay = halfPayDays * (dailyRate * 0.5);
-
-  return {
-    paidDays: fullPayDays + halfPayDays,
-    totalPay: fullPay + halfPay,
-    breakdown: {
-      fullPay: fullPayDays,
-      halfPay: halfPayDays,
-      unpaid: unpaidDays,
-    },
-  };
-}
-
-/**
- * Check if employee has passed probation (3 months in TL)
- */
-function hasPassedProbation(startDate: string): boolean {
-  const start = new Date(startDate);
-  const now = new Date();
-  const monthsWorked = (now.getFullYear() - start.getFullYear()) * 12 +
-    (now.getMonth() - start.getMonth());
-  return monthsWorked >= 3;
-}
-
 // ============================================
 // Leave Service
 // ============================================

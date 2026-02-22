@@ -12,15 +12,20 @@ interface CsvColumn {
  * Handles quoting, escaping, commas in values, and BOM for Excel compatibility.
  */
 function exportToCSV(
-  data: any[],
+  data: Record<string, unknown>[],
   filename: string,
   columns: CsvColumn[]
 ): void {
-  const rows = data.map((item: any) =>
+  const rows = data.map((item) =>
     columns.reduce((row, col) => {
-      let value = col.key.split(".").reduce((obj: any, key: string) => obj?.[key], item);
+      let value: unknown = col.key.split(".").reduce<unknown>((obj, key) => {
+        if (obj != null && typeof obj === 'object') return (obj as Record<string, unknown>)[key];
+        return undefined;
+      }, item);
       // Convert Firestore Timestamps
-      if (value?.toDate) value = value.toDate().toISOString();
+      if (value != null && typeof value === 'object' && 'toDate' in value) {
+        value = (value as { toDate: () => Date }).toDate().toISOString();
+      }
       row[col.label] = value ?? "";
       return row;
     }, {} as Record<string, unknown>)

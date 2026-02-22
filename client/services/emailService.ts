@@ -7,12 +7,6 @@
 import {
   collection,
   addDoc,
-  doc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  orderBy,
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
@@ -316,64 +310,4 @@ export async function sendBulkPayslipEmails(
   return result;
 }
 
-// ============================================================================
-// EMAIL STATUS TRACKING
-// ============================================================================
 
-/**
- * Get email send history for a tenant
- */
-async function getEmailHistory(
-  tenantId: string,
-  options: {
-    purpose?: EmailRecord["purpose"];
-    limit?: number;
-    startAfter?: Timestamp;
-  } = {}
-): Promise<EmailRecord[]> {
-  const { purpose, limit = 50 } = options;
-
-  let q = query(
-    collection(db, MAIL_COLLECTION),
-    where("tenantId", "==", tenantId),
-    orderBy("createdAt", "desc")
-  );
-
-  if (purpose) {
-    q = query(q, where("purpose", "==", purpose));
-  }
-
-  const snapshot = await getDocs(q);
-  const emails: EmailRecord[] = [];
-
-  snapshot.docs.slice(0, limit).forEach((doc) => {
-    emails.push({ id: doc.id, ...doc.data() } as EmailRecord);
-  });
-
-  return emails;
-}
-
-/**
- * Get email record by ID
- */
-async function getEmailRecord(emailId: string): Promise<EmailRecord | null> {
-  const docRef = doc(db, MAIL_COLLECTION, emailId);
-  const docSnap = await getDoc(docRef);
-
-  if (!docSnap.exists()) {
-    return null;
-  }
-
-  return { id: docSnap.id, ...docSnap.data() } as EmailRecord;
-}
-
-// ============================================================================
-// EXPORTS
-// ============================================================================
-
-const emailService = {
-  sendPayslipEmail,
-  sendBulkPayslipEmails,
-  getEmailHistory,
-  getEmailRecord,
-};

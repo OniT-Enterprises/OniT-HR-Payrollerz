@@ -88,35 +88,6 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
 };
 
 /**
- * Get section theme based on current path
- */
-function getSectionFromPath(pathname: string): SectionId {
-  if (pathname.startsWith("/people") || pathname.startsWith("/staff") || pathname.startsWith("/hiring")) {
-    return "people";
-  }
-  if (pathname.startsWith("/payroll")) {
-    return "payroll";
-  }
-  if (pathname.startsWith("/money")) {
-    return "money";
-  }
-  if (pathname.startsWith("/accounting")) {
-    return "accounting";
-  }
-  if (pathname.startsWith("/reports")) {
-    return "reports";
-  }
-  return "dashboard";
-}
-
-/**
- * Get theme for current section
- */
-function getThemeFromPath(pathname: string): SectionTheme {
-  return sectionThemes[getSectionFromPath(pathname)];
-}
-
-/**
  * Navigation item colors (for MainNavigation)
  */
 export const navColors: Record<SectionId, string> = {

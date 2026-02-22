@@ -36,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -150,7 +150,7 @@ export default function GrievanceInbox() {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [grievancesRef, toast]);
 
   useEffect(() => {
     if (tenantId) {

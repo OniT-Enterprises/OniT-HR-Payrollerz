@@ -5,7 +5,6 @@
 import type { Employee } from '@/services/employeeService';
 import type { TLPayrollResult } from '@/lib/payroll/calculations-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
-import type { PayrollRecord } from '@/types/payroll';
 
 export interface EmployeePayrollData {
   employee: Employee;
@@ -28,52 +27,6 @@ export interface EmployeePayrollData {
     allowances: number;
   };
 }
-
-export const mapTLEarningTypeToPayrollEarningType = (
-  type: string
-): PayrollRecord['earnings'][number]['type'] => {
-  switch (type) {
-    case 'regular':
-      return 'regular';
-    case 'overtime':
-      return 'overtime';
-    case 'holiday':
-      return 'holiday';
-    case 'bonus':
-      return 'bonus';
-    case 'subsidio_anual':
-      return 'subsidio_anual';
-    case 'commission':
-      return 'commission';
-    case 'reimbursement':
-      return 'reimbursement';
-    case 'per_diem':
-    case 'food_allowance':
-    case 'transport_allowance':
-    case 'housing_allowance':
-    case 'travel_allowance':
-      return 'allowance';
-    default:
-      return 'other';
-  }
-};
-
-export const mapTLDeductionTypeToPayrollDeductionType = (
-  type: string
-): PayrollRecord['deductions'][number]['type'] => {
-  switch (type) {
-    case 'income_tax':
-      return 'federal_tax';
-    case 'inss_employee':
-      return 'social_security';
-    case 'advance_repayment':
-      return 'advance';
-    case 'court_order':
-      return 'garnishment';
-    default:
-      return 'other';
-  }
-};
 
 export const getPayPeriodsInPayMonth = (
   payDateIso: string,

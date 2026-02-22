@@ -143,7 +143,7 @@ export default function Announcements() {
     } finally {
       setLoading(false);
     }
-  }, [tenantId]);
+  }, [announcementsRef, toast]);
 
   useEffect(() => {
     if (tenantId) {

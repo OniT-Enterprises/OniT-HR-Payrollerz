@@ -777,57 +777,6 @@ export function getDefaultAccounts(): Omit<Account, 'id' | 'createdAt' | 'update
 }
 
 /**
- * Payroll account mappings for auto-generating journal entries
- */
-const PAYROLL_JOURNAL_MAPPINGS = {
-  grossSalary: {
-    description: 'Gross Salaries and Wages',
-    debit: { code: '5110', name: 'Salaries and Wages' },
-    credit: { code: '2210', name: 'Salaries Payable' },
-  },
-  overtime: {
-    description: 'Overtime Pay',
-    debit: { code: '5120', name: 'Overtime Pay' },
-    credit: { code: '2210', name: 'Salaries Payable' },
-  },
-  bonus: {
-    description: 'Bonuses',
-    debit: { code: '5130', name: 'Bonuses' },
-    credit: { code: '2210', name: 'Salaries Payable' },
-  },
-  subsidioAnual: {
-    description: '13th Month Salary (Subsídiu Anual)',
-    debit: { code: '5140', name: 'Subsidio Anual Expense' },
-    credit: { code: '2250', name: 'Subsidio Anual Accrued' },
-  },
-  incomeTax: {
-    description: 'Withholding Income Tax (WIT)',
-    debit: { code: '2210', name: 'Salaries Payable' },
-    credit: { code: '2220', name: 'Impostu Retidu (WIT)' },
-  },
-  inssEmployee: {
-    description: 'INSS Employee Contribution (4%)',
-    debit: { code: '2210', name: 'Salaries Payable' },
-    credit: { code: '2230', name: 'INSS Payable - Employee' },
-  },
-  inssEmployer: {
-    description: 'INSS Employer Contribution (6%)',
-    debit: { code: '5150', name: 'INSS Employer Contribution' },
-    credit: { code: '2240', name: 'INSS Payable - Employer' },
-  },
-  netPay: {
-    description: 'Net Pay Disbursement',
-    debit: { code: '2210', name: 'Salaries Payable' },
-    credit: { code: '1130', name: 'Cash in Bank - Payroll' },
-  },
-  loanDeduction: {
-    description: 'Employee Loan Repayment',
-    debit: { code: '2210', name: 'Salaries Payable' },
-    credit: { code: '1220', name: 'Employee Advances' },
-  },
-};
-
-/**
  * Expense category to account code mappings for auto-generating journal entries
  * from the Money module (Expenses, Bills)
  */
@@ -884,23 +833,3 @@ export const MONEY_JOURNAL_MAPPINGS = {
   },
 };
 
-/**
- * Get account by code
- */
-function getAccountByCode(code: string): DefaultAccount | undefined {
-  return DEFAULT_CHART_OF_ACCOUNTS.find(acc => acc.code === code);
-}
-
-/**
- * Get all accounts by type
- */
-function getAccountsByType(type: AccountType): DefaultAccount[] {
-  return DEFAULT_CHART_OF_ACCOUNTS.filter(acc => acc.type === type);
-}
-
-/**
- * Get child accounts of a parent
- */
-function getChildAccounts(parentCode: string): DefaultAccount[] {
-  return DEFAULT_CHART_OF_ACCOUNTS.filter(acc => acc.parentCode === parentCode);
-}

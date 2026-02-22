@@ -70,7 +70,7 @@ export default function EmployeeReports() {
     return acc;
   }, {} as Record<string, number>), [employees]);
 
-  const handleExportCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+  const handleExportCSV = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
     toast({
       title: "Export Complete",
@@ -79,7 +79,7 @@ export default function EmployeeReports() {
   };
 
   const exportDirectory = () => {
-    handleExportCSV(employees, "employee_directory", [
+    handleExportCSV(employees as unknown as Record<string, unknown>[], "employee_directory", [
       { key: "jobDetails.employeeId", label: "Employee ID" },
       { key: "personalInfo.firstName", label: "First Name" },
       { key: "personalInfo.lastName", label: "Last Name" },
@@ -94,7 +94,7 @@ export default function EmployeeReports() {
   };
 
   const exportNewHires = () => {
-    handleExportCSV(newHires, "new_hires_report", [
+    handleExportCSV(newHires as unknown as Record<string, unknown>[], "new_hires_report", [
       { key: "jobDetails.employeeId", label: "Employee ID" },
       { key: "personalInfo.firstName", label: "First Name" },
       { key: "personalInfo.lastName", label: "Last Name" },

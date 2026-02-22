@@ -104,7 +104,7 @@ export interface TenantMember {
 // tenants is a map of { tenantId: role } for firestore.rules fast-path authorization
 export interface CustomClaims {
   tenants: Record<string, TenantRole>;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 // Session context types
@@ -305,10 +305,3 @@ export const hasModulePermission = (
   return modules?.includes(requiredModule) ?? false;
 };
 
-const canWrite = (role: TenantRole): boolean => {
-  return role === 'owner' || role === 'hr-admin';
-};
-
-const canManage = (role: TenantRole): boolean => {
-  return role === 'owner' || role === 'hr-admin';
-};

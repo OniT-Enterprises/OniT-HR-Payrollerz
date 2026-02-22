@@ -446,8 +446,9 @@ export default function AllEmployees() {
       toast({
         title: t("employees.ekipaAccount.success", { name }),
       });
-    } catch (error: any) {
-      if (error?.code === "functions/already-exists") {
+    } catch (error: unknown) {
+      const errorCode = error instanceof Error ? (error as { code?: string }).code : undefined;
+      if (errorCode === "functions/already-exists") {
         toast({ title: t("employees.ekipaAccount.alreadyExists", { name }) });
       } else {
         toast({

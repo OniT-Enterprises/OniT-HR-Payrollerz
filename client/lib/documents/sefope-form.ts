@@ -199,40 +199,6 @@ export function mapToSefopeForm(
 }
 
 /**
- * Validate required fields for SEFOPE registration
- */
-function validateSefopeForm(data: SefopeFormData): {
-  isValid: boolean;
-  missingFields: string[];
-} {
-  const requiredFields: (keyof SefopeFormData)[] = [
-    'companyName',
-    'companyTIN',
-    'employeeFullName',
-    'biNumber',
-    'nationality',
-    'dateOfBirth',
-    'position',
-    'hireDate',
-    'monthlySalary',
-  ];
-
-  const missingFields: string[] = [];
-
-  for (const field of requiredFields) {
-    const value = data[field];
-    if (!value || (typeof value === 'string' && !value.trim())) {
-      missingFields.push(field);
-    }
-  }
-
-  return {
-    isValid: missingFields.length === 0,
-    missingFields,
-  };
-}
-
-/**
  * Format date for SEFOPE form (DD/MM/YYYY)
  */
 export function formatSefopeDate(dateString: string | undefined): string {

@@ -138,45 +138,56 @@ function getDaysUntilDue(dueDate: string): number {
   return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getRecordGrossPay(record: any): number {
+/** Shape covering both current PayrollRecord and legacy formats */
+interface TaxablePayrollRecord {
+  totalGrossPay?: number;
+  grossPay?: number;
+  incomeTax?: number;
+  inssEmployee?: number;
+  inssEmployer?: number;
+  deductions?: { type?: string; description?: string; amount?: number }[];
+  employerTaxes?: { type?: string; description?: string; amount?: number }[];
+}
+
+function getRecordGrossPay(record: TaxablePayrollRecord | null): number {
   if (!record) return 0;
   if (typeof record.totalGrossPay === 'number') return record.totalGrossPay;
   if (typeof record.grossPay === 'number') return record.grossPay;
   return 0;
 }
 
-function getRecordWITWithheld(record: any): number {
+function getRecordWITWithheld(record: TaxablePayrollRecord | null): number {
   if (!record) return 0;
   if (typeof record.incomeTax === 'number') return record.incomeTax;
 
   const deductions = Array.isArray(record.deductions) ? record.deductions : [];
-  const wit = deductions.find((d: any) =>
-    d?.type === 'federal_tax' ||
+  const wit = deductions.find((d) =>
+    d?.type === 'income_tax' ||
     String(d?.description || '').toLowerCase().includes('wit') ||
     String(d?.description || '').toLowerCase().includes('income tax')
   );
   return typeof wit?.amount === 'number' ? wit.amount : 0;
 }
 
-function getRecordINSSEmployee(record: any): number {
+function getRecordINSSEmployee(record: TaxablePayrollRecord | null): number {
   if (!record) return 0;
   if (typeof record.inssEmployee === 'number') return record.inssEmployee;
 
   const deductions = Array.isArray(record.deductions) ? record.deductions : [];
-  const inss = deductions.find((d: any) =>
-    d?.type === 'social_security' ||
+  const inss = deductions.find((d) =>
+    d?.type === 'inss_employee' ||
     String(d?.description || '').toLowerCase().includes('inss')
   );
   return typeof inss?.amount === 'number' ? inss.amount : 0;
 }
 
-function getRecordINSSEmployer(record: any): number {
+function getRecordINSSEmployer(record: TaxablePayrollRecord | null): number {
   if (!record) return 0;
   if (typeof record.inssEmployer === 'number') return record.inssEmployer;
 
   const employerTaxes = Array.isArray(record.employerTaxes) ? record.employerTaxes : [];
-  const inss = employerTaxes.find((t: any) =>
-    t?.type === 'social_security' ||
+  const inss = employerTaxes.find((t) =>
+    t?.type === 'inss_employer' ||
     String(t?.description || '').toLowerCase().includes('inss')
   );
   return typeof inss?.amount === 'number' ? inss.amount : 0;
@@ -513,7 +524,7 @@ class TaxFilingService {
         existing.totalGrossWages = addMoney(existing.totalGrossWages, record.totalGrossPay || 0);
         // Find WIT deduction from deductions array (check type and description)
         const witDeduction = record.deductions?.find(d =>
-          d.type === 'federal_tax' || d.description?.toLowerCase().includes('wit') || d.description?.toLowerCase().includes('income tax')
+          d.type === 'income_tax' || d.description?.toLowerCase().includes('wit') || d.description?.toLowerCase().includes('income tax')
         );
         existing.totalWIT = addMoney(existing.totalWIT, witDeduction?.amount || 0);
         existing.monthsWorked.add(runMonth);

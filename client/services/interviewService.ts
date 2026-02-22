@@ -191,15 +191,6 @@ export function getPreCheckProgress(checks: PreInterviewCheck): number {
 }
 
 /**
- * Calculate average feedback rating
- */
-function calculateAverageFeedbackRating(feedback: InterviewFeedback[]): number {
-  if (feedback.length === 0) return 0;
-  const total = feedback.reduce((sum, f) => sum + f.overallRating, 0);
-  return Math.round((total / feedback.length) * 10) / 10;
-}
-
-/**
  * Format interview date/time for display
  */
 export function formatInterviewDateTime(date: string, time: string): string {

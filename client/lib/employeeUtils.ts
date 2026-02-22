@@ -103,12 +103,6 @@ export function getIncompleteEmployees(employees: Employee[]): Employee[] {
   return employees.filter(emp => getProfileCompleteness(emp).completionPercentage < 100);
 }
 
-function getCompletionStatusIcon(completeness: number): string {
-  if (completeness >= 100) return "check-circle";
-  if (completeness >= 75) return "alert-circle";
-  return "x-circle";
-}
-
 export function getCompletionStatusColor(completeness: number): string {
   if (completeness >= 100) return "text-green-600";
   if (completeness >= 75) return "text-yellow-600";

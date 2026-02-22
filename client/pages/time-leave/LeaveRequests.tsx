@@ -225,7 +225,7 @@ export default function LeaveRequests() {
   }, [leaveRequests]);
 
   // Handle form input changes
-  const handleInputChange = (field: string, value: any) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
@@ -290,7 +290,11 @@ export default function LeaveRequests() {
         reason: formData.reason,
         hasCertificate: formData.hasCertificate,
         certificateType: leaveType?.certificateType,
-      } as any);
+        // Fields required by Omit<LeaveRequest, 'id'> but set server-side
+        status: "pending" as const,
+        requestDate: formData.startDate,
+        tenantId,
+      });
 
       toast({
         title: t("timeLeave.leaveRequests.toast.successTitle"),

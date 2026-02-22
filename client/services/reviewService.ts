@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -149,13 +150,6 @@ const RATING_LABELS: Record<RatingValue, string> = {
   5: 'Outstanding',
 };
 
-const GOAL_ACHIEVEMENT_OPTIONS = [
-  { id: 'exceeded', name: 'Exceeded', color: 'green' },
-  { id: 'met', name: 'Met', color: 'blue' },
-  { id: 'partially_met', name: 'Partially Met', color: 'yellow' },
-  { id: 'not_met', name: 'Not Met', color: 'red' },
-] as const;
-
 // ============================================
 // Helper Functions
 // ============================================
@@ -172,15 +166,6 @@ export function getRatingLabel(rating: RatingValue): string {
  */
 export function getReviewTypeName(type: ReviewType): string {
   return REVIEW_TYPES.find((t) => t.id === type)?.name || type;
-}
-
-/**
- * Calculate average competency rating
- */
-function calculateAverageRating(competencies: CompetencyRating[]): number {
-  if (competencies.length === 0) return 0;
-  const total = competencies.reduce((sum, c) => sum + c.rating, 0);
-  return Math.round((total / competencies.length) * 10) / 10;
 }
 
 // ============================================
@@ -536,7 +521,7 @@ class ReviewService {
   /**
    * Map Firestore document to PerformanceReview
    */
-  private mapDocToReview(id: string, data: Record<string, any>): PerformanceReview {
+  private mapDocToReview(id: string, data: DocumentData): PerformanceReview {
     return {
       id,
       tenantId: data.tenantId,

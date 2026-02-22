@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,16 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 
+interface DepartmentStat {
+  name: string;
+  totalEmployees: number;
+  activeEmployees: number;
+  inactiveEmployees: number;
+  averageSalary: number;
+  employees: Employee[];
+  department: Department;
+}
+
 export default function Departments() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
@@ -61,13 +71,13 @@ export default function Departments() {
   const employeesQuery = useAllEmployees();
   const departmentsQuery = useDepartments(tenantId);
 
-  const employees = employeesQuery.data ?? [];
-  const departments = departmentsQuery.data ?? [];
+  const employees = useMemo(() => employeesQuery.data ?? [], [employeesQuery.data]);
+  const departments = useMemo(() => departmentsQuery.data ?? [], [departmentsQuery.data]);
   const loading = employeesQuery.isLoading || departmentsQuery.isLoading;
 
   const [showDepartmentManager, setShowDepartmentManager] = useState(false);
   const [managerMode, setManagerMode] = useState<"add" | "edit">("edit");
-  const [selectedDepartment, setSelectedDepartment] = useState<any>(null);
+  const [selectedDepartment, setSelectedDepartment] = useState<DepartmentStat | null>(null);
   const [showDepartmentEmployees, setShowDepartmentEmployees] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
@@ -211,7 +221,7 @@ export default function Departments() {
     }).format(monthlySalary);
   };
 
-  const handleViewDepartmentEmployees = (dept: any) => {
+  const handleViewDepartmentEmployees = (dept: DepartmentStat) => {
     setSelectedDepartment(dept);
     setShowDepartmentEmployees(true);
   };
@@ -573,7 +583,7 @@ export default function Departments() {
               <DialogTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5" />
                 {t("departments.dialogTitle", {
-                  department: selectedDepartment?.name,
+                  department: selectedDepartment?.name ?? "",
                 })}
               </DialogTitle>
               <DialogDescription>

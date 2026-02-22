@@ -25,8 +25,9 @@ export default function Login() {
     try {
       await signIn(email, password);
       navigate("/");
-    } catch (error: any) {
-      setError(error.message || t("auth.errors.signInFailed"));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t("auth.errors.signInFailed");
+      setError(message);
     } finally {
       setLoading(false);
     }

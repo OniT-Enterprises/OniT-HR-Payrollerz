@@ -4,7 +4,7 @@
  * Allows updating tax rates without redeploying the application
  */
 
-import { doc, getDoc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 // ============================================
@@ -190,83 +190,3 @@ export async function getTaxConfig(): Promise<TLTaxConfig> {
   }
 }
 
-/**
- * Update tax configuration in Firestore
- * Only accessible by admins
- */
-async function updateTaxConfig(
-  updates: Partial<Omit<TLTaxConfig, 'lastUpdated' | 'version'>>,
-  userId: string
-): Promise<void> {
-  const currentConfig = await getTaxConfig();
-
-  const newConfig = {
-    ...currentConfig,
-    ...updates,
-    lastUpdated: serverTimestamp(),
-    updatedBy: userId,
-    version: (currentConfig.version || 0) + 1,
-  };
-
-  await setDoc(doc(db, 'system_config', 'tl_tax_config'), newConfig);
-
-  // Invalidate cache
-  cachedConfig = null;
-  cacheTimestamp = 0;
-}
-
-/**
- * Clear the cache (useful for testing or after updates)
- */
-function clearTaxConfigCache(): void {
-  cachedConfig = null;
-  cacheTimestamp = 0;
-}
-
-// ============================================
-// HELPER FUNCTIONS
-// ============================================
-
-/**
- * Calculate income tax based on config
- */
-async function calculateIncomeTax(
-  taxableIncome: number,
-  isResident: boolean
-): Promise<number> {
-  const config = await getTaxConfig();
-  const threshold = isResident
-    ? config.incomeTax.residentThreshold
-    : config.incomeTax.nonResidentThreshold;
-
-  const taxable = Math.max(0, taxableIncome - threshold);
-  return taxable * config.incomeTax.rate;
-}
-
-/**
- * Calculate INSS contributions based on config
- */
-async function calculateINSS(
-  grossSalary: number
-): Promise<{ employee: number; employer: number }> {
-  const config = await getTaxConfig();
-  return {
-    employee: grossSalary * config.inss.employeeRate,
-    employer: grossSalary * config.inss.employerRate,
-  };
-}
-
-/**
- * Calculate annual leave entitlement based on config
- */
-async function calculateAnnualLeave(
-  yearsOfService: number
-): Promise<number> {
-  const config = await getTaxConfig();
-  const { annualLeave } = config;
-
-  if (yearsOfService >= 9) return annualLeave.after9Years;
-  if (yearsOfService >= 6) return annualLeave.after6Years;
-  if (yearsOfService >= 3) return annualLeave.after3Years;
-  return annualLeave.minimumDays;
-}

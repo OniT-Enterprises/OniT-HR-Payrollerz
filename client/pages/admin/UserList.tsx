@@ -95,9 +95,10 @@ export default function UserList() {
           : `Superadmin removed from ${targetUser.email}`
       );
       loadUsers();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error updating superadmin status:", error);
-      toast.error(error.message || "Failed to update superadmin status");
+      const message = error instanceof Error ? error.message : "Failed to update superadmin status";
+      toast.error(message);
     } finally {
       setActionLoading(null);
       setConfirmDialog({ open: false, user: null, action: "grant" });
@@ -110,15 +111,17 @@ export default function UserList() {
       user.displayName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatDate = (date: any): string => {
+  type FirestoreTimestampLike = { toDate: () => Date } | { seconds: number } | Date | string | null | undefined;
+
+  const formatDate = (date: FirestoreTimestampLike): string => {
     if (!date) return "-";
-    if (date.toDate) {
+    if (typeof date === "object" && "toDate" in date) {
       return formatDateTL(date.toDate()) || "-";
     }
-    if (date.seconds) {
+    if (typeof date === "object" && "seconds" in date) {
       return formatDateTL(new Date(date.seconds * 1000)) || "-";
     }
-    return formatDateTL(new Date(date)) || "-";
+    return formatDateTL(new Date(date as Date | string)) || "-";
   };
 
   const superadminCount = users.filter((u) => u.isSuperAdmin).length;

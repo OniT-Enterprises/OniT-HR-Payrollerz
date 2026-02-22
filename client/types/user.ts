@@ -52,7 +52,7 @@ export interface AdminAuditEntry {
   targetType: 'tenant' | 'user';
   targetId: string;
   targetName?: string;
-  details?: Record<string, any>;
+  details?: Record<string, unknown>;
   timestamp: Timestamp;
   ipAddress?: string;
   // Additional fields for UI compatibility
@@ -81,23 +81,3 @@ export type AdminAuditAction =
   | 'user_added_to_tenant'
   | 'user_removed_from_tenant';
 
-// Helper to create initial user profile
-function createUserProfile(
-  uid: string,
-  email: string,
-  displayName?: string
-): Omit<UserProfile, 'createdAt' | 'updatedAt'> {
-  return {
-    uid,
-    email,
-    displayName: displayName || email.split('@')[0],
-    isSuperAdmin: false,
-    tenantIds: [],
-    impersonating: null,
-  };
-}
-
-// Type guard for checking if user is superadmin
-function isSuperAdmin(profile: UserProfile | null): boolean {
-  return profile?.isSuperAdmin === true;
-}

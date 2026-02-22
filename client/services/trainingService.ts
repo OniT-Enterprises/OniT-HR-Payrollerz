@@ -16,6 +16,7 @@ import {
   orderBy,
   Timestamp,
   serverTimestamp,
+  type DocumentData,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { fileUploadService } from './fileUploadService';
@@ -493,7 +494,7 @@ class TrainingService {
   /**
    * Map Firestore document to TrainingRecord
    */
-  private mapDocToRecord(id: string, data: Record<string, any>): TrainingRecord {
+  private mapDocToRecord(id: string, data: DocumentData): TrainingRecord {
     return {
       id,
       tenantId: data.tenantId,

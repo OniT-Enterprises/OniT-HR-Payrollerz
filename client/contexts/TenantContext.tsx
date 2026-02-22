@@ -329,9 +329,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
         sessionStorage.setItem("impersonatingTenantId", tenantId);
         sessionStorage.setItem("impersonatingTenantName", tenantName);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to start impersonation:", error);
-      setError(error.message || "Failed to impersonate");
+      const message = error instanceof Error ? error.message : "Failed to impersonate";
+      setError(message);
       throw error;
     } finally {
       setLoading(false);
@@ -400,9 +401,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
         // Store current tenant in localStorage for persistence
         localStorage.setItem("currentTenantId", tid);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Failed to switch tenant:", error);
-      setError(error.message || "Failed to switch tenant");
+      const message = error instanceof Error ? error.message : "Failed to switch tenant";
+      setError(message);
       throw error;
     } finally {
       setLoading(false);

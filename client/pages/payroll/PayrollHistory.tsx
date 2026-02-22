@@ -309,11 +309,11 @@ export default function PayrollHistory() {
       // Create accounting journal entry
       const records = await payrollService.records.getPayrollRecordsByRunId(approveRun.id, tenantId);
       const totalINSSEmployee = records.reduce((sum, r) =>
-        sum + (r.deductions?.find(d => d.type === 'social_security')?.amount || 0), 0);
+        sum + (r.deductions?.find(d => d.type === 'inss_employee')?.amount || 0), 0);
       const totalINSSEmployer = records.reduce((sum, r) =>
-        sum + (r.employerTaxes?.find(t => t.type === 'social_security')?.amount || 0), 0);
+        sum + (r.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0), 0);
       const totalIncomeTax = records.reduce((sum, r) =>
-        sum + (r.deductions?.find(d => d.type === 'federal_tax')?.amount || 0), 0);
+        sum + (r.deductions?.find(d => d.type === 'income_tax')?.amount || 0), 0);
 
       const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
         periodStart: approveRun.periodStart,
@@ -349,10 +349,11 @@ export default function PayrollHistory() {
 
       setShowApproveDialog(false);
       setApproveRun(null);
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t("payrollHistory.toastApprovalFailedDesc");
       toast({
         title: t("payrollHistory.toastApprovalFailed"),
-        description: error.message || t("payrollHistory.toastApprovalFailedDesc"),
+        description: message,
         variant: "destructive",
       });
     } finally {
@@ -391,10 +392,11 @@ export default function PayrollHistory() {
       setShowRejectDialog(false);
       setRejectRun(null);
       setRejectionReason("");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : t("payrollHistory.toastRejectionFailedDesc");
       toast({
         title: t("payrollHistory.toastRejectionFailed"),
-        description: error.message || t("payrollHistory.toastRejectionFailedDesc"),
+        description: message,
         variant: "destructive",
       });
     } finally {

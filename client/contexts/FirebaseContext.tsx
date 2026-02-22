@@ -1,6 +1,5 @@
 import React, {
   createContext,
-  useContext,
   useState,
   useEffect,
   useCallback,
@@ -19,15 +18,6 @@ interface FirebaseContextType {
 const FirebaseContext = createContext<FirebaseContextType | undefined>(
   undefined,
 );
-
-// eslint-disable-next-line react-refresh/only-export-components
-const useFirebase = () => {
-  const context = useContext(FirebaseContext);
-  if (context === undefined) {
-    throw new Error("useFirebase must be used within a FirebaseProvider");
-  }
-  return context;
-};
 
 interface FirebaseProviderProps {
   children: ReactNode;
@@ -56,14 +46,16 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
       setIsConnected(true);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Permission denied is actually a successful connection - Firebase is reachable
-      if (err.code === "permission-denied") {
+      const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
+      const errMessage = err instanceof Error ? err.message : "Connection failed";
+      if (errCode === "permission-denied") {
         setIsConnected(true);
         setError(null);
       } else {
         console.error("Firebase connection error:", err);
-        setError(err.message || "Connection failed");
+        setError(errMessage);
         setIsConnected(false);
       }
     }
