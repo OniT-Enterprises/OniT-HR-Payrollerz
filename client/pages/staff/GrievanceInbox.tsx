@@ -113,12 +113,12 @@ export default function GrievanceInbox() {
   // Dismiss dialog
   const [dismissingGrievance, setDismissingGrievance] = useState<Grievance | null>(null);
 
-  const grievancesRef = collection(db, `tenants/${tenantId}/grievances`);
-
   const fetchGrievances = useCallback(async () => {
+    if (!tenantId) return;
     try {
       setLoading(true);
-      const q = query(grievancesRef, orderBy("createdAt", "desc"));
+      const ref = collection(db, `tenants/${tenantId}/grievances`);
+      const q = query(ref, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       const items: Grievance[] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
@@ -150,7 +150,7 @@ export default function GrievanceInbox() {
     } finally {
       setLoading(false);
     }
-  }, [grievancesRef, toast]);
+  }, [tenantId, toast]);
 
   useEffect(() => {
     if (tenantId) {

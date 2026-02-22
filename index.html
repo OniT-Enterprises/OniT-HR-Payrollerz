@@ -40,9 +40,10 @@
     <meta name="twitter:image" content="https://onit-hr-payroll.web.app/og-image.png" />
 
     <!-- Favicons -->
-    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
 
     <!-- Web App Manifest -->
@@ -88,12 +89,51 @@
 
   <body>
     <!-- Splash overlay — lives OUTSIDE #root so React doesn't destroy it -->
-    <div id="splash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#09090b;flex-direction:column;gap:16px;overflow:hidden;transition:opacity 0.3s ease">
+    <div id="splash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#09090b;flex-direction:column;gap:20px;overflow:hidden;transition:opacity 0.3s ease">
       <img src="/images/illustrations/splash-loading.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.07;pointer-events:none" />
       <img src="/images/illustrations/logo-v2-dark.webp" alt="Meza" style="height:48px;width:auto;position:relative" />
       <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:#818cf8;border-radius:50%;animation:sp .7s linear infinite;position:relative"></div>
+      <div id="splash-msg" style="position:relative;text-align:center;font-family:system-ui,sans-serif;max-width:320px;animation:fadeUp .5s ease both">
+        <p id="splash-phrase" style="color:rgba(255,255,255,0.8);font-size:16px;font-style:italic;letter-spacing:0.02em;line-height:1.4;margin:0"></p>
+        <p id="splash-sub" style="color:rgba(255,255,255,0.35);font-size:12px;margin:6px 0 0;font-style:normal"></p>
+      </div>
     </div>
-    <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+    <style>
+      @keyframes sp{to{transform:rotate(360deg)}}
+      @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    </style>
+    <script>
+      (function(){
+        var msgs=[
+          // Tetun greetings & proverbs
+          ["\u201CBainaka\u201D","Welcome \u2014 let\u2019s get to work"],
+          ["\u201CHamutuk ita bele\u201D","Together we can"],
+          ["\u201CServisu ho laran\u201D","Work with heart"],
+          ["\u201CLao ba oin\u201D","Moving forward, always"],
+          ["\u201CDi\u2019ak loron ida\u201D","Have a good day"],
+          ["\u201CProntu ona\u201D","All set \u2014 almost there"],
+          ["\u201CMeza prontu\u201D","Your desk is ready"],
+          ["\u201CHakarak di\u2019ak liu tan\u201D","Always striving for better"],
+          ["\u201CIta nia forsa maka ita nia ema\u201D","Our strength is our people"],
+          // Feature callouts
+          ["Payroll. People. Accounting.","Everything your business needs, one Meza."],
+          ["Built for Timor-Leste","INSS, WIT, subsidio anual \u2014 all handled."],
+          ["Your back office, simplified","From hire to retire, Meza has you covered."],
+          ["Run payroll in minutes","Not hours. Not headaches. Minutes."],
+          ["Real-time financials","Journal entries, trial balance, always up to date."],
+          ["Track your team","Attendance, leave, performance \u2014 all in one place."],
+          // Fun personality
+          ["Spreadsheets are so last decade","Welcome to the future of HR."],
+          ["Fueling the businesses of Timor-Leste","One payroll at a time."],
+          ["Where HR meets simplicity","Meza \u2014 Tetum for \u201Cdesk.\u201D Your digital one."],
+        ];
+        var m=msgs[Math.floor(Math.random()*msgs.length)];
+        var el=document.getElementById("splash-phrase");
+        var sub=document.getElementById("splash-sub");
+        if(el) el.textContent=m[0];
+        if(sub) sub.textContent=m[1];
+      })();
+    </script>
 
     <div id="root"></div>
 

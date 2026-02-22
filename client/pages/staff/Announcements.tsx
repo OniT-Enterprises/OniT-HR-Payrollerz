@@ -108,12 +108,12 @@ export default function Announcements() {
   const [deletingAnnouncement, setDeletingAnnouncement] = useState<Announcement | null>(null);
   const [formData, setFormData] = useState<AnnouncementFormData>(EMPTY_FORM);
 
-  const announcementsRef = collection(db, `tenants/${tenantId}/announcements`);
-
   const fetchAnnouncements = useCallback(async () => {
+    if (!tenantId) return;
     try {
       setLoading(true);
-      const q = query(announcementsRef, orderBy("createdAt", "desc"));
+      const ref = collection(db, `tenants/${tenantId}/announcements`);
+      const q = query(ref, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
       const items: Announcement[] = snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
@@ -143,7 +143,7 @@ export default function Announcements() {
     } finally {
       setLoading(false);
     }
-  }, [announcementsRef, toast]);
+  }, [tenantId, toast]);
 
   useEffect(() => {
     if (tenantId) {
@@ -218,7 +218,7 @@ export default function Announcements() {
           description: "Announcement updated",
         });
       } else {
-        await addDoc(announcementsRef, {
+        await addDoc(collection(db, `tenants/${tenantId}/announcements`), {
           ...payload,
           createdAt: serverTimestamp(),
           createdBy: user?.uid || "",
