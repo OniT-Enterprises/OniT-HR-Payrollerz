@@ -38,6 +38,7 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
 
 export default function AttendanceReports() {
   const [dateRange, setDateRange] = useState("30");
@@ -122,34 +123,13 @@ export default function AttendanceReports() {
       return acc;
     }, {} as Record<string, number>), [leaveRequests]);
 
-  // Export to CSV
-  const exportToCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
-    const headers = columns.map((c) => c.label).join(",");
-    const rows = data.map((item) =>
-      columns
-        .map((c) => {
-          const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-          const strValue = String(value ?? "").replace(/,/g, ";");
-          return `"${strValue}"`;
-        })
-        .join(",")
-    );
-    const csv = [headers, ...rows].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}_${getTodayTL()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({
-      title: "Export Complete",
-      description: `${filename}.csv downloaded successfully`,
-    });
+  const doExport = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    exportToCSV(data, filename, columns);
+    toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
   };
 
   const exportAttendance = () => {
-    exportToCSV(attendanceRecords, "attendance_report", [
+    doExport(attendanceRecords, "attendance_report", [
       { key: "date", label: "Date" },
       { key: "employeeName", label: "Employee Name" },
       { key: "department", label: "Department" },
@@ -174,7 +154,7 @@ export default function AttendanceReports() {
       sickRemaining: b.sick?.remaining || 0,
       carryOver: b.carryOver || 0,
     }));
-    exportToCSV(balanceData, "leave_balances", [
+    doExport(balanceData, "leave_balances", [
       { key: "employeeName", label: "Employee Name" },
       { key: "annualEntitled", label: "Annual Entitled" },
       { key: "annualUsed", label: "Annual Used" },
@@ -188,7 +168,7 @@ export default function AttendanceReports() {
 
   const exportOvertime = () => {
     const overtimeRecords = attendanceRecords.filter((r) => r.overtimeHours > 0);
-    exportToCSV(overtimeRecords, "overtime_report", [
+    doExport(overtimeRecords, "overtime_report", [
       { key: "date", label: "Date" },
       { key: "employeeName", label: "Employee Name" },
       { key: "department", label: "Department" },

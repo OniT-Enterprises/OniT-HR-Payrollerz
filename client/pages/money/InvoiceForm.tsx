@@ -4,7 +4,7 @@
  * Uses react-hook-form + Zod for form management and validation
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -78,6 +78,14 @@ export default function InvoiceForm() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { session } = useTenant();
+
+  // Preload PDF module so download resolves instantly from cache
+  const preloaded = useRef(false);
+  useEffect(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    import('@/components/money/InvoicePDF');
+  }, []);
 
   const isNew = !id || id === 'new';
   const isEditMode = searchParams.get('mode') === 'edit' || window.location.pathname.endsWith('/edit');

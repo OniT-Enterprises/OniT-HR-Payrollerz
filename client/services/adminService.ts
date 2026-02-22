@@ -292,7 +292,7 @@ class AdminService {
   // USER MANAGEMENT
   // ============================================
 
-  async getAllUsers(maxResults = 100): Promise<UserProfile[]> {
+  async getAllUsers(maxResults = 500): Promise<UserProfile[]> {
     if (!db) return [];
 
     try {
@@ -496,4 +496,3 @@ class AdminService {
 }
 
 export const adminService = new AdminService();
-export default adminService;

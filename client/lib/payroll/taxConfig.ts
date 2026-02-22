@@ -89,7 +89,7 @@ export interface TLTaxConfig {
 // DEFAULT VALUES (Fallback)
 // ============================================
 
-export const DEFAULT_TAX_CONFIG: TLTaxConfig = {
+const DEFAULT_TAX_CONFIG: TLTaxConfig = {
   incomeTax: {
     rate: 0.10,
     residentThreshold: 500,
@@ -194,7 +194,7 @@ export async function getTaxConfig(): Promise<TLTaxConfig> {
  * Update tax configuration in Firestore
  * Only accessible by admins
  */
-export async function updateTaxConfig(
+async function updateTaxConfig(
   updates: Partial<Omit<TLTaxConfig, 'lastUpdated' | 'version'>>,
   userId: string
 ): Promise<void> {
@@ -218,7 +218,7 @@ export async function updateTaxConfig(
 /**
  * Clear the cache (useful for testing or after updates)
  */
-export function clearTaxConfigCache(): void {
+function clearTaxConfigCache(): void {
   cachedConfig = null;
   cacheTimestamp = 0;
 }
@@ -230,7 +230,7 @@ export function clearTaxConfigCache(): void {
 /**
  * Calculate income tax based on config
  */
-export async function calculateIncomeTax(
+async function calculateIncomeTax(
   taxableIncome: number,
   isResident: boolean
 ): Promise<number> {
@@ -246,7 +246,7 @@ export async function calculateIncomeTax(
 /**
  * Calculate INSS contributions based on config
  */
-export async function calculateINSS(
+async function calculateINSS(
   grossSalary: number
 ): Promise<{ employee: number; employer: number }> {
   const config = await getTaxConfig();
@@ -259,7 +259,7 @@ export async function calculateINSS(
 /**
  * Calculate annual leave entitlement based on config
  */
-export async function calculateAnnualLeave(
+async function calculateAnnualLeave(
   yearsOfService: number
 ): Promise<number> {
   const config = await getTaxConfig();

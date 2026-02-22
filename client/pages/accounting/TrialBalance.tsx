@@ -455,14 +455,14 @@ export default function TrialBalance() {
                               {type}
                             </Badge>
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono tabular-nums">
                             {row.closingDebit > 0 ? (
                               <span className="text-green-600">{formatCurrencyTL(row.closingDebit)}</span>
                             ) : (
                               '-'
                             )}
                           </TableCell>
-                          <TableCell className="text-right font-mono">
+                          <TableCell className="text-right font-mono tabular-nums">
                             {row.closingCredit > 0 ? (
                               <span className="text-blue-600">{formatCurrencyTL(row.closingCredit)}</span>
                             ) : (
@@ -477,10 +477,10 @@ export default function TrialBalance() {
                         <TableCell colSpan={3} className="text-right font-medium">
                           {t("accounting.trialBalance.subtotal", { type: type.charAt(0).toUpperCase() + type.slice(1) })}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-mono font-medium tabular-nums">
                           {formatCurrencyTL(summaryByType[type].debit)}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-mono font-medium tabular-nums">
                           {formatCurrencyTL(summaryByType[type].credit)}
                         </TableCell>
                       </TableRow>
@@ -493,13 +493,13 @@ export default function TrialBalance() {
                   <TableCell colSpan={3} className="text-right">
                     {t("accounting.trialBalance.totalLabel")}
                   </TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell className="text-right font-mono tabular-nums">
                     <div className="flex items-center justify-end gap-1">
                       <TrendingUp className="h-4 w-4 text-green-600" />
                       {formatCurrencyTL(totals.debit)}
                     </div>
                   </TableCell>
-                  <TableCell className="text-right font-mono">
+                  <TableCell className="text-right font-mono tabular-nums">
                     <div className="flex items-center justify-end gap-1">
                       <TrendingDown className="h-4 w-4 text-blue-600" />
                       {formatCurrencyTL(totals.credit)}

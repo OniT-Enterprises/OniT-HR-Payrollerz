@@ -305,10 +305,10 @@ export const hasModulePermission = (
   return modules?.includes(requiredModule) ?? false;
 };
 
-export const canWrite = (role: TenantRole): boolean => {
+const canWrite = (role: TenantRole): boolean => {
   return role === 'owner' || role === 'hr-admin';
 };
 
-export const canManage = (role: TenantRole): boolean => {
+const canManage = (role: TenantRole): boolean => {
   return role === 'owner' || role === 'hr-admin';
 };

@@ -343,4 +343,3 @@ export const seoConfig = {
   },
 } as const;
 
-export default SEO;

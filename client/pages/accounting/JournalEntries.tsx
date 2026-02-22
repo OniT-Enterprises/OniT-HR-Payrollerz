@@ -903,10 +903,10 @@ export default function JournalEntries() {
                                           </p>
                                         )}
                                       </TableCell>
-                                      <TableCell className="text-right font-mono text-sm">
+                                      <TableCell className="text-right font-mono text-sm tabular-nums">
                                         {line.debit > 0 ? formatCurrencyTL(line.debit) : "-"}
                                       </TableCell>
-                                      <TableCell className="text-right font-mono text-sm">
+                                      <TableCell className="text-right font-mono text-sm tabular-nums">
                                         {line.credit > 0 ? formatCurrencyTL(line.credit) : "-"}
                                       </TableCell>
                                     </TableRow>
@@ -915,10 +915,10 @@ export default function JournalEntries() {
                                   <TableRow className="bg-muted/50 font-semibold border-t">
                                     <TableCell></TableCell>
                                     <TableCell className="text-sm">{t("accounting.journalEntries.total")}</TableCell>
-                                    <TableCell className="text-right font-mono text-sm">
+                                    <TableCell className="text-right font-mono text-sm tabular-nums">
                                       {formatCurrencyTL(entry.totalDebit)}
                                     </TableCell>
-                                    <TableCell className="text-right font-mono text-sm">
+                                    <TableCell className="text-right font-mono text-sm tabular-nums">
                                       {formatCurrencyTL(entry.totalCredit)}
                                     </TableCell>
                                   </TableRow>
@@ -1015,20 +1015,20 @@ export default function JournalEntries() {
                             <p className="text-sm text-gray-500">{line.description}</p>
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono tabular-nums">
                           {line.debit > 0 ? formatCurrencyTL(line.debit) : "-"}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono tabular-nums">
                           {line.credit > 0 ? formatCurrencyTL(line.credit) : "-"}
                         </TableCell>
                       </TableRow>
                     ))}
                     <TableRow className="bg-gray-50 font-semibold">
                       <TableCell>{t("accounting.journalEntries.total")}</TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(selectedEntry.totalDebit)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(selectedEntry.totalCredit)}
                       </TableCell>
                     </TableRow>

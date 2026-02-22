@@ -433,17 +433,8 @@ export const downloadWITReturnPDF = async (
   company?: Partial<CompanyDetails>,
   filename?: string
 ): Promise<void> => {
+  const { downloadBlob } = await import("@/lib/downloadBlob");
   const blob = await generateWITReturnBlob(witReturn, company);
-  const url = URL.createObjectURL(blob);
-
-  const link = document.createElement("a");
-  link.href = url;
-  link.download =
-    filename || `wit-return-${witReturn.reportingPeriod}.pdf`;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, filename || `wit-return-${witReturn.reportingPeriod}.pdf`);
 };
 
-export default WITReturnDocument;

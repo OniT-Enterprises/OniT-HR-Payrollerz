@@ -118,7 +118,7 @@ export const DEPARTURE_REASONS: { id: DepartureReason; name: string }[] = [
   { id: 'other', name: 'Other' },
 ];
 
-export const DEFAULT_CHECKLIST: OffboardingChecklist = {
+const DEFAULT_CHECKLIST: OffboardingChecklist = {
   accessRevoked: false,
   equipmentReturned: false,
   documentsSigned: false,
@@ -129,7 +129,7 @@ export const DEFAULT_CHECKLIST: OffboardingChecklist = {
   referenceLetter: false,
 };
 
-export const DEFAULT_EXIT_INTERVIEW: ExitInterview = {
+const DEFAULT_EXIT_INTERVIEW: ExitInterview = {
   overallSatisfaction: '',
   managerRelationship: '',
   primaryReason: '',
@@ -155,7 +155,7 @@ export function getChecklistProgress(checklist: OffboardingChecklist): number {
 /**
  * Calculate status based on checklist
  */
-export function calculateStatus(checklist: OffboardingChecklist): OffboardingStatus {
+function calculateStatus(checklist: OffboardingChecklist): OffboardingStatus {
   const progress = getChecklistProgress(checklist);
   if (progress === 100) return 'completed';
   if (progress > 0) return 'in_progress';
@@ -165,7 +165,7 @@ export function calculateStatus(checklist: OffboardingChecklist): OffboardingSta
 /**
  * Get departure reason display name
  */
-export function getReasonName(reason: DepartureReason): string {
+function getReasonName(reason: DepartureReason): string {
   return DEPARTURE_REASONS.find((r) => r.id === reason)?.name || reason;
 }
 
@@ -563,4 +563,3 @@ class OffboardingService {
 }
 
 export const offboardingService = new OffboardingService();
-export default offboardingService;

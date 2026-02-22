@@ -127,7 +127,7 @@ const DocumentAlerts = lazy(() => import("@/pages/admin/DocumentAlerts"));
 const ForeignWorkers = lazy(() => import("@/pages/admin/ForeignWorkers"));
 
 // Export components for use in HomeRoute
-export { Login, Dashboard, Landing, NotFound, Settings, Signup, AdminSetup, Sitemap };
+export { Dashboard, Landing };
 
 /**
  * Auth & Core Routes

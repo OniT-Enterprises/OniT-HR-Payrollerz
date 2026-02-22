@@ -197,4 +197,3 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
   );
 }
 
-export default InvoiceStatusTimeline;

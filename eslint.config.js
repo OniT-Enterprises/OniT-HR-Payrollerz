@@ -16,6 +16,8 @@ export default [
       "firebaseemulator_payroll/",
       "scripts/",
       "netlify/",
+      "server/",
+      "mobile/",
       "*.config.js",
       "*.config.ts",
     ],

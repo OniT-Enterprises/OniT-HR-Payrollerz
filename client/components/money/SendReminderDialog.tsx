@@ -179,4 +179,3 @@ export function SendReminderDialog({
   );
 }
 
-export default SendReminderDialog;

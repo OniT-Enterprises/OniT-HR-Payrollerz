@@ -785,4 +785,3 @@ export function TimeOffPoliciesTab({
   );
 }
 
-export default TimeOffPoliciesTab;

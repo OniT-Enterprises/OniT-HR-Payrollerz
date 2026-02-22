@@ -69,6 +69,7 @@ export default function Customers() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<CustomerFormData>({
     name: '',
     type: 'business',
@@ -93,7 +94,7 @@ export default function Customers() {
   });
 
   const handleSubmit = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || saving) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -103,6 +104,7 @@ export default function Customers() {
       return;
     }
 
+    setSaving(true);
     try {
       if (editingCustomer) {
         await customerService.updateCustomer(session.tid, editingCustomer.id, formData);
@@ -128,6 +130,8 @@ export default function Customers() {
         description: t('money.customers.saveError') || 'Failed to save customer',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -480,10 +484,12 @@ export default function Customers() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700">
-              {editingCustomer
-                ? t('common.save') || 'Save'
-                : t('money.customers.add') || 'Add Customer'}
+            <Button onClick={handleSubmit} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+              {saving
+                ? (t('common.saving') || 'Saving...')
+                : editingCustomer
+                  ? t('common.save') || 'Save'
+                  : t('money.customers.add') || 'Add Customer'}
             </Button>
           </DialogFooter>
         </DialogContent>

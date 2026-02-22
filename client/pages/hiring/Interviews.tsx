@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -134,15 +134,7 @@ export default function Interviews() {
     notes: "",
   });
 
-  // Load interviews
-  useEffect(() => {
-    if (tenantId) {
-      loadInterviews();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadInterviews = async () => {
+  const loadInterviews = useCallback(async () => {
     if (!tenantId) return;
     setLoading(true);
     try {
@@ -154,7 +146,14 @@ export default function Interviews() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId]);
+
+  // Load interviews
+  useEffect(() => {
+    if (tenantId) {
+      loadInterviews();
+    }
+  }, [loadInterviews, tenantId]);
 
   // Get filtered interviews
   const getFilteredInterviews = () => {

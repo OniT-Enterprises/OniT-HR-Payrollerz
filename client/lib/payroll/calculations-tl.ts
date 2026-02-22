@@ -179,7 +179,7 @@ export interface TLPayrollResult {
  * Calculate regular pay based on salary and frequency
  * Uses decimal.js for precise currency calculations
  */
-export function calculateRegularPay(
+function calculateRegularPay(
   monthlySalary: number,
   payFrequency: TLPayFrequency,
   isHourly: boolean,
@@ -206,7 +206,7 @@ export function calculateRegularPay(
  * Calculate overtime pay
  * Uses decimal.js for precise currency calculations
  */
-export function calculateOvertimePay(
+function calculateOvertimePay(
   hourlyRate: number,
   overtimeHours: number,
   nightShiftHours: number,
@@ -241,7 +241,7 @@ export function calculateHourlyRate(monthlySalary: number): number {
  * First 6 days: 100%, next 6 days: 50%
  * Uses decimal.js for precise currency calculations
  */
-export function calculateSickPay(
+function calculateSickPay(
   dailyRate: number,
   sickDaysThisPeriod: number,
   ytdSickDaysUsed: number
@@ -268,7 +268,7 @@ export function calculateSickPay(
  * - Non-residents: 10% on all income
  * Uses decimal.js for precise currency calculations
  */
-export function calculateIncomeTax(
+function calculateIncomeTax(
   taxableIncome: number,
   isResident: boolean,
   payFrequency: TLPayFrequency,
@@ -815,7 +815,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
  * NOTE: For guaranteed reconciliation (sum of weeks = monthly salary),
  * use calculateMonthlyWeeklyPayrolls() instead.
  */
-export function calculateWeeklySubPayroll(
+function calculateWeeklySubPayroll(
   monthlySalary: number,
   weekNumber: number,  // 1-5 (some months have 5 weeks)
   daysInWeek: number,  // Working days this week (typically 5-6)
@@ -914,7 +914,7 @@ export function calculateMonthlyWeeklyPayrolls(
  * @param alreadyPaid - Sum of payments already made for previous weeks
  * @returns The amount to pay for the final week
  */
-export function calculateFinalWeekReconciliation(
+function calculateFinalWeekReconciliation(
   monthlySalary: number,
   alreadyPaid: number
 ): number {
@@ -948,4 +948,3 @@ export function validateTLPayrollInput(input: TLPayrollInput): string[] {
   return errors;
 }
 
-export default calculateTLPayroll;

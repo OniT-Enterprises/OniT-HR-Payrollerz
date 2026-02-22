@@ -82,7 +82,7 @@ export type AdminAuditAction =
   | 'user_removed_from_tenant';
 
 // Helper to create initial user profile
-export function createUserProfile(
+function createUserProfile(
   uid: string,
   email: string,
   displayName?: string
@@ -98,6 +98,6 @@ export function createUserProfile(
 }
 
 // Type guard for checking if user is superadmin
-export function isSuperAdmin(profile: UserProfile | null): boolean {
+function isSuperAdmin(profile: UserProfile | null): boolean {
   return profile?.isSuperAdmin === true;
 }

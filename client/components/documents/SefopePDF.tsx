@@ -216,7 +216,7 @@ interface SefopePDFProps {
 /**
  * SEFOPE Document Component - The actual PDF document
  */
-export const SefopeDocument = ({ data }: SefopePDFProps) => {
+const SefopeDocument = ({ data }: SefopePDFProps) => {
   const today = new Date().toLocaleDateString('pt-TL', {
     day: '2-digit',
     month: '2-digit',
@@ -464,34 +464,6 @@ export const SefopeDocument = ({ data }: SefopePDFProps) => {
 };
 
 /**
- * Generate and download SEFOPE form for an employee
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export const downloadSefopeForm = async (
-  employee: Employee,
-  company: Partial<CompanyDetails>
-): Promise<void> => {
-  const formData = mapToSefopeForm(employee, company);
-
-  const doc = <SefopeDocument data={formData} />;
-  const blob = await pdf(doc).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-
-  // Generate filename
-  const safeName = `${employee.personalInfo.firstName}_${employee.personalInfo.lastName}`
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
-  const today = getTodayTL();
-  link.download = `SEFOPE_${safeName}_${today}.pdf`;
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-/**
  * Generate SEFOPE form as blob (for preview or upload)
  */
 // eslint-disable-next-line react-refresh/only-export-components
@@ -505,10 +477,28 @@ export const generateSefopeBlob = async (
 };
 
 /**
+ * Generate and download SEFOPE form for an employee
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export const downloadSefopeForm = async (
+  employee: Employee,
+  company: Partial<CompanyDetails>
+): Promise<void> => {
+  const { downloadBlob } = await import("@/lib/downloadBlob");
+  const blob = await generateSefopeBlob(employee, company);
+
+  // Generate filename
+  const safeName = `${employee.personalInfo.firstName}_${employee.personalInfo.lastName}`
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
+  const today = getTodayTL();
+  downloadBlob(blob, `SEFOPE_${safeName}_${today}.pdf`);
+};
+
+/**
  * Bulk generate SEFOPE forms for multiple employees
  */
 // eslint-disable-next-line react-refresh/only-export-components
-export const downloadBulkSefopeForms = async (
+const downloadBulkSefopeForms = async (
   employees: Employee[],
   company: Partial<CompanyDetails>
 ): Promise<void> => {
@@ -521,4 +511,3 @@ export const downloadBulkSefopeForms = async (
   }
 };
 
-export default SefopeDocument;

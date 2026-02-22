@@ -11,6 +11,7 @@ import {
   type PaginatedResult,
 } from '@/services/invoiceService';
 import type { Invoice, InvoiceFormData } from '@/types/money';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const invoiceKeys = {
   all: (tenantId: string) => ['invoices', tenantId] as const,
@@ -29,8 +30,6 @@ export function useInvoices(filters: InvoiceFilters = {}) {
     gcTime: 30 * 60 * 1000,
   });
 }
-
-const SEARCH_FETCH_LIMIT = 2000;
 
 export function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();

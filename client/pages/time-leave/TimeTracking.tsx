@@ -315,9 +315,10 @@ export default function TimeTracking() {
     return entries;
   }, [timeEntries, selectedEmployee, selectedDepartment]);
 
-  // Pagination
+  // Pagination (clamp page when filtered results shrink)
   const totalPages = Math.ceil(filteredEntries.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
+  const effectivePage = totalPages > 0 ? Math.min(currentPage, totalPages) : 1;
+  const startIndex = (effectivePage - 1) * itemsPerPage;
   const paginatedEntries = filteredEntries.slice(
     startIndex,
     startIndex + itemsPerPage,
@@ -931,10 +932,10 @@ export default function TimeTracking() {
                           <PaginationItem>
                             <PaginationPrevious
                               onClick={() =>
-                                setCurrentPage(Math.max(1, currentPage - 1))
+                                setCurrentPage(Math.max(1, effectivePage - 1))
                               }
                               className={
-                                currentPage === 1
+                                effectivePage === 1
                                   ? "pointer-events-none opacity-50"
                                   : ""
                               }
@@ -944,7 +945,7 @@ export default function TimeTracking() {
                             <PaginationItem key={i + 1}>
                               <PaginationLink
                                 onClick={() => setCurrentPage(i + 1)}
-                                isActive={currentPage === i + 1}
+                                isActive={effectivePage === i + 1}
                               >
                                 {i + 1}
                               </PaginationLink>
@@ -954,11 +955,11 @@ export default function TimeTracking() {
                             <PaginationNext
                               onClick={() =>
                                 setCurrentPage(
-                                  Math.min(totalPages, currentPage + 1),
+                                  Math.min(totalPages, effectivePage + 1),
                                 )
                               }
                               className={
-                                currentPage === totalPages
+                                effectivePage === totalPages
                                   ? "pointer-events-none opacity-50"
                                   : ""
                               }

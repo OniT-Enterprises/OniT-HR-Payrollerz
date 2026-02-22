@@ -18,6 +18,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService } from "@/services/employeeService";
 import { leaveService } from "@/services/leaveService";
+import { payrollService } from "@/services/payrollService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
 import { adjustToNextBusinessDayTL } from "@/lib/payroll/tl-holidays";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -190,9 +191,10 @@ export default function PayrollDashboard() {
 
   const loadStats = async () => {
     try {
-      const [employees, leaveStats] = await Promise.all([
+      const [employees, leaveStats, paidRuns] = await Promise.all([
         employeeService.getAllEmployees(tenantId),
         leaveService.getLeaveStats(tenantId),
+        payrollService.runs.getAllPayrollRuns({ tenantId, status: 'paid', limit: 1 }),
       ]);
 
       const activeEmployees = employees.filter((e) => e.status === "active");
@@ -235,11 +237,13 @@ export default function PayrollDashboard() {
         employeeINSS,
         estimatedNet,
         nextPayDate: formatDateTL(nextPay, { month: "short", day: "numeric" }),
-        lastPayrollDate: formatDateTL(new Date(2025, 11, 25), {
-          month: "short",
-          day: "numeric",
-          year: "numeric",
-        }),
+        lastPayrollDate: paidRuns.length > 0 && paidRuns[0].paidAt
+          ? formatDateTL(new Date(paidRuns[0].paidAt as unknown as Date), {
+              month: "short",
+              day: "numeric",
+              year: "numeric",
+            })
+          : "N/A",
         daysUntilPayday,
         currentMonth: payrollMonth,
         blockedEmployees,
@@ -845,15 +849,29 @@ export default function PayrollDashboard() {
                     {t("payrollDashboard.lastPayroll")}
                   </p>
                   <p className="text-lg font-bold">{stats.lastPayrollDate}</p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    <span className="inline-flex items-center gap-1 text-emerald-600">
-                      <CheckCircle className="h-3 w-3" />
-                      {t("payrollDashboard.completed")}
-                    </span>
-                  </p>
+                  {stats.lastPayrollDate !== "N/A" ? (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      <span className="inline-flex items-center gap-1 text-emerald-600">
+                        <CheckCircle className="h-3 w-3" />
+                        {t("payrollDashboard.completed")}
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("payrollDashboard.noPayrollYet")}
+                    </p>
+                  )}
                 </div>
-                <div className="h-12 w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                  <CheckCircle className="h-6 w-6 text-emerald-600" />
+                <div className={`h-12 w-12 rounded-full flex items-center justify-center ${
+                  stats.lastPayrollDate !== "N/A"
+                    ? "bg-emerald-100 dark:bg-emerald-900/30"
+                    : "bg-muted"
+                }`}>
+                  {stats.lastPayrollDate !== "N/A" ? (
+                    <CheckCircle className="h-6 w-6 text-emerald-600" />
+                  ) : (
+                    <Clock className="h-6 w-6 text-muted-foreground" />
+                  )}
                 </div>
               </div>
             </CardContent>

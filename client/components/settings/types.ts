@@ -18,8 +18,6 @@ export type {
 
 export {
   SECTOR_DEPARTMENT_PRESETS,
-  TL_DEFAULT_PAYROLL_CONFIG,
-  TL_DEFAULT_LEAVE_POLICIES,
 } from '@/types/settings';
 
 export type {

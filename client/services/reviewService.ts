@@ -141,7 +141,7 @@ export const DEFAULT_COMPETENCIES = [
   'Reliability',
 ];
 
-export const RATING_LABELS: Record<RatingValue, string> = {
+const RATING_LABELS: Record<RatingValue, string> = {
   1: 'Needs Improvement',
   2: 'Below Expectations',
   3: 'Meets Expectations',
@@ -149,7 +149,7 @@ export const RATING_LABELS: Record<RatingValue, string> = {
   5: 'Outstanding',
 };
 
-export const GOAL_ACHIEVEMENT_OPTIONS = [
+const GOAL_ACHIEVEMENT_OPTIONS = [
   { id: 'exceeded', name: 'Exceeded', color: 'green' },
   { id: 'met', name: 'Met', color: 'blue' },
   { id: 'partially_met', name: 'Partially Met', color: 'yellow' },
@@ -177,7 +177,7 @@ export function getReviewTypeName(type: ReviewType): string {
 /**
  * Calculate average competency rating
  */
-export function calculateAverageRating(competencies: CompetencyRating[]): number {
+function calculateAverageRating(competencies: CompetencyRating[]): number {
   if (competencies.length === 0) return 0;
   const total = competencies.reduce((sum, c) => sum + c.rating, 0);
   return Math.round((total / competencies.length) * 10) / 10;
@@ -580,4 +580,3 @@ class ReviewService {
 }
 
 export const reviewService = new ReviewService();
-export default reviewService;

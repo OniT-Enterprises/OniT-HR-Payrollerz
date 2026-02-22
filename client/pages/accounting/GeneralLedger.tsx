@@ -424,7 +424,7 @@ export default function GeneralLedger() {
                           </span>
                         </TableCell>
                         <TableCell>{entry.description}</TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono tabular-nums">
                           {entry.debit > 0 ? (
                             <span className="flex items-center justify-end gap-1 text-green-600">
                               <ArrowUpRight className="h-3 w-3" />
@@ -434,7 +434,7 @@ export default function GeneralLedger() {
                             '-'
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono tabular-nums">
                           {entry.credit > 0 ? (
                             <span className="flex items-center justify-end gap-1 text-red-600">
                               <ArrowDownRight className="h-3 w-3" />
@@ -444,7 +444,7 @@ export default function GeneralLedger() {
                             '-'
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-mono font-medium tabular-nums">
                           {formatCurrencyTL(entry.balance)}
                         </TableCell>
                       </TableRow>
@@ -455,13 +455,13 @@ export default function GeneralLedger() {
                       <TableCell colSpan={3} className="text-right">
                         {t("accounting.generalLedger.periodTotals")}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(totals.debit)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(totals.credit)}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
+                      <TableCell className="text-right font-mono tabular-nums">
                         {formatCurrencyTL(endingBalance)}
                       </TableCell>
                     </TableRow>

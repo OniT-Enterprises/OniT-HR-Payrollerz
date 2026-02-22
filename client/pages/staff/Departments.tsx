@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -33,15 +33,23 @@ import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   Building,
   Users,
+  UserPlus,
   Database,
   User,
   Plus,
   Edit,
   Eye,
+  MoreHorizontal,
 } from "lucide-react";
 
 export default function Departments() {
@@ -71,20 +79,6 @@ export default function Departments() {
   // Track whether migration has already run to avoid repeated attempts
   const hasMigratedRef = useRef(false);
 
-  // Auto-migrate departments that exist in employee records but not in departments collection
-  useEffect(() => {
-    if (
-      !loading &&
-      !hasMigratedRef.current &&
-      employees.length > 0 &&
-      departments.length === 0
-    ) {
-      hasMigratedRef.current = true;
-      migrateMissingDepartments(employees, departments);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, employees, departments]);
-
   const handleDepartmentChange = async () => {
     // Invalidate queries to refetch and notify about updates
     await Promise.all([
@@ -97,7 +91,7 @@ export default function Departments() {
     });
   };
 
-  const migrateMissingDepartments = async (
+  const migrateMissingDepartments = useCallback(async (
     employeeList: Employee[],
     existingDepartments: Department[],
   ) => {
@@ -141,7 +135,20 @@ export default function Departments() {
     } catch (error) {
       console.error("Error migrating departments:", error);
     }
-  };
+  }, [tenantId, queryClient, toast, t]);
+
+  // Auto-migrate departments that exist in employee records but not in departments collection
+  useEffect(() => {
+    if (
+      !loading &&
+      !hasMigratedRef.current &&
+      employees.length > 0 &&
+      departments.length === 0
+    ) {
+      hasMigratedRef.current = true;
+      migrateMissingDepartments(employees, departments);
+    }
+  }, [loading, employees, departments, migrateMissingDepartments]);
 
   // Calculate department statistics using only managed departments
   const departmentStats = departments.map((department) => {
@@ -311,16 +318,27 @@ export default function Departments() {
 
             {/* Action Buttons */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setManagerMode("add");
-                  setShowDepartmentManager(true);
-                }}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                {t("departments.addDepartment")}
-              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <MoreHorizontal className="mr-2 h-4 w-4" />
+                    {t("common.more") || "More"}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => {
+                    setManagerMode("add");
+                    setShowDepartmentManager(true);
+                  }}>
+                    <Plus className="mr-2 h-4 w-4" />
+                    {t("departments.addDepartment")}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate("/people/org-chart")}>
+                    <Users className="mr-2 h-4 w-4" />
+                    {t("departments.organizationChart")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
               <Button
                 className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
                 onClick={() => {
@@ -330,13 +348,6 @@ export default function Departments() {
               >
                 <Edit className="mr-2 h-4 w-4" />
                 {t("departments.editDepartments")}
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/people/org-chart")}
-              >
-                <Users className="mr-2 h-4 w-4" />
-                {t("departments.organizationChart")}
               </Button>
             </div>
           </div>
@@ -657,9 +668,13 @@ export default function Departments() {
                     <h3 className="text-lg font-semibold mb-2">
                       {t("departments.dialogEmptyTitle")}
                     </h3>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground mb-4">
                       {t("departments.dialogEmptyDesc")}
                     </p>
+                    <Button variant="outline" onClick={() => navigate("/people/add")}>
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      {t("employees.addEmployee")}
+                    </Button>
                   </div>
                 )}
               </div>

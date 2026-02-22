@@ -274,11 +274,11 @@ export default function APAgingReport() {
                             <span className="font-medium">{vendor.vendorName}</span>
                           </div>
                         </td>
-                        <td className="text-right py-3">{formatCurrency(vendor.current)}</td>
-                        <td className="text-right py-3">{formatCurrency(vendor.days30)}</td>
-                        <td className="text-right py-3">{formatCurrency(vendor.days60)}</td>
-                        <td className="text-right py-3 text-red-600">{formatCurrency(vendor.days90Plus)}</td>
-                        <td className="text-right py-3 font-semibold">{formatCurrency(vendor.total)}</td>
+                        <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.current)}</td>
+                        <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.days30)}</td>
+                        <td className="text-right py-3 tabular-nums">{formatCurrency(vendor.days60)}</td>
+                        <td className="text-right py-3 text-red-600 tabular-nums">{formatCurrency(vendor.days90Plus)}</td>
+                        <td className="text-right py-3 font-semibold tabular-nums">{formatCurrency(vendor.total)}</td>
                         <td className="py-3">
                           <Button
                             variant="ghost"
@@ -294,13 +294,13 @@ export default function APAgingReport() {
                   <tfoot>
                     <tr className="bg-muted font-semibold">
                       <td className="py-3">{t('money.apAging.total') || 'Total'}</td>
-                      <td className="text-right py-3">{formatCurrency(buckets[0]?.total || 0)}</td>
-                      <td className="text-right py-3">{formatCurrency(buckets[1]?.total || 0)}</td>
-                      <td className="text-right py-3">{formatCurrency(buckets[2]?.total || 0)}</td>
-                      <td className="text-right py-3 text-red-600">
+                      <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[0]?.total || 0)}</td>
+                      <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[1]?.total || 0)}</td>
+                      <td className="text-right py-3 tabular-nums">{formatCurrency(buckets[2]?.total || 0)}</td>
+                      <td className="text-right py-3 text-red-600 tabular-nums">
                         {formatCurrency((buckets[3]?.total || 0) + (buckets[4]?.total || 0))}
                       </td>
-                      <td className="text-right py-3">{formatCurrency(totalPayable)}</td>
+                      <td className="text-right py-3 tabular-nums">{formatCurrency(totalPayable)}</td>
                       <td></td>
                     </tr>
                   </tfoot>

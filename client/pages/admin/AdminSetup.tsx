@@ -6,10 +6,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck, Building2, CheckCircle2, AlertTriangle } from "lucide-react";
-import { doc, setDoc, getDoc, serverTimestamp } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { paths } from "@/lib/paths";
-import { PLAN_LIMITS } from "@/types/tenant";
+import { doc, getDoc } from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminSetup() {
@@ -51,7 +50,7 @@ export default function AdminSetup() {
   }, []);
 
   const handleSetup = async () => {
-    if (!user || !db) {
+    if (!user || !functions) {
       setError("You must be logged in to set up admin access");
       return;
     }
@@ -60,86 +59,10 @@ export default function AdminSetup() {
     setError(null);
 
     try {
-      // 1. Create or update user profile with superadmin
-      const userRef = doc(db, paths.user(user.uid));
-      const userSnap = await getDoc(userRef);
+      const bootstrapFn = httpsCallable(functions, "bootstrapFirstAdmin");
+      await bootstrapFn({ companyName, companySlug });
 
-      if (userSnap.exists()) {
-        // Update existing profile to superadmin
-        const existingTenants = userSnap.data()?.tenantIds || [];
-        await setDoc(userRef, {
-          isSuperAdmin: true,
-          tenantIds: existingTenants.includes(companySlug)
-            ? existingTenants
-            : [...existingTenants, companySlug],
-          updatedAt: serverTimestamp(),
-        }, { merge: true });
-      } else {
-        // Create new profile
-        await setDoc(userRef, {
-          uid: user.uid,
-          email: user.email,
-          displayName: user.displayName || user.email?.split("@")[0] || "Admin",
-          isSuperAdmin: true,
-          tenantIds: [companySlug],
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
-      }
-
-      // 2. Create demo tenant
-      const tenantRef = doc(db, paths.tenant(companySlug));
-      await setDoc(tenantRef, {
-        id: companySlug,
-        name: companyName,
-        slug: companySlug,
-        status: "active",
-        plan: "professional",
-        limits: PLAN_LIMITS.professional,
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        billingEmail: user.email,
-        features: {
-          hiring: true,
-          timeleave: true,
-          performance: true,
-          payroll: true,
-          reports: true,
-        },
-        settings: {
-          timezone: "Asia/Dili",
-          currency: "USD",
-          dateFormat: "DD/MM/YYYY",
-        },
-      });
-
-      // 3. Create owner membership
-      const memberRef = doc(db, paths.member(companySlug, user.uid));
-      await setDoc(memberRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName || user.email?.split("@")[0] || "Admin",
-        role: "owner",
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "reports"],
-        joinedAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp(),
-        permissions: {
-          admin: true,
-          write: true,
-          read: true,
-        },
-      });
-
-      // 4. Mark bootstrap as complete (prevents future bootstrap)
-      const bootstrapRef = doc(db, "_bootstrap", "initialized");
-      await setDoc(bootstrapRef, {
-        initializedAt: serverTimestamp(),
-        initializedBy: user.uid,
-        initializedEmail: user.email,
-      });
-
-      // 5. Refresh user profile in auth context
+      // Refresh user profile in auth context
       if (refreshUserProfile) {
         await refreshUserProfile();
       }
@@ -152,7 +75,8 @@ export default function AdminSetup() {
       }, 2000);
     } catch (err: any) {
       console.error("Setup error:", err);
-      setError(err.message || "Failed to complete setup");
+      const message = err?.message || err?.details || "Failed to complete setup";
+      setError(message);
     } finally {
       setLoading(false);
     }

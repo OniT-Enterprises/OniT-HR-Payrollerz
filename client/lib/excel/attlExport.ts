@@ -316,11 +316,7 @@ export async function downloadATTLExcel(
   company?: Partial<CompanyDetails>,
   filename?: string
 ): Promise<void> {
+  const { downloadBlob } = await import("@/lib/downloadBlob");
   const blob = await generateATTLExcel(witReturn, company);
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = filename || `ATTL_Monthly_Tax_${witReturn.reportingPeriod}.xlsx`;
-  link.click();
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, filename || `ATTL_Monthly_Tax_${witReturn.reportingPeriod}.xlsx`);
 }

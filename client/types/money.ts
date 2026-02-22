@@ -431,7 +431,7 @@ export interface InvoiceSettings {
   pricesIncludeVAT?: boolean;      // true = shelf prices are VAT-inclusive
 }
 
-export const DEFAULT_INVOICE_SETTINGS: Partial<InvoiceSettings> = {
+const DEFAULT_INVOICE_SETTINGS: Partial<InvoiceSettings> = {
   prefix: 'INV',
   nextNumber: 1,
   defaultTaxRate: 0,

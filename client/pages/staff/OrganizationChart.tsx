@@ -68,115 +68,6 @@ export default function OrganizationChart() {
   const { t } = useI18n();
   const tenantId = useTenantId();
 
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      // Load data with individual error handling for better resilience
-      let employeesData: Employee[] = [];
-      let departmentsData: Department[] = [];
-
-      // Load from Firebase services
-      try {
-        employeesData = await employeeService.getAllEmployees(tenantId);
-        departmentsData = await departmentService.getAllDepartments(tenantId);
-      } catch {
-        employeesData = [];
-        departmentsData = [];
-      }
-
-      setEmployees(employeesData);
-      setDepartments(departmentsData);
-
-      // Only attempt migration if we have some data
-      if (employeesData.length > 0 || departmentsData.length > 0) {
-        try {
-          await migrateMissingDepartments(employeesData, departmentsData);
-        } catch {
-          // Migration failed, continue without it
-        }
-      }
-
-      buildAppleOrgChart(employeesData, departmentsData);
-    } catch (error) {
-
-      // Provide user-friendly error message
-      const errorMessage =
-        error instanceof Error
-          ? error.message.includes("network") || error.message.includes("fetch")
-            ? t("orgChart.toast.connectionOffline")
-            : t("orgChart.toast.loadFailed")
-          : t("orgChart.toast.unexpected");
-
-      toast({
-        title: t("orgChart.toast.connectionTitle"),
-        description: errorMessage,
-        variant: "destructive",
-        duration: 6000,
-      });
-
-      // Set empty data so the component can still render
-      setEmployees([]);
-      setDepartments([]);
-      buildAppleOrgChart([], []);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const migrateMissingDepartments = async (
-    employees: Employee[],
-    existingDepartments: Department[],
-  ) => {
-    try {
-      // Only run migration if NO departments exist but we have employees with department assignments
-      if (existingDepartments.length > 0 || employees.length === 0) {
-        return;
-      }
-
-      const employeeDepartments = [
-        ...new Set(employees.map((emp) => emp.jobDetails.department)),
-      ];
-      const validDepartments = employeeDepartments.filter(
-        (deptName) => deptName && deptName.trim(),
-      );
-
-      if (validDepartments.length > 0) {
-        // Add departments one by one with individual error handling
-        for (const deptName of validDepartments) {
-          try {
-            await departmentService.addDepartment(tenantId, {
-              name: deptName,
-              icon: "building",
-              shape: "circle",
-              color: "#3B82F6",
-            });
-          } catch {
-            // Continue with other departments even if one fails
-          }
-        }
-
-        // Try to reload departments after migration
-        try {
-          const updatedDepartments =
-            await departmentService.getAllDepartments(tenantId);
-          setDepartments(updatedDepartments);
-          buildAppleOrgChart(employees, updatedDepartments);
-        } catch {
-          // Continue with existing data
-        }
-      }
-    } catch {
-      // Don't throw the error - just continue
-    }
-  };
-
-
   const buildAppleOrgChart = useCallback(
     (employeesData: Employee[], departmentsData: Department[]) => {
       const employeesByDept = employeesData.reduce(
@@ -332,6 +223,113 @@ export default function OrganizationChart() {
     },
     [t],
   );
+
+  const migrateMissingDepartments = useCallback(async (
+    employees: Employee[],
+    existingDepartments: Department[],
+  ) => {
+    try {
+      // Only run migration if NO departments exist but we have employees with department assignments
+      if (existingDepartments.length > 0 || employees.length === 0) {
+        return;
+      }
+
+      const employeeDepartments = [
+        ...new Set(employees.map((emp) => emp.jobDetails.department)),
+      ];
+      const validDepartments = employeeDepartments.filter(
+        (deptName) => deptName && deptName.trim(),
+      );
+
+      if (validDepartments.length > 0) {
+        // Add departments one by one with individual error handling
+        for (const deptName of validDepartments) {
+          try {
+            await departmentService.addDepartment(tenantId, {
+              name: deptName,
+              icon: "building",
+              shape: "circle",
+              color: "#3B82F6",
+            });
+          } catch {
+            // Continue with other departments even if one fails
+          }
+        }
+
+        // Try to reload departments after migration
+        try {
+          const updatedDepartments =
+            await departmentService.getAllDepartments(tenantId);
+          setDepartments(updatedDepartments);
+          buildAppleOrgChart(employees, updatedDepartments);
+        } catch {
+          // Continue with existing data
+        }
+      }
+    } catch {
+      // Don't throw the error - just continue
+    }
+  }, [tenantId, buildAppleOrgChart]);
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+
+      // Load data with individual error handling for better resilience
+      let employeesData: Employee[] = [];
+      let departmentsData: Department[] = [];
+
+      // Load from Firebase services
+      try {
+        employeesData = await employeeService.getAllEmployees(tenantId);
+        departmentsData = await departmentService.getAllDepartments(tenantId);
+      } catch {
+        employeesData = [];
+        departmentsData = [];
+      }
+
+      setEmployees(employeesData);
+      setDepartments(departmentsData);
+
+      // Only attempt migration if we have some data
+      if (employeesData.length > 0 || departmentsData.length > 0) {
+        try {
+          await migrateMissingDepartments(employeesData, departmentsData);
+        } catch {
+          // Migration failed, continue without it
+        }
+      }
+
+      buildAppleOrgChart(employeesData, departmentsData);
+    } catch (error) {
+
+      // Provide user-friendly error message
+      const errorMessage =
+        error instanceof Error
+          ? error.message.includes("network") || error.message.includes("fetch")
+            ? t("orgChart.toast.connectionOffline")
+            : t("orgChart.toast.loadFailed")
+          : t("orgChart.toast.unexpected");
+
+      toast({
+        title: t("orgChart.toast.connectionTitle"),
+        description: errorMessage,
+        variant: "destructive",
+        duration: 6000,
+      });
+
+      // Set empty data so the component can still render
+      setEmployees([]);
+      setDepartments([]);
+      buildAppleOrgChart([], []);
+    } finally {
+      setLoading(false);
+    }
+  }, [tenantId, toast, t, migrateMissingDepartments, buildAppleOrgChart]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return;

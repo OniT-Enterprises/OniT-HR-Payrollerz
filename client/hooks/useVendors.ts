@@ -10,6 +10,7 @@ import {
   type PaginatedResult,
 } from '@/services/vendorService';
 import type { Vendor, VendorFormData } from '@/types/money';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const vendorKeys = {
   all: (tenantId: string) => ['vendors', tenantId] as const,
@@ -28,8 +29,6 @@ export function useVendors(filters: VendorFilters = {}) {
     gcTime: 30 * 60 * 1000,
   });
 }
-
-const SEARCH_FETCH_LIMIT = 2000;
 
 export function useAllVendors(maxResults: number = SEARCH_FETCH_LIMIT) {
   const tenantId = useTenantId();

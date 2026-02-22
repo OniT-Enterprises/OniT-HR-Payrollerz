@@ -149,8 +149,7 @@ export default function AllEmployees() {
         setSearchParams({});
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, employees]);
+  }, [searchParams, employees, setSearchParams]);
 
   // Filter employees using useMemo for performance
   const filteredEmployees = useMemo(() => {
@@ -1091,7 +1090,54 @@ export default function AllEmployees() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
+            {/* Mobile Card View */}
+            <div className="md:hidden divide-y divide-border/50">
+              {filteredEmployees.map((employee) => (
+                <div
+                  key={employee.id}
+                  className="p-4 hover:bg-muted/50 transition-colors cursor-pointer active:bg-muted"
+                  onClick={() => handleViewEmployee(employee)}
+                >
+                  <div className="flex items-center gap-3">
+                    <Avatar className="h-10 w-10">
+                      <AvatarImage src="" alt={employee.personalInfo.firstName} />
+                      <AvatarFallback className="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600">
+                        {employee.personalInfo.firstName[0]}
+                        {employee.personalInfo.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="font-medium truncate">
+                          {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                        </p>
+                        <Badge
+                          className={
+                            employee.status === "active"
+                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 shrink-0"
+                              : employee.status === "inactive"
+                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shrink-0"
+                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shrink-0"
+                          }
+                        >
+                          {getStatusLabel(employee.status)}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">
+                        {employee.jobDetails.position}
+                        {employee.jobDetails.department && ` · ${employee.jobDetails.department}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {employee.jobDetails.employeeId}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full">
                 <thead className="sticky top-0 bg-background border-b z-10">
                   <tr>
@@ -1240,6 +1286,7 @@ export default function AllEmployees() {
                   ))}
                 </tbody>
               </table>
+            </div>
 
               {/* Loading State - inline skeleton */}
               {loading && <TableSkeleton />}
@@ -1280,7 +1327,6 @@ export default function AllEmployees() {
                   )}
                 </div>
               )}
-            </div>
 
             {/* Infinite Scroll Trigger */}
             <InfiniteScrollTrigger

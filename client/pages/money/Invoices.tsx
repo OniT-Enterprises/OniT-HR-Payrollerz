@@ -3,7 +3,7 @@
  * List, filter, and manage invoices
  */
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -87,6 +87,14 @@ export default function Invoices() {
   const [paymentInvoice, setPaymentInvoice] = useState<Invoice | null>(null);
   const [voidInvoice, setVoidInvoice] = useState<Invoice | null>(null);
   const [reminderInvoice, setReminderInvoice] = useState<Invoice | null>(null);
+
+  // Preload PDF module so download resolves instantly from cache
+  const preloaded = useRef(false);
+  useEffect(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    import('@/components/money/InvoicePDF');
+  }, []);
 
   const { invoices, totalLoaded, isLoading: loading, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(isSearching);
   const { data: invoiceSettings = {} } = useInvoiceSettings();
@@ -245,22 +253,24 @@ export default function Invoices() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => navigate('/money/invoices/recurring')}
-              title={t('money.recurring.title') || 'Recurring Invoices'}
-            >
-              <Repeat className="h-4 w-4 mr-2" />
-              {t('money.invoices.recurring') || 'Recurring'}
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => navigate('/money/invoices/settings')}
-              title={t('money.settings.title') || 'Invoice Settings'}
-            >
-              <Settings className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline">
+                  <MoreHorizontal className="h-4 w-4 mr-2" />
+                  {t('common.moreActions') || 'More'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => navigate('/money/invoices/recurring')}>
+                  <Repeat className="h-4 w-4 mr-2" />
+                  {t('money.recurring.title') || 'Recurring Invoices'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => navigate('/money/invoices/settings')}>
+                  <Settings className="h-4 w-4 mr-2" />
+                  {t('money.settings.title') || 'Invoice Settings'}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button
               onClick={() => navigate('/money/invoices/new')}
               className="bg-indigo-600 hover:bg-indigo-700"

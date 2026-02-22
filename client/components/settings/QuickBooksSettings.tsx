@@ -440,4 +440,3 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   );
 }
 
-export default QuickBooksSettings;

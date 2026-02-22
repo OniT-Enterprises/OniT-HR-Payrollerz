@@ -775,8 +775,8 @@ class TaxReportService {
     return collection(db, 'taxReports');
   }
 
-  async getAllTaxReports(tenantId: string): Promise<TaxReport[]> {
-    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'));
+  async getAllTaxReports(tenantId: string, maxResults: number = 500): Promise<TaxReport[]> {
+    const q = query(this.collectionRef, where('tenantId', '==', tenantId), orderBy('createdAt', 'desc'), limit(maxResults));
     const querySnapshot = await getDocs(q);
 
     return querySnapshot.docs.map((doc) => {
@@ -911,12 +911,12 @@ class BankTransferService {
 // EXPORT SERVICE INSTANCES
 // ============================================
 
-export const payrollRunService = new PayrollRunService();
-export const payrollRecordService = new PayrollRecordService();
-export const benefitEnrollmentService = new BenefitEnrollmentService();
-export const recurringDeductionService = new RecurringDeductionService();
-export const taxReportService = new TaxReportService();
-export const bankTransferService = new BankTransferService();
+const payrollRunService = new PayrollRunService();
+const payrollRecordService = new PayrollRecordService();
+const benefitEnrollmentService = new BenefitEnrollmentService();
+const recurringDeductionService = new RecurringDeductionService();
+const taxReportService = new TaxReportService();
+const bankTransferService = new BankTransferService();
 
 // Combined export for convenience
 export const payrollService = {

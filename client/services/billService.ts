@@ -25,7 +25,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney } from '@/lib/currency';
+import { addMoney, subtractMoney, percentOf, sumMoney } from '@/lib/currency';
 import type {
   Bill,
   BillFormData,
@@ -267,8 +267,8 @@ class BillService {
     }
 
     // Calculate totals
-    const taxAmount = data.amount * (data.taxRate / 100);
-    const total = data.amount + taxAmount;
+    const taxAmount = percentOf(data.amount, data.taxRate);
+    const total = addMoney(data.amount, taxAmount);
 
     const bill: Omit<Bill, 'id'> = {
       billNumber: data.billNumber,
@@ -365,13 +365,13 @@ class BillService {
       const amount = data.amount ?? bill.amount;
       const existingTaxRate = bill.amount > 0 ? (bill.taxAmount / bill.amount) * 100 : 0;
       const taxRate = data.taxRate ?? existingTaxRate;
-      const taxAmount = amount * (taxRate / 100);
-      const total = amount + taxAmount;
+      const taxAmount = percentOf(amount, taxRate);
+      const total = addMoney(amount, taxAmount);
 
       updates.amount = amount;
       updates.taxAmount = taxAmount;
       updates.total = total;
-      updates.balanceDue = total - bill.amountPaid;
+      updates.balanceDue = subtractMoney(total, bill.amountPaid);
 
       if (updates.balanceDue < -PAYMENT_EPSILON) {
         throw new Error('Cannot reduce bill total below amount already paid');
@@ -443,8 +443,7 @@ class BillService {
 
   /**
    * Record a payment for a bill
-   * Uses transaction to ensure atomicity of payment + bill update
-   * Also creates a journal entry (Debit AP, Credit Cash)
+   * Uses transaction to ensure atomicity of payment + bill update + journal entry
    */
   async recordPayment(
     tenantId: string,
@@ -454,7 +453,27 @@ class BillService {
   ): Promise<string> {
     const billRef = doc(db, paths.bill(tenantId, billId));
 
-    // Use transaction to ensure atomicity of payment creation and bill update
+    // Check if chart of accounts is set up (read BEFORE transaction)
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+
+    if (hasAccounts) {
+      // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
+      const cashCode = payment.method === 'cash' ? '1110' : '1120';
+      const [apAccount, cashAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, '2110'),
+        accountService.getAccountByCode(tenantId, cashCode),
+      ]);
+      if (apAccount?.id && cashAccount?.id) {
+        resolvedAccounts = {
+          '2110': { id: apAccount.id, name: apAccount.name },
+          [cashCode]: { id: cashAccount.id, name: cashAccount.name },
+        };
+      }
+    }
+
+    // Atomic: payment + bill update + journal entry in one transaction
     const paymentId = await runTransaction(db, async (transaction) => {
       // Read bill within transaction
       const billDoc = await transaction.get(billRef);
@@ -510,34 +529,27 @@ class BillService {
         updatedAt: serverTimestamp(),
       });
 
+      // Create journal entry within same transaction
+      if (resolvedAccounts) {
+        await journalEntryService.createFromBillPayment(
+          tenantId,
+          {
+            billId: bill.id,
+            billNumber: bill.billNumber,
+            vendorName: bill.vendorName,
+            date: payment.date,
+            amount: payment.amount,
+            method: payment.method,
+            reference: payment.reference,
+          },
+          userId || 'system',
+          transaction,
+          resolvedAccounts
+        );
+      }
+
       return paymentDocRef.id;
     });
-
-    // Create accounting journal entry outside transaction (optional, non-critical)
-    try {
-      const bill = await this.getBillById(tenantId, billId);
-      if (bill) {
-        const accounts = await accountService.getAllAccounts(tenantId);
-        if (accounts.length > 0) {
-          await journalEntryService.createFromBillPayment(
-            tenantId,
-            {
-              billId: bill.id,
-              billNumber: bill.billNumber,
-              vendorName: bill.vendorName,
-              date: payment.date,
-              amount: payment.amount,
-              method: payment.method,
-              reference: payment.reference,
-            },
-            userId || 'system'
-          );
-        }
-      }
-    } catch (error) {
-      // Log but don't fail - accounting integration is optional
-      console.warn('Could not create journal entry for bill payment:', error);
-    }
 
     return paymentId;
   }
@@ -602,7 +614,7 @@ class BillService {
    */
   async getTotalPayables(tenantId: string): Promise<number> {
     const bills = await this.getUnpaidBills(tenantId);
-    return bills.reduce((sum, bill) => sum + bill.balanceDue, 0);
+    return sumMoney(bills.map(bill => bill.balanceDue));
   }
 
   /**
@@ -650,13 +662,13 @@ class BillService {
 
     for (const bill of unpaidBills) {
       if (bill.dueDate < todayStr) {
-        result.overdue += bill.balanceDue;
+        result.overdue = addMoney(result.overdue, bill.balanceDue);
         result.overdueCount++;
       } else if (bill.dueDate <= nextWeekStr) {
-        result.dueThisWeek += bill.balanceDue;
+        result.dueThisWeek = addMoney(result.dueThisWeek, bill.balanceDue);
         result.dueThisWeekCount++;
       } else {
-        result.dueLater += bill.balanceDue;
+        result.dueLater = addMoney(result.dueLater, bill.balanceDue);
         result.dueLaterCount++;
       }
     }
@@ -692,4 +704,3 @@ class BillService {
 }
 
 export const billService = new BillService();
-export default billService;

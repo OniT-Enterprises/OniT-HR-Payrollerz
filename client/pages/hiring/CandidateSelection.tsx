@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { candidateService, type Candidate } from "@/services/candidateService";
 import { useToast } from "@/hooks/use-toast";
@@ -66,13 +66,7 @@ export default function CandidateSelection() {
   const { t } = useI18n();
   const tenantId = useTenantId();
 
-  // Load candidates from Firebase on component mount
-  useEffect(() => {
-    loadCandidates();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadCandidates = async () => {
+  const loadCandidates = useCallback(async () => {
     try {
       setLoading(true);
       const candidatesData = await candidateService.getAllCandidates(tenantId);
@@ -87,7 +81,12 @@ export default function CandidateSelection() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, toast, t]);
+
+  // Load candidates from Firebase on component mount
+  useEffect(() => {
+    loadCandidates();
+  }, [loadCandidates]);
 
   // Filter candidates based on search and filters
   const getFilteredCandidates = () => {

@@ -321,4 +321,3 @@ export function QuickBooksExportDialog({
   );
 }
 
-export default QuickBooksExportDialog;

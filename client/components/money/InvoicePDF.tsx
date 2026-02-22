@@ -336,7 +336,7 @@ interface InvoicePDFProps {
 /**
  * InvoiceDocument - The actual PDF document component
  */
-export const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
+const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
   const statusStyles = getStatusStyles(invoice.status);
 
   return (
@@ -519,28 +519,6 @@ export const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
 };
 
 /**
- * Generate and download an invoice PDF
- */
-// eslint-disable-next-line react-refresh/only-export-components
-export const downloadInvoicePDF = async (
-  invoice: Invoice,
-  settings?: Partial<InvoiceSettings>
-): Promise<void> => {
-  const doc = <InvoiceDocument invoice={invoice} settings={settings} />;
-
-  const blob = await pdf(doc).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `${invoice.invoiceNumber}.pdf`;
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-};
-
-/**
  * Generate invoice PDF as blob (for preview or email attachment)
  */
 // eslint-disable-next-line react-refresh/only-export-components
@@ -552,4 +530,16 @@ export const generateInvoiceBlob = async (
   return await pdf(doc).toBlob();
 };
 
-export default InvoiceDocument;
+/**
+ * Generate and download an invoice PDF
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export const downloadInvoicePDF = async (
+  invoice: Invoice,
+  settings?: Partial<InvoiceSettings>
+): Promise<void> => {
+  const { downloadBlob } = await import("@/lib/downloadBlob");
+  const blob = await generateInvoiceBlob(invoice, settings);
+  downloadBlob(blob, `${invoice.invoiceNumber}.pdf`);
+};
+

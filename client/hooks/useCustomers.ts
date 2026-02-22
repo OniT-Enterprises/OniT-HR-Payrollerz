@@ -10,6 +10,7 @@ import {
   type PaginatedResult,
 } from '@/services/customerService';
 import type { Customer, CustomerFormData } from '@/types/money';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const customerKeys = {
   all: (tenantId: string) => ['customers', tenantId] as const,
@@ -29,8 +30,6 @@ export function useCustomers(filters: CustomerFilters = {}) {
     gcTime: 30 * 60 * 1000,
   });
 }
-
-const SEARCH_FETCH_LIMIT = 2000;
 
 export function useAllCustomers(maxResults: number = SEARCH_FETCH_LIMIT) {
   const tenantId = useTenantId();

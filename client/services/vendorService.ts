@@ -234,4 +234,3 @@ class VendorService {
 }
 
 export const vendorService = new VendorService();
-export default vendorService;

@@ -44,7 +44,7 @@ export interface HRPermissions {
 }
 
 // Default permissions by level
-export const DEFAULT_PERMISSIONS: Record<HRAdminLevel, HRPermissions> = {
+const DEFAULT_PERMISSIONS: Record<HRAdminLevel, HRPermissions> = {
   owner: {
     canAccessHiring: true,
     canAccessStaff: true,
@@ -358,14 +358,14 @@ export interface TenantSettings {
 // Default Values for Timor-Leste
 // ============================================
 
-export const TL_DEFAULT_TAX_CONFIG: TaxConfig = {
+const TL_DEFAULT_TAX_CONFIG: TaxConfig = {
   residentThreshold: 500,
   residentRate: 10,
   nonResidentRate: 10,
   paymentDueDay: 15,
 };
 
-export const TL_DEFAULT_SS_CONFIG: SocialSecurityConfig = {
+const TL_DEFAULT_SS_CONFIG: SocialSecurityConfig = {
   employeeRate: 4,
   employerRate: 6,
   paymentDueDay: 20,

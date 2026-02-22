@@ -430,7 +430,7 @@ interface PayslipPDFProps {
 /**
  * PayslipDocument - The actual PDF document component
  */
-export const PayslipDocument = ({
+const PayslipDocument = ({
   record,
   payrollRun,
   companyName = 'OniT Enterprises',
@@ -769,34 +769,15 @@ export const downloadPayslip = async (
   },
   language?: PayslipLocale
 ): Promise<void> => {
-  const doc = (
-    <PayslipDocument
-      record={record}
-      payrollRun={payrollRun}
-      companyName={companyInfo?.name}
-      companyAddress={companyInfo?.address}
-      companyPhone={companyInfo?.phone}
-      companyEmail={companyInfo?.email}
-      language={language}
-    />
-  );
-
-  const blob = await pdf(doc).toBlob();
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
+  const { downloadBlob } = await import("@/lib/downloadBlob");
+  const blob = await generatePayslipBlob(record, payrollRun, companyInfo, language);
 
   // Generate filename
   const payDate = new Date(payrollRun.payDate);
   const monthYear = payDate.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'Asia/Dili' }).replace(' ', '');
   const safeName = record.employeeName
     .normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_]/g, '_');
-  link.download = `Payslip_${safeName}_${monthYear}.pdf`;
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
+  downloadBlob(blob, `Payslip_${safeName}_${monthYear}.pdf`);
 };
 
 /**
@@ -830,4 +811,3 @@ export const generatePayslipBlob = async (
 };
 
 export type { PayslipLocale };
-export default PayslipDocument;

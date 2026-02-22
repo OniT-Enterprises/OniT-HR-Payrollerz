@@ -220,4 +220,3 @@ export function StepContent({ stepId, currentStepId, children }: StepContentProp
   return <>{children}</>;
 }
 
-export default StepWizard;

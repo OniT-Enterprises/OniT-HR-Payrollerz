@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -34,7 +35,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
-import { getTodayTL } from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
 
 interface DepartmentStats {
   department: Department;
@@ -46,6 +47,7 @@ interface DepartmentStats {
 }
 
 export default function DepartmentReports() {
+  const navigate = useNavigate();
   const tenantId = useTenantId();
   const { data: departments = [], isLoading: deptsLoading } = useAllDepartments(tenantId, 100);
   const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
@@ -130,34 +132,9 @@ export default function DepartmentReports() {
     );
   }, [departments, employees]);
 
-  // Export to CSV
-  const exportToCSV = (
-    data: any[],
-    filename: string,
-    columns: { key: string; label: string }[]
-  ) => {
-    const headers = columns.map((c) => c.label).join(",");
-    const rows = data.map((item) =>
-      columns
-        .map((c) => {
-          const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-          const strValue = String(value ?? "").replace(/,/g, ";");
-          return `"${strValue}"`;
-        })
-        .join(",")
-    );
-    const csv = [headers, ...rows].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}_${getTodayTL()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({
-      title: "Export Complete",
-      description: `${filename}.csv downloaded successfully`,
-    });
+  const doExport = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    exportToCSV(data, filename, columns);
+    toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
   };
 
   const exportDepartmentOverview = () => {
@@ -169,7 +146,7 @@ export default function DepartmentReports() {
       activeEmployees: s.activeEmployees,
       avgTenureMonths: s.averageTenure.toFixed(1),
     }));
-    exportToCSV(data, "department_overview", [
+    doExport(data, "department_overview", [
       { key: "name", label: "Department" },
       { key: "director", label: "Director" },
       { key: "manager", label: "Manager" },
@@ -188,7 +165,7 @@ export default function DepartmentReports() {
         percentage: ((count / s.headcount) * 100).toFixed(1),
       }))
     );
-    exportToCSV(data, "staffing_by_department", [
+    doExport(data, "staffing_by_department", [
       { key: "department", label: "Department" },
       { key: "employmentType", label: "Employment Type" },
       { key: "count", label: "Count" },
@@ -206,7 +183,7 @@ export default function DepartmentReports() {
           ? ((s.newHires / (s.headcount - s.newHires)) * 100).toFixed(1)
           : "N/A",
     }));
-    exportToCSV(data, "department_growth", [
+    doExport(data, "department_growth", [
       { key: "department", label: "Department" },
       { key: "currentHeadcount", label: "Current Headcount" },
       { key: "newHires", label: "New Hires" },
@@ -553,7 +530,11 @@ export default function DepartmentReports() {
               <div className="text-center py-8 text-muted-foreground">
                 <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No departments found</p>
-                <p className="text-sm">Create departments in Staff &gt; Departments</p>
+                <p className="text-sm mb-4">Create departments in Staff &gt; Departments</p>
+                <Button variant="outline" onClick={() => navigate("/people/departments")}>
+                  <Building className="h-4 w-4 mr-2" />
+                  Go to Departments
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">

@@ -15,6 +15,7 @@ import {
   where,
   orderBy,
   serverTimestamp,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getTodayTL } from '@/lib/dateUtils';
@@ -210,7 +211,7 @@ export function calculateWorkingDays(startDate: string, endDate: string): number
  * Days 7-12: 50% pay
  * Beyond 12: Unpaid (but job protected up to 30 days)
  */
-export function calculateSickLeavePayment(
+function calculateSickLeavePayment(
   days: number,
   dailyRate: number
 ): { paidDays: number; totalPay: number; breakdown: { fullPay: number; halfPay: number; unpaid: number } } {
@@ -235,7 +236,7 @@ export function calculateSickLeavePayment(
 /**
  * Check if employee has passed probation (3 months in TL)
  */
-export function hasPassedProbation(startDate: string): boolean {
+function hasPassedProbation(startDate: string): boolean {
   const start = new Date(startDate);
   const now = new Date();
   const monthsWorked = (now.getFullYear() - start.getFullYear()) * 12 +
@@ -263,7 +264,14 @@ class LeaveService {
       // Calculate duration if not provided
       const duration = request.duration || calculateWorkingDays(request.startDate, request.endDate);
 
-      const docRef = await addDoc(collection(db, LEAVE_REQUESTS_COLLECTION), {
+      // Pre-read: get current balance for the batch write
+      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
+
+      const batch = writeBatch(db);
+
+      // Write 1: Create leave request
+      const docRef = doc(collection(db, LEAVE_REQUESTS_COLLECTION));
+      batch.set(docRef, {
         ...request,
         tenantId,
         duration,
@@ -273,9 +281,23 @@ class LeaveService {
         updatedAt: serverTimestamp(),
       });
 
-      // Update pending balance
-      await this.updatePendingBalance(tenantId, request.employeeId, request.leaveType, duration);
+      // Write 2: Update pending balance (if balance exists)
+      if (balance?.id) {
+        const typeKey = request.leaveType as keyof LeaveBalance;
+        if (typeof balance[typeKey] === 'object') {
+          const currentBalance = balance[typeKey] as LeaveBalanceItem;
+          const newPending = Math.max(0, currentBalance.pending + duration);
+          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
+          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
+          batch.update(balanceRef, {
+            [`${request.leaveType}.pending`]: newPending,
+            [`${request.leaveType}.remaining`]: newRemaining,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
 
+      await batch.commit();
       return docRef.id;
     } catch (error) {
       console.error('Error creating leave request:', error);
@@ -384,8 +406,14 @@ class LeaveService {
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Request is not pending');
 
-      const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      await updateDoc(docRef, {
+      // Pre-read balance for batch
+      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
+
+      const batch = writeBatch(db);
+
+      // Write 1: Update request status
+      const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
+      batch.update(requestRef, {
         status: 'approved',
         approverId,
         approverName,
@@ -393,13 +421,25 @@ class LeaveService {
         updatedAt: serverTimestamp(),
       });
 
-      // Move from pending to used in balance
-      await this.updateBalanceOnApproval(
-        tenantId,
-        request.employeeId,
-        request.leaveType,
-        request.duration
-      );
+      // Write 2: Move from pending to used in balance
+      if (balance?.id) {
+        const typeKey = request.leaveType as keyof LeaveBalance;
+        if (typeof balance[typeKey] === 'object') {
+          const currentBalance = balance[typeKey] as LeaveBalanceItem;
+          const newUsed = currentBalance.used + request.duration;
+          const newPending = Math.max(0, currentBalance.pending - request.duration);
+          const newRemaining = currentBalance.entitled - newUsed - newPending;
+          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
+          batch.update(balanceRef, {
+            [`${request.leaveType}.used`]: newUsed,
+            [`${request.leaveType}.pending`]: newPending,
+            [`${request.leaveType}.remaining`]: newRemaining,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      await batch.commit();
     } catch (error) {
       console.error('Error approving leave request:', error);
       throw error;
@@ -421,8 +461,14 @@ class LeaveService {
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Request is not pending');
 
-      const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      await updateDoc(docRef, {
+      // Pre-read balance for batch
+      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
+
+      const batch = writeBatch(db);
+
+      // Write 1: Update request status
+      const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
+      batch.update(requestRef, {
         status: 'rejected',
         approverId,
         approverName,
@@ -430,13 +476,23 @@ class LeaveService {
         updatedAt: serverTimestamp(),
       });
 
-      // Remove from pending balance
-      await this.updatePendingBalance(
-        tenantId,
-        request.employeeId,
-        request.leaveType,
-        -request.duration
-      );
+      // Write 2: Remove from pending balance
+      if (balance?.id) {
+        const typeKey = request.leaveType as keyof LeaveBalance;
+        if (typeof balance[typeKey] === 'object') {
+          const currentBalance = balance[typeKey] as LeaveBalanceItem;
+          const newPending = Math.max(0, currentBalance.pending - request.duration);
+          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
+          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
+          batch.update(balanceRef, {
+            [`${request.leaveType}.pending`]: newPending,
+            [`${request.leaveType}.remaining`]: newRemaining,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      await batch.commit();
     } catch (error) {
       console.error('Error rejecting leave request:', error);
       throw error;
@@ -452,19 +508,35 @@ class LeaveService {
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Only pending requests can be cancelled');
 
-      const docRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      await updateDoc(docRef, {
+      // Pre-read balance for batch
+      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
+
+      const batch = writeBatch(db);
+
+      // Write 1: Update request status
+      const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
+      batch.update(requestRef, {
         status: 'cancelled',
         updatedAt: serverTimestamp(),
       });
 
-      // Remove from pending balance
-      await this.updatePendingBalance(
-        tenantId,
-        request.employeeId,
-        request.leaveType,
-        -request.duration
-      );
+      // Write 2: Remove from pending balance
+      if (balance?.id) {
+        const typeKey = request.leaveType as keyof LeaveBalance;
+        if (typeof balance[typeKey] === 'object') {
+          const currentBalance = balance[typeKey] as LeaveBalanceItem;
+          const newPending = Math.max(0, currentBalance.pending - request.duration);
+          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
+          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
+          batch.update(balanceRef, {
+            [`${request.leaveType}.pending`]: newPending,
+            [`${request.leaveType}.remaining`]: newRemaining,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      await batch.commit();
     } catch (error) {
       console.error('Error cancelling leave request:', error);
       throw error;
@@ -551,10 +623,11 @@ class LeaveService {
       carryOver: carryOver || 0,
     };
 
-    // Add carry over to annual leave
+    // Add carry over to remaining (not entitled — entitled stays at statutory 12)
     if (carryOver && carryOver > 0) {
-      defaultBalance.annual.entitled += Math.min(carryOver, 6); // Max 6 days carry over
-      defaultBalance.annual.remaining = defaultBalance.annual.entitled;
+      const cappedCarryOver = Math.min(carryOver, 6); // Max 6 days carry over per TL law
+      defaultBalance.annual.remaining += cappedCarryOver;
+      defaultBalance.carryOver = cappedCarryOver;
     }
 
     try {
@@ -769,4 +842,3 @@ class LeaveService {
 }
 
 export const leaveService = new LeaveService();
-export default leaveService;

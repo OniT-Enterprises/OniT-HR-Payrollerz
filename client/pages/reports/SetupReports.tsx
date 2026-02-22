@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -33,9 +34,10 @@ import {
   Database,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
-import { getTodayTL } from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
 
 export default function SetupReports() {
+  const navigate = useNavigate();
   const { session } = useTenant();
   const { user: _user } = useAuth();
   const { toast } = useToast();
@@ -90,39 +92,13 @@ export default function SetupReports() {
   const completedSteps = useMemo(() => Object.values(setupSteps).filter(Boolean).length, [setupSteps]);
   const totalSteps = useMemo(() => Object.keys(setupSteps).length || 5, [setupSteps]);
 
-  // Export functions
-  const exportToCSV = (
-    data: any[],
-    filename: string,
-    columns: { key: string; label: string }[]
-  ) => {
-    const headers = columns.map((c) => c.label).join(",");
-    const rows = data.map((item) =>
-      columns
-        .map((c) => {
-          let value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-          if (value?.toDate) value = value.toDate().toISOString();
-          const strValue = String(value ?? "").replace(/,/g, ";");
-          return `"${strValue}"`;
-        })
-        .join(",")
-    );
-    const csv = [headers, ...rows].join("\n");
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}_${getTodayTL()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast({
-      title: "Export Complete",
-      description: `${filename}.csv downloaded successfully`,
-    });
+  const doExport = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    exportToCSV(data, filename, columns);
+    toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
   };
 
   const exportAuditLog = () => {
-    exportToCSV(auditLog, "audit_log", [
+    doExport(auditLog, "audit_log", [
       { key: "timestamp", label: "Timestamp" },
       { key: "action", label: "Action" },
       { key: "actorEmail", label: "Actor Email" },
@@ -139,7 +115,7 @@ export default function SetupReports() {
       tenantCount: u.tenantIds?.length || 0,
       createdAt: u.createdAt,
     }));
-    exportToCSV(userData, "user_permissions", [
+    doExport(userData, "user_permissions", [
       { key: "email", label: "Email" },
       { key: "displayName", label: "Display Name" },
       { key: "isSuperAdmin", label: "Super Admin" },
@@ -192,7 +168,7 @@ export default function SetupReports() {
         value: settings.timeOffPolicies?.sickLeave?.daysPerYear || 30,
       },
     ];
-    exportToCSV(configData, "system_configuration", [
+    doExport(configData, "system_configuration", [
       { key: "section", label: "Section" },
       { key: "setting", label: "Setting" },
       { key: "value", label: "Value" },
@@ -545,7 +521,11 @@ export default function SetupReports() {
             {users.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No users found</p>
+                <p className="mb-4">No users found</p>
+                <Button variant="outline" onClick={() => navigate("/admin/users")}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Manage Users
+                </Button>
               </div>
             ) : (
               <div className="overflow-x-auto">

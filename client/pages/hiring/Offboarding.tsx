@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,6 +68,7 @@ import {
 } from "@/services/offboardingService";
 
 export default function Offboarding() {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
@@ -93,7 +95,7 @@ export default function Offboarding() {
   });
 
   // Load data
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [active, completed] = await Promise.all([
@@ -112,12 +114,11 @@ export default function Offboarding() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, toast, t]);
 
   useEffect(() => {
     loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+  }, [loadData]);
 
   // Filter employees for selection
   const activeEmployees = employees.filter((emp) => emp.status === "active");
@@ -537,6 +538,9 @@ export default function Offboarding() {
               <p className="text-muted-foreground mb-6">
                 {t("hiring.offboarding.empty.noEmployeesDesc")}
               </p>
+              <Button variant="outline" onClick={() => navigate("/people/add")}>
+                Add Employees
+              </Button>
             </CardContent>
           </Card>
         ) : (

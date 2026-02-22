@@ -42,4 +42,3 @@ export function ImpersonationBanner() {
   );
 }
 
-export default ImpersonationBanner;

@@ -24,7 +24,7 @@ export type OptionalTimestamp = FirestoreTimestamp | null | undefined;
  * Handles Timestamp, Date, and FieldValue inputs safely
  * Note: FieldValue (from serverTimestamp()) cannot be converted - returns null
  */
-export function toDate(value: FirestoreTimestamp | null | undefined): Date | null {
+function toDate(value: FirestoreTimestamp | null | undefined): Date | null {
   if (!value) return null;
   if (value instanceof Date) return value;
   if (value instanceof Timestamp) return value.toDate();
@@ -40,7 +40,7 @@ export function toDate(value: FirestoreTimestamp | null | undefined): Date | nul
  * Convert a Firestore Timestamp to ISO string
  * Useful for serialization
  */
-export function toISOString(value: FirestoreTimestamp | null | undefined): string | null {
+function toISOString(value: FirestoreTimestamp | null | undefined): string | null {
   const date = toDate(value);
   return date ? date.toISOString() : null;
 }
@@ -48,7 +48,7 @@ export function toISOString(value: FirestoreTimestamp | null | undefined): strin
 /**
  * Check if a value is a Firestore Timestamp
  */
-export function isTimestamp(value: unknown): value is Timestamp {
+function isTimestamp(value: unknown): value is Timestamp {
   return value instanceof Timestamp ||
     (typeof value === 'object' &&
      value !== null &&

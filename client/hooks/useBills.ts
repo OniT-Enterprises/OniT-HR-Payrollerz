@@ -11,6 +11,7 @@ import {
   type PaginatedResult,
 } from '@/services/billService';
 import type { Bill, BillFormData, BillPaymentFormData } from '@/types/money';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const billKeys = {
   all: (tenantId: string) => ['bills', tenantId] as const,
@@ -30,8 +31,6 @@ export function useBills(filters: BillFilters = {}) {
     gcTime: 30 * 60 * 1000,
   });
 }
-
-const SEARCH_FETCH_LIMIT = 2000;
 
 export function useAllBills(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();

@@ -310,4 +310,3 @@ export function RecordPaymentModal({
   );
 }
 
-export default RecordPaymentModal;

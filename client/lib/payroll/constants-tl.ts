@@ -81,13 +81,13 @@ export const TL_INSS = {
   ],
 };
 
-export const TL_SOCIAL_PENSION_USD = 60;
+const TL_SOCIAL_PENSION_USD = 60;
 
 /**
  * Optional registration (voluntary) uses Social Pension (SP) multiples as contribution bands.
  * Reference: INSS contributions guidance.
  */
-export const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
+const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
   2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 100, 200,
 ] as const;
 
@@ -97,7 +97,7 @@ export interface TLInssContributionBand {
   base: number;
 }
 
-export const getTLInssOptionalContributionBands = (
+const getTLInssOptionalContributionBands = (
   socialPensionUSD: number = TL_SOCIAL_PENSION_USD
 ): TLInssContributionBand[] => {
   return TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS.map((multiplier, index) => ({
@@ -215,7 +215,7 @@ export const TL_SICK_LEAVE = {
 /**
  * Maternity Leave (Labor Code Article 44)
  */
-export const TL_MATERNITY_LEAVE = {
+const TL_MATERNITY_LEAVE = {
   // Duration
   totalDays: 90,  // 12 weeks
 
@@ -238,7 +238,7 @@ export const TL_MATERNITY_LEAVE = {
 /**
  * Annual Leave (Labor Code Article 38)
  */
-export const TL_ANNUAL_LEAVE = {
+const TL_ANNUAL_LEAVE = {
   // Minimum annual leave days
   minimumDays: 12,
 
@@ -263,7 +263,7 @@ export const TL_ANNUAL_LEAVE = {
  * Keep a concrete year list for backwards compatibility in the codebase.
  * Prefer `getTLPublicHolidays(year)` for new code.
  */
-export const TL_PUBLIC_HOLIDAYS_2025 = getTLPublicHolidays(2025);
+const TL_PUBLIC_HOLIDAYS_2025 = getTLPublicHolidays(2025);
 
 // ============================================
 // CONTRACT TYPES
@@ -275,7 +275,7 @@ export type TLContractType =
   | 'agencia'              // Agency / Temporary
   | 'prestacao_servicos';  // Service provider / Contractor
 
-export const TL_CONTRACT_TYPES = {
+const TL_CONTRACT_TYPES = {
   prazo_indeterminado: {
     label: 'Prazo Indeterminado',
     labelEn: 'Open-ended / Permanent',
@@ -308,7 +308,7 @@ export const TL_CONTRACT_TYPES = {
  * Severance Pay (Labor Code Article 51)
  * For dismissal without just cause or redundancy
  */
-export const TL_SEVERANCE = {
+const TL_SEVERANCE = {
   // Days of salary per year of service
   daysPerYear: 30,
 
@@ -350,7 +350,7 @@ export const TL_PAY_PERIODS = {
 // CURRENCY & FORMATTING
 // ============================================
 
-export const TL_CURRENCY = {
+const TL_CURRENCY = {
   code: 'USD',
   symbol: '$',
   name: 'US Dollar',
@@ -366,14 +366,14 @@ export const formatCurrencyTL = (amount: number): string => {
   }).format(amount);
 };
 
-export const formatNumberTL = (num: number, decimals: number = 2): string => {
+const formatNumberTL = (num: number, decimals: number = 2): string => {
   return new Intl.NumberFormat(TL_CURRENCY.locale, {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(num);
 };
 
-export const formatPercentTL = (decimal: number): string => {
+const formatPercentTL = (decimal: number): string => {
   return new Intl.NumberFormat(TL_CURRENCY.locale, {
     style: 'percent',
     minimumFractionDigits: 1,
@@ -385,7 +385,7 @@ export const formatPercentTL = (decimal: number): string => {
 // STATUS LABELS (Bilingual)
 // ============================================
 
-export const TL_PAYROLL_STATUS_CONFIG = {
+const TL_PAYROLL_STATUS_CONFIG = {
   draft: {
     label: 'Rascunho',
     labelEn: 'Draft',
@@ -448,7 +448,7 @@ export const TL_DEDUCTION_TYPE_LABELS: Record<string, { tl: string; en: string }
   other: { tl: 'Seluk', en: 'Other Deduction' },
 };
 
-export const TL_EARNING_TYPE_LABELS: Record<string, { tl: string; en: string }> = {
+const TL_EARNING_TYPE_LABELS: Record<string, { tl: string; en: string }> = {
   regular: { tl: 'Saláriu Regular', en: 'Regular Salary' },
   overtime: { tl: 'Oras Extra', en: 'Overtime' },
   night_shift: { tl: 'Turnu Kalan', en: 'Night Shift' },
@@ -467,7 +467,7 @@ export const TL_EARNING_TYPE_LABELS: Record<string, { tl: string; en: string }> 
 // MONTHS (Tetun/Portuguese)
 // ============================================
 
-export const TL_MONTHS = [
+const TL_MONTHS = [
   { en: 'January', tl: 'Janeiru' },
   { en: 'February', tl: 'Fevereiru' },
   { en: 'March', tl: 'Marsu' },
@@ -510,7 +510,7 @@ export const TL_MINIMUM_WAGE = {
 /**
  * Check if a date is a public holiday
  */
-export const isPublicHoliday = (date: Date | string, year: number = new Date().getFullYear()): boolean => {
+const isPublicHoliday = (date: Date | string, year: number = new Date().getFullYear()): boolean => {
   const dateStr = typeof date === 'string'
     ? date
     : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -521,7 +521,7 @@ export const isPublicHoliday = (date: Date | string, year: number = new Date().g
 /**
  * Get public holiday name if date is a holiday
  */
-export const getHolidayName = (date: Date | string): string | null => {
+const getHolidayName = (date: Date | string): string | null => {
   const dateStr = typeof date === 'string'
     ? date
     : `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -533,7 +533,7 @@ export const getHolidayName = (date: Date | string): string | null => {
 /**
  * Calculate annual leave entitlement based on years of service
  */
-export const calculateAnnualLeave = (yearsOfService: number): number => {
+const calculateAnnualLeave = (yearsOfService: number): number => {
   if (yearsOfService >= 9) return TL_ANNUAL_LEAVE.after9Years;
   if (yearsOfService >= 6) return TL_ANNUAL_LEAVE.after6Years;
   if (yearsOfService >= 3) return TL_ANNUAL_LEAVE.after3Years;
@@ -543,7 +543,7 @@ export const calculateAnnualLeave = (yearsOfService: number): number => {
 /**
  * Calculate sick pay for a given day number (1-12)
  */
-export const calculateSickPayRate = (dayNumber: number, usedDays: number): number => {
+const calculateSickPayRate = (dayNumber: number, usedDays: number): number => {
   if (dayNumber > TL_SICK_LEAVE.totalDays) return 0;  // Beyond 12 days
   if (usedDays < TL_SICK_LEAVE.fullPayDays) return TL_SICK_LEAVE.fullPayRate;
   return TL_SICK_LEAVE.reducedPayRate;

@@ -99,8 +99,7 @@ export default function CreateJobLocal() {
     };
 
     fetchData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast]);
+  }, [tenantId, toast, t]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};

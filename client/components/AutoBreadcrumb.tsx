@@ -74,7 +74,7 @@ interface AutoBreadcrumbProps {
   className?: string;
 }
 
-export function AutoBreadcrumb({ className }: AutoBreadcrumbProps) {
+function AutoBreadcrumb({ className }: AutoBreadcrumbProps) {
   const location = useLocation();
 
   const segments = location.pathname.split("/").filter(Boolean);

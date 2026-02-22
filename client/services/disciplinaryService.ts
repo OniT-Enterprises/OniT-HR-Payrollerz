@@ -108,7 +108,7 @@ export const SEVERITY_LEVELS: { id: SeverityLevel; name: string }[] = [
   { id: 'high', name: 'High' },
 ];
 
-export const STATUS_OPTIONS: { id: DisciplinaryStatus; name: string }[] = [
+const STATUS_OPTIONS: { id: DisciplinaryStatus; name: string }[] = [
   { id: 'open', name: 'Open' },
   { id: 'in_review', name: 'In Review' },
   { id: 'closed', name: 'Closed' },
@@ -533,4 +533,3 @@ class DisciplinaryService {
 }
 
 export const disciplinaryService = new DisciplinaryService();
-export default disciplinaryService;

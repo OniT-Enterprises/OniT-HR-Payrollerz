@@ -90,6 +90,9 @@ const downloadPayslip = async (...args: Parameters<typeof import("@/components/p
   const { downloadPayslip: download } = await import("@/components/payroll/PayslipPDF");
   return download(...args);
 };
+
+// Preload PDF module on first render so download resolves instantly from cache
+let _payslipPreloaded = false;
 import { QuickBooksExportDialog } from "@/components/payroll/QuickBooksExportDialog";
 import { SendPayslipsDialog } from "@/components/payroll/SendPayslipsDialog";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
@@ -138,6 +141,13 @@ export default function PayrollHistory() {
     new Date().getFullYear().toString()
   );
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Preload PDF module so downloads resolve instantly from cache
+  useEffect(() => {
+    if (_payslipPreloaded) return;
+    _payslipPreloaded = true;
+    import("@/components/payroll/PayslipPDF");
+  }, []);
 
   // Load payroll runs
   useEffect(() => {
@@ -818,7 +828,62 @@ export default function PayrollHistory() {
                       <p className="text-muted-foreground">{t("payrollHistory.noPendingRuns")}</p>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* Mobile Card View - Pending */}
+                    <div className="md:hidden divide-y divide-border/50">
+                      {pendingRuns.map((run) => {
+                        const isSameUser = run.createdBy === user?.uid;
+                        return (
+                          <div key={run.id} className="p-4 bg-amber-50/50 dark:bg-amber-950/10">
+                            <div className="flex items-start justify-between gap-2 mb-2">
+                              <div>
+                                <p className="font-medium">{getPayPeriodLabel(run.periodStart, run.periodEnd)}</p>
+                                <p className="text-sm text-muted-foreground">{formatPayPeriod(run.periodStart, run.periodEnd)}</p>
+                              </div>
+                              <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shrink-0">
+                                {t("payrollHistory.pendingApproval") || "Pending"}
+                              </Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                              <div>
+                                <span className="text-muted-foreground">{t("payrollHistory.netPay")}:</span>
+                                <span className="ml-1 font-semibold text-emerald-600 tabular-nums">{formatCurrency(run.totalNetPay)}</span>
+                              </div>
+                              <div>
+                                <span className="text-muted-foreground">{t("payrollHistory.employees")}:</span>
+                                <span className="ml-1 font-medium">{run.employeeCount}</span>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleViewDetails(run)}>
+                                <Eye className="h-4 w-4 mr-1" />
+                                {t("payrollHistory.viewDetails")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                disabled={isSameUser}
+                                onClick={() => { setApproveRun(run); setShowApproveDialog(true); }}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <CheckCircle className="h-4 w-4 mr-1" />
+                                {t("payrollHistory.approve")}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => { setRejectRun(run); setRejectionReason(""); setShowRejectDialog(true); }}
+                                className="border-red-300 text-red-600 hover:bg-red-50"
+                              >
+                                <XCircle className="h-4 w-4 mr-1" />
+                                {t("payrollHistory.reject")}
+                              </Button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                    {/* Desktop Table View - Pending */}
+                    <div className="hidden md:block overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -852,10 +917,10 @@ export default function PayrollHistory() {
                                 <TableCell className="text-right">
                                   {run.employeeCount}
                                 </TableCell>
-                                <TableCell className="text-right font-medium">
+                                <TableCell className="text-right font-medium tabular-nums">
                                   {formatCurrency(run.totalGrossPay)}
                                 </TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-600">
+                                <TableCell className="text-right font-semibold text-emerald-600 tabular-nums">
                                   {formatCurrency(run.totalNetPay)}
                                 </TableCell>
                                 <TableCell>
@@ -911,6 +976,7 @@ export default function PayrollHistory() {
                         </TableBody>
                       </Table>
                     </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -938,7 +1004,59 @@ export default function PayrollHistory() {
                       </Button>
                     </div>
                   ) : (
-                    <div className="overflow-x-auto">
+                    <>
+                    {/* Mobile Card View - All Runs */}
+                    <div className="md:hidden divide-y divide-border/50">
+                      {filteredRuns.map((run) => (
+                        <div key={run.id} className="p-4" onClick={() => handleViewDetails(run)}>
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div>
+                              <p className="font-medium">{getPayPeriodLabel(run.periodStart, run.periodEnd)}</p>
+                              <p className="text-sm text-muted-foreground">{formatPayPeriod(run.periodStart, run.periodEnd)}</p>
+                            </div>
+                            {getStatusBadge(run.status)}
+                          </div>
+                          <div className="grid grid-cols-2 gap-2 text-sm mb-2">
+                            <div>
+                              <span className="text-muted-foreground">{t("payrollHistory.netPay")}:</span>
+                              <span className="ml-1 font-semibold text-emerald-600 tabular-nums">{formatCurrency(run.totalNetPay)}</span>
+                            </div>
+                            <div>
+                              <span className="text-muted-foreground">{t("payrollHistory.employees")}:</span>
+                              <span className="ml-1 font-medium">{run.employeeCount}</span>
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs text-muted-foreground">{formatDateTL(run.payDate)}</span>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewDetails(run)}>
+                                  <Eye className="h-4 w-4 mr-2" />
+                                  {t("payrollHistory.viewDetails")}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleExportCSV(run)}>
+                                  <Download className="h-4 w-4 mr-2" />
+                                  {t("payrollHistory.exportCsv")}
+                                </DropdownMenuItem>
+                                {(run.status === "approved" || run.status === "paid") && (
+                                  <DropdownMenuItem onClick={() => handleSendPayslips(run)}>
+                                    <Mail className="h-4 w-4 mr-2" />
+                                    {t("payrollHistory.sendPayslips")}
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    {/* Desktop Table View - All Runs */}
+                    <div className="hidden md:block overflow-x-auto">
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -970,10 +1088,10 @@ export default function PayrollHistory() {
                               <TableCell className="text-right">
                                 {run.employeeCount}
                               </TableCell>
-                              <TableCell className="text-right font-medium">
+                              <TableCell className="text-right font-medium tabular-nums">
                                 {formatCurrency(run.totalGrossPay)}
                               </TableCell>
-                              <TableCell className="text-right font-semibold text-emerald-600">
+                              <TableCell className="text-right font-semibold text-emerald-600 tabular-nums">
                                 {formatCurrency(run.totalNetPay)}
                               </TableCell>
                               <TableCell>{getStatusBadge(run.status)}</TableCell>
@@ -1042,6 +1160,7 @@ export default function PayrollHistory() {
                         </TableBody>
                       </Table>
                     </div>
+                    </>
                   )}
                 </CardContent>
               </Card>
@@ -1300,13 +1419,13 @@ export default function PayrollHistory() {
                               </span>
                             )}
                           </TableCell>
-                          <TableCell className="text-right">
+                          <TableCell className="text-right tabular-nums">
                             {formatCurrency(record.totalGrossPay)}
                           </TableCell>
-                          <TableCell className="text-right text-red-600">
+                          <TableCell className="text-right text-red-600 tabular-nums">
                             {formatCurrency(record.totalDeductions)}
                           </TableCell>
-                          <TableCell className="text-right font-semibold text-emerald-600">
+                          <TableCell className="text-right font-semibold text-emerald-600 tabular-nums">
                             {formatCurrency(record.netPay)}
                           </TableCell>
                           <TableCell className="text-right">

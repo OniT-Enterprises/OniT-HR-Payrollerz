@@ -12,8 +12,19 @@ import { QueryClient, QueryCache, MutationCache } from '@tanstack/react-query';
 import * as Sentry from '@sentry/react';
 import { get, set, del } from 'idb-keyval';
 
+declare const __BUILD_TIMESTAMP__: string;
+
+/**
+ * Max records fetched for client-side search.
+ * Firestore has no native full-text search, so we fetch up to this many
+ * records and filter locally. Keep this low to control Firestore read costs.
+ * V2: Replace with server-side search (Algolia/Typesense/Meilisearch).
+ */
+export const SEARCH_FETCH_LIMIT = 300;
+
 const CACHE_KEY = 'onit-query-cache';
-const CACHE_VERSION = 5; // v5: migrated from sessionStorage to IndexedDB
+// Cache version tied to build — each deploy auto-invalidates stale data
+const CACHE_VERSION = __BUILD_TIMESTAMP__ || '5';
 const MAX_AGE = 1000 * 60 * 30; // 30 minutes
 
 /**
@@ -52,7 +63,7 @@ interface CacheEntry {
 }
 
 interface CacheStore {
-  version: number;
+  version: string | number;
   entries: Record<string, CacheEntry>;
 }
 
@@ -69,7 +80,7 @@ function isSafeToPersist(queryKey: string): boolean {
  * Save specific query data to IndexedDB
  * SECURITY: Only persists data that matches the allow-list
  */
-export async function persistQueryData(queryKey: string, data: unknown): Promise<void> {
+async function persistQueryData(queryKey: string, data: unknown): Promise<void> {
   if (!isSafeToPersist(queryKey)) {
     return;
   }
@@ -124,7 +135,7 @@ async function loadCacheStore(): Promise<CacheStore> {
 /**
  * Get cached data for a query key
  */
-export async function getCachedData<T>(queryKey: string): Promise<T | undefined> {
+async function getCachedData<T>(queryKey: string): Promise<T | undefined> {
   const store = await loadCacheStore();
   const entry = store.entries[queryKey];
   if (entry && Date.now() - entry.timestamp < MAX_AGE) {

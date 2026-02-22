@@ -15,8 +15,8 @@ if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
     environment: import.meta.env.MODE,
     // Only send 10% of transactions for performance monitoring
     tracesSampleRate: 0.1,
-    // Capture 100% of errors
-    replaysOnErrorSampleRate: 1.0,
+    // Capture 50% of error sessions (limits quota burn on launch spikes)
+    replaysOnErrorSampleRate: 0.5,
     replaysSessionSampleRate: 0,
   });
 }

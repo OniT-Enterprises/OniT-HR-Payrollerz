@@ -179,4 +179,3 @@ export const KEYBOARD_SHORTCUTS = [
   },
 ];
 
-export default useKeyboardShortcuts;

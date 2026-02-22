@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { formatDateTL, getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { formatDateTL, toDateStringTL } from "@/lib/dateUtils";
+import { exportToCSV as exportCSVFile } from "@/lib/csvExport";
 import { useQueryClient } from "@tanstack/react-query";
 import {
   Card,
@@ -309,25 +310,10 @@ export default function CustomReports() {
     });
   };
 
-  const exportToCSV = async () => {
+  const exportToCSV = () => {
     if (!previewData || !previewColumns.length) return;
 
-    const { default: Papa } = await import("papaparse");
-    const rows = previewData.map((item) =>
-      previewColumns.reduce((row, c) => {
-        const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-        row[c.label] = String(value ?? "");
-        return row;
-      }, {} as Record<string, string>)
-    );
-    const csv = Papa.unparse(rows);
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `custom_report_${getTodayTL()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+    exportCSVFile(previewData, "custom_report", previewColumns);
     toast({
       title: "Export Complete",
       description: "Report exported to CSV",

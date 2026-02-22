@@ -42,5 +42,3 @@ export function SuperadminRoute({ children }: SuperadminRouteProps) {
 
   return <>{children}</>;
 }
-
-export default SuperadminRoute;

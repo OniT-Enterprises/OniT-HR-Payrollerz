@@ -370,4 +370,3 @@ class ExpenseService {
 }
 
 export const expenseService = new ExpenseService();
-export default expenseService;

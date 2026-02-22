@@ -28,7 +28,7 @@ interface DefaultAccount {
  * 4xxx - Revenue (Receitas)
  * 5xxx - Expenses (Despesas)
  */
-export const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
+const DEFAULT_CHART_OF_ACCOUNTS: DefaultAccount[] = [
   // ============================================
   // 1000 - ASSETS (ATIVOS)
   // ============================================
@@ -779,7 +779,7 @@ export function getDefaultAccounts(): Omit<Account, 'id' | 'createdAt' | 'update
 /**
  * Payroll account mappings for auto-generating journal entries
  */
-export const PAYROLL_JOURNAL_MAPPINGS = {
+const PAYROLL_JOURNAL_MAPPINGS = {
   grossSalary: {
     description: 'Gross Salaries and Wages',
     debit: { code: '5110', name: 'Salaries and Wages' },
@@ -887,20 +887,20 @@ export const MONEY_JOURNAL_MAPPINGS = {
 /**
  * Get account by code
  */
-export function getAccountByCode(code: string): DefaultAccount | undefined {
+function getAccountByCode(code: string): DefaultAccount | undefined {
   return DEFAULT_CHART_OF_ACCOUNTS.find(acc => acc.code === code);
 }
 
 /**
  * Get all accounts by type
  */
-export function getAccountsByType(type: AccountType): DefaultAccount[] {
+function getAccountsByType(type: AccountType): DefaultAccount[] {
   return DEFAULT_CHART_OF_ACCOUNTS.filter(acc => acc.type === type);
 }
 
 /**
  * Get child accounts of a parent
  */
-export function getChildAccounts(parentCode: string): DefaultAccount[] {
+function getChildAccounts(parentCode: string): DefaultAccount[] {
   return DEFAULT_CHART_OF_ACCOUNTS.filter(acc => acc.parentCode === parentCode);
 }

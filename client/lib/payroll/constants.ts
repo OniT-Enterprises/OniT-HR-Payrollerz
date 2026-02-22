@@ -8,7 +8,7 @@
 // FEDERAL TAX BRACKETS (2024)
 // ============================================
 
-export const FEDERAL_TAX_BRACKETS_SINGLE = [
+const FEDERAL_TAX_BRACKETS_SINGLE = [
   { min: 0, max: 11600, rate: 0.10 },
   { min: 11600, max: 47150, rate: 0.12 },
   { min: 47150, max: 100525, rate: 0.22 },
@@ -18,7 +18,7 @@ export const FEDERAL_TAX_BRACKETS_SINGLE = [
   { min: 609350, max: Infinity, rate: 0.37 },
 ];
 
-export const FEDERAL_TAX_BRACKETS_MARRIED = [
+const FEDERAL_TAX_BRACKETS_MARRIED = [
   { min: 0, max: 23200, rate: 0.10 },
   { min: 23200, max: 94300, rate: 0.12 },
   { min: 94300, max: 201050, rate: 0.22 },
@@ -28,7 +28,7 @@ export const FEDERAL_TAX_BRACKETS_MARRIED = [
   { min: 731200, max: Infinity, rate: 0.37 },
 ];
 
-export const FEDERAL_TAX_BRACKETS_HEAD_OF_HOUSEHOLD = [
+const FEDERAL_TAX_BRACKETS_HEAD_OF_HOUSEHOLD = [
   { min: 0, max: 16550, rate: 0.10 },
   { min: 16550, max: 63100, rate: 0.12 },
   { min: 63100, max: 100500, rate: 0.22 },
@@ -39,7 +39,7 @@ export const FEDERAL_TAX_BRACKETS_HEAD_OF_HOUSEHOLD = [
 ];
 
 // Standard deduction amounts (2024)
-export const STANDARD_DEDUCTION = {
+const STANDARD_DEDUCTION = {
   single: 14600,
   married: 29200,
   head_of_household: 21900,
@@ -49,7 +49,7 @@ export const STANDARD_DEDUCTION = {
 // FICA (SOCIAL SECURITY & MEDICARE)
 // ============================================
 
-export const FICA_RATES = {
+const FICA_RATES = {
   // Social Security
   socialSecurityRate: 0.062,  // 6.2% employee + 6.2% employer
   socialSecurityWageBase: 168600,  // 2024 limit
@@ -64,7 +64,7 @@ export const FICA_RATES = {
 // UNEMPLOYMENT TAXES (FUTA/SUTA)
 // ============================================
 
-export const UNEMPLOYMENT_RATES = {
+const UNEMPLOYMENT_RATES = {
   // Federal Unemployment Tax Act (employer only)
   futaRate: 0.006,  // 0.6% after state credit
   futaWageBase: 7000,
@@ -78,7 +78,7 @@ export const UNEMPLOYMENT_RATES = {
 // OVERTIME & PAY RATES
 // ============================================
 
-export const PAY_RATES = {
+const PAY_RATES = {
   // Overtime multipliers
   overtimeMultiplier: 1.5,      // Time and a half
   doubleTimeMultiplier: 2.0,    // Double time
@@ -101,7 +101,7 @@ export const PAY_RATES = {
 // MINIMUM WAGE (Federal - states may be higher)
 // ============================================
 
-export const MINIMUM_WAGE = {
+const MINIMUM_WAGE = {
   federal: 7.25,  // Federal minimum
   // Add state-specific rates as needed
 };
@@ -110,7 +110,7 @@ export const MINIMUM_WAGE = {
 // BENEFIT CONTRIBUTION LIMITS (2024)
 // ============================================
 
-export const BENEFIT_LIMITS = {
+const BENEFIT_LIMITS = {
   // 401(k) limits
   '401k_employee_limit': 23000,
   '401k_catchup_limit': 7500,  // Age 50+
@@ -130,7 +130,7 @@ export const BENEFIT_LIMITS = {
 // PAY PERIOD DATES HELPER
 // ============================================
 
-export const MONTHS = [
+const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'
 ];
@@ -210,7 +210,7 @@ export const DEDUCTION_TYPE_LABELS: Record<string, string> = {
 // EARNING TYPE LABELS
 // ============================================
 
-export const EARNING_TYPE_LABELS: Record<string, string> = {
+const EARNING_TYPE_LABELS: Record<string, string> = {
   regular: 'Regular Pay',
   overtime: 'Overtime Pay',
   double_time: 'Double Time Pay',
@@ -227,7 +227,7 @@ export const EARNING_TYPE_LABELS: Record<string, string> = {
 // DEFAULT TAX SETTINGS
 // ============================================
 
-export const DEFAULT_TAX_SETTINGS = {
+const DEFAULT_TAX_SETTINGS = {
   federalFilingStatus: 'single' as const,
   federalAllowances: 0,
   additionalFederalWithholding: 0,
@@ -249,14 +249,14 @@ export const formatCurrency = (amount: number): string => {
   }).format(amount);
 };
 
-export const formatNumber = (num: number, decimals: number = 2): string => {
+const formatNumber = (num: number, decimals: number = 2): string => {
   return new Intl.NumberFormat('en-US', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   }).format(num);
 };
 
-export const formatPercent = (decimal: number): string => {
+const formatPercent = (decimal: number): string => {
   return new Intl.NumberFormat('en-US', {
     style: 'percent',
     minimumFractionDigits: 1,

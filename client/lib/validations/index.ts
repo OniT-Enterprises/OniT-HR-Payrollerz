@@ -176,7 +176,7 @@ export type FirestoreBill = z.infer<typeof firestoreBillSchema>;
  * Safe parser for Firestore documents
  * Returns validated data or throws with detailed error
  */
-export function parseFirestoreDoc<T>(
+function parseFirestoreDoc<T>(
   schema: z.ZodSchema<T>,
   data: unknown,
   docId?: string
@@ -194,7 +194,7 @@ export function parseFirestoreDoc<T>(
 /**
  * Safe parser that doesn't throw - returns null on failure
  */
-export function safeParseFirestoreDoc<T>(
+function safeParseFirestoreDoc<T>(
   schema: z.ZodSchema<T>,
   data: unknown
 ): T | null {
@@ -203,34 +203,51 @@ export function safeParseFirestoreDoc<T>(
 }
 
 // ============================================
+// COERCION HELPERS
+// ============================================
+
+/**
+ * Coerces input to a number for form validation.
+ * Unlike z.coerce.number(), treats empty strings and NaN as undefined
+ * so that required_error / .optional() / .default() work correctly.
+ * Usage: z.preprocess(coerceToNumber, z.number({ required_error: '...' }).min(...))
+ */
+const coerceToNumber = (val: unknown): number | undefined => {
+  if (val === '' || val === undefined || val === null) return undefined;
+  if (typeof val === 'number') return isNaN(val) ? undefined : val;
+  const num = Number(val);
+  return isNaN(num) ? undefined : num;
+};
+
+// ============================================
 // COMMON SCHEMAS
 // ============================================
 
-export const emailSchema = z
+const emailSchema = z
   .string()
   .email('Invalid email address')
   .min(1, 'Email is required');
 
-export const phoneSchema = z
+const phoneSchema = z
   .string()
   .regex(/^[+]?[\d\s()-]{7,20}$/, 'Invalid phone number')
   .optional()
   .or(z.literal(''));
 
-export const dateSchema = z
+const dateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Date must be in YYYY-MM-DD format');
 
-export const moneySchema = z
+const moneySchema = z
   .number()
   .min(0, 'Amount cannot be negative')
   .multipleOf(0.01, 'Amount must have at most 2 decimal places');
 
-export const positiveNumberSchema = z
+const positiveNumberSchema = z
   .number()
   .positive('Must be a positive number');
 
-export const percentageSchema = z
+const percentageSchema = z
   .number()
   .min(0, 'Percentage cannot be negative')
   .max(100, 'Percentage cannot exceed 100');
@@ -239,7 +256,7 @@ export const percentageSchema = z
 // EMPLOYEE SCHEMAS
 // ============================================
 
-export const employeeSchema = z.object({
+const employeeSchema = z.object({
   firstName: z.string().min(1, 'First name is required').max(50),
   lastName: z.string().min(1, 'Last name is required').max(50),
   email: emailSchema,
@@ -294,7 +311,7 @@ export type AddEmployeeFormData = z.infer<typeof addEmployeeFormSchema>;
 /**
  * Schema for additional employee info (nationality, visa)
  */
-export const employeeAdditionalInfoSchema = z.object({
+const employeeAdditionalInfoSchema = z.object({
   nationality: z.string().default('Timor-Leste'),
   residencyStatus: z.enum(['timorese', 'permanent_resident', 'work_permit', 'temporary']).default('timorese'),
   workingVisaNumber: z.string().optional().or(z.literal('')),
@@ -306,7 +323,7 @@ export type EmployeeAdditionalInfoData = z.infer<typeof employeeAdditionalInfoSc
 /**
  * Schema for individual document entry
  */
-export const employeeDocumentSchema = z.object({
+const employeeDocumentSchema = z.object({
   id: z.number(),
   type: z.string(),
   fieldKey: z.string(),
@@ -322,14 +339,14 @@ export type EmployeeDocumentData = z.infer<typeof employeeDocumentSchema>;
 // INVOICE SCHEMAS
 // ============================================
 
-export const invoiceItemSchema = z.object({
+const invoiceItemSchema = z.object({
   description: z.string().min(1, 'Description is required').max(500),
   quantity: z.number().min(0.01, 'Quantity must be greater than 0'),
   unitPrice: moneySchema,
   amount: moneySchema.optional(), // Calculated field
 });
 
-export const invoiceSchema = z.object({
+const invoiceSchema = z.object({
   customerId: z.string().min(1, 'Customer is required'),
   issueDate: dateSchema,
   dueDate: dateSchema,
@@ -354,12 +371,12 @@ export const invoiceFormSchema = z.object({
   dueDate: z.string().min(1, 'Due date is required'),
   items: z.array(z.object({
     description: z.string().min(1, 'Description is required').max(500),
-    quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
-    unitPrice: z.coerce.number().refine(v => v > 0, { message: 'Unit price is required' }),
+    quantity: z.preprocess(coerceToNumber, z.number({ required_error: 'Quantity is required' }).min(0.01, 'Quantity must be greater than 0')),
+    unitPrice: z.preprocess(coerceToNumber, z.number({ required_error: 'Unit price is required' }).refine(v => v > 0, { message: 'Unit price must be greater than 0' })),
     amount: z.number().optional(),
-    vatRate: z.coerce.number().min(0).max(100).optional(),
+    vatRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).optional()),
   })).min(1, 'At least one item is required'),
-  taxRate: z.coerce.number().min(0).max(100).default(0),
+  taxRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).default(0)),
   notes: z.string().max(1000).optional().or(z.literal('')),
   terms: z.string().max(1000).optional().or(z.literal('')),
 }).refine(
@@ -378,18 +395,18 @@ export const recurringInvoiceFormSchema = z.object({
   startDate: z.string().min(1, 'Start date is required'),
   endType: z.enum(['never', 'date', 'occurrences']),
   endDate: z.string().optional().or(z.literal('')),
-  endAfterOccurrences: z.coerce.number().min(1).optional(),
+  endAfterOccurrences: z.preprocess(coerceToNumber, z.number().min(1).optional()),
   items: z.array(z.object({
     id: z.string().optional(),
     description: z.string().min(1, 'Description is required'),
-    quantity: z.coerce.number().min(0.01, 'Quantity must be greater than 0'),
-    unitPrice: z.coerce.number().refine(v => v > 0, { message: 'Unit price is required' }),
+    quantity: z.preprocess(coerceToNumber, z.number({ required_error: 'Quantity is required' }).min(0.01, 'Quantity must be greater than 0')),
+    unitPrice: z.preprocess(coerceToNumber, z.number({ required_error: 'Unit price is required' }).refine(v => v > 0, { message: 'Unit price must be greater than 0' })),
     amount: z.number().optional(),
   })).min(1, 'At least one item is required'),
-  taxRate: z.coerce.number().min(0).max(100).default(0),
+  taxRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).default(0)),
   notes: z.string().max(1000).optional().or(z.literal('')),
   terms: z.string().max(1000).optional().or(z.literal('')),
-  dueDays: z.coerce.number().min(1).default(30),
+  dueDays: z.preprocess(coerceToNumber, z.number().min(1).default(30)),
   autoSend: z.boolean().default(false),
 }).refine(
   (data) => {
@@ -415,7 +432,7 @@ export type RecurringInvoiceFormSchemaData = z.infer<typeof recurringInvoiceForm
 // BILL SCHEMAS
 // ============================================
 
-export const billSchema = z.object({
+const billSchema = z.object({
   vendorName: z.string().min(1, 'Vendor name is required').max(200),
   billNumber: z.string().optional(),
   billDate: dateSchema,
@@ -441,8 +458,8 @@ export const billFormSchema = z.object({
   billDate: z.string().min(1, 'Bill date is required'),
   dueDate: z.string().min(1, 'Due date is required'),
   description: z.string().min(1, 'Description is required').max(500),
-  amount: z.coerce.number().min(0.01, 'Amount must be greater than 0'),
-  taxRate: z.coerce.number().min(0).max(100).default(0),
+  amount: z.preprocess(coerceToNumber, z.number({ required_error: 'Amount is required' }).min(0.01, 'Amount must be greater than 0')),
+  taxRate: z.preprocess(coerceToNumber, z.number().min(0).max(100).default(0)),
   category: z.string().min(1, 'Category is required'),
   notes: z.string().max(1000).optional().or(z.literal('')),
 }).refine(
@@ -456,7 +473,7 @@ export type BillFormSchemaData = z.infer<typeof billFormSchema>;
 // CUSTOMER SCHEMAS
 // ============================================
 
-export const customerSchema = z.object({
+const customerSchema = z.object({
   name: z.string().min(1, 'Customer name is required').max(200),
   email: emailSchema.optional().or(z.literal('')),
   phone: phoneSchema,
@@ -473,7 +490,7 @@ export type CustomerFormData = z.infer<typeof customerSchema>;
 // PAYMENT SCHEMAS
 // ============================================
 
-export const paymentSchema = z.object({
+const paymentSchema = z.object({
   date: dateSchema,
   amount: moneySchema.min(0.01, 'Amount must be greater than 0'),
   method: z.enum(['cash', 'bank_transfer', 'check', 'other']),
@@ -486,7 +503,7 @@ export type PaymentFormData = z.infer<typeof paymentSchema>;
 // PAYROLL SCHEMAS
 // ============================================
 
-export const payrollInputSchema = z.object({
+const payrollInputSchema = z.object({
   employeeId: z.string().min(1, 'Employee is required'),
   monthlySalary: moneySchema,
   payFrequency: z.enum(['weekly', 'biweekly', 'monthly']),
@@ -505,7 +522,7 @@ export type PayrollInputFormData = z.infer<typeof payrollInputSchema>;
 // BANK RECONCILIATION SCHEMAS
 // ============================================
 
-export const bankTransactionSchema = z.object({
+const bankTransactionSchema = z.object({
   date: dateSchema,
   description: z.string().min(1, 'Description is required').max(500),
   amount: z.number(), // Can be negative for withdrawals
@@ -520,7 +537,7 @@ export type BankTransactionFormData = z.infer<typeof bankTransactionSchema>;
 // GL ACCOUNT SCHEMAS
 // ============================================
 
-export const glAccountSchema = z.object({
+const glAccountSchema = z.object({
   code: z.string().min(1, 'Account code is required').max(20),
   name: z.string().min(1, 'Account name is required').max(200),
   type: z.enum(['asset', 'liability', 'equity', 'revenue', 'expense']),
@@ -535,14 +552,14 @@ export type GLAccountFormData = z.infer<typeof glAccountSchema>;
 // JOURNAL ENTRY SCHEMAS
 // ============================================
 
-export const journalLineSchema = z.object({
+const journalLineSchema = z.object({
   accountId: z.string().min(1, 'Account is required'),
   debit: moneySchema.default(0),
   credit: moneySchema.default(0),
   description: z.string().max(500).optional(),
 });
 
-export const journalEntrySchema = z.object({
+const journalEntrySchema = z.object({
   date: dateSchema,
   reference: z.string().max(100).optional(),
   description: z.string().min(1, 'Description is required').max(500),
@@ -602,7 +619,7 @@ export type HolidayOverrideFormData = z.infer<typeof holidayOverrideFormSchema>;
 /**
  * Validate data against a schema and return errors
  */
-export function validateWithSchema<T>(
+function validateWithSchema<T>(
   schema: z.ZodSchema<T>,
   data: unknown
 ): { success: true; data: T } | { success: false; errors: Record<string, string> } {
@@ -624,7 +641,7 @@ export function validateWithSchema<T>(
 /**
  * Get first error message for a field
  */
-export function getFieldError(
+function getFieldError(
   errors: Record<string, string> | undefined,
   field: string
 ): string | undefined {

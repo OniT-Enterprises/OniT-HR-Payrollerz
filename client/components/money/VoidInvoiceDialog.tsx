@@ -150,4 +150,3 @@ export function VoidInvoiceDialog({
   );
 }
 
-export default VoidInvoiceDialog;

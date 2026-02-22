@@ -349,7 +349,10 @@ class JournalEntryService {
   }
 
   /**
-   * Generate next entry number
+   * Generate next entry number via Firestore transaction on a single settings doc.
+   * NOTE: This limits throughput to ~1 write/sec per tenant. Acceptable for current
+   * scale (1-2 admins). If high-volume concurrent numbering is needed, switch to
+   * a distributed counter or timestamp-based IDs (e.g., JE-2026-10-ABC1).
    */
   async getNextEntryNumber(tenantId: string, year: number, txn?: Transaction): Promise<string> {
     const settingsRef = doc(db, paths.accountingSettings(tenantId));
@@ -663,14 +666,17 @@ class JournalEntryService {
   async createFromInvoice(
     tenantId: string,
     invoice: Invoice,
-    createdBy: string
+    createdBy: string,
+    txn?: Transaction,
+    resolvedAccounts?: Record<string, { id: string; name: string }>
   ): Promise<string> {
     const invoiceDate = invoice.issueDate;
     const year = new Date(invoiceDate).getFullYear();
     const month = new Date(invoiceDate).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
     const getAccountId = async (code: string) => {
+      if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
@@ -720,7 +726,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(tenantId, journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry, txn);
   }
 
   /**
@@ -739,13 +745,16 @@ class JournalEntryService {
       method: PaymentMethod;
       reference?: string;
     },
-    createdBy: string
+    createdBy: string,
+    txn?: Transaction,
+    resolvedAccounts?: Record<string, { id: string; name: string }>
   ): Promise<string> {
     const year = new Date(payment.date).getFullYear();
     const month = new Date(payment.date).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
     const getAccountId = async (code: string) => {
+      if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
@@ -796,7 +805,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(tenantId, journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry, txn);
   }
 
   /**
@@ -887,13 +896,16 @@ class JournalEntryService {
       method: PaymentMethod;
       reference?: string;
     },
-    createdBy: string
+    createdBy: string,
+    txn?: Transaction,
+    resolvedAccounts?: Record<string, { id: string; name: string }>
   ): Promise<string> {
     const year = new Date(payment.date).getFullYear();
     const month = new Date(payment.date).getMonth() + 1;
-    const entryNumber = await this.getNextEntryNumber(tenantId, year);
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, txn);
 
     const getAccountId = async (code: string) => {
+      if (resolvedAccounts?.[code]) return resolvedAccounts[code];
       const account = await accountService.getAccountByCode(tenantId, code);
       if (!account?.id) {
         throw new Error(`Missing account for code ${code}. Initialize chart of accounts first.`);
@@ -946,7 +958,7 @@ class JournalEntryService {
       fiscalPeriod: month,
     };
 
-    return await this.createJournalEntry(tenantId, journalEntry);
+    return await this.createJournalEntry(tenantId, journalEntry, txn);
   }
 
   /**
@@ -1338,10 +1350,10 @@ class AccountingSettingsService {
 
 export const accountService = new AccountService();
 export const journalEntryService = new JournalEntryService();
-export const generalLedgerService = new GeneralLedgerService();
+const generalLedgerService = new GeneralLedgerService();
 export const trialBalanceService = new TrialBalanceService();
-export const fiscalPeriodService = new FiscalPeriodService();
-export const accountingSettingsService = new AccountingSettingsService();
+const fiscalPeriodService = new FiscalPeriodService();
+const accountingSettingsService = new AccountingSettingsService();
 
 // Convenience export
 export const accountingService = {
@@ -1352,5 +1364,3 @@ export const accountingService = {
   fiscalPeriods: fiscalPeriodService,
   settings: accountingSettingsService,
 };
-
-export default accountingService;

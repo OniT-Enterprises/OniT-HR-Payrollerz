@@ -26,7 +26,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney } from '@/lib/currency';
+import { addMoney, subtractMoney, sumMoney, multiplyMoney, percentOf } from '@/lib/currency';
 import type {
   Invoice,
   InvoiceFormData,
@@ -316,12 +316,12 @@ class InvoiceService {
     const items: InvoiceItem[] = data.items.map((item, index) => ({
       id: `item_${Date.now()}_${index}`,
       ...item,
-      amount: item.quantity * item.unitPrice,
+      amount: multiplyMoney(item.quantity, item.unitPrice),
     }));
 
-    const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
-    const taxAmount = subtotal * (data.taxRate / 100);
-    const total = subtotal + taxAmount;
+    const subtotal = sumMoney(items.map(item => item.amount));
+    const taxAmount = percentOf(subtotal, data.taxRate);
+    const total = addMoney(subtotal, taxAmount);
 
     // Generate share token
     const shareToken = this.generateShareToken();
@@ -391,20 +391,20 @@ class InvoiceService {
       const items: InvoiceItem[] = data.items.map((item, index) => ({
         id: `item_${Date.now()}_${index}`,
         ...item,
-        amount: item.quantity * item.unitPrice,
+        amount: multiplyMoney(item.quantity, item.unitPrice),
       }));
 
-      const subtotal = items.reduce((sum, item) => sum + item.amount, 0);
+      const subtotal = sumMoney(items.map(item => item.amount));
       const taxRate = data.taxRate ?? invoice.taxRate;
-      const taxAmount = subtotal * (taxRate / 100);
-      const total = subtotal + taxAmount;
+      const taxAmount = percentOf(subtotal, taxRate);
+      const total = addMoney(subtotal, taxAmount);
 
       updates.items = items;
       updates.subtotal = subtotal;
       updates.taxRate = taxRate;
       updates.taxAmount = taxAmount;
       updates.total = total;
-      updates.balanceDue = total - invoice.amountPaid;
+      updates.balanceDue = subtractMoney(total, invoice.amountPaid);
 
       if (updates.balanceDue < -PAYMENT_EPSILON) {
         throw new Error('Cannot reduce invoice total below amount already paid');
@@ -434,6 +434,7 @@ class InvoiceService {
   /**
    * Mark invoice as sent
    * Also creates a journal entry (Debit AR, Credit Revenue)
+   * Uses transaction to ensure invoice status + journal entry are atomic
    */
   async markAsSent(tenantId: string, id: string, userId?: string): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
@@ -445,37 +446,56 @@ class InvoiceService {
       throw new Error('Cannot send a cancelled invoice');
     }
 
-    // Create accounting journal entry (if chart of accounts is set up)
+    // Check if chart of accounts is set up (read BEFORE transaction)
     const accounts = await accountService.getAllAccounts(tenantId);
     const shouldCreateJournal = accounts.length > 0;
+    let needsJournal = false;
+    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
 
-    try {
-      if (shouldCreateJournal) {
-        const existing = await journalEntryService.getJournalEntryBySource(
-          tenantId,
-          'invoice',
-          id
-        );
-        if (!existing) {
+    if (shouldCreateJournal) {
+      // Check for existing journal entry (query, not transaction-safe)
+      const existing = await journalEntryService.getJournalEntryBySource(
+        tenantId,
+        'invoice',
+        id
+      );
+      needsJournal = !existing;
+
+      if (needsJournal) {
+        // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
+        const [arAccount, revenueAccount] = await Promise.all([
+          accountService.getAccountByCode(tenantId, '1210'),
+          accountService.getAccountByCode(tenantId, '4100'),
+        ]);
+        if (!arAccount?.id) throw new Error('Missing account for code 1210. Initialize chart of accounts first.');
+        if (!revenueAccount?.id) throw new Error('Missing account for code 4100. Initialize chart of accounts first.');
+        resolvedAccounts = {
+          '1210': { id: arAccount.id, name: arAccount.name },
+          '4100': { id: revenueAccount.id, name: revenueAccount.name },
+        };
+      }
+    }
+
+    // Atomic: journal entry + status update in one transaction
+    if (invoice.status === 'draft' || needsJournal) {
+      const invoiceRef = doc(db, paths.invoice(tenantId, id));
+      await runTransaction(db, async (transaction) => {
+        if (needsJournal) {
           await journalEntryService.createFromInvoice(
             tenantId,
             invoice,
-            userId || 'system'
+            userId || 'system',
+            transaction,
+            resolvedAccounts
           );
         }
-      }
-    } catch (error) {
-      throw new Error(`Could not create journal entry for invoice: ${
-        error instanceof Error ? error.message : 'Unknown error'
-      }`);
-    }
-
-    if (invoice.status === 'draft') {
-      const docRef = doc(db, paths.invoice(tenantId, id));
-      await updateDoc(docRef, {
-        status: 'sent',
-        sentAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        if (invoice.status === 'draft') {
+          transaction.update(invoiceRef, {
+            status: 'sent',
+            sentAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
       });
     }
 
@@ -580,7 +600,7 @@ class InvoiceService {
             <ul style="list-style: none; padding: 0;">
               <li>Invoice Number: ${invoice.invoiceNumber}</li>
               <li>Due Date: ${invoice.dueDate}</li>
-              <li>Amount Due: $${(invoice.totalAmount - (invoice.amountPaid || 0)).toFixed(2)}</li>
+              <li>Amount Due: $${(invoice.total - (invoice.amountPaid || 0)).toFixed(2)}</li>
             </ul>
             <p>Please arrange payment at your earliest convenience.</p>
             <p style="color: #666; font-size: 12px; margin-top: 20px;">
@@ -588,7 +608,7 @@ class InvoiceService {
             </p>
           </div>
         `,
-        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${(invoice.totalAmount - (invoice.amountPaid || 0)).toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
+        text: `Payment Reminder: Invoice ${invoice.invoiceNumber}\n\nDear ${invoice.customerName},\n\nThis is a friendly reminder that invoice ${invoice.invoiceNumber} is outstanding.\nAmount Due: $${(invoice.total - (invoice.amountPaid || 0)).toFixed(2)}\nDue Date: ${invoice.dueDate}\n\nPlease arrange payment at your earliest convenience.`,
         status: 'pending',
         purpose: 'notification',
         relatedId: id,
@@ -619,7 +639,7 @@ class InvoiceService {
         description,
         quantity,
         unitPrice,
-        amount: quantity * unitPrice,
+        amount: multiplyMoney(quantity, unitPrice),
       })),
       taxRate: invoice.taxRate,
       notes: invoice.notes,
@@ -635,8 +655,7 @@ class InvoiceService {
 
   /**
    * Record a payment for an invoice
-   * Uses transaction to ensure atomicity of payment + invoice update
-   * Also creates a journal entry (Debit Cash, Credit AR)
+   * Uses transaction to ensure atomicity of payment + invoice update + journal entry
    */
   async recordPayment(
     tenantId: string,
@@ -646,7 +665,27 @@ class InvoiceService {
   ): Promise<string> {
     const invoiceRef = doc(db, paths.invoice(tenantId, invoiceId));
 
-    // Use transaction to ensure atomicity of payment creation and invoice update
+    // Check if chart of accounts is set up (read BEFORE transaction)
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const hasAccounts = accounts.length > 0;
+    let resolvedAccounts: Record<string, { id: string; name: string }> | undefined;
+
+    if (hasAccounts) {
+      // Pre-resolve account IDs outside transaction (getDocs not transaction-safe)
+      const cashCode = payment.method === 'cash' ? '1110' : '1120';
+      const [cashAccount, arAccount] = await Promise.all([
+        accountService.getAccountByCode(tenantId, cashCode),
+        accountService.getAccountByCode(tenantId, '1210'),
+      ]);
+      if (cashAccount?.id && arAccount?.id) {
+        resolvedAccounts = {
+          [cashCode]: { id: cashAccount.id, name: cashAccount.name },
+          '1210': { id: arAccount.id, name: arAccount.name },
+        };
+      }
+    }
+
+    // Atomic: payment + invoice update + journal entry in one transaction
     const paymentId = await runTransaction(db, async (transaction) => {
       // Read invoice within transaction
       const invoiceDoc = await transaction.get(invoiceRef);
@@ -705,34 +744,27 @@ class InvoiceService {
         updatedAt: serverTimestamp(),
       });
 
+      // Create journal entry within same transaction
+      if (resolvedAccounts) {
+        await journalEntryService.createFromInvoicePayment(
+          tenantId,
+          {
+            invoiceId: invoice.id,
+            invoiceNumber: invoice.invoiceNumber,
+            customerName: invoice.customerName,
+            date: payment.date,
+            amount: payment.amount,
+            method: payment.method,
+            reference: payment.reference,
+          },
+          userId || 'system',
+          transaction,
+          resolvedAccounts
+        );
+      }
+
       return paymentDocRef.id;
     });
-
-    // Create accounting journal entry outside transaction (optional, non-critical)
-    try {
-      const invoice = await this.getInvoiceById(tenantId, invoiceId);
-      if (invoice) {
-        const accounts = await accountService.getAllAccounts(tenantId);
-        if (accounts.length > 0) {
-          await journalEntryService.createFromInvoicePayment(
-            tenantId,
-            {
-              invoiceId: invoice.id,
-              invoiceNumber: invoice.invoiceNumber,
-              customerName: invoice.customerName,
-              date: payment.date,
-              amount: payment.amount,
-              method: payment.method,
-              reference: payment.reference,
-            },
-            userId || 'system'
-          );
-        }
-      }
-    } catch (error) {
-      // Log but don't fail - accounting integration is optional
-      console.warn('Could not create journal entry for payment:', error);
-    }
 
     return paymentId;
   }
@@ -839,23 +871,20 @@ class InvoiceService {
       ['sent', 'viewed', 'partial'].includes(inv.status)
     );
 
-    const totalRevenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
-    const revenueThisMonth = paidInvoices
+    const totalRevenue = sumMoney(paidInvoices.map(inv => inv.total));
+    const revenueThisMonth = sumMoney(paidInvoices
       .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(thisMonth))
-      .reduce((sum, inv) => sum + inv.total, 0);
-    const revenuePreviousMonth = paidInvoices
+      .map(inv => inv.total));
+    const revenuePreviousMonth = sumMoney(paidInvoices
       .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(lastMonth))
-      .reduce((sum, inv) => sum + inv.total, 0);
+      .map(inv => inv.total));
 
-    const totalOutstanding = outstandingInvoices.reduce(
-      (sum, inv) => sum + inv.balanceDue,
-      0
-    );
+    const totalOutstanding = sumMoney(outstandingInvoices.map(inv => inv.balanceDue));
 
     const today = getTodayTL();
     const todayDate = parseDateISO(today);
     const overdueInvoices = outstandingInvoices.filter((inv) => inv.dueDate < today);
-    const overdueAmount = overdueInvoices.reduce((sum, inv) => sum + inv.balanceDue, 0);
+    const overdueAmount = sumMoney(overdueInvoices.map(inv => inv.balanceDue));
 
     // Calculate AR Aging
     const aging = { current: 0, days30to60: 0, days60to90: 0, over90: 0 };
@@ -864,15 +893,15 @@ class InvoiceService {
       const daysPastDue = Math.floor((todayDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
 
       if (daysPastDue <= 0) {
-        aging.current += inv.balanceDue;
+        aging.current = addMoney(aging.current, inv.balanceDue);
       } else if (daysPastDue <= 30) {
-        aging.current += inv.balanceDue; // 0-30 days = current
+        aging.current = addMoney(aging.current, inv.balanceDue);
       } else if (daysPastDue <= 60) {
-        aging.days30to60 += inv.balanceDue;
+        aging.days30to60 = addMoney(aging.days30to60, inv.balanceDue);
       } else if (daysPastDue <= 90) {
-        aging.days60to90 += inv.balanceDue;
+        aging.days60to90 = addMoney(aging.days60to90, inv.balanceDue);
       } else {
-        aging.over90 += inv.balanceDue;
+        aging.over90 = addMoney(aging.over90, inv.balanceDue);
       }
     });
 
@@ -883,9 +912,9 @@ class InvoiceService {
       const monthKey = formatDateISO(monthDate).slice(0, 7);
       const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' });
 
-      const received = paidInvoices
+      const received = sumMoney(paidInvoices
         .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(monthKey))
-        .reduce((sum, inv) => sum + inv.total, 0);
+        .map(inv => inv.total));
 
       cashFlow.push({
         month: monthName,
@@ -907,7 +936,7 @@ class InvoiceService {
         invoiceCount: 0,
         oldestInvoiceDays: 0,
       };
-      existing.outstanding += inv.balanceDue;
+      existing.outstanding = addMoney(existing.outstanding, inv.balanceDue);
       existing.invoiceCount += 1;
       existing.oldestInvoiceDays = Math.max(existing.oldestInvoiceDays, daysSinceIssue);
       customerBalances.set(inv.customerId, existing);
@@ -1055,4 +1084,3 @@ class InvoiceService {
 }
 
 export const invoiceService = new InvoiceService();
-export default invoiceService;

@@ -161,4 +161,3 @@ export function AdminLayout({ children }: AdminLayoutProps) {
   );
 }
 
-export default AdminLayout;

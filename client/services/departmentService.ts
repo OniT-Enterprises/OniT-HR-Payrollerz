@@ -40,8 +40,7 @@ class DepartmentService {
     return collection(db, "departments");
   }
 
-  async getAllDepartments(tenantId: string, maxResults: number = 100): Promise<Department[]> {
-    // Limit query to prevent excessive reads
+  async getAllDepartments(tenantId: string, maxResults: number = 1000): Promise<Department[]> {
     const querySnapshot = await getDocs(
       query(
         this.getCollection(),
@@ -51,7 +50,7 @@ class DepartmentService {
       )
     );
 
-    return querySnapshot.docs.map((doc) => {
+    const results = querySnapshot.docs.map((doc) => {
       const data = doc.data();
       return {
         id: doc.id,
@@ -60,6 +59,12 @@ class DepartmentService {
         updatedAt: data.updatedAt?.toDate() || new Date(),
       } as Department;
     });
+
+    if (results.length === maxResults) {
+      console.warn(`[departmentService] Results truncated at ${maxResults}. Consider pagination.`);
+    }
+
+    return results;
   }
 
   async addDepartment(tenantId: string, departmentData: DepartmentInput): Promise<string> {

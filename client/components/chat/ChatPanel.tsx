@@ -42,10 +42,27 @@ const ChatPanel = ({
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const isNearBottomRef = useRef(true);
 
-  // Auto-scroll to bottom when messages change or loading state changes
+  // Track whether user is scrolled near the bottom
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = viewportRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      const threshold = 80;
+      isNearBottomRef.current =
+        el.scrollHeight - el.scrollTop - el.clientHeight < threshold;
+    };
+    el.addEventListener("scroll", onScroll, { passive: true });
+    return () => el.removeEventListener("scroll", onScroll);
+  }, []);
+
+  // Auto-scroll only when user is near the bottom
+  useEffect(() => {
+    if (isNearBottomRef.current) {
+      bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
   }, [messages, isLoading]);
 
   // Focus input on mount
@@ -162,7 +179,14 @@ const ChatPanel = ({
       )}
 
       {/* Messages area */}
-      <ScrollArea className="flex-1 min-h-0 px-4 py-3">
+      <ScrollArea
+        className="flex-1 min-h-0 px-4 py-3"
+        ref={(node: HTMLDivElement | null) => {
+          viewportRef.current = node?.querySelector<HTMLDivElement>(
+            "[data-radix-scroll-area-viewport]"
+          ) ?? null;
+        }}
+      >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
             <Bot className="h-10 w-10 text-muted-foreground/50 mb-3" />

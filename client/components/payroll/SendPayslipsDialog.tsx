@@ -484,4 +484,3 @@ export function SendPayslipsDialog({
   );
 }
 
-export default SendPayslipsDialog;

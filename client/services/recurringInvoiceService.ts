@@ -400,4 +400,3 @@ class RecurringInvoiceService {
 }
 
 export const recurringInvoiceService = new RecurringInvoiceService();
-export default recurringInvoiceService;

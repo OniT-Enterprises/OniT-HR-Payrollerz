@@ -192,6 +192,13 @@ export default function Disciplinary() {
     setCurrentPage(1);
   }, [selectedEmployee, selectedType, selectedStatus]);
 
+  // Clamp page when items are deleted and current page becomes empty
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const getStatusBadge = (status: DisciplinaryStatus) => {
     switch (status) {
       case "open":

@@ -147,7 +147,7 @@ async function uploadPayslipPdf(
 /**
  * Generate and email payslip to a single employee
  */
-export async function sendPayslipEmail(
+async function sendPayslipEmail(
   tenantId: string,
   data: PayslipEmailData,
   companyInfo: {
@@ -323,7 +323,7 @@ export async function sendBulkPayslipEmails(
 /**
  * Get email send history for a tenant
  */
-export async function getEmailHistory(
+async function getEmailHistory(
   tenantId: string,
   options: {
     purpose?: EmailRecord["purpose"];
@@ -356,7 +356,7 @@ export async function getEmailHistory(
 /**
  * Get email record by ID
  */
-export async function getEmailRecord(emailId: string): Promise<EmailRecord | null> {
+async function getEmailRecord(emailId: string): Promise<EmailRecord | null> {
   const docRef = doc(db, MAIL_COLLECTION, emailId);
   const docSnap = await getDoc(docRef);
 
@@ -371,11 +371,9 @@ export async function getEmailRecord(emailId: string): Promise<EmailRecord | nul
 // EXPORTS
 // ============================================================================
 
-export const emailService = {
+const emailService = {
   sendPayslipEmail,
   sendBulkPayslipEmails,
   getEmailHistory,
   getEmailRecord,
 };
-
-export default emailService;

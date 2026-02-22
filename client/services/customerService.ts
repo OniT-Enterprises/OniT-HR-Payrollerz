@@ -245,4 +245,3 @@ class CustomerService {
 }
 
 export const customerService = new CustomerService();
-export default customerService;

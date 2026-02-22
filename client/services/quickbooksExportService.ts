@@ -303,7 +303,7 @@ export function buildJournalEntry(
  * Generate CSV content for QuickBooks Online import
  * Compatible with Transaction Pro Importer
  */
-export function generateCSV(journalEntry: QBJournalEntry): string {
+function generateCSV(journalEntry: QBJournalEntry): string {
   const headers = ['RefNumber', 'TxnDate', 'Account', 'Debit', 'Credit', 'Memo', 'Name', 'Class'];
   const rows: string[][] = [headers];
 
@@ -329,7 +329,7 @@ export function generateCSV(journalEntry: QBJournalEntry): string {
 /**
  * Generate CSV with QB Online native format (TRNS/SPL/ENDTRNS)
  */
-export function generateCSVNative(journalEntry: QBJournalEntry): string {
+function generateCSVNative(journalEntry: QBJournalEntry): string {
   const lines: string[] = [];
 
   // Header line markers
@@ -383,7 +383,7 @@ export function generateCSVNative(journalEntry: QBJournalEntry): string {
 /**
  * Generate IIF content for QuickBooks Desktop import
  */
-export function generateIIF(journalEntry: QBJournalEntry): string {
+function generateIIF(journalEntry: QBJournalEntry): string {
   const lines: string[] = [];
 
   // IIF header
@@ -441,7 +441,7 @@ export function generateIIF(journalEntry: QBJournalEntry): string {
 /**
  * Get QuickBooks export settings
  */
-export async function getExportSettings(): Promise<QBExportSettings> {
+async function getExportSettings(): Promise<QBExportSettings> {
   try {
     console.warn('getExportSettings() called without tenantId; returning defaults.');
     return {
@@ -593,7 +593,7 @@ export function getDefaultMappings(): QBAccountMapping[] {
 /**
  * Log an export for audit trail
  */
-export async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<string> {
+async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Promise<string> {
   if (!log.tenantId) {
     throw new Error('Missing tenantId for QB export log');
   }
@@ -608,7 +608,7 @@ export async function logExport(log: Omit<QBExportLog, 'id' | 'createdAt'>): Pro
 /**
  * Get export history for a payroll run
  */
-export async function getExportHistory(payrollRunId?: string, _maxResults: number = 20): Promise<QBExportLog[]> {
+async function getExportHistory(payrollRunId?: string, _maxResults: number = 20): Promise<QBExportLog[]> {
   console.warn('getExportHistory() called without tenantId; returning empty list.');
   return [];
 }
@@ -616,7 +616,7 @@ export async function getExportHistory(payrollRunId?: string, _maxResults: numbe
 /**
  * Get export history for a payroll run (tenant-scoped)
  */
-export async function getExportHistoryForTenant(
+async function getExportHistoryForTenant(
   tenantId: string,
   payrollRunId?: string,
   maxResults: number = 20

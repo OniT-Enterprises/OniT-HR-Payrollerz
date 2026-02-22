@@ -21,7 +21,7 @@ const FirebaseContext = createContext<FirebaseContextType | undefined>(
 );
 
 // eslint-disable-next-line react-refresh/only-export-components
-export const useFirebase = () => {
+const useFirebase = () => {
   const context = useContext(FirebaseContext);
   if (context === undefined) {
     throw new Error("useFirebase must be used within a FirebaseProvider");

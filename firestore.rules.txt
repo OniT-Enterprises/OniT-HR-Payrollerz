@@ -90,6 +90,14 @@ service cloud.firestore {
       allow delete: if isSuperAdmin();
     }
 
+    // User device tokens for push notifications (Ekipa)
+    match /users/{userId}/devices/{tokenId} {
+      // Users can manage their own device tokens
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+      // Superadmins can read all (for debugging)
+      allow read: if isSuperAdmin();
+    }
+
     // Bootstrap document - locked. Superadmin setup is handled via Firebase Admin SDK.
     match /_bootstrap/{docId} {
       allow read: if isAuthenticated();
@@ -115,19 +123,18 @@ service cloud.firestore {
     // ============================================
     match /audit_logs/{entryId} {
       // Superadmins can read all audit logs
-      allow read: if isSuperAdmin();
+      // SECURITY: Restricted to admins only — audit logs contain sensitive info
+      // (salary changes, disciplinary actions, etc.)
+      allow read: if isSuperAdmin() ||
+        (isAuthenticated() &&
+         resource.data.tenantId != null &&
+         isTenantAdmin(resource.data.tenantId));
 
-      // Tenant members can read their tenant's audit logs
-      allow read: if isAuthenticated() &&
-        resource.data.tenantId != null &&
-        isTenantMember(resource.data.tenantId);
-
-      // Limit creates to superadmins or valid tenant members writing for their own tenant.
+      // Limit creates to superadmins or tenant admins
       allow create: if isSuperAdmin() ||
         (isAuthenticated() &&
          request.resource.data.tenantId != null &&
-         isTenantMember(request.resource.data.tenantId) &&
-         request.resource.data.userId == request.auth.uid);
+         isTenantAdmin(request.resource.data.tenantId));
 
       // Audit logs are immutable - no updates or deletes
       allow update, delete: if false;
@@ -243,8 +250,19 @@ service cloud.firestore {
       // ============================================
       match /leaveRequests/{requestId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create: if isSuperAdmin() || isTenantMember(tenantId);
-        allow update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+
+        // SECURITY: Employees can only request leave for themselves
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+
+        // Admins can update/delete. Employees can only cancel their own pending requests.
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) &&
+           resource.data.employeeId == request.auth.uid &&
+           request.resource.data.status == 'cancelled' &&
+           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
+
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       // ============================================
@@ -252,7 +270,17 @@ service cloud.firestore {
       // ============================================
       match /timesheets/{timesheetId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+
+        // SECURITY: Employees can only log their own time
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+
+        // Employees can only update their own timesheets, and cannot reassign employeeId
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) &&
+           resource.data.employeeId == request.auth.uid &&
+           request.resource.data.employeeId == resource.data.employeeId);
+
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -283,7 +311,15 @@ service cloud.firestore {
       // ============================================
       match /goals/{goalId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+
+        // SECURITY: Employees can only create goals they own
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) && request.resource.data.createdById == request.auth.uid);
+
+        // Employees can only update their own goals
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) && resource.data.createdById == request.auth.uid);
+
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -387,27 +423,105 @@ service cloud.firestore {
       }
 
       // ============================================
-      // CATCH-ALL FOR OTHER TENANT SUBCOLLECTIONS
+      // ANNOUNCEMENTS SUBCOLLECTION (Ekipa)
       // ============================================
-      match /{collection}/{docId} {
-        // Catch-all must not override explicit rules above.
-        allow read: if (isSuperAdmin() || isTenantMember(tenantId)) &&
-          ![
-            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
-            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
-            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
-            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
-            'fiscalYears', 'fiscalPeriods'
-          ].hasAny([collection]);
-        allow write: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
-          ![
-            'members', 'settings', 'employees', 'departments', 'positions', 'jobs',
-            'candidates', 'interviews', 'contracts', 'leaveRequests', 'timesheets',
-            'payruns', 'goals', 'reviews', 'trainings', 'discipline', 'auditLogs',
-            'archives', 'qbExportLogs', 'accounts', 'journalEntries', 'generalLedger',
-            'fiscalYears', 'fiscalPeriods'
-          ].hasAny([collection]);
+      match /announcements/{announcementId} {
+        // All tenant members can read announcements
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        // Only admins can create/update/delete announcements
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
+
+      // ============================================
+      // EXPENSES SUBCOLLECTION (Employee reimbursements — Ekipa)
+      // ============================================
+      match /expenses/{expenseId} {
+        // All tenant members can read (managers need to see for approval)
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+
+        // SECURITY: Employees can only submit expenses for themselves
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
+          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+
+        // Admins can approve/reject. Employees can update their own pending expenses
+        // but CANNOT change status (prevents self-approval) or reassign employeeId
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) || (
+          isTenantMember(tenantId) &&
+          resource.data.employeeId == request.auth.uid &&
+          request.resource.data.employeeId == resource.data.employeeId &&
+          resource.data.status == 'submitted' &&
+          request.resource.data.status == 'submitted'
+        );
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // RECOGNITION SUBCOLLECTION (Peer kudos — Ekipa)
+      // ============================================
+      match /recognition/{recognitionId} {
+        // All tenant members can read and create recognition
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create: if isSuperAdmin() || isTenantMember(tenantId);
+        // Recognition is immutable once sent
+        allow update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // GRIEVANCES SUBCOLLECTION (Anonymous — Ekipa)
+      // ============================================
+      match /grievances/{grievanceId} {
+        // Only admins can read grievances (sensitive, anonymous)
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Any tenant member can submit (anonymous — no userId stored)
+        allow create: if isSuperAdmin() || isTenantMember(tenantId);
+        // Only admins can update status (review, resolve, dismiss)
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Grievances should not be deleted
+        allow delete: if isSuperAdmin();
+      }
+
+      // ============================================
+      // SHIFTS SUBCOLLECTION (Ekipa reads published shifts)
+      // ============================================
+      match /shifts/{shiftId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // EMPLOYEE SUBCOLLECTIONS (Document requests, Change requests)
+      // ============================================
+      match /employees/{employeeId}/document_requests/{requestId} {
+        // Employee can read their own requests; admins can read all
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId) || (
+          isTenantMember(tenantId) && request.auth.uid == employeeId
+        );
+        // Employee can create requests for themselves
+        allow create: if isSuperAdmin() || (
+          isTenantMember(tenantId) && request.auth.uid == employeeId
+        );
+        // Only admins can update (mark ready/rejected)
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin();
+      }
+
+      match /employees/{employeeId}/change_requests/{requestId} {
+        // Employee can read their own; admins can read all
+        allow read: if isSuperAdmin() || isTenantAdmin(tenantId) || (
+          isTenantMember(tenantId) && request.auth.uid == employeeId
+        );
+        // Employee can create change requests for themselves
+        allow create: if isSuperAdmin() || (
+          isTenantMember(tenantId) && request.auth.uid == employeeId
+        );
+        // Only admins can approve/reject
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin();
+      }
+
+      // DEFAULT DENY: Any tenant subcollection not explicitly listed above
+      // is blocked by Firestore's default-deny behavior. Do NOT add a catch-all
+      // wildcard here — new subcollections must have explicit rules added.
     }
 
     // ============================================
@@ -687,12 +801,30 @@ service cloud.firestore {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
 
+      // Standard creates (non-supervisor) — any tenant member
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null &&
+         isTenantMember(request.resource.data.tenantId) &&
+         // Supervisor creates require manager+ role and matching supervisorId
+         (request.resource.data.source != 'supervisor' ||
+          (request.resource.data.supervisorId == request.auth.uid &&
+           getTenantRole(request.resource.data.tenantId) in ['owner', 'hr-admin', 'manager'])));
 
-      allow update, delete: if isSuperAdmin() || (
+      // Admins can update/delete any record; supervisors can update their own (clock-out)
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        (isTenantAdmin(resource.data.tenantId) ||
+         // Supervisor clock-out: same supervisor, immutable fields unchanged
+         (resource.data.source == 'supervisor' &&
+          resource.data.supervisorId == request.auth.uid &&
+          request.resource.data.supervisorId == resource.data.supervisorId &&
+          request.resource.data.batchId == resource.data.batchId &&
+          request.resource.data.employeeId == resource.data.employeeId))
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
@@ -737,6 +869,21 @@ service cloud.firestore {
     match /settings/{docId} {
       // Legacy global settings collection is no longer used by the app; restrict to superadmins.
       allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // HR ADMINS (tenant-scoped admin records)
+    // ============================================
+    match /hr_admins/{adminId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     // ============================================

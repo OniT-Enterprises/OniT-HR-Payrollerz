@@ -6,7 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import { shiftService, type ShiftRecord } from '@/services/shiftService';
 
-export const shiftKeys = {
+const shiftKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'shifts'] as const,
   byRange: (tenantId: string, start: string, end: string) =>
     [...shiftKeys.all(tenantId), 'range', start, end] as const,

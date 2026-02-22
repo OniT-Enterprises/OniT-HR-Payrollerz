@@ -193,7 +193,7 @@ export function getPreCheckProgress(checks: PreInterviewCheck): number {
 /**
  * Calculate average feedback rating
  */
-export function calculateAverageFeedbackRating(feedback: InterviewFeedback[]): number {
+function calculateAverageFeedbackRating(feedback: InterviewFeedback[]): number {
   if (feedback.length === 0) return 0;
   const total = feedback.reduce((sum, f) => sum + f.overallRating, 0);
   return Math.round((total / feedback.length) * 10) / 10;
@@ -703,4 +703,3 @@ class InterviewService {
 }
 
 export const interviewService = new InterviewService();
-export default interviewService;

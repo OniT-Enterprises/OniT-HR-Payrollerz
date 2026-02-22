@@ -11,6 +11,7 @@ import {
   type PaginatedResult,
 } from '@/services/expenseService';
 import type { Expense, ExpenseFormData } from '@/types/money';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const expenseKeys = {
   all: (tenantId: string) => ['expenses', tenantId] as const,
@@ -29,8 +30,6 @@ export function useExpenses(filters: ExpenseFilters = {}) {
     gcTime: 30 * 60 * 1000,
   });
 }
-
-const SEARCH_FETCH_LIMIT = 2000;
 
 export function useAllExpenses(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();

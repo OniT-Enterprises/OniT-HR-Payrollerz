@@ -147,7 +147,7 @@ export const DEFAULT_DEPARTMENTS = [
 /**
  * Calculate OKR progress from key results
  */
-export function calculateOKRProgress(keyResults: KeyResult[]): number {
+function calculateOKRProgress(keyResults: KeyResult[]): number {
   if (keyResults.length === 0) return 0;
   const total = keyResults.reduce((sum, kr) => sum + kr.progress, 0);
   return Math.round(total / keyResults.length);
@@ -156,7 +156,7 @@ export function calculateOKRProgress(keyResults: KeyResult[]): number {
 /**
  * Calculate key result progress
  */
-export function calculateKRProgress(currentValue: number, targetValue: number): number {
+function calculateKRProgress(currentValue: number, targetValue: number): number {
   if (targetValue === 0) return 0;
   const progress = Math.round((currentValue / targetValue) * 100);
   return Math.min(100, Math.max(0, progress));
@@ -165,7 +165,7 @@ export function calculateKRProgress(currentValue: number, targetValue: number): 
 /**
  * Determine key result status based on progress and due date
  */
-export function determineKRStatus(progress: number, dueDate: string): KeyResultStatus {
+function determineKRStatus(progress: number, dueDate: string): KeyResultStatus {
   if (progress >= 100) return 'completed';
 
   const today = new Date();
@@ -182,7 +182,7 @@ export function determineKRStatus(progress: number, dueDate: string): KeyResultS
 /**
  * Calculate goal progress from milestones
  */
-export function calculateGoalProgress(milestones: Milestone[]): number {
+function calculateGoalProgress(milestones: Milestone[]): number {
   if (milestones.length === 0) return 0;
   const completed = milestones.filter((m) => m.status === 'completed').length;
   return Math.round((completed / milestones.length) * 100);
@@ -191,7 +191,7 @@ export function calculateGoalProgress(milestones: Milestone[]): number {
 /**
  * Update milestone statuses based on dates
  */
-export function updateMilestoneStatuses(milestones: Milestone[]): Milestone[] {
+function updateMilestoneStatuses(milestones: Milestone[]): Milestone[] {
   const today = getTodayTL();
 
   return milestones.map((m) => {
@@ -707,4 +707,3 @@ class GoalsService {
 }
 
 export const goalsService = new GoalsService();
-export default goalsService;

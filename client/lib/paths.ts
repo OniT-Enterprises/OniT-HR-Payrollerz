@@ -176,7 +176,7 @@ export const paths = {
 } as const;
 
 // Helper functions for ID generation and validation
-export const idHelpers = {
+const idHelpers = {
   // Generate timesheet ID: {empId}_{ISOweek}
   timesheetId: (empId: string, weekIso: string) => `${empId}_${weekIso}`,
   
@@ -220,7 +220,7 @@ export type EmployeePath = ReturnType<typeof paths.employees>;
 export type JobPath = ReturnType<typeof paths.jobs>;
 
 // Validation helpers
-export const pathValidators = {
+const pathValidators = {
   isTenantPath: (path: string): boolean => {
     return path.startsWith('tenants/') && path.split('/').length >= 2;
   },
@@ -239,4 +239,3 @@ export const pathValidators = {
   },
 } as const;
 
-export default paths;

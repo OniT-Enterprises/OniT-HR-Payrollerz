@@ -3,7 +3,7 @@
  * Reduces cognitive load by breaking the form into 4 digestible steps
  */
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
@@ -204,16 +204,7 @@ export default function AddEmployee() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
-  useEffect(() => {
-    if (!tenantId) return; // Wait for tenantId to be available
-    loadDepartmentsAndManagers();
-    if (editEmployeeId) {
-      loadEmployeeForEdit(editEmployeeId);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [editEmployeeId, tenantId]);
-
-  const loadEmployeeForEdit = async (employeeId: string) => {
+  const loadEmployeeForEdit = useCallback(async (employeeId: string) => {
     try {
       setLoading(true);
       const employee = await employeeService.getEmployeeById(tenantId, employeeId);
@@ -271,9 +262,9 @@ export default function AddEmployee() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, reset, toast, t, navigate]);
 
-  const loadDepartmentsAndManagers = async () => {
+  const loadDepartmentsAndManagers = useCallback(async () => {
     try {
       const [depts, employees] = await Promise.all([
         departmentService.getAllDepartments(tenantId),
@@ -291,7 +282,15 @@ export default function AddEmployee() {
     } finally {
       if (!editEmployeeId) setLoading(false);
     }
-  };
+  }, [tenantId, editEmployeeId, toast, t]);
+
+  useEffect(() => {
+    if (!tenantId) return; // Wait for tenantId to be available
+    loadDepartmentsAndManagers();
+    if (editEmployeeId) {
+      loadEmployeeForEdit(editEmployeeId);
+    }
+  }, [editEmployeeId, tenantId, loadDepartmentsAndManagers, loadEmployeeForEdit]);
 
   const handleDocumentChange = (id: number, field: string, value: string) => {
     setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, [field]: value } : doc));
@@ -397,6 +396,7 @@ export default function AddEmployee() {
 
       // Upload files if they exist
       const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id! : fileUploadService.generateTempEmployeeId();
+      const failedUploads: string[] = [];
 
       if (additionalInfo.workContract) {
         try {
@@ -404,6 +404,7 @@ export default function AddEmployee() {
           newEmployee.documents.workContract.fileUrl = url;
         } catch (e) {
           console.error("Work contract upload failed:", e);
+          failedUploads.push(t("addEmployee.documents.workContract") || "work contract");
         }
       }
 
@@ -413,6 +414,7 @@ export default function AddEmployee() {
           newEmployee.documents.workingVisaResidency.fileUrl = url;
         } catch (e) {
           console.error("Visa upload failed:", e);
+          failedUploads.push(t("addEmployee.documents.workingVisa") || "working visa");
         }
       }
 
@@ -436,8 +438,15 @@ export default function AddEmployee() {
         });
       }
 
+      if (failedUploads.length > 0) {
+        toast({
+          title: t("addEmployee.toast.uploadWarningTitle") || "Document upload failed",
+          description: (t("addEmployee.toast.uploadWarningDesc") || "Employee was saved, but failed to upload: {files}").replace("{files}", failedUploads.join(", ")),
+          variant: "destructive",
+        });
+      }
+
       navigate("/people/employees");
-      return; // Component unmounts — skip setIsSubmitting(false)
     } catch (error) {
       console.error("Error saving employee:", error);
       toast({
@@ -445,6 +454,7 @@ export default function AddEmployee() {
         description: t("addEmployee.toast.saveFailed"),
         variant: "destructive",
       });
+    } finally {
       setIsSubmitting(false);
     }
   };

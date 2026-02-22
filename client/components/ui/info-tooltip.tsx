@@ -100,7 +100,7 @@ interface InfoLabelProps {
   htmlFor?: string;
 }
 
-export function InfoLabel({
+function InfoLabel({
   label,
   tooltip,
   tooltipTitle,
@@ -211,4 +211,3 @@ export const MoneyTooltips = {
   },
 } as const;
 
-export default InfoTooltip;

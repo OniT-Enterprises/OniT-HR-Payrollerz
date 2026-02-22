@@ -985,7 +985,9 @@ export const translations = {
       "updatedTitle": "Success",
       "updatedDesc": "{{name}} updated!",
       "addedTitle": "Success",
-      "addedDesc": "{{name}} added!"
+      "addedDesc": "{{name}} added!",
+      "uploadWarningTitle": "Document upload failed",
+      "uploadWarningDesc": "Employee was saved, but failed to upload: {files}"
     },
     "fields": {
       "firstName": "First Name *",
@@ -2486,6 +2488,7 @@ export const translations = {
     "allEmployeesReady": "All employees ready",
     "lastPayroll": "Last Payroll",
     "completed": "Completed",
+    "noPayrollYet": "No payroll run yet",
     "manage": "Manage",
     "pastReports": "Past & Reports",
     "complianceDeadlines": "Compliance Deadlines",
@@ -2841,7 +2844,10 @@ export const translations = {
       "review": "Review",
       "accountingTools": "Accounting Tools",
       "accountingToolsDesc": "Chart of accounts, journal entries, ledger, reports",
-      "lastReconciliation": "Last reconciliation: {{date}}"
+      "lastReconciliation": "Last reconciliation: {{date}}",
+      "errorTitle": "Error",
+      "errorLoading": "Failed to load accounting data",
+      "noPayrollEntries": "No payroll entries yet"
     }
   },
   "admin": {
@@ -5959,6 +5965,7 @@ export const translations = {
     "allEmployeesReady": "Trabalhador hotu prontu",
     "lastPayroll": "Saláriu Ikus",
     "completed": "Kompletu",
+    "noPayrollYet": "Seidauk iha saláriu",
     "manage": "Jere",
     "pastReports": "Passadu & Relatoriu",
     "complianceDeadlines": "Prazu Kompliansia",
@@ -6314,7 +6321,10 @@ export const translations = {
       "review": "Reviza",
       "accountingTools": "Ferramenta Kontabilidade",
       "accountingToolsDesc": "Planu konta, entrada jornál, livru jeral, relatoriu",
-      "lastReconciliation": "Rekonsiliasaun ikus: {{date}}"
+      "lastReconciliation": "Rekonsiliasaun ikus: {{date}}",
+      "errorTitle": "Erru",
+      "errorLoading": "Falha atu karrega dadus kontabilidade",
+      "noPayrollEntries": "Seidauk iha entrada saláriu"
     }
   },
   "admin": {

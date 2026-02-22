@@ -91,5 +91,3 @@ export const holidayService = {
   },
 };
 
-export default holidayService;
-

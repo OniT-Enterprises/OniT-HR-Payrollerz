@@ -105,7 +105,7 @@ export const TRAINING_CATEGORIES = [
 /**
  * Calculate status based on dates
  */
-export function calculateTrainingStatus(
+function calculateTrainingStatus(
   startDate: string,
   completionDate?: string,
   expiryDate?: string
@@ -526,4 +526,3 @@ class TrainingService {
 }
 
 export const trainingService = new TrainingService();
-export default trainingService;

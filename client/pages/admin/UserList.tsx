@@ -225,7 +225,12 @@ export default function UserList() {
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground">No users found</p>
+                <p className="text-muted-foreground mb-4">No users found</p>
+                {searchQuery && (
+                  <Button variant="outline" onClick={() => setSearchQuery("")}>
+                    Clear Search
+                  </Button>
+                )}
               </div>
             ) : (
               <Table>

@@ -1533,8 +1533,10 @@ export default function ShiftScheduling() {
                           >
                             {t("timeLeave.shiftScheduling.actions.cancel")}
                           </Button>
-                          <Button type="submit" className="flex-1">
-                            {t("timeLeave.shiftScheduling.actions.createShift")}
+                          <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
+                            {createShiftMutation.isPending
+                              ? (t("common.saving") || "Saving...")
+                              : t("timeLeave.shiftScheduling.actions.createShift")}
                           </Button>
                         </div>
                       </form>
@@ -1765,9 +1767,11 @@ export default function ShiftScheduling() {
                   >
                     {t("timeLeave.shiftScheduling.actions.cancel")}
                   </Button>
-                  <Button type="submit" className="flex-1">
+                  <Button type="submit" className="flex-1" disabled={updateShiftMutation.isPending}>
                     <Save className="h-4 w-4 mr-2" />
-                    {t("timeLeave.shiftScheduling.actions.update")}
+                    {updateShiftMutation.isPending
+                      ? (t("common.saving") || "Saving...")
+                      : t("timeLeave.shiftScheduling.actions.update")}
                   </Button>
                 </div>
               </form>

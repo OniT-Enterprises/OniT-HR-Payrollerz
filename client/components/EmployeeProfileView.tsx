@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -64,6 +64,14 @@ export default function EmployeeProfileView({
   const tenantId = useTenantId();
   const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
   const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
+
+  // Preload PDF module so download resolves instantly from cache
+  const preloaded = useRef(false);
+  useEffect(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    import("@/components/documents/SefopePDF");
+  }, []);
 
   // Fetch company details for SEFOPE form
   useEffect(() => {

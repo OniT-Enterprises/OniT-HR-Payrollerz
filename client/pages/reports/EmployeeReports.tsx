@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
-import { formatDateTL, getTodayTL } from "@/lib/dateUtils";
+import { formatDateTL } from "@/lib/dateUtils";
+import { exportToCSV } from "@/lib/csvExport";
 import {
   Card,
   CardContent,
@@ -69,24 +70,8 @@ export default function EmployeeReports() {
     return acc;
   }, {} as Record<string, number>), [employees]);
 
-  // Export to CSV
-  const exportToCSV = async (data: any[], filename: string, columns: { key: string; label: string }[]) => {
-    const { default: Papa } = await import("papaparse");
-    const rows = data.map((item) =>
-      columns.reduce((row, c) => {
-        const value = c.key.split(".").reduce((obj, key) => obj?.[key], item);
-        row[c.label] = String(value ?? "");
-        return row;
-      }, {} as Record<string, string>)
-    );
-    const csv = Papa.unparse(rows);
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${filename}_${getTodayTL()}.csv`;
-    a.click();
-    URL.revokeObjectURL(url);
+  const handleExportCSV = (data: any[], filename: string, columns: { key: string; label: string }[]) => {
+    exportToCSV(data, filename, columns);
     toast({
       title: "Export Complete",
       description: `${filename}.csv downloaded successfully`,
@@ -94,7 +79,7 @@ export default function EmployeeReports() {
   };
 
   const exportDirectory = () => {
-    exportToCSV(employees, "employee_directory", [
+    handleExportCSV(employees, "employee_directory", [
       { key: "jobDetails.employeeId", label: "Employee ID" },
       { key: "personalInfo.firstName", label: "First Name" },
       { key: "personalInfo.lastName", label: "Last Name" },
@@ -109,7 +94,7 @@ export default function EmployeeReports() {
   };
 
   const exportNewHires = () => {
-    exportToCSV(newHires, "new_hires_report", [
+    handleExportCSV(newHires, "new_hires_report", [
       { key: "jobDetails.employeeId", label: "Employee ID" },
       { key: "personalInfo.firstName", label: "First Name" },
       { key: "personalInfo.lastName", label: "Last Name" },
@@ -126,7 +111,7 @@ export default function EmployeeReports() {
       headcount: count as number,
       percentage: (((count as number) / employees.length) * 100).toFixed(1),
     }));
-    exportToCSV(headcountData, "headcount_by_department", [
+    handleExportCSV(headcountData, "headcount_by_department", [
       { key: "department", label: "Department" },
       { key: "headcount", label: "Headcount" },
       { key: "percentage", label: "Percentage %" },

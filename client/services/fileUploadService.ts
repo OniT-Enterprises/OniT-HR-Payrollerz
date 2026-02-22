@@ -6,7 +6,7 @@ import {
 } from "firebase/storage";
 import { storage } from "@/lib/firebase";
 
-export class FileUploadService {
+class FileUploadService {
   private static instance: FileUploadService;
 
   static getInstance(): FileUploadService {

@@ -346,7 +346,7 @@ export const settingsService = {
 // HR Admin Management
 // ============================================
 
-export const hrAdminService = {
+const hrAdminService = {
   /**
    * Get all HR admins for a tenant
    */
@@ -446,5 +446,3 @@ export const hrAdminService = {
     }
   },
 };
-
-export default settingsService;

@@ -8,7 +8,7 @@
  * Submission: e-Tax portal or BNU bank branches
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -77,6 +77,7 @@ import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
+import { downloadBlob } from "@/lib/downloadBlob";
 
 // ============================================
 // CONSTANTS
@@ -151,6 +152,15 @@ export default function ATTLMonthlyWIT() {
   const [filedMethod, setFiledMethod] = useState<SubmissionMethod>("etax");
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
+
+  // Preload PDF/Excel modules so downloads resolve instantly from cache
+  const preloaded = useRef(false);
+  useEffect(() => {
+    if (preloaded.current) return;
+    preloaded.current = true;
+    import("@/components/reports/WITReturnPDF");
+    import("@/lib/excel/attlExport");
+  }, []);
 
   // ============================================
   // DATA LOADING
@@ -290,12 +300,7 @@ export default function ATTLMonthlyWIT() {
 
     // Download
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `WIT_Monthly_${selectedReturn.reportingPeriod}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadBlob(blob, `WIT_Monthly_${selectedReturn.reportingPeriod}.csv`);
 
     toast({
       title: "CSV Exported",

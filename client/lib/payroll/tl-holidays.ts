@@ -7,7 +7,7 @@ export interface TLHoliday {
 
 const pad2 = (n: number) => String(n).padStart(2, "0");
 
-export function normalizeISODate(date: Date | string): string {
+function normalizeISODate(date: Date | string): string {
   if (typeof date === "string") {
     return date.trim().slice(0, 10);
   }
@@ -32,7 +32,7 @@ function addDaysUTC(date: Date, days: number): Date {
  * Gregorian Easter Sunday (Meeus/Jones/Butcher algorithm).
  * Returns a Date at UTC midnight for stable ISO formatting.
  */
-export function getEasterSundayUTC(year: number): Date {
+function getEasterSundayUTC(year: number): Date {
   const a = year % 19;
   const b = Math.floor(year / 100);
   const c = year % 100;
@@ -87,13 +87,13 @@ export function getTLPublicHolidays(year: number): TLHoliday[] {
   return [...fixed, ...movable].sort((a, b) => a.date.localeCompare(b.date));
 }
 
-export function isTLPublicHoliday(date: Date | string): boolean {
+function isTLPublicHoliday(date: Date | string): boolean {
   const iso = normalizeISODate(date);
   const year = parseInt(iso.slice(0, 4), 10);
   return getTLPublicHolidays(year).some((h) => h.date === iso);
 }
 
-export function getTLHolidayName(date: Date | string): string | null {
+function getTLHolidayName(date: Date | string): string | null {
   const iso = normalizeISODate(date);
   const year = parseInt(iso.slice(0, 4), 10);
   return getTLPublicHolidays(year).find((h) => h.date === iso)?.name ?? null;

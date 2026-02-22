@@ -202,6 +202,13 @@ export default function TrainingCertifications() {
     setCurrentPage(1);
   }, [selectedEmployee, selectedStatus]);
 
+  // Clamp page when items are deleted and current page becomes empty
+  useEffect(() => {
+    if (totalPages > 0 && currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [totalPages, currentPage]);
+
   const getStatusBadge = (status: TrainingStatus, expiryDate?: string) => {
     const expiring = isExpiringSoon(expiryDate);
 

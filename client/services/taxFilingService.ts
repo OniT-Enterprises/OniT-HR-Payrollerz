@@ -998,4 +998,3 @@ class TaxFilingService {
 // ============================================
 
 export const taxFilingService = new TaxFilingService();
-export default taxFilingService;

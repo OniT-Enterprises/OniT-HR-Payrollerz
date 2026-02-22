@@ -12,6 +12,7 @@ import {
   type EmployeeFilters,
   type PaginatedResult,
 } from '@/services/employeeService';
+import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 // Query keys for cache management
 export const employeeKeys = {
@@ -37,13 +38,6 @@ export function useEmployees(filters: EmployeeFilters = {}) {
   });
 }
 
-/**
- * Max records fetched for client-side search.
- * Firestore has no native full-text search, so we fetch up to this many
- * records and filter locally. If a tenant exceeds this, a server-side
- * search solution (Algolia/Typesense) is needed.
- */
-const SEARCH_FETCH_LIMIT = 2000;
 
 /**
  * Fetch all employees (convenience hook for components that need all data)

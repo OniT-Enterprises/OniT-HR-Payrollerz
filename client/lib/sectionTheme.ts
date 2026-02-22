@@ -90,7 +90,7 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
 /**
  * Get section theme based on current path
  */
-export function getSectionFromPath(pathname: string): SectionId {
+function getSectionFromPath(pathname: string): SectionId {
   if (pathname.startsWith("/people") || pathname.startsWith("/staff") || pathname.startsWith("/hiring")) {
     return "people";
   }
@@ -112,7 +112,7 @@ export function getSectionFromPath(pathname: string): SectionId {
 /**
  * Get theme for current section
  */
-export function getThemeFromPath(pathname: string): SectionTheme {
+function getThemeFromPath(pathname: string): SectionTheme {
   return sectionThemes[getSectionFromPath(pathname)];
 }
 

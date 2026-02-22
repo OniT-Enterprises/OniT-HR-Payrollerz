@@ -201,7 +201,7 @@ export function mapToSefopeForm(
 /**
  * Validate required fields for SEFOPE registration
  */
-export function validateSefopeForm(data: SefopeFormData): {
+function validateSefopeForm(data: SefopeFormData): {
   isValid: boolean;
   missingFields: string[];
 } {

@@ -149,7 +149,7 @@ export function generateBankFile(
 /**
  * Generate files for all banks with employees
  */
-export function generateAllBankFiles(input: BankTransferInput): BankFileResult[] {
+function generateAllBankFiles(input: BankTransferInput): BankFileResult[] {
   const results: BankFileResult[] = [];
   const grouped = groupRecordsByBank(input.records, input.employees);
 

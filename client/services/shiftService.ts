@@ -213,4 +213,3 @@ class ShiftService {
 }
 
 export const shiftService = new ShiftService();
-export default shiftService;

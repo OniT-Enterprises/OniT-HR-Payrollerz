@@ -323,14 +323,18 @@ const PRODUCTION_HOSTNAMES = ['payroll.naroman.tl', 'app.onithr.com', 'onithr.co
 const PRODUCTION_PROJECT_IDS = ['onit-hr-payroll']; // Add production project IDs here
 
 function isProductionEnvironment(): boolean {
-  // Check hostname
+  // Primary check: Vite sets this to true for production builds
+  if (import.meta.env.PROD) {
+    return true;
+  }
+  // Defense-in-depth: check hostname
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (PRODUCTION_HOSTNAMES.some(h => hostname.includes(h))) {
       return true;
     }
   }
-  // Check Firebase project ID from config
+  // Defense-in-depth: check Firebase project ID
   const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
   if (projectId && PRODUCTION_PROJECT_IDS.includes(projectId)) {
     return true;
@@ -429,28 +433,16 @@ export default function SeedDatabase() {
       "payments_received", "bill_payments"
     ];
 
-    const rootCollections = ["accounts", "journalEntries", "generalLedger", "fiscalPeriods"];
+    const accountingCollections = ["accounts", "journalEntries", "generalLedger", "fiscalPeriods"];
 
     try {
       // Clear tenant-scoped collections
-      for (const collName of tenantCollections) {
+      for (const collName of [...tenantCollections, ...accountingCollections]) {
         const collRef = collection(db!, getCollectionPath(collName));
         const snapshot = await getDocs(collRef);
         let deleted = 0;
         for (const docSnap of snapshot.docs) {
           await deleteDoc(doc(db!, getCollectionPath(collName), docSnap.id));
-          deleted++;
-        }
-        if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
-      }
-
-      // Clear root collections (accounting)
-      for (const collName of rootCollections) {
-        const collRef = collection(db!, collName);
-        const snapshot = await getDocs(collRef);
-        let deleted = 0;
-        for (const docSnap of snapshot.docs) {
-          await deleteDoc(doc(db!, collName, docSnap.id));
           deleted++;
         }
         if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
@@ -829,11 +821,11 @@ export default function SeedDatabase() {
   const seedAccounting = async () => {
     let success = 0, failed = 0;
 
-    // Seed Chart of Accounts (root level - not tenant-scoped)
+    // Seed Chart of Accounts (tenant-scoped)
     addLog("Creating Chart of Accounts...");
     for (const account of CHART_OF_ACCOUNTS) {
       try {
-        const docRef = doc(collection(db!, "accounts"));
+        const docRef = doc(collection(db!, getCollectionPath("accounts")));
         await setDoc(docRef, {
           id: docRef.id,
           ...account,
@@ -956,7 +948,7 @@ export default function SeedDatabase() {
     addLog("Creating Journal Entries...");
     for (const entry of journalEntries) {
       try {
-        const docRef = doc(collection(db!, "journalEntries"));
+        const docRef = doc(collection(db!, getCollectionPath("journalEntries")));
         const totalDebit = entry.lines.reduce((sum, l) => sum + l.debit, 0);
         const totalCredit = entry.lines.reduce((sum, l) => sum + l.credit, 0);
 
@@ -983,7 +975,7 @@ export default function SeedDatabase() {
 
         // Create general ledger entries for each line
         for (const line of entry.lines) {
-          const glRef = doc(collection(db!, "generalLedger"));
+          const glRef = doc(collection(db!, getCollectionPath("generalLedger")));
           await setDoc(glRef, {
             id: glRef.id,
             accountId: line.accountCode, // Using code as ID for now
@@ -1010,7 +1002,7 @@ export default function SeedDatabase() {
       }
     }
 
-    // Create fiscal periods (root level - not tenant-scoped)
+    // Create fiscal periods (tenant-scoped)
     addLog("Creating Fiscal Periods...");
     for (let month = 0; month < 12; month++) {
       try {
@@ -1018,7 +1010,7 @@ export default function SeedDatabase() {
         const endDate = new Date(currentYear, month + 1, 0);
         const periodKey = `${currentYear}-${String(month + 1).padStart(2, '0')}`;
 
-        const docRef = doc(db!, "fiscalPeriods", periodKey);
+        const docRef = doc(db!, getCollectionPath("fiscalPeriods"), periodKey);
         await setDoc(docRef, {
           id: periodKey,
           year: currentYear,

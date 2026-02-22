@@ -70,6 +70,7 @@ export default function Vendors() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingVendor, setEditingVendor] = useState<Vendor | null>(null);
+  const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState<VendorFormData>({
     name: '',
     type: 'business',
@@ -94,7 +95,7 @@ export default function Vendors() {
   });
 
   const handleSubmit = async () => {
-    if (!session?.tid) return;
+    if (!session?.tid || saving) return;
     if (!formData.name.trim()) {
       toast({
         title: t('common.error') || 'Error',
@@ -104,6 +105,7 @@ export default function Vendors() {
       return;
     }
 
+    setSaving(true);
     try {
       if (editingVendor) {
         await vendorService.updateVendor(session.tid, editingVendor.id, formData);
@@ -129,6 +131,8 @@ export default function Vendors() {
         description: t('money.vendors.saveError') || 'Failed to save vendor',
         variant: 'destructive',
       });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -485,10 +489,12 @@ export default function Vendors() {
             <Button variant="outline" onClick={() => setShowAddDialog(false)}>
               {t('common.cancel') || 'Cancel'}
             </Button>
-            <Button onClick={handleSubmit} className="bg-indigo-600 hover:bg-indigo-700">
-              {editingVendor
-                ? t('common.save') || 'Save'
-                : t('money.vendors.add') || 'Add Vendor'}
+            <Button onClick={handleSubmit} disabled={saving} className="bg-indigo-600 hover:bg-indigo-700">
+              {saving
+                ? (t('common.saving') || 'Saving...')
+                : editingVendor
+                  ? t('common.save') || 'Save'
+                  : t('money.vendors.add') || 'Add Vendor'}
             </Button>
           </DialogFooter>
         </DialogContent>

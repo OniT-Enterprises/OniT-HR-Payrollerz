@@ -8,7 +8,7 @@
  */
 
 // Timor-Leste timezone
-export const TL_TIMEZONE = 'Asia/Dili';
+const TL_TIMEZONE = 'Asia/Dili';
 
 /**
  * Format a date for display in TL timezone
@@ -37,7 +37,7 @@ export function formatDateTL(
 /**
  * Format date and time for display in TL timezone
  */
-export function formatDateTimeTL(
+function formatDateTimeTL(
   date: Date | string | null | undefined,
   options?: Intl.DateTimeFormatOptions
 ): string {
@@ -119,7 +119,7 @@ export function addDays(date: Date | string, days: number): Date {
  * Get start of day in UTC for a given date
  * Use this when storing date-only values
  */
-export function toUTCStartOfDay(date: Date | string): Date {
+function toUTCStartOfDay(date: Date | string): Date {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
 
   return new Date(Date.UTC(
@@ -133,7 +133,7 @@ export function toUTCStartOfDay(date: Date | string): Date {
 /**
  * Get end of day in UTC for a given date
  */
-export function toUTCEndOfDay(date: Date | string): Date {
+function toUTCEndOfDay(date: Date | string): Date {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
 
   return new Date(Date.UTC(
@@ -162,14 +162,14 @@ export function toDateStringTL(date: Date | string): string {
 /**
  * Check if two dates are the same day (in TL timezone)
  */
-export function isSameDayTL(date1: Date | string, date2: Date | string): boolean {
+function isSameDayTL(date1: Date | string, date2: Date | string): boolean {
   return formatDateISO(date1) === formatDateISO(date2);
 }
 
 /**
  * Format relative time (e.g., "2 hours ago")
  */
-export function formatRelativeTime(date: Date | string | null | undefined): string {
+function formatRelativeTime(date: Date | string | null | undefined): string {
   if (!date) return '';
 
   const dateObj = typeof date === 'string' ? new Date(date) : date;
@@ -193,7 +193,7 @@ export function formatRelativeTime(date: Date | string | null | undefined): stri
 /**
  * Get month name in English
  */
-export function getMonthName(month: number): string {
+function getMonthName(month: number): string {
   const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
     'July', 'August', 'September', 'October', 'November', 'December'
@@ -204,6 +204,6 @@ export function getMonthName(month: number): string {
 /**
  * Get short month name (Jan, Feb, etc.)
  */
-export function getMonthShort(month: number): string {
+function getMonthShort(month: number): string {
   return getMonthName(month).substring(0, 3);
 }
