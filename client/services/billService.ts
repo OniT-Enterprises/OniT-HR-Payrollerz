@@ -17,6 +17,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  writeBatch,
   runTransaction,
   QueryConstraint,
   DocumentSnapshot,
@@ -683,22 +684,23 @@ class BillService {
     const today = getTodayTL();
     const bills = await this.getAllBills(tenantId);
 
-    let updated = 0;
-    for (const bill of bills) {
-      if (
-        ['pending', 'partial'].includes(bill.status) &&
-        bill.dueDate < today
-      ) {
-        const docRef = doc(db, paths.bill(tenantId, bill.id));
-        await updateDoc(docRef, {
+    const overdue = bills.filter(
+      b => ['pending', 'partial'].includes(b.status) && b.dueDate < today
+    );
+
+    // Batch all updates (max 500 per batch)
+    for (let i = 0; i < overdue.length; i += 499) {
+      const batch = writeBatch(db);
+      for (const bill of overdue.slice(i, i + 499)) {
+        batch.update(doc(db, paths.bill(tenantId, bill.id)), {
           status: 'overdue',
           updatedAt: serverTimestamp(),
         });
-        updated++;
       }
+      await batch.commit();
     }
 
-    return updated;
+    return overdue.length;
   }
 
 }

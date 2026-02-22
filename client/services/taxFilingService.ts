@@ -23,6 +23,7 @@ import { db } from '@/lib/firebase';
 import { employeeService, type Employee, type AuditContext } from './employeeService';
 import { auditLogService } from './auditLogService';
 import { payrollService } from './payrollService';
+import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
 import { holidayService } from './holidayService';
 import type {
   TaxFiling,
@@ -193,6 +194,43 @@ function getRecordINSSEmployer(record: TaxablePayrollRecord | null): number {
   return typeof inss?.amount === 'number' ? inss.amount : 0;
 }
 
+/**
+ * Bulk-fetch all payroll records for a tenant in a single query,
+ * then group by payrollRunId. Avoids N+1 queries when processing
+ * multiple payroll runs.
+ */
+async function bulkFetchPayrollRecordsByTenant(
+  tenantId: string,
+  runIds: Set<string>
+): Promise<Map<string, TaxablePayrollRecord[]>> {
+  const q = query(
+    collection(db, 'payrollRecords'),
+    where('tenantId', '==', tenantId)
+  );
+  const snapshot = await getDocs(q);
+
+  const grouped = new Map<string, TaxablePayrollRecord[]>();
+  for (const docSnap of snapshot.docs) {
+    const raw = docSnap.data();
+    const runId = raw.payrollRunId as string;
+    if (!runId || !runIds.has(runId)) continue;
+
+    const data = normalizeLegacyRecord({ ...raw });
+    const record = {
+      id: docSnap.id,
+      ...data,
+      createdAt: data.createdAt?.toDate?.() || new Date(),
+      updatedAt: data.updatedAt?.toDate?.() || new Date(),
+    } as TaxablePayrollRecord & { employeeId?: string; payrollRunId?: string };
+
+    const existing = grouped.get(runId) || [];
+    existing.push(record);
+    grouped.set(runId, existing);
+  }
+
+  return grouped;
+}
+
 // ============================================
 // TAX FILING SERVICE
 // ============================================
@@ -282,22 +320,20 @@ class TaxFilingService {
       return runPeriod === period && run.status === 'paid';
     });
 
-    const recordsByRun = await Promise.all(
-      periodRuns
-        .filter(r => !!r.id)
-        .map(r => payrollService.records.getPayrollRecordsByRunId(r.id!, tenantId))
-    );
-    const periodRecords = recordsByRun.flat();
+    // Bulk-fetch all payroll records for the relevant runs in a single query
+    const periodRunIds = new Set(periodRuns.filter(r => !!r.id).map(r => r.id!));
+    const recordsByRun = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
+    const periodRecords = Array.from(recordsByRun.values()).flat();
 
     const totalsByEmployee = new Map<string, { grossWages: number; witWithheld: number }>();
     periodRecords.forEach(record => {
-      const employeeId = record.employeeId;
-      if (!employeeId) return;
+      const rec = record as TaxablePayrollRecord & { employeeId?: string };
+      if (!rec.employeeId) return;
 
-      const existing = totalsByEmployee.get(employeeId) || { grossWages: 0, witWithheld: 0 };
-      totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(existing.grossWages, getRecordGrossPay(record)),
-        witWithheld: addMoney(existing.witWithheld, getRecordWITWithheld(record)),
+      const existing = totalsByEmployee.get(rec.employeeId) || { grossWages: 0, witWithheld: 0 };
+      totalsByEmployee.set(rec.employeeId, {
+        grossWages: addMoney(existing.grossWages, getRecordGrossPay(rec)),
+        witWithheld: addMoney(existing.witWithheld, getRecordWITWithheld(rec)),
       });
     });
 
@@ -389,33 +425,31 @@ class TaxFilingService {
       return runPeriod === period && run.status === 'paid';
     });
 
-    const recordsByRun = await Promise.all(
-      periodRuns
-        .filter(r => !!r.id)
-        .map(r => payrollService.records.getPayrollRecordsByRunId(r.id!, tenantId))
-    );
-    const periodRecords = recordsByRun.flat();
+    // Bulk-fetch all payroll records for the relevant runs in a single query
+    const periodRunIds = new Set(periodRuns.filter(r => !!r.id).map(r => r.id!));
+    const recordsByRunMap = await bulkFetchPayrollRecordsByTenant(tenantId, periodRunIds);
+    const periodRecords = Array.from(recordsByRunMap.values()).flat();
 
     const totalsByEmployee = new Map<string, { grossWages: number; employeeINSS: number; employerINSS: number; contributionBase: number }>();
     periodRecords.forEach(record => {
-      const employeeId = record.employeeId;
-      if (!employeeId) return;
+      const rec = record as TaxablePayrollRecord & { employeeId?: string };
+      if (!rec.employeeId) return;
 
-      const employeeINSS = getRecordINSSEmployee(record);
-      const employerINSS = getRecordINSSEmployer(record);
+      const employeeINSS = getRecordINSSEmployee(rec);
+      const employerINSS = getRecordINSSEmployer(rec);
       const contributionBase = taxConfig.inss.employeeRate > 0
         ? divideMoney(employeeINSS, taxConfig.inss.employeeRate)
         : 0;
 
-      const existing = totalsByEmployee.get(employeeId) || {
+      const existing = totalsByEmployee.get(rec.employeeId) || {
         grossWages: 0,
         employeeINSS: 0,
         employerINSS: 0,
         contributionBase: 0,
       };
 
-      totalsByEmployee.set(employeeId, {
-        grossWages: addMoney(existing.grossWages, getRecordGrossPay(record)),
+      totalsByEmployee.set(rec.employeeId, {
+        grossWages: addMoney(existing.grossWages, getRecordGrossPay(rec)),
         employeeINSS: addMoney(existing.employeeINSS, employeeINSS),
         employerINSS: addMoney(existing.employerINSS, employerINSS),
         contributionBase: addMoney(existing.contributionBase, contributionBase),
@@ -498,6 +532,13 @@ class TaxFilingService {
       return runYear === taxYear && run.status === 'paid';
     });
 
+    // Bulk-fetch all payroll records for the relevant runs in a single query
+    const yearRunIds = new Set(yearRuns.filter(r => !!r.id).map(r => r.id!));
+    const recordsByRun = await bulkFetchPayrollRecordsByTenant(tenantId, yearRunIds);
+
+    // Build a lookup for run payDate by run ID
+    const runPayDateMap = new Map(yearRuns.map(r => [r.id!, r.payDate]));
+
     // Aggregate employee data for the year
     const employeeAggregates: Map<string, {
       employee: Employee;
@@ -506,30 +547,28 @@ class TaxFilingService {
       monthsWorked: Set<number>;
     }> = new Map();
 
-    for (const run of yearRuns) {
-      const records = await payrollService.records.getPayrollRecordsByRunId(run.id!, tenantId);
-      const runMonth = parseInt(run.payDate.substring(5, 7));
+    for (const [runId, records] of recordsByRun) {
+      const payDate = runPayDateMap.get(runId);
+      const runMonth = payDate ? parseInt(payDate.substring(5, 7)) : 0;
 
       for (const record of records) {
-        const employee = employees.find(e => e.id === record.employeeId);
+        const rec = record as TaxablePayrollRecord & { employeeId?: string };
+        if (!rec.employeeId) continue;
+        const employee = employees.find(e => e.id === rec.employeeId);
         if (!employee) continue;
 
-        const existing = employeeAggregates.get(record.employeeId) || {
+        const existing = employeeAggregates.get(rec.employeeId) || {
           employee,
           totalGrossWages: 0,
           totalWIT: 0,
           monthsWorked: new Set<number>(),
         };
 
-        existing.totalGrossWages = addMoney(existing.totalGrossWages, record.totalGrossPay || 0);
-        // Find WIT deduction from deductions array (check type and description)
-        const witDeduction = record.deductions?.find(d =>
-          d.type === 'income_tax' || d.description?.toLowerCase().includes('wit') || d.description?.toLowerCase().includes('income tax')
-        );
-        existing.totalWIT = addMoney(existing.totalWIT, witDeduction?.amount || 0);
+        existing.totalGrossWages = addMoney(existing.totalGrossWages, getRecordGrossPay(rec));
+        existing.totalWIT = addMoney(existing.totalWIT, getRecordWITWithheld(rec));
         existing.monthsWorked.add(runMonth);
 
-        employeeAggregates.set(record.employeeId, existing);
+        employeeAggregates.set(rec.employeeId, existing);
       }
     }
 

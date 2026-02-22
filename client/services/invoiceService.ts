@@ -18,6 +18,7 @@ import {
   limit,
   startAfter,
   serverTimestamp,
+  writeBatch,
   runTransaction,
   QueryConstraint,
   DocumentSnapshot,
@@ -1064,22 +1065,23 @@ class InvoiceService {
     const today = getTodayTL();
     const invoices = await this.getAllInvoices(tenantId);
 
-    let updated = 0;
-    for (const invoice of invoices) {
-      if (
-        ['sent', 'viewed', 'partial'].includes(invoice.status) &&
-        invoice.dueDate < today
-      ) {
-        const docRef = doc(db, paths.invoice(tenantId, invoice.id));
-        await updateDoc(docRef, {
+    const overdue = invoices.filter(
+      inv => ['sent', 'viewed', 'partial'].includes(inv.status) && inv.dueDate < today
+    );
+
+    // Batch all updates (max 500 per batch)
+    for (let i = 0; i < overdue.length; i += 499) {
+      const batch = writeBatch(db);
+      for (const invoice of overdue.slice(i, i + 499)) {
+        batch.update(doc(db, paths.invoice(tenantId, invoice.id)), {
           status: 'overdue',
           updatedAt: serverTimestamp(),
         });
-        updated++;
       }
+      await batch.commit();
     }
 
-    return updated;
+    return overdue.length;
   }
 }
 

@@ -495,16 +495,29 @@ class AttendanceService {
     let duplicateCount = 0;
     const errors: string[] = [];
 
+    // Prefetch existing records for the date range to avoid N+1 queries
+    const dates = [...new Set(records.map(r => r.date))].sort();
+    const minDate = dates[0];
+    const maxDate = dates[dates.length - 1];
+    const existingQuery = query(
+      this.collectionRef,
+      where('tenantId', '==', tenantId),
+      where('date', '>=', minDate),
+      where('date', '<=', maxDate)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+    const existingKeys = new Set(
+      existingSnapshot.docs.map(d => `${d.data().employeeId}:${d.data().date}`)
+    );
+
     // Create import batch record
     const importRef = doc(this.importsRef);
     const batchId = importRef.id;
 
     for (const record of records) {
       try {
-        // Check for duplicate
-        const existing = await this.getExistingRecord(tenantId, record.employeeId, record.date);
-
-        if (existing) {
+        // Check for duplicate using prefetched data
+        if (existingKeys.has(`${record.employeeId}:${record.date}`)) {
           duplicateCount++;
           continue;
         }

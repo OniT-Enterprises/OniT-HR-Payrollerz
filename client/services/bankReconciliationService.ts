@@ -10,6 +10,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   orderBy,
   where,
@@ -199,16 +200,24 @@ class BankReconciliationService {
     const errors: string[] = [];
     let imported = 0;
 
-    for (const tx of parsed) {
-      try {
-        await addDoc(getCollection(tenantId), {
+    // Batch all writes (max 499 per batch)
+    for (let i = 0; i < parsed.length; i += 499) {
+      const batch = writeBatch(db);
+      const chunk = parsed.slice(i, i + 499);
+      for (const tx of chunk) {
+        const docRef = doc(getCollection(tenantId));
+        batch.set(docRef, {
           ...tx,
           status: 'unmatched' as ReconciliationStatus,
           createdAt: Timestamp.now(),
         });
         imported++;
+      }
+      try {
+        await batch.commit();
       } catch {
-        errors.push(`Failed to import: ${tx.description}`);
+        errors.push(`Failed to import batch starting at row ${i + 1}`);
+        imported -= chunk.length;
       }
     }
 
@@ -299,12 +308,16 @@ class BankReconciliationService {
   async reconcileTransactions(transactionIds: string[]): Promise<boolean> {
     const tenantId = this.ensureTenant();
 
-    for (const id of transactionIds) {
-      const docRef = doc(getCollection(tenantId), id);
-      await updateDoc(docRef, {
-        status: 'reconciled',
-        reconciledAt: Timestamp.now(),
-      });
+    // Batch all updates (max 499 per batch)
+    for (let i = 0; i < transactionIds.length; i += 499) {
+      const batch = writeBatch(db);
+      for (const id of transactionIds.slice(i, i + 499)) {
+        batch.update(doc(getCollection(tenantId), id), {
+          status: 'reconciled',
+          reconciledAt: Timestamp.now(),
+        });
+      }
+      await batch.commit();
     }
 
     return true;

@@ -176,16 +176,12 @@ export default function AccountingDashboard() {
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth(); // 0-indexed
 
-        console.log('[Accounting] fetching data for tenant:', tenantId);
-
         // Fetch posted and draft journal entries in parallel
         const [postedEntries, draftEntries, trialBalance] = await Promise.all([
           journalEntryService.getAllJournalEntries(tenantId, { status: 'posted' }),
           journalEntryService.getAllJournalEntries(tenantId, { status: 'draft' }),
           trialBalanceService.generateTrialBalance(tenantId, today, currentYear),
         ]);
-
-        console.log('[Accounting] data loaded:', { posted: postedEntries.length, draft: draftEntries.length, balanced: trialBalance.isBalanced });
 
         if (cancelled) return;
 
@@ -222,7 +218,6 @@ export default function AccountingDashboard() {
           });
         }
       } catch (err) {
-        console.error('[Accounting] fetch error:', err);
         if (!cancelled) {
           toast({
             title: t("accounting.dashboard.errorTitle") || "Error",

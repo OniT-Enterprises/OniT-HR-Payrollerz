@@ -382,18 +382,21 @@ class RecurringInvoiceService {
    */
   async processAllDue(tenantId: string): Promise<{ generated: number; errors: string[] }> {
     const due = await this.getDueForGeneration(tenantId);
+
+    const results = await Promise.allSettled(
+      due.map(recurring => this.generateInvoice(tenantId, recurring.id))
+    );
+
     const errors: string[] = [];
     let generated = 0;
-
-    for (const recurring of due) {
-      try {
-        await this.generateInvoice(tenantId, recurring.id);
+    results.forEach((result, i) => {
+      if (result.status === 'fulfilled') {
         generated++;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : 'Unknown error';
-        errors.push(`${recurring.id}: ${message}`);
+      } else {
+        const message = result.reason instanceof Error ? result.reason.message : 'Unknown error';
+        errors.push(`${due[i].id}: ${message}`);
       }
-    }
+    });
 
     return { generated, errors };
   }

@@ -11,6 +11,7 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  writeBatch,
   query,
   where,
   orderBy,
@@ -466,20 +467,29 @@ class TrainingService {
     try {
       const allRecords = await this.getTrainingRecords(tenantId);
 
+      // Collect records that need updating
+      const updates: { id: string; newStatus: string }[] = [];
       for (const record of allRecords) {
         const newStatus = calculateTrainingStatus(
           record.startDate,
           record.completionDate,
           record.expiryDate
         );
-
         if (newStatus !== record.status) {
-          const docRef = doc(db, TRAINING_COLLECTION, record.id!);
-          await updateDoc(docRef, {
+          updates.push({ id: record.id!, newStatus });
+        }
+      }
+
+      // Batch all updates (max 499 per batch)
+      for (let i = 0; i < updates.length; i += 499) {
+        const batch = writeBatch(db);
+        for (const { id, newStatus } of updates.slice(i, i + 499)) {
+          batch.update(doc(db, TRAINING_COLLECTION, id), {
             status: newStatus,
             updatedAt: serverTimestamp(),
           });
         }
+        await batch.commit();
       }
     } catch (error) {
       console.error('Error refreshing statuses:', error);

@@ -1170,13 +1170,38 @@ class GeneralLedgerService {
 
 class TrialBalanceService {
   async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number): Promise<TrialBalance> {
-    const accounts = await accountService.getAllAccounts(tenantId);
+    // Fetch accounts and ALL GL entries in just 2 queries (instead of N×2)
+    const [accounts, glSnapshot] = await Promise.all([
+      accountService.getAllAccounts(tenantId),
+      getDocs(collection(db, paths.generalLedger(tenantId))),
+    ]);
+
+    // Build balance map from GL entries, filtering by date
+    const balanceByAccountId = new Map<string, number>();
+    const balanceByAccountCode = new Map<string, number>();
+
+    glSnapshot.docs.forEach(doc => {
+      const entry = doc.data() as GeneralLedgerEntry;
+      if (asOfDate && entry.entryDate > asOfDate) return;
+
+      const net = subtractMoney(entry.debit, entry.credit);
+
+      // Accumulate by accountId
+      const prevById = balanceByAccountId.get(entry.accountId) ?? 0;
+      balanceByAccountId.set(entry.accountId, addMoney(prevById, net));
+
+      // Accumulate by accountCode (for legacy rows)
+      const prevByCode = balanceByAccountCode.get(entry.accountCode) ?? 0;
+      balanceByAccountCode.set(entry.accountCode, addMoney(prevByCode, net));
+    });
+
     const rows: TrialBalanceRow[] = [];
 
     for (const account of accounts) {
       if (!account.isActive) continue;
 
-      const balance = await generalLedgerService.getAccountBalance(tenantId, account.id!, account.code, asOfDate);
+      // Use accountId balance, fall back to accountCode for legacy data
+      const balance = balanceByAccountId.get(account.id!) ?? balanceByAccountCode.get(account.code) ?? 0;
 
       // Skip zero balances for cleaner report
       if (toDecimal(balance).abs().lessThan(0.01)) continue;
@@ -1189,7 +1214,7 @@ class TrialBalanceService {
         accountCode: account.code,
         accountName: account.name,
         accountType: account.type,
-        openingDebit: 0,  // Would need prior period data
+        openingDebit: 0,
         openingCredit: 0,
         periodDebit: debitBalance,
         periodCredit: creditBalance,
