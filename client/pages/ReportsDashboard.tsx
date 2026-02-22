@@ -41,6 +41,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
+import GuidancePanel from "@/components/GuidancePanel";
 
 function ReportsDashboardSkeleton() {
   return (
@@ -290,7 +291,7 @@ export default function ReportsDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                <BarChart3 className="h-8 w-8 text-white" />
+                <img src="/images/illustrations/icons/icon-reports.webp" alt="" className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
@@ -330,6 +331,7 @@ export default function ReportsDashboard() {
       </div>
 
       <div className="p-6 max-w-7xl mx-auto space-y-8">
+        <GuidancePanel section="reports" />
 
         {/* Recent Reports - Smart quick access */}
         <section>

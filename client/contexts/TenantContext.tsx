@@ -553,17 +553,20 @@ export function TenantProvider({ children }: TenantProviderProps) {
     refreshTenants,
   };
 
+  // Dismiss the HTML splash overlay once we're past the loading gate
+  useEffect(() => {
+    if (!loading) {
+      const splash = document.getElementById("splash");
+      if (splash) {
+        splash.style.opacity = "0";
+        setTimeout(() => splash.remove(), 300);
+      }
+    }
+  }, [loading]);
+
   return (
     <TenantContext.Provider value={value}>
-      {loading ? (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-          <div className="flex flex-col items-center gap-4">
-            <img src="/images/meza-logo-dark-on-light.png" alt="Meza" className="h-10 w-auto dark:hidden" />
-            <img src="/images/meza-logo-light-on-dark-glow.png" alt="Meza" className="h-10 w-auto hidden dark:block" />
-            <div className="animate-spin h-7 w-7 border-[3px] border-primary/20 border-t-primary rounded-full" />
-          </div>
-        </div>
-      ) : children}
+      {loading ? null : children}
     </TenantContext.Provider>
   );
 }

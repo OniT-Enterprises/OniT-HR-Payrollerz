@@ -20,7 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
@@ -50,7 +50,7 @@ export default function RecurringInvoices() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [items, setItems] = useState<RecurringInvoice[]>([]);
 
@@ -59,18 +59,18 @@ export default function RecurringInvoices() {
   };
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid]);
+  }, [tenantId]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setLoading(true);
-      const data = await recurringInvoiceService.getAll(session.tid);
+      const data = await recurringInvoiceService.getAll(tenantId);
       setItems(data);
     } catch (error) {
       console.error('Error loading recurring invoices:', error);
@@ -85,10 +85,10 @@ export default function RecurringInvoices() {
   };
 
   const handlePause = async (item: RecurringInvoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
-      await recurringInvoiceService.pause(session.tid, item.id);
+      await recurringInvoiceService.pause(tenantId, item.id);
       toast({
         title: t('money.recurring.pausedToast') || 'Paused',
         description: (t('money.recurring.pausedDesc') || 'Recurring invoice for {{name}} paused').replace('{{name}}', item.customerName),
@@ -105,10 +105,10 @@ export default function RecurringInvoices() {
   };
 
   const handleResume = async (item: RecurringInvoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
-      await recurringInvoiceService.resume(session.tid, item.id);
+      await recurringInvoiceService.resume(tenantId, item.id);
       toast({
         title: t('money.recurring.resumedToast') || 'Resumed',
         description: (t('money.recurring.resumedDesc') || 'Recurring invoice for {{name}} resumed').replace('{{name}}', item.customerName),
@@ -125,10 +125,10 @@ export default function RecurringInvoices() {
   };
 
   const handleGenerateNow = async (item: RecurringInvoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
-      const invoiceId = await recurringInvoiceService.generateInvoice(session.tid, item.id);
+      const invoiceId = await recurringInvoiceService.generateInvoice(tenantId, item.id);
       toast({
         title: t('money.recurring.invoiceGenerated') || 'Invoice generated',
         description: (t('money.recurring.invoiceGeneratedDesc') || 'New invoice created for {{name}}').replace('{{name}}', item.customerName),
@@ -145,14 +145,14 @@ export default function RecurringInvoices() {
   };
 
   const handleDelete = async (item: RecurringInvoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     if (!confirm((t('money.recurring.confirmDeleteMsg') || 'Delete recurring invoice for {{name}}? This cannot be undone.').replace('{{name}}', item.customerName))) {
       return;
     }
 
     try {
-      await recurringInvoiceService.delete(session.tid, item.id);
+      await recurringInvoiceService.delete(tenantId, item.id);
       toast({
         title: t('money.recurring.deletedToast') || 'Deleted',
         description: t('money.recurring.deletedDesc') || 'Recurring invoice deleted',

@@ -29,7 +29,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -64,7 +64,7 @@ const DEFAULT_VAT_SETTINGS: VATSettingsData = {
 export default function VATSettingsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -72,7 +72,7 @@ export default function VATSettingsPage() {
   const [platformActive, setPlatformActive] = useState(false);
 
   const loadSettings = useCallback(async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     setLoading(true);
     try {
       // Check platform VAT status
@@ -84,7 +84,7 @@ export default function VATSettingsPage() {
       }
 
       // Load tenant VAT settings
-      const tenantRef = doc(db, paths.vatSettings(session.tid));
+      const tenantRef = doc(db, paths.vatSettings(tenantId));
       const tenantSnap = await getDoc(tenantRef);
       if (tenantSnap.exists()) {
         const data = tenantSnap.data();
@@ -107,19 +107,19 @@ export default function VATSettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [session?.tid, toast]);
+  }, [tenantId, toast]);
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadSettings();
     }
-  }, [session?.tid, loadSettings]);
+  }, [tenantId, loadSettings]);
 
   const saveSettings = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     setSaving(true);
     try {
-      const ref = doc(db, paths.vatSettings(session.tid));
+      const ref = doc(db, paths.vatSettings(tenantId));
       await setDoc(
         ref,
         {

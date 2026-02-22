@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useGuidance } from "@/contexts/GuidanceContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   DropdownMenu,
@@ -33,6 +34,8 @@ import {
   X,
   Wallet,
   Map,
+  BookOpen,
+  Check,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
@@ -100,6 +103,7 @@ export default function MainNavigation() {
   const location = useLocation();
   const { user, signOut, isSuperAdmin } = useAuth();
   const { isDark, toggleTheme } = useTheme();
+  const { guidanceEnabled, toggleGuidance } = useGuidance();
   const { t, locale, setLocale, localeLabels } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const localeOptions = Object.entries(localeLabels) as Array<[typeof locale, string]>;
@@ -139,7 +143,7 @@ export default function MainNavigation() {
               className="flex items-center"
             >
               <img
-                src={isDark ? "/images/meza-logo-light-on-dark-glow.png" : "/images/meza-logo-dark-on-light.png"}
+                src={isDark ? "/images/illustrations/logo-v2-dark.webp" : "/images/illustrations/logo-v2-light.webp"}
                 alt="Meza"
                 className="h-8 w-auto"
               />
@@ -276,6 +280,11 @@ export default function MainNavigation() {
                 <DropdownMenuItem onClick={() => handleNavigate("/sitemap")}>
                   <Map className="h-4 w-4 mr-2" />
                   Sitemap
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={toggleGuidance}>
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Guidance
+                  {guidanceEnabled && <Check className="h-4 w-4 ml-auto text-emerald-500" />}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-500">

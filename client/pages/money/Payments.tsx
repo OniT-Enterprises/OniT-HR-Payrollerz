@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
@@ -59,25 +59,25 @@ export default function Payments() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [payments, setPayments] = useState<PaymentDisplay[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadPayments();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid]);
+  }, [tenantId]);
 
   const loadPayments = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     try {
       setLoading(true);
       // Get all payments directly
-      const allPayments = await invoiceService.getAllPayments(session.tid);
+      const allPayments = await invoiceService.getAllPayments(tenantId);
       setPayments(allPayments);
     } catch (error) {
       console.error('Error loading payments:', error);
@@ -270,7 +270,7 @@ export default function Payments() {
         {filteredPayments.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <img src="/images/illustrations/empty-invoices.webp" alt="No payments yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm || methodFilter !== 'all'
                   ? t('money.payments.noResults') || 'No payments found'

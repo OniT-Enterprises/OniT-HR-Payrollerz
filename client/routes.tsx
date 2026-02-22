@@ -14,12 +14,12 @@ export function PageLoader() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <img
-          src="/images/meza-logo-dark-on-light.png"
+          src="/images/illustrations/logo-v2-light.webp"
           alt="Meza"
           className="h-10 w-auto dark:hidden"
         />
         <img
-          src="/images/meza-logo-light-on-dark-glow.png"
+          src="/images/illustrations/logo-v2-dark.webp"
           alt="Meza"
           className="h-10 w-auto hidden dark:block"
         />

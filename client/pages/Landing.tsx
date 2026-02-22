@@ -144,7 +144,7 @@ export default function Landing() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/meza-logo-light-on-dark-glow.png"
+                src="/images/illustrations/logo-v2-dark.webp"
                 alt="Meza"
                 className="h-9 w-auto"
               />
@@ -299,79 +299,15 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Dashboard Preview */}
+          {/* Dashboard Preview - Hero Illustration */}
           <div className="mt-20 relative">
             <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0b] via-transparent to-transparent z-10 pointer-events-none" />
-            <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-zinc-900/50 backdrop-blur shadow-2xl shadow-black/50">
-              <div className="absolute inset-0 bg-gradient-to-tr from-red-500/5 via-transparent to-amber-500/5" />
-              {/* Mock Dashboard */}
-              <div className="p-4 border-b border-white/5 flex items-center gap-2">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
-                </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 rounded-lg bg-white/5 text-xs text-zinc-500">meza.onit.tl/dashboard</div>
-                </div>
-              </div>
-              <div className="p-8 min-h-[400px] bg-gradient-to-br from-zinc-900 to-zinc-950">
-                <div className="grid grid-cols-4 gap-4 mb-6">
-                  {[
-                    { label: t("landing.mock.stats.totalEmployees"), value: "847", change: t("landing.mock.stats.totalEmployeesChange") },
-                    { label: t("landing.mock.stats.monthlyPayroll"), value: "$124,350", change: t("landing.mock.stats.monthlyPayrollChange") },
-                    { label: t("landing.mock.stats.inssContribution"), value: "$12,435", change: t("landing.mock.stats.inssContributionChange") },
-                    { label: t("landing.mock.stats.thirteenth"), value: "$103,625", change: t("landing.mock.stats.thirteenthChange") },
-                  ].map((stat, i) => (
-                    <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/5">
-                      <p className="text-xs text-zinc-500 mb-1">{stat.label}</p>
-                      <p className="text-2xl font-bold text-white">{stat.value}</p>
-                      <p className="text-xs text-amber-400 mt-1">{stat.change}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="col-span-2 p-4 rounded-xl bg-white/5 border border-white/5 h-48">
-                    <div className="flex items-center justify-between mb-3">
-                      <p className="text-sm font-medium text-white">{t("landing.mock.payrollByDept")}</p>
-                      <span className="text-xs text-zinc-500">{t("landing.mock.currency")}</span>
-                    </div>
-                    <div className="flex items-end gap-2 h-32">
-                      {[
-                        { h: 85, label: t("landing.mock.departments.security") },
-                        { h: 70, label: t("landing.mock.departments.admin") },
-                        { h: 55, label: t("landing.mock.departments.finance") },
-                        { h: 90, label: t("landing.mock.departments.operations") },
-                        { h: 45, label: t("landing.mock.departments.hr") },
-                        { h: 60, label: t("landing.mock.departments.it") },
-                      ].map((bar, i) => (
-                        <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                          <div className="w-full rounded-t bg-gradient-to-t from-red-500/80 to-amber-500/80" style={{ height: `${bar.h}%` }} />
-                          <span className="text-[10px] text-zinc-600">{bar.label}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                    <p className="text-sm font-medium text-white mb-3">
-                      {t("landing.mock.upcomingHolidays")}
-                    </p>
-                    <div className="space-y-2">
-                      {[
-                        { date: t("landing.mock.holidays.nov12.date"), name: t("landing.mock.holidays.nov12.name") },
-                        { date: t("landing.mock.holidays.nov28.date"), name: t("landing.mock.holidays.nov28.name") },
-                        { date: t("landing.mock.holidays.dec7.date"), name: t("landing.mock.holidays.dec7.name") },
-                        { date: t("landing.mock.holidays.dec25.date"), name: t("landing.mock.holidays.dec25.name") },
-                      ].map((holiday, i) => (
-                        <div key={i} className="flex items-center gap-2 p-2 rounded-lg bg-white/5 text-sm">
-                          <span className="text-xs text-amber-400 font-mono">{holiday.date}</span>
-                          <span className="text-zinc-400 text-xs">{holiday.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div className="relative flex justify-center">
+              <img
+                src="/images/illustrations/hero-dashboard.webp"
+                alt="Meza HR dashboard command center"
+                className="w-full max-w-3xl drop-shadow-2xl"
+              />
             </div>
           </div>
         </div>
@@ -407,26 +343,18 @@ export default function Landing() {
 
           {/* Pain points - Why switch */}
           <div className="mt-16 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="p-6 rounded-xl bg-red-500/5 border border-red-500/10">
-              <div className="text-3xl mb-3">📋</div>
-              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.paper.title")}</h3>
-              <p className="text-sm text-zinc-400">{t("landing.painPoints.paper.desc")}</p>
-            </div>
-            <div className="p-6 rounded-xl bg-amber-500/5 border border-amber-500/10">
-              <div className="text-3xl mb-3">📊</div>
-              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.excel.title")}</h3>
-              <p className="text-sm text-zinc-400">{t("landing.painPoints.excel.desc")}</p>
-            </div>
-            <div className="p-6 rounded-xl bg-blue-500/5 border border-blue-500/10">
-              <div className="text-3xl mb-3">🌐</div>
-              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.foreign.title")}</h3>
-              <p className="text-sm text-zinc-400">{t("landing.painPoints.foreign.desc")}</p>
-            </div>
-            <div className="p-6 rounded-xl bg-emerald-500/5 border border-emerald-500/10">
-              <div className="text-3xl mb-3">✅</div>
-              <h3 className="font-semibold text-white mb-2">{t("landing.painPoints.solution.title")}</h3>
-              <p className="text-sm text-zinc-400">{t("landing.painPoints.solution.desc")}</p>
-            </div>
+            {[
+              { img: "pain-paper", border: "border-red-500/10", bg: "bg-red-500/5", titleKey: "landing.painPoints.paper.title", descKey: "landing.painPoints.paper.desc" },
+              { img: "pain-excel", border: "border-amber-500/10", bg: "bg-amber-500/5", titleKey: "landing.painPoints.excel.title", descKey: "landing.painPoints.excel.desc" },
+              { img: "pain-foreign", border: "border-blue-500/10", bg: "bg-blue-500/5", titleKey: "landing.painPoints.foreign.title", descKey: "landing.painPoints.foreign.desc" },
+              { img: "pain-solution", border: "border-emerald-500/10", bg: "bg-emerald-500/5", titleKey: "landing.painPoints.solution.title", descKey: "landing.painPoints.solution.desc" },
+            ].map((pain, i) => (
+              <div key={i} className={`p-6 rounded-xl ${pain.bg} ${pain.border} border`}>
+                <img src={`/images/illustrations/${pain.img}.webp`} alt="" className="h-28 w-28 mb-4 -ml-2" />
+                <h3 className="font-semibold text-white mb-2">{t(pain.titleKey)}</h3>
+                <p className="text-sm text-zinc-400">{t(pain.descKey)}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -861,12 +789,12 @@ export default function Landing() {
           {/* Who is Kaixa for? */}
           <div className="mt-12 grid sm:grid-cols-3 gap-4">
             {[
-              { emoji: "🏪", name: t("landing.kaixa.personas.maria.name"), role: t("landing.kaixa.personas.maria.role"), desc: t("landing.kaixa.personas.maria.desc") },
-              { emoji: "☕", name: t("landing.kaixa.personas.ana.name"), role: t("landing.kaixa.personas.ana.role"), desc: t("landing.kaixa.personas.ana.desc") },
-              { emoji: "🛒", name: t("landing.kaixa.personas.tomas.name"), role: t("landing.kaixa.personas.tomas.role"), desc: t("landing.kaixa.personas.tomas.desc") },
+              { img: "persona-maria", name: t("landing.kaixa.personas.maria.name"), role: t("landing.kaixa.personas.maria.role"), desc: t("landing.kaixa.personas.maria.desc") },
+              { img: "persona-ana", name: t("landing.kaixa.personas.ana.name"), role: t("landing.kaixa.personas.ana.role"), desc: t("landing.kaixa.personas.ana.desc") },
+              { img: "persona-tomas", name: t("landing.kaixa.personas.tomas.name"), role: t("landing.kaixa.personas.tomas.role"), desc: t("landing.kaixa.personas.tomas.desc") },
             ].map((persona, i) => (
               <div key={i} className="p-5 rounded-xl bg-white/[0.02] border border-white/5 text-center">
-                <div className="text-3xl mb-2">{persona.emoji}</div>
+                <img src={`/images/illustrations/${persona.img}.webp`} alt={persona.name} className="h-20 w-20 rounded-full mx-auto mb-3 object-cover" />
                 <h4 className="font-semibold text-white">{persona.name}</h4>
                 <p className="text-xs text-orange-400/70 mb-2">{persona.role}</p>
                 <p className="text-xs text-zinc-500 leading-relaxed">{persona.desc}</p>
@@ -1198,7 +1126,7 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <img
-                src="/images/meza-logo-light-on-dark-glow.png"
+                src="/images/illustrations/logo-v2-dark.webp"
                 alt="Meza"
                 className="h-7 w-auto"
               />

@@ -8,6 +8,7 @@ import {
   setupQueryPersistence,
 } from "@/lib/queryCache";
 
+
 // Initialize Sentry for production error tracking
 if (import.meta.env.PROD && import.meta.env.VITE_SENTRY_DSN) {
   Sentry.init({

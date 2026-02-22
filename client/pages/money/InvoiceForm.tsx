@@ -35,7 +35,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
@@ -77,7 +77,7 @@ export default function InvoiceForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   // Preload PDF module so download resolves instantly from cache
   const preloaded = useRef(false);
@@ -141,11 +141,11 @@ export default function InvoiceForm() {
   const formData = watch();
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, duplicateId, session?.tid]);
+  }, [id, duplicateId, tenantId]);
 
   useEffect(() => {
     // Check if we should show payment dialog
@@ -156,13 +156,13 @@ export default function InvoiceForm() {
   }, [searchParams, invoice]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       // Load customers and settings in parallel
       const [customerList, settings] = await Promise.all([
-        customerService.getActiveCustomers(session.tid),
-        invoiceService.getSettings(session.tid).catch(() => ({})),
+        customerService.getActiveCustomers(tenantId),
+        invoiceService.getSettings(tenantId).catch(() => ({})),
       ]);
       setCustomers(customerList);
       setInvoiceSettings(settings);
@@ -175,7 +175,7 @@ export default function InvoiceForm() {
       // Load existing invoice
       if (!isNew && id) {
         setLoading(true);
-        const invoiceData = await invoiceService.getInvoiceById(session.tid, id);
+        const invoiceData = await invoiceService.getInvoiceById(tenantId, id);
         if (invoiceData) {
           setInvoice(invoiceData);
           reset({
@@ -192,7 +192,7 @@ export default function InvoiceForm() {
 
       // Handle duplicate
       if (duplicateId) {
-        const sourceInvoice = await invoiceService.getInvoiceById(session.tid, duplicateId);
+        const sourceInvoice = await invoiceService.getInvoiceById(tenantId, duplicateId);
         if (sourceInvoice) {
           reset({
             customerId: sourceInvoice.customerId,
@@ -249,7 +249,7 @@ export default function InvoiceForm() {
   };
 
   const onSubmit = async (data: InvoiceFormSchemaData, sendAfter = false) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setSaving(true);
@@ -275,13 +275,13 @@ export default function InvoiceForm() {
       let invoiceId: string;
 
       if (isNew || duplicateId) {
-        invoiceId = await invoiceService.createInvoice(session.tid, dataToSave);
+        invoiceId = await invoiceService.createInvoice(tenantId, dataToSave);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.created') || 'Invoice created',
         });
       } else if (invoice) {
-        await invoiceService.updateInvoice(session.tid, invoice.id, dataToSave);
+        await invoiceService.updateInvoice(tenantId, invoice.id, dataToSave);
         invoiceId = invoice.id;
         toast({
           title: t('common.success') || 'Success',
@@ -292,7 +292,7 @@ export default function InvoiceForm() {
       }
 
       if (sendAfter) {
-        await invoiceService.markAsSent(session.tid, invoiceId);
+        await invoiceService.markAsSent(tenantId, invoiceId);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.sentSuccess') || 'Invoice sent',
@@ -331,7 +331,7 @@ export default function InvoiceForm() {
 
     try {
       setSaving(true);
-      await invoiceService.recordPayment(session!.tid, invoice.id, {
+      await invoiceService.recordPayment(tenantId, invoice.id, {
         date: getTodayTL(),
         amount,
         method: paymentMethod as 'cash' | 'bank_transfer' | 'check' | 'other',

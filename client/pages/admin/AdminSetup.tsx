@@ -144,7 +144,7 @@ export default function AdminSetup() {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
             <img
-              src="/images/meza-logo-dark-on-light.png"
+              src="/images/illustrations/logo-v2-light.webp"
               alt="Meza"
               className="h-10 w-auto"
             />

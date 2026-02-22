@@ -266,7 +266,7 @@ export default function Bills() {
         {filteredBills.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <img src="/images/illustrations/empty-invoices.webp" alt="No bills yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== 'all'
                   ? t('money.bills.noResults') || 'No bills found'

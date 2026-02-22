@@ -13,12 +13,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { customerService } from '@/services/customerService';
 import { billService } from '@/services/billService';
 import type { MoneyStats, Invoice } from '@/types/money';
+import GuidancePanel from '@/components/GuidancePanel';
 import {
   Wallet,
   FileText,
@@ -46,7 +47,7 @@ import {
 export default function MoneyDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<MoneyStats | null>(null);
   const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
@@ -61,22 +62,22 @@ export default function MoneyDashboard() {
   } | null>(null);
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid]);
+  }, [tenantId]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setLoading(true);
       const [statsData, invoices, customers, payables] = await Promise.all([
-        invoiceService.getStats(session.tid),
-        invoiceService.getAllInvoices(session.tid, 10),
-        customerService.getAllCustomers(session.tid),
-        billService.getPayablesSummary(session.tid),
+        invoiceService.getStats(tenantId),
+        invoiceService.getAllInvoices(tenantId, 10),
+        customerService.getAllCustomers(tenantId),
+        billService.getPayablesSummary(tenantId),
       ]);
       setStats(statsData);
       setRecentInvoices(invoices);
@@ -252,7 +253,7 @@ export default function MoneyDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 shadow-lg shadow-indigo-500/25">
-                <Wallet className="h-8 w-8 text-white" />
+                <img src="/images/illustrations/icons/icon-money.webp" alt="" className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">{t('money.dashboard.title')}</h1>
@@ -270,6 +271,8 @@ export default function MoneyDashboard() {
       </div>
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <GuidancePanel section="money" />
+
         {/* Money Health + Action Required */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Money Health Indicator */}

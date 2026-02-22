@@ -65,6 +65,7 @@ import {
   Globe,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import GuidancePanel from "@/components/GuidancePanel";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 
@@ -343,7 +344,7 @@ export default function PeopleDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <Users className="h-8 w-8 text-white" />
+                <img src="/images/illustrations/icons/icon-people.webp" alt="" className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
@@ -367,6 +368,8 @@ export default function PeopleDashboard() {
       </div>
 
       <div className="p-6 max-w-7xl mx-auto">
+        <GuidancePanel section="people" />
+
         {/* ═══════════════════════════════════════════════════════════════
             KPIs - 3 Only: Active Employees, Pending Leave, On Leave Today
         ═══════════════════════════════════════════════════════════════ */}
@@ -594,8 +597,12 @@ export default function PeopleDashboard() {
           <CardContent className="pt-0">
             {filteredEmployees.length === 0 ? (
               <div className="text-center py-12">
-                <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground mb-2">No employees found</p>
+                <img
+                  src="/images/illustrations/empty-employees.webp"
+                  alt="No employees yet"
+                  className="w-40 h-40 mx-auto mb-4 drop-shadow-lg"
+                />
+                <p className="text-muted-foreground mb-3">No employees found</p>
                 <Button
                   variant="outline"
                   onClick={() => navigate("/people/add")}

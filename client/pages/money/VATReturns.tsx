@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import {
   collection,
@@ -97,7 +97,7 @@ function formatCurrency(amount: number): string {
 export default function VATReturnsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -111,7 +111,7 @@ export default function VATReturnsPage() {
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
   const loadPeriodData = useCallback(async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     setLoading(true);
 
     try {
@@ -120,7 +120,7 @@ export default function VATReturnsPage() {
       const periodEnd = new Date(year, month, 1);
 
       // Query invoices for the period
-      const invoicesRef = collection(db, paths.invoices(session.tid));
+      const invoicesRef = collection(db, paths.invoices(tenantId));
       const invoiceQuery = query(
         invoicesRef,
         where('issueDate', '>=', toDateStringTL(periodStart)),
@@ -141,7 +141,7 @@ export default function VATReturnsPage() {
       });
 
       // Query expenses for the period
-      const expensesRef = collection(db, paths.expenses(session.tid));
+      const expensesRef = collection(db, paths.expenses(tenantId));
       const expenseQuery = query(
         expensesRef,
         where('date', '>=', toDateStringTL(periodStart)),
@@ -161,7 +161,7 @@ export default function VATReturnsPage() {
       });
 
       // Also check bills
-      const billsRef = collection(db, paths.bills(session.tid));
+      const billsRef = collection(db, paths.bills(tenantId));
       const billQuery = query(
         billsRef,
         where('date', '>=', toDateStringTL(periodStart)),
@@ -182,7 +182,7 @@ export default function VATReturnsPage() {
       setSummary({ outputVAT, inputVAT, netDue, salesCount, expenseCount });
 
       // Check if a return has already been saved for this period
-      const returnRef = doc(db, paths.vatReturn(session.tid, selectedPeriod));
+      const returnRef = doc(db, paths.vatReturn(tenantId, selectedPeriod));
       const returnSnap = await getDoc(returnRef);
       if (returnSnap.exists()) {
         const rData = returnSnap.data();
@@ -210,16 +210,16 @@ export default function VATReturnsPage() {
     } finally {
       setLoading(false);
     }
-  }, [session?.tid, selectedPeriod, toast]);
+  }, [tenantId, selectedPeriod, toast]);
 
   useEffect(() => {
-    if (session?.tid && selectedPeriod) {
+    if (tenantId && selectedPeriod) {
       loadPeriodData();
     }
-  }, [session?.tid, selectedPeriod, loadPeriodData]);
+  }, [tenantId, selectedPeriod, loadPeriodData]);
 
   const saveReturn = async (markAsFiled = false) => {
-    if (!session?.tid || !summary) return;
+    if (!tenantId || !summary) return;
     setSaving(true);
     try {
       const [year, month] = selectedPeriod.split('-').map(Number);
@@ -246,7 +246,7 @@ export default function VATReturnsPage() {
         updatedAt: Timestamp.fromDate(new Date()),
       };
 
-      const ref = doc(db, paths.vatReturn(session.tid, selectedPeriod));
+      const ref = doc(db, paths.vatReturn(tenantId, selectedPeriod));
       await setDoc(ref, returnData, { merge: true });
 
       toast({

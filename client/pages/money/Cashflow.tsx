@@ -18,7 +18,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -50,7 +50,7 @@ interface CashflowData {
 export default function Cashflow() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('this_month');
   const [data, setData] = useState<CashflowData>({
@@ -65,11 +65,11 @@ export default function Cashflow() {
   });
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, session?.tid]);
+  }, [period, tenantId]);
 
   const getDateRange = (periodValue: string): { start: Date; end: Date } => {
     const now = new Date();
@@ -104,7 +104,7 @@ export default function Cashflow() {
   };
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     try {
       setLoading(true);
       const { start, end } = getDateRange(period);
@@ -112,9 +112,9 @@ export default function Cashflow() {
       const endStr = toDateStringTL(end);
 
       const [invoices, bills, expenses] = await Promise.all([
-        invoiceService.getAllInvoices(session.tid),
-        billService.getAllBills(session.tid),
-        expenseService.getExpensesByDateRange(session.tid, startStr, endStr),
+        invoiceService.getAllInvoices(tenantId),
+        billService.getAllBills(tenantId),
+        expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
       ]);
 
       // Calculate customer payments (cash inflows from paid invoices in period)

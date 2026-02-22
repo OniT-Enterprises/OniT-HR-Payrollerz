@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import { vendorService } from '@/services/vendorService';
@@ -89,7 +89,7 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   const isNew = !id || id === 'new';
   const isEdit = searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit');
@@ -132,11 +132,11 @@ export default function BillForm() {
   const formData = watch();
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, session?.tid]);
+  }, [id, tenantId]);
 
   useEffect(() => {
     if (searchParams.get('record') === 'payment' && bill) {
@@ -146,10 +146,10 @@ export default function BillForm() {
   }, [searchParams, bill]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     try {
       // Load vendors
-      const vendorList = await vendorService.getActiveVendors(session.tid);
+      const vendorList = await vendorService.getActiveVendors(tenantId);
       setVendors(vendorList);
 
       // Set preselected vendor if provided
@@ -159,7 +159,7 @@ export default function BillForm() {
 
       // Load bill if editing/viewing
       if (!isNew && id) {
-        const billData = await billService.getBillById(session.tid, id);
+        const billData = await billService.getBillById(tenantId, id);
         if (billData) {
           setBill(billData);
           reset({
@@ -175,7 +175,7 @@ export default function BillForm() {
           });
 
           // Load payments
-          const billPayments = await billService.getPaymentsForBill(session.tid, id);
+          const billPayments = await billService.getPaymentsForBill(tenantId, id);
           setPayments(billPayments);
         }
       }
@@ -213,7 +213,7 @@ export default function BillForm() {
   };
 
   const onSubmit = async (data: BillFormSchemaData) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setSaving(true);
@@ -231,14 +231,14 @@ export default function BillForm() {
       };
 
       if (isNew) {
-        const newId = await billService.createBill(session.tid, billData);
+        const newId = await billService.createBill(tenantId, billData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
         navigate(`/money/bills/${newId}`);
       } else if (id) {
-        await billService.updateBill(session.tid, id, billData);
+        await billService.updateBill(tenantId, id, billData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.updated') || 'Bill updated',
@@ -260,7 +260,7 @@ export default function BillForm() {
   const handleSave = handleSubmit(onSubmit);
 
   const handleRecordPayment = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     if (!bill) return;
 
     const amount = parseFloat(paymentAmount);
@@ -275,7 +275,7 @@ export default function BillForm() {
 
     try {
       setSaving(true);
-      await billService.recordPayment(session.tid, bill.id, {
+      await billService.recordPayment(tenantId, bill.id, {
         date: getTodayTL(),
         amount,
         method: paymentMethod as PaymentMethod,

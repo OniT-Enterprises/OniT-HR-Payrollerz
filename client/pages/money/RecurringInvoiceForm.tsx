@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import { customerService } from '@/services/customerService';
@@ -57,7 +57,7 @@ export default function RecurringInvoiceForm() {
   const { id } = useParams();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
 
   const isEditMode = !!id;
 
@@ -113,21 +113,21 @@ export default function RecurringInvoiceForm() {
   const endType = watch('endType');
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid, id]);
+  }, [tenantId, id]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setLoading(true);
 
       const [customerList, invoiceSettings] = await Promise.all([
-        customerService.getActiveCustomers(session.tid),
-        invoiceService.getSettings(session.tid).catch(() => ({})),
+        customerService.getActiveCustomers(tenantId),
+        invoiceService.getSettings(tenantId).catch(() => ({})),
       ]);
 
       setCustomers(customerList);
@@ -147,7 +147,7 @@ export default function RecurringInvoiceForm() {
 
       // Load existing recurring invoice if editing
       if (isEditMode && id) {
-        const recurring = await recurringInvoiceService.getById(session.tid, id);
+        const recurring = await recurringInvoiceService.getById(tenantId, id);
         if (recurring) {
           let endTypeValue: 'never' | 'date' | 'occurrences' = 'never';
           if (recurring.endDate) {
@@ -215,7 +215,7 @@ export default function RecurringInvoiceForm() {
   };
 
   const onSubmit = async (formValues: RecurringInvoiceFormSchemaData) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
 
     try {
       setSaving(true);
@@ -245,10 +245,10 @@ export default function RecurringInvoiceForm() {
       };
 
       if (isEditMode && id) {
-        await recurringInvoiceService.update(session.tid, id, data);
+        await recurringInvoiceService.update(tenantId, id, data);
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.updated') || 'Recurring invoice updated' });
       } else {
-        await recurringInvoiceService.create(session.tid, data);
+        await recurringInvoiceService.create(tenantId, data);
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.created') || 'Recurring invoice created' });
       }
 

@@ -48,6 +48,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
+import GuidancePanel from "@/components/GuidancePanel";
 
 const theme = sectionThemes.payroll;
 
@@ -541,7 +542,7 @@ export default function PayrollDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
-                <Calculator className="h-8 w-8 text-white" />
+                <img src="/images/illustrations/icons/icon-payroll.webp" alt="" className="h-8 w-8" />
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-foreground">
@@ -557,6 +558,7 @@ export default function PayrollDashboard() {
       </div>
 
       <div className="p-6 max-w-7xl mx-auto">
+        <GuidancePanel section="payroll" />
 
         {/* ============================================ */}
         {/* PAYROLL READY BANNER - Shows when 4/4       */}
@@ -857,9 +859,12 @@ export default function PayrollDashboard() {
                       </span>
                     </p>
                   ) : (
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t("payrollDashboard.noPayrollYet")}
-                    </p>
+                    <>
+                      <img src="/images/illustrations/empty-payroll.webp" alt="No payroll yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {t("payrollDashboard.noPayrollYet")}
+                      </p>
+                    </>
                   )}
                 </div>
                 <div className={`h-12 w-12 rounded-full flex items-center justify-center ${

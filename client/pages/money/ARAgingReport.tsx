@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
@@ -46,24 +46,24 @@ export default function ARAgingReport() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [loading, setLoading] = useState(true);
   const [buckets, setBuckets] = useState<AgingBucket[]>([]);
   const [customerAging, setCustomerAging] = useState<CustomerAging[]>([]);
   const [totalOutstanding, setTotalOutstanding] = useState(0);
 
   useEffect(() => {
-    if (session?.tid) {
+    if (tenantId) {
       loadData();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.tid]);
+  }, [tenantId]);
 
   const loadData = async () => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     try {
       setLoading(true);
-      const invoices = await invoiceService.getAllInvoices(session.tid);
+      const invoices = await invoiceService.getAllInvoices(tenantId);
 
       // Filter to only unpaid invoices
       const unpaidInvoices = invoices.filter(

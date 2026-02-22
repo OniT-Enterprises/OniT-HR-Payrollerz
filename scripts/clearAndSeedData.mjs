@@ -29,7 +29,7 @@ const db = getFirestore();
 // CONFIGURATION
 // ===========================================
 
-const TENANT_ID = 'onit'; // Main tenant
+const TENANT_ID = 'onit-enterprises'; // Main tenant
 const NOW = new Date();
 const TODAY = NOW.toISOString().split('T')[0];
 
@@ -1468,6 +1468,27 @@ async function seedTenantData(tenantId) {
     updatedAt: now,
   }, { merge: true });
   console.log('      ✓ Updated tenant config');
+
+  // Seed Members (admin user)
+  console.log('   👤 Seeding members...');
+  const SEED_MEMBERS = [
+    {
+      uid: 'fgxScvArI0PEPLfSfbnPIIjzJsa2',
+      email: 'admin@company.com',
+      displayName: 'Admin User',
+      role: 'owner',
+      status: 'active',
+    },
+  ];
+  for (const member of SEED_MEMBERS) {
+    await db.doc(`tenants/${tenantId}/members/${member.uid}`).set({
+      ...member,
+      tenantId,
+      createdAt: now,
+      updatedAt: now,
+    });
+  }
+  console.log(`      ✓ Created ${SEED_MEMBERS.length} members`);
 }
 
 // ===========================================

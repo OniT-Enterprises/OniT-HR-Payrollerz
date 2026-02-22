@@ -28,7 +28,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenant } from '@/contexts/TenantContext';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
@@ -78,7 +78,7 @@ export default function Invoices() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
@@ -121,9 +121,9 @@ export default function Invoices() {
   };
 
   const handleSend = async (invoice: Invoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     try {
-      await invoiceService.markAsSent(session.tid, invoice.id);
+      await invoiceService.markAsSent(tenantId, invoice.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.markedSent') || 'Invoice marked as sent',
@@ -167,7 +167,7 @@ export default function Invoices() {
   };
 
   const handleDelete = async (invoice: Invoice) => {
-    if (!session?.tid) return;
+    if (!tenantId) return;
     if (
       !confirm(
         t('money.invoices.confirmDelete') || `Delete invoice ${invoice.invoiceNumber}?`
@@ -177,7 +177,7 @@ export default function Invoices() {
     }
 
     try {
-      await invoiceService.deleteInvoice(session.tid, invoice.id);
+      await invoiceService.deleteInvoice(tenantId, invoice.id);
       toast({
         title: t('common.success') || 'Success',
         description: t('money.invoices.deleted') || 'Invoice deleted',
@@ -331,7 +331,7 @@ export default function Invoices() {
         {filteredInvoices.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-3" />
+              <img src="/images/illustrations/empty-invoices.webp" alt="No invoices yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== 'all'
                   ? t('money.invoices.noResults') || 'No invoices found'

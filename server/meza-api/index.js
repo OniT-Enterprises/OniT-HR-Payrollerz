@@ -107,8 +107,11 @@ function requireTenant(req, res, next) {
   if (!tenantId) {
     return res.status(400).json({ success: false, message: 'Missing tenantId parameter' });
   }
-  if (ALLOWED_TENANT_ID && tenantId !== ALLOWED_TENANT_ID) {
-    return res.status(403).json({ success: false, message: 'Access denied for this tenant' });
+  if (ALLOWED_TENANT_ID) {
+    const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
+    if (!allowed.includes(tenantId)) {
+      return res.status(403).json({ success: false, message: 'Access denied for this tenant' });
+    }
   }
   if (!firebaseInitialized) {
     return res.status(503).json({ success: false, message: 'Firebase not initialized' });
@@ -947,7 +950,7 @@ router.get('/journal-entries', async (req, res) => {
 
     const snapshot = await query.get();
     const entries = mapDocs(snapshot);
-    res.json({ success: true, count: entries.length, entries });
+    res.json(entries);
   } catch (error) {
     console.error('[journal-entries]', error);
     res.status(500).json({ success: false, message: error.message });
@@ -1115,7 +1118,7 @@ router.get('/accounts', async (req, res) => {
   try {
     const snapshot = await tenantCol(req.tenantId, 'accounts').orderBy('code', 'asc').get();
     const accounts = mapDocs(snapshot);
-    res.json({ success: true, count: accounts.length, accounts });
+    res.json(accounts);
   } catch (error) {
     console.error('[accounts]', error);
     res.status(500).json({ success: false, message: error.message });
@@ -1190,6 +1193,203 @@ router.get('/journals', async (req, res) => {
     res.json(entries);
   } catch (error) {
     console.error('[journals]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
+// REPORTS (P&L, Balance Sheet)
+// ============================================================================
+
+/**
+ * GET /api/tenants/:tenantId/reports/pnl
+ * Query: start (YYYY-MM-DD), end (YYYY-MM-DD)
+ * Defaults to current month if no dates provided.
+ * Returns PnLReport matching the Rezerva frontend schema.
+ */
+router.get('/reports/pnl', async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    const { start: defaultStart, end: defaultEnd } = getCurrentMonthRange();
+    const periodStart = start || defaultStart;
+    const periodEnd = end || defaultEnd;
+
+    // Fetch accounts for type lookup
+    const accountsSnap = await tenantCol(req.tenantId, 'accounts').get();
+    const accountMap = {};
+    accountsSnap.docs.forEach((doc) => {
+      const a = doc.data();
+      accountMap[doc.id] = { ...a, id: doc.id };
+      if (a.code) accountMap[a.code] = { ...a, id: doc.id };
+    });
+
+    // Fetch GL entries filtered by date range
+    const glSnap = await tenantCol(req.tenantId, 'generalLedger').get();
+    const glEntries = glSnap.docs
+      .map((doc) => doc.data())
+      .filter((entry) => {
+        const d = entry.entryDate || entry.date || '';
+        const dateStr = typeof d === 'string' ? d.split('T')[0] : '';
+        return dateStr >= periodStart && dateStr <= periodEnd;
+      });
+
+    // Aggregate by account
+    const accountTotals = {};
+    for (const entry of glEntries) {
+      const key = entry.accountId || entry.accountCode;
+      if (!accountTotals[key]) {
+        accountTotals[key] = { debit: 0, credit: 0 };
+      }
+      accountTotals[key].debit += entry.debit || 0;
+      accountTotals[key].credit += entry.credit || 0;
+    }
+
+    // Build P&L lines
+    const revenueLines = [];
+    const expenseLines = [];
+
+    for (const [key, totals] of Object.entries(accountTotals)) {
+      const acct = accountMap[key] || {};
+      const type = (acct.type || acct.subType || '').toLowerCase();
+
+      if (type === 'revenue') {
+        // Revenue: credit - debit (natural credit balance)
+        const amount = totals.credit - totals.debit;
+        revenueLines.push({
+          accountCode: acct.code || key,
+          accountName: acct.name || totals.accountName || key,
+          amount,
+        });
+      } else if (type === 'expense') {
+        // Expense: debit - credit (natural debit balance)
+        const amount = totals.debit - totals.credit;
+        expenseLines.push({
+          accountCode: acct.code || key,
+          accountName: acct.name || totals.accountName || key,
+          amount,
+        });
+      }
+    }
+
+    // Sort by account code
+    revenueLines.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    expenseLines.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+    const revenueTotal = revenueLines.reduce((sum, l) => sum + l.amount, 0);
+    const expenseTotal = expenseLines.reduce((sum, l) => sum + l.amount, 0);
+
+    res.json({
+      periodStart,
+      periodEnd,
+      revenue: { total: revenueTotal, lines: revenueLines },
+      expenses: { total: expenseTotal, lines: expenseLines },
+      netProfit: revenueTotal - expenseTotal,
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('[reports/pnl]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/reports/balance-sheet
+ * Query: asOf (YYYY-MM-DD, defaults to today)
+ * Returns BalanceSheet matching the Rezerva frontend schema.
+ */
+router.get('/reports/balance-sheet', async (req, res) => {
+  try {
+    const asOf = req.query.asOf || getTodayTL();
+
+    // Fetch accounts for type lookup
+    const accountsSnap = await tenantCol(req.tenantId, 'accounts').get();
+    const accountMap = {};
+    accountsSnap.docs.forEach((doc) => {
+      const a = doc.data();
+      accountMap[doc.id] = { ...a, id: doc.id };
+      if (a.code) accountMap[a.code] = { ...a, id: doc.id };
+    });
+
+    // Fetch all GL entries up to asOf date
+    const glSnap = await tenantCol(req.tenantId, 'generalLedger').get();
+    const glEntries = glSnap.docs
+      .map((doc) => doc.data())
+      .filter((entry) => {
+        const d = entry.entryDate || entry.date || '';
+        const dateStr = typeof d === 'string' ? d.split('T')[0] : '';
+        return dateStr <= asOf;
+      });
+
+    // Aggregate by account
+    const accountTotals = {};
+    for (const entry of glEntries) {
+      const key = entry.accountId || entry.accountCode;
+      if (!accountTotals[key]) {
+        accountTotals[key] = { debit: 0, credit: 0 };
+      }
+      accountTotals[key].debit += entry.debit || 0;
+      accountTotals[key].credit += entry.credit || 0;
+    }
+
+    // Build balance sheet sections
+    const assetLines = [];
+    const liabilityLines = [];
+    const equityLines = [];
+    let retainedEarnings = 0; // revenue - expenses rolled into equity
+
+    for (const [key, totals] of Object.entries(accountTotals)) {
+      const acct = accountMap[key] || {};
+      const type = (acct.type || acct.subType || '').toLowerCase();
+      const line = {
+        accountCode: acct.code || key,
+        accountName: acct.name || key,
+      };
+
+      if (type === 'asset') {
+        // Assets: natural debit balance
+        assetLines.push({ ...line, amount: totals.debit - totals.credit });
+      } else if (type === 'liability') {
+        // Liabilities: natural credit balance
+        liabilityLines.push({ ...line, amount: totals.credit - totals.debit });
+      } else if (type === 'equity') {
+        // Equity: natural credit balance
+        equityLines.push({ ...line, amount: totals.credit - totals.debit });
+      } else if (type === 'revenue') {
+        // Revenue rolls into retained earnings (credit balance)
+        retainedEarnings += totals.credit - totals.debit;
+      } else if (type === 'expense') {
+        // Expenses reduce retained earnings (debit balance)
+        retainedEarnings -= totals.debit - totals.credit;
+      }
+    }
+
+    // Add retained earnings to equity if non-zero
+    if (Math.abs(retainedEarnings) > 0.01) {
+      equityLines.push({
+        accountCode: 'RE',
+        accountName: 'Retained Earnings (Current Period)',
+        amount: retainedEarnings,
+      });
+    }
+
+    // Sort by account code
+    assetLines.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    liabilityLines.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    equityLines.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+    const assetTotal = assetLines.reduce((sum, l) => sum + l.amount, 0);
+    const liabilityTotal = liabilityLines.reduce((sum, l) => sum + l.amount, 0);
+    const equityTotal = equityLines.reduce((sum, l) => sum + l.amount, 0);
+
+    res.json({
+      asOf,
+      assets: { total: assetTotal, lines: assetLines },
+      liabilities: { total: liabilityTotal, lines: liabilityLines },
+      equity: { total: equityTotal, lines: equityLines },
+      generatedAt: new Date().toISOString(),
+    });
+  } catch (error) {
+    console.error('[reports/balance-sheet]', error);
     res.status(500).json({ success: false, message: error.message });
   }
 });

@@ -87,15 +87,20 @@
   </head>
 
   <body>
-    <div id="root">
-      <!-- Splash screen shown instantly while JS loads — replaced when React mounts -->
-      <div id="splash" style="min-height:100vh;display:flex;align-items:center;justify-content:center;background:#09090b;flex-direction:column;gap:16px">
-        <img src="/images/meza-logo-light-on-dark-glow.png" alt="Meza" style="height:48px;width:auto" />
-        <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:#818cf8;border-radius:50%;animation:sp .7s linear infinite"></div>
-      </div>
-      <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
+    <!-- Splash overlay — lives OUTSIDE #root so React doesn't destroy it -->
+    <div id="splash" style="position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:#09090b;flex-direction:column;gap:16px;overflow:hidden;transition:opacity 0.3s ease">
+      <img src="/images/illustrations/splash-loading.webp" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0.07;pointer-events:none" />
+      <img src="/images/illustrations/logo-v2-dark.webp" alt="Meza" style="height:48px;width:auto;position:relative" />
+      <div style="width:32px;height:32px;border:3px solid rgba(255,255,255,0.15);border-top-color:#818cf8;border-radius:50%;animation:sp .7s linear infinite;position:relative"></div>
     </div>
+    <style>@keyframes sp{to{transform:rotate(360deg)}}</style>
 
+    <div id="root"></div>
+
+    <script>
+      // Safety: remove splash after 8s even if React fails to load
+      setTimeout(function(){var s=document.getElementById("splash");if(s){s.style.opacity="0";setTimeout(function(){s.remove()},300)}},8000);
+    </script>
     <script type="module" src="/client/main.tsx"></script>
   </body>
 </html>

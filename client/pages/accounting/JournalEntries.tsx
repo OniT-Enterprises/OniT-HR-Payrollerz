@@ -796,7 +796,7 @@ export default function JournalEntries() {
             <CardContent>
               {filteredEntries.length === 0 ? (
                 <div className="text-center py-12">
-                  <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <img src="/images/illustrations/empty-accounting.webp" alt="No journal entries yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                   <p className="text-muted-foreground mb-2">{t("accounting.journalEntries.noEntriesFound")}</p>
                   <p className="text-sm text-muted-foreground/70 mb-4">
                     {t("accounting.journalEntries.noEntriesDesc")}

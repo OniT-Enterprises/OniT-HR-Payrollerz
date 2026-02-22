@@ -588,7 +588,7 @@ export default function ProductDetails() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/meza-logo-light-on-dark-glow.png"
+                src="/images/illustrations/logo-v2-dark.webp"
                 alt="Meza"
                 className="h-9 w-auto"
               />
@@ -952,7 +952,7 @@ export default function ProductDetails() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img
-              src="/images/meza-logo-light-on-dark-glow.png"
+              src="/images/illustrations/logo-v2-dark.webp"
               alt="Meza"
               className="h-7 w-auto"
             />

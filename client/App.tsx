@@ -11,6 +11,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
 import { TenantProvider } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
+import { GuidanceProvider } from "@/contexts/GuidanceContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -71,7 +72,8 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <ThemeProvider>
-          <TooltipProvider>
+          <GuidanceProvider>
+            <TooltipProvider>
             <Toaster />
             <Sonner />
             <BrowserRouter>
@@ -118,7 +120,8 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
                 </FirebaseProvider>
               </ErrorBoundary>
             </BrowserRouter>
-          </TooltipProvider>
+            </TooltipProvider>
+          </GuidanceProvider>
         </ThemeProvider>
       </I18nProvider>
     </QueryClientProvider>

@@ -533,9 +533,11 @@ export default function SetupWizard() {
             {/* Step 5: Complete */}
             {currentStep === 4 && (
               <div className="text-center py-8 space-y-4">
-                <div className="inline-flex p-4 rounded-full bg-green-100 dark:bg-green-900/30">
-                  <CheckCircle className="h-12 w-12 text-green-600" />
-                </div>
+                <img
+                  src="/images/illustrations/setup-complete.webp"
+                  alt="Setup complete!"
+                  className="w-40 h-40 mx-auto mb-2 drop-shadow-xl"
+                />
                 <h3 className="text-xl font-bold">{t("setupWizard.allSet")}</h3>
                 <p className="text-muted-foreground max-w-md mx-auto">
                   {t("setupWizard.allSetDesc")}

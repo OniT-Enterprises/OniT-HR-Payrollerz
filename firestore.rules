@@ -519,6 +519,80 @@ service cloud.firestore {
         allow delete: if isSuperAdmin();
       }
 
+      // ============================================
+      // MONEY MODULE SUBCOLLECTIONS
+      // ============================================
+      match /customers/{customerId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /invoices/{invoiceId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /payments_received/{paymentId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /recurring_invoices/{recurringId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /vendors/{vendorId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /bills/{billId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /bill_payments/{paymentId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      // ============================================
+      // OTHER TENANT SUBCOLLECTIONS
+      // ============================================
+      match /holidays/{holidayId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /analytics/{docId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin();
+      }
+
+      match /offers/{offerId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /employmentSnapshots/{snapshotId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin();
+      }
+
+      match /leavePolicies/{policyId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /leaveBalances/{balanceId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
       // DEFAULT DENY: Any tenant subcollection not explicitly listed above
       // is blocked by Firestore's default-deny behavior. Do NOT add a catch-all
       // wildcard here — new subcollections must have explicit rules added.

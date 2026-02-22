@@ -771,7 +771,7 @@ export default function ChartOfAccounts() {
             <CardContent>
               {accounts.length === 0 ? (
                 <div className="text-center py-12">
-                  <BookOpen className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
+                  <img src="/images/illustrations/empty-accounting.webp" alt="No accounts yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                   <p className="text-muted-foreground mb-4">{t("accounting.chartOfAccounts.noAccountsFound")}</p>
                   <Button onClick={handleInitialize} disabled={initializing}>
                     {initializing ? (

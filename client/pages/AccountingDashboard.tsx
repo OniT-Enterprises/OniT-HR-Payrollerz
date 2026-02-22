@@ -48,6 +48,7 @@ import { journalEntryService, trialBalanceService } from "@/services/accountingS
 import { getTodayTL } from "@/lib/dateUtils";
 import { formatDateTL } from "@/lib/dateUtils";
 import { useToast } from "@/hooks/use-toast";
+import GuidancePanel from "@/components/GuidancePanel";
 import type { JournalEntry } from "@/types/accounting";
 
 function AccountingDashboardSkeleton() {
@@ -175,12 +176,16 @@ export default function AccountingDashboard() {
         const currentYear = new Date().getFullYear();
         const currentMonth = new Date().getMonth(); // 0-indexed
 
+        console.log('[Accounting] fetching data for tenant:', tenantId);
+
         // Fetch posted and draft journal entries in parallel
         const [postedEntries, draftEntries, trialBalance] = await Promise.all([
           journalEntryService.getAllJournalEntries(tenantId, { status: 'posted' }),
           journalEntryService.getAllJournalEntries(tenantId, { status: 'draft' }),
           trialBalanceService.generateTrialBalance(tenantId, today, currentYear),
         ]);
+
+        console.log('[Accounting] data loaded:', { posted: postedEntries.length, draft: draftEntries.length, balanced: trialBalance.isBalanced });
 
         if (cancelled) return;
 
@@ -216,7 +221,8 @@ export default function AccountingDashboard() {
             })),
           });
         }
-      } catch (_err) {
+      } catch (err) {
+        console.error('[Accounting] fetch error:', err);
         if (!cancelled) {
           toast({
             title: t("accounting.dashboard.errorTitle") || "Error",
@@ -231,7 +237,8 @@ export default function AccountingDashboard() {
 
     fetchData();
     return () => { cancelled = true; };
-  }, [tenantId, t, toast]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId]);
 
   // Attention items (only show if there are issues)
   const attentionItems = accountingStatus.pendingEntries > 0
@@ -300,7 +307,7 @@ export default function AccountingDashboard() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <Landmark className="h-6 w-6 text-white" />
+                <img src="/images/illustrations/icons/icon-accounting.webp" alt="" className="h-6 w-6" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-foreground">{t("accounting.dashboard.title")}</h1>
@@ -332,6 +339,8 @@ export default function AccountingDashboard() {
       </div>
 
       <div className="p-6 max-w-6xl mx-auto">
+        <GuidancePanel section="accounting" />
+
         {/* ═══════════════════════════════════════════════════════════════
             ACCOUNTANT GATE - Help non-accountants understand this section
         ═══════════════════════════════════════════════════════════════ */}

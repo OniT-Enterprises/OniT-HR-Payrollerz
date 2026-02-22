@@ -396,7 +396,7 @@ export default function GeneralLedger() {
               </div>
             ) : filteredEntries.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                <FileText className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <img src="/images/illustrations/empty-accounting.webp" alt="No transactions yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                 <p>{t("accounting.generalLedger.noTransactions")}</p>
               </div>
             ) : (

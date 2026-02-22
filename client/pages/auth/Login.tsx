@@ -51,7 +51,7 @@ export default function Login() {
         <div className="flex justify-center mb-10">
           <Link to="/landing">
             <img
-              src="/images/meza-logo-light-on-dark-glow.png"
+              src="/images/illustrations/logo-v2-dark.webp"
               alt="Meza"
               className="h-12 w-auto"
             />

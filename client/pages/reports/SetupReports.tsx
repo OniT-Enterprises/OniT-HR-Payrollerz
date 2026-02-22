@@ -17,7 +17,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { adminService } from "@/services/adminService";
 import { settingsService } from "@/services/settingsService";
-import { useTenant } from "@/contexts/TenantContext";
+import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -38,12 +38,10 @@ import { exportToCSV } from "@/lib/csvExport";
 
 export default function SetupReports() {
   const navigate = useNavigate();
-  const { session } = useTenant();
+  const tenantId = useTenantId();
   const { user: _user } = useAuth();
   const { toast } = useToast();
   const { t } = useI18n();
-
-  const tenantId = session?.tid;
 
   // Fetch audit log with React Query
   const { data: auditLog = [], isLoading: auditLoading } = useQuery({

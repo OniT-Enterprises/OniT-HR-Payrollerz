@@ -43,6 +43,7 @@ import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import DocumentAlertsCard from "@/components/dashboard/DocumentAlertsCard";
+import GuidancePanel from "@/components/GuidancePanel";
 
 function DashboardSkeleton() {
   return (
@@ -346,6 +347,8 @@ export default function Dashboard() {
             <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">?</kbd>
           </Button>
         </div>
+
+        <GuidancePanel section="dashboard" />
 
         {/* ═══════════════════════════════════════════════════════════════
             TODAY'S STATUS - 3 Cards: Payroll (PRIMARY), Compliance, Team
