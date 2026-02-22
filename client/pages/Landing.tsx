@@ -42,6 +42,10 @@ import {
   BookOpen,
   MonitorSmartphone,
   FileSpreadsheet,
+  UserCheck,
+  CalendarCheck,
+  Camera,
+  Globe,
 } from "lucide-react";
 
 export default function Landing() {
@@ -193,7 +197,7 @@ export default function Landing() {
               <Button variant="ghost" asChild className="text-zinc-300 hover:text-white hover:bg-white/5">
                 <Link to="/auth/login">{t("auth.signIn")}</Link>
               </Button>
-              <Button asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-red-500/25">
+              <Button asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-emerald-500/25">
                 <Link to="/auth/signup">
                   {t("landing.nav.getStarted")}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -206,9 +210,9 @@ export default function Landing() {
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 lg:pt-40 lg:pb-32">
-        {/* Background Effects - Timor flag colors */}
+        {/* Background Effects - Brand gradient (teal → amber) */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-red-500/10 rounded-full blur-[128px] animate-pulse" />
+          <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-[128px] animate-pulse" />
           <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-gradient-to-r from-black/20 to-transparent rounded-full blur-[120px]" />
         </div>
@@ -219,11 +223,11 @@ export default function Landing() {
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center max-w-4xl mx-auto">
             {/* Badge */}
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 mb-8">
-              <MapPin className="h-4 w-4 text-red-400" />
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-8">
+              <MapPin className="h-4 w-4 text-emerald-400" />
               <span className="text-sm text-zinc-300">
                 {t("landing.hero.badge")}{" "}
-                <span className="text-red-400 font-medium">
+                <span className="text-emerald-400 font-medium">
                   {t("landing.hero.badgeHighlight")}
                 </span>
               </span>
@@ -232,7 +236,7 @@ export default function Landing() {
             {/* Headline */}
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.1] mb-6">
               <span className="block text-white">{t("landing.hero.headline")}</span>
-              <span className="block bg-gradient-to-r from-red-400 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
+              <span className="block bg-gradient-to-r from-emerald-400 via-yellow-400 to-amber-300 bg-clip-text text-transparent">
                 {t("landing.hero.headlineAccent")}
               </span>
             </h1>
@@ -268,7 +272,7 @@ export default function Landing() {
 
             {/* CTAs */}
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
-              <Button size="lg" asChild className="h-14 px-8 text-base bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold shadow-xl shadow-red-500/25 hover:shadow-red-500/40 transition-all">
+              <Button size="lg" asChild className="h-14 px-8 text-base bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all">
                 <Link to="/auth/signup">
                   {t("landing.hero.ctaPrimary")}
                   <ArrowRight className="ml-2 h-5 w-5" />
@@ -363,9 +367,9 @@ export default function Landing() {
       <section id="features" className="py-24 lg:py-32 border-t border-white/5">
         <div className="max-w-7xl mx-auto px-6 lg:px-8">
           <div className="text-center max-w-2xl mx-auto mb-16">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-500/10 border border-red-500/20 mb-4">
-              <MapPin className="h-3 w-3 text-red-400" />
-              <span className="text-xs text-red-400">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-4">
+              <MapPin className="h-3 w-3 text-emerald-400" />
+              <span className="text-xs text-emerald-400">
                 {t("landing.features.badge")}
               </span>
             </div>
@@ -386,7 +390,7 @@ export default function Landing() {
               return (
                 <div
                   key={i}
-                  className="group relative p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-red-500/20 transition-all hover:bg-white/[0.04]"
+                  className="group relative p-8 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/20 transition-all hover:bg-white/[0.04]"
                 >
                   <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} mb-4 shadow-lg`}>
                     <Icon className="h-6 w-6 text-white" />
@@ -396,7 +400,7 @@ export default function Landing() {
                     <span className="text-sm text-zinc-500">{feature.subtitle}</span>
                   </div>
                   <p className="text-zinc-400 leading-relaxed">{feature.description}</p>
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-red-500/0 via-red-500/5 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
+                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-emerald-500/0 via-emerald-500/5 to-amber-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
                 </div>
               );
             })}
@@ -430,7 +434,7 @@ export default function Landing() {
           </div>
 
           {/* Mobile Payments */}
-          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-red-500/5 via-amber-500/5 to-red-500/5 border border-amber-500/20">
+          <div className="mt-6 p-6 rounded-2xl bg-gradient-to-r from-emerald-500/5 via-amber-500/5 to-emerald-500/5 border border-amber-500/20">
             <div className="flex items-center gap-3 mb-5">
               <Smartphone className="h-5 w-5 text-amber-400" />
               <h4 className="font-bold text-white text-lg">{t("landing.mobilePay.title")}</h4>
@@ -540,6 +544,216 @@ export default function Landing() {
                 <ChevronRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════════════════════════════════════════════════
+          Ekipa — Employee Mobile Companion
+      ═══════════════════════════════════════════════════════════ */}
+      <section className="py-24 lg:py-32 border-t border-white/5 relative overflow-hidden">
+        {/* Teal glow */}
+        <div className="absolute inset-0">
+          <div className="absolute top-1/3 left-1/4 w-[500px] h-[500px] bg-teal-500/[0.07] rounded-full blur-[120px]" />
+          <div className="absolute bottom-1/4 right-1/3 w-[300px] h-[300px] bg-emerald-600/[0.05] rounded-full blur-[100px]" />
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-6 lg:px-8">
+          {/* Section Header */}
+          <div className="text-center max-w-2xl mx-auto mb-16">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-teal-500/10 border border-teal-500/20 mb-4">
+              <Users className="h-3 w-3 text-teal-400" />
+              <span className="text-xs text-teal-400">{t("landing.ekipa.badge")}</span>
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-black mb-2">
+              {t("landing.ekipa.title")}
+              <span className="block text-zinc-500 text-2xl lg:text-3xl mt-2">
+                {t("landing.ekipa.titleAccent")}
+              </span>
+            </h2>
+            <p className="text-zinc-400 mt-4">
+              {t("landing.ekipa.description")}
+            </p>
+          </div>
+
+          {/* Two-column: Phone Mockup + Features */}
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
+            {/* Features */}
+            <div>
+              <p className="text-sm text-teal-400/80 font-medium mb-6 italic">
+                {t("landing.ekipa.tagline")}
+              </p>
+              <div className="space-y-5">
+                {[
+                  { icon: FileText, title: t("landing.ekipa.features.payslips.title"), desc: t("landing.ekipa.features.payslips.desc"), color: "text-teal-400", bg: "bg-teal-500/10" },
+                  { icon: CalendarCheck, title: t("landing.ekipa.features.leave.title"), desc: t("landing.ekipa.features.leave.desc"), color: "text-emerald-400", bg: "bg-emerald-500/10" },
+                  { icon: Camera, title: t("landing.ekipa.features.crewClock.title"), desc: t("landing.ekipa.features.crewClock.desc"), color: "text-cyan-400", bg: "bg-cyan-500/10" },
+                  { icon: WifiOff, title: t("landing.ekipa.features.offline.title"), desc: t("landing.ekipa.features.offline.desc"), color: "text-blue-400", bg: "bg-blue-500/10" },
+                  { icon: Globe, title: t("landing.ekipa.features.bilingual.title"), desc: t("landing.ekipa.features.bilingual.desc"), color: "text-violet-400", bg: "bg-violet-500/10" },
+                  { icon: UserCheck, title: t("landing.ekipa.features.selfService.title"), desc: t("landing.ekipa.features.selfService.desc"), color: "text-amber-400", bg: "bg-amber-500/10" },
+                ].map((feature, i) => {
+                  const Icon = feature.icon;
+                  return (
+                    <div key={i} className="flex items-start gap-4">
+                      <div className={`p-2 rounded-lg ${feature.bg} flex-shrink-0`}>
+                        <Icon className={`h-4 w-4 ${feature.color}`} />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-white text-sm">{feature.title}</h3>
+                        <p className="text-xs text-zinc-500 leading-relaxed">{feature.desc}</p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* CTA */}
+              <div className="mt-8 flex flex-wrap items-center gap-4">
+                <div className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-teal-500/20 to-emerald-500/20 border border-teal-500/20 text-teal-300 font-medium text-sm">
+                  <Smartphone className="h-4 w-4" />
+                  {t("landing.ekipa.cta")}
+                </div>
+                <span className="text-xs text-zinc-600">{t("landing.ekipa.ctaNote")}</span>
+              </div>
+            </div>
+
+            {/* Phone Mockup */}
+            <div className="flex justify-center">
+              <div className="relative">
+                {/* Glow behind phone */}
+                <div className="absolute inset-0 bg-gradient-to-b from-teal-500/20 to-emerald-600/10 rounded-[3rem] blur-2xl scale-110" />
+                {/* Phone frame */}
+                <div className="relative rounded-[2.5rem] border-[6px] border-zinc-700/80 bg-zinc-900 shadow-2xl shadow-black/50 w-[280px]">
+                  {/* Notch */}
+                  <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-5 bg-zinc-800 rounded-full z-10" />
+                  {/* Screen */}
+                  <div className="rounded-[2rem] overflow-hidden bg-[#111]">
+                    {/* Status bar */}
+                    <div className="flex justify-between items-center px-6 pt-7 pb-2">
+                      <span className="text-[10px] text-zinc-500 font-medium">9:41</span>
+                      <div className="flex gap-1.5 items-center text-[10px] text-zinc-500">
+                        <span>LTE</span>
+                        <span>100%</span>
+                      </div>
+                    </div>
+
+                    {/* App header */}
+                    <div className="px-5 pt-2 pb-3">
+                      <p className="text-teal-400 font-bold text-base tracking-wide">Ekipa</p>
+                      <p className="text-[10px] text-zinc-600 mt-0.5">Bondia, Maria</p>
+                    </div>
+
+                    {/* Payday countdown */}
+                    <div className="mx-4 p-4 rounded-2xl bg-gradient-to-br from-teal-500/20 to-emerald-600/10 border border-teal-500/20 mb-3">
+                      <p className="text-[10px] text-zinc-400 mb-1">Next payday</p>
+                      <div className="flex items-baseline gap-2">
+                        <p className="text-2xl font-bold text-white">3</p>
+                        <p className="text-sm text-zinc-400">days</p>
+                      </div>
+                      <div className="w-full h-1.5 rounded-full bg-white/10 mt-2">
+                        <div className="h-full w-[85%] rounded-full bg-gradient-to-r from-teal-400 to-emerald-400" />
+                      </div>
+                    </div>
+
+                    {/* Leave Balance Card */}
+                    <div className="mx-4 p-3 rounded-xl bg-white/[0.03] border border-white/5 mb-3">
+                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Leave balance</p>
+                      <div className="flex gap-3">
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-emerald-400">12</p>
+                          <p className="text-[9px] text-zinc-500">Annual</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-blue-400">8</p>
+                          <p className="text-[9px] text-zinc-500">Sick</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-amber-400">2</p>
+                          <p className="text-[9px] text-zinc-500">Personal</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick actions */}
+                    <div className="grid grid-cols-3 gap-2 px-4 mb-3">
+                      <div className="py-2.5 rounded-xl bg-teal-500/15 border border-teal-500/20 text-center">
+                        <FileText className="h-4 w-4 text-teal-400 mx-auto mb-1" />
+                        <span className="text-[9px] text-teal-300 block">Payslips</span>
+                      </div>
+                      <div className="py-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/20 text-center">
+                        <CalendarCheck className="h-4 w-4 text-emerald-400 mx-auto mb-1" />
+                        <span className="text-[9px] text-emerald-300 block">Leave</span>
+                      </div>
+                      <div className="py-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/20 text-center">
+                        <Clock className="h-4 w-4 text-cyan-400 mx-auto mb-1" />
+                        <span className="text-[9px] text-cyan-300 block">Clock In</span>
+                      </div>
+                    </div>
+
+                    {/* Latest payslip */}
+                    <div className="px-4 pb-6">
+                      <p className="text-[10px] text-zinc-500 mb-2 font-medium">Latest payslip</p>
+                      <div className="p-2.5 rounded-lg bg-white/[0.03] border border-white/5">
+                        <div className="flex justify-between items-center">
+                          <div>
+                            <span className="text-[10px] text-zinc-400 block">January 2026</span>
+                            <span className="text-sm font-semibold text-white">$847.30</span>
+                          </div>
+                          <div className="px-2 py-1 rounded bg-emerald-500/20 text-emerald-400 text-[9px] font-medium">Paid</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Two Tiers - Shipped / Coming Next */}
+          <div className="mt-20 grid md:grid-cols-2 gap-6">
+            {/* Shipped */}
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-teal-500/20 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="px-3 py-1 rounded-full bg-teal-500/10 text-teal-400 text-xs font-semibold border border-teal-500/20">{t("landing.ekipa.shipped.badge")}</div>
+                <h3 className="font-bold text-white text-lg">{t("landing.ekipa.shipped.title")}</h3>
+              </div>
+              <ul className="space-y-2.5">
+                {[
+                  t("landing.ekipa.shipped.features.login"),
+                  t("landing.ekipa.shipped.features.dashboard"),
+                  t("landing.ekipa.shipped.features.payslips"),
+                  t("landing.ekipa.shipped.features.leave"),
+                  t("landing.ekipa.shipped.features.crewClock"),
+                  t("landing.ekipa.shipped.features.profile"),
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <CheckCircle2 className="h-4 w-4 text-teal-400 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Coming Next */}
+            <div className="p-6 rounded-2xl bg-gradient-to-br from-teal-500/[0.03] to-emerald-500/[0.03] border border-teal-500/20 hover:border-teal-400/30 transition-colors">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">{t("landing.ekipa.coming.badge")}</div>
+                <h3 className="font-bold text-white text-lg">{t("landing.ekipa.coming.title")}</h3>
+              </div>
+              <ul className="space-y-2.5">
+                {[
+                  t("landing.ekipa.coming.features.push"),
+                  t("landing.ekipa.coming.features.attendance"),
+                  t("landing.ekipa.coming.features.documents"),
+                  t("landing.ekipa.coming.features.shifts"),
+                ].map((item, i) => (
+                  <li key={i} className="flex items-start gap-2 text-sm text-zinc-300">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </div>
       </section>
@@ -1094,12 +1308,12 @@ export default function Landing() {
       {/* Final CTA */}
       <section className="py-24 lg:py-32 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-red-500/20 to-amber-500/20 rounded-full blur-[120px]" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-gradient-to-r from-emerald-500/20 to-amber-500/20 rounded-full blur-[120px]" />
         </div>
         <div className="relative max-w-4xl mx-auto px-6 lg:px-8 text-center">
           <h2 className="text-4xl lg:text-5xl font-black mb-6">
             {t("landing.cta.title")}
-            <span className="block bg-gradient-to-r from-red-400 to-amber-400 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-emerald-400 to-amber-400 bg-clip-text text-transparent">
               {t("landing.cta.titleAccent")}
             </span>
           </h2>
@@ -1107,7 +1321,7 @@ export default function Landing() {
             {t("landing.cta.description")}
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" asChild className="h-14 px-10 text-base bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold shadow-xl shadow-red-500/30">
+            <Button size="lg" asChild className="h-14 px-10 text-base bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold shadow-xl shadow-emerald-500/30">
               <Link to="/auth/signup">
                 {t("landing.cta.primary")}
                 <ArrowRight className="ml-2 h-5 w-5" />

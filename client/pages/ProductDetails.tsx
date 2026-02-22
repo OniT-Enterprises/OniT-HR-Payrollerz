@@ -637,7 +637,7 @@ export default function ProductDetails() {
               <Button variant="ghost" asChild className="text-zinc-300 hover:text-white hover:bg-white/5">
                 <Link to="/auth/login">{t("auth.signIn")}</Link>
               </Button>
-              <Button asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-red-500/25">
+              <Button asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400 text-white font-semibold shadow-lg shadow-red-500/25">
                 <Link to="/auth/signup">
                   {t("landing.nav.getStarted")}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -651,19 +651,19 @@ export default function ProductDetails() {
       {/* Hero */}
       <section className="py-16 lg:py-24 relative overflow-hidden">
         <div className="absolute inset-0">
-          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-red-500/10 rounded-full blur-[100px]" />
+          <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-emerald-500/10 rounded-full blur-[100px]" />
           <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-amber-500/10 rounded-full blur-[100px]" />
         </div>
 
         <div className="relative max-w-7xl mx-auto px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-red-500/10 border border-red-500/20 mb-6">
-            <FileText className="h-4 w-4 text-red-400" />
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 mb-6">
+            <FileText className="h-4 w-4 text-emerald-400" />
             <span className="text-sm text-zinc-300">Complete Platform Documentation</span>
           </div>
 
           <h1 className="text-4xl lg:text-6xl font-black mb-6">
             Everything You Need to Know
-            <span className="block bg-gradient-to-r from-red-400 via-amber-400 to-yellow-300 bg-clip-text text-transparent">
+            <span className="block bg-gradient-to-r from-emerald-400 via-yellow-400 to-amber-300 bg-clip-text text-transparent">
               About Meza
             </span>
           </h1>
@@ -746,16 +746,16 @@ export default function ProductDetails() {
                 {tlFeatures.map((feature, i) => {
                   const Icon = feature.icon;
                   return (
-                    <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-red-500/20 transition-colors">
-                      <div className="p-3 rounded-xl bg-red-500/10 inline-flex mb-4">
-                        <Icon className="h-6 w-6 text-red-400" />
+                    <div key={i} className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-emerald-500/20 transition-colors">
+                      <div className="p-3 rounded-xl bg-emerald-500/10 inline-flex mb-4">
+                        <Icon className="h-6 w-6 text-emerald-400" />
                       </div>
                       <h3 className="text-lg font-bold text-white mb-1">{feature.title}</h3>
                       <p className="text-sm text-zinc-500 mb-4">{feature.description}</p>
                       <ul className="space-y-2">
                         {feature.details.map((detail, j) => (
                           <li key={j} className="flex items-center gap-2 text-sm text-zinc-400">
-                            <CheckCircle2 className="h-3 w-3 text-red-400 flex-shrink-0" />
+                            <CheckCircle2 className="h-3 w-3 text-emerald-400 flex-shrink-0" />
                             {detail}
                           </li>
                         ))}
@@ -931,7 +931,7 @@ export default function ProductDetails() {
             Join businesses across Timor-Leste using Meza for compliant HR and Payroll.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" asChild className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400">
+            <Button size="lg" asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400">
               <Link to="/auth/signup">
                 Start 30-Day Free Trial
                 <ArrowRight className="ml-2 h-5 w-5" />

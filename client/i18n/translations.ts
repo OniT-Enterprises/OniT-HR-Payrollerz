@@ -504,6 +504,45 @@ export const translations = {
         "tomas": { "name": "Tomas", "role": "Shop Owner", "desc": "Growing retail shop. Customer tabs, inventory tracking. Ready for VAT when it arrives." }
       }
     },
+    "ekipa": {
+      "badge": "Employee App",
+      "title": "Ekipa",
+      "titleAccent": "Your Team's Mobile Companion",
+      "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Meza customers.",
+      "tagline": "\"Ekipa\" — Tetum for team",
+      "features": {
+        "payslips": { "title": "Payslips on Phone", "desc": "Employees view payslip breakdown, download PDF, and share via WhatsApp. No more printing." },
+        "leave": { "title": "Leave Requests", "desc": "Request annual, sick, or maternity leave. See balances and track approval status in real-time." },
+        "crewClock": { "title": "Crew Clock-In", "desc": "Supervisor mode with GPS + camera proof. Anti-ghost-worker system for construction and security teams." },
+        "offline": { "title": "Works Offline", "desc": "SQLite local database syncs crew data when reconnected. Perfect for remote sites." },
+        "bilingual": { "title": "Tetum & English", "desc": "Full interface in both languages. Employees switch instantly — no restart needed." },
+        "selfService": { "title": "Self-Service Profile", "desc": "View personal details, job info, documents, and attendance history. Fewer questions for HR." }
+      },
+      "cta": "Included with Meza",
+      "ctaNote": "Android · Free for all Meza employees",
+      "shipped": {
+        "badge": "Live Now",
+        "title": "What's Shipped",
+        "features": {
+          "login": "Email/password authentication",
+          "dashboard": "Home with payday countdown & leave balance",
+          "payslips": "12-month payslip history with PDF export",
+          "leave": "Leave balances, history & request form",
+          "crewClock": "Crew clock-in/out with GPS & camera",
+          "profile": "Full employee profile & attendance summary"
+        }
+      },
+      "coming": {
+        "badge": "Coming Next",
+        "title": "On the Roadmap",
+        "features": {
+          "push": "Push notifications for payslips & approvals",
+          "attendance": "Personal attendance history & hours verification",
+          "documents": "Document viewer for contracts & certificates",
+          "shifts": "Shift schedule viewer"
+        }
+      }
+    },
     "mobilePay": {
       "title": "Mobile Money Ready",
       "subtitle": "Pay employees without bank accounts",
@@ -4375,6 +4414,45 @@ export const translations = {
         "maria": { "name": "Maria", "role": "Vendedór Kiosk", "desc": "Fa'an kreditu telefone, snack, sigaru. Uza kaderno ohin. Presiza: \"Ohin ha'u hetan hira?\"" },
         "ana": { "name": "Ana", "role": "Dona Kafé", "desc": "Hala'o kafé ho staf 5. Uza Meza ba folha, Kaixa ba venda loron-loron. Staf uza Meza Go." },
         "tomas": { "name": "Tomas", "role": "Dona Loja", "desc": "Loja varejo ne'ebe kresce. Tab kliente, kontrolu stock. Prontu ba VAT bainhira mai." }
+      }
+    },
+    "ekipa": {
+      "badge": "App Empregadu",
+      "title": "Ekipa",
+      "titleAccent": "Kompanheiru Movel Ita-nia Ekipa",
+      "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Meza.",
+      "tagline": "\"Ekipa\" — Tetun ba ekipa",
+      "features": {
+        "payslips": { "title": "Payslip iha Telefone", "desc": "Empregadu haree detallu payslip, download PDF, no fahe liu WhatsApp. Laiha presiza halo print." },
+        "leave": { "title": "Pedidu Lisensa", "desc": "Husu lisensa annual, moras, ka maternidade. Haree balansu no akompaña aprovasaun iha tempu real." },
+        "crewClock": { "title": "Clock-In Ekipa", "desc": "Modu supervizór ho GPS + prova kamera. Sistema anti-trabalhador-fantasma ba konstrusaun no seguransa." },
+        "offline": { "title": "Funsiona Offline", "desc": "Database lokál SQLite synka dadus ekipa bainhira liga fali. Di'ak ba fatin remotu." },
+        "bilingual": { "title": "Tetun & Ingles", "desc": "Interface tomak iha lian rua. Empregadu muda kedas — la presiza restart." },
+        "selfService": { "title": "Perfil Self-Service", "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensia. Pergunta menus ba RH." }
+      },
+      "cta": "Inklui ho Meza",
+      "ctaNote": "Android · Grátis ba empregadu Meza hotu",
+      "shipped": {
+        "badge": "Ativu Ona",
+        "title": "Saida mak Prontu",
+        "features": {
+          "login": "Autentikasaun email/password",
+          "dashboard": "Uma ho countdown loron selu & balansu lisensa",
+          "payslips": "Istória payslip fulan 12 ho PDF export",
+          "leave": "Balansu lisensa, istória & formuláriu pedidu",
+          "crewClock": "Clock-in/out ekipa ho GPS & kamera",
+          "profile": "Perfil empregadu kompletu & sumáriu prezensia"
+        }
+      },
+      "coming": {
+        "badge": "Mai Tuir",
+        "title": "Iha Roadmap",
+        "features": {
+          "push": "Notifikasaun push ba payslip & aprovasaun",
+          "attendance": "Istória prezensia pesoál & verifikasaun oras",
+          "documents": "Haree dokumentu ba kontratu & sertifikadu",
+          "shifts": "Haree orário turnu"
+        }
       }
     },
     "mobilePay": {

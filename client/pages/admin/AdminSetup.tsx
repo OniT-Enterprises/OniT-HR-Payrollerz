@@ -236,7 +236,7 @@ export default function AdminSetup() {
                 <Button
                   onClick={handleSetup}
                   disabled={loading || !companyName || !companySlug}
-                  className="w-full bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400"
+                  className="w-full bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400"
                   size="lg"
                 >
                   {loading ? (
