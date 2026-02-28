@@ -15,6 +15,28 @@ interface ProvisionTenantResponse {
   message: string;
 }
 
+const ALLOWED_MODULES = [
+  "hiring",
+  "staff",
+  "timeleave",
+  "performance",
+  "payroll",
+  "money",
+  "accounting",
+  "reports",
+] as const;
+
+type AllowedModule = (typeof ALLOWED_MODULES)[number];
+
+const ALLOWED_MODULE_SET = new Set<AllowedModule>(ALLOWED_MODULES);
+
+const DEFAULT_MODULES_BY_ROLE: Record<TenantRole, AllowedModule[]> = {
+  owner: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+  "hr-admin": ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+  manager: ["staff", "timeleave", "performance"],
+  viewer: [],
+};
+
 /**
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
@@ -93,6 +115,8 @@ export const provisionTenant = onCall(
           timeleave: true,
           performance: true,
           payroll: true,
+          money: true,
+          accounting: true,
           reports: true,
           ...config?.features,
         },
@@ -127,7 +151,7 @@ export const provisionTenant = onCall(
       const ownerMemberData = {
         uid: ownerUser.uid,
         role: "owner" as const,
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "reports"],
+        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
         email: ownerEmail,
         displayName: ownerUser.displayName || null,
         joinedAt: new Date(),
@@ -310,7 +334,7 @@ async function createDefaultTenantData(db: FirebaseFirestore.Firestore, tenantId
  */
 export const addTenantMember = onCall(
   async (request): Promise<{ success: boolean; message: string }> => {
-    const { tenantId, userEmail, role, modules = [], employeeId, tenantName } = request.data as {
+    const { tenantId, userEmail, role, modules, employeeId, tenantName } = request.data as {
       tenantId?: string;
       userEmail?: string;
       role?: TenantRole;
@@ -333,16 +357,30 @@ export const addTenantMember = onCall(
       throw new HttpsError("invalid-argument", "Invalid role");
     }
 
-    if (!Array.isArray(modules)) {
+    if (modules !== undefined && !Array.isArray(modules)) {
       throw new HttpsError("invalid-argument", "modules must be an array");
     }
 
     const db = getFirestore();
     const auth = getAuth();
     const normalizedEmail = userEmail.trim().toLowerCase();
-    const normalizedModules = modules.filter(
-      (module): module is string => typeof module === "string",
-    );
+    const requestedModules = Array.isArray(modules)
+      ? modules.map((module) => {
+          if (typeof module !== "string") {
+            throw new HttpsError("invalid-argument", "modules must only include strings");
+          }
+          return module.trim();
+        })
+      : [];
+
+    if (requestedModules.some((module) => !ALLOWED_MODULE_SET.has(module as AllowedModule))) {
+      throw new HttpsError("invalid-argument", "modules contains invalid entries");
+    }
+
+    const normalizedModules = Array.from(new Set(requestedModules)) as AllowedModule[];
+    const effectiveModules = Array.isArray(modules)
+      ? normalizedModules
+      : DEFAULT_MODULES_BY_ROLE[role];
 
     try {
       const callerMember = await requireTenantAdmin(tenantId, authContext.uid);
@@ -381,7 +419,7 @@ export const addTenantMember = onCall(
       const memberData = {
         uid: targetUser.uid,
         role,
-        modules: normalizedModules,
+        modules: effectiveModules,
         email: normalizedEmail,
         displayName: targetUser.displayName || null,
         joinedAt: new Date(),

@@ -43,7 +43,7 @@ jest.mock("firebase-admin/firestore", () => ({
   getFirestore: () => mockFirestore,
   FieldValue: {
     serverTimestamp: () => ({ _methodName: "FieldValue.serverTimestamp" }),
-    arrayUnion: (value: any) => ({
+    arrayUnion: (value: unknown) => ({
       _methodName: "FieldValue.arrayUnion",
       _elements: [value],
     }),

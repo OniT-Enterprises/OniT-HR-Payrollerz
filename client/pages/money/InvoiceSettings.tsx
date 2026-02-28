@@ -3,8 +3,9 @@
  * Configure company info, bank details, and invoice defaults
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import { useInvoiceSettings } from '@/hooks/useInvoices';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { InvoiceSettings } from '@/types/money';
 import {
@@ -53,9 +55,38 @@ export default function InvoiceSettingsPage() {
   const { t } = useI18n();
   const tenantId = useTenantId();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>(DEFAULT_SETTINGS);
+
+  const { data: loadedSettings, isLoading: loading } = useInvoiceSettings();
+
+  // Sync loaded settings into local state for editing (render-time sync)
+  const prevLoadedRef = useRef(loadedSettings);
+  if (loadedSettings && loadedSettings !== prevLoadedRef.current) {
+    prevLoadedRef.current = loadedSettings;
+    setSettings({ ...DEFAULT_SETTINGS, ...loadedSettings });
+  }
+
+  const saveMutation = useMutation({
+    mutationFn: (data: Partial<InvoiceSettings>) =>
+      invoiceService.updateSettings(tenantId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
+      toast({
+        title: t('common.success') || 'Success',
+        description: t('money.settings.saved') || 'Invoice settings saved',
+      });
+    },
+    onError: () => {
+      toast({
+        title: t('common.error') || 'Error',
+        description: t('money.settings.saveError') || 'Failed to save settings',
+        variant: 'destructive',
+      });
+    },
+  });
+
+  const saving = saveMutation.isPending;
 
   const TAX_RATES = [
     { value: '0', label: t('money.settings.noTax') || 'No Tax (0%)' },
@@ -74,49 +105,8 @@ export default function InvoiceSettingsPage() {
     { value: '90', label: `90 ${t('money.settings.days') || 'days'}` },
   ];
 
-  useEffect(() => {
-    if (tenantId) {
-      loadSettings();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadSettings = async () => {
-    if (!tenantId) return;
-
-    try {
-      setLoading(true);
-      const data = await invoiceService.getSettings(tenantId);
-      setSettings({ ...DEFAULT_SETTINGS, ...data });
-    } catch (error) {
-      console.error('Error loading settings:', error);
-      // Use defaults if no settings exist
-      setSettings(DEFAULT_SETTINGS);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSave = async () => {
-    if (!tenantId) return;
-
-    try {
-      setSaving(true);
-      await invoiceService.updateSettings(tenantId, settings);
-      toast({
-        title: t('common.success') || 'Success',
-        description: t('money.settings.saved') || 'Invoice settings saved',
-      });
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.settings.saveError') || 'Failed to save settings',
-        variant: 'destructive',
-      });
-    } finally {
-      setSaving(false);
-    }
+  const handleSave = () => {
+    saveMutation.mutate(settings);
   };
 
   const updateField = (field: keyof InvoiceSettings, value: string | number) => {

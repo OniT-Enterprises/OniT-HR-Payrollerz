@@ -3,19 +3,17 @@
  * Shows outstanding bills grouped by age (current, 30, 60, 90+ days)
  */
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { billService } from '@/services/billService';
-import { vendorService } from '@/services/vendorService';
+import { useAllBills } from '@/hooks/useBills';
+import { useAllVendors } from '@/hooks/useVendors';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, Vendor } from '@/types/money';
 import {
@@ -45,111 +43,91 @@ interface VendorAging {
 
 export default function APAgingReport() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [buckets, setBuckets] = useState<AgingBucket[]>([]);
-  const [vendorAging, setVendorAging] = useState<VendorAging[]>([]);
-  const [totalPayable, setTotalPayable] = useState(0);
+  const { data: allBills = [], isLoading: loadingBills } = useAllBills();
+  const { data: allVendors = [], isLoading: loadingVendors } = useAllVendors();
+  const loading = loadingBills || loadingVendors;
 
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
+  const { buckets, vendorAging, totalPayable } = useMemo(() => {
+    if (allBills.length === 0 && allVendors.length === 0) {
+      return { buckets: [] as AgingBucket[], vendorAging: [] as VendorAging[], totalPayable: 0 };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
 
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
-      const [bills, vendors] = await Promise.all([
-        billService.getAllBills(tenantId),
-        vendorService.getAllVendors(tenantId),
-      ]);
+    // Create vendor lookup
+    const vendorMap = new Map<string, Vendor>();
+    allVendors.forEach(v => vendorMap.set(v.id, v));
 
-      // Create vendor lookup
-      const vendorMap = new Map<string, Vendor>();
-      vendors.forEach(v => vendorMap.set(v.id, v));
+    // Filter to only unpaid bills
+    const unpaidBills = allBills.filter(
+      bill => bill.status !== 'paid' && bill.status !== 'cancelled'
+    );
 
-      // Filter to only unpaid bills
-      const unpaidBills = bills.filter(
-        bill => bill.status !== 'paid' && bill.status !== 'cancelled'
-      );
+    const now = new Date();
 
-      const now = new Date();
+    // Calculate days overdue for each bill
+    const billsWithAge = unpaidBills.map(bill => {
+      const dueDate = new Date(bill.dueDate);
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      const vendor = vendorMap.get(bill.vendorId);
+      return { ...bill, daysOverdue, vendorName: vendor?.name || 'Unknown Vendor' };
+    });
 
-      // Calculate days overdue for each bill
-      const billsWithAge = unpaidBills.map(bill => {
-        const dueDate = new Date(bill.dueDate);
-        const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        const vendor = vendorMap.get(bill.vendorId);
-        return { ...bill, daysOverdue, vendorName: vendor?.name || 'Unknown Vendor' };
-      });
+    // Group into aging buckets
+    const current = billsWithAge.filter(bill => bill.daysOverdue <= 0);
+    const days1to30 = billsWithAge.filter(bill => bill.daysOverdue > 0 && bill.daysOverdue <= 30);
+    const days31to60 = billsWithAge.filter(bill => bill.daysOverdue > 30 && bill.daysOverdue <= 60);
+    const days61to90 = billsWithAge.filter(bill => bill.daysOverdue > 60 && bill.daysOverdue <= 90);
+    const days90Plus = billsWithAge.filter(bill => bill.daysOverdue > 90);
 
-      // Group into aging buckets
-      const current = billsWithAge.filter(bill => bill.daysOverdue <= 0);
-      const days1to30 = billsWithAge.filter(bill => bill.daysOverdue > 0 && bill.daysOverdue <= 30);
-      const days31to60 = billsWithAge.filter(bill => bill.daysOverdue > 30 && bill.daysOverdue <= 60);
-      const days61to90 = billsWithAge.filter(bill => bill.daysOverdue > 60 && bill.daysOverdue <= 90);
-      const days90Plus = billsWithAge.filter(bill => bill.daysOverdue > 90);
+    const calcTotal = (bills: Bill[]) => bills.reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
 
-      const calcTotal = (bills: Bill[]) => bills.reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
+    const computedBuckets: AgingBucket[] = [
+      { label: t('money.apAging.current') || 'Current', days: '0 days', bills: current, total: calcTotal(current) },
+      { label: t('money.apAging.days1to30') || '1-30 Days', days: '1-30', bills: days1to30, total: calcTotal(days1to30) },
+      { label: t('money.apAging.days31to60') || '31-60 Days', days: '31-60', bills: days31to60, total: calcTotal(days31to60) },
+      { label: t('money.apAging.days61to90') || '61-90 Days', days: '61-90', bills: days61to90, total: calcTotal(days61to90) },
+      { label: t('money.apAging.days90Plus') || '90+ Days', days: '90+', bills: days90Plus, total: calcTotal(days90Plus) },
+    ];
 
-      setBuckets([
-        { label: t('money.apAging.current') || 'Current', days: '0 days', bills: current, total: calcTotal(current) },
-        { label: t('money.apAging.days1to30') || '1-30 Days', days: '1-30', bills: days1to30, total: calcTotal(days1to30) },
-        { label: t('money.apAging.days31to60') || '31-60 Days', days: '31-60', bills: days31to60, total: calcTotal(days31to60) },
-        { label: t('money.apAging.days61to90') || '61-90 Days', days: '61-90', bills: days61to90, total: calcTotal(days61to90) },
-        { label: t('money.apAging.days90Plus') || '90+ Days', days: '90+', bills: days90Plus, total: calcTotal(days90Plus) },
-      ]);
+    // Group by vendor
+    const vendorAgingMap = new Map<string, VendorAging>();
 
-      // Group by vendor
-      const vendorAgingMap = new Map<string, VendorAging>();
+    billsWithAge.forEach(bill => {
+      const balance = bill.amount - (bill.amountPaid || 0);
+      if (!vendorAgingMap.has(bill.vendorId)) {
+        vendorAgingMap.set(bill.vendorId, {
+          vendorId: bill.vendorId,
+          vendorName: bill.vendorName,
+          current: 0,
+          days30: 0,
+          days60: 0,
+          days90Plus: 0,
+          total: 0,
+        });
+      }
 
-      billsWithAge.forEach(bill => {
-        const balance = bill.amount - (bill.amountPaid || 0);
-        if (!vendorAgingMap.has(bill.vendorId)) {
-          vendorAgingMap.set(bill.vendorId, {
-            vendorId: bill.vendorId,
-            vendorName: bill.vendorName,
-            current: 0,
-            days30: 0,
-            days60: 0,
-            days90Plus: 0,
-            total: 0,
-          });
-        }
+      const vendor = vendorAgingMap.get(bill.vendorId)!;
+      vendor.total += balance;
 
-        const vendor = vendorAgingMap.get(bill.vendorId)!;
-        vendor.total += balance;
+      if (bill.daysOverdue <= 0) {
+        vendor.current += balance;
+      } else if (bill.daysOverdue <= 30) {
+        vendor.days30 += balance;
+      } else if (bill.daysOverdue <= 60) {
+        vendor.days60 += balance;
+      } else {
+        vendor.days90Plus += balance;
+      }
+    });
 
-        if (bill.daysOverdue <= 0) {
-          vendor.current += balance;
-        } else if (bill.daysOverdue <= 30) {
-          vendor.days30 += balance;
-        } else if (bill.daysOverdue <= 60) {
-          vendor.days60 += balance;
-        } else {
-          vendor.days90Plus += balance;
-        }
-      });
+    const sortedVendors = Array.from(vendorAgingMap.values()).sort((a, b) => b.total - a.total);
 
-      const sortedVendors = Array.from(vendorAgingMap.values()).sort((a, b) => b.total - a.total);
-      setVendorAging(sortedVendors);
-      setTotalPayable(calcTotal(unpaidBills));
-    } catch (error) {
-      console.error('Error loading A/P aging:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.apAging.loadError') || 'Failed to load report',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      buckets: computedBuckets,
+      vendorAging: sortedVendors,
+      totalPayable: calcTotal(unpaidBills),
+    };
+  }, [allBills, allVendors, t]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

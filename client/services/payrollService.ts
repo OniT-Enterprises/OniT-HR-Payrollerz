@@ -19,7 +19,6 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { getTodayTL } from '@/lib/dateUtils';
 import { chunkArray } from '@/lib/utils';
 import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
 import { auditLogService } from './auditLogService';

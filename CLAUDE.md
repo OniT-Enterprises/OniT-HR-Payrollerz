@@ -40,8 +40,8 @@ firebase deploy --only hosting       # Deploy hosting only
 ```
 
 ### Firestore Rules
-- Production: `firestore.rules`
-- Dev: `firestore-dev.rules` (currently deployed)
+- Production: `firestore.rules` (deployed)
+- Dev: `firestore-dev.rules` (local testing only)
 
 ## Hetzner VPS
 

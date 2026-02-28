@@ -6,6 +6,9 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
+import { collection, doc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { paths } from '@/lib/paths';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
@@ -227,14 +230,15 @@ export default function Expenses() {
 
     setSaving(true);
     try {
+      // Pre-generate Firestore doc ID so receipt upload path matches the final document
+      const preGeneratedExpenseId = editingExpense?.id || doc(collection(db, paths.expenses(tenantId))).id;
       let receiptUrl = existingReceiptUrl || undefined;
 
       // Upload receipt if a new file was selected
       if (receiptFile) {
         setUploadingReceipt(true);
         try {
-          const expenseId = editingExpense?.id || fileUploadService.generateTempExpenseId();
-          receiptUrl = await fileUploadService.uploadExpenseReceipt(receiptFile, tenantId, expenseId);
+          receiptUrl = await fileUploadService.uploadExpenseReceipt(receiptFile, tenantId, preGeneratedExpenseId);
         } catch (uploadError) {
           console.error('Error uploading receipt:', uploadError);
           toast({
@@ -260,7 +264,7 @@ export default function Expenses() {
           description: t('money.expenses.updated') || 'Expense updated successfully',
         });
       } else {
-        await expenseService.createExpense(session.tid, dataWithReceipt);
+        await expenseService.createExpense(session.tid, dataWithReceipt, undefined, preGeneratedExpenseId);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.expenses.created') || 'Expense created successfully',

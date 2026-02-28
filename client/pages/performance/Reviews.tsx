@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -40,11 +40,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService } from "@/services/employeeService";
 import {
-  reviewService,
   PerformanceReview,
-  ReviewStats,
   ReviewType,
   ReviewStatus,
   RatingValue,
@@ -54,7 +51,17 @@ import {
   getRatingLabel,
   getReviewTypeName,
 } from "@/services/reviewService";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import {
+  useReviews,
+  useReviewStats,
+  useCreateReview,
+  useUpdateReview,
+  useSubmitReview,
+  useAcknowledgeReview,
+  useCompleteReview,
+  useDeleteReview,
+} from "@/hooks/usePerformance";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { Employee } from "@/services/employeeService";
@@ -157,10 +164,20 @@ const defaultFormData: ReviewFormData = {
 // ============================================
 
 export default function Reviews() {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [reviews, setReviews] = useState<PerformanceReview[]>([]);
-  const [stats, setStats] = useState<ReviewStats | null>(null);
-  const [loading, setLoading] = useState(true);
+  // Data queries
+  const { data: employees = [], isLoading: loadingEmployees } = useAllEmployees();
+  const { data: reviews = [], isLoading: loadingReviews } = useReviews();
+  const { data: stats } = useReviewStats();
+  const loading = loadingReviews || loadingEmployees;
+
+  // Mutations
+  const createReview = useCreateReview();
+  const updateReview = useUpdateReview();
+  const submitReview = useSubmitReview();
+  const acknowledgeReview = useAcknowledgeReview();
+  const completeReview = useCompleteReview();
+  const deleteReview = useDeleteReview();
+
   const [activeTab, setActiveTab] = useState("employees");
 
   // Dialog states
@@ -170,43 +187,13 @@ export default function Reviews() {
   const [selectedReview, setSelectedReview] = useState<PerformanceReview | null>(null);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(null);
   const [formData, setFormData] = useState<ReviewFormData>(defaultFormData);
-  const [saving, setSaving] = useState(false);
 
   // Filters
   const [statusFilter, setStatusFilter] = useState<ReviewStatus | "all">("all");
   const [typeFilter, setTypeFilter] = useState<ReviewType | "all">("all");
 
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { user } = useAuth();
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [employeesData, reviewsData, statsData] = await Promise.all([
-        employeeService.getAllEmployees(tenantId),
-        reviewService.getReviews(tenantId),
-        reviewService.getStats(tenantId),
-      ]);
-      setEmployees(employeesData);
-      setReviews(reviewsData);
-      setStats(statsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const activeEmployees = employees.filter((emp) => emp.status === "active");
 
@@ -253,6 +240,8 @@ export default function Reviews() {
     setShowViewDialog(true);
   };
 
+  const saving = createReview.isPending || updateReview.isPending;
+
   const handleSave = async () => {
     if (!formData.employeeId) {
       toast({
@@ -266,36 +255,35 @@ export default function Reviews() {
     const employee = employees.find((e) => e.id === formData.employeeId);
     if (!employee) return;
 
-    setSaving(true);
-    try {
-      const reviewData = {
-        employeeId: formData.employeeId,
-        employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-        department: employee.jobDetails.department,
-        position: employee.jobDetails.position,
-        reviewType: formData.reviewType,
-        reviewPeriodStart: formData.reviewPeriodStart,
-        reviewPeriodEnd: formData.reviewPeriodEnd,
-        reviewDate: formData.reviewDate,
-        reviewerId: user?.uid || "",
-        reviewerName: user?.displayName || user?.email || "Manager",
-        overallRating: formData.overallRating,
-        competencies: formData.competencies,
-        goalAssessments: [],
-        strengths: formData.strengths,
-        areasForImprovement: formData.areasForImprovement,
-        managerComments: formData.managerComments,
-        developmentPlan: formData.developmentPlan,
-      };
+    const reviewData = {
+      employeeId: formData.employeeId,
+      employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+      department: employee.jobDetails.department,
+      position: employee.jobDetails.position,
+      reviewType: formData.reviewType,
+      reviewPeriodStart: formData.reviewPeriodStart,
+      reviewPeriodEnd: formData.reviewPeriodEnd,
+      reviewDate: formData.reviewDate,
+      reviewerId: user?.uid || "",
+      reviewerName: user?.displayName || user?.email || "Manager",
+      overallRating: formData.overallRating,
+      competencies: formData.competencies,
+      goalAssessments: [],
+      strengths: formData.strengths,
+      areasForImprovement: formData.areasForImprovement,
+      managerComments: formData.managerComments,
+      developmentPlan: formData.developmentPlan,
+    };
 
+    try {
       if (selectedReview) {
-        await reviewService.updateReview(tenantId, selectedReview.id!, reviewData);
+        await updateReview.mutateAsync({ id: selectedReview.id!, updates: reviewData });
         toast({
           title: "Success",
           description: "Review updated successfully",
         });
       } else {
-        await reviewService.createReview(tenantId, reviewData);
+        await createReview.mutateAsync(reviewData);
         toast({
           title: "Success",
           description: "Review created successfully",
@@ -303,29 +291,23 @@ export default function Reviews() {
       }
 
       setShowNewDialog(false);
-      loadData();
-    } catch (error) {
-      console.error("Error saving review:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to save review",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
   const handleSubmitReview = async (review: PerformanceReview) => {
     try {
-      await reviewService.submitReview(tenantId, review.id!);
+      await submitReview.mutateAsync(review.id!);
       toast({
         title: "Success",
         description: "Review submitted for acknowledgement",
       });
-      loadData();
-    } catch (error) {
-      console.error("Error submitting review:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to submit review",
@@ -338,16 +320,14 @@ export default function Reviews() {
     if (!selectedReview) return;
 
     try {
-      await reviewService.deleteReview(tenantId, selectedReview.id!);
+      await deleteReview.mutateAsync(selectedReview.id!);
       toast({
         title: "Success",
         description: "Review deleted successfully",
       });
       setShowDeleteDialog(false);
       setSelectedReview(null);
-      loadData();
-    } catch (error) {
-      console.error("Error deleting review:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete review",
@@ -359,21 +339,19 @@ export default function Reviews() {
   const handleCompleteReview = async (review: PerformanceReview) => {
     try {
       if (review.status === "submitted") {
-        await reviewService.acknowledgeReview(tenantId, review.id!);
+        await acknowledgeReview.mutateAsync({ id: review.id! });
         toast({
           title: "Success",
           description: "Review acknowledged",
         });
       } else if (review.status === "acknowledged") {
-        await reviewService.completeReview(tenantId, review.id!);
+        await completeReview.mutateAsync(review.id!);
         toast({
           title: "Success",
           description: "Review completed",
         });
       }
-      loadData();
-    } catch (error) {
-      console.error("Error updating review status:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to update review status",

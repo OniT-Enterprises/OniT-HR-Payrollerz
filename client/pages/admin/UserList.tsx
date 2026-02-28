@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -40,17 +40,16 @@ import {
   Building2,
   AlertTriangle,
 } from "lucide-react";
-import { adminService } from "@/services/adminService";
+import { useAllUsers, useSetSuperadmin } from "@/hooks/useAdmin";
 import { UserProfile } from "@/types/user";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 export default function UserList() {
   const { user: currentUser } = useAuth();
-  const [users, setUsers] = useState<UserProfile[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: users = [], isLoading: loading } = useAllUsers();
+  const setSuperadminMutation = useSetSuperadmin();
   const [searchQuery, setSearchQuery] = useState("");
-  const [actionLoading, setActionLoading] = useState<string | null>(null);
 
   // Confirmation dialog state
   const [confirmDialog, setConfirmDialog] = useState<{
@@ -63,23 +62,6 @@ export default function UserList() {
     action: "grant",
   });
 
-  useEffect(() => {
-    loadUsers();
-  }, []);
-
-  const loadUsers = async () => {
-    try {
-      setLoading(true);
-      const data = await adminService.getAllUsers();
-      setUsers(data);
-    } catch (error) {
-      console.error("Error loading users:", error);
-      toast.error("Failed to load users");
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleSuperadminAction = async () => {
     if (!confirmDialog.user) return;
 
@@ -87,20 +69,19 @@ export default function UserList() {
     const grantSuperadmin = confirmDialog.action === "grant";
 
     try {
-      setActionLoading(targetUser.uid);
-      await adminService.setSuperadmin(targetUser.uid, grantSuperadmin);
+      await setSuperadminMutation.mutateAsync({
+        targetUid: targetUser.uid,
+        isSuperAdmin: grantSuperadmin,
+      });
       toast.success(
         grantSuperadmin
           ? `${targetUser.email} is now a superadmin`
           : `Superadmin removed from ${targetUser.email}`
       );
-      loadUsers();
     } catch (error: unknown) {
-      console.error("Error updating superadmin status:", error);
       const message = error instanceof Error ? error.message : "Failed to update superadmin status";
       toast.error(message);
     } finally {
-      setActionLoading(null);
       setConfirmDialog({ open: false, user: null, action: "grant" });
     }
   };
@@ -293,9 +274,9 @@ export default function UserList() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              disabled={actionLoading === user.uid}
+                              disabled={setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid}
                             >
-                              {actionLoading === user.uid ? (
+                              {setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <MoreHorizontal className="h-4 w-4" />
@@ -386,9 +367,9 @@ export default function UserList() {
             <Button
               variant={confirmDialog.action === "revoke" ? "destructive" : "default"}
               onClick={handleSuperadminAction}
-              disabled={actionLoading !== null}
+              disabled={setSuperadminMutation.isPending}
             >
-              {actionLoading ? (
+              {setSuperadminMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Processing...

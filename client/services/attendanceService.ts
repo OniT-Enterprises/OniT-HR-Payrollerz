@@ -129,6 +129,17 @@ export interface DailyAttendanceReport {
   attendanceRate: number;
 }
 
+export interface AttendanceEmployeeSummary {
+  employeeId: string;
+  employeeName: string;
+  department: string;
+  regularHours: number;
+  overtimeHours: number;
+  lateMinutes: number;
+  daysPresent: number;
+  recordsCount: number;
+}
+
 // ============================================
 // HELPER FUNCTIONS
 // ============================================
@@ -266,6 +277,48 @@ class AttendanceService {
    */
   async getAttendanceByDate(tenantId: string, date: string): Promise<AttendanceRecord[]> {
     return this.getAttendanceByDateRange(tenantId, date, date);
+  }
+
+  /**
+   * Get summarized attendance by employee for a date range
+   * Used by payroll to sync real attendance metrics into payroll inputs.
+   */
+  async getAttendanceSummaryByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<AttendanceEmployeeSummary[]> {
+    const records = await this.getAttendanceByDateRange(tenantId, startDate, endDate);
+    const byEmployee = new Map<string, AttendanceEmployeeSummary>();
+
+    for (const record of records) {
+      if (!record.employeeId) continue;
+
+      const existing = byEmployee.get(record.employeeId);
+      if (existing) {
+        existing.regularHours += record.regularHours || 0;
+        existing.overtimeHours += record.overtimeHours || 0;
+        existing.lateMinutes += record.lateMinutes || 0;
+        existing.recordsCount += 1;
+        if ((record.totalHours || 0) > 0 || record.status === 'present' || record.status === 'late') {
+          existing.daysPresent += 1;
+        }
+        continue;
+      }
+
+      byEmployee.set(record.employeeId, {
+        employeeId: record.employeeId,
+        employeeName: record.employeeName,
+        department: record.department,
+        regularHours: record.regularHours || 0,
+        overtimeHours: record.overtimeHours || 0,
+        lateMinutes: record.lateMinutes || 0,
+        daysPresent: (record.totalHours || 0) > 0 || record.status === 'present' || record.status === 'late' ? 1 : 0,
+        recordsCount: 1,
+      });
+    }
+
+    return Array.from(byEmployee.values()).sort((a, b) => a.employeeName.localeCompare(b.employeeName));
   }
 
   /**

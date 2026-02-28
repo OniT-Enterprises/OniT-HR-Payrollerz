@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Calculator, Calendar } from 'lucide-react';
+import { Calculator, Calendar, RefreshCw } from 'lucide-react';
 import { TL_PAY_PERIODS } from '@/lib/payroll/constants-tl';
 import type { TLPayFrequency } from '@/lib/payroll/constants-tl';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -29,6 +29,8 @@ interface PayrollPeriodConfigProps {
   setPayDate: (v: string) => void;
   includeSubsidioAnual: boolean;
   setIncludeSubsidioAnual: (v: boolean) => void;
+  onSyncAttendance: () => void;
+  syncingAttendance: boolean;
 }
 
 export function PayrollPeriodConfig({
@@ -42,6 +44,8 @@ export function PayrollPeriodConfig({
   setPayDate,
   includeSubsidioAnual,
   setIncludeSubsidioAnual,
+  onSyncAttendance,
+  syncingAttendance,
 }: PayrollPeriodConfigProps) {
   const { t } = useI18n();
   return (
@@ -124,6 +128,18 @@ export function PayrollPeriodConfig({
             />
           </div>
           <div className="md:col-span-4 pt-2">
+            <div className="mb-3">
+              <button
+                type="button"
+                onClick={onSyncAttendance}
+                disabled={syncingAttendance}
+                className="inline-flex items-center gap-2 rounded-md border border-border/50 bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-60"
+              >
+                <RefreshCw className={`h-3.5 w-3.5 ${syncingAttendance ? 'animate-spin' : ''}`} />
+                {syncingAttendance ? t('runPayroll.syncingAttendance') : t('runPayroll.syncAttendance')}
+              </button>
+              <p className="mt-1 text-xs text-muted-foreground">{t('runPayroll.syncAttendanceDesc')}</p>
+            </div>
             <div className="flex items-start gap-3 cursor-pointer" onClick={() => setIncludeSubsidioAnual(!includeSubsidioAnual)}>
               <Checkbox
                 checked={includeSubsidioAnual}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -43,18 +43,26 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
-  goalsService,
-  OKR,
-  Goal,
-  OKRStats,
-  GoalStats,
-  GoalPriority,
-  KeyResultStatus,
-  MilestoneStatus,
+  type OKR,
+  type Goal,
+  type GoalPriority,
+  type KeyResultStatus,
+  type MilestoneStatus,
   DEFAULT_DEPARTMENTS,
   QUARTERS,
 } from "@/services/goalsService";
-import { useTenantId } from "@/contexts/TenantContext";
+import {
+  useOKRs,
+  useOKRStats,
+  useGoals,
+  useGoalStats,
+  useCreateOKR,
+  useUpdateOKR,
+  useDeleteOKR,
+  useCreateGoal,
+  useUpdateGoal,
+  useDeleteGoal,
+} from "@/hooks/usePerformance";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import {
@@ -122,20 +130,34 @@ const getPriorityBadge = (priority: GoalPriority) => {
 
 export default function Goals() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { user } = useAuth();
   const { data: employees = [] } = useAllEmployees();
 
-  // State
-  const [loading, setLoading] = useState(true);
-  const [okrs, setOkrs] = useState<OKR[]>([]);
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [okrStats, setOkrStats] = useState<OKRStats | null>(null);
-  const [goalStats, setGoalStats] = useState<GoalStats | null>(null);
-
   const [activeTab, setActiveTab] = useState("dashboard");
   const [selectedQuarter, setSelectedQuarter] = useState(`Q${Math.ceil((new Date().getMonth() + 1) / 3)} ${new Date().getFullYear()}`);
-  const [_selectedYear] = useState(new Date().getFullYear());
+
+  // Parse quarter/year from selectedQuarter (e.g. "Q1 2026")
+  const { quarter, year } = useMemo(() => {
+    const [q, y] = selectedQuarter.split(" ");
+    return { quarter: q, year: parseInt(y, 10) };
+  }, [selectedQuarter]);
+
+  // Data queries
+  const { data: okrs = [], isLoading: okrsLoading } = useOKRs({ quarter, year });
+  const { data: goals = [], isLoading: goalsLoading } = useGoals({ year });
+  const { data: okrStats = null, isLoading: okrStatsLoading } = useOKRStats(quarter, year);
+  const { data: goalStats = null, isLoading: goalStatsLoading } = useGoalStats(year);
+  const loading = okrsLoading || goalsLoading || okrStatsLoading || goalStatsLoading;
+
+  // Mutations
+  const createOKRMutation = useCreateOKR();
+  const updateOKRMutation = useUpdateOKR();
+  const deleteOKRMutation = useDeleteOKR();
+  const createGoalMutation = useCreateGoal();
+  const updateGoalMutation = useUpdateGoal();
+  const deleteGoalMutation = useDeleteGoal();
+  const saving = createOKRMutation.isPending || updateOKRMutation.isPending ||
+    createGoalMutation.isPending || updateGoalMutation.isPending;
 
   // Dialog states
   const [showOKRDialog, setShowOKRDialog] = useState(false);
@@ -144,7 +166,6 @@ export default function Goals() {
   const [selectedOKR, setSelectedOKR] = useState<OKR | null>(null);
   const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
   const [deleteType, setDeleteType] = useState<"okr" | "goal">("okr");
-  const [saving, setSaving] = useState(false);
 
   // Form states
   const [okrFormData, setOkrFormData] = useState({
@@ -172,40 +193,6 @@ export default function Goals() {
     ...QUARTERS.map((q) => `${q} ${currentYear}`),
     ...QUARTERS.map((q) => `${q} ${currentYear + 1}`),
   ];
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, selectedQuarter]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [quarter, yearStr] = selectedQuarter.split(" ");
-      const year = parseInt(yearStr, 10);
-
-      const [okrsData, goalsData, okrStatsData, goalStatsData] = await Promise.all([
-        goalsService.getOKRs(tenantId, { quarter, year }),
-        goalsService.getGoals(tenantId, { year }),
-        goalsService.getOKRStats(tenantId, quarter, year),
-        goalsService.getGoalStats(tenantId, year),
-      ]);
-
-      setOkrs(okrsData);
-      setGoals(goalsData);
-      setOkrStats(okrStatsData);
-      setGoalStats(goalStatsData);
-    } catch (error) {
-      console.error("Error loading data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load data",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // ----------------------------------------
   // OKR Handlers
@@ -252,10 +239,9 @@ export default function Goals() {
       return;
     }
 
-    setSaving(true);
     try {
-      const [quarter, yearStr] = okrFormData.quarter.split(" ");
-      const year = parseInt(yearStr, 10);
+      const [formQuarter, yearStr] = okrFormData.quarter.split(" ");
+      const formYear = parseInt(yearStr, 10);
       const owner = employees.find((e) => e.id === okrFormData.ownerId);
 
       const okrData = {
@@ -266,8 +252,8 @@ export default function Goals() {
         ownerName: owner
           ? `${owner.personalInfo.firstName} ${owner.personalInfo.lastName}`
           : user?.displayName || "Manager",
-        quarter,
-        year,
+        quarter: formQuarter,
+        year: formYear,
         keyResults: okrFormData.keyResults
           .filter((kr) => kr.title)
           .map((kr, index) => ({
@@ -284,24 +270,20 @@ export default function Goals() {
       };
 
       if (selectedOKR) {
-        await goalsService.updateOKR(tenantId, selectedOKR.id!, okrData);
+        await updateOKRMutation.mutateAsync({ id: selectedOKR.id!, updates: okrData });
         toast({ title: "Success", description: "OKR updated successfully" });
       } else {
-        await goalsService.createOKR(tenantId, okrData);
+        await createOKRMutation.mutateAsync(okrData);
         toast({ title: "Success", description: "OKR created successfully" });
       }
 
       setShowOKRDialog(false);
-      loadData();
-    } catch (error) {
-      console.error("Error saving OKR:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to save OKR",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -351,7 +333,6 @@ export default function Goals() {
       return;
     }
 
-    setSaving(true);
     try {
       const goalData = {
         title: goalFormData.title,
@@ -383,24 +364,20 @@ export default function Goals() {
       };
 
       if (selectedGoal) {
-        await goalsService.updateGoal(tenantId, selectedGoal.id!, goalData);
+        await updateGoalMutation.mutateAsync({ id: selectedGoal.id!, updates: goalData });
         toast({ title: "Success", description: "Goal updated successfully" });
       } else {
-        await goalsService.createGoal(tenantId, goalData);
+        await createGoalMutation.mutateAsync(goalData);
         toast({ title: "Success", description: "Goal created successfully" });
       }
 
       setShowGoalDialog(false);
-      loadData();
-    } catch (error) {
-      console.error("Error saving goal:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to save goal",
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
     }
   };
 
@@ -421,16 +398,14 @@ export default function Goals() {
   const handleDelete = async () => {
     try {
       if (deleteType === "okr" && selectedOKR) {
-        await goalsService.deleteOKR(tenantId, selectedOKR.id!);
+        await deleteOKRMutation.mutateAsync(selectedOKR.id!);
         toast({ title: "Success", description: "OKR deleted successfully" });
       } else if (deleteType === "goal" && selectedGoal) {
-        await goalsService.deleteGoal(tenantId, selectedGoal.id!);
+        await deleteGoalMutation.mutateAsync(selectedGoal.id!);
         toast({ title: "Success", description: "Goal deleted successfully" });
       }
       setShowDeleteDialog(false);
-      loadData();
-    } catch (error) {
-      console.error("Error deleting:", error);
+    } catch (_error) {
       toast({
         title: "Error",
         description: "Failed to delete",

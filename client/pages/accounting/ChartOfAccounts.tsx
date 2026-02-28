@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,11 +57,10 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { accountingService } from "@/services/accountingService";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -74,16 +73,18 @@ const PAYROLL_LINKED_CODES = [
 export default function ChartOfAccounts() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const { data: accounts = [], isLoading: loading } = useAccounts();
+  const createAccountMutation = useCreateAccount();
+  const updateAccountMutation = useUpdateAccount();
+  const initializeMutation = useInitializeChartOfAccounts();
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingAccount, setEditingAccount] = useState<Account | null>(null);
   const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
-  const [submitting, setSubmitting] = useState(false);
-  const [initializing, setInitializing] = useState(false);
+
+  const submitting = createAccountMutation.isPending || updateAccountMutation.isPending;
+  const initializing = initializeMutation.isPending;
 
   const [formData, setFormData] = useState({
     code: "",
@@ -95,50 +96,20 @@ export default function ChartOfAccounts() {
     parentAccountId: "",
   });
 
-  // Load accounts when tenantId is available
-  useEffect(() => {
-    if (tenantId && tenantId !== "local-dev-tenant") {
-      loadAccounts();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadAccounts = async () => {
-    try {
-      setLoading(true);
-      const data = await accountingService.accounts.getAllAccounts(tenantId);
-      setAccounts(data);
-    } catch (error) {
-      console.error("Failed to load accounts:", error);
-      toast({
-        title: t("common.error"),
-        description: t("accounting.chartOfAccounts.errorLoad"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
   // Initialize default chart of accounts
   const handleInitialize = async () => {
     try {
-      setInitializing(true);
-      await accountingService.accounts.initializeChartOfAccounts(tenantId);
-      await loadAccounts();
+      await initializeMutation.mutateAsync();
       toast({
         title: t("accounting.chartOfAccounts.success"),
         description: t("accounting.chartOfAccounts.initialized"),
       });
-    } catch (error) {
-      console.error("Failed to initialize:", error);
+    } catch (_error) {
       toast({
         title: t("common.error"),
         description: t("accounting.chartOfAccounts.errorInit"),
         variant: "destructive",
       });
-    } finally {
-      setInitializing(false);
     }
   };
 
@@ -234,43 +205,40 @@ export default function ChartOfAccounts() {
     }
 
     try {
-      setSubmitting(true);
-
       if (editingAccount) {
-        await accountingService.accounts.updateAccount(tenantId, editingAccount.id!, {
-          ...formData,
-          level: formData.parentAccountId ? 2 : 1,
+        await updateAccountMutation.mutateAsync({
+          id: editingAccount.id!,
+          updates: {
+            ...formData,
+            level: formData.parentAccountId ? 2 : 1,
+          },
         });
         toast({
           title: t("accounting.chartOfAccounts.success"),
           description: t("accounting.chartOfAccounts.accountUpdated"),
         });
       } else {
-        await accountingService.accounts.createAccount(tenantId, {
+        await createAccountMutation.mutateAsync({
           ...formData,
           isSystem: false,
           isActive: true,
           level: formData.parentAccountId ? 2 : 1,
-        });
+        } as Omit<Account, 'id' | 'createdAt' | 'updatedAt'>);
         toast({
           title: t("accounting.chartOfAccounts.success"),
           description: t("accounting.chartOfAccounts.accountCreated"),
         });
       }
 
-      await loadAccounts();
       setShowAddDialog(false);
       setEditingAccount(null);
       resetForm();
-    } catch (error) {
-      console.error("Failed to save account:", error);
+    } catch (_error) {
       toast({
         title: t("common.error"),
         description: t("accounting.chartOfAccounts.errorSave"),
         variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 

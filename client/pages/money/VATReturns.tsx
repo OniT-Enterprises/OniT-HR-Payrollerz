@@ -4,7 +4,7 @@
  * Shows output VAT (collected) vs input VAT (paid) and net due.
  */
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -30,11 +30,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import {
-  collection,
-  getDocs,
-  query,
-  where,
-  orderBy,
   Timestamp,
   doc,
   setDoc,
@@ -42,7 +37,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
+import { formatDateTL } from '@/lib/dateUtils';
+import { useAllInvoices } from '@/hooks/useInvoices';
+import { useAllBills } from '@/hooks/useBills';
+import { useAllExpenses } from '@/hooks/useExpenses';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   Receipt,
   ArrowLeft,
@@ -98,125 +97,100 @@ export default function VATReturnsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [selectedPeriod, setSelectedPeriod] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [summary, setSummary] = useState<VATSummary | null>(null);
-  const [savedReturn, setSavedReturn] = useState<VATReturnRecord | null>(null);
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
-  const loadPeriodData = useCallback(async () => {
-    if (!tenantId) return;
-    setLoading(true);
+  // Fetch all invoices, bills, expenses via React Query
+  const { data: invoices, isLoading: invoicesLoading } = useAllInvoices();
+  const { data: bills, isLoading: billsLoading } = useAllBills();
+  const { data: expenses, isLoading: expensesLoading } = useAllExpenses();
 
-    try {
-      const [year, month] = selectedPeriod.split('-').map(Number);
-      const periodStart = new Date(year, month - 1, 1);
-      const periodEnd = new Date(year, month, 1);
+  // Fetch saved VAT return for the selected period
+  const { data: savedReturn, isLoading: returnLoading } = useQuery({
+    queryKey: ['vatReturn', tenantId, selectedPeriod],
+    queryFn: async () => {
+      const returnRef = doc(db, paths.vatReturn(tenantId, selectedPeriod));
+      const returnSnap = await getDoc(returnRef);
+      if (!returnSnap.exists()) return null;
+      const rData = returnSnap.data();
+      return {
+        id: returnSnap.id,
+        periodStart: rData.periodStart,
+        periodEnd: rData.periodEnd,
+        outputVAT: rData.outputVAT,
+        inputVAT: rData.inputVAT,
+        netDue: rData.netDue,
+        status: rData.status || 'draft',
+        filedAt: rData.filedAt?.toDate?.(),
+        createdAt: rData.createdAt?.toDate?.() || new Date(),
+      } as VATReturnRecord;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Query invoices for the period
-      const invoicesRef = collection(db, paths.invoices(tenantId));
-      const invoiceQuery = query(
-        invoicesRef,
-        where('issueDate', '>=', toDateStringTL(periodStart)),
-        where('issueDate', '<', toDateStringTL(periodEnd)),
-        orderBy('issueDate', 'desc')
-      );
-      const invoiceSnap = await getDocs(invoiceQuery);
+  // Compute VAT summary from invoices, bills, expenses for selected period
+  const summary = useMemo<VATSummary | null>(() => {
+    if (!invoices || !bills || !expenses) return null;
 
-      let outputVAT = 0;
-      let salesCount = 0;
-      invoiceSnap.docs.forEach((d) => {
-        const data = d.data();
-        const taxAmount = Number(data.taxAmount) || 0;
+    const [year, month] = selectedPeriod.split('-').map(Number);
+    const periodStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
+    // First day of next month
+    const nextMonth = month === 12 ? 1 : month + 1;
+    const nextYear = month === 12 ? year + 1 : year;
+    const periodEndStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+
+    // Output VAT from invoices
+    let outputVAT = 0;
+    let salesCount = 0;
+    for (const inv of invoices) {
+      if (inv.issueDate >= periodStartStr && inv.issueDate < periodEndStr) {
+        const taxAmount = Number(inv.taxAmount) || 0;
         if (taxAmount > 0) {
           outputVAT += taxAmount;
           salesCount++;
         }
-      });
-
-      // Query expenses for the period
-      const expensesRef = collection(db, paths.expenses(tenantId));
-      const expenseQuery = query(
-        expensesRef,
-        where('date', '>=', toDateStringTL(periodStart)),
-        where('date', '<', toDateStringTL(periodEnd))
-      );
-      const expenseSnap = await getDocs(expenseQuery);
-
-      let inputVAT = 0;
-      let expenseCount = 0;
-      expenseSnap.docs.forEach((d) => {
-        const data = d.data();
-        const vatAmount = Number(data.vatAmount) || 0;
-        if (vatAmount > 0) {
-          inputVAT += vatAmount;
-          expenseCount++;
-        }
-      });
-
-      // Also check bills
-      const billsRef = collection(db, paths.bills(tenantId));
-      const billQuery = query(
-        billsRef,
-        where('date', '>=', toDateStringTL(periodStart)),
-        where('date', '<', toDateStringTL(periodEnd))
-      );
-      const billSnap = await getDocs(billQuery);
-
-      billSnap.docs.forEach((d) => {
-        const data = d.data();
-        const vatAmount = Number(data.vatAmount) || 0;
-        if (vatAmount > 0) {
-          inputVAT += vatAmount;
-          expenseCount++;
-        }
-      });
-
-      const netDue = outputVAT - inputVAT;
-      setSummary({ outputVAT, inputVAT, netDue, salesCount, expenseCount });
-
-      // Check if a return has already been saved for this period
-      const returnRef = doc(db, paths.vatReturn(tenantId, selectedPeriod));
-      const returnSnap = await getDoc(returnRef);
-      if (returnSnap.exists()) {
-        const rData = returnSnap.data();
-        setSavedReturn({
-          id: returnSnap.id,
-          periodStart: rData.periodStart,
-          periodEnd: rData.periodEnd,
-          outputVAT: rData.outputVAT,
-          inputVAT: rData.inputVAT,
-          netDue: rData.netDue,
-          status: rData.status || 'draft',
-          filedAt: rData.filedAt?.toDate?.(),
-          createdAt: rData.createdAt?.toDate?.() || new Date(),
-        });
-      } else {
-        setSavedReturn(null);
       }
-    } catch (err) {
-      console.error('Failed to load VAT data:', err);
-      toast({
-        title: 'Error',
-        description: 'Failed to load VAT data for this period',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
     }
-  }, [tenantId, selectedPeriod, toast]);
 
-  useEffect(() => {
-    if (tenantId && selectedPeriod) {
-      loadPeriodData();
+    // Input VAT from expenses
+    let inputVAT = 0;
+    let expenseCount = 0;
+    for (const exp of expenses) {
+      if (exp.date >= periodStartStr && exp.date < periodEndStr) {
+        const vatAmount = Number(exp.vatAmount) || 0;
+        if (vatAmount > 0) {
+          inputVAT += vatAmount;
+          expenseCount++;
+        }
+      }
     }
-  }, [tenantId, selectedPeriod, loadPeriodData]);
+
+    // Input VAT from bills
+    for (const bill of bills) {
+      if (bill.billDate >= periodStartStr && bill.billDate < periodEndStr) {
+        const vatAmount = Number(bill.vatAmount) || 0;
+        if (vatAmount > 0) {
+          inputVAT += vatAmount;
+          expenseCount++;
+        }
+      }
+    }
+
+    const netDue = outputVAT - inputVAT;
+
+    if (salesCount === 0 && expenseCount === 0) return null;
+
+    return { outputVAT, inputVAT, netDue, salesCount, expenseCount };
+  }, [invoices, bills, expenses, selectedPeriod]);
+
+  const loading = invoicesLoading || billsLoading || expensesLoading || returnLoading;
 
   const saveReturn = async (markAsFiled = false) => {
     if (!tenantId || !summary) return;
@@ -256,8 +230,8 @@ export default function VATReturnsPage() {
           : `VAT return draft saved for ${selectedPeriod}`,
       });
 
-      // Reload
-      await loadPeriodData();
+      // Invalidate the saved return query to refetch
+      queryClient.invalidateQueries({ queryKey: ['vatReturn', tenantId, selectedPeriod] });
     } catch (err) {
       console.error(err);
       toast({

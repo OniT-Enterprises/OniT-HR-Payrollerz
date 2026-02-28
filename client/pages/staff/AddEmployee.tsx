@@ -45,6 +45,9 @@ import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWizard";
+import { collection, doc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { paths } from "@/lib/paths";
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
@@ -366,8 +369,8 @@ export default function AddEmployee() {
           employmentType: data.employmentType,
           workLocation: "Office",
           manager: data.manager || "",
-          sefopeNumber: data.sefopeNumber || undefined,
-          sefopeRegistrationDate: data.sefopeRegistrationDate || undefined,
+          sefopeNumber: data.sefopeNumber || "",
+          sefopeRegistrationDate: data.sefopeRegistrationDate || "",
         },
         compensation: {
           monthlySalary: parseInt(data.salary || "0", 10) || 0,
@@ -395,7 +398,7 @@ export default function AddEmployee() {
       };
 
       // Upload files if they exist
-      const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id! : fileUploadService.generateTempEmployeeId();
+      const employeeIdForUpload = isEditMode && editingEmployee ? editingEmployee.id! : doc(collection(db, paths.employees(tenantId))).id;
       const failedUploads: string[] = [];
 
       if (additionalInfo.workContract) {
@@ -428,7 +431,7 @@ export default function AddEmployee() {
           }),
         });
       } else {
-        const id = await employeeService.addEmployee(tenantId, newEmployee);
+        const id = await employeeService.addEmployee(tenantId, newEmployee, undefined, employeeIdForUpload);
         if (!id) throw new Error("Failed to save");
         toast({
           title: t("addEmployee.toast.addedTitle"),
@@ -597,11 +600,28 @@ export default function AddEmployee() {
           steps={WIZARD_STEPS}
           currentStep={currentStep}
           onStepChange={setCurrentStep}
-          onComplete={handleSubmit(onFormSubmit)}
+          onComplete={handleSubmit(onFormSubmit, (validationErrors) => {
+            // Navigate to the step with the first error and show toast
+            const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp"];
+            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "sefopeNumber", "sefopeRegistrationDate"];
+            const errorKeys = Object.keys(validationErrors);
+            if (errorKeys.some(k => basicFields.includes(k))) {
+              setCurrentStep(0);
+            } else if (errorKeys.some(k => jobFields.includes(k))) {
+              setCurrentStep(1);
+            }
+            const firstError = Object.values(validationErrors)[0];
+            toast({
+              title: t("addEmployee.toast.errorTitle") || "Validation Error",
+              description: firstError?.message || "Please fill in all required fields.",
+              variant: "destructive",
+            });
+          })}
           onCancel={() => navigate("/people/employees")}
           isSubmitting={isSubmitting}
           submitLabel={isEditMode ? t("addEmployee.buttons.updateEmployee") : t("addEmployee.buttons.addEmployee")}
           canProceed={canProceed()}
+          cannotProceedMessage={!canProceed() ? "Please fill in all required fields" : undefined}
         >
           {/* Step 1: Basic Info */}
           <StepContent stepId="basic" currentStepId={WIZARD_STEPS[currentStep].id}>

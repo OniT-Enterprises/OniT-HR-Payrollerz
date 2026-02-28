@@ -152,7 +152,7 @@ export function TimeOffPoliciesTab({
       map.set(o.date, {
         date: o.date,
         name: o.name || t("settings.notifications.holidayName"),
-        nameTetun: o.nameTetun || undefined,
+        nameTetun: o.nameTetun || "",
         source: "override",
       });
     });
@@ -673,7 +673,13 @@ export function TimeOffPoliciesTab({
 
           <form
             className="p-4 border rounded-lg space-y-4"
-            onSubmit={holidayOverrideForm.handleSubmit(onSaveHolidayOverride)}
+            onSubmit={holidayOverrideForm.handleSubmit(onSaveHolidayOverride, () => {
+              toast({
+                title: t('settings.notifications.errorTitle') || 'Validation Error',
+                description: 'Please fill in all required fields.',
+                variant: 'destructive',
+              });
+            })}
           >
             <div className="flex items-center justify-between">
               <h4 className="font-medium">

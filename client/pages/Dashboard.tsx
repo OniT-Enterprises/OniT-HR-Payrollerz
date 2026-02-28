@@ -4,7 +4,7 @@
  * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -17,12 +17,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { employeeService, type Employee } from "@/services/employeeService";
-import { leaveService } from "@/services/leaveService";
+import { type Employee } from "@/services/employeeService";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import {
   Users,
   DollarSign,
@@ -38,6 +40,8 @@ import {
   AlertTriangle,
   Play,
   Zap,
+  FolderKanban,
+  Building2,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -159,75 +163,19 @@ function DashboardSkeleton() {
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const tenantId = useTenantId();
-  const { session: _session } = useTenant();
+  const { session, hasModule, canManage } = useTenant();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [pendingLeave, setPendingLeave] = useState(0);
-  const [onLeaveToday, setOnLeaveToday] = useState(0);
+  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
+  const loading = employeesLoading || leaveStatsLoading;
+  const pendingLeave = leaveStats?.pendingRequests ?? 0;
+  const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
   const [showShortcuts, setShowShortcuts] = useState(false);
 
   useKeyboardShortcuts({
     enabled: true,
     onShowHelp: () => setShowShortcuts(true),
   });
-
-  // Redirect to setup wizard if setup is incomplete (owner/hr-admin only)
-  // TEMPORARILY DISABLED
-  // useEffect(() => {
-  //   const checkSetup = async () => {
-  //     const role = session?.role;
-  //     if (role !== "owner" && role !== "hr-admin") return;
-  //     if (sessionStorage.getItem("setup-dismissed")) return;
-  //     try {
-  //       const progress = await settingsService.getSetupProgress(tenantId);
-  //       if (!progress.isComplete) {
-  //         navigate("/setup", { replace: true });
-  //       }
-  //     } catch {
-  //       // Settings don't exist - redirect to setup
-  //       navigate("/setup", { replace: true });
-  //     }
-  //   };
-  //   if (tenantId && tenantId !== "local-dev-tenant") {
-  //     checkSetup();
-  //   }
-  // }, [tenantId, session?.role, navigate]);
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      const [employeesResult, leaveStatsResult] = await Promise.allSettled([
-        employeeService.getAllEmployees(tenantId),
-        leaveService.getLeaveStats(tenantId),
-      ]);
-
-      if (employeesResult.status === 'fulfilled') {
-        setEmployees(employeesResult.value);
-      } else {
-        setEmployees([]);
-      }
-
-      if (leaveStatsResult.status === 'fulfilled') {
-        setPendingLeave(leaveStatsResult.value.pendingRequests);
-        setOnLeaveToday(leaveStatsResult.value.employeesOnLeaveToday);
-      } else {
-        setPendingLeave(0);
-        setOnLeaveToday(0);
-      }
-    } catch (error) {
-      console.error("Error loading dashboard data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Derived data
   const activeEmployees = employees.filter((e) => e.status === "active");
@@ -300,6 +248,12 @@ export default function Dashboard() {
   const daysUntilPayday = getDaysUntilPayday();
   const compliance = getComplianceStatus();
   const firstName = user?.displayName?.split(" ")[0] || "there";
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule("reports"),
+    canManage()
+  );
 
   // Payroll status
   const payrollPrepared = false; // In production, check actual payroll status
@@ -566,14 +520,14 @@ export default function Dashboard() {
         </div>
 
         {/* ═══════════════════════════════════════════════════════════════
-            QUICK ACTIONS - 3 Only: Run Payroll, Add Employee, Generate Report
+            QUICK ACTIONS - Payroll, HR, Reports, NGO exports
         ═══════════════════════════════════════════════════════════════ */}
         <Card className="mb-6 border-border/50">
           <CardContent className="py-3">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
               <span className="text-sm text-muted-foreground">{t("dashboard.quickActions")}</span>
-              <div className="h-4 w-px bg-border" />
-              <div className="flex items-center gap-2">
+              <div className="h-px w-full bg-border sm:h-4 sm:w-px" />
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   size="sm"
                   className={isPayrollUrgent
@@ -594,8 +548,26 @@ export default function Dashboard() {
                   <FileText className="h-3.5 w-3.5" />
                   {t("dashboard.generateReport")}
                 </Button>
+                {ngoReportingEnabled && (
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports/payroll-allocation")}>
+                    <FolderKanban className="h-3.5 w-3.5" />
+                    {t("dashboard.payrollAllocation")}
+                  </Button>
+                )}
+                {donorExportEnabled && (
+                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports/donor-export")}>
+                    <FileText className="h-3.5 w-3.5" />
+                    {t("dashboard.donorExport")}
+                  </Button>
+                )}
               </div>
             </div>
+            {ngoReportingEnabled && (
+              <div className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <Building2 className="h-3.5 w-3.5" />
+                <span>{t("dashboard.ngoReportingHint")}</span>
+              </div>
+            )}
           </CardContent>
         </Card>
 

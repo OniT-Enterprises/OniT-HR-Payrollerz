@@ -4,8 +4,9 @@
  * Only visible when platform VAT is active or when accessed directly.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import {
@@ -66,82 +67,74 @@ export default function VATSettingsPage() {
   const { toast } = useToast();
   const tenantId = useTenantId();
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const queryClient = useQueryClient();
   const [settings, setSettings] = useState<VATSettingsData>(DEFAULT_VAT_SETTINGS);
-  const [platformActive, setPlatformActive] = useState(false);
 
-  const loadSettings = useCallback(async () => {
-    if (!tenantId) return;
-    setLoading(true);
-    try {
+  // Load VAT settings via React Query
+  const { data: loadedData, isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'vatSettings'],
+    queryFn: async () => {
       // Check platform VAT status
       const platformRef = doc(db, paths.vatConfig());
       const platformSnap = await getDoc(platformRef);
-      if (platformSnap.exists()) {
-        const pData = platformSnap.data();
-        setPlatformActive(pData.isActive === true);
-      }
+      const isPlatformActive = platformSnap.exists() && platformSnap.data().isActive === true;
 
       // Load tenant VAT settings
       const tenantRef = doc(db, paths.vatSettings(tenantId));
       const tenantSnap = await getDoc(tenantRef);
+      let tenantSettings = DEFAULT_VAT_SETTINGS;
       if (tenantSnap.exists()) {
         const data = tenantSnap.data();
-        setSettings({
+        tenantSettings = {
           isRegistered: data.isRegistered ?? false,
           vatRegistrationNumber: data.vatRegistrationNumber ?? '',
           defaultRate: data.defaultRate ?? 10,
           pricesIncludeVAT: data.pricesIncludeVAT ?? true,
           filingFrequency: data.filingFrequency ?? 'monthly',
           updatedAt: data.updatedAt?.toDate?.(),
-        });
+        };
       }
-    } catch (err) {
-      toast({
-        title: 'Error',
-        description: 'Failed to load VAT settings',
-        variant: 'destructive',
-      });
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast]);
 
-  useEffect(() => {
-    if (tenantId) {
-      loadSettings();
-    }
-  }, [tenantId, loadSettings]);
+      return { platformActive: isPlatformActive, settings: tenantSettings };
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const saveSettings = async () => {
-    if (!tenantId) return;
-    setSaving(true);
-    try {
+  const platformActive = loadedData?.platformActive ?? false;
+
+  // Sync loaded settings into local state for editing (render-time sync)
+  const prevLoadedRef = useRef(loadedData);
+  if (loadedData?.settings && loadedData !== prevLoadedRef.current) {
+    prevLoadedRef.current = loadedData;
+    setSettings(loadedData.settings);
+  }
+
+  // Save mutation
+  const saveMutation = useMutation({
+    mutationFn: async (data: VATSettingsData) => {
       const ref = doc(db, paths.vatSettings(tenantId));
-      await setDoc(
-        ref,
-        {
-          ...settings,
-          updatedAt: new Date(),
-        },
-        { merge: true }
-      );
+      await setDoc(ref, { ...data, updatedAt: new Date() }, { merge: true });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'vatSettings'] });
       toast({
         title: 'Saved',
         description: 'VAT settings updated successfully',
       });
-    } catch (err) {
+    },
+    onError: () => {
       toast({
         title: 'Error',
         description: 'Failed to save VAT settings',
         variant: 'destructive',
       });
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
+    },
+  });
+
+  const saving = saveMutation.isPending;
+
+  const saveSettings = () => {
+    saveMutation.mutate(settings);
   };
 
   const updateField = <K extends keyof VATSettingsData>(

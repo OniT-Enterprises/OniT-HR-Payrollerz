@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { candidateService, type Candidate } from "@/services/candidateService";
+import { type Candidate } from "@/services/candidateService";
+import { useCandidates, useAddCandidate } from "@/hooks/useHiring";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,
@@ -24,7 +25,6 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useTenantId } from "@/contexts/TenantContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
@@ -59,34 +59,12 @@ export default function CandidateSelection() {
   const [searchQuery, setSearchQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
-  // State for managing candidates list
-  const [candidates, setCandidates] = useState<Candidate[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
 
-  const loadCandidates = useCallback(async () => {
-    try {
-      setLoading(true);
-      const candidatesData = await candidateService.getAllCandidates(tenantId);
-      setCandidates(candidatesData);
-    } catch (error) {
-      console.error("Error loading candidates:", error);
-      toast({
-        title: t("addEmployee.toast.errorTitle"),
-        description: t("hiring.candidates.toast.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast, t]);
-
-  // Load candidates from Firebase on component mount
-  useEffect(() => {
-    loadCandidates();
-  }, [loadCandidates]);
+  // Data fetching via React Query
+  const { data: candidates = [], isLoading: loading } = useCandidates();
+  const addCandidateMutation = useAddCandidate();
 
   // Filter candidates based on search and filters
   const getFilteredCandidates = () => {
@@ -177,59 +155,53 @@ export default function CandidateSelection() {
   };
 
   // Function to add new candidate to the list
-  const addCandidate = async () => {
+  const addCandidate = () => {
     if (!importedData.name) return;
 
-    try {
-      const newCandidate: Omit<Candidate, "id"> = {
-        tenantId,
-        name: importedData.name,
-        email: importedData.email,
-        phone: importedData.phone,
-        position: "Senior Software Engineer", // Default position
-        experience: "TBD", // To be determined
-        score: 0,
-        status: "New",
-        appliedDate: getTodayTL(),
-        resume: uploadedFiles.cv?.name || "uploaded_resume.pdf",
-        avatar: importedData.name
-          .split(" ")
-          .map((n) => n[0])
-          .join("")
-          .toUpperCase(),
-        cvQuality: 0,
-        coverLetter: 0,
-        technicalSkills: 0,
-        interviewScore: null,
-        totalScore: 0,
-      };
+    const newCandidate: Omit<Candidate, "id" | "tenantId"> = {
+      name: importedData.name,
+      email: importedData.email,
+      phone: importedData.phone,
+      position: "Senior Software Engineer", // Default position
+      experience: "TBD", // To be determined
+      score: 0,
+      status: "New",
+      appliedDate: getTodayTL(),
+      resume: uploadedFiles.cv?.name || "uploaded_resume.pdf",
+      avatar: importedData.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase(),
+      cvQuality: 0,
+      coverLetter: 0,
+      technicalSkills: 0,
+      interviewScore: null,
+      totalScore: 0,
+    };
 
-      const candidateId = await candidateService.addCandidate(tenantId, newCandidate);
-
-      if (candidateId) {
+    addCandidateMutation.mutate(newCandidate, {
+      onSuccess: () => {
         toast({
           title: t("addEmployee.toast.addedTitle"),
           description: t("hiring.candidates.toast.addSuccess"),
         });
-        // Reload candidates to get the updated list
-        await loadCandidates();
-      } else {
-        throw new Error("Failed to add candidate");
-      }
-    } catch (error) {
-      console.error("Error adding candidate:", error);
-      toast({
-        title: t("addEmployee.toast.errorTitle"),
-        description: t("hiring.candidates.toast.addFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      // Reset dialog state
-      setShowImportDialog(false);
-      setUploadedFiles({ cv: null, coverLetter: null });
-      setImportedData({ name: "", email: "", phone: "" });
-      setIsProcessing(false);
-    }
+      },
+      onError: () => {
+        toast({
+          title: t("addEmployee.toast.errorTitle"),
+          description: t("hiring.candidates.toast.addFailed"),
+          variant: "destructive",
+        });
+      },
+      onSettled: () => {
+        // Reset dialog state
+        setShowImportDialog(false);
+        setUploadedFiles({ cv: null, coverLetter: null });
+        setImportedData({ name: "", email: "", phone: "" });
+        setIsProcessing(false);
+      },
+    });
   };
 
   const getStatusColor = (status: string) => {

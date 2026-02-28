@@ -42,7 +42,10 @@ export interface TenantConfig {
     timeleave?: boolean;
     performance?: boolean;
     payroll?: boolean;
+    money?: boolean;
+    accounting?: boolean;
     reports?: boolean;
+    ngoReporting?: boolean;
   };
   payrollPolicy?: {
     overtimeThreshold?: number; // hours per week
@@ -83,6 +86,8 @@ export type ModulePermission =
   | 'timeleave' 
   | 'performance' 
   | 'payroll' 
+  | 'money'
+  | 'accounting'
   | 'reports';
 
 export interface TenantMember {
@@ -284,8 +289,8 @@ export interface ListShiftsOptions {
 
 // Default RBAC matrix
 export const DEFAULT_ROLE_PERMISSIONS: Record<TenantRole, ModulePermission[]> = {
-  owner: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
-  'hr-admin': ['hiring', 'staff', 'timeleave', 'payroll', 'performance', 'reports'],
+  owner: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
+  'hr-admin': ['hiring', 'staff', 'timeleave', 'payroll', 'performance', 'money', 'accounting', 'reports'],
   manager: ['staff', 'timeleave', 'performance'], // Limited to own team
   viewer: [], // Read-only access, defined by explicit modules
 };
@@ -296,12 +301,9 @@ export const hasModulePermission = (
   modules: ModulePermission[] | undefined,
   requiredModule: ModulePermission
 ): boolean => {
-  // Owner and hr-admin have access to all modules
-  if (role === 'owner' || role === 'hr-admin') {
-    return true;
-  }
-  
-  // Check explicit module permissions
-  return modules?.includes(requiredModule) ?? false;
+  const effectiveModules =
+    modules && modules.length > 0
+      ? modules
+      : DEFAULT_ROLE_PERMISSIONS[role] ?? [];
+  return effectiveModules.includes(requiredModule);
 };
-

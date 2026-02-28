@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -25,8 +25,8 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
-import { departmentService, Department } from "@/services/departmentService";
-import { jobService } from "@/services/jobService";
+import { useDepartments } from "@/hooks/useDepartments";
+import { useCreateJob } from "@/hooks/useHiring";
 import {
   Briefcase,
   Save,
@@ -57,9 +57,8 @@ export default function CreateJobLocal() {
   const { t } = useI18n();
   const tenantId = useTenantId();
 
-  const [departments, setDepartments] = useState<Department[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { data: departments = [], isLoading, error: deptError } = useDepartments(tenantId);
+  const createJobMutation = useCreateJob();
 
   const [formData, setFormData] = useState<CreateJobFormData>({
     title: "",
@@ -75,31 +74,6 @@ export default function CreateJobLocal() {
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Fetch departments on mount
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setIsLoading(true);
-        const depts = await departmentService.getAllDepartments(tenantId);
-        setDepartments(depts);
-        setError(null);
-      } catch (err) {
-        console.error("Failed to fetch departments:", err);
-        setError(t("hiring.createJob.errors.loadDepartments"));
-        toast({
-          title: t("addEmployee.toast.errorTitle"),
-          description: t("hiring.createJob.errors.loadDepartmentsToast"),
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [tenantId, toast, t]);
 
   const validateForm = (): boolean => {
     const newErrors: Record<string, string> = {};
@@ -128,46 +102,41 @@ export default function CreateJobLocal() {
       return;
     }
 
-    setIsSubmitting(true);
+    const jobData = {
+      title: formData.title,
+      description: formData.description,
+      department: formData.department,
+      location: formData.location,
+      employmentType: formData.employmentType,
+      contractType: formData.contractType,
+      contractDuration: formData.contractDuration || "",
+      probationPeriod: formData.probationPeriod || "",
+      status: "open" as const,
+      salaryMin: formData.salaryMin ? parseInt(formData.salaryMin, 10) : 0,
+      salaryMax: formData.salaryMax ? parseInt(formData.salaryMax, 10) : 0,
+    };
 
-    try {
-      const jobData = {
-        title: formData.title,
-        description: formData.description,
-        department: formData.department,
-        location: formData.location,
-        employmentType: formData.employmentType,
-        contractType: formData.contractType,
-        contractDuration: formData.contractDuration || undefined,
-        probationPeriod: formData.probationPeriod || undefined,
-        status: "open" as const,
-        salaryMin: formData.salaryMin ? parseInt(formData.salaryMin, 10) : undefined,
-        salaryMax: formData.salaryMax ? parseInt(formData.salaryMax, 10) : undefined,
-      };
-
-      await jobService.createJob(tenantId, jobData);
-
-      toast({
-        title: t("hiring.createJob.errors.createdTitle"),
-        description: t("hiring.createJob.errors.createdDesc", {
-          title: formData.title,
-        }),
-      });
-
-      navigate("/hiring");
-    } catch (error) {
-      console.error("Failed to create job:", error);
-      toast({
-        title: t("hiring.createJob.errors.creationFailedTitle"),
-        description:
-          error instanceof Error
-            ? error.message
-            : t("hiring.createJob.errors.creationFailedDesc"),
-        variant: "destructive",
-      });
-    } finally {
-      setIsSubmitting(false);
-    }
+    createJobMutation.mutate(jobData, {
+      onSuccess: () => {
+        toast({
+          title: t("hiring.createJob.errors.createdTitle"),
+          description: t("hiring.createJob.errors.createdDesc", {
+            title: formData.title,
+          }),
+        });
+        navigate("/hiring");
+      },
+      onError: (error) => {
+        toast({
+          title: t("hiring.createJob.errors.creationFailedTitle"),
+          description:
+            error instanceof Error
+              ? error.message
+              : t("hiring.createJob.errors.creationFailedDesc"),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleInputChange = (field: keyof CreateJobFormData, value: string) => {
@@ -229,14 +198,14 @@ export default function CreateJobLocal() {
     );
   }
 
-  if (error) {
+  if (deptError) {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 lg:p-8 max-w-4xl mx-auto">
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
+              <p className="text-destructive">{t("hiring.createJob.errors.loadDepartments")}</p>
               <Button
                 onClick={() => navigate("/hiring")}
                 className="mt-4 gap-2"
@@ -505,17 +474,17 @@ export default function CreateJobLocal() {
                 type="button"
                 variant="outline"
                 onClick={() => navigate("/hiring")}
-                disabled={isSubmitting}
+                disabled={createJobMutation.isPending}
                 className="gap-2 shadow-sm"
               >
                 {t("hiring.createJob.buttons.cancel")}
               </Button>
               <Button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={createJobMutation.isPending}
                 className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
               >
-                {isSubmitting ? (
+                {createJobMutation.isPending ? (
                   <>
                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white" />
                     {t("hiring.createJob.buttons.creating")}

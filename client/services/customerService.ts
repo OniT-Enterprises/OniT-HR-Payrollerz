@@ -138,20 +138,49 @@ class CustomerService {
   }
 
   /**
-   * Get all customers
-   * @deprecated Use getCustomers() with filters for better performance
+   * Get all customers (fetches every page via getCustomers pagination loop)
    */
-  async getAllCustomers(tenantId: string, maxResults: number = 500): Promise<Customer[]> {
-    const result = await this.getCustomers(tenantId, { pageSize: maxResults });
-    return result.data;
+  async getAllCustomers(tenantId: string): Promise<Customer[]> {
+    const MAX_PAGES = 100;
+    const all: Customer[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllCustomers: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getCustomers(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get active customers only (server-side filtered)
+   * Get active customers only (server-side filtered, paginated)
    */
   async getActiveCustomers(tenantId: string): Promise<Customer[]> {
-    const result = await this.getCustomers(tenantId, { isActive: true, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Customer[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getActiveCustomers: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getCustomers(tenantId, { isActive: true, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**

@@ -64,6 +64,16 @@ export function useBillPayments(billId: string | undefined) {
   });
 }
 
+export function usePayablesSummary() {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: [...billKeys.all(tenantId), 'payablesSummary'] as const,
+    queryFn: () => billService.getPayablesSummary(tenantId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
 export function useCreateBill() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();

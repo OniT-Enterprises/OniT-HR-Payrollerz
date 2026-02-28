@@ -7,7 +7,6 @@ import {
   collection,
   doc,
   getDocs,
-  addDoc,
   updateDoc,
   deleteDoc,
   writeBatch,
@@ -22,6 +21,7 @@ import type {
   BankTransaction,
   ReconciliationStatus,
 } from '@/types/money';
+export type { BankTransaction };
 
 // Get tenant-scoped collection
 const getCollection = (tenantId: string) =>

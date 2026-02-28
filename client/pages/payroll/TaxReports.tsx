@@ -6,8 +6,9 @@
  * - INSS Monthly contribution submission
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,7 +19,6 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { taxFilingService } from "@/services/taxFilingService";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { FilingDueDate } from "@/types/tax-filing";
 import {
   ArrowRight,
   Building,
@@ -34,25 +34,11 @@ export default function TaxReports() {
   const tenantId = useTenantId();
   const { t } = useI18n();
 
-  const [loading, setLoading] = useState(true);
-  const [dueDates, setDueDates] = useState<FilingDueDate[]>([]);
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true);
-        const dues = await taxFilingService.getFilingsDueSoon(tenantId, 6);
-        setDueDates(dues);
-      } catch (error) {
-        console.error("Failed to load tax due dates:", error);
-        setDueDates([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    load();
-  }, [tenantId]);
+  const { data: dueDates = [], isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'taxFilings', 'dueSoon', 6],
+    queryFn: () => taxFilingService.getFilingsDueSoon(tenantId, 6),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const nextWit = useMemo(() => {
     return dueDates

@@ -27,6 +27,7 @@ interface StepWizardProps {
   isSubmitting?: boolean;
   submitLabel?: string;
   canProceed?: boolean;
+  cannotProceedMessage?: string;
   className?: string;
 }
 
@@ -40,6 +41,7 @@ export function StepWizard({
   isSubmitting = false,
   submitLabel = "Complete",
   canProceed = true,
+  cannotProceedMessage,
   className,
 }: StepWizardProps) {
   const isFirstStep = currentStep === 0;
@@ -180,25 +182,30 @@ export function StepWizard({
             Back
           </Button>
 
-          <Button
-            type="button"
-            onClick={handleNext}
-            disabled={!canProceed || isSubmitting}
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Saving...
-              </>
-            ) : isLastStep ? (
-              submitLabel
-            ) : (
-              <>
-                Next
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </>
+          <div className="flex items-center gap-2">
+            {!canProceed && cannotProceedMessage && (
+              <p className="text-sm text-amber-500">{cannotProceedMessage}</p>
             )}
-          </Button>
+            <Button
+              type="button"
+              onClick={handleNext}
+              disabled={!canProceed || isSubmitting}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Saving...
+                </>
+              ) : isLastStep ? (
+                submitLabel
+              ) : (
+                <>
+                  Next
+                  <ChevronRight className="h-4 w-4 ml-1" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

@@ -12,6 +12,8 @@ export interface EmployeePayrollData {
   overtimeHours: number;
   nightShiftHours: number;
   holidayHours: number;
+  absenceHours: number;
+  lateArrivalMinutes: number;
   sickDays: number;
   perDiem: number;
   bonus: number;
@@ -22,6 +24,8 @@ export interface EmployeePayrollData {
     regularHours: number;
     overtimeHours: number;
     nightShiftHours: number;
+    absenceHours: number;
+    lateArrivalMinutes: number;
     bonus: number;
     perDiem: number;
     allowances: number;

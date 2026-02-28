@@ -8,7 +8,7 @@
  * Submission: e-Tax portal or BNU bank branches
  */
 
-import React, { useState, useEffect, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -62,21 +62,24 @@ import {
   Landmark,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { taxFilingService } from "@/services/taxFilingService";
-import { settingsService } from "@/services/settingsService";
-
+import { useSettings } from "@/hooks/useSettings";
+import {
+  useTaxFilings,
+  useTaxFilingsDueSoon,
+  useGenerateMonthlyWIT,
+  useSaveTaxFiling,
+  useMarkTaxFilingAsFiled,
+} from "@/hooks/useTaxFiling";
 
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type {
   MonthlyWITReturn,
   TaxFiling,
-  FilingDueDate,
   SubmissionMethod,
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
 import { downloadBlob } from "@/lib/downloadBlob";
 
 // ============================================
@@ -128,14 +131,20 @@ const STATUS_CONFIG = {
 export default function ATTLMonthlyWIT() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const tenantId = useTenantId();
 
-  // State
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [company, setCompany] = useState<Partial<CompanyDetails>>({});
-  const [filings, setFilings] = useState<TaxFiling[]>([]);
-  const [dueDates, setDueDates] = useState<FilingDueDate[]>([]);
+  // React Query hooks
+  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const { data: filings = [], isLoading: filingsLoading } = useTaxFilings("monthly_wit");
+  const { data: allDueDates = [], isLoading: duesLoading } = useTaxFilingsDueSoon(6);
+  const generateWIT = useGenerateMonthlyWIT();
+  const saveFiling = useSaveTaxFiling();
+  const markFiled = useMarkTaxFilingAsFiled();
+
+  const company: Partial<CompanyDetails> = settings?.companyDetails || {};
+  const dueDates = useMemo(() => allDueDates.filter(d => d.type === "monthly_wit"), [allDueDates]);
+  const loading = settingsLoading || filingsLoading || duesLoading;
+
+  // Local state
   const [selectedReturn, setSelectedReturn] = useState<MonthlyWITReturn | null>(null);
   const [showMarkFiledDialog, setShowMarkFiledDialog] = useState(false);
   const [selectedFilingId, setSelectedFilingId] = useState<string | null>(null);
@@ -163,46 +172,6 @@ export default function ATTLMonthlyWIT() {
   }, []);
 
   // ============================================
-  // DATA LOADING
-  // ============================================
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-
-      // Load company settings
-      if (tenantId) {
-        const settings = await settingsService.getSettings(tenantId);
-        if (settings?.companyDetails) {
-          setCompany(settings.companyDetails);
-        }
-      }
-
-      // Load existing filings
-      const allFilings = await taxFilingService.getAllFilings(tenantId, "monthly_wit");
-      setFilings(allFilings);
-
-      // Load due dates
-      const dues = await taxFilingService.getFilingsDueSoon(tenantId, 6);
-      setDueDates(dues.filter(d => d.type === "monthly_wit"));
-    } catch (error) {
-      console.error("Failed to load data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load tax filing data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // ============================================
   // ACTIONS
   // ============================================
 
@@ -210,28 +179,17 @@ export default function ATTLMonthlyWIT() {
     const period = `${selectedYear}-${selectedMonth}`;
 
     try {
-      setGenerating(true);
-
       // Generate the return data
-      const returnData = await taxFilingService.generateMonthlyWITReturn(
-        period,
-        company,
-        tenantId
-      );
+      const returnData = await generateWIT.mutateAsync({ period, company });
       setSelectedReturn(returnData);
 
       // Save as draft
-      await taxFilingService.saveFiling(
-        "monthly_wit",
+      await saveFiling.mutateAsync({
+        type: "monthly_wit",
         period,
-        returnData,
-        user?.uid || "",
-        tenantId
-      );
-
-      // Reload filings
-      const allFilings = await taxFilingService.getAllFilings(tenantId, "monthly_wit");
-      setFilings(allFilings);
+        dataSnapshot: returnData,
+        userId: user?.uid || "",
+      });
 
       toast({
         title: "Return Generated",
@@ -244,8 +202,6 @@ export default function ATTLMonthlyWIT() {
         description: "Failed to generate WIT return. Make sure you have payroll data for this period.",
         variant: "destructive",
       });
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -380,16 +336,13 @@ export default function ATTLMonthlyWIT() {
     if (!selectedFilingId) return;
 
     try {
-      await taxFilingService.markAsFiled(
-        selectedFilingId,
-        filedMethod,
-        receiptNumber || undefined,
-        filedNotes || undefined,
-        user?.uid
-      );
-
-      // Reload data
-      await loadData();
+      await markFiled.mutateAsync({
+        filingId: selectedFilingId,
+        method: filedMethod,
+        receiptNumber: receiptNumber || "",
+        notes: filedNotes || "",
+        userId: user?.uid,
+      });
 
       setShowMarkFiledDialog(false);
       setSelectedFilingId(null);
@@ -429,6 +382,8 @@ export default function ATTLMonthlyWIT() {
 
   const upcomingDue = dueDates.find(d => d.status === "pending" && d.daysUntilDue >= 0);
   const overdueFiling = dueDates.find(d => d.isOverdue);
+
+  const generating = generateWIT.isPending || saveFiling.isPending;
 
   // ============================================
   // RENDER

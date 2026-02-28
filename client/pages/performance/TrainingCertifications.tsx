@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
+import {
+  useTrainingRecords,
+  useCreateTrainingRecord,
+  useUpdateTrainingRecord,
+  useDeleteTrainingRecord,
+  useRefreshTrainingStatuses,
+} from "@/hooks/usePerformance";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,7 +61,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -80,18 +86,20 @@ import {
   TRAINING_CATEGORIES,
   isExpiringSoon,
 } from "@/services/trainingService";
+// trainingService kept only for validateCertificateFile (sync utility)
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function TrainingCertifications() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { user } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
 
-  // Data state
-  const [records, setRecords] = useState<TrainingRecord[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  // Data via React Query
+  const { data: records = [], isLoading: loading } = useTrainingRecords();
+  const createMutation = useCreateTrainingRecord();
+  const updateMutation = useUpdateTrainingRecord();
+  const deleteMutation = useDeleteTrainingRecord();
+  const refreshMutation = useRefreshTrainingStatuses();
 
   // Filter state
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -121,8 +129,6 @@ export default function TrainingCertifications() {
     notes: "",
   });
   const [certificateFile, setCertificateFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   const statusOptions = [
     { id: "all", name: "All Statuses" },
@@ -132,43 +138,16 @@ export default function TrainingCertifications() {
     { id: "expired", name: "Expired" },
   ];
 
-  // Load training records
-  const loadRecords = async () => {
-    try {
-      const data = await trainingService.getTrainingRecords(tenantId);
-      setRecords(data);
-    } catch (error) {
-      console.error("Error loading training records:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load training records",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
   // Refresh statuses (check for expired)
-  const handleRefreshStatuses = async () => {
-    setRefreshing(true);
-    try {
-      await trainingService.refreshStatuses(tenantId);
-      await loadRecords();
-      toast({
-        title: "Statuses Updated",
-        description: "Training record statuses have been refreshed",
-      });
-    } catch (error) {
-      console.error("Error refreshing statuses:", error);
-    } finally {
-      setRefreshing(false);
-    }
+  const handleRefreshStatuses = () => {
+    refreshMutation.mutate(undefined, {
+      onSuccess: () => {
+        toast({
+          title: "Statuses Updated",
+          description: "Training record statuses have been refreshed",
+        });
+      },
+    });
   };
 
   // Get employee name by ID
@@ -198,16 +177,17 @@ export default function TrainingCertifications() {
   );
 
   // Reset page when filters change
-  useEffect(() => {
+  const filterKey = `${selectedEmployee}-${selectedStatus}`;
+  const prevFilterKeyRef = useRef(filterKey);
+  if (filterKey !== prevFilterKeyRef.current) {
+    prevFilterKeyRef.current = filterKey;
     setCurrentPage(1);
-  }, [selectedEmployee, selectedStatus]);
+  }
 
   // Clamp page when items are deleted and current page becomes empty
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  if (totalPages > 0 && currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const getStatusBadge = (status: TrainingStatus, expiryDate?: string) => {
     const expiring = isExpiringSoon(expiryDate);
@@ -295,7 +275,7 @@ export default function TrainingCertifications() {
     setShowAddDialog(true);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.employeeId || !formData.courseTitle || !formData.provider || !formData.startDate) {
@@ -307,92 +287,87 @@ export default function TrainingCertifications() {
       return;
     }
 
-    setSubmitting(true);
-    try {
-      const employeeName = getEmployeeName(formData.employeeId);
-      const employee = employees.find((e) => e.id === formData.employeeId);
+    const employeeName = getEmployeeName(formData.employeeId);
+    const employee = employees.find((e) => e.id === formData.employeeId);
 
-      const recordData = {
-        employeeId: formData.employeeId,
-        employeeName,
-        department: employee?.jobDetails.department || "",
-        departmentId: "",  // Not available in Employee type
-        courseTitle: formData.courseTitle,
-        provider: formData.provider,
-        description: formData.description || undefined,
-        category: formData.category || undefined,
-        startDate: formData.startDate,
-        completionDate: formData.completionDate || undefined,
-        expiryDate: formData.expiryDate || undefined,
-        cost: formData.cost ? parseFloat(formData.cost) : undefined,
-        currency: "USD",
-        notes: formData.notes || undefined,
-      };
+    const recordData = {
+      employeeId: formData.employeeId,
+      employeeName,
+      department: employee?.jobDetails.department || "",
+      departmentId: "",  // Not available in Employee type
+      courseTitle: formData.courseTitle,
+      provider: formData.provider,
+      description: formData.description || "",
+      category: formData.category || "",
+      startDate: formData.startDate,
+      completionDate: formData.completionDate || "",
+      expiryDate: formData.expiryDate || "",
+      cost: formData.cost ? parseFloat(formData.cost) : 0,
+      currency: "USD",
+      notes: formData.notes || "",
+    };
 
-      if (editingRecord) {
-        // Update existing record
-        await trainingService.updateTrainingRecord(
-          tenantId,
-          editingRecord.id!,
-          recordData,
-          certificateFile || undefined
-        );
+    const mutationCallbacks = {
+      onSuccess: () => {
         toast({
           title: "Success",
-          description: "Training record updated successfully.",
+          description: editingRecord
+            ? "Training record updated successfully."
+            : "Training record created successfully.",
         });
-      } else {
-        // Create new record
-        await trainingService.createTrainingRecord(
-          tenantId,
-          recordData,
-          certificateFile || undefined,
-          user?.email || undefined
-        );
+        resetForm();
+        setShowAddDialog(false);
+      },
+      onError: () => {
         toast({
-          title: "Success",
-          description: "Training record created successfully.",
+          title: "Error",
+          description: "Failed to save training record. Please try again.",
+          variant: "destructive",
         });
-      }
+      },
+    };
 
-      resetForm();
-      setShowAddDialog(false);
-      await loadRecords();
-    } catch (error) {
-      console.error("Error saving training record:", error);
-      toast({
-        title: "Error",
-        description: "Failed to save training record. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
+    if (editingRecord) {
+      updateMutation.mutate(
+        {
+          id: editingRecord.id!,
+          updates: recordData,
+          certificateFile: certificateFile || undefined,
+        },
+        mutationCallbacks
+      );
+    } else {
+      createMutation.mutate(
+        {
+          record: recordData,
+          certificateFile: certificateFile || undefined,
+          createdBy: user?.email || "",
+        },
+        mutationCallbacks
+      );
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!deletingRecordId) return;
 
-    setDeleting(true);
-    try {
-      await trainingService.deleteTrainingRecord(tenantId, deletingRecordId);
-      toast({
-        title: "Success",
-        description: "Training record deleted successfully.",
-      });
-      setShowDeleteDialog(false);
-      setDeletingRecordId(null);
-      await loadRecords();
-    } catch (error) {
-      console.error("Error deleting training record:", error);
-      toast({
-        title: "Error",
-        description: "Failed to delete training record.",
-        variant: "destructive",
-      });
-    } finally {
-      setDeleting(false);
-    }
+    deleteMutation.mutate(deletingRecordId, {
+      onSuccess: () => {
+        toast({
+          title: "Success",
+          description: "Training record deleted successfully.",
+        });
+        setShowDeleteDialog(false);
+        setDeletingRecordId(null);
+      },
+      onError: () => {
+        toast({
+          title: "Error",
+          description: "Failed to delete training record.",
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleExportCSV = () => {
@@ -526,10 +501,10 @@ export default function TrainingCertifications() {
                 <Button
                   variant="outline"
                   onClick={handleRefreshStatuses}
-                  disabled={refreshing}
+                  disabled={refreshMutation.isPending}
                   className="w-full"
                 >
-                  {refreshing ? (
+                  {refreshMutation.isPending ? (
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   ) : (
                     <RefreshCw className="h-4 w-4 mr-2" />
@@ -745,8 +720,8 @@ export default function TrainingCertifications() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={submitting}>
-                          {submitting ? (
+                        <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                          {createMutation.isPending || updateMutation.isPending ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               Saving...
@@ -980,10 +955,10 @@ export default function TrainingCertifications() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...

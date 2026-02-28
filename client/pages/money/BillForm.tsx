@@ -34,13 +34,12 @@ import {
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { billService } from '@/services/billService';
-import { vendorService } from '@/services/vendorService';
+import { useActiveVendors } from '@/hooks/useVendors';
+import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
-import type { Bill, BillFormData, BillPayment, Vendor, ExpenseCategory, PaymentMethod } from '@/types/money';
+import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { getTodayTL, toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import { percentOf, addMoney } from '@/lib/currency';
 import {
@@ -89,21 +88,27 @@ export default function BillForm() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
 
   const isNew = !id || id === 'new';
   const isEdit = searchParams.get('edit') === 'true' || window.location.pathname.endsWith('/edit');
   const preselectedVendorId = searchParams.get('vendor');
 
-  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [vendors, setVendors] = useState<Vendor[]>([]);
-  const [bill, setBill] = useState<Bill | null>(null);
-  const [payments, setPayments] = useState<BillPayment[]>([]);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
+
+  // React Query hooks
+  const { data: vendors = [] } = useActiveVendors();
+  const billIdToLoad = !isNew && id ? id : undefined;
+  const { data: bill = null, isLoading: billLoading } = useBill(billIdToLoad);
+  const { data: payments = [] } = useBillPayments(billIdToLoad);
+  const createBillMutation = useCreateBill();
+  const updateBillMutation = useUpdateBill();
+  const recordPaymentMutation = useRecordBillPayment();
+
+  const loading = !isNew && billLoading;
 
   // React Hook Form for better performance (no re-render on every keystroke)
   const {
@@ -131,12 +136,29 @@ export default function BillForm() {
   // Watch form values for summary calculation
   const formData = watch();
 
+  // Set preselected vendor if provided
   useEffect(() => {
-    if (tenantId) {
-      loadData();
+    if (preselectedVendorId) {
+      reset((prev) => ({ ...prev, vendorId: preselectedVendorId }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, tenantId]);
+  }, [preselectedVendorId, reset]);
+
+  // Populate form when editing/viewing an existing bill
+  useEffect(() => {
+    if (!isNew && bill) {
+      reset({
+        billNumber: bill.billNumber || '',
+        vendorId: bill.vendorId,
+        billDate: bill.billDate,
+        dueDate: bill.dueDate,
+        description: bill.description,
+        amount: bill.amount,
+        taxRate: bill.taxAmount > 0 ? (bill.taxAmount / bill.amount) * 100 : 0,
+        category: bill.category,
+        notes: bill.notes || '',
+      });
+    }
+  }, [isNew, bill, reset]);
 
   useEffect(() => {
     if (searchParams.get('record') === 'payment' && bill) {
@@ -144,52 +166,6 @@ export default function BillForm() {
       setShowPaymentDialog(true);
     }
   }, [searchParams, bill]);
-
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      // Load vendors
-      const vendorList = await vendorService.getActiveVendors(tenantId);
-      setVendors(vendorList);
-
-      // Set preselected vendor if provided
-      if (preselectedVendorId) {
-        reset((prev) => ({ ...prev, vendorId: preselectedVendorId }));
-      }
-
-      // Load bill if editing/viewing
-      if (!isNew && id) {
-        const billData = await billService.getBillById(tenantId, id);
-        if (billData) {
-          setBill(billData);
-          reset({
-            billNumber: billData.billNumber || '',
-            vendorId: billData.vendorId,
-            billDate: billData.billDate,
-            dueDate: billData.dueDate,
-            description: billData.description,
-            amount: billData.amount,
-            taxRate: billData.taxAmount > 0 ? (billData.taxAmount / billData.amount) * 100 : 0,
-            category: billData.category,
-            notes: billData.notes || '',
-          });
-
-          // Load payments
-          const billPayments = await billService.getPaymentsForBill(tenantId, id);
-          setPayments(billPayments);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bills.loadError') || 'Failed to load bill',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateTotals = () => {
     const taxAmount = percentOf(formData.amount, formData.taxRate);
@@ -213,8 +189,6 @@ export default function BillForm() {
   };
 
   const onSubmit = async (data: BillFormSchemaData) => {
-    if (!tenantId) return;
-
     try {
       setSaving(true);
       // Convert to BillFormData for service
@@ -231,22 +205,21 @@ export default function BillForm() {
       };
 
       if (isNew) {
-        const newId = await billService.createBill(tenantId, billData);
+        const newId = await createBillMutation.mutateAsync(billData);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.created') || 'Bill created',
         });
         navigate(`/money/bills/${newId}`);
       } else if (id) {
-        await billService.updateBill(tenantId, id, billData);
+        await updateBillMutation.mutateAsync({ id, data: billData });
         toast({
           title: t('common.success') || 'Success',
           description: t('money.bills.updated') || 'Bill updated',
         });
         navigate(`/money/bills/${id}`);
       }
-    } catch (error) {
-      console.error('Error saving bill:', error);
+    } catch (_error) {
       toast({
         title: t('common.error') || 'Error',
         description: t('money.bills.saveError') || 'Failed to save bill',
@@ -257,10 +230,16 @@ export default function BillForm() {
     }
   };
 
-  const handleSave = handleSubmit(onSubmit);
+  const handleSave = handleSubmit(onSubmit, (validationErrors) => {
+    const firstError = Object.values(validationErrors)[0];
+    toast({
+      title: t('common.error') || 'Validation Error',
+      description: firstError?.message || 'Please fill in all required fields.',
+      variant: 'destructive',
+    });
+  });
 
   const handleRecordPayment = async () => {
-    if (!tenantId) return;
     if (!bill) return;
 
     const amount = parseFloat(paymentAmount);
@@ -275,11 +254,14 @@ export default function BillForm() {
 
     try {
       setSaving(true);
-      await billService.recordPayment(tenantId, bill.id, {
-        date: getTodayTL(),
-        amount,
-        method: paymentMethod as PaymentMethod,
-        notes: paymentNotes,
+      await recordPaymentMutation.mutateAsync({
+        billId: bill.id,
+        payment: {
+          date: getTodayTL(),
+          amount,
+          method: paymentMethod as PaymentMethod,
+          notes: paymentNotes,
+        },
       });
 
       toast({
@@ -288,9 +270,7 @@ export default function BillForm() {
       });
 
       setShowPaymentDialog(false);
-      loadData();
-    } catch (error) {
-      console.error('Error recording payment:', error);
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         description: t('money.payments.recordError') || 'Failed to record payment',

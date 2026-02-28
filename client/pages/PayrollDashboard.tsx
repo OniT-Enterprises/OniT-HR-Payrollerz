@@ -3,7 +3,7 @@
  * "Would I trust this page on payday?" - YES.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ import {
 } from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService } from "@/services/employeeService";
+import { useQuery } from '@tanstack/react-query';
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { usePayrollRuns } from "@/hooks/usePayroll";
 import { leaveService } from "@/services/leaveService";
-import { payrollService } from "@/services/payrollService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
 import { adjustToNextBusinessDayTL } from "@/lib/payroll/tl-holidays";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -42,13 +43,16 @@ import {
   ExternalLink,
   UserX,
   Wallet,
+  FolderKanban,
+  Building2,
 } from "lucide-react";
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import GuidancePanel from "@/components/GuidancePanel";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 const theme = sectionThemes.payroll;
 
@@ -70,62 +74,130 @@ export default function PayrollDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { user } = useAuth();
+  const { session, hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
   const [secondaryOpen, setSecondaryOpen] = useState(false);
-  const [stats, setStats] = useState({
-    totalEmployees: 0,
-    grossPayroll: 0,
-    employerINSS: 0,
-    employeeINSS: 0,
-    estimatedNet: 0,
-    nextPayDate: "",
-    lastPayrollDate: "",
-    daysUntilPayday: 0,
-    currentMonth: "",
-    blockedEmployees: 0,
-  });
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule("reports"),
+    canManage()
+  );
 
-  // Checklist with grammatically correct issue labels and direct links
-  const [checklist, setChecklist] = useState<PayrollChecklistItem[]>([
-    {
-      id: "attendance",
-      label: t("payrollDashboard.checklist.attendanceLabel"),
-      issueLabel: t("payrollDashboard.checklist.attendanceIssue"),
-      description: t("payrollDashboard.checklist.attendanceDesc"),
-      status: "complete",
-      linkPath: "/people/time-tracking",
-      linkLabel: t("payrollDashboard.checklist.attendanceLink"),
-    },
-    {
-      id: "leave",
-      label: t("payrollDashboard.checklist.leaveLabel"),
-      issueLabel: t("payrollDashboard.checklist.leaveIssue"),
-      description: t("payrollDashboard.checklist.leaveDesc"),
-      status: "warning",
-      count: 2,
-      linkPath: "/people/leave",
-      linkLabel: t("payrollDashboard.checklist.leaveLink"),
-    },
-    {
-      id: "contracts",
-      label: t("payrollDashboard.checklist.contractsLabel"),
-      issueLabel: t("payrollDashboard.checklist.contractsIssue"),
-      description: t("payrollDashboard.checklist.contractsDesc"),
-      status: "complete",
-      linkPath: "/people/employees?filter=missing-contract",
-      linkLabel: t("payrollDashboard.checklist.contractsLink"),
-    },
-    {
-      id: "salaries",
-      label: t("payrollDashboard.checklist.salariesLabel"),
-      issueLabel: t("payrollDashboard.checklist.salariesIssue"),
-      description: t("payrollDashboard.checklist.salariesDesc"),
-      status: "complete",
-      linkPath: "/people/employees?filter=missing-salary",
-      linkLabel: t("payrollDashboard.checklist.salariesLink"),
-    },
-  ]);
+  // React Query: fetch all employees, payroll runs, and leave stats
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
+  const { data: allPayrollRuns = [], isLoading: loadingRuns } = usePayrollRuns({ status: 'paid', limit: 1 });
+  const { data: leaveStats, isLoading: loadingLeave } = useQuery({
+    queryKey: ['tenants', tenantId, 'leaveStats'],
+    queryFn: () => leaveService.getLeaveStats(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const loading = loadingEmployees || loadingRuns || loadingLeave;
+
+  // Derive stats from fetched data
+  const stats = useMemo(() => {
+    const activeEmployees = allEmployees.filter((e) => e.status === "active");
+    const grossPayroll = activeEmployees.reduce(
+      (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
+      0
+    );
+
+    // Calculate INSS contributions
+    const inssBaseTotal = activeEmployees.reduce(
+      (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
+      0
+    );
+    const employerINSS = inssBaseTotal * TL_INSS.employerRate;
+    const employeeINSS = inssBaseTotal * TL_INSS.employeeRate;
+    const estimatedNet = grossPayroll - employeeINSS; // Simplified - actual would include WIT
+
+    // Count employees with blocking issues
+    const employeesWithoutContracts = activeEmployees.filter(e => !e.documents?.workContract?.fileUrl);
+    const employeesWithoutINSS = activeEmployees.filter(e => !e.documents?.socialSecurityNumber?.number);
+    const blockedEmployees = new Set([
+      ...employeesWithoutContracts.map(e => e.id),
+      ...employeesWithoutINSS.map(e => e.id),
+    ]).size;
+
+    // Calculate next pay date (25th of current or next month)
+    const now = new Date();
+    let nextPay = new Date(now.getFullYear(), now.getMonth(), 25);
+    if (now.getDate() > 25) {
+      nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 25);
+    }
+
+    const daysUntilPayday = Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const payrollMonth = formatDateTL(nextPay, { month: "long", year: "numeric" });
+
+    const paidRuns = allPayrollRuns;
+
+    return {
+      totalEmployees: activeEmployees.length,
+      grossPayroll,
+      employerINSS,
+      employeeINSS,
+      estimatedNet,
+      nextPayDate: formatDateTL(nextPay, { month: "short", day: "numeric" }),
+      lastPayrollDate: paidRuns.length > 0 && paidRuns[0].paidAt
+        ? formatDateTL(new Date(paidRuns[0].paidAt as unknown as Date), {
+            month: "short",
+            day: "numeric",
+            year: "numeric",
+          })
+        : "N/A",
+      daysUntilPayday,
+      currentMonth: payrollMonth,
+      blockedEmployees,
+    };
+  }, [allEmployees, allPayrollRuns]);
+
+  // Derive checklist from fetched data
+  const checklist = useMemo<PayrollChecklistItem[]>(() => {
+    const activeEmployees = allEmployees.filter((e) => e.status === "active");
+    const employeesWithoutContracts = activeEmployees.filter(e => !e.documents?.workContract?.fileUrl);
+    const pendingLeave = leaveStats?.pendingRequests ?? 0;
+
+    return [
+      {
+        id: "attendance",
+        label: t("payrollDashboard.checklist.attendanceLabel"),
+        issueLabel: t("payrollDashboard.checklist.attendanceIssue"),
+        description: t("payrollDashboard.checklist.attendanceDesc"),
+        status: "complete",
+        linkPath: "/people/time-tracking",
+        linkLabel: t("payrollDashboard.checklist.attendanceLink"),
+      },
+      {
+        id: "leave",
+        label: t("payrollDashboard.checklist.leaveLabel"),
+        issueLabel: t("payrollDashboard.checklist.leaveIssue"),
+        description: t("payrollDashboard.checklist.leaveDesc"),
+        status: pendingLeave > 0 ? "warning" : "complete",
+        count: pendingLeave > 0 ? pendingLeave : undefined,
+        linkPath: "/people/leave",
+        linkLabel: t("payrollDashboard.checklist.leaveLink"),
+      },
+      {
+        id: "contracts",
+        label: t("payrollDashboard.checklist.contractsLabel"),
+        issueLabel: t("payrollDashboard.checklist.contractsIssue"),
+        description: t("payrollDashboard.checklist.contractsDesc"),
+        status: employeesWithoutContracts.length > 0 ? "warning" : "complete",
+        count: employeesWithoutContracts.length > 0 ? employeesWithoutContracts.length : undefined,
+        linkPath: "/people/employees?filter=missing-contract",
+        linkLabel: t("payrollDashboard.checklist.contractsLink"),
+      },
+      {
+        id: "salaries",
+        label: t("payrollDashboard.checklist.salariesLabel"),
+        issueLabel: t("payrollDashboard.checklist.salariesIssue"),
+        description: t("payrollDashboard.checklist.salariesDesc"),
+        status: "complete",
+        linkPath: "/people/employees?filter=missing-salary",
+        linkLabel: t("payrollDashboard.checklist.salariesLink"),
+      },
+    ];
+  }, [allEmployees, leaveStats, t]);
 
   // Calculate payroll status based on checklist
   const payrollStatus = useMemo<PayrollStatus>(() => {
@@ -185,103 +257,6 @@ export default function PayrollDashboard() {
 
   const compliance = getComplianceDeadlines();
 
-  useEffect(() => {
-    loadStats();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadStats = async () => {
-    try {
-      const [employees, leaveStats, paidRuns] = await Promise.all([
-        employeeService.getAllEmployees(tenantId),
-        leaveService.getLeaveStats(tenantId),
-        payrollService.runs.getAllPayrollRuns({ tenantId, status: 'paid', limit: 1 }),
-      ]);
-
-      const activeEmployees = employees.filter((e) => e.status === "active");
-      const grossPayroll = activeEmployees.reduce(
-        (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
-        0
-      );
-
-      // Calculate INSS contributions
-      const inssBaseTotal = activeEmployees.reduce(
-        (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
-        0
-      );
-      const employerINSS = inssBaseTotal * TL_INSS.employerRate;
-      const employeeINSS = inssBaseTotal * TL_INSS.employeeRate;
-      const estimatedNet = grossPayroll - employeeINSS; // Simplified - actual would include WIT
-
-      // Count employees with blocking issues
-      const employeesWithoutContracts = activeEmployees.filter(e => !e.documents?.workContract?.fileUrl);
-      const employeesWithoutINSS = activeEmployees.filter(e => !e.documents?.socialSecurityNumber?.number);
-      const blockedEmployees = new Set([
-        ...employeesWithoutContracts.map(e => e.id),
-        ...employeesWithoutINSS.map(e => e.id),
-      ]).size;
-
-      // Calculate next pay date (25th of current or next month)
-      const now = new Date();
-      let nextPay = new Date(now.getFullYear(), now.getMonth(), 25);
-      if (now.getDate() > 25) {
-        nextPay = new Date(now.getFullYear(), now.getMonth() + 1, 25);
-      }
-
-      const daysUntilPayday = Math.ceil((nextPay.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-      const payrollMonth = formatDateTL(nextPay, { month: "long", year: "numeric" });
-
-      setStats({
-        totalEmployees: activeEmployees.length,
-        grossPayroll,
-        employerINSS,
-        employeeINSS,
-        estimatedNet,
-        nextPayDate: formatDateTL(nextPay, { month: "short", day: "numeric" }),
-        lastPayrollDate: paidRuns.length > 0 && paidRuns[0].paidAt
-          ? formatDateTL(new Date(paidRuns[0].paidAt as unknown as Date), {
-              month: "short",
-              day: "numeric",
-              year: "numeric",
-            })
-          : "N/A",
-        daysUntilPayday,
-        currentMonth: payrollMonth,
-        blockedEmployees,
-      });
-
-      // Update checklist based on real data
-      setChecklist(prev => prev.map(item => {
-        if (item.id === "contracts" && employeesWithoutContracts.length > 0) {
-          return {
-            ...item,
-            status: "warning",
-            count: employeesWithoutContracts.length,
-          };
-        }
-        if (item.id === "leave" && leaveStats.pendingRequests > 0) {
-          return {
-            ...item,
-            status: "warning",
-            count: leaveStats.pendingRequests,
-          };
-        }
-        if (item.id === "leave" && leaveStats.pendingRequests === 0) {
-          return {
-            ...item,
-            status: "complete",
-            count: undefined,
-          };
-        }
-        return item;
-      }));
-
-    } catch (error) {
-      console.error("Error loading stats:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Status display config
   const statusConfig = {
@@ -355,6 +330,25 @@ export default function PayrollDashboard() {
       icon: FileSpreadsheet,
     },
   ];
+
+  const ngoLinks = ngoReportingEnabled
+    ? [
+        {
+          label: t("payrollDashboard.links.payrollAllocation"),
+          description: t("payrollDashboard.links.payrollAllocationDesc"),
+          path: "/reports/payroll-allocation",
+          icon: FolderKanban,
+        },
+        ...(donorExportEnabled
+          ? [{
+              label: t("payrollDashboard.links.donorExport"),
+              description: t("payrollDashboard.links.donorExportDesc"),
+              path: "/reports/donor-export",
+              icon: FileSpreadsheet,
+            }]
+          : []),
+      ]
+    : [];
 
   if (loading) {
     return (
@@ -916,6 +910,43 @@ export default function PayrollDashboard() {
             })}
           </div>
         </div>
+
+        {ngoLinks.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
+              {t("payrollDashboard.ngoReporting")}
+            </h3>
+            <div className="grid gap-4 md:grid-cols-2">
+              {ngoLinks.map((link) => {
+                const LinkIcon = link.icon;
+                return (
+                  <Card
+                    key={link.path}
+                    className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-emerald-500/50 hover:border-l-emerald-500"
+                    onClick={() => navigate(link.path)}
+                  >
+                    <CardContent className="pt-6">
+                      <div className="flex items-start gap-4">
+                        <div className="h-12 w-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                          <LinkIcon className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold">{link.label}</h3>
+                          <p className="text-sm text-muted-foreground">{link.description}</p>
+                        </div>
+                        <ChevronRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+            <div className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <Building2 className="h-3.5 w-3.5" />
+              <span>{t("payrollDashboard.ngoReportingHint")}</span>
+            </div>
+          </div>
+        )}
 
         {/* ======================== */}
         {/* PAST & REPORTS SECTION   */}

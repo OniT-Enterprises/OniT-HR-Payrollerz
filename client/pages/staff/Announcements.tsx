@@ -122,7 +122,7 @@ export default function Announcements() {
           title: data.title || "",
           body: data.body || "",
           pinned: data.pinned || false,
-          imageUrl: data.imageUrl || undefined,
+          imageUrl: data.imageUrl || "",
           createdAt:
             data.createdAt instanceof Timestamp
               ? data.createdAt.toDate()

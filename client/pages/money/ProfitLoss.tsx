@@ -3,7 +3,8 @@
  * Simple income statement showing revenue vs expenses
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,11 +17,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { invoiceService } from '@/services/invoiceService';
+import { useAllInvoices } from '@/hooks/useInvoices';
 import { expenseService } from '@/services/expenseService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { ExpenseCategory } from '@/types/money';
@@ -58,24 +58,9 @@ const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 };
 
 export default function ProfitLoss() {
-  const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('this_month');
-  const [data, setData] = useState<PeriodData>({
-    revenue: 0,
-    expenses: 0,
-    expensesByCategory: {},
-    profit: 0,
-  });
-
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, tenantId]);
 
   const getDateRange = (periodValue: string): { start: string; end: string } => {
     const now = new Date();
@@ -116,49 +101,43 @@ export default function ProfitLoss() {
     };
   };
 
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
-      const { start, end } = getDateRange(period);
+  const { start: startStr, end: endStr } = getDateRange(period);
 
-      // Get all paid invoices in the period
-      const invoices = await invoiceService.getAllInvoices(tenantId);
-      const paidInvoices = invoices.filter((inv) => {
-        if (inv.status !== 'paid' || !inv.paidAt) return false;
-        const paidDate = toDateStringTL(inv.paidAt);
-        return paidDate >= start && paidDate <= end;
-      });
+  // Fetch all invoices via React Query hook
+  const { data: allInvoices = [], isLoading: loadingInvoices } = useAllInvoices();
 
-      const revenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
+  // Fetch expenses for the selected date range
+  const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
+    queryKey: ['tenants', tenantId, 'expenses', 'dateRange', startStr, endStr],
+    queryFn: () => expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
+    staleTime: 5 * 60 * 1000,
+  });
 
-      // Get expenses in the period
-      const expenses = await expenseService.getExpensesByDateRange(tenantId, start, end);
-      const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+  const loading = loadingInvoices || loadingExpenses;
 
-      // Group expenses by category
-      const expensesByCategory: Record<string, number> = {};
-      expenses.forEach((exp) => {
-        expensesByCategory[exp.category] = (expensesByCategory[exp.category] || 0) + exp.amount;
-      });
+  // Compute P&L data from fetched invoices + expenses
+  const data = useMemo<PeriodData>(() => {
+    const paidInvoices = allInvoices.filter((inv) => {
+      if (inv.status !== 'paid' || !inv.paidAt) return false;
+      const paidDate = toDateStringTL(inv.paidAt);
+      return paidDate >= startStr && paidDate <= endStr;
+    });
 
-      setData({
-        revenue,
-        expenses: totalExpenses,
-        expensesByCategory,
-        profit: revenue - totalExpenses,
-      });
-    } catch (error) {
-      console.error('Error loading P&L data:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.profitLoss.loadError') || 'Failed to load report',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    const revenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
+    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+
+    const expensesByCategory: Record<string, number> = {};
+    expenses.forEach((exp) => {
+      expensesByCategory[exp.category] = (expensesByCategory[exp.category] || 0) + exp.amount;
+    });
+
+    return {
+      revenue,
+      expenses: totalExpenses,
+      expensesByCategory,
+      profit: revenue - totalExpenses,
+    };
+  }, [allInvoices, expenses, startStr, endStr]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

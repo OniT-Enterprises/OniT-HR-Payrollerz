@@ -98,8 +98,8 @@ export function RecordPaymentModal({
         amount: paymentAmount,
         date: paymentDate, // YYYY-MM-DD string format
         method: paymentMethod,
-        reference: reference || undefined,
-        notes: notes || undefined,
+        reference: reference || "",
+        notes: notes || "",
       });
 
       const isFullPayment = paymentAmount >= remainingBalance - 0.01; // Small tolerance for rounding

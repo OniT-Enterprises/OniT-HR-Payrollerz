@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -42,8 +42,8 @@ import {
   RefreshCw,
   Filter,
 } from "lucide-react";
-import { adminService, AuditLogEntry } from "@/services/adminService";
-import { toast } from "sonner";
+import { useAuditLog } from "@/hooks/useAdmin";
+import type { AuditLogEntry } from "@/services/adminService";
 import { useI18n } from "@/i18n/I18nProvider";
 
 const ACTION_ICON_CONFIGS: Record<
@@ -94,29 +94,10 @@ const ACTION_ICON_CONFIGS: Record<
 
 export default function AuditLog() {
   const { t } = useI18n();
-  const [entries, setEntries] = useState<AuditLogEntry[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: entries = [], isLoading: loading, refetch } = useAuditLog();
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
-
-  useEffect(() => {
-    loadAuditLog();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadAuditLog = async () => {
-    try {
-      setLoading(true);
-      const data = await adminService.getAuditLog(100);
-      setEntries(data);
-    } catch (error) {
-      console.error("Error loading audit log:", error);
-      toast.error(t("admin.auditLog.errorLoad"));
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const filteredEntries = entries.filter((entry) => {
     const matchesSearch =
@@ -221,7 +202,7 @@ export default function AuditLog() {
               </div>
             </div>
 
-            <Button onClick={loadAuditLog} variant="outline" className="gap-2">
+            <Button onClick={() => refetch()} variant="outline" className="gap-2">
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               {t("admin.auditLog.refresh")}
             </Button>

@@ -222,10 +222,10 @@ export default function TimeTracking() {
         employeeName: emp ? `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}` : '',
         department: emp?.jobDetails.department || '',
         date: formData.date,
-        clockIn: formData.clockIn || undefined,
-        clockOut: formData.clockOut || undefined,
+        clockIn: formData.clockIn || "",
+        clockOut: formData.clockOut || "",
         source: 'manual',
-        notes: formData.notes || undefined,
+        notes: formData.notes || "",
       });
       toast({
         title: t("timeLeave.timeTracking.toast.successTitle"),

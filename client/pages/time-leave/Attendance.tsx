@@ -250,9 +250,9 @@ export default function Attendance() {
         department: employee.jobDetails.department,
         date: formData.date,
         clockIn: formData.clockIn,
-        clockOut: formData.clockOut || undefined,
+        clockOut: formData.clockOut || "",
         source: "manual",
-        notes: formData.notes || undefined,
+        notes: formData.notes || "",
       },
       {
         onSuccess: () => {
@@ -377,8 +377,8 @@ export default function Attendance() {
             employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
             department: employee.jobDetails.department,
             date: values[dateIdx],
-            clockIn: values[clockInIdx] || undefined,
-            clockOut: clockOutIdx !== -1 ? values[clockOutIdx] : undefined,
+            clockIn: values[clockInIdx] || "",
+            clockOut: clockOutIdx !== -1 ? (values[clockOutIdx] || "") : "",
           });
         }
       }

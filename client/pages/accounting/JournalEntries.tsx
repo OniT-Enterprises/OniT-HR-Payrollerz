@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -56,9 +56,10 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { accountingService } from "@/services/accountingService";
+import { useAccounts, useJournalEntries, useCreateJournalEntry } from "@/hooks/useAccounting";
+import { journalEntryService } from "@/services/accountingService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import type { JournalEntry, JournalEntryLine, Account } from "@/types/accounting";
+import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -79,19 +80,22 @@ export default function JournalEntries() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
-  const [entries, setEntries] = useState<JournalEntry[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
-  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [showAddDialog, setShowAddDialog] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
-  // Filters
+  // Filters (yearFilter must be declared before useJournalEntries)
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
+
+  // React Query hooks
+  const { data: accounts = [] } = useAccounts();
+  const activeAccounts = useMemo(() => accounts.filter(a => a.isActive), [accounts]);
+  const { data: entries = [], isLoading: loading } = useJournalEntries({ fiscalYear: parseInt(yearFilter) });
+  const createEntryMutation = useCreateJournalEntry();
+
+  const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
 
   // Expanded entries state
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
@@ -103,37 +107,6 @@ export default function JournalEntries() {
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
     { accountId: "", accountCode: "", accountName: "", debit: "", credit: "", description: "" },
   ]);
-
-  // Load data when tenantId is available (not the fallback)
-  useEffect(() => {
-    if (tenantId && tenantId !== "local-dev-tenant") {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadData = async () => {
-    try {
-      setLoading(true);
-      const [entriesData, accountsData] = await Promise.all([
-        accountingService.journalEntries.getAllJournalEntries(tenantId, {
-          fiscalYear: parseInt(yearFilter),
-        }),
-        accountingService.accounts.getAllAccounts(tenantId),
-      ]);
-      setEntries(entriesData);
-      setAccounts(accountsData.filter((a) => a.isActive));
-    } catch (error) {
-      console.error("Failed to load data:", error);
-      toast({
-        title: "Error",
-        description: t("accounting.journalEntries.errorLoad"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filter entries
   const filteredEntries = useMemo(() => {
@@ -278,7 +251,7 @@ export default function JournalEntries() {
 
     // If account selected, populate account info
     if (field === "accountId" && value) {
-      const account = accounts.find((a) => a.id === value);
+      const account = activeAccounts.find((a) => a.id === value);
       if (account) {
         newLines[index].accountCode = account.code;
         newLines[index].accountName = account.name;
@@ -327,11 +300,9 @@ export default function JournalEntries() {
     }
 
     try {
-      setSubmitting(true);
-
       const year = new Date(entryDate).getFullYear();
       const month = new Date(entryDate).getMonth() + 1;
-      const entryNumber = await accountingService.journalEntries.getNextEntryNumber(tenantId, year);
+      const entryNumber = await journalEntryService.getNextEntryNumber(tenantId, year);
 
       const lines: JournalEntryLine[] = validLines.map((line, index) => ({
         lineNumber: index + 1,
@@ -362,14 +333,13 @@ export default function JournalEntries() {
         entry.postedBy = "current-user";
       }
 
-      await accountingService.journalEntries.createJournalEntry(tenantId, entry);
+      await createEntryMutation.mutateAsync(entry);
 
       toast({
         title: t("accounting.journalEntries.success"),
         description: t("accounting.journalEntries.entryCreated", { number: entryNumber, status: asDraft ? t("accounting.journalEntries.savedAsDraft") : t("accounting.journalEntries.entryPosted") }),
       });
 
-      await loadData();
       setShowAddDialog(false);
       resetForm();
     } catch (error) {
@@ -379,8 +349,6 @@ export default function JournalEntries() {
         description: t("accounting.journalEntries.errorCreate"),
         variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -570,7 +538,7 @@ export default function JournalEntries() {
                                       <SelectValue placeholder={t("accounting.journalEntries.selectAccount")} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {accounts.map((acc) => (
+                                      {activeAccounts.map((acc) => (
                                         <SelectItem key={acc.id} value={acc.id!}>
                                           {acc.code} - {acc.name}
                                         </SelectItem>
@@ -653,7 +621,7 @@ export default function JournalEntries() {
                         type="button"
                         variant="outline"
                         onClick={() => setShowAddDialog(false)}
-                        disabled={submitting}
+                        disabled={createEntryMutation.isPending}
                       >
                         {t("accounting.journalEntries.cancel")}
                       </Button>
@@ -661,16 +629,16 @@ export default function JournalEntries() {
                         type="button"
                         variant="secondary"
                         onClick={() => handleSubmit(true)}
-                        disabled={submitting}
+                        disabled={createEntryMutation.isPending}
                       >
                         {t("accounting.journalEntries.saveAsDraft")}
                       </Button>
                       <Button
                         type="button"
                         onClick={() => handleSubmit(false)}
-                        disabled={submitting || !formTotals.isBalanced}
+                        disabled={createEntryMutation.isPending || !formTotals.isBalanced}
                       >
-                        {submitting ? (
+                        {createEntryMutation.isPending ? (
                           <>
                             <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                             {t("accounting.journalEntries.posting")}

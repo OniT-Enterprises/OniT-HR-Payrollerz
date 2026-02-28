@@ -9,6 +9,8 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useTenant } from '@/contexts/TenantContext';
+import { canUseDonorExport, canUseNgoReporting } from '@/lib/ngo/access';
 import {
   Users,
   DollarSign,
@@ -391,6 +393,18 @@ const sitemapData: SitemapSection[] = [
         description: 'Payroll summaries, cost analysis, and tax breakdowns',
       },
       {
+        name: 'Payroll Allocation Report',
+        path: '/reports/payroll-allocation',
+        description: 'NGO project/funding payroll allocation summary for donor reporting',
+        badge: 'NGO',
+      },
+      {
+        name: 'Donor Export Pack',
+        path: '/reports/donor-export',
+        description: 'Exports donor-ready payroll summary and journal lines (CSV)',
+        badge: 'NGO',
+      },
+      {
         name: 'Employee Reports',
         path: '/reports/employees',
         description: 'Headcount, demographics, turnover, and roster exports',
@@ -470,6 +484,32 @@ const sitemapData: SitemapSection[] = [
 ];
 
 export default function Sitemap() {
+  const { session, hasModule, canManage } = useTenant();
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule('reports'));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule('reports'),
+    canManage()
+  );
+
+  const visibleSitemapData = sitemapData
+    .map((section) => {
+      if (section.title !== 'Reports') return section;
+      return {
+        ...section,
+        pages: section.pages.filter((page) => {
+          if (page.path === '/reports/payroll-allocation') return ngoReportingEnabled;
+          if (page.path === '/reports/donor-export') return donorExportEnabled;
+          return true;
+        }),
+      };
+    })
+    .filter((section) => section.pages.length > 0);
+  const visiblePageCount = visibleSitemapData.reduce(
+    (acc, section) => acc + section.pages.length,
+    0
+  );
+
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Sitemap - Meza" description="Complete navigation guide for Meza system" />
@@ -493,13 +533,11 @@ export default function Sitemap() {
           {/* Quick Stats */}
           <div className="flex flex-wrap gap-4 mt-6">
             <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">{sitemapData.length}</span>
+              <span className="text-2xl font-bold text-primary">{visibleSitemapData.length}</span>
               <span className="text-sm text-muted-foreground ml-2">Modules</span>
             </div>
             <div className="bg-muted/50 rounded-lg px-4 py-2">
-              <span className="text-2xl font-bold text-primary">
-                {sitemapData.reduce((acc, section) => acc + section.pages.length, 0)}
-              </span>
+              <span className="text-2xl font-bold text-primary">{visiblePageCount}</span>
               <span className="text-sm text-muted-foreground ml-2">Pages</span>
             </div>
             <div className="bg-muted/50 rounded-lg px-4 py-2">
@@ -511,7 +549,7 @@ export default function Sitemap() {
 
         {/* Sections */}
         <div className="space-y-8">
-          {sitemapData.map((section) => {
+          {visibleSitemapData.map((section) => {
             const Icon = section.icon;
             return (
               <Card key={section.title} className="overflow-hidden">

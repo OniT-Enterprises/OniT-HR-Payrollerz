@@ -3,9 +3,8 @@
  * View all transactions for any account with running balances
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { accountingService } from '../../services/accountingService';
-import { Account, GeneralLedgerEntry } from '../../types/accounting';
+import React, { useState, useMemo } from 'react';
+import { useAccounts, useGeneralLedgerEntries } from "@/hooks/useAccounting";
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -37,7 +36,6 @@ import {
   Search,
   Download,
   Loader2,
-  FileText,
   ArrowUpRight,
   ArrowDownRight,
 } from 'lucide-react';
@@ -45,21 +43,14 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
 export default function GeneralLedger() {
-  const tenantId = useTenantId();
   const { t } = useI18n();
-  // State
-  const [accounts, setAccounts] = useState<Account[]>([]);
-  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
-  const [ledgerEntries, setLedgerEntries] = useState<GeneralLedgerEntry[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingEntries, setLoadingEntries] = useState(false);
 
-  // Date filters
+  // Local UI state
+  const [selectedAccountId, setSelectedAccountId] = useState<string>('');
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
@@ -68,62 +59,20 @@ export default function GeneralLedger() {
   const [endDate, setEndDate] = useState<string>(() => {
     return getTodayTL();
   });
-
-  // Search
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Load accounts when tenantId is available
-  useEffect(() => {
-    const loadAccounts = async () => {
-      try {
-        const accountsList = await accountingService.accounts.getAllAccounts(tenantId);
-        // Sort by code
-        accountsList.sort((a, b) => a.code.localeCompare(b.code));
-        setAccounts(accountsList);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch accounts via React Query
+  const { data: accounts = [], isLoading: loading } = useAccounts();
 
-    if (tenantId && tenantId !== "local-dev-tenant") {
-      loadAccounts();
-    }
-  }, [tenantId]);
+  // Derive selected account from fetched accounts
+  const selectedAccount = accounts.find(a => a.id === selectedAccountId);
+  const accountKey = selectedAccount?.id || selectedAccount?.code;
 
-  // Get selected account details
-  const selectedAccount = useMemo(() => {
-    return accounts.find((a) => a.id === selectedAccountId);
-  }, [accounts, selectedAccountId]);
-
-  // Load ledger entries when account or date range changes
-  useEffect(() => {
-    const loadLedgerEntries = async () => {
-      if (!selectedAccount?.code) {
-        setLedgerEntries([]);
-        return;
-      }
-
-      setLoadingEntries(true);
-      try {
-        // Query by account code since that's what we store in GL entries
-        const entries = await accountingService.generalLedger.getEntriesByAccount(
-          tenantId,
-          selectedAccount.id || selectedAccount.code,
-          { startDate, endDate }
-        );
-        setLedgerEntries(entries);
-      } catch (error) {
-        console.error('Error loading ledger entries:', error);
-      } finally {
-        setLoadingEntries(false);
-      }
-    };
-
-    loadLedgerEntries();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedAccount?.code, startDate, endDate]);
+  // Fetch GL entries via React Query
+  const { data: ledgerEntries = [], isLoading: loadingEntries } = useGeneralLedgerEntries(
+    accountKey,
+    { startDate, endDate }
+  );
 
   // Filter entries by search term
   const filteredEntries = useMemo(() => {
@@ -179,19 +128,15 @@ export default function GeneralLedger() {
 
   // Group accounts by type for select dropdown
   const groupedAccounts = useMemo(() => {
-    const groups: Record<string, Account[]> = {
-      asset: [],
-      liability: [],
-      equity: [],
-      revenue: [],
-      expense: [],
+    const activeAccounts = accounts.filter((a) => a.isActive);
+    return {
+      asset: activeAccounts.filter((a) => a.type === 'asset'),
+      liability: activeAccounts.filter((a) => a.type === 'liability'),
+      equity: activeAccounts.filter((a) => a.type === 'equity'),
+      revenue: activeAccounts.filter((a) => a.type === 'revenue'),
+      expense: activeAccounts.filter((a) => a.type === 'expense'),
     };
-    accounts.forEach((account) => {
-      if (account.isActive) {
-        groups[account.type].push(account);
-      }
-    });
-    return groups;
+    // eslint-disable-next-line react-hooks/preserve-manual-memoization -- accounts is stable from React Query
   }, [accounts]);
 
   if (loading) {

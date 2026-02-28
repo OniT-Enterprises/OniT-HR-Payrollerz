@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -33,8 +33,8 @@ import {
   Settings,
   BarChart3,
 } from "lucide-react";
-import { adminService } from "@/services/adminService";
-import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
+import { useTenantDetail, useTenantStats, useSuspendTenant, useReactivateTenant } from "@/hooks/useAdmin";
+import { TenantStatus, TenantPlan } from "@/types/tenant";
 import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -59,42 +59,11 @@ export default function TenantDetail() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
-  const [tenant, setTenant] = useState<TenantConfig | null>(null);
-  const [stats, setStats] = useState({ memberCount: 0, employeeCount: 0 });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (id) {
-      loadTenant();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id]);
-
-  const loadTenant = async () => {
-    if (!id) return;
-
-    try {
-      setLoading(true);
-      const [tenantData, statsData] = await Promise.all([
-        adminService.getTenantById(id),
-        adminService.getTenantStats(id),
-      ]);
-
-      if (!tenantData) {
-        toast.error("Tenant not found");
-        navigate("/admin/tenants");
-        return;
-      }
-
-      setTenant(tenantData);
-      setStats(statsData);
-    } catch (error) {
-      console.error("Error loading tenant:", error);
-      toast.error("Failed to load tenant");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: tenant, isLoading: tenantLoading } = useTenantDetail(id);
+  const { data: stats = { memberCount: 0, employeeCount: 0 } } = useTenantStats(id);
+  const suspendMutation = useSuspendTenant();
+  const reactivateMutation = useReactivateTenant();
+  const loading = tenantLoading;
 
   const handleImpersonate = async () => {
     if (!tenant) return;
@@ -103,8 +72,7 @@ export default function TenantDetail() {
       await startImpersonation(tenant.id, tenant.name);
       toast.success(`Now viewing as ${tenant.name}`);
       navigate("/");
-    } catch (error) {
-      console.error("Error impersonating:", error);
+    } catch (_error) {
       toast.error("Failed to impersonate tenant");
     }
   };
@@ -113,16 +81,14 @@ export default function TenantDetail() {
     if (!tenant || !user || !userProfile) return;
 
     try {
-      await adminService.suspendTenant(
-        tenant.id,
-        "Suspended by admin",
-        user.uid,
-        userProfile.email
-      );
+      await suspendMutation.mutateAsync({
+        tenantId: tenant.id,
+        reason: "Suspended by admin",
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
       toast.success(`${tenant.name} has been suspended`);
-      loadTenant();
-    } catch (error) {
-      console.error("Error suspending tenant:", error);
+    } catch (_error) {
       toast.error("Failed to suspend tenant");
     }
   };
@@ -131,11 +97,13 @@ export default function TenantDetail() {
     if (!tenant || !user || !userProfile) return;
 
     try {
-      await adminService.reactivateTenant(tenant.id, user.uid, userProfile.email);
+      await reactivateMutation.mutateAsync({
+        tenantId: tenant.id,
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
       toast.success(`${tenant.name} has been reactivated`);
-      loadTenant();
-    } catch (error) {
-      console.error("Error reactivating tenant:", error);
+    } catch (_error) {
       toast.error("Failed to reactivate tenant");
     }
   };
@@ -428,6 +396,16 @@ export default function TenantDetail() {
                   {tenant.features?.payroll && (
                     <Badge className="bg-green-500/10 text-green-600 border border-green-500/20">
                       Payroll
+                    </Badge>
+                  )}
+                  {tenant.features?.money && (
+                    <Badge className="bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
+                      Money
+                    </Badge>
+                  )}
+                  {tenant.features?.accounting && (
+                    <Badge className="bg-sky-500/10 text-sky-600 border border-sky-500/20">
+                      Accounting
                     </Badge>
                   )}
                   {tenant.features?.reports && (

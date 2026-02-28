@@ -2,20 +2,17 @@
  * Settings Page — Orchestrator
  * Loads TenantSettings, renders tab components
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
-import { settingsService } from "@/services/settingsService";
-import { holidayService, type HolidayOverride } from "@/services/holidayService";
+import { holidayService } from "@/services/holidayService";
+import { useSettings, settingsKeys } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useToast } from "@/hooks/use-toast";
 import { SEO, seoConfig } from "@/components/SEO";
-import {
-  TenantSettings,
-} from "@/types/settings";
 import {
   Settings as SettingsIcon,
   Building,
@@ -39,51 +36,30 @@ import {
 export default function Settings() {
   const { user } = useAuth();
   const tenantId = useTenantId();
-  const { toast } = useToast();
   const { t } = useI18n();
 
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const { data: settings = null, isLoading: settingsLoading } = useSettings();
+
+  // Holiday overrides query
+  const year = new Date().getFullYear();
+  const { data: holidayOverrides = [], isLoading: holidaysLoading } = useQuery({
+    queryKey: ['tenants', tenantId, 'holidayOverrides', year] as const,
+    queryFn: () => holidayService.listTenantHolidayOverrides(tenantId, year),
+    staleTime: 10 * 60 * 1000,
+    enabled: !!tenantId,
+  });
+
+  const loading = settingsLoading || holidaysLoading;
+
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
-  const [settings, setSettings] = useState<TenantSettings | null>(null);
-  const [holidayOverrides, setHolidayOverrides] = useState<HolidayOverride[]>([]);
 
-  const loadSettings = useCallback(async () => {
-    if (!tenantId) {
-      setLoading(false);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      let existingSettings = await settingsService.getSettings(tenantId);
-
-      if (!existingSettings) {
-        existingSettings = await settingsService.createSettings(tenantId);
-      }
-
-      setSettings(existingSettings);
-
-      // Load holiday overrides for current year
-      const year = new Date().getFullYear();
-      const overrides = await holidayService.listTenantHolidayOverrides(tenantId, year);
-      setHolidayOverrides(overrides);
-    } catch (error) {
-      console.error("Error loading settings:", error);
-      toast({
-        title: t("settings.notifications.errorTitle"),
-        description: t("settings.notifications.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast, t]);
-
-  // Load on mount
-  useEffect(() => {
-    loadSettings();
-  }, [loadSettings]);
+  // onReload for child tabs — invalidate queries so React Query refetches
+  const handleReload = () => {
+    queryClient.invalidateQueries({ queryKey: settingsKeys.all(tenantId) });
+    queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'holidayOverrides', year] });
+  };
 
   if (loading) {
     return <SettingsSkeleton />;
@@ -147,7 +123,7 @@ export default function Settings() {
                 tenantId={tenantId}
                 saving={saving}
                 setSaving={setSaving}
-                onReload={loadSettings}
+                onReload={handleReload}
                 t={t}
                 initialData={settings.companyDetails}
               />
@@ -160,7 +136,7 @@ export default function Settings() {
                 tenantId={tenantId}
                 saving={saving}
                 setSaving={setSaving}
-                onReload={loadSettings}
+                onReload={handleReload}
                 t={t}
                 initialData={settings.companyStructure}
               />
@@ -173,7 +149,7 @@ export default function Settings() {
                 tenantId={tenantId}
                 saving={saving}
                 setSaving={setSaving}
-                onReload={loadSettings}
+                onReload={handleReload}
                 t={t}
                 initialData={settings.paymentStructure}
               />
@@ -186,7 +162,7 @@ export default function Settings() {
                 tenantId={tenantId}
                 saving={saving}
                 setSaving={setSaving}
-                onReload={loadSettings}
+                onReload={handleReload}
                 t={t}
                 initialTimeOff={settings.timeOffPolicies}
                 initialHolidayOverrides={holidayOverrides}
@@ -201,7 +177,7 @@ export default function Settings() {
                 tenantId={tenantId}
                 saving={saving}
                 setSaving={setSaving}
-                onReload={loadSettings}
+                onReload={handleReload}
                 t={t}
                 initialData={settings.payrollConfig}
               />

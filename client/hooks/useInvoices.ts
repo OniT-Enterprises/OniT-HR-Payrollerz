@@ -79,6 +79,16 @@ export function useUpdateInvoice() {
   });
 }
 
+export function useInvoiceStats() {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: [...invoiceKeys.all(tenantId), 'stats'] as const,
+    queryFn: () => invoiceService.getStats(tenantId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
 export function useInvoiceSettings() {
   const tenantId = useTenantId();
   return useQuery({

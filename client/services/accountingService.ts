@@ -349,6 +349,61 @@ class JournalEntryService {
   }
 
   /**
+   * Void a journal entry and create reversing GL entries inside an existing transaction.
+   * Use this when cancelling/deleting source documents (bills, invoices, expenses)
+   * to keep the General Ledger balanced.
+   *
+   * @param tenantId - Tenant ID
+   * @param journalEntryId - The journal entry to void
+   * @param transaction - Firestore transaction (must be provided)
+   * @param voidedBy - User who initiated the void
+   * @param reason - Reason for voiding
+   */
+  voidJournalEntryInTransaction(
+    tenantId: string,
+    journalEntryId: string,
+    journalEntry: JournalEntry,
+    transaction: Transaction,
+    voidedBy: string,
+    reason: string
+  ): void {
+    if (journalEntry.status !== 'posted') {
+      // Nothing to reverse for draft or already-voided entries
+      return;
+    }
+
+    const journalDocRef = doc(db, paths.journalEntry(tenantId, journalEntryId));
+
+    // 1. Mark journal entry as void
+    transaction.update(journalDocRef, {
+      status: 'void',
+      voidedAt: serverTimestamp(),
+      voidedBy,
+      voidReason: reason,
+    });
+
+    // 2. Create reversing GL entries (swap debits and credits)
+    for (const line of journalEntry.lines) {
+      const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
+      transaction.set(glDocRef, {
+        accountId: line.accountId,
+        accountCode: line.accountCode,
+        accountName: line.accountName,
+        journalEntryId: journalEntryId,
+        entryNumber: `${journalEntry.entryNumber}-VOID`,
+        entryDate: journalEntry.date,
+        description: `VOID: ${line.description || journalEntry.description}`,
+        debit: line.credit,   // Swap: original credit becomes debit
+        credit: line.debit,   // Swap: original debit becomes credit
+        balance: 0,
+        fiscalYear: journalEntry.fiscalYear,
+        fiscalPeriod: journalEntry.fiscalPeriod,
+        createdAt: serverTimestamp(),
+      });
+    }
+  }
+
+  /**
    * Generate next entry number via Firestore transaction on a single settings doc.
    * NOTE: This limits throughput to ~1 write/sec per tenant. Acceptable for current
    * scale (1-2 admins). If high-volume concurrent numbering is needed, switch to
@@ -549,6 +604,12 @@ class JournalEntryService {
     employeeCount: number;
     approvedBy?: string;
     sourceId?: string;
+    allocations?: Array<{
+      projectCode: string;
+      fundingSource: string;
+      grossPay: number;
+      inssEmployer: number;
+    }>;
   }, tenantId: string): Promise<string> {
     const year = new Date(summary.periodEnd).getFullYear();
     const month = new Date(summary.periodEnd).getMonth() + 1;
@@ -566,26 +627,102 @@ class JournalEntryService {
     };
 
     const salaryAccount = await getAccountId('5110');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: salaryAccount.id,
-      accountCode: '5110',
-      accountName: salaryAccount.name,
-      debit: summary.totalGrossPay,
-      credit: 0,
-      description: 'Gross salaries',
-    });
-
     const inssExpense = await getAccountId('5150');
-    lines.push({
-      lineNumber: lineNumber++,
-      accountId: inssExpense.id,
-      accountCode: '5150',
-      accountName: inssExpense.name,
-      debit: summary.totalINSSEmployer,
-      credit: 0,
-      description: 'INSS employer contribution (6%)',
-    });
+
+    const allocationRows = (summary.allocations ?? [])
+      .map((row) => ({
+        projectCode: row.projectCode?.trim() || 'Unassigned',
+        fundingSource: row.fundingSource?.trim() || 'Unassigned',
+        grossPay: addMoney(row.grossPay || 0),
+        inssEmployer: addMoney(row.inssEmployer || 0),
+      }))
+      .filter((row) => row.grossPay > 0 || row.inssEmployer > 0);
+
+    if (allocationRows.length > 0) {
+      let allocatedGross = 0;
+      let allocatedINSS = 0;
+
+      for (const allocation of allocationRows) {
+        if (allocation.grossPay > 0) {
+          lines.push({
+            lineNumber: lineNumber++,
+            accountId: salaryAccount.id,
+            accountCode: '5110',
+            accountName: salaryAccount.name,
+            debit: allocation.grossPay,
+            credit: 0,
+            description: `Gross salaries (${allocation.projectCode} | ${allocation.fundingSource})`,
+            projectId: allocation.projectCode,
+            departmentId: allocation.fundingSource,
+          });
+          allocatedGross = addMoney(allocatedGross, allocation.grossPay);
+        }
+        if (allocation.inssEmployer > 0) {
+          lines.push({
+            lineNumber: lineNumber++,
+            accountId: inssExpense.id,
+            accountCode: '5150',
+            accountName: inssExpense.name,
+            debit: allocation.inssEmployer,
+            credit: 0,
+            description: `INSS employer contribution (${allocation.projectCode} | ${allocation.fundingSource})`,
+            projectId: allocation.projectCode,
+            departmentId: allocation.fundingSource,
+          });
+          allocatedINSS = addMoney(allocatedINSS, allocation.inssEmployer);
+        }
+      }
+
+      const grossRemainder = subtractMoney(summary.totalGrossPay, allocatedGross);
+      if (grossRemainder > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: salaryAccount.id,
+          accountCode: '5110',
+          accountName: salaryAccount.name,
+          debit: grossRemainder,
+          credit: 0,
+          description: 'Gross salaries (Unassigned)',
+          projectId: 'Unassigned',
+          departmentId: 'Unassigned',
+        });
+      }
+
+      const inssRemainder = subtractMoney(summary.totalINSSEmployer, allocatedINSS);
+      if (inssRemainder > 0) {
+        lines.push({
+          lineNumber: lineNumber++,
+          accountId: inssExpense.id,
+          accountCode: '5150',
+          accountName: inssExpense.name,
+          debit: inssRemainder,
+          credit: 0,
+          description: 'INSS employer contribution (Unassigned)',
+          projectId: 'Unassigned',
+          departmentId: 'Unassigned',
+        });
+      }
+    } else {
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: salaryAccount.id,
+        accountCode: '5110',
+        accountName: salaryAccount.name,
+        debit: summary.totalGrossPay,
+        credit: 0,
+        description: 'Gross salaries',
+      });
+
+      lines.push({
+        lineNumber: lineNumber++,
+        accountId: inssExpense.id,
+        accountCode: '5150',
+        accountName: inssExpense.name,
+        debit: summary.totalINSSEmployer,
+        credit: 0,
+        description: 'INSS employer contribution (6%)',
+      });
+    }
 
     const salariesPayable = await getAccountId('2210');
     lines.push({

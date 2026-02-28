@@ -5,7 +5,7 @@
  * and visa requirements for Timor-Leste compliance.
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +41,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
@@ -59,8 +58,8 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO } from "@/components/SEO";
-import { employeeService, Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import type { Employee } from "@/services/employeeService";
 import type { WorkPermitStatus } from "@/types/tax-filing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -214,41 +213,15 @@ function ForeignWorkersSkeleton() {
 // ============================================
 
 export default function ForeignWorkers() {
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const tenantId = useTenantId();
   const { t } = useI18n();
 
   // State
-  const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { data: employees = [], isLoading: loading } = useAllEmployees();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [nationalityFilter, setNationalityFilter] = useState<string>("all");
   const [activeTab, setActiveTab] = useState("all");
-
-  // Load employees
-  useEffect(() => {
-    loadEmployees();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadEmployees = async () => {
-    try {
-      setLoading(true);
-      const allEmployees = await employeeService.getAllEmployees(tenantId);
-      setEmployees(allEmployees);
-    } catch (error) {
-      console.error("Failed to load employees:", error);
-      toast({
-        title: t("common.error"),
-        description: t("admin.foreignWorkers.errorLoad"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Process foreign workers
   const foreignWorkers = useMemo<ForeignWorkerWithDetails[]>(() => {

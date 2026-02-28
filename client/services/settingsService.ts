@@ -24,6 +24,7 @@ import {
   TL_DEFAULT_PAYROLL_CONFIG,
   TL_DEFAULT_LEAVE_POLICIES,
 } from '@/types/settings';
+export type { CompanyDetails, CompanyStructure, PaymentStructure, TimeOffPolicies, PayrollConfig };
 
 const LEGACY_SETTINGS_COLLECTION = 'tenant_settings';
 

@@ -3,7 +3,7 @@
  * Import bank transactions and match against records
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useRef } from 'react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,7 +30,15 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { bankReconciliationService } from '@/services/bankReconciliationService';
+import {
+  useBankTransactions,
+  useReconciliationSummary,
+  useImportTransactions,
+  useMatchTransaction,
+  useUnmatchTransaction,
+  useReconcileTransactions,
+  useDeleteBankTransaction,
+} from '@/hooks/useBankReconciliation';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
@@ -61,18 +69,8 @@ export default function BankReconciliation() {
   const tenantId = useTenantId();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [transactions, setTransactions] = useState<BankTransaction[]>([]);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
-  const [importing, setImporting] = useState(false);
-  const [summary, setSummary] = useState({
-    unmatchedCount: 0,
-    matchedCount: 0,
-    reconciledCount: 0,
-    totalDeposits: 0,
-    totalWithdrawals: 0,
-  });
 
   // Match dialog state
   const [matchDialogOpen, setMatchDialogOpen] = useState(false);
@@ -80,31 +78,22 @@ export default function BankReconciliation() {
   const [matchOptions, setMatchOptions] = useState<MatchOption[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [txns, sum] = await Promise.all([
-        bankReconciliationService.getAllTransactions(),
-        bankReconciliationService.getReconciliationSummary(),
-      ]);
-      setTransactions(txns);
-      setSummary(sum);
-    } catch (error) {
-      console.error('Error loading transactions:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.bankRecon.loadError') || 'Failed to load transactions',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [toast, t]);
+  // React Query hooks
+  const { data: transactions = [], isLoading: loading } = useBankTransactions();
+  const { data: summary = {
+    unmatchedCount: 0,
+    matchedCount: 0,
+    reconciledCount: 0,
+    totalDeposits: 0,
+    totalWithdrawals: 0,
+  } } = useReconciliationSummary();
+  const importMutation = useImportTransactions();
+  const matchMutation = useMatchTransaction();
+  const unmatchMutation = useUnmatchTransaction();
+  const reconcileMutation = useReconcileTransactions();
+  const deleteMutation = useDeleteBankTransaction();
 
-  useEffect(() => {
-    bankReconciliationService.setTenantId(tenantId);
-    loadData();
-  }, [tenantId, loadData]);
+  const importing = importMutation.isPending;
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -121,10 +110,9 @@ export default function BankReconciliation() {
       return;
     }
 
-    setImporting(true);
     try {
       const content = await file.text();
-      const result = await bankReconciliationService.importTransactions(content);
+      const result = await importMutation.mutateAsync(content);
 
       toast({
         title: t('money.bankRecon.importSuccess') || 'Import Complete',
@@ -134,17 +122,13 @@ export default function BankReconciliation() {
       if (result.errors.length > 0) {
         console.warn('Import errors:', result.errors);
       }
-
-      loadData();
-    } catch (error) {
-      console.error('Import error:', error);
+    } catch {
       toast({
         title: t('common.error') || 'Error',
         description: t('money.bankRecon.importError') || 'Failed to import file',
         variant: 'destructive',
       });
     } finally {
-      setImporting(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -178,7 +162,7 @@ export default function BankReconciliation() {
         // For withdrawals, suggest bills and expenses
         const [bills, expenses] = await Promise.all([
           billService.getAllBills(tenantId),
-          expenseService.getAllExpenses(tenantId, 50),
+          expenseService.getAllExpenses(tenantId),
         ]);
 
         bills
@@ -228,10 +212,13 @@ export default function BankReconciliation() {
     if (!transactionToMatch) return;
 
     try {
-      await bankReconciliationService.matchTransaction(transactionToMatch.id, {
-        type: option.type,
-        id: option.id,
-        description: option.description,
+      await matchMutation.mutateAsync({
+        transactionId: transactionToMatch.id,
+        matchedTo: {
+          type: option.type,
+          id: option.id,
+          description: option.description,
+        },
       });
 
       toast({
@@ -240,7 +227,6 @@ export default function BankReconciliation() {
       });
 
       setMatchDialogOpen(false);
-      loadData();
     } catch {
       toast({
         title: t('common.error') || 'Error',
@@ -252,11 +238,10 @@ export default function BankReconciliation() {
 
   const handleUnmatch = async (transactionId: string) => {
     try {
-      await bankReconciliationService.unmatchTransaction(transactionId);
+      await unmatchMutation.mutateAsync(transactionId);
       toast({
         title: t('money.bankRecon.unmatched') || 'Unmatched',
       });
-      loadData();
     } catch {
       toast({
         title: t('common.error') || 'Error',
@@ -267,11 +252,10 @@ export default function BankReconciliation() {
 
   const handleDelete = async (transactionId: string) => {
     try {
-      await bankReconciliationService.deleteTransaction(transactionId);
+      await deleteMutation.mutateAsync(transactionId);
       toast({
         title: t('money.bankRecon.deleted') || 'Deleted',
       });
-      loadData();
     } catch {
       toast({
         title: t('common.error') || 'Error',
@@ -284,13 +268,12 @@ export default function BankReconciliation() {
     if (selectedIds.size === 0) return;
 
     try {
-      await bankReconciliationService.reconcileTransactions(Array.from(selectedIds));
+      await reconcileMutation.mutateAsync(Array.from(selectedIds));
       toast({
         title: t('money.bankRecon.reconciled') || 'Reconciled',
         description: `${selectedIds.size} ${t('money.bankRecon.transactionsReconciled') || 'transactions reconciled'}`,
       });
       setSelectedIds(new Set());
-      loadData();
     } catch {
       toast({
         title: t('common.error') || 'Error',

@@ -7,6 +7,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useGuidance } from "@/contexts/GuidanceContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -36,9 +37,12 @@ import {
   Map,
   BookOpen,
   Check,
+  FolderKanban,
+  FileSpreadsheet,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 // Simple 6-tab navigation
 const NAV_ITEMS: Array<{
@@ -102,11 +106,47 @@ export default function MainNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, isSuperAdmin } = useAuth();
+  const { session, hasModule, canManage } = useTenant();
   const { isDark, toggleTheme } = useTheme();
   const { guidanceEnabled, toggleGuidance } = useGuidance();
   const { t, locale, setLocale, localeLabels } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const localeOptions = Object.entries(localeLabels) as Array<[typeof locale, string]>;
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule("reports"),
+    canManage()
+  );
+  const visibleNavItems = NAV_ITEMS.filter((item) => {
+    if (item.id === "dashboard") {
+      return true;
+    }
+
+    if (item.id === "people") {
+      return (["staff", "hiring", "timeleave", "performance"] as const).some((module) =>
+        hasModule(module)
+      );
+    }
+
+    if (item.id === "payroll") {
+      return hasModule("payroll");
+    }
+
+    if (item.id === "money") {
+      return hasModule("money");
+    }
+
+    if (item.id === "accounting") {
+      return hasModule("accounting");
+    }
+
+    if (item.id === "reports") {
+      return hasModule("reports");
+    }
+
+    return true;
+  });
 
   const isActive = (path: string) => {
     if (path === "/") {
@@ -151,7 +191,7 @@ export default function MainNavigation() {
 
             {/* Desktop Navigation - Simple tabs */}
             <div className="hidden md:flex items-center gap-1">
-              {NAV_ITEMS.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
                 const iconColor = navColors[item.id];
@@ -281,6 +321,24 @@ export default function MainNavigation() {
                   <Map className="h-4 w-4 mr-2" />
                   Sitemap
                 </DropdownMenuItem>
+                {ngoReportingEnabled && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
+                      {t("reports.dashboard.ngo.title")}
+                    </p>
+                    <DropdownMenuItem onClick={() => handleNavigate("/reports/payroll-allocation")}>
+                      <FolderKanban className="h-4 w-4 mr-2" />
+                      {t("reports.dashboard.ngo.allocationTitle")}
+                    </DropdownMenuItem>
+                    {donorExportEnabled && (
+                      <DropdownMenuItem onClick={() => handleNavigate("/reports/donor-export")}>
+                        <FileSpreadsheet className="h-4 w-4 mr-2" />
+                        {t("reports.dashboard.ngo.donorExportTitle")}
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
                 <DropdownMenuItem onClick={toggleGuidance}>
                   <BookOpen className="h-4 w-4 mr-2" />
                   Guidance
@@ -310,7 +368,7 @@ export default function MainNavigation() {
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50">
             <div className="flex flex-col gap-1">
-              {NAV_ITEMS.map((item) => {
+              {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
                 const iconColor = navColors[item.id];
@@ -353,6 +411,32 @@ export default function MainNavigation() {
                 <Map className="h-5 w-5 mr-3" />
                 Sitemap
               </Button>
+              {ngoReportingEnabled && (
+                <>
+                  <DropdownMenuSeparator className="my-2" />
+                  <p className="px-2 pb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground/80">
+                    {t("reports.dashboard.ngo.title")}
+                  </p>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleNavigate("/reports/payroll-allocation")}
+                    className="justify-start h-12 text-base text-muted-foreground"
+                  >
+                    <FolderKanban className="h-5 w-5 mr-3" />
+                    {t("reports.dashboard.ngo.allocationTitle")}
+                  </Button>
+                  {donorExportEnabled && (
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleNavigate("/reports/donor-export")}
+                      className="justify-start h-12 text-base text-muted-foreground"
+                    >
+                      <FileSpreadsheet className="h-5 w-5 mr-3" />
+                      {t("reports.dashboard.ngo.donorExportTitle")}
+                    </Button>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,9 +58,9 @@ import {
   Percent,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { employeeService, Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
-import { payrollService } from "@/services/payrollService";
+import { Employee } from "@/services/employeeService";
+import { useRecurringDeductions, useCreateDeduction, useUpdateDeduction, usePauseDeduction, useDeleteDeduction } from "@/hooks/usePayroll";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import { formatCurrency } from "@/lib/payroll/constants";
 import { TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
@@ -70,13 +70,22 @@ import { getTodayTL } from "@/lib/dateUtils";
 
 export default function DeductionsAdvances() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  const [deductions, setDeductions] = useState<RecurringDeduction[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  // React Query data
+  const { data: deductions = [], isLoading: loadingDeductions } = useRecurringDeductions();
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
+  const employees = useMemo(() => allEmployees.filter((e: Employee) => e.status === "active"), [allEmployees]);
+  const loading = loadingDeductions || loadingEmployees;
+
+  // Mutations
+  const createDeduction = useCreateDeduction();
+  const updateDeduction = useUpdateDeduction();
+  const pauseDeduction = usePauseDeduction();
+  const deleteDeduction = useDeleteDeduction();
+  const saving = createDeduction.isPending;
+
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [activeTab, setActiveTab] = useState("all");
 
@@ -107,33 +116,6 @@ export default function DeductionsAdvances() {
     { value: "biweekly", label: t("deductions.freqBiweekly") },
     { value: "monthly", label: t("deductions.freqMonthly") },
   ];
-
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-	        setLoading(true);
-	        const [deductionData, employeeData] = await Promise.all([
-	          payrollService.deductions.getAllDeductions(tenantId),
-	          employeeService.getAllEmployees(tenantId),
-	        ]);
-        setDeductions(deductionData);
-        setEmployees(employeeData.filter((e) => e.status === "active"));
-      } catch (error) {
-        console.error("Failed to load data:", error);
-        toast({
-          title: t("common.error"),
-          description: t("deductions.loadError"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-	  }, [toast, tenantId]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -232,7 +214,7 @@ export default function DeductionsAdvances() {
   };
 
   // Handle add deduction
-  const handleAddDeduction = async () => {
+  const handleAddDeduction = () => {
     if (!selectedEmployee || !description || (isPercentage ? percentage <= 0 : amount <= 0)) {
       toast({
         title: t("deductions.validationError"),
@@ -242,97 +224,83 @@ export default function DeductionsAdvances() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const deduction: Omit<RecurringDeduction, "id"> = {
-        employeeId: selectedEmployee,
-        type: deductionType,
-        description,
-        amount: isPercentage ? 0 : amount,
-        isPercentage,
-        percentage: isPercentage ? percentage : undefined,
-        isPreTax,
-        startDate,
-        endDate: endDate || undefined,
-        totalAmount: deductionType === "advance_repayment" ? totalAmount : undefined,
-        remainingBalance: deductionType === "advance_repayment" ? totalAmount : undefined,
-        frequency,
-        status: "active",
-      };
+    const deduction: Omit<RecurringDeduction, "id" | "tenantId"> = {
+      employeeId: selectedEmployee,
+      type: deductionType,
+      description,
+      amount: isPercentage ? 0 : amount,
+      isPercentage,
+      percentage: isPercentage ? percentage : 0,
+      isPreTax,
+      startDate,
+      endDate: endDate || "",
+      totalAmount: deductionType === "advance_repayment" ? totalAmount : 0,
+      remainingBalance: deductionType === "advance_repayment" ? totalAmount : 0,
+      frequency,
+      status: "active",
+    };
 
-      await payrollService.deductions.createDeduction(tenantId, deduction);
-
-      toast({
-        title: t("common.success"),
-        description: t("deductions.createSuccess"),
-      });
-
-      // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions(tenantId);
-      setDeductions(data);
-
-      setShowAddDialog(false);
-      resetForm();
-    } catch (error) {
-      console.error("Failed to create deduction:", error);
-      toast({
-        title: t("common.error"),
-        description: t("deductions.createError"),
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    createDeduction.mutate(deduction, {
+      onSuccess: () => {
+        toast({
+          title: t("common.success"),
+          description: t("deductions.createSuccess"),
+        });
+        setShowAddDialog(false);
+        resetForm();
+      },
+      onError: () => {
+        toast({
+          title: t("common.error"),
+          description: t("deductions.createError"),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   // Pause/resume deduction
-  const handleToggleStatus = async (deduction: RecurringDeduction) => {
-    try {
-      if (deduction.status === "active") {
-        await payrollService.deductions.pauseDeduction(deduction.id!);
-      } else if (deduction.status === "paused") {
-        await payrollService.deductions.updateDeduction(deduction.id!, { status: "active" });
-      }
+  const handleToggleStatus = (deduction: RecurringDeduction) => {
+    const callbacks = {
+      onSuccess: () => {
+        toast({
+          title: t("common.success"),
+          description: deduction.status === "active" ? t("deductions.pausedSuccess") : t("deductions.resumedSuccess"),
+        });
+      },
+      onError: () => {
+        toast({
+          title: t("common.error"),
+          description: t("deductions.toggleError"),
+          variant: "destructive",
+        });
+      },
+    };
 
-      // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions(tenantId);
-      setDeductions(data);
-
-      toast({
-        title: t("common.success"),
-        description: deduction.status === "active" ? t("deductions.pausedSuccess") : t("deductions.resumedSuccess"),
-      });
-    } catch (error) {
-      console.error("Failed to update deduction:", error);
-      toast({
-        title: t("common.error"),
-        description: t("deductions.toggleError"),
-        variant: "destructive",
-      });
+    if (deduction.status === "active") {
+      pauseDeduction.mutate(deduction.id!, callbacks);
+    } else if (deduction.status === "paused") {
+      updateDeduction.mutate({ id: deduction.id!, updates: { status: "active" } }, callbacks);
     }
   };
 
   // Delete deduction
-  const handleDelete = async (id: string) => {
-    try {
-      await payrollService.deductions.deleteDeduction(id);
-
-      // Reload deductions
-      const data = await payrollService.deductions.getAllDeductions(tenantId);
-      setDeductions(data);
-
-      toast({
-        title: t("common.success"),
-        description: t("deductions.deleteSuccess"),
-      });
-    } catch (error) {
-      console.error("Failed to delete deduction:", error);
-      toast({
-        title: t("common.error"),
-        description: t("deductions.deleteError"),
-        variant: "destructive",
-      });
-    }
+  const handleDelete = (id: string) => {
+    deleteDeduction.mutate(id, {
+      onSuccess: () => {
+        toast({
+          title: t("common.success"),
+          description: t("deductions.deleteSuccess"),
+        });
+      },
+      onError: () => {
+        toast({
+          title: t("common.error"),
+          description: t("deductions.deleteError"),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   // Reset form

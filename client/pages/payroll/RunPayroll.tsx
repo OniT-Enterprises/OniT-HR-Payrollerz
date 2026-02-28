@@ -39,8 +39,9 @@ import {
   Pencil,
   AlertCircle,
 } from "lucide-react";
-import { employeeService, Employee } from "@/services/employeeService";
-import { payrollService } from "@/services/payrollService";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useCreatePayrollRunWithRecords } from "@/hooks/usePayroll";
+import { useAttendanceSummary } from "@/hooks/useAttendance";
 
 import {
   calculateTLPayroll,
@@ -88,10 +89,14 @@ export default function RunPayroll() {
   const { t } = useI18n();
   const { user } = useAuth();
   const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [processing, setProcessing] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+
+  // React Query: fetch all employees
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
+  const activeEmployees = useMemo(() => allEmployees.filter(e => e.status === 'active'), [allEmployees]);
+
+  // React Query: mutation for creating payroll runs
+  const createPayrollMutation = useCreatePayrollRunWithRecords();
+
   const [employeePayrollData, setEmployeePayrollData] = useState<EmployeePayrollData[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
@@ -102,6 +107,11 @@ export default function RunPayroll() {
   const [periodEnd, setPeriodEnd] = useState("");
   const [payDate, setPayDate] = useState("");
   const [includeSubsidioAnual, setIncludeSubsidioAnual] = useState(false);
+  const {
+    data: attendanceSummary = [],
+    isFetching: syncingAttendance,
+    refetch: refetchAttendanceSummary,
+  } = useAttendanceSummary(periodStart, periodEnd);
 
   // Dialog states
   const [showApproveDialog, setShowApproveDialog] = useState(false);
@@ -129,63 +139,48 @@ export default function RunPayroll() {
     setPayDate(toDateStringTL(payDay));
   }, []);
 
-  // Load employees
+  // Initialize payroll data when active employees change
   useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        setLoading(true);
-        const data = await employeeService.getAllEmployees(tenantId);
-        const activeEmployees = data.filter((e) => e.status === "active");
-        setEmployees(activeEmployees);
+    if (activeEmployees.length === 0) return;
 
-        // Initialize payroll data for each employee
-        // TL standard: 44 hours/week = ~190.67 hours/month (44 * 52/12)
-        const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
-        const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
+    // TL standard: 44 hours/week = ~190.67 hours/month (44 * 52/12)
+    const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
+    const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
 
-        const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => {
-          // Auto-prorate hours for mid-period hires
-          const hireDate = emp.jobDetails.hireDate || '';
-          const empHours = calculateProRataHours(hireDate, periodStart, periodEnd, defaultHours);
+    const initialData: EmployeePayrollData[] = activeEmployees.map((emp) => {
+      // Auto-prorate hours for mid-period hires
+      const hireDate = emp.jobDetails.hireDate || '';
+      const empHours = calculateProRataHours(hireDate, periodStart, periodEnd, defaultHours);
 
-          return {
-            employee: emp,
-            regularHours: empHours,
-            overtimeHours: 0,
-            nightShiftHours: 0,
-            holidayHours: 0,
-            sickDays: 0,
-            perDiem: 0,
-            bonus: 0,
-            allowances: 0,
-            calculation: null,
-            isEdited: false,
-            originalValues: {
-              regularHours: empHours,
-              overtimeHours: 0,
-              nightShiftHours: 0,
-              bonus: 0,
-              perDiem: 0,
-              allowances: 0,
-            },
-          };
-        });
+      return {
+        employee: emp,
+        regularHours: empHours,
+        overtimeHours: 0,
+        nightShiftHours: 0,
+        holidayHours: 0,
+        absenceHours: 0,
+        lateArrivalMinutes: 0,
+        sickDays: 0,
+        perDiem: 0,
+        bonus: 0,
+        allowances: 0,
+        calculation: null,
+        isEdited: false,
+        originalValues: {
+          regularHours: empHours,
+          overtimeHours: 0,
+          nightShiftHours: 0,
+          absenceHours: 0,
+          lateArrivalMinutes: 0,
+          bonus: 0,
+          perDiem: 0,
+          allowances: 0,
+        },
+      };
+    });
 
-        setEmployeePayrollData(initialData);
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-        toast({
-          title: t("common.error"),
-          description: t("runPayroll.toastLoadFailed"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadEmployees();
-  }, [toast, payFrequency, tenantId, periodStart, periodEnd, t]);
+    setEmployeePayrollData(initialData);
+  }, [activeEmployees, payFrequency, periodStart, periodEnd]);
 
   /**
    * Calculate payroll for a single employee data object.
@@ -219,8 +214,8 @@ export default function RunPayroll() {
       nightShiftHours: data.nightShiftHours,
       holidayHours: data.holidayHours,
       restDayHours: 0,
-      absenceHours: 0,
-      lateArrivalMinutes: 0,
+      absenceHours: data.absenceHours,
+      lateArrivalMinutes: data.lateArrivalMinutes,
       sickDaysUsed: data.sickDays,
       ytdSickDaysUsed: 0,
       bonus: data.bonus,
@@ -286,13 +281,13 @@ export default function RunPayroll() {
 
   // Detect employees with compliance issues (for NGO "run anyway" scenarios)
   const complianceIssues = useMemo(() => {
-    return employees.map(emp => {
+    return activeEmployees.map(emp => {
       const issues: string[] = [];
       if (!emp.documents?.workContract?.fileUrl) issues.push(t("runPayroll.contractNeeded"));
       if (!emp.documents?.socialSecurityNumber?.number) issues.push(t("runPayroll.inssNeeded"));
       return { employee: emp, issues };
     }).filter(item => item.issues.length > 0);
-  }, [employees, t]);
+  }, [activeEmployees, t]);
 
   const hasComplianceIssues = complianceIssues.length > 0;
 
@@ -379,8 +374,8 @@ export default function RunPayroll() {
         nightShiftHours: data.nightShiftHours,
         holidayHours: data.holidayHours,
         restDayHours: 0,
-        absenceHours: 0,
-        lateArrivalMinutes: 0,
+        absenceHours: data.absenceHours,
+        lateArrivalMinutes: data.lateArrivalMinutes,
         sickDaysUsed: data.sickDays,
         ytdSickDaysUsed: 0,
         bonus: data.bonus,
@@ -527,6 +522,8 @@ export default function RunPayroll() {
           updated.regularHours !== d.originalValues.regularHours ||
           updated.overtimeHours !== d.originalValues.overtimeHours ||
           updated.nightShiftHours !== d.originalValues.nightShiftHours ||
+          updated.absenceHours !== d.originalValues.absenceHours ||
+          updated.lateArrivalMinutes !== d.originalValues.lateArrivalMinutes ||
           updated.bonus !== d.originalValues.bonus ||
           updated.perDiem !== d.originalValues.perDiem ||
           updated.allowances !== d.originalValues.allowances;
@@ -547,6 +544,8 @@ export default function RunPayroll() {
           regularHours: d.originalValues.regularHours,
           overtimeHours: d.originalValues.overtimeHours,
           nightShiftHours: d.originalValues.nightShiftHours,
+          absenceHours: d.originalValues.absenceHours,
+          lateArrivalMinutes: d.originalValues.lateArrivalMinutes,
           bonus: d.originalValues.bonus,
           perDiem: d.originalValues.perDiem,
           allowances: d.originalValues.allowances,
@@ -570,157 +569,223 @@ export default function RunPayroll() {
     });
   };
 
-  // Save as draft
-  const handleSaveDraft = async () => {
-    setSaving(true);
-    try {
-      const includedData = getIncludedData();
-
-      const validationErrors = validateAllEmployees(includedData);
-      if (validationErrors.length > 0) {
-        toast({
-          title: t("runPayroll.toastValidationErrors"),
-          description: validationErrors.slice(0, 3).join("\n") +
-            (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const payrollRun = buildPayrollRun(includedData);
-      const records = buildPayrollRecords(includedData);
-
-      await payrollService.runs.createPayrollRunWithRecords(payrollRun, records);
-
+  // Sync attendance totals (regular/overtime/late) into payroll inputs.
+  const handleSyncFromAttendance = async () => {
+    if (!periodStart || !periodEnd) {
       toast({
-        title: t("common.success"),
-        description: t("runPayroll.toastDraftSaved"),
-      });
-
-      setShowSaveDialog(false);
-    } catch (error) {
-      console.error("Failed to save payroll:", error);
-      toast({
-        title: t("common.error"),
-        description: t("runPayroll.toastSaveFailed"),
+        title: t("runPayroll.toastDatesRequired"),
+        description: t("runPayroll.toastDatesRequiredDesc"),
         variant: "destructive",
       });
-    } finally {
-      setSaving(false);
+      return;
     }
+
+    const result = await refetchAttendanceSummary();
+    const summaryRows = result.data ?? attendanceSummary;
+    if (!summaryRows || summaryRows.length === 0) {
+      toast({
+        title: t("runPayroll.syncAttendance"),
+        description: t("runPayroll.toastSyncAttendanceNoData"),
+      });
+      return;
+    }
+
+    const summaryByEmployee = new Map(summaryRows.map((row) => [row.employeeId, row]));
+    let syncedCount = 0;
+
+    setEmployeePayrollData((prev) =>
+      prev.map((data) => {
+        const employeeId = data.employee.id || "";
+        const summary = summaryByEmployee.get(employeeId);
+        if (!summary) return data;
+
+        const regularHours = Number(summary.regularHours.toFixed(2));
+        const overtimeHours = Number(summary.overtimeHours.toFixed(2));
+        const expectedRegularHours = data.originalValues.regularHours;
+        const absenceHours = Number(Math.max(0, expectedRegularHours - regularHours).toFixed(2));
+        const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
+
+        const updated: EmployeePayrollData = {
+          ...data,
+          regularHours,
+          overtimeHours,
+          absenceHours,
+          lateArrivalMinutes,
+        };
+
+        const isEdited =
+          updated.regularHours !== data.originalValues.regularHours ||
+          updated.overtimeHours !== data.originalValues.overtimeHours ||
+          updated.nightShiftHours !== data.originalValues.nightShiftHours ||
+          updated.absenceHours !== data.originalValues.absenceHours ||
+          updated.lateArrivalMinutes !== data.originalValues.lateArrivalMinutes ||
+          updated.bonus !== data.originalValues.bonus ||
+          updated.perDiem !== data.originalValues.perDiem ||
+          updated.allowances !== data.originalValues.allowances;
+
+        syncedCount += 1;
+        const withEdit = { ...updated, isEdited };
+        return { ...withEdit, calculation: calculateForEmployee(withEdit) };
+      })
+    );
+
+    toast({
+      title: t("runPayroll.syncAttendance"),
+      description: t("runPayroll.toastSyncedAttendance", { count: String(syncedCount) }),
+    });
+  };
+
+  // Save as draft
+  const handleSaveDraft = async () => {
+    const includedData = getIncludedData();
+
+    const validationErrors = validateAllEmployees(includedData);
+    if (validationErrors.length > 0) {
+      toast({
+        title: t("runPayroll.toastValidationErrors"),
+        description: validationErrors.slice(0, 3).join("\n") +
+          (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payrollRun = buildPayrollRun(includedData);
+    const records = buildPayrollRecords(includedData);
+
+    createPayrollMutation.mutate(
+      { payrollRun, records },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("common.success"),
+            description: t("runPayroll.toastDraftSaved"),
+          });
+          setShowSaveDialog(false);
+        },
+        onError: () => {
+          toast({
+            title: t("common.error"),
+            description: t("runPayroll.toastSaveFailed"),
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   // Process payroll (final step)
   const handleProcessPayroll = async () => {
-    setProcessing(true);
-    try {
-      if (!periodStart || !periodEnd || !payDate) {
-        toast({
-          title: t("runPayroll.toastDatesRequired"),
-          description: t("runPayroll.toastDatesRequiredDesc"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (periodStart >= periodEnd) {
-        toast({
-          title: t("runPayroll.toastInvalidPeriod"),
-          description: t("runPayroll.toastInvalidPeriodDesc"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      if (payDate < periodEnd) {
-        toast({
-          title: t("runPayroll.toastInvalidPayDate"),
-          description: t("runPayroll.toastInvalidPayDateDesc"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // SEC-6: Date range validation
-      const now = new Date();
-      const twoYearsAgo = toDateStringTL(new Date(now.getFullYear() - 2, now.getMonth(), 1));
-      const oneMonthAhead = toDateStringTL(new Date(now.getFullYear(), now.getMonth() + 2, 0));
-      if (periodStart < twoYearsAgo || periodEnd > oneMonthAhead) {
-        toast({
-          title: t("runPayroll.toastDateOutOfBounds"),
-          description: t("runPayroll.toastDateOutOfBoundsDesc"),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // SEC-7: Compliance override reason validation
-      if (hasComplianceIssues && excludedEmployees.size < complianceIssues.length) {
-        if (!complianceAcknowledged) {
-          toast({
-            title: t("runPayroll.toastComplianceRequired"),
-            description: t("runPayroll.toastComplianceRequiredDesc"),
-            variant: "destructive",
-          });
-          return;
-        }
-        if (complianceOverrideReason.trim().length < 10) {
-          toast({
-            title: t("runPayroll.toastOverrideShort"),
-            description: t("runPayroll.toastOverrideShortDesc"),
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      const includedData = getIncludedData();
-
-      const validationErrors = validateAllEmployees(includedData);
-      if (validationErrors.length > 0) {
-        toast({
-          title: t("runPayroll.toastValidationErrors"),
-          description: validationErrors.slice(0, 3).join("\n") +
-            (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
-          variant: "destructive",
-        });
-        return;
-      }
-
-      const payrollRun = {
-        ...buildPayrollRun(includedData),
-        status: 'processing' as const,
-      };
-      const records = buildPayrollRecords(includedData);
-
-      await payrollService.runs.createPayrollRunWithRecords(
-        payrollRun,
-        records,
-        { tenantId, userId: user?.uid || "current-user", userEmail: user?.email || "" }
-      );
-
+    if (!periodStart || !periodEnd || !payDate) {
       toast({
-        title: t("runPayroll.toastSubmittedTitle"),
-        description: t("runPayroll.toastSubmittedDesc", { count: String(includedData.length) }),
-      });
-
-      setShowFinalConfirmDialog(false);
-      setShowApproveDialog(false);
-
-      navigate("/payroll/history");
-    } catch (error) {
-      console.error("Failed to process payroll:", error);
-      toast({
-        title: t("runPayroll.toastErrorTitle"),
-        description: t("runPayroll.toastErrorDesc"),
+        title: t("runPayroll.toastDatesRequired"),
+        description: t("runPayroll.toastDatesRequiredDesc"),
         variant: "destructive",
       });
-    } finally {
-      setProcessing(false);
+      return;
     }
+
+    if (periodStart >= periodEnd) {
+      toast({
+        title: t("runPayroll.toastInvalidPeriod"),
+        description: t("runPayroll.toastInvalidPeriodDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (payDate < periodEnd) {
+      toast({
+        title: t("runPayroll.toastInvalidPayDate"),
+        description: t("runPayroll.toastInvalidPayDateDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // SEC-6: Date range validation
+    const now = new Date();
+    const twoYearsAgo = toDateStringTL(new Date(now.getFullYear() - 2, now.getMonth(), 1));
+    const oneMonthAhead = toDateStringTL(new Date(now.getFullYear(), now.getMonth() + 2, 0));
+    if (periodStart < twoYearsAgo || periodEnd > oneMonthAhead) {
+      toast({
+        title: t("runPayroll.toastDateOutOfBounds"),
+        description: t("runPayroll.toastDateOutOfBoundsDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // SEC-7: Compliance override reason validation
+    if (hasComplianceIssues && excludedEmployees.size < complianceIssues.length) {
+      if (!complianceAcknowledged) {
+        toast({
+          title: t("runPayroll.toastComplianceRequired"),
+          description: t("runPayroll.toastComplianceRequiredDesc"),
+          variant: "destructive",
+        });
+        return;
+      }
+      if (complianceOverrideReason.trim().length < 10) {
+        toast({
+          title: t("runPayroll.toastOverrideShort"),
+          description: t("runPayroll.toastOverrideShortDesc"),
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    const includedData = getIncludedData();
+
+    const validationErrors = validateAllEmployees(includedData);
+    if (validationErrors.length > 0) {
+      toast({
+        title: t("runPayroll.toastValidationErrors"),
+        description: validationErrors.slice(0, 3).join("\n") +
+          (validationErrors.length > 3 ? `\n...and ${validationErrors.length - 3} more` : ""),
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const payrollRun = {
+      ...buildPayrollRun(includedData),
+      status: 'processing' as const,
+    };
+    const records = buildPayrollRecords(includedData);
+    const audit = { tenantId, userId: user?.uid || "current-user", userEmail: user?.email || "" };
+
+    createPayrollMutation.mutate(
+      { payrollRun, records, audit },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("runPayroll.toastSubmittedTitle"),
+            description: t("runPayroll.toastSubmittedDesc", { count: String(includedData.length) }),
+          });
+
+          setShowFinalConfirmDialog(false);
+          setShowApproveDialog(false);
+
+          navigate("/payroll/history");
+        },
+        onError: () => {
+          toast({
+            title: t("runPayroll.toastErrorTitle"),
+            description: t("runPayroll.toastErrorDesc"),
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
-  if (loading) {
+  // Derive saving/processing from mutation state
+  const saving = createPayrollMutation.isPending;
+  const processing = createPayrollMutation.isPending;
+
+  if (loadingEmployees) {
     return <PayrollLoadingSkeleton />;
   }
 
@@ -743,7 +808,7 @@ export default function RunPayroll() {
                   {t("runPayroll.title")}
                 </h1>
                 <p className="text-muted-foreground mt-1">
-                  {t("runPayroll.processPayrollFor", { count: String(employees.length) })}
+                  {t("runPayroll.processPayrollFor", { count: String(activeEmployees.length) })}
                 </p>
               </div>
             </div>
@@ -820,7 +885,7 @@ export default function RunPayroll() {
           setComplianceOverrideReason={setComplianceOverrideReason}
           showAllCompliance={showAllCompliance}
           setShowAllCompliance={setShowAllCompliance}
-          totalEmployees={employees.length}
+          totalEmployees={activeEmployees.length}
         />
 
         {/* Period Settings */}
@@ -835,11 +900,13 @@ export default function RunPayroll() {
           setPayDate={setPayDate}
           includeSubsidioAnual={includeSubsidioAnual}
           setIncludeSubsidioAnual={setIncludeSubsidioAnual}
+          onSyncAttendance={handleSyncFromAttendance}
+          syncingAttendance={syncingAttendance}
         />
 
         {/* Summary Cards */}
         <div className="animate-fade-up stagger-2">
-          <PayrollSummaryCards totals={totals} employeeCount={employees.length} />
+          <PayrollSummaryCards totals={totals} employeeCount={activeEmployees.length} />
         </div>
 
         {/* Tax Summary Card */}
@@ -973,7 +1040,7 @@ export default function RunPayroll() {
         periodStart={periodStart}
         periodEnd={periodEnd}
         payDate={payDate}
-        employeeCount={employees.length}
+        employeeCount={activeEmployees.length}
         editedCount={editedCount}
         totals={totals}
         t={t}

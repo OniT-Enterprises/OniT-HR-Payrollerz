@@ -4,7 +4,6 @@
  * Designed for small business owners, not accountants
  */
 
-import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -13,15 +12,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { invoiceService } from '@/services/invoiceService';
-import { customerService } from '@/services/customerService';
-import { billService } from '@/services/billService';
-import type { MoneyStats, Invoice } from '@/types/money';
+import { useInvoiceStats, useAllInvoices } from '@/hooks/useInvoices';
+import { usePayablesSummary } from '@/hooks/useBills';
 import GuidancePanel from '@/components/GuidancePanel';
 import {
-  Wallet,
   FileText,
   Users,
   AlertCircle,
@@ -47,48 +42,10 @@ import {
 export default function MoneyDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<MoneyStats | null>(null);
-  const [recentInvoices, setRecentInvoices] = useState<Invoice[]>([]);
-  const [_customerCount, setCustomerCount] = useState(0);
-  const [payablesSummary, setPayablesSummary] = useState<{
-    overdue: number;
-    overdueCount: number;
-    dueThisWeek: number;
-    dueThisWeekCount: number;
-    dueLater: number;
-    dueLaterCount: number;
-  } | null>(null);
-
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadData = async () => {
-    if (!tenantId) return;
-
-    try {
-      setLoading(true);
-      const [statsData, invoices, customers, payables] = await Promise.all([
-        invoiceService.getStats(tenantId),
-        invoiceService.getAllInvoices(tenantId, 10),
-        customerService.getAllCustomers(tenantId),
-        billService.getPayablesSummary(tenantId),
-      ]);
-      setStats(statsData);
-      setRecentInvoices(invoices);
-      setCustomerCount(customers.length);
-      setPayablesSummary(payables);
-    } catch (error) {
-      console.error('Error loading money dashboard:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: stats = null, isLoading: statsLoading } = useInvoiceStats();
+  const { data: recentInvoices = [], isLoading: invoicesLoading } = useAllInvoices();
+  const { data: payablesSummary = null, isLoading: payablesLoading } = usePayablesSummary();
+  const loading = statsLoading || invoicesLoading || payablesLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

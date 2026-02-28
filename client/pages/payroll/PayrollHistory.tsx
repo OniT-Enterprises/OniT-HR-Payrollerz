@@ -43,6 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +53,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayrollRunAsPaid, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
@@ -101,6 +104,10 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
+import {
+  createEmployeeAllocationMetaMap,
+  summarizePayrollAllocations,
+} from "@/lib/reports/ngoReporting";
 
 export default function PayrollHistory() {
   const navigate = useNavigate();
@@ -108,8 +115,17 @@ export default function PayrollHistory() {
   const tenantId = useTenantId();
   const { user } = useAuth();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
+
+  // React Query: payroll runs
+  const { data: payrollRuns = [], isLoading: loading } = usePayrollRuns();
+  const { data: employees = [] } = useAllEmployees(2000);
+
+  // React Query: mutations
+  const approveMutation = useApprovePayrollRun();
+  const rejectMutation = useRejectPayrollRun();
+  const markPaidMutation = useMarkPayrollRunAsPaid();
+  const updateRunMutation = useUpdatePayrollRun();
+  const repairMutation = useRepairStuckRun();
   const [selectedRun, setSelectedRun] = useState<PayrollRun | null>(null);
   const [runRecords, setRunRecords] = useState<PayrollRecord[]>([]);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
@@ -128,11 +144,16 @@ export default function PayrollHistory() {
   // Approval/Rejection
   const [approveRun, setApproveRun] = useState<PayrollRun | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const [approveRunRecords, setApproveRunRecords] = useState<PayrollRecord[]>([]);
+  const [loadingApproveAllocationCheck, setLoadingApproveAllocationCheck] = useState(false);
+  const [approveUnassignedEmployeeCount, setApproveUnassignedEmployeeCount] = useState(0);
+  const [approveUnassignedGrossPay, setApproveUnassignedGrossPay] = useState(0);
+  const [confirmUnassignedAllocation, setConfirmUnassignedAllocation] = useState(false);
   const [rejectRun, setRejectRun] = useState<PayrollRun | null>(null);
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
-  const [approving, setApproving] = useState(false);
-  const [rejecting, setRejecting] = useState(false);
+  const approving = approveMutation.isPending || markPaidMutation.isPending || updateRunMutation.isPending;
+  const rejecting = rejectMutation.isPending;
   const [activeTab, setActiveTab] = useState("pending");
 
   // Filters
@@ -141,6 +162,10 @@ export default function PayrollHistory() {
     new Date().getFullYear().toString()
   );
   const [searchTerm, setSearchTerm] = useState("");
+  const employeeAllocationMeta = useMemo(
+    () => createEmployeeAllocationMetaMap(employees),
+    [employees]
+  );
 
   // Preload PDF module so downloads resolve instantly from cache
   useEffect(() => {
@@ -149,28 +174,59 @@ export default function PayrollHistory() {
     import("@/components/payroll/PayslipPDF");
   }, []);
 
-  // Load payroll runs
   useEffect(() => {
-    const loadPayrollRuns = async () => {
+    if (!showApproveDialog || !approveRun?.id) {
+      setApproveRunRecords([]);
+      setLoadingApproveAllocationCheck(false);
+      setApproveUnassignedEmployeeCount(0);
+      setApproveUnassignedGrossPay(0);
+      setConfirmUnassignedAllocation(false);
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadApprovalChecks = async () => {
+      setLoadingApproveAllocationCheck(true);
+      setConfirmUnassignedAllocation(false);
       try {
-        setLoading(true);
-        const runs = await payrollService.runs.getAllPayrollRuns({ tenantId });
-        setPayrollRuns(runs);
+        const records = await payrollService.records.getPayrollRecordsByRunId(approveRun.id!, tenantId);
+        if (cancelled) return;
+
+        setApproveRunRecords(records);
+        const allocationRollup = summarizePayrollAllocations(records, employeeAllocationMeta);
+        setApproveUnassignedEmployeeCount(allocationRollup.unassignedEmployeeCount);
+        setApproveUnassignedGrossPay(allocationRollup.unassignedGrossPay);
       } catch (error) {
-        console.error("Failed to load payroll runs:", error);
+        if (cancelled) return;
+        console.error("Failed to load payroll records for approval check:", error);
+        setApproveRunRecords([]);
+        setApproveUnassignedEmployeeCount(0);
+        setApproveUnassignedGrossPay(0);
         toast({
           title: t("common.error"),
-          description: t("payrollHistory.toastLoadError"),
+          description: t("payrollHistory.toastRecordsError"),
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoadingApproveAllocationCheck(false);
+        }
       }
     };
 
-    loadPayrollRuns();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, tenantId]);
+    loadApprovalChecks();
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    approveRun?.id,
+    employeeAllocationMeta,
+    showApproveDialog,
+    t,
+    tenantId,
+    toast,
+  ]);
 
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -216,26 +272,19 @@ export default function PayrollHistory() {
     });
   }, [payrollRuns]);
 
-  const [repairingRunId, setRepairingRunId] = useState<string | null>(null);
-
   const handleRepairRun = async (runId: string) => {
-    setRepairingRunId(runId);
-    try {
-      const result = await payrollService.runs.repairStuckRun(runId);
-      if (result === 'repaired') {
-        toast({ title: "Payroll Repaired", description: "All records were present. Run has been recovered." });
-      } else {
-        toast({ title: "Incomplete Run Removed", description: "The interrupted payroll run and its partial records have been cleaned up." });
-      }
-      // Reload runs
-      const runs = await payrollService.runs.getAllPayrollRuns({ tenantId });
-      setPayrollRuns(runs);
-    } catch (error) {
-      console.error("Failed to repair run:", error);
-      toast({ title: "Repair Failed", description: "Could not repair the payroll run. Please try again.", variant: "destructive" });
-    } finally {
-      setRepairingRunId(null);
-    }
+    repairMutation.mutate(runId, {
+      onSuccess: (result) => {
+        if (result === 'repaired') {
+          toast({ title: "Payroll Repaired", description: "All records were present. Run has been recovered." });
+        } else {
+          toast({ title: "Incomplete Run Removed", description: "The interrupted payroll run and its partial records have been cleaned up." });
+        }
+      },
+      onError: () => {
+        toast({ title: "Repair Failed", description: "Could not repair the payroll run. Please try again.", variant: "destructive" });
+      },
+    });
   };
 
   // Filter payroll runs
@@ -296,24 +345,34 @@ export default function PayrollHistory() {
   // Handle approve payroll
   const handleApprovePayroll = async () => {
     if (!approveRun?.id || !user?.uid) return;
+    if (approveUnassignedEmployeeCount > 0 && !confirmUnassignedAllocation) {
+      toast({
+        title: t("payrollHistory.toastApprovalBlocked"),
+        description: t("payrollHistory.toastApprovalBlockedDesc"),
+        variant: "destructive",
+      });
+      return;
+    }
 
-    setApproving(true);
     try {
       // Approve the run (service enforces two-person rule)
-      await payrollService.runs.approvePayrollRun(
-        approveRun.id,
-        user.uid,
-        { tenantId, userId: user.uid, userEmail: user.email || "" }
-      );
+      await approveMutation.mutateAsync({
+        id: approveRun.id,
+        approvedBy: user.uid,
+        audit: { tenantId, userId: user.uid, userEmail: user.email || "" },
+      });
 
       // Create accounting journal entry
-      const records = await payrollService.records.getPayrollRecordsByRunId(approveRun.id, tenantId);
+      const records = approveRunRecords.length
+        ? approveRunRecords
+        : await payrollService.records.getPayrollRecordsByRunId(approveRun.id, tenantId);
       const totalINSSEmployee = records.reduce((sum, r) =>
         sum + (r.deductions?.find(d => d.type === 'inss_employee')?.amount || 0), 0);
       const totalINSSEmployer = records.reduce((sum, r) =>
         sum + (r.employerTaxes?.find(t => t.type === 'inss_employer')?.amount || 0), 0);
       const totalIncomeTax = records.reduce((sum, r) =>
         sum + (r.deductions?.find(d => d.type === 'income_tax')?.amount || 0), 0);
+      const allocationRollup = summarizePayrollAllocations(records, employeeAllocationMeta);
 
       const journalEntryId = await accountingService.journalEntries.createFromPayrollSummary({
         periodStart: approveRun.periodStart,
@@ -327,20 +386,12 @@ export default function PayrollHistory() {
         employeeCount: approveRun.employeeCount,
         approvedBy: user.uid,
         sourceId: approveRun.id,
+        allocations: allocationRollup.allocations,
       }, tenantId);
 
       // Mark as paid and link journal entry
-      await payrollService.runs.markPayrollRunAsPaid(approveRun.id);
-      await payrollService.runs.updatePayrollRun(approveRun.id, { journalEntryId });
-
-      // Update local state
-      setPayrollRuns((prev) =>
-        prev.map((r) =>
-          r.id === approveRun.id
-            ? { ...r, status: "paid" as PayrollStatus, approvedBy: user.uid }
-            : r
-        )
-      );
+      await markPaidMutation.mutateAsync(approveRun.id);
+      await updateRunMutation.mutateAsync({ id: approveRun.id, updates: { journalEntryId } });
 
       toast({
         title: t("payrollHistory.toastApproved"),
@@ -356,8 +407,6 @@ export default function PayrollHistory() {
         description: message,
         variant: "destructive",
       });
-    } finally {
-      setApproving(false);
     }
   };
 
@@ -366,23 +415,13 @@ export default function PayrollHistory() {
     if (!rejectRun?.id || !user?.uid) return;
     if (rejectionReason.trim().length < 10) return;
 
-    setRejecting(true);
     try {
-      await payrollService.runs.rejectPayrollRun(
-        rejectRun.id,
-        user.uid,
-        rejectionReason.trim(),
-        { tenantId, userId: user.uid, userEmail: user.email || "" }
-      );
-
-      // Update local state
-      setPayrollRuns((prev) =>
-        prev.map((r) =>
-          r.id === rejectRun.id
-            ? { ...r, status: "rejected" as PayrollStatus, rejectedBy: user.uid, rejectionReason: rejectionReason.trim() }
-            : r
-        )
-      );
+      await rejectMutation.mutateAsync({
+        id: rejectRun.id,
+        rejectedBy: user.uid,
+        reason: rejectionReason.trim(),
+        audit: { tenantId, userId: user.uid, userEmail: user.email || "" },
+      });
 
       toast({
         title: t("payrollHistory.toastRejected"),
@@ -399,8 +438,6 @@ export default function PayrollHistory() {
         description: message,
         variant: "destructive",
       });
-    } finally {
-      setRejecting(false);
     }
   };
 
@@ -779,10 +816,10 @@ export default function PayrollHistory() {
                           size="sm"
                           variant="outline"
                           className="border-amber-400 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900"
-                          disabled={repairingRunId === run.id}
+                          disabled={repairMutation.isPending && repairMutation.variables === run.id}
                           onClick={() => run.id && handleRepairRun(run.id)}
                         >
-                          {repairingRunId === run.id ? (
+                          {repairMutation.isPending && repairMutation.variables === run.id ? (
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           ) : (
                             <AlertTriangle className="h-3 w-3 mr-1" />
@@ -1229,6 +1266,40 @@ export default function PayrollHistory() {
                   <li>- {t("payrollHistory.approveCreateJournalEntries")}</li>
                   <li>- {t("payrollHistory.approveGeneratePayslips")}</li>
                 </ul>
+                {loadingApproveAllocationCheck ? (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>{t("payrollHistory.approveCheckingAllocation")}</span>
+                  </div>
+                ) : approveUnassignedEmployeeCount > 0 ? (
+                  <div className="rounded-lg border border-amber-400/50 bg-amber-50 dark:bg-amber-950/20 p-3 space-y-3">
+                    <div className="flex items-start gap-2">
+                      <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                          {t("payrollHistory.approveUnassignedWarningTitle")}
+                        </p>
+                        <p className="text-xs text-amber-800/90 dark:text-amber-300/90">
+                          {t("payrollHistory.approveUnassignedWarningDesc", {
+                            count: String(approveUnassignedEmployeeCount),
+                            amount: formatCurrency(approveUnassignedGrossPay),
+                          })}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Checkbox
+                        id="approve-unassigned-allocation"
+                        checked={confirmUnassignedAllocation}
+                        onCheckedChange={(checked) => setConfirmUnassignedAllocation(checked === true)}
+                        className="mt-0.5"
+                      />
+                      <Label htmlFor="approve-unassigned-allocation" className="text-sm">
+                        {t("payrollHistory.approveUnassignedConfirm")}
+                      </Label>
+                    </div>
+                  </div>
+                ) : null}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -1236,7 +1307,11 @@ export default function PayrollHistory() {
             <AlertDialogCancel disabled={approving}>{t("payrollHistory.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleApprovePayroll}
-              disabled={approving}
+              disabled={
+                approving ||
+                loadingApproveAllocationCheck ||
+                (approveUnassignedEmployeeCount > 0 && !confirmUnassignedAllocation)
+              }
               className="bg-green-600 hover:bg-green-700 text-white"
             >
               {approving ? (

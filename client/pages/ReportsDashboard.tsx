@@ -23,11 +23,11 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
-  BarChart3,
   Users,
   DollarSign,
   CalendarDays,
   Building,
+  Building2,
   FileSpreadsheet,
   ChevronRight,
   ChevronDown,
@@ -38,10 +38,13 @@ import {
   Settings2,
   History,
   Landmark,
+  FolderKanban,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import GuidancePanel from "@/components/GuidancePanel";
+import { useTenant } from "@/contexts/TenantContext";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 function ReportsDashboardSkeleton() {
   return (
@@ -49,9 +52,9 @@ function ReportsDashboardSkeleton() {
       <MainNavigation />
       {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <Skeleton className="h-4 w-24 mb-4" />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <Skeleton className="h-14 w-14 rounded-2xl" />
               <div>
@@ -64,7 +67,7 @@ function ReportsDashboardSkeleton() {
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8">
         {/* Recent Reports */}
         <section>
           <div className="flex items-center gap-2 mb-4">
@@ -141,7 +144,7 @@ function ReportsDashboardSkeleton() {
         {/* Scheduled Reports */}
         <Card>
           <CardHeader className="pb-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-3">
                 <Skeleton className="h-10 w-10 rounded-lg" />
                 <div>
@@ -196,8 +199,15 @@ const scheduledReportDefs = [
 export default function ReportsDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { session, hasModule, canManage } = useTenant();
   const [loading, setLoading] = useState(true);
   const [showOtherCategories, setShowOtherCategories] = useState(false);
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule("reports"),
+    canManage()
+  );
 
   // Simulate loading delay for data fetch
   useEffect(() => {
@@ -275,6 +285,27 @@ export default function ReportsDashboard() {
     },
   ];
 
+  const ngoCategories = ngoReportingEnabled
+    ? [
+        {
+          id: "payroll-allocation",
+          title: t("reports.dashboard.ngo.allocationTitle"),
+          description: t("reports.dashboard.ngo.allocationDesc"),
+          path: "/reports/payroll-allocation",
+          icon: FolderKanban,
+        },
+        ...(donorExportEnabled
+          ? [{
+              id: "donor-export",
+              title: t("reports.dashboard.ngo.donorExportTitle"),
+              description: t("reports.dashboard.ngo.donorExportDesc"),
+              path: "/reports/donor-export",
+              icon: FileSpreadsheet,
+            }]
+          : []),
+      ]
+    : [];
+
   if (loading) {
     return <ReportsDashboardSkeleton />;
   }
@@ -286,9 +317,9 @@ export default function ReportsDashboard() {
 
       {/* Hero Section - Simplified */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
                 <img src="/images/illustrations/icons/icon-reports.webp" alt="" className="h-8 w-8" />
@@ -305,7 +336,7 @@ export default function ReportsDashboard() {
             {/* Export demoted to secondary dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="text-muted-foreground">
+                <Button variant="ghost" size="sm" className="self-start text-muted-foreground">
                   <Download className="h-4 w-4 mr-2" />
                   {t("reports.dashboard.export")}
                   <ChevronDown className="h-3 w-3 ml-1" />
@@ -330,7 +361,7 @@ export default function ReportsDashboard() {
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8">
         <GuidancePanel section="reports" />
 
         {/* Recent Reports - Smart quick access */}
@@ -480,6 +511,44 @@ export default function ReportsDashboard() {
           </Card>
         </section>
 
+        {ngoCategories.length > 0 && (
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <Building2 className="h-4 w-4 text-emerald-600" />
+              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                {t("reports.dashboard.ngo.title")}
+              </h2>
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {ngoCategories.map((category) => {
+                const CategoryIcon = category.icon;
+                return (
+                  <Card
+                    key={category.id}
+                    className="cursor-pointer hover:shadow-sm transition-all border-l-4 border-l-emerald-500 hover:border-l-emerald-600"
+                    onClick={() => navigate(category.path)}
+                  >
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                            <CategoryIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{category.title}</p>
+                            <p className="text-xs text-muted-foreground mt-0.5">{category.description}</p>
+                          </div>
+                        </div>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
         {/* Secondary Categories - Collapsible */}
         <Collapsible open={showOtherCategories} onOpenChange={setShowOtherCategories}>
           <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
@@ -539,7 +608,7 @@ export default function ReportsDashboard() {
         <section>
           <Card>
             <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
                     <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
@@ -549,7 +618,7 @@ export default function ReportsDashboard() {
                     <CardDescription>{t("reports.dashboard.scheduledReportsDesc")}</CardDescription>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" onClick={() => navigate("/reports/custom")}>
+                <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate("/reports/custom")}>
                   <Settings2 className="h-4 w-4 mr-2" />
                   {t("reports.dashboard.manage")}
                 </Button>
@@ -563,7 +632,7 @@ export default function ReportsDashboard() {
               ) : (
                 <div className="divide-y">
                   {scheduledReportDefs.map((report) => (
-                    <div key={report.id} className="flex items-center justify-between py-3">
+                    <div key={report.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`h-2 w-2 rounded-full ${report.enabled ? "bg-green-500" : "bg-gray-300"}`} />
                         <div>
@@ -571,7 +640,7 @@ export default function ReportsDashboard() {
                           <p className="text-xs text-muted-foreground">{t(report.frequencyKey)}</p>
                         </div>
                       </div>
-                      <div className="text-right">
+                      <div className="text-left sm:text-right">
                         <p className="text-xs text-muted-foreground">{t("reports.dashboard.nextRun")}</p>
                         <p className="text-sm">{report.nextRun}</p>
                       </div>

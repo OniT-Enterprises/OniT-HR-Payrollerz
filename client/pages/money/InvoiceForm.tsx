@@ -8,6 +8,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,12 +39,13 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import { customerService } from '@/services/customerService';
+import { useActiveCustomers } from '@/hooks/useCustomers';
+import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice, invoiceKeys } from '@/hooks/useInvoices';
 
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
-import type { Invoice, InvoiceFormData, Customer, InvoiceSettings } from '@/types/money';
+import type { InvoiceFormData, InvoiceSettings } from '@/types/money';
 import { getTodayTL, toDateStringTL } from '@/lib/dateUtils';
 import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
@@ -87,21 +89,32 @@ export default function InvoiceForm() {
     import('@/components/money/InvoicePDF');
   }, []);
 
+  const queryClient = useQueryClient();
+
   const isNew = !id || id === 'new';
   const isEditMode = searchParams.get('mode') === 'edit' || window.location.pathname.endsWith('/edit');
   const duplicateId = searchParams.get('duplicate');
   const preselectedCustomerId = searchParams.get('customer');
 
-  const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<string>('cash');
   const [paymentNotes, setPaymentNotes] = useState('');
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [invoiceSettings, setInvoiceSettings] = useState<Partial<InvoiceSettings>>({});
+
+  // React Query hooks for data loading
+  const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
+  const { data: invoiceSettings = {} as Partial<InvoiceSettings> } = useInvoiceSettings();
+  const invoiceIdToLoad = !isNew && id ? id : undefined;
+  const { data: invoice = null, isLoading: invoiceLoading } = useInvoice(invoiceIdToLoad);
+  const { data: duplicateInvoice } = useInvoice(duplicateId || undefined);
+  const createInvoiceMutation = useCreateInvoice();
+  const updateInvoiceMutation = useUpdateInvoice();
+
+  const loading = !isNew && !duplicateId
+    ? (customersLoading || invoiceLoading)
+    : (customersLoading && !customers.length);
 
   const TAX_RATES = [
     { value: 0, label: t('money.invoices.noTax') || 'No Tax (0%)' },
@@ -140,12 +153,42 @@ export default function InvoiceForm() {
   // Watch form values for summary calculation
   const formData = watch();
 
+  // Set preselected customer if provided
   useEffect(() => {
-    if (tenantId) {
-      loadData();
+    if (preselectedCustomerId) {
+      reset((prev) => ({ ...prev, customerId: preselectedCustomerId }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, duplicateId, tenantId]);
+  }, [preselectedCustomerId, reset]);
+
+  // Populate form when editing an existing invoice
+  useEffect(() => {
+    if (!isNew && invoice) {
+      reset({
+        customerId: invoice.customerId,
+        issueDate: invoice.issueDate,
+        dueDate: invoice.dueDate,
+        items: invoice.items,
+        taxRate: invoice.taxRate,
+        notes: invoice.notes || '',
+        terms: invoice.terms || '',
+      });
+    }
+  }, [isNew, invoice, reset]);
+
+  // Handle duplicate
+  useEffect(() => {
+    if (duplicateInvoice) {
+      reset({
+        customerId: duplicateInvoice.customerId,
+        issueDate: getTodayTL(),
+        dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
+        items: duplicateInvoice.items,
+        taxRate: duplicateInvoice.taxRate,
+        notes: duplicateInvoice.notes || '',
+        terms: duplicateInvoice.terms || '',
+      });
+    }
+  }, [duplicateInvoice, reset]);
 
   useEffect(() => {
     // Check if we should show payment dialog
@@ -154,68 +197,6 @@ export default function InvoiceForm() {
       setShowPaymentDialog(true);
     }
   }, [searchParams, invoice]);
-
-  const loadData = async () => {
-    if (!tenantId) return;
-
-    try {
-      // Load customers and settings in parallel
-      const [customerList, settings] = await Promise.all([
-        customerService.getActiveCustomers(tenantId),
-        invoiceService.getSettings(tenantId).catch(() => ({})),
-      ]);
-      setCustomers(customerList);
-      setInvoiceSettings(settings);
-
-      // Set preselected customer if provided
-      if (preselectedCustomerId) {
-        reset((prev) => ({ ...prev, customerId: preselectedCustomerId }));
-      }
-
-      // Load existing invoice
-      if (!isNew && id) {
-        setLoading(true);
-        const invoiceData = await invoiceService.getInvoiceById(tenantId, id);
-        if (invoiceData) {
-          setInvoice(invoiceData);
-          reset({
-            customerId: invoiceData.customerId,
-            issueDate: invoiceData.issueDate,
-            dueDate: invoiceData.dueDate,
-            items: invoiceData.items,
-            taxRate: invoiceData.taxRate,
-            notes: invoiceData.notes || '',
-            terms: invoiceData.terms || '',
-          });
-        }
-      }
-
-      // Handle duplicate
-      if (duplicateId) {
-        const sourceInvoice = await invoiceService.getInvoiceById(tenantId, duplicateId);
-        if (sourceInvoice) {
-          reset({
-            customerId: sourceInvoice.customerId,
-            issueDate: getTodayTL(),
-            dueDate: toDateStringTL(new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)),
-            items: sourceInvoice.items,
-            taxRate: sourceInvoice.taxRate,
-            notes: sourceInvoice.notes || '',
-            terms: sourceInvoice.terms || '',
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.invoices.failedToLoadData') || 'Failed to load data',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const calculateTotals = () => {
     const items = formData.items || [];
@@ -227,8 +208,9 @@ export default function InvoiceForm() {
     const taxAmount = sumMoney(
       items.map((item) => {
         const lineTotal = multiplyMoney(Number(item.unitPrice) || 0, Number(item.quantity) || 0);
-        const rate = item.vatRate !== undefined && item.vatRate !== null
-          ? Number(item.vatRate)
+        const rawVat = Number(item.vatRate);
+        const rate = !isNaN(rawVat) && item.vatRate !== undefined && item.vatRate !== null
+          ? rawVat
           : invoiceTaxRate;
         return percentOf(lineTotal, rate);
       })
@@ -249,8 +231,6 @@ export default function InvoiceForm() {
   };
 
   const onSubmit = async (data: InvoiceFormSchemaData, sendAfter = false) => {
-    if (!tenantId) return;
-
     try {
       setSaving(true);
 
@@ -275,13 +255,13 @@ export default function InvoiceForm() {
       let invoiceId: string;
 
       if (isNew || duplicateId) {
-        invoiceId = await invoiceService.createInvoice(tenantId, dataToSave);
+        invoiceId = await createInvoiceMutation.mutateAsync(dataToSave);
         toast({
           title: t('common.success') || 'Success',
           description: t('money.invoices.created') || 'Invoice created',
         });
       } else if (invoice) {
-        await invoiceService.updateInvoice(tenantId, invoice.id, dataToSave);
+        await updateInvoiceMutation.mutateAsync({ id: invoice.id, data: dataToSave });
         invoiceId = invoice.id;
         toast({
           title: t('common.success') || 'Success',
@@ -300,8 +280,7 @@ export default function InvoiceForm() {
       }
 
       navigate('/money/invoices');
-    } catch (error) {
-      console.error('Error saving invoice:', error);
+    } catch (_error) {
       toast({
         title: t('common.error') || 'Error',
         description: t('money.invoices.saveError') || 'Failed to save invoice',
@@ -313,7 +292,14 @@ export default function InvoiceForm() {
   };
 
   const handleSave = (sendAfter = false) => {
-    handleSubmit((data) => onSubmit(data, sendAfter))();
+    handleSubmit((data) => onSubmit(data, sendAfter), (validationErrors) => {
+      const firstError = Object.values(validationErrors)[0];
+      toast({
+        title: t('common.error') || 'Validation Error',
+        description: firstError?.message || 'Please fill in all required fields.',
+        variant: 'destructive',
+      });
+    })();
   };
 
   const handleRecordPayment = async () => {
@@ -344,8 +330,8 @@ export default function InvoiceForm() {
       });
 
       setShowPaymentDialog(false);
-      // Reload invoice
-      loadData();
+      // Reload invoice via React Query
+      queryClient.invalidateQueries({ queryKey: invoiceKeys.detail(tenantId, invoice.id) });
     } catch (error) {
       console.error('Error recording payment:', error);
       toast({

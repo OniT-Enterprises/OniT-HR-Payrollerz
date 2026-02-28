@@ -6,6 +6,23 @@ const firestore_1 = require("firebase-admin/firestore");
 const auth_1 = require("firebase-admin/auth");
 const firebase_functions_1 = require("firebase-functions");
 const authz_1 = require("./authz");
+const ALLOWED_MODULES = [
+    "hiring",
+    "staff",
+    "timeleave",
+    "performance",
+    "payroll",
+    "money",
+    "accounting",
+    "reports",
+];
+const ALLOWED_MODULE_SET = new Set(ALLOWED_MODULES);
+const DEFAULT_MODULES_BY_ROLE = {
+    owner: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+    "hr-admin": ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+    manager: ["staff", "timeleave", "performance"],
+    viewer: [],
+};
 /**
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
@@ -59,7 +76,7 @@ exports.provisionTenant = (0, https_1.onCall)(async (request) => {
             name: name.trim(),
             slug: slug || tenantId,
             branding: (config === null || config === void 0 ? void 0 : config.branding) || {},
-            features: Object.assign({ hiring: true, timeleave: true, performance: true, payroll: true, reports: true }, config === null || config === void 0 ? void 0 : config.features),
+            features: Object.assign({ hiring: true, timeleave: true, performance: true, payroll: true, money: true, accounting: true, reports: true }, config === null || config === void 0 ? void 0 : config.features),
             payrollPolicy: Object.assign({ overtimeThreshold: 44, overtimeRate: 1.5, payrollCycle: "monthly" }, config === null || config === void 0 ? void 0 : config.payrollPolicy),
             settings: Object.assign({ timezone: "UTC", currency: "USD", dateFormat: "YYYY-MM-DD" }, config === null || config === void 0 ? void 0 : config.settings),
             createdAt: new Date(),
@@ -79,7 +96,7 @@ exports.provisionTenant = (0, https_1.onCall)(async (request) => {
         const ownerMemberData = {
             uid: ownerUser.uid,
             role: "owner",
-            modules: ["hiring", "staff", "timeleave", "performance", "payroll", "reports"],
+            modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
             email: ownerEmail,
             displayName: ownerUser.displayName || null,
             joinedAt: new Date(),
@@ -103,10 +120,15 @@ exports.provisionTenant = (0, https_1.onCall)(async (request) => {
         batch.set(memberRef, ownerMemberData);
         // Commit the batch
         await batch.commit();
-        // Step 8: Set custom claims for the owner
+        // Step 8: Set custom claims for the owner (map format for firestore.rules fast-path)
         const existingClaims = ownerUser.customClaims || {};
-        const existingTenants = existingClaims.tenants || [];
-        const newClaims = Object.assign(Object.assign({}, existingClaims), { tenants: [...existingTenants, tenantId], role: "owner" });
+        const existingTenantsMap = existingClaims.tenants || {};
+        // Migrate legacy array format to map
+        const tenantsMap = Array.isArray(existingTenantsMap)
+            ? Object.fromEntries(existingTenantsMap.map((tid) => [tid, "member"]))
+            : Object.assign({}, existingTenantsMap);
+        tenantsMap[tenantId] = "owner";
+        const newClaims = Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap });
         await auth.setCustomUserClaims(ownerUser.uid, newClaims);
         // Step 9: Create some default data (optional)
         try {
@@ -218,7 +240,7 @@ async function createDefaultTenantData(db, tenantId) {
  * Cloud Function to add a user to an existing tenant
  */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
-    const { tenantId, userEmail, role, modules = [], employeeId, tenantName } = request.data;
+    const { tenantId, userEmail, role, modules, employeeId, tenantName } = request.data;
     const authContext = (0, authz_1.requireAuth)(request);
     if (!tenantId) {
         throw new https_1.HttpsError("invalid-argument", "tenantId is required");
@@ -230,13 +252,27 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
     if (!role || !allowedRoles.includes(role)) {
         throw new https_1.HttpsError("invalid-argument", "Invalid role");
     }
-    if (!Array.isArray(modules)) {
+    if (modules !== undefined && !Array.isArray(modules)) {
         throw new https_1.HttpsError("invalid-argument", "modules must be an array");
     }
     const db = (0, firestore_1.getFirestore)();
     const auth = (0, auth_1.getAuth)();
     const normalizedEmail = userEmail.trim().toLowerCase();
-    const normalizedModules = modules.filter((module) => typeof module === "string");
+    const requestedModules = Array.isArray(modules)
+        ? modules.map((module) => {
+            if (typeof module !== "string") {
+                throw new https_1.HttpsError("invalid-argument", "modules must only include strings");
+            }
+            return module.trim();
+        })
+        : [];
+    if (requestedModules.some((module) => !ALLOWED_MODULE_SET.has(module))) {
+        throw new https_1.HttpsError("invalid-argument", "modules contains invalid entries");
+    }
+    const normalizedModules = Array.from(new Set(requestedModules));
+    const effectiveModules = Array.isArray(modules)
+        ? normalizedModules
+        : DEFAULT_MODULES_BY_ROLE[role];
     try {
         const callerMember = await (0, authz_1.requireTenantAdmin)(tenantId, authContext.uid);
         if (role === "owner" && callerMember.role !== "owner") {
@@ -269,7 +305,7 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
             throw new https_1.HttpsError("already-exists", "User is already a member of this tenant");
         }
         // Create member document
-        const memberData = Object.assign({ uid: targetUser.uid, role, modules: normalizedModules, email: normalizedEmail, displayName: targetUser.displayName || null, joinedAt: new Date(), lastActiveAt: new Date() }, (employeeId ? { employeeId } : {}));
+        const memberData = Object.assign({ uid: targetUser.uid, role, modules: effectiveModules, email: normalizedEmail, displayName: targetUser.displayName || null, joinedAt: new Date(), lastActiveAt: new Date() }, (employeeId ? { employeeId } : {}));
         await db.collection(`tenants/${tenantId}/members`).doc(targetUser.uid).set(memberData);
         // Create/update user profile with tenantAccess (for Ekipa/mobile app login)
         if (tenantName) {
@@ -299,11 +335,16 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
                 firebase_functions_1.logger.warn(`Failed to generate password reset link for ${normalizedEmail}:`, resetError.message);
             }
         }
-        // Update user's custom claims
+        // Update user's custom claims (map format for firestore.rules fast-path)
         const existingClaims = targetUser.customClaims || {};
-        const existingTenants = existingClaims.tenants || [];
-        if (!existingTenants.includes(tenantId)) {
-            const newClaims = Object.assign(Object.assign({}, existingClaims), { tenants: [...existingTenants, tenantId] });
+        const existingTenantsMap = existingClaims.tenants || {};
+        // Migrate legacy array format to map
+        const tenantsMap = Array.isArray(existingTenantsMap)
+            ? Object.fromEntries(existingTenantsMap.map((tid) => [tid, "member"]))
+            : Object.assign({}, existingTenantsMap);
+        if (!tenantsMap[tenantId]) {
+            tenantsMap[tenantId] = role;
+            const newClaims = Object.assign(Object.assign({}, existingClaims), { tenants: tenantsMap });
             await auth.setCustomUserClaims(targetUser.uid, newClaims);
         }
         return {

@@ -4,7 +4,7 @@
  * Structure: KPIs -> Attention Required -> Employee Table -> Collapsible Sections
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -32,9 +32,9 @@ import {
 } from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { employeeService, type Employee } from "@/services/employeeService";
-import { departmentService } from "@/services/departmentService";
-import { leaveService } from "@/services/leaveService";
+import { type Employee } from "@/services/employeeService";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import {
   Users,
   UserPlus,
@@ -67,7 +67,7 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useTenantId } from "@/contexts/TenantContext";
+
 
 function PeopleDashboardSkeleton() {
   return (
@@ -212,15 +212,24 @@ function PeopleDashboardSkeleton() {
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [departments, setDepartments] = useState<string[]>([]);
-  const [stats, setStats] = useState({
-    activeEmployees: 0,
-    pendingLeave: 0,
-    onLeaveToday: 0,
-  });
+  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
+  const loading = employeesLoading || leaveStatsLoading;
+
+  // Derived data
+  const departments = useMemo(
+    () =>
+      [...new Set(employees.map((e) => e.jobDetails?.department).filter(Boolean))] as string[],
+    [employees]
+  );
+  const stats = useMemo(
+    () => ({
+      activeEmployees: employees.filter((e) => e.status === "active").length,
+      pendingLeave: leaveStats?.pendingRequests ?? 0,
+      onLeaveToday: leaveStats?.employeesOnLeaveToday ?? 0,
+    }),
+    [employees, leaveStats]
+  );
 
   // Search and filter state
   const [searchQuery, setSearchQuery] = useState("");
@@ -233,38 +242,6 @@ export default function PeopleDashboard() {
   const [hiringOpen, setHiringOpen] = useState(false);
   const [performanceOpen, setPerformanceOpen] = useState(false);
   const [commsOpen, setCommsOpen] = useState(false);
-
-  useEffect(() => {
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadData = async () => {
-    try {
-      const [employeesData, _departmentsData, leaveStats] = await Promise.all([
-        employeeService.getAllEmployees(tenantId),
-        departmentService.getAllDepartments(tenantId),
-        leaveService.getLeaveStats(tenantId),
-      ]);
-
-      setEmployees(employeesData);
-      setDepartments([
-        ...new Set(
-          employeesData.map((e) => e.jobDetails?.department).filter(Boolean)
-        ),
-      ] as string[]);
-      setStats({
-        activeEmployees: employeesData.filter((e) => e.status === "active")
-          .length,
-        pendingLeave: leaveStats.pendingRequests,
-        onLeaveToday: leaveStats.employeesOnLeaveToday,
-      });
-    } catch (error) {
-      console.error("Error loading data:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   // Filtered employees
   const filteredEmployees = useMemo(() => {

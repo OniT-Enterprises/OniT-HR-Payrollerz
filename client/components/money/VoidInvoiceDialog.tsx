@@ -45,7 +45,7 @@ export function VoidInvoiceDialog({
 
     try {
       setLoading(true);
-      await invoiceService.cancelInvoice(session.tid, invoice.id, reason || undefined);
+      await invoiceService.cancelInvoice(session.tid, invoice.id, reason || "");
 
       toast({
         title: 'Invoice voided',

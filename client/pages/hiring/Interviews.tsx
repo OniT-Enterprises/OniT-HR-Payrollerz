@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -45,7 +45,20 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import {
-  interviewService,
+  useInterviews,
+  useCreateInterview,
+  useUpdateInterview,
+  useDeleteInterview,
+  useCompleteInterview,
+  useCancelInterview,
+  useMarkNoShow,
+  useUpdatePreCheck,
+  useMarkInvitationSent,
+  useMarkFollowUpCall,
+  useAddFeedback,
+  useMakeDecision,
+} from "@/hooks/useHiring";
+import {
   Interview,
   InterviewStatus,
   InterviewType,
@@ -84,16 +97,68 @@ import {
 } from "lucide-react";
 import { getTodayTL } from "@/lib/dateUtils";
 
+interface StarRatingProps {
+  value: number;
+  onChange?: (value: number) => void;
+  readonly?: boolean;
+}
+
+function StarRating({
+  value,
+  onChange,
+  readonly = false,
+}: StarRatingProps) {
+  return (
+    <div className="flex gap-1">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          disabled={readonly}
+          onClick={() => onChange?.(star)}
+          className={`${readonly ? "cursor-default" : "cursor-pointer hover:scale-110"} transition-transform`}
+        >
+          <Star
+            className={`h-5 w-5 ${
+              star <= value
+                ? "fill-yellow-400 text-yellow-400"
+                : "text-gray-300"
+            }`}
+          />
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export default function Interviews() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const { user } = useAuth();
   const { data: employees = [], isLoading: _employeesLoading } = useAllEmployees();
 
+  // Data via React Query
+  const { data: interviews = [], isLoading: loading } = useInterviews();
+  const createInterviewMutation = useCreateInterview();
+  const updateInterviewMutation = useUpdateInterview();
+  const deleteInterviewMutation = useDeleteInterview();
+  const completeInterviewMutation = useCompleteInterview();
+  const cancelInterviewMutation = useCancelInterview();
+  const noShowMutation = useMarkNoShow();
+  const updatePreCheckMutation = useUpdatePreCheck();
+  const markInvitationMutation = useMarkInvitationSent();
+  const markFollowUpMutation = useMarkFollowUpCall();
+  const addFeedbackMutation = useAddFeedback();
+  const makeDecisionMutation = useMakeDecision();
+
+  // Derived saving state from any active mutation
+  const saving =
+    createInterviewMutation.isPending ||
+    updateInterviewMutation.isPending ||
+    deleteInterviewMutation.isPending ||
+    addFeedbackMutation.isPending;
+
   // State
-  const [interviews, setInterviews] = useState<Interview[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -133,27 +198,6 @@ export default function Interviews() {
     recommendation: "pending" as InterviewDecision,
     notes: "",
   });
-
-  const loadInterviews = useCallback(async () => {
-    if (!tenantId) return;
-    setLoading(true);
-    try {
-      const data = await interviewService.getInterviews(tenantId);
-      setInterviews(data);
-    } catch (error) {
-      console.error("Error loading interviews:", error);
-      toast.error("Failed to load interviews");
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId]);
-
-  // Load interviews
-  useEffect(() => {
-    if (tenantId) {
-      loadInterviews();
-    }
-  }, [loadInterviews, tenantId]);
 
   // Get filtered interviews
   const getFilteredInterviews = () => {
@@ -200,7 +244,7 @@ export default function Interviews() {
   };
 
   // Handle schedule interview
-  const handleScheduleInterview = async () => {
+  const handleScheduleInterview = () => {
     if (!tenantId || !user) return;
 
     if (!formData.candidateName || !formData.candidateEmail || !formData.interviewDate || !formData.interviewTime) {
@@ -208,37 +252,50 @@ export default function Interviews() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const interviewerNames = formData.interviewerIds
-        .map((id) => {
-          const emp = employees.find((e) => e.id === id);
-          return emp
-            ? `${emp.personalInfo?.firstName || ""} ${emp.personalInfo?.lastName || ""}`.trim()
-            : "";
-        })
-        .filter(Boolean);
+    const interviewerNames = formData.interviewerIds
+      .map((id) => {
+        const emp = employees.find((e) => e.id === id);
+        return emp
+          ? `${emp.personalInfo?.firstName || ""} ${emp.personalInfo?.lastName || ""}`.trim()
+          : "";
+      })
+      .filter(Boolean);
 
-      if (selectedInterview?.id) {
-        // Update existing
-        await interviewService.updateInterview(tenantId, selectedInterview.id, {
-          candidateName: formData.candidateName,
-          candidateEmail: formData.candidateEmail,
-          candidatePhone: formData.candidatePhone,
-          position: formData.position,
-          interviewDate: formData.interviewDate,
-          interviewTime: formData.interviewTime,
-          duration: formData.duration,
-          interviewType: formData.interviewType,
-          location: formData.location,
-          meetingLink: formData.meetingLink,
-          interviewerIds: formData.interviewerIds,
-          interviewerNames,
-        });
-        toast.success("Interview updated");
-      } else {
-        // Create new
-        await interviewService.createInterview(tenantId, {
+    const onSettled = () => {
+      setShowScheduleDialog(false);
+      resetForm();
+    };
+
+    if (selectedInterview?.id) {
+      // Update existing
+      updateInterviewMutation.mutate(
+        {
+          id: selectedInterview.id,
+          updates: {
+            candidateName: formData.candidateName,
+            candidateEmail: formData.candidateEmail,
+            candidatePhone: formData.candidatePhone,
+            position: formData.position,
+            interviewDate: formData.interviewDate,
+            interviewTime: formData.interviewTime,
+            duration: formData.duration,
+            interviewType: formData.interviewType,
+            location: formData.location,
+            meetingLink: formData.meetingLink,
+            interviewerIds: formData.interviewerIds,
+            interviewerNames,
+          },
+        },
+        {
+          onSuccess: () => toast.success("Interview updated"),
+          onError: () => toast.error("Failed to save interview"),
+          onSettled,
+        }
+      );
+    } else {
+      // Create new
+      createInterviewMutation.mutate(
+        {
           candidateName: formData.candidateName,
           candidateEmail: formData.candidateEmail,
           candidatePhone: formData.candidatePhone,
@@ -257,23 +314,18 @@ export default function Interviews() {
           candidateConfirmed: false,
           followUpCall: false,
           createdBy: user.uid,
-        });
-        toast.success("Interview scheduled");
-      }
-
-      setShowScheduleDialog(false);
-      resetForm();
-      loadInterviews();
-    } catch (error) {
-      console.error("Error saving interview:", error);
-      toast.error("Failed to save interview");
-    } finally {
-      setSaving(false);
+        },
+        {
+          onSuccess: () => toast.success("Interview scheduled"),
+          onError: () => toast.error("Failed to save interview"),
+          onSettled,
+        }
+      );
     }
   };
 
   // Handle submit feedback
-  const handleSubmitFeedback = async () => {
+  const handleSubmitFeedback = () => {
     if (!tenantId || !selectedInterview?.id || !user) return;
 
     if (!feedbackData.interviewerId) {
@@ -281,138 +333,122 @@ export default function Interviews() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const interviewer = employees.find((e) => e.id === feedbackData.interviewerId);
-      const interviewerName = interviewer
-        ? `${interviewer.personalInfo?.firstName || ""} ${interviewer.personalInfo?.lastName || ""}`.trim()
-        : "Unknown";
+    const interviewer = employees.find((e) => e.id === feedbackData.interviewerId);
+    const interviewerName = interviewer
+      ? `${interviewer.personalInfo?.firstName || ""} ${interviewer.personalInfo?.lastName || ""}`.trim()
+      : "Unknown";
 
-      await interviewService.addFeedback(tenantId, selectedInterview.id, {
-        ...feedbackData,
-        interviewerName,
-      });
-
-      toast.success("Feedback submitted");
-      setShowFeedbackDialog(false);
-      setSelectedInterview(null);
-      loadInterviews();
-    } catch (error) {
-      console.error("Error submitting feedback:", error);
-      toast.error("Failed to submit feedback");
-    } finally {
-      setSaving(false);
-    }
+    addFeedbackMutation.mutate(
+      {
+        id: selectedInterview.id,
+        feedback: { ...feedbackData, interviewerName },
+      },
+      {
+        onSuccess: () => {
+          toast.success("Feedback submitted");
+          setShowFeedbackDialog(false);
+          setSelectedInterview(null);
+        },
+        onError: () => {
+          toast.error("Failed to submit feedback");
+        },
+      }
+    );
   };
 
   // Handle pre-check update
-  const handlePreCheckUpdate = async (
+  const handlePreCheckUpdate = (
     interview: Interview,
     check: keyof Interview["preChecks"],
     value: boolean
   ) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.updatePreCheck(tenantId, interview.id, check, value);
-      loadInterviews();
-    } catch (error) {
-      console.error("Error updating pre-check:", error);
-      toast.error("Failed to update check");
-    }
+    updatePreCheckMutation.mutate(
+      { id: interview.id, check, value },
+      {
+        onError: () => toast.error("Failed to update check"),
+      }
+    );
   };
 
   // Handle communication actions
-  const handleSendInvitation = async (interview: Interview) => {
+  const handleSendInvitation = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.markInvitationSent(tenantId, interview.id);
-      toast.success("Invitation marked as sent");
-      loadInterviews();
-    } catch {
-      toast.error("Failed to update");
-    }
+    markInvitationMutation.mutate(interview.id, {
+      onSuccess: () => toast.success("Invitation marked as sent"),
+      onError: () => toast.error("Failed to update"),
+    });
   };
 
-  const handleFollowUpCall = async (interview: Interview) => {
+  const handleFollowUpCall = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.markFollowUpCall(tenantId, interview.id);
-      toast.success("Follow-up call recorded");
-      loadInterviews();
-    } catch {
-      toast.error("Failed to update");
-    }
+    markFollowUpMutation.mutate(interview.id, {
+      onSuccess: () => toast.success("Follow-up call recorded"),
+      onError: () => toast.error("Failed to update"),
+    });
   };
 
   // Handle status changes
-  const handleCompleteInterview = async (interview: Interview) => {
+  const handleCompleteInterview = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.completeInterview(tenantId, interview.id);
-      toast.success("Interview marked as completed");
-      loadInterviews();
-    } catch {
-      toast.error("Failed to update status");
-    }
+    completeInterviewMutation.mutate(interview.id, {
+      onSuccess: () => toast.success("Interview marked as completed"),
+      onError: () => toast.error("Failed to update status"),
+    });
   };
 
-  const handleCancelInterview = async (interview: Interview) => {
+  const handleCancelInterview = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.cancelInterview(tenantId, interview.id);
-      toast.success("Interview cancelled");
-      loadInterviews();
-    } catch {
-      toast.error("Failed to cancel interview");
-    }
+    cancelInterviewMutation.mutate(
+      { id: interview.id },
+      {
+        onSuccess: () => toast.success("Interview cancelled"),
+        onError: () => toast.error("Failed to cancel interview"),
+      }
+    );
   };
 
-  const _handleNoShow = async (interview: Interview) => {
+  const _handleNoShow = (interview: Interview) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.markNoShow(tenantId, interview.id);
-      toast.success("Marked as no-show");
-      loadInterviews();
-    } catch {
-      toast.error("Failed to update status");
-    }
+    noShowMutation.mutate(interview.id, {
+      onSuccess: () => toast.success("Marked as no-show"),
+      onError: () => toast.error("Failed to update status"),
+    });
   };
 
   // Handle delete
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!tenantId || !selectedInterview?.id) return;
 
-    setSaving(true);
-    try {
-      await interviewService.deleteInterview(tenantId, selectedInterview.id);
-      toast.success("Interview deleted");
-      setDeleteDialogOpen(false);
-      setSelectedInterview(null);
-      loadInterviews();
-    } catch {
-      toast.error("Failed to delete interview");
-    } finally {
-      setSaving(false);
-    }
+    deleteInterviewMutation.mutate(selectedInterview.id, {
+      onSuccess: () => {
+        toast.success("Interview deleted");
+        setDeleteDialogOpen(false);
+        setSelectedInterview(null);
+      },
+      onError: () => {
+        toast.error("Failed to delete interview");
+      },
+    });
   };
 
   // Handle make decision
-  const handleMakeDecision = async (interview: Interview, decision: InterviewDecision) => {
+  const handleMakeDecision = (interview: Interview, decision: InterviewDecision) => {
     if (!tenantId || !interview.id) return;
 
-    try {
-      await interviewService.makeDecision(tenantId, interview.id, decision);
-      toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`);
-      loadInterviews();
-    } catch {
-      toast.error("Failed to record decision");
-    }
+    makeDecisionMutation.mutate(
+      { id: interview.id, decision },
+      {
+        onSuccess: () => toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`),
+        onError: () => toast.error("Failed to record decision"),
+      }
+    );
   };
 
   // Reset form
@@ -503,37 +539,6 @@ export default function Interviews() {
   };
 
   const filteredInterviews = getFilteredInterviews();
-
-  // Star rating component
-  const StarRating = ({
-    value,
-    onChange,
-    readonly = false,
-  }: {
-    value: number;
-    onChange?: (v: number) => void;
-    readonly?: boolean;
-  }) => (
-    <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((star) => (
-        <button
-          key={star}
-          type="button"
-          disabled={readonly}
-          onClick={() => onChange?.(star)}
-          className={`${readonly ? "cursor-default" : "cursor-pointer hover:scale-110"} transition-transform`}
-        >
-          <Star
-            className={`h-5 w-5 ${
-              star <= value
-                ? "fill-yellow-400 text-yellow-400"
-                : "text-gray-300"
-            }`}
-          />
-        </button>
-      ))}
-    </div>
-  );
 
   if (loading) {
     return (

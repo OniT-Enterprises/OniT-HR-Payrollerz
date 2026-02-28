@@ -25,6 +25,7 @@
     "emulators:ui": "firebase emulators:start --config firebase.dev.json --import=./firebaseemulator_payroll/ --export-on-exit",
     "reset:emulator": "node scripts/resetEmulator.js",
     "backfill:gl-ids": "node scripts/backfill-gl-account-ids.mjs",
+    "backfill:tenant-modules": "node scripts/backfill-tenant-modules.mjs",
     "i18n:check": "tsx scripts/check-i18n.ts && tsx scripts/check-i18n-usage.ts",
     "seed:prod": "node scripts/clearAndSeedData.mjs",
     "audit:data": "node scripts/auditData.mjs",

@@ -4,7 +4,7 @@
  * NOT a full QuickBooks replacement - supports payroll, audits, reports
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -39,17 +39,17 @@ import {
   Eye,
   Clock,
   FilePlus,
+  FolderKanban,
+  Building2,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import { useTenantId } from "@/contexts/TenantContext";
-import { journalEntryService, trialBalanceService } from "@/services/accountingService";
-import { getTodayTL } from "@/lib/dateUtils";
+import { useAccountingDashboard } from "@/hooks/useAccounting";
 import { formatDateTL } from "@/lib/dateUtils";
-import { useToast } from "@/hooks/use-toast";
 import GuidancePanel from "@/components/GuidancePanel";
-import type { JournalEntry } from "@/types/accounting";
+import { useTenant } from "@/contexts/TenantContext";
+import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 function AccountingDashboardSkeleton() {
   return (
@@ -147,93 +147,33 @@ function AccountingDashboardSkeleton() {
 export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { toast } = useToast();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
+  const { session, hasModule, canManage } = useTenant();
   const [toolsOpen, setToolsOpen] = useState(true);
+  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
+  const donorExportEnabled = canUseDonorExport(
+    session,
+    hasModule("reports"),
+    canManage()
+  );
 
-  const [accountingStatus, setAccountingStatus] = useState({
-    payrollPosted: false,
-    trialBalanced: true,
-    pendingEntries: 0,
-    lastPayrollAmount: 0,
-    lastPayrollDate: "",
-  });
+  const { data: dashboardData, isLoading: loading } = useAccountingDashboard();
 
-  const [lastPayrollEntry, setLastPayrollEntry] = useState<{
-    payrollRun: string;
-    date: string;
-    totalAmount: number;
-    entries: { account: string; type: string; amount: number }[];
-  } | null>(null);
+  const accountingStatus = {
+    payrollPosted: dashboardData?.payrollPosted ?? false,
+    trialBalanced: dashboardData?.trialBalanced ?? false,
+    pendingEntries: dashboardData?.pendingEntries ?? 0,
+    lastPayrollAmount: dashboardData?.lastPayrollAmount ?? 0,
+    lastPayrollDate: dashboardData?.lastPayrollDate
+      ? formatDateTL(new Date(dashboardData.lastPayrollDate), { year: 'numeric', month: 'short', day: 'numeric' })
+      : null,
+  };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function fetchData() {
-      try {
-        const today = getTodayTL();
-        const currentYear = new Date().getFullYear();
-        const currentMonth = new Date().getMonth(); // 0-indexed
-
-        // Fetch posted and draft journal entries in parallel
-        const [postedEntries, draftEntries, trialBalance] = await Promise.all([
-          journalEntryService.getAllJournalEntries(tenantId, { status: 'posted' }),
-          journalEntryService.getAllJournalEntries(tenantId, { status: 'draft' }),
-          trialBalanceService.generateTrialBalance(tenantId, today, currentYear),
-        ]);
-
-        if (cancelled) return;
-
-        // Find latest payroll journal entry
-        const payrollEntries = postedEntries.filter((e: JournalEntry) => e.source === 'payroll');
-        const latestPayroll = payrollEntries[0] || null; // already sorted desc by date
-
-        // Check if payroll posted for current month
-        const payrollPosted = payrollEntries.some((e: JournalEntry) => {
-          const entryDate = new Date(e.date);
-          return entryDate.getFullYear() === currentYear && entryDate.getMonth() === currentMonth;
-        });
-
-        setAccountingStatus({
-          payrollPosted,
-          trialBalanced: trialBalance.isBalanced,
-          pendingEntries: draftEntries.length,
-          lastPayrollAmount: latestPayroll?.totalDebit ?? 0,
-          lastPayrollDate: latestPayroll?.date
-            ? formatDateTL(new Date(latestPayroll.date), { year: 'numeric', month: 'short', day: 'numeric' })
-            : "",
-        });
-
-        if (latestPayroll) {
-          setLastPayrollEntry({
-            payrollRun: latestPayroll.description || latestPayroll.sourceRef || 'Payroll',
-            date: formatDateTL(new Date(latestPayroll.date), { year: 'numeric', month: 'short', day: 'numeric' }),
-            totalAmount: latestPayroll.totalDebit,
-            entries: latestPayroll.lines.map((line) => ({
-              account: line.accountName,
-              type: line.debit > 0 ? 'debit' : 'credit',
-              amount: line.debit > 0 ? line.debit : line.credit,
-            })),
-          });
-        }
-      } catch (err) {
-        if (!cancelled) {
-          toast({
-            title: t("accounting.dashboard.errorTitle") || "Error",
-            description: t("accounting.dashboard.errorLoading") || "Failed to load accounting data",
-            variant: "destructive",
-          });
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+  const lastPayrollEntry = dashboardData?.lastPayrollEntry
+    ? {
+        ...dashboardData.lastPayrollEntry,
+        date: formatDateTL(new Date(dashboardData.lastPayrollEntry.date), { year: 'numeric', month: 'short', day: 'numeric' }),
       }
-    }
-
-    fetchData();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
+    : null;
 
   // Attention items (only show if there are issues)
   const attentionItems = accountingStatus.pendingEntries > 0
@@ -285,6 +225,27 @@ export default function AccountingDashboard() {
       path: "/accounting/reports",
     },
   ];
+
+  const ngoReportingLinks = ngoReportingEnabled
+    ? [
+        {
+          id: "payroll-allocation",
+          title: t("accounting.dashboard.payrollAllocation"),
+          description: t("accounting.dashboard.payrollAllocationDesc"),
+          path: "/reports/payroll-allocation",
+          icon: FolderKanban,
+        },
+        ...(donorExportEnabled
+          ? [{
+              id: "donor-export",
+              title: t("accounting.dashboard.donorExport"),
+              description: t("accounting.dashboard.donorExportDesc"),
+              path: "/reports/donor-export",
+              icon: FileSpreadsheet,
+            }]
+          : []),
+      ]
+    : [];
 
   if (loading) {
     return <AccountingDashboardSkeleton />;
@@ -530,6 +491,41 @@ export default function AccountingDashboard() {
             )}
           </CardContent>
         </Card>
+
+        {ngoReportingLinks.length > 0 && (
+          <Card className="mb-6 border-emerald-500/20 bg-emerald-50/20 dark:bg-emerald-950/10">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Building2 className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
+                {t("accounting.dashboard.ngoReporting")}
+              </CardTitle>
+              <CardDescription>{t("accounting.dashboard.ngoReportingDesc")}</CardDescription>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="grid gap-3 md:grid-cols-2">
+                {ngoReportingLinks.map((link) => {
+                  const LinkIcon = link.icon;
+                  return (
+                    <div
+                      key={link.id}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-emerald-500/20 hover:border-emerald-500/40 hover:bg-background cursor-pointer transition-colors"
+                      onClick={() => navigate(link.path)}
+                    >
+                      <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center flex-shrink-0">
+                        <LinkIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium">{link.title}</p>
+                        <p className="text-xs text-muted-foreground">{link.description}</p>
+                      </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════
             ATTENTION REQUIRED - Only shows when there are issues

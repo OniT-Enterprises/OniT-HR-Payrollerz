@@ -4,6 +4,7 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
   query,
   where,
@@ -289,12 +290,26 @@ class EmployeeService {
   }
 
   /**
-   * Get all employees (convenience method, uses getEmployees internally)
-   * @deprecated Use getEmployees() with filters for better performance
+   * Get all employees (fetches every page via getEmployees pagination loop)
    */
-  async getAllEmployees(tenantId: string, maxResults: number = 500): Promise<Employee[]> {
-    const result = await this.getEmployees(tenantId, { pageSize: maxResults });
-    return result.data;
+  async getAllEmployees(tenantId: string): Promise<Employee[]> {
+    const MAX_PAGES = 100;
+    const all: Employee[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllEmployees: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getEmployees(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   async getEmployeeById(tenantId: string, id: string): Promise<Employee | null> {
@@ -325,7 +340,9 @@ class EmployeeService {
   async addEmployee(
     tenantId: string,
     employee: Omit<Employee, "id">,
-    audit?: AuditContext
+    audit?: AuditContext,
+    /** Pre-generated Firestore document ID (used when files were uploaded before save) */
+    preGeneratedId?: string
   ): Promise<string> {
     // Uniqueness check: prevent duplicate employeeId (National ID / BI number)
     const empId = employee.jobDetails?.employeeId;
@@ -343,11 +360,21 @@ class EmployeeService {
       }
     }
 
-    const docRef = await addDoc(this.collectionRef(tenantId), {
+    const data = {
       ...employee,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
-    });
+    };
+
+    let docId: string;
+    if (preGeneratedId) {
+      const docRef = doc(this.collectionRef(tenantId), preGeneratedId);
+      await setDoc(docRef, data);
+      docId = preGeneratedId;
+    } else {
+      const docRef = await addDoc(this.collectionRef(tenantId), data);
+      docId = docRef.id;
+    }
 
     // Log to audit trail if context provided
     if (audit) {
@@ -356,12 +383,12 @@ class EmployeeService {
         ...audit,
         tenantId,
         action: "employee.create",
-        employeeId: docRef.id,
+        employeeId: docId,
         employeeName,
       }).catch(err => console.error("Audit log failed:", err));
     }
 
-    return docRef.id;
+    return docId;
   }
 
   async updateEmployee(

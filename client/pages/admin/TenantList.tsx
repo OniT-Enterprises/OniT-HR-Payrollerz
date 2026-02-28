@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
@@ -35,7 +35,7 @@ import {
   Calendar,
   Database,
 } from "lucide-react";
-import { adminService } from "@/services/adminService";
+import { useAllTenants, useSuspendTenant, useReactivateTenant } from "@/hooks/useAdmin";
 import { TenantConfig, TenantStatus, TenantPlan } from "@/types/tenant";
 import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
@@ -60,34 +60,17 @@ export default function TenantList() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
-  const [tenants, setTenants] = useState<TenantConfig[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: tenants = [], isLoading: loading } = useAllTenants();
+  const suspendMutation = useSuspendTenant();
+  const reactivateMutation = useReactivateTenant();
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    loadTenants();
-  }, []);
-
-  const loadTenants = async () => {
-    try {
-      setLoading(true);
-      const data = await adminService.getAllTenants();
-      setTenants(data);
-    } catch (error) {
-      console.error("Error loading tenants:", error);
-      toast.error("Failed to load tenants");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleImpersonate = async (tenant: TenantConfig) => {
     try {
       await startImpersonation(tenant.id, tenant.name);
       toast.success(`Now viewing as ${tenant.name}`);
       navigate("/");
-    } catch (error) {
-      console.error("Error impersonating:", error);
+    } catch (_error) {
       toast.error("Failed to impersonate tenant");
     }
   };
@@ -96,16 +79,14 @@ export default function TenantList() {
     if (!user || !userProfile) return;
 
     try {
-      await adminService.suspendTenant(
-        tenant.id,
-        "Suspended by admin",
-        user.uid,
-        userProfile.email
-      );
+      await suspendMutation.mutateAsync({
+        tenantId: tenant.id,
+        reason: "Suspended by admin",
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
       toast.success(`${tenant.name} has been suspended`);
-      loadTenants();
-    } catch (error) {
-      console.error("Error suspending tenant:", error);
+    } catch (_error) {
       toast.error("Failed to suspend tenant");
     }
   };
@@ -114,11 +95,13 @@ export default function TenantList() {
     if (!user || !userProfile) return;
 
     try {
-      await adminService.reactivateTenant(tenant.id, user.uid, userProfile.email);
+      await reactivateMutation.mutateAsync({
+        tenantId: tenant.id,
+        actorUid: user.uid,
+        actorEmail: userProfile.email,
+      });
       toast.success(`${tenant.name} has been reactivated`);
-      loadTenants();
-    } catch (error) {
-      console.error("Error reactivating tenant:", error);
+    } catch (_error) {
       toast.error("Failed to reactivate tenant");
     }
   };

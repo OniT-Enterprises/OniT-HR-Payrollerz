@@ -40,6 +40,7 @@ import type {
   FilingDueDate,
 } from '@/types/tax-filing';
 import type { CompanyDetails } from '@/types/settings';
+export type { TaxFilingType, TaxFiling, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSReturn, SubmissionMethod, CompanyDetails };
 import { TL_INCOME_TAX } from '@/lib/payroll/constants-tl';
 import { getTaxConfig } from '@/lib/payroll/taxConfig';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
@@ -477,7 +478,7 @@ class TaxFilingService {
       employeeRecords.push({
         employeeId: employee.id,
         fullName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-        inssNumber: employee.documents?.socialSecurityNumber?.number || undefined,
+        inssNumber: employee.documents?.socialSecurityNumber?.number || "",
         contributionBase,
         employeeContribution,
         employerContribution,

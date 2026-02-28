@@ -134,20 +134,49 @@ class VendorService {
   }
 
   /**
-   * Get all vendors
-   * @deprecated Use getVendors() with filters for better performance
+   * Get all vendors (fetches every page via getVendors pagination loop)
    */
   async getAllVendors(tenantId: string): Promise<Vendor[]> {
-    const result = await this.getVendors(tenantId, { pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Vendor[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllVendors: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getVendors(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get active vendors only (server-side filtered)
+   * Get active vendors only (server-side filtered, paginated)
    */
   async getActiveVendors(tenantId: string): Promise<Vendor[]> {
-    const result = await this.getVendors(tenantId, { isActive: true, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Vendor[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getActiveVendors: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getVendors(tenantId, { isActive: true, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**

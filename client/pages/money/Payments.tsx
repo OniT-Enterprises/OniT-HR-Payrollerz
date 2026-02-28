@@ -3,8 +3,9 @@
  * View payment history and summaries
  */
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent } from '@/components/ui/card';
@@ -19,14 +20,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
-import type { PaymentReceived } from '@/types/money';
 import {
   DollarSign,
   Search,
@@ -37,9 +36,6 @@ import {
   Building2,
   TrendingUp,
 } from 'lucide-react';
-
-// PaymentReceived already contains invoiceNumber and customerName
-type PaymentDisplay = PaymentReceived;
 
 const METHOD_ICONS: Record<string, typeof CreditCard> = {
   cash: Banknote,
@@ -57,39 +53,16 @@ const METHOD_LABELS: Record<string, string> = {
 
 export default function Payments() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [payments, setPayments] = useState<PaymentDisplay[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState<string>('all');
 
-  useEffect(() => {
-    if (tenantId) {
-      loadPayments();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  const loadPayments = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
-      // Get all payments directly
-      const allPayments = await invoiceService.getAllPayments(tenantId);
-      setPayments(allPayments);
-    } catch (error) {
-      console.error('Error loading payments:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.payments.loadError') || 'Failed to load payments',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: payments = [], isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'payments'],
+    queryFn: () => invoiceService.getAllPayments(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
 
   const filteredPayments = payments.filter((payment) => {
     const matchesSearch =

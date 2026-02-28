@@ -115,6 +115,8 @@ export default function Signup() {
           timeleave: true,
           performance: true,
           payroll: true,
+          money: true,
+          accounting: true,
           reports: true,
         },
         settings: {
@@ -130,7 +132,7 @@ export default function Signup() {
         email: user.email,
         displayName: displayName.trim(),
         role: "owner",
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "reports"],
+        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
         joinedAt: serverTimestamp(),
         lastActiveAt: serverTimestamp(),
         permissions: {

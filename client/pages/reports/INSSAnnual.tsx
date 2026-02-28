@@ -5,7 +5,7 @@
  * Used for year-end reconciliation with the Social Security authority.
  */
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -36,12 +36,11 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   CalendarDays,
   Download,
-  Loader2,
   Shield,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { taxFilingService } from "@/services/taxFilingService";
-import { settingsService } from "@/services/settingsService";
+import { useSettings } from "@/hooks/useSettings";
+import { useTaxFilings } from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type {
   MonthlyINSSReturn,
@@ -49,7 +48,6 @@ import type {
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
 
 interface AnnualEmployeeSummary {
   employeeId: string;
@@ -75,9 +73,9 @@ interface AnnualSummary {
   employees: AnnualEmployeeSummary[];
 }
 
-function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>): AnnualSummary | null {
+function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>, year: string): AnnualSummary | null {
   const inssFilings = filings.filter(f =>
-    f.type === "inss_monthly" && f.dataSnapshot
+    f.type === "inss_monthly" && f.dataSnapshot && f.period.startsWith(year)
   );
 
   if (inssFilings.length === 0) return null;
@@ -124,7 +122,7 @@ function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>)
   }
 
   return {
-    year: inssFilings[0]?.period?.substring(0, 4) || "",
+    year,
     employerName: company.legalName || "",
     employerTIN: company.tinNumber || "",
     monthsFiled: inssFilings.length,
@@ -139,77 +137,48 @@ function aggregateAnnual(filings: TaxFiling[], company: Partial<CompanyDetails>)
 
 export default function INSSAnnual() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
 
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [company, setCompany] = useState<Partial<CompanyDetails>>({});
-  const [_filings, setFilings] = useState<TaxFiling[]>([]);
-  const [summary, setSummary] = useState<AnnualSummary | null>(null);
+  // React Query hooks
+  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const { data: allFilings = [], isLoading: filingsLoading } = useTaxFilings("inss_monthly");
+
+  const loading = settingsLoading || filingsLoading;
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = useState(String(currentYear - 1));
+  const [showSummary, setShowSummary] = useState(false);
 
   const availableYears = useMemo(() => {
     return [currentYear, currentYear - 1, currentYear - 2].map(String);
   }, [currentYear]);
 
-  useEffect(() => {
-    loadSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // Derive company from settings inside useMemo to avoid unstable deps
+  const company: Partial<CompanyDetails> = useMemo(
+    () => settings?.companyDetails || {},
+    [settings?.companyDetails]
+  );
 
-  const loadSettings = async () => {
-    try {
-      if (tenantId) {
-        const settings = await settingsService.getSettings(tenantId);
-        if (settings?.companyDetails) setCompany(settings.companyDetails);
-      }
-    } catch (error) {
-      console.error("Failed to load settings:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // Compute the annual summary from filings data via useMemo
+  const summary = useMemo<AnnualSummary | null>(() => {
+    if (!showSummary || allFilings.length === 0) return null;
+    return aggregateAnnual(allFilings, company, selectedYear);
+  }, [showSummary, allFilings, company, selectedYear]);
 
-  const handleGenerate = async () => {
-    try {
-      setGenerating(true);
+  const handleGenerate = () => {
+    setShowSummary(true);
 
-      // Fetch all INSS monthly filings
-      const allFilings = await taxFilingService.getAllFilings(tenantId, "inss_monthly");
-
-      // Filter to selected year
-      const yearFilings = allFilings.filter(f => f.period.startsWith(selectedYear));
-      setFilings(yearFilings);
-
-      const annualSummary = aggregateAnnual(yearFilings, company);
-      if (annualSummary) {
-        annualSummary.year = selectedYear;
-      }
-      setSummary(annualSummary);
-
-      if (!annualSummary || yearFilings.length === 0) {
-        toast({
-          title: "No Data",
-          description: `No INSS monthly filings found for ${selectedYear}. Generate monthly returns first.`,
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Annual Summary Generated",
-          description: `Aggregated ${yearFilings.length} months of INSS data for ${selectedYear}.`,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to generate annual summary:", error);
+    const yearFilings = allFilings.filter(f => f.period.startsWith(selectedYear));
+    if (yearFilings.length === 0) {
       toast({
-        title: "Error",
-        description: "Failed to generate annual INSS reconciliation.",
+        title: "No Data",
+        description: `No INSS monthly filings found for ${selectedYear}. Generate monthly returns first.`,
         variant: "destructive",
       });
-    } finally {
-      setGenerating(false);
+    } else {
+      toast({
+        title: "Annual Summary Generated",
+        description: `Aggregated ${yearFilings.length} months of INSS data for ${selectedYear}.`,
+      });
     }
   };
 
@@ -321,7 +290,7 @@ export default function INSSAnnual() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
               <div className="space-y-2">
                 <Label>Year</Label>
-                <Select value={selectedYear} onValueChange={setSelectedYear}>
+                <Select value={selectedYear} onValueChange={(v) => { setSelectedYear(v); setShowSummary(false); }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select year" />
                   </SelectTrigger>
@@ -333,15 +302,8 @@ export default function INSSAnnual() {
                 </Select>
               </div>
               <div className="md:col-span-2 flex gap-2">
-                <Button onClick={handleGenerate} disabled={generating} className="flex-1">
-                  {generating ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
-                    </>
-                  ) : (
-                    "Generate Annual Summary"
-                  )}
+                <Button onClick={handleGenerate} className="flex-1">
+                  Generate Annual Summary
                 </Button>
               </div>
             </div>
@@ -352,14 +314,14 @@ export default function INSSAnnual() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>INSS Annual Summary — {summary.year}</span>
+                <span>INSS Annual Summary - {summary.year}</span>
                 <Button variant="outline" onClick={handleExportCSV}>
                   <Download className="h-4 w-4 mr-2" />
                   Export CSV
                 </Button>
               </CardTitle>
               <CardDescription>
-                Employer: {summary.employerName || "—"} | TIN: {summary.employerTIN || "—"} | Months filed: {summary.monthsFiled}/12
+                Employer: {summary.employerName || "-"} | TIN: {summary.employerTIN || "-"} | Months filed: {summary.monthsFiled}/12
               </CardDescription>
             </CardHeader>
             <CardContent>

@@ -3,18 +3,16 @@
  * Shows outstanding invoices grouped by age (current, 30, 60, 90+ days)
  */
 
-import { useState, useEffect } from 'react';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { invoiceService } from '@/services/invoiceService';
+import { useAllInvoices } from '@/hooks/useInvoices';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Invoice } from '@/types/money';
 import {
@@ -44,103 +42,84 @@ interface CustomerAging {
 
 export default function ARAgingReport() {
   const navigate = useNavigate();
-  const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [buckets, setBuckets] = useState<AgingBucket[]>([]);
-  const [customerAging, setCustomerAging] = useState<CustomerAging[]>([]);
-  const [totalOutstanding, setTotalOutstanding] = useState(0);
+  const { data: allInvoices = [], isLoading: loading } = useAllInvoices();
 
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
+  const { buckets, customerAging, totalOutstanding } = useMemo(() => {
+    if (allInvoices.length === 0) {
+      return { buckets: [] as AgingBucket[], customerAging: [] as CustomerAging[], totalOutstanding: 0 };
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
 
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
-      const invoices = await invoiceService.getAllInvoices(tenantId);
+    // Filter to only unpaid invoices
+    const unpaidInvoices = allInvoices.filter(
+      inv => inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'
+    );
 
-      // Filter to only unpaid invoices
-      const unpaidInvoices = invoices.filter(
-        inv => inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'
-      );
+    const now = new Date();
 
-      const now = new Date();
+    // Calculate days overdue for each invoice
+    const invoicesWithAge = unpaidInvoices.map(inv => {
+      const dueDate = new Date(inv.dueDate);
+      const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+      return { ...inv, daysOverdue };
+    });
 
-      // Calculate days overdue for each invoice
-      const invoicesWithAge = unpaidInvoices.map(inv => {
-        const dueDate = new Date(inv.dueDate);
-        const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-        return { ...inv, daysOverdue };
-      });
+    // Group into aging buckets
+    const current = invoicesWithAge.filter(inv => inv.daysOverdue <= 0);
+    const days1to30 = invoicesWithAge.filter(inv => inv.daysOverdue > 0 && inv.daysOverdue <= 30);
+    const days31to60 = invoicesWithAge.filter(inv => inv.daysOverdue > 30 && inv.daysOverdue <= 60);
+    const days61to90 = invoicesWithAge.filter(inv => inv.daysOverdue > 60 && inv.daysOverdue <= 90);
+    const days90Plus = invoicesWithAge.filter(inv => inv.daysOverdue > 90);
 
-      // Group into aging buckets
-      const current = invoicesWithAge.filter(inv => inv.daysOverdue <= 0);
-      const days1to30 = invoicesWithAge.filter(inv => inv.daysOverdue > 0 && inv.daysOverdue <= 30);
-      const days31to60 = invoicesWithAge.filter(inv => inv.daysOverdue > 30 && inv.daysOverdue <= 60);
-      const days61to90 = invoicesWithAge.filter(inv => inv.daysOverdue > 60 && inv.daysOverdue <= 90);
-      const days90Plus = invoicesWithAge.filter(inv => inv.daysOverdue > 90);
+    const calcTotal = (invs: Invoice[]) => invs.reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
 
-      const calcTotal = (invs: Invoice[]) => invs.reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
+    const computedBuckets: AgingBucket[] = [
+      { label: t('money.arAging.current') || 'Current', days: '0 days', invoices: current, total: calcTotal(current) },
+      { label: t('money.arAging.days1to30') || '1-30 Days', days: '1-30', invoices: days1to30, total: calcTotal(days1to30) },
+      { label: t('money.arAging.days31to60') || '31-60 Days', days: '31-60', invoices: days31to60, total: calcTotal(days31to60) },
+      { label: t('money.arAging.days61to90') || '61-90 Days', days: '61-90', invoices: days61to90, total: calcTotal(days61to90) },
+      { label: t('money.arAging.days90Plus') || '90+ Days', days: '90+', invoices: days90Plus, total: calcTotal(days90Plus) },
+    ];
 
-      setBuckets([
-        { label: t('money.arAging.current') || 'Current', days: '0 days', invoices: current, total: calcTotal(current) },
-        { label: t('money.arAging.days1to30') || '1-30 Days', days: '1-30', invoices: days1to30, total: calcTotal(days1to30) },
-        { label: t('money.arAging.days31to60') || '31-60 Days', days: '31-60', invoices: days31to60, total: calcTotal(days31to60) },
-        { label: t('money.arAging.days61to90') || '61-90 Days', days: '61-90', invoices: days61to90, total: calcTotal(days61to90) },
-        { label: t('money.arAging.days90Plus') || '90+ Days', days: '90+', invoices: days90Plus, total: calcTotal(days90Plus) },
-      ]);
+    // Group by customer
+    const customerMap = new Map<string, CustomerAging>();
 
-      // Group by customer
-      const customerMap = new Map<string, CustomerAging>();
+    invoicesWithAge.forEach(inv => {
+      const balance = inv.total - (inv.amountPaid || 0);
+      if (!customerMap.has(inv.customerId)) {
+        customerMap.set(inv.customerId, {
+          customerId: inv.customerId,
+          customerName: inv.customerName,
+          current: 0,
+          days30: 0,
+          days60: 0,
+          days90Plus: 0,
+          total: 0,
+        });
+      }
 
-      invoicesWithAge.forEach(inv => {
-        const balance = inv.total - (inv.amountPaid || 0);
-        if (!customerMap.has(inv.customerId)) {
-          customerMap.set(inv.customerId, {
-            customerId: inv.customerId,
-            customerName: inv.customerName,
-            current: 0,
-            days30: 0,
-            days60: 0,
-            days90Plus: 0,
-            total: 0,
-          });
-        }
+      const customer = customerMap.get(inv.customerId)!;
+      customer.total += balance;
 
-        const customer = customerMap.get(inv.customerId)!;
-        customer.total += balance;
+      if (inv.daysOverdue <= 0) {
+        customer.current += balance;
+      } else if (inv.daysOverdue <= 30) {
+        customer.days30 += balance;
+      } else if (inv.daysOverdue <= 60) {
+        customer.days60 += balance;
+      } else {
+        customer.days90Plus += balance;
+      }
+    });
 
-        if (inv.daysOverdue <= 0) {
-          customer.current += balance;
-        } else if (inv.daysOverdue <= 30) {
-          customer.days30 += balance;
-        } else if (inv.daysOverdue <= 60) {
-          customer.days60 += balance;
-        } else {
-          customer.days90Plus += balance;
-        }
-      });
+    const sortedCustomers = Array.from(customerMap.values()).sort((a, b) => b.total - a.total);
 
-      const sortedCustomers = Array.from(customerMap.values()).sort((a, b) => b.total - a.total);
-      setCustomerAging(sortedCustomers);
-      setTotalOutstanding(calcTotal(unpaidInvoices));
-    } catch (error) {
-      console.error('Error loading A/R aging:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.arAging.loadError') || 'Failed to load report',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      buckets: computedBuckets,
+      customerAging: sortedCustomers,
+      totalOutstanding: calcTotal(unpaidInvoices),
+    };
+  }, [allInvoices, t]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

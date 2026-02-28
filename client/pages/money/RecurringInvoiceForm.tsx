@@ -26,14 +26,17 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { recurringInvoiceService } from '@/services/recurringInvoiceService';
-import { customerService } from '@/services/customerService';
-import { invoiceService } from '@/services/invoiceService';
+import { useActiveCustomers } from '@/hooks/useCustomers';
+import { useInvoiceSettings } from '@/hooks/useInvoices';
+import {
+  useRecurringInvoice,
+  useCreateRecurringInvoice,
+  useUpdateRecurringInvoice,
+} from '@/hooks/useRecurringInvoices';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
-import type { RecurringFrequency, Customer, InvoiceSettings } from '@/types/money';
+import type { RecurringFrequency, InvoiceSettings } from '@/types/money';
 import { getTodayTL } from '@/lib/dateUtils';
 import { multiplyMoney, sumMoney, percentOf, addMoney } from '@/lib/currency';
 import {
@@ -57,7 +60,6 @@ export default function RecurringInvoiceForm() {
   const { id } = useParams();
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
 
   const isEditMode = !!id;
 
@@ -71,10 +73,16 @@ export default function RecurringInvoiceForm() {
     label: t(`money.recurringInvoiceForm.dueDays${value}`) || `${value} days`,
   }));
 
-  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [_settings, setSettings] = useState<Partial<InvoiceSettings>>({});
+
+  // React Query hooks for data loading
+  const { data: customers = [], isLoading: customersLoading } = useActiveCustomers();
+  const { data: invoiceSettings, isLoading: settingsLoading } = useInvoiceSettings();
+  const { data: recurringInvoice, isLoading: recurringLoading } = useRecurringInvoice(id);
+  const createMutation = useCreateRecurringInvoice();
+  const updateMutation = useUpdateRecurringInvoice();
+
+  const loading = customersLoading || settingsLoading || (isEditMode && recurringLoading);
 
   // React Hook Form for better performance
   const {
@@ -112,80 +120,49 @@ export default function RecurringInvoiceForm() {
   const formData = watch();
   const endType = watch('endType');
 
+  // Apply invoice settings defaults for new mode
   useEffect(() => {
-    if (tenantId) {
-      loadData();
+    if (!isEditMode && invoiceSettings) {
+      const s = invoiceSettings as Partial<InvoiceSettings>;
+      reset((prev) => ({
+        ...prev,
+        taxRate: s.defaultTaxRate || 0,
+        notes: s.defaultNotes || '',
+        terms: s.defaultTerms || '',
+        dueDays: s.defaultDueDays || 30,
+      }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, id]);
+  }, [isEditMode, invoiceSettings, reset]);
 
-  const loadData = async () => {
-    if (!tenantId) return;
-
-    try {
-      setLoading(true);
-
-      const [customerList, invoiceSettings] = await Promise.all([
-        customerService.getActiveCustomers(tenantId),
-        invoiceService.getSettings(tenantId).catch(() => ({})),
-      ]);
-
-      setCustomers(customerList);
-      setSettings(invoiceSettings);
-
-      // Set defaults from settings
-      if (!isEditMode && invoiceSettings) {
-        const s = invoiceSettings as Partial<InvoiceSettings>;
-        reset((prev) => ({
-          ...prev,
-          taxRate: s.defaultTaxRate || 0,
-          notes: s.defaultNotes || '',
-          terms: s.defaultTerms || '',
-          dueDays: s.defaultDueDays || 30,
-        }));
+  // Populate form when editing an existing recurring invoice
+  useEffect(() => {
+    if (isEditMode && recurringInvoice) {
+      let endTypeValue: 'never' | 'date' | 'occurrences' = 'never';
+      if (recurringInvoice.endDate) {
+        endTypeValue = 'date';
+      } else if (recurringInvoice.endAfterOccurrences) {
+        endTypeValue = 'occurrences';
       }
 
-      // Load existing recurring invoice if editing
-      if (isEditMode && id) {
-        const recurring = await recurringInvoiceService.getById(tenantId, id);
-        if (recurring) {
-          let endTypeValue: 'never' | 'date' | 'occurrences' = 'never';
-          if (recurring.endDate) {
-            endTypeValue = 'date';
-          } else if (recurring.endAfterOccurrences) {
-            endTypeValue = 'occurrences';
-          }
-
-          reset({
-            customerId: recurring.customerId,
-            frequency: recurring.frequency,
-            startDate: recurring.startDate,
-            endType: endTypeValue,
-            endDate: recurring.endDate || '',
-            endAfterOccurrences: recurring.endAfterOccurrences,
-            items: recurring.items.map((item, index) => ({
-              ...item,
-              id: item.id || `item-${index}`,
-            })),
-            taxRate: recurring.taxRate,
-            notes: recurring.notes || '',
-            terms: recurring.terms || '',
-            dueDays: recurring.dueDays,
-            autoSend: recurring.autoSend,
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error loading data:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.recurringInvoiceForm.loadError') || 'Failed to load data',
-        variant: 'destructive',
+      reset({
+        customerId: recurringInvoice.customerId,
+        frequency: recurringInvoice.frequency,
+        startDate: recurringInvoice.startDate,
+        endType: endTypeValue,
+        endDate: recurringInvoice.endDate || '',
+        endAfterOccurrences: recurringInvoice.endAfterOccurrences,
+        items: recurringInvoice.items.map((item, index) => ({
+          ...item,
+          id: item.id || `item-${index}`,
+        })),
+        taxRate: recurringInvoice.taxRate,
+        notes: recurringInvoice.notes || '',
+        terms: recurringInvoice.terms || '',
+        dueDays: recurringInvoice.dueDays,
+        autoSend: recurringInvoice.autoSend,
       });
-    } finally {
-      setLoading(false);
     }
-  };
+  }, [isEditMode, recurringInvoice, reset]);
 
   const addItem = () => {
     append({ id: `item-${Date.now()}`, description: '', quantity: 1, unitPrice: 0, amount: 0 });
@@ -215,8 +192,6 @@ export default function RecurringInvoiceForm() {
   };
 
   const onSubmit = async (formValues: RecurringInvoiceFormSchemaData) => {
-    if (!tenantId) return;
-
     try {
       setSaving(true);
 
@@ -234,27 +209,26 @@ export default function RecurringInvoiceForm() {
         customerId: formValues.customerId,
         frequency: formValues.frequency,
         startDate: formValues.startDate,
-        endDate: formValues.endType === 'date' ? formValues.endDate : undefined,
-        endAfterOccurrences: formValues.endType === 'occurrences' ? formValues.endAfterOccurrences : undefined,
+        endDate: formValues.endType === 'date' ? formValues.endDate : "",
+        endAfterOccurrences: formValues.endType === 'occurrences' ? formValues.endAfterOccurrences : 0,
         items: validItems,
         taxRate: Number(formValues.taxRate),
-        notes: formValues.notes || undefined,
-        terms: formValues.terms || undefined,
+        notes: formValues.notes || "",
+        terms: formValues.terms || "",
         dueDays: Number(formValues.dueDays),
         autoSend: formValues.autoSend,
       };
 
       if (isEditMode && id) {
-        await recurringInvoiceService.update(tenantId, id, data);
+        await updateMutation.mutateAsync({ id, data });
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.updated') || 'Recurring invoice updated' });
       } else {
-        await recurringInvoiceService.create(tenantId, data);
+        await createMutation.mutateAsync(data);
         toast({ title: t('common.success') || 'Success', description: t('money.recurringInvoiceForm.created') || 'Recurring invoice created' });
       }
 
       navigate('/money/invoices/recurring');
     } catch (error) {
-      console.error('Error saving recurring invoice:', error);
       toast({
         title: t('common.error') || 'Error',
         description: error instanceof Error ? error.message : (t('money.recurringInvoiceForm.saveError') || 'Failed to save'),
@@ -265,7 +239,14 @@ export default function RecurringInvoiceForm() {
     }
   };
 
-  const handleSave = handleSubmit(onSubmit);
+  const handleSave = handleSubmit(onSubmit, (validationErrors) => {
+    const firstError = Object.values(validationErrors)[0];
+    toast({
+      title: t('common.error') || 'Validation Error',
+      description: firstError?.message || 'Please fill in all required fields.',
+      variant: 'destructive',
+    });
+  });
 
   if (loading) {
     return (

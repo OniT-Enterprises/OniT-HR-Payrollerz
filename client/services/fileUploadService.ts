@@ -71,17 +71,10 @@ class FileUploadService {
   }
 
   /**
-   * Generate a temporary employee ID for file uploads before employee creation
-   */
-  generateTempEmployeeId(): string {
-    return `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
-
-  /**
    * Upload expense receipt
    * @param file - The receipt file (image or PDF)
    * @param tenantId - Tenant ID for storage isolation
-   * @param expenseId - Expense ID (use 'temp' prefix for new expenses)
+   * @param expenseId - Expense ID (pre-generated Firestore doc ID for new expenses)
    * @returns Promise with download URL
    */
   async uploadExpenseReceipt(file: File, tenantId: string, expenseId: string): Promise<string> {
@@ -111,12 +104,6 @@ class FileUploadService {
     return { valid: true };
   }
 
-  /**
-   * Generate a temporary expense ID for file uploads before expense creation
-   */
-  generateTempExpenseId(): string {
-    return `temp_expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-  }
 }
 
 export const fileUploadService = FileUploadService.getInstance();

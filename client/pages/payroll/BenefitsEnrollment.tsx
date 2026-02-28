@@ -4,7 +4,7 @@
  * Common in TL businesses instead of US-style benefits
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -75,9 +75,9 @@ import {
   Fuel,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { employeeService, Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
-import { payrollService } from "@/services/payrollService";
+import { useBenefitEnrollments, useCreateBenefitEnrollment, useUpdateBenefitEnrollment, useTerminateBenefitEnrollment } from "@/hooks/usePayroll";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import type { Employee } from "@/services/employeeService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
@@ -125,8 +125,19 @@ const SUGGESTED_AMOUNTS: Record<string, { low: number; typical: number; high: nu
 
 export default function EmployeeAllowances() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { t } = useI18n();
+
+  // React Query data hooks
+  const { data: allowances = [], isLoading: loadingAllowances } = useBenefitEnrollments();
+  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
+  const employees = useMemo(() => allEmployees.filter((e: Employee) => e.status === "active"), [allEmployees]);
+  const loading = loadingAllowances || loadingEmployees;
+
+  // React Query mutation hooks
+  const createMutation = useCreateBenefitEnrollment();
+  const updateMutation = useUpdateBenefitEnrollment();
+  const terminateMutation = useTerminateBenefitEnrollment();
+  const saving = createMutation.isPending || updateMutation.isPending || terminateMutation.isPending;
 
   // Build allowance types with translated labels
   const ALLOWANCE_TYPES = ALLOWANCE_TYPE_VALUES.map((value) => ({
@@ -135,13 +146,9 @@ export default function EmployeeAllowances() {
     icon: ALLOWANCE_ICONS[value],
     description: t(`allowances.types.${value}Desc`),
   }));
-  const [loading, setLoading] = useState(true);
-  const [allowances, setAllowances] = useState<BenefitEnrollment[]>([]);
-  const [employees, setEmployees] = useState<Employee[]>([]);
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [editingAllowance, setEditingAllowance] = useState<BenefitEnrollment | null>(null);
   const [deletingAllowance, setDeletingAllowance] = useState<BenefitEnrollment | null>(null);
-  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterType, setFilterType] = useState("all");
 
@@ -153,34 +160,6 @@ export default function EmployeeAllowances() {
     getTodayTL()
   );
   const [_notes, setNotes] = useState("");
-
-  // Load data
-  useEffect(() => {
-    const loadData = async () => {
-      if (!tenantId) return;
-      try {
-        setLoading(true);
-        const [enrollmentData, employeeData] = await Promise.all([
-          payrollService.benefits.getAllEnrollments(tenantId),
-          employeeService.getAllEmployees(tenantId),
-        ]);
-        setAllowances(enrollmentData);
-        setEmployees(employeeData.filter((e) => e.status === "active"));
-      } catch (error) {
-        console.error("Failed to load data:", error);
-        toast({
-          title: t("common.error"),
-          description: t("allowances.loadError"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, tenantId]);
 
   // Calculate stats
   const stats = useMemo(() => {
@@ -268,46 +247,38 @@ export default function EmployeeAllowances() {
       return;
     }
 
-    setSaving(true);
-    try {
-      const config = getAllowanceConfig(allowanceType);
+    const config = getAllowanceConfig(allowanceType);
 
-      const enrollment: Omit<BenefitEnrollment, "id"> = {
-        employeeId: selectedEmployee,
-        benefitType: allowanceType as BenefitEnrollment["benefitType"],
-        planName: config.label,
-        planId: `allowance-${allowanceType}`,
-        coverageLevel: "employee_only",
-        employeeContribution: 0, // Allowances are employer-paid
-        employerContribution: amount,
-        isPreTax: false,
-        effectiveDate,
-        status: "active",
-      };
+    const enrollment: Omit<BenefitEnrollment, "id" | "tenantId"> = {
+      employeeId: selectedEmployee,
+      benefitType: allowanceType as BenefitEnrollment["benefitType"],
+      planName: config.label,
+      planId: `allowance-${allowanceType}`,
+      coverageLevel: "employee_only",
+      employeeContribution: 0, // Allowances are employer-paid
+      employerContribution: amount,
+      isPreTax: false,
+      effectiveDate,
+      status: "active",
+    };
 
-      await payrollService.benefits.createEnrollment(tenantId, enrollment);
-
-      toast({
-        title: t("allowances.allowanceAdded"),
-        description: t("allowances.allowanceAddedDesc", { type: config.label, amount: formatCurrency(amount) }),
-      });
-
-      // Reload allowances
-      const data = await payrollService.benefits.getAllEnrollments(tenantId);
-      setAllowances(data);
-
-      setShowAddDialog(false);
-      resetForm();
-    } catch (error) {
-      console.error("Failed to create allowance:", error);
-      toast({
-        title: t("common.error"),
-        description: t("allowances.addError"),
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    createMutation.mutate(enrollment, {
+      onSuccess: () => {
+        toast({
+          title: t("allowances.allowanceAdded"),
+          description: t("allowances.allowanceAddedDesc", { type: config.label, amount: formatCurrency(amount) }),
+        });
+        setShowAddDialog(false);
+        resetForm();
+      },
+      onError: () => {
+        toast({
+          title: t("common.error"),
+          description: t("allowances.addError"),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   // Reset form
@@ -333,67 +304,65 @@ export default function EmployeeAllowances() {
   const handleUpdateAllowance = async () => {
     if (!editingAllowance || !allowanceType || amount <= 0) return;
 
-    setSaving(true);
-    try {
-      const config = getAllowanceConfig(allowanceType);
-      await payrollService.benefits.updateEnrollment(editingAllowance.id!, {
-        benefitType: allowanceType as BenefitEnrollment["benefitType"],
-        planName: config.label,
-        employerContribution: amount,
-        effectiveDate,
-      });
+    const config = getAllowanceConfig(allowanceType);
 
-      toast({
-        title: t("allowances.allowanceUpdated") || "Allowance Updated",
-        description: t("allowances.allowanceUpdatedDesc", { type: config.label, amount: formatCurrency(amount) }) || `${config.label} updated to ${formatCurrency(amount)}/month`,
-      });
-
-      const data = await payrollService.benefits.getAllEnrollments(tenantId);
-      setAllowances(data);
-      setShowAddDialog(false);
-      setEditingAllowance(null);
-      resetForm();
-    } catch (error) {
-      console.error("Failed to update allowance:", error);
-      toast({
-        title: t("common.error"),
-        description: t("allowances.updateError") || "Failed to update allowance",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    updateMutation.mutate(
+      {
+        id: editingAllowance.id!,
+        updates: {
+          benefitType: allowanceType as BenefitEnrollment["benefitType"],
+          planName: config.label,
+          employerContribution: amount,
+          effectiveDate,
+        },
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("allowances.allowanceUpdated") || "Allowance Updated",
+            description: t("allowances.allowanceUpdatedDesc", { type: config.label, amount: formatCurrency(amount) }) || `${config.label} updated to ${formatCurrency(amount)}/month`,
+          });
+          setShowAddDialog(false);
+          setEditingAllowance(null);
+          resetForm();
+        },
+        onError: () => {
+          toast({
+            title: t("common.error"),
+            description: t("allowances.updateError") || "Failed to update allowance",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   // Handle delete allowance
   const handleDeleteAllowance = async () => {
     if (!deletingAllowance) return;
 
-    setSaving(true);
-    try {
-      await payrollService.benefits.terminateEnrollment(
-        deletingAllowance.id!,
-        getTodayTL()
-      );
-
-      toast({
-        title: t("allowances.allowanceRemoved") || "Allowance Removed",
-        description: t("allowances.allowanceRemovedDesc") || "The allowance has been terminated",
-      });
-
-      const data = await payrollService.benefits.getAllEnrollments(tenantId);
-      setAllowances(data);
-      setDeletingAllowance(null);
-    } catch (error) {
-      console.error("Failed to remove allowance:", error);
-      toast({
-        title: t("common.error"),
-        description: t("allowances.removeError") || "Failed to remove allowance",
-        variant: "destructive",
-      });
-    } finally {
-      setSaving(false);
-    }
+    terminateMutation.mutate(
+      {
+        id: deletingAllowance.id!,
+        terminationDate: getTodayTL(),
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("allowances.allowanceRemoved") || "Allowance Removed",
+            description: t("allowances.allowanceRemovedDesc") || "The allowance has been terminated",
+          });
+          setDeletingAllowance(null);
+        },
+        onError: () => {
+          toast({
+            title: t("common.error"),
+            description: t("allowances.removeError") || "Failed to remove allowance",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
   // Set suggested amount

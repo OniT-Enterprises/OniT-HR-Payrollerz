@@ -3,7 +3,8 @@
  * Shows cash inflows and outflows over a period
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +17,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { invoiceService } from '@/services/invoiceService';
-import { billService } from '@/services/billService';
+import { useAllInvoices } from '@/hooks/useInvoices';
+import { useAllBills } from '@/hooks/useBills';
 import { expenseService } from '@/services/expenseService';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
@@ -48,28 +48,9 @@ interface CashflowData {
 }
 
 export default function Cashflow() {
-  const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState<string>('this_month');
-  const [data, setData] = useState<CashflowData>({
-    customerPayments: 0,
-    totalInflows: 0,
-    vendorPayments: 0,
-    expenses: 0,
-    totalOutflows: 0,
-    netCashflow: 0,
-    openingBalance: 0,
-    closingBalance: 0,
-  });
-
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period, tenantId]);
 
   const getDateRange = (periodValue: string): { start: Date; end: Date } => {
     const now = new Date();
@@ -103,66 +84,59 @@ export default function Cashflow() {
     return { start, end };
   };
 
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
-      const { start, end } = getDateRange(period);
-      const startStr = toDateStringTL(start);
-      const endStr = toDateStringTL(end);
+  const { start, end } = getDateRange(period);
+  const startStr = toDateStringTL(start);
+  const endStr = toDateStringTL(end);
 
-      const [invoices, bills, expenses] = await Promise.all([
-        invoiceService.getAllInvoices(tenantId),
-        billService.getAllBills(tenantId),
-        expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
-      ]);
+  const { data: allInvoices = [], isLoading: invoicesLoading } = useAllInvoices();
+  const { data: allBills = [], isLoading: billsLoading } = useAllBills();
+  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
+    queryKey: ['expenses', tenantId, 'dateRange', startStr, endStr],
+    queryFn: () => expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
 
-      // Calculate customer payments (cash inflows from paid invoices in period)
-      const customerPayments = invoices
-        .filter(inv => {
-          if (inv.status !== 'paid' || !inv.paidAt) return false;
-          const paidDate = new Date(inv.paidAt);
-          return paidDate >= start && paidDate <= end;
-        })
-        .reduce((sum, inv) => sum + inv.total, 0);
+  const loading = invoicesLoading || billsLoading || expensesLoading;
 
-      // Calculate vendor payments (cash outflows from paid bills in period)
-      const vendorPayments = bills
-        .filter(bill => bill.status === 'paid')
-        .reduce((sum, bill) => sum + bill.amount, 0);
+  const data = useMemo<CashflowData>(() => {
+    // Calculate customer payments (cash inflows from paid invoices in period)
+    const customerPayments = allInvoices
+      .filter(inv => {
+        if (inv.status !== 'paid' || !inv.paidAt) return false;
+        const paidDate = new Date(inv.paidAt);
+        return paidDate >= start && paidDate <= end;
+      })
+      .reduce((sum, inv) => sum + inv.total, 0);
 
-      // Calculate expenses in period
-      const expenseTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
+    // Calculate vendor payments (cash outflows from paid bills in period)
+    const vendorPayments = allBills
+      .filter(bill => bill.status === 'paid')
+      .reduce((sum, bill) => sum + bill.amount, 0);
 
-      const totalInflows = customerPayments;
-      const totalOutflows = vendorPayments + expenseTotal;
-      const netCashflow = totalInflows - totalOutflows;
+    // Calculate expenses in period
+    const expenseTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
 
-      // For simplicity, opening balance is 0 (would need historical data)
-      const openingBalance = 0;
-      const closingBalance = openingBalance + netCashflow;
+    const totalInflows = customerPayments;
+    const totalOutflows = vendorPayments + expenseTotal;
+    const netCashflow = totalInflows - totalOutflows;
 
-      setData({
-        customerPayments,
-        totalInflows,
-        vendorPayments,
-        expenses: expenseTotal,
-        totalOutflows,
-        netCashflow,
-        openingBalance,
-        closingBalance,
-      });
-    } catch (error) {
-      console.error('Error loading cashflow:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.cashflow.loadError') || 'Failed to load report',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // For simplicity, opening balance is 0 (would need historical data)
+    const openingBalance = 0;
+    const closingBalance = openingBalance + netCashflow;
+
+    return {
+      customerPayments,
+      totalInflows,
+      vendorPayments,
+      expenses: expenseTotal,
+      totalOutflows,
+      netCashflow,
+      openingBalance,
+      closingBalance,
+    };
+  }, [allInvoices, allBills, expenses, start, end]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

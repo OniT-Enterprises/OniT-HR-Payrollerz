@@ -4,7 +4,7 @@
  * Handles superadmin claims sync and admin-only operations
  */
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.reactivateTenantFunction = exports.suspendTenantFunction = exports.getAllUsers = exports.setSuperadmin = exports.syncSuperadminClaims = void 0;
+exports.bootstrapFirstAdmin = exports.reactivateTenantFunction = exports.suspendTenantFunction = exports.getAllUsers = exports.setSuperadmin = exports.syncSuperadminClaims = void 0;
 const firestore_1 = require("firebase-functions/v2/firestore");
 const https_1 = require("firebase-functions/v2/https");
 const firestore_2 = require("firebase-admin/firestore");
@@ -294,6 +294,131 @@ exports.reactivateTenantFunction = (0, https_1.onCall)(async (request) => {
             throw error;
         }
         throw new https_1.HttpsError("internal", `Failed to reactivate tenant: ${error.message}`);
+    }
+});
+/**
+ * Bootstrap the first superadmin account
+ * Can only be called once — checks _bootstrap/initialized
+ * Uses Admin SDK to bypass Firestore rules
+ */
+exports.bootstrapFirstAdmin = (0, https_1.onCall)(async (request) => {
+    if (!request.auth) {
+        throw new https_1.HttpsError("unauthenticated", "Authentication required");
+    }
+    const callerUid = request.auth.uid;
+    const callerEmail = request.auth.token.email;
+    const { companyName, companySlug } = request.data;
+    if (!companyName || !companySlug) {
+        throw new https_1.HttpsError("invalid-argument", "Company name and slug are required");
+    }
+    // Validate slug format
+    if (!/^[a-z0-9-]+$/.test(companySlug) || companySlug.length > 50) {
+        throw new https_1.HttpsError("invalid-argument", "Invalid company slug format");
+    }
+    const db = (0, firestore_2.getFirestore)();
+    const auth = (0, auth_1.getAuth)();
+    // Check if bootstrap has already occurred
+    const bootstrapDoc = await db.doc("_bootstrap/initialized").get();
+    if (bootstrapDoc.exists) {
+        throw new https_1.HttpsError("already-exists", "System has already been bootstrapped");
+    }
+    try {
+        // Use a transaction to ensure atomicity
+        await db.runTransaction(async (transaction) => {
+            var _a, _b;
+            // Double-check inside transaction
+            const bootstrapRef = db.doc("_bootstrap/initialized");
+            const bootstrapSnap = await transaction.get(bootstrapRef);
+            if (bootstrapSnap.exists) {
+                throw new https_1.HttpsError("already-exists", "System has already been bootstrapped");
+            }
+            const userRef = db.doc(`users/${callerUid}`);
+            const tenantRef = db.doc(`tenants/${companySlug}`);
+            const memberRef = db.doc(`tenants/${companySlug}/members/${callerUid}`);
+            // 1. Create/update user profile as superadmin
+            const userSnap = await transaction.get(userRef);
+            if (userSnap.exists) {
+                transaction.update(userRef, {
+                    isSuperAdmin: true,
+                    tenantIds: [...(((_a = userSnap.data()) === null || _a === void 0 ? void 0 : _a.tenantIds) || []), companySlug].filter((v, i, a) => a.indexOf(v) === i),
+                    tenantAccess: Object.assign(Object.assign({}, (((_b = userSnap.data()) === null || _b === void 0 ? void 0 : _b.tenantAccess) || {})), { [companySlug]: { name: companyName, role: "owner" } }),
+                    updatedAt: firestore_2.FieldValue.serverTimestamp(),
+                });
+            }
+            else {
+                transaction.set(userRef, {
+                    uid: callerUid,
+                    email: callerEmail,
+                    displayName: (callerEmail === null || callerEmail === void 0 ? void 0 : callerEmail.split("@")[0]) || "Admin",
+                    isSuperAdmin: true,
+                    tenantIds: [companySlug],
+                    tenantAccess: {
+                        [companySlug]: { name: companyName, role: "owner" },
+                    },
+                    createdAt: firestore_2.FieldValue.serverTimestamp(),
+                    updatedAt: firestore_2.FieldValue.serverTimestamp(),
+                });
+            }
+            // 2. Create tenant
+            transaction.set(tenantRef, {
+                id: companySlug,
+                name: companyName,
+                slug: companySlug,
+                status: "active",
+                plan: "professional",
+                limits: { employees: 100, members: 20, storage: 10 },
+                createdBy: callerUid,
+                createdAt: firestore_2.FieldValue.serverTimestamp(),
+                updatedAt: firestore_2.FieldValue.serverTimestamp(),
+                billingEmail: callerEmail,
+                features: {
+                    hiring: true,
+                    timeleave: true,
+                    performance: true,
+                    payroll: true,
+                    money: true,
+                    accounting: true,
+                    reports: true,
+                },
+                settings: {
+                    timezone: "Asia/Dili",
+                    currency: "USD",
+                    dateFormat: "DD/MM/YYYY",
+                },
+            });
+            // 3. Create owner membership
+            transaction.set(memberRef, {
+                uid: callerUid,
+                email: callerEmail,
+                displayName: (callerEmail === null || callerEmail === void 0 ? void 0 : callerEmail.split("@")[0]) || "Admin",
+                role: "owner",
+                modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+                joinedAt: firestore_2.FieldValue.serverTimestamp(),
+                lastActiveAt: firestore_2.FieldValue.serverTimestamp(),
+                permissions: { admin: true, write: true, read: true },
+            });
+            // 4. Mark bootstrap as complete
+            transaction.set(bootstrapRef, {
+                initializedAt: firestore_2.FieldValue.serverTimestamp(),
+                initializedBy: callerUid,
+                initializedEmail: callerEmail,
+            });
+        });
+        // Set custom claims (outside transaction — Auth API is not transactional)
+        const existingUser = await auth.getUser(callerUid);
+        const existingClaims = existingUser.customClaims || {};
+        await auth.setCustomUserClaims(callerUid, Object.assign(Object.assign({}, existingClaims), { superadmin: true, tenants: Object.assign(Object.assign({}, (existingClaims.tenants || {})), { [companySlug]: "owner" }) }));
+        firebase_functions_1.logger.info(`Bootstrap complete: ${callerEmail} is now superadmin of ${companyName}`);
+        return {
+            success: true,
+            message: `Bootstrap complete. You are now superadmin of ${companyName}.`,
+        };
+    }
+    catch (error) {
+        firebase_functions_1.logger.error("Bootstrap failed:", error);
+        if (error instanceof https_1.HttpsError)
+            throw error;
+        throw new https_1.HttpsError("internal", `Bootstrap failed: ${error.message}`);
     }
 });
 //# sourceMappingURL=admin.js.map

@@ -22,6 +22,8 @@ import { TenantConfig, TenantStatus, TenantPlan, PLAN_LIMITS } from '@/types/ten
 import { UserProfile, AdminAuditEntry, AuditLogEntry } from '@/types/user';
 
 export type { AuditLogEntry };
+export type { TenantConfig };
+export type { UserProfile, AdminAuditEntry };
 
 // Generate a URL-safe tenant ID from name
 function generateTenantSlug(name: string): string {
@@ -109,6 +111,8 @@ class AdminService {
           timeleave: true,
           performance: true,
           payroll: plan !== 'free',
+          money: true,
+          accounting: true,
           reports: true,
         },
         settings: {
@@ -126,7 +130,7 @@ class AdminService {
         uid: ownerUid,
         email: ownerEmail,
         role: 'owner',
-        modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'],
+        modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
         joinedAt: serverTimestamp(),
         lastActiveAt: serverTimestamp(),
       });

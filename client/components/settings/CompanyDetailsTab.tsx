@@ -67,14 +67,14 @@ export function CompanyDetailsTab({
       try {
         const companyDetails: CompanyDetails = {
           legalName: data.legalName,
-          tradingName: data.tradingName || undefined,
+          tradingName: data.tradingName || "",
           businessType: data.businessType,
           tinNumber: data.tinNumber || '',
           registeredAddress: data.registeredAddress || '',
           city: data.city,
           country: data.country,
-          phone: data.phone || undefined,
-          email: data.email || undefined,
+          phone: data.phone || "",
+          email: data.email || "",
         };
         await settingsService.updateCompanyDetails(tenantId, companyDetails);
         toast({
@@ -102,7 +102,13 @@ export function CompanyDetailsTab({
         <CardDescription>{t('settings.company.description')}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
-        <form onSubmit={form.handleSubmit(onSave)}>
+        <form onSubmit={form.handleSubmit(onSave, () => {
+          toast({
+            title: t('settings.notifications.errorTitle') || 'Validation Error',
+            description: 'Please fill in all required fields.',
+            variant: 'destructive',
+          });
+        })}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="legalName">{t('settings.company.legalName')}</Label>

@@ -284,8 +284,8 @@ export default function CustomReports() {
       dataSource,
       columns: selectedColumns,
       filters: {
-        department: filterDepartment || undefined,
-        status: filterStatus || undefined,
+        department: filterDepartment || "",
+        status: filterStatus || "",
         dateRange: filterDateRange,
       },
       createdAt: new Date(),

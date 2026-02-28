@@ -269,7 +269,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         return {
           tid,
           role: 'owner' as TenantRole,
-          modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'reports'] as ModulePermission[],
+          modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'] as ModulePermission[],
           config,
           member: {
             uid: firebaseUser.uid,

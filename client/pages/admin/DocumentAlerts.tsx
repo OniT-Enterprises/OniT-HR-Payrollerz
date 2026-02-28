@@ -3,7 +3,7 @@
  * Full view of all document expiry alerts with filtering and actions
  */
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -46,8 +46,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { employeeService, type Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import {
   extractAlerts,
   SEVERITY_CONFIG,
@@ -57,31 +56,10 @@ import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<Employee[]>([]);
+  const { data: employees = [], isLoading: loading } = useAllEmployees();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [documentFilter, setDocumentFilter] = useState<string>("all");
-
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const result = await employeeService.getAllEmployees(tenantId);
-        setEmployees(result);
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-        toast({
-          title: "Error",
-          description: "Failed to load employee data.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadEmployees();
-  }, [tenantId, toast]);
 
   const allAlerts = useMemo(() => extractAlerts(employees), [employees]);
 

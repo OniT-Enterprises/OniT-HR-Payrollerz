@@ -7,6 +7,7 @@
 import React, { lazy, useMemo } from "react";
 import { Route, Navigate } from "react-router-dom";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
+import { FeatureRoute } from "@/components/auth/FeatureRoute";
 
 const splashMessages: [string, string][] = [
   // Tetun — conversational, people know these
@@ -151,6 +152,8 @@ const SetupReports = lazy(() => import("@/pages/reports/SetupReports"));
 const ATTLMonthlyWIT = lazy(() => import("@/pages/reports/ATTLMonthlyWIT"));
 const INSSMonthly = lazy(() => import("@/pages/reports/INSSMonthly"));
 const INSSAnnual = lazy(() => import("@/pages/reports/INSSAnnual"));
+const PayrollAllocationReport = lazy(() => import("@/pages/reports/PayrollAllocationReport"));
+const DonorExportPack = lazy(() => import("@/pages/reports/DonorExportPack"));
 
 // Settings
 const SetupWizard = lazy(() => import("@/pages/settings/SetupWizard"));
@@ -193,34 +196,174 @@ export const authRoutes = (
 export const peopleRoutes = (
   <>
     {/* People Hub Dashboard */}
-    <Route path="/people" element={<PeopleDashboard />} />
+    <Route
+      path="/people"
+      element={
+        <FeatureRoute requiredAnyModules={["staff", "hiring", "timeleave", "performance"]}>
+          <PeopleDashboard />
+        </FeatureRoute>
+      }
+    />
 
     {/* Staff */}
-    <Route path="/people/employees" element={<AllEmployees />} />
-    <Route path="/people/add" element={<AddEmployee />} />
-    <Route path="/people/departments" element={<Departments />} />
-    <Route path="/people/org-chart" element={<OrganizationChart />} />
-    <Route path="/people/announcements" element={<Announcements />} />
-    <Route path="/people/grievances" element={<GrievanceInbox />} />
+    <Route
+      path="/people/employees"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <AllEmployees />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/add"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <AddEmployee />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/departments"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <Departments />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/org-chart"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <OrganizationChart />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/announcements"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <Announcements />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/grievances"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <GrievanceInbox />
+        </FeatureRoute>
+      }
+    />
 
     {/* Hiring */}
-    <Route path="/people/jobs" element={<CreateJobLocal />} />
-    <Route path="/people/candidates" element={<CandidateSelection />} />
-    <Route path="/people/interviews" element={<Interviews />} />
-    <Route path="/people/onboarding" element={<Onboarding />} />
-    <Route path="/people/offboarding" element={<Offboarding />} />
+    <Route
+      path="/people/jobs"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <CreateJobLocal />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/candidates"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <CandidateSelection />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/interviews"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <Interviews />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/onboarding"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <Onboarding />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/offboarding"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <Offboarding />
+        </FeatureRoute>
+      }
+    />
 
     {/* Time & Leave */}
-    <Route path="/people/time-tracking" element={<TimeTracking />} />
-    <Route path="/people/attendance" element={<Attendance />} />
-    <Route path="/people/leave" element={<LeaveRequests />} />
-    <Route path="/people/schedules" element={<ShiftScheduling />} />
+    <Route
+      path="/people/time-tracking"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <TimeTracking />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/attendance"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <Attendance />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/leave"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <LeaveRequests />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/schedules"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <ShiftScheduling />
+        </FeatureRoute>
+      }
+    />
 
     {/* Performance */}
-    <Route path="/people/goals" element={<Goals />} />
-    <Route path="/people/reviews" element={<Reviews />} />
-    <Route path="/people/training" element={<TrainingCertifications />} />
-    <Route path="/people/disciplinary" element={<Disciplinary />} />
+    <Route
+      path="/people/goals"
+      element={
+        <FeatureRoute requiredModule="performance">
+          <Goals />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/reviews"
+      element={
+        <FeatureRoute requiredModule="performance">
+          <Reviews />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/training"
+      element={
+        <FeatureRoute requiredModule="performance">
+          <TrainingCertifications />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/disciplinary"
+      element={
+        <FeatureRoute requiredModule="performance">
+          <Disciplinary />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -229,13 +372,62 @@ export const peopleRoutes = (
  */
 export const payrollRoutes = (
   <>
-    <Route path="/payroll" element={<PayrollDashboard />} />
-    <Route path="/payroll/run" element={<RunPayroll />} />
-    <Route path="/payroll/history" element={<PayrollHistory />} />
-    <Route path="/payroll/transfers" element={<BankTransfers />} />
-    <Route path="/payroll/taxes" element={<TaxReports />} />
-    <Route path="/payroll/benefits" element={<BenefitsEnrollment />} />
-    <Route path="/payroll/deductions" element={<DeductionsAdvances />} />
+    <Route
+      path="/payroll"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <PayrollDashboard />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/run"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <RunPayroll />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/history"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <PayrollHistory />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/transfers"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <BankTransfers />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/taxes"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <TaxReports />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/benefits"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <BenefitsEnrollment />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/deductions"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <DeductionsAdvances />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -244,32 +436,214 @@ export const payrollRoutes = (
  */
 export const moneyRoutes = (
   <>
-    <Route path="/money" element={<MoneyDashboard />} />
-    <Route path="/money/customers" element={<Customers />} />
-    <Route path="/money/invoices" element={<Invoices />} />
-    <Route path="/money/invoices/new" element={<InvoiceForm />} />
-    <Route path="/money/invoices/:id" element={<InvoiceForm />} />
-    <Route path="/money/invoices/:id/edit" element={<InvoiceForm />} />
-    <Route path="/money/invoices/settings" element={<InvoiceSettings />} />
-    <Route path="/money/invoices/recurring" element={<RecurringInvoices />} />
-    <Route path="/money/invoices/recurring/new" element={<RecurringInvoiceForm />} />
-    <Route path="/money/invoices/recurring/:id" element={<RecurringInvoiceForm />} />
-    <Route path="/money/invoices/recurring/:id/edit" element={<RecurringInvoiceForm />} />
-    <Route path="/money/payments" element={<Payments />} />
-    <Route path="/money/vendors" element={<Vendors />} />
-    <Route path="/money/expenses" element={<Expenses />} />
-    <Route path="/money/bills" element={<Bills />} />
-    <Route path="/money/bills/new" element={<BillForm />} />
-    <Route path="/money/bills/:id" element={<BillForm />} />
-    <Route path="/money/bills/:id/edit" element={<BillForm />} />
-    <Route path="/money/profit-loss" element={<ProfitLoss />} />
-    <Route path="/money/balance-sheet" element={<BalanceSheet />} />
-    <Route path="/money/cashflow" element={<Cashflow />} />
-    <Route path="/money/ar-aging" element={<ARAgingReport />} />
-    <Route path="/money/ap-aging" element={<APAgingReport />} />
-    <Route path="/money/bank-reconciliation" element={<BankReconciliation />} />
-    <Route path="/money/vat-settings" element={<VATSettings />} />
-    <Route path="/money/vat-returns" element={<VATReturns />} />
+    <Route
+      path="/money"
+      element={
+        <FeatureRoute requiredModule="money">
+          <MoneyDashboard />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/customers"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Customers />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Invoices />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/new"
+      element={
+        <FeatureRoute requiredModule="money">
+          <InvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/:id"
+      element={
+        <FeatureRoute requiredModule="money">
+          <InvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/:id/edit"
+      element={
+        <FeatureRoute requiredModule="money">
+          <InvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/settings"
+      element={
+        <FeatureRoute requiredModule="money">
+          <InvoiceSettings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/recurring"
+      element={
+        <FeatureRoute requiredModule="money">
+          <RecurringInvoices />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/recurring/new"
+      element={
+        <FeatureRoute requiredModule="money">
+          <RecurringInvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/recurring/:id"
+      element={
+        <FeatureRoute requiredModule="money">
+          <RecurringInvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/invoices/recurring/:id/edit"
+      element={
+        <FeatureRoute requiredModule="money">
+          <RecurringInvoiceForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/payments"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Payments />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/vendors"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Vendors />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/expenses"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Expenses />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/bills"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Bills />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/bills/new"
+      element={
+        <FeatureRoute requiredModule="money">
+          <BillForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/bills/:id"
+      element={
+        <FeatureRoute requiredModule="money">
+          <BillForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/bills/:id/edit"
+      element={
+        <FeatureRoute requiredModule="money">
+          <BillForm />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/profit-loss"
+      element={
+        <FeatureRoute requiredModule="money">
+          <ProfitLoss />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/balance-sheet"
+      element={
+        <FeatureRoute requiredModule="money">
+          <BalanceSheet />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/cashflow"
+      element={
+        <FeatureRoute requiredModule="money">
+          <Cashflow />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/ar-aging"
+      element={
+        <FeatureRoute requiredModule="money">
+          <ARAgingReport />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/ap-aging"
+      element={
+        <FeatureRoute requiredModule="money">
+          <APAgingReport />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/bank-reconciliation"
+      element={
+        <FeatureRoute requiredModule="money">
+          <BankReconciliation />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/vat-settings"
+      element={
+        <FeatureRoute requiredModule="money">
+          <VATSettings />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/money/vat-returns"
+      element={
+        <FeatureRoute requiredModule="money">
+          <VATReturns />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -278,13 +652,55 @@ export const moneyRoutes = (
  */
 export const accountingRoutes = (
   <>
-    <Route path="/accounting" element={<AccountingDashboard />} />
-    <Route path="/accounting/chart-of-accounts" element={<ChartOfAccounts />} />
-    <Route path="/accounting/journal-entries" element={<JournalEntries />} />
-    <Route path="/accounting/general-ledger" element={<GeneralLedger />} />
-    <Route path="/accounting/trial-balance" element={<TrialBalance />} />
+    <Route
+      path="/accounting"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <AccountingDashboard />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/chart-of-accounts"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <ChartOfAccounts />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/journal-entries"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <JournalEntries />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/general-ledger"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <GeneralLedger />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/trial-balance"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <TrialBalance />
+        </FeatureRoute>
+      }
+    />
     {/* Reuses PayrollReports until a dedicated accounting reports page is built */}
-    <Route path="/accounting/reports" element={<PayrollReports />} />
+    <Route
+      path="/accounting/reports"
+      element={
+        <FeatureRoute requiredAllModules={["accounting", "reports"]}>
+          <PayrollReports />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -293,20 +709,115 @@ export const accountingRoutes = (
  */
 export const reportsRoutes = (
   <>
-    <Route path="/reports" element={<ReportsDashboard />} />
-    <Route path="/reports/payroll" element={<PayrollReports />} />
-    <Route path="/reports/employees" element={<EmployeeReports />} />
+    <Route
+      path="/reports"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <ReportsDashboard />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/payroll"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <PayrollReports />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/employees"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <EmployeeReports />
+        </FeatureRoute>
+      }
+    />
     <Route path="/reports/employee" element={<Navigate to="/reports/employees" replace />} />
-    <Route path="/reports/attendance" element={<AttendanceReports />} />
-    <Route path="/reports/custom" element={<CustomReports />} />
-    <Route path="/reports/departments" element={<DepartmentReports />} />
+    <Route
+      path="/reports/attendance"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <AttendanceReports />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/custom"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <CustomReports />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/departments"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <DepartmentReports />
+        </FeatureRoute>
+      }
+    />
     <Route path="/reports/department" element={<Navigate to="/reports/departments" replace />} />
-    <Route path="/reports/setup" element={<SetupReports />} />
+    <Route
+      path="/reports/setup"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <SetupReports />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/payroll-allocation"
+      element={
+        <FeatureRoute
+          requiredModule="reports"
+          requireNgoReporting
+          fallbackPath="/reports"
+        >
+          <PayrollAllocationReport />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/donor-export"
+      element={
+        <FeatureRoute
+          requiredModule="reports"
+          requireManage
+          requireNgoReporting
+          fallbackPath="/reports"
+        >
+          <DonorExportPack />
+        </FeatureRoute>
+      }
+    />
 
     {/* Tax Filings (ATTL) */}
-    <Route path="/reports/attl-monthly-wit" element={<ATTLMonthlyWIT />} />
-    <Route path="/reports/inss-monthly" element={<INSSMonthly />} />
-    <Route path="/reports/inss-annual" element={<INSSAnnual />} />
+    <Route
+      path="/reports/attl-monthly-wit"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <ATTLMonthlyWIT />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/inss-monthly"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <INSSMonthly />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/reports/inss-annual"
+      element={
+        <FeatureRoute requiredModule="reports">
+          <INSSAnnual />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 

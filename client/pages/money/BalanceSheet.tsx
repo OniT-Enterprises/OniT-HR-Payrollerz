@@ -3,7 +3,7 @@
  * Shows assets, liabilities, and equity at a point in time
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -16,12 +16,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { invoiceService } from '@/services/invoiceService';
-import { billService } from '@/services/billService';
+import { useAllInvoices } from '@/hooks/useInvoices';
+import { useAllBills } from '@/hooks/useBills';
 import { formatDateTL } from '@/lib/dateUtils';
 import {
   Scale,
@@ -45,27 +43,12 @@ interface BalanceSheetData {
 }
 
 export default function BalanceSheet() {
-  const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
-  const [loading, setLoading] = useState(true);
   const [asOfDate, setAsOfDate] = useState<string>('today');
-  const [data, setData] = useState<BalanceSheetData>({
-    cashAndBank: 0,
-    accountsReceivable: 0,
-    totalAssets: 0,
-    accountsPayable: 0,
-    totalLiabilities: 0,
-    retainedEarnings: 0,
-    totalEquity: 0,
-  });
 
-  useEffect(() => {
-    if (tenantId) {
-      loadData();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [asOfDate, tenantId]);
+  const { data: allInvoices = [], isLoading: loadingInvoices } = useAllInvoices();
+  const { data: allBills = [], isLoading: loadingBills } = useAllBills();
+  const loading = loadingInvoices || loadingBills;
 
   const getAsOfDateValue = (): Date => {
     const now = new Date();
@@ -85,71 +68,52 @@ export default function BalanceSheet() {
     }
   };
 
-  const loadData = async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
+  const data = useMemo<BalanceSheetData>(() => {
+    const asOf = getAsOfDateValue();
 
-      // Get all invoices and bills to calculate balances
-      const [invoices, bills] = await Promise.all([
-        invoiceService.getAllInvoices(tenantId),
-        billService.getAllBills(tenantId),
-      ]);
+    // Calculate Accounts Receivable (unpaid invoices as of date)
+    const accountsReceivable = allInvoices
+      .filter(inv => {
+        const invoiceDate = new Date(inv.issueDate);
+        return invoiceDate <= asOf && inv.status !== 'paid' && inv.status !== 'cancelled';
+      })
+      .reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
 
-      const asOf = getAsOfDateValue();
+    // Calculate Accounts Payable (unpaid bills as of date)
+    const accountsPayable = allBills
+      .filter(bill => {
+        const billDate = new Date(bill.billDate);
+        return billDate <= asOf && bill.status !== 'paid' && bill.status !== 'cancelled';
+      })
+      .reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
 
-      // Calculate Accounts Receivable (unpaid invoices as of date)
-      const accountsReceivable = invoices
-        .filter(inv => {
-          const invoiceDate = new Date(inv.issueDate);
-          return invoiceDate <= asOf && inv.status !== 'paid' && inv.status !== 'cancelled';
-        })
-        .reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
+    // Calculate cash received (simplified - sum of paid invoices)
+    const cashReceived = allInvoices
+      .filter(inv => inv.status === 'paid' && inv.paidAt && new Date(inv.paidAt) <= asOf)
+      .reduce((sum, inv) => sum + inv.total, 0);
 
-      // Calculate Accounts Payable (unpaid bills as of date)
-      const accountsPayable = bills
-        .filter(bill => {
-          const billDate = new Date(bill.billDate);
-          return billDate <= asOf && bill.status !== 'paid' && bill.status !== 'cancelled';
-        })
-        .reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
+    // Calculate cash paid (simplified - sum of paid bills)
+    const cashPaid = allBills
+      .filter(bill => bill.status === 'paid')
+      .reduce((sum, bill) => sum + bill.amount, 0);
 
-      // Calculate cash received (simplified - sum of paid invoices)
-      const cashReceived = invoices
-        .filter(inv => inv.status === 'paid' && inv.paidAt && new Date(inv.paidAt) <= asOf)
-        .reduce((sum, inv) => sum + inv.total, 0);
+    const cashAndBank = cashReceived - cashPaid;
+    const totalAssets = cashAndBank + accountsReceivable;
+    const totalLiabilities = accountsPayable;
+    const retainedEarnings = totalAssets - totalLiabilities;
+    const totalEquity = retainedEarnings;
 
-      // Calculate cash paid (simplified - sum of paid bills)
-      const cashPaid = bills
-        .filter(bill => bill.status === 'paid')
-        .reduce((sum, bill) => sum + bill.amount, 0);
-
-      const cashAndBank = cashReceived - cashPaid;
-      const totalAssets = cashAndBank + accountsReceivable;
-      const totalLiabilities = accountsPayable;
-      const retainedEarnings = totalAssets - totalLiabilities;
-      const totalEquity = retainedEarnings;
-
-      setData({
-        cashAndBank,
-        accountsReceivable,
-        totalAssets,
-        accountsPayable,
-        totalLiabilities,
-        retainedEarnings,
-        totalEquity,
-      });
-    } catch (error) {
-      console.error('Error loading balance sheet:', error);
-      toast({
-        title: t('common.error') || 'Error',
-        description: t('money.balanceSheet.loadError') || 'Failed to load report',
-        variant: 'destructive',
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    return {
+      cashAndBank,
+      accountsReceivable,
+      totalAssets,
+      accountsPayable,
+      totalLiabilities,
+      retainedEarnings,
+      totalEquity,
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allInvoices, allBills, asOfDate]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

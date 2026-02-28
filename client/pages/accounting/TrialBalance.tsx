@@ -3,9 +3,9 @@
  * Shows all accounts with debit/credit balances to verify books are balanced
  */
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { accountingService } from '../../services/accountingService';
-import { Account, AccountType, TrialBalanceRow } from '../../types/accounting';
+import React, { useState, useMemo } from 'react';
+import { AccountType, TrialBalanceRow } from '../../types/accounting';
+import { useAccounts, useGenerateTrialBalance } from '@/hooks/useAccounting';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -41,7 +41,6 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
 
@@ -57,59 +56,23 @@ const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
 };
 
 export default function TrialBalance() {
-  const tenantId = useTenantId();
   const { t } = useI18n();
-  // State
-  const [_accounts, setAccounts] = useState<Account[]>([]);
+  // Data hooks
+  const { isLoading: loading } = useAccounts();
+  const generateMutation = useGenerateTrialBalance();
+
+  // Local UI state
   const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-
-  // Date filter
-  const [asOfDate, setAsOfDate] = useState<string>(() => {
-    return getTodayTL();
-  });
-
-  // Options
+  const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
   const [includeZeroBalances, setIncludeZeroBalances] = useState(false);
 
-  // Load accounts when tenantId is available
-  useEffect(() => {
-    const loadAccounts = async () => {
-      try {
-        const accountsList = await accountingService.accounts.getAllAccounts(tenantId);
-        setAccounts(accountsList);
-      } catch (error) {
-        console.error('Error loading accounts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (tenantId && tenantId !== "local-dev-tenant") {
-      loadAccounts();
-    }
-  }, [tenantId]);
+  const generating = generateMutation.isPending;
 
   // Generate trial balance
   const handleGenerateTrialBalance = async () => {
-    setGenerating(true);
-    try {
-      // Get the current year from the as-of date
-      const year = new Date(asOfDate).getFullYear();
-
-      const trialBalance = await accountingService.trialBalance.generateTrialBalance(
-        tenantId,
-        asOfDate,
-        year
-      );
-
-      setTrialBalanceRows(trialBalance.rows);
-    } catch (error) {
-      console.error('Error generating trial balance:', error);
-    } finally {
-      setGenerating(false);
-    }
+    const fiscalYear = new Date(asOfDate).getFullYear();
+    const trialBalance = await generateMutation.mutateAsync({ asOfDate, fiscalYear });
+    setTrialBalanceRows(trialBalance.rows);
   };
 
   // Filter rows based on options

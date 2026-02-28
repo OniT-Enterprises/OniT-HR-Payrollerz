@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,9 +54,12 @@ import {
   Building2,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useQuery } from "@tanstack/react-query";
+import { useBankTransfers, usePayrollRuns, usePayrollRecordsByRun, useCreateBankTransfer } from "@/hooks/usePayroll";
+import { useAllEmployees } from "@/hooks/useEmployees";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
-import type { BankTransfer, PayrollRun, PayrollRecord } from "@/types/payroll";
+import type { BankTransfer } from "@/types/payroll";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
@@ -66,7 +69,6 @@ import {
   downloadBankFile,
 } from "@/lib/bank-transfers";
 import { TL_BANKS } from "@/lib/payroll/constants-tl";
-import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { settingsService } from "@/services/settingsService";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -77,10 +79,42 @@ export default function BankTransfers() {
   const { user } = useAuth();
   const tenantId = useTenantId();
   const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [transfers, setTransfers] = useState<BankTransfer[]>([]);
-  const [payrollRuns, setPayrollRuns] = useState<PayrollRun[]>([]);
+  // ─── React Query data fetching ──────────────────────────────────
+  const { data: transfers = [], isLoading: loadingTransfers } = useBankTransfers();
+  const { data: payrollRuns = [], isLoading: loadingRuns } = usePayrollRuns();
+  const { data: employees = [] } = useAllEmployees();
+  const createTransferMutation = useCreateBankTransfer();
+
+  const { data: companySettings } = useQuery({
+    queryKey: ['tenants', tenantId, 'settings'],
+    queryFn: () => settingsService.getSettings(tenantId),
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const companyName = companySettings?.companyDetails?.legalName
+    || companySettings?.companyDetails?.tradingName
+    || t("bankTransfers.company");
+
+  const bankAccounts = useMemo(() => {
+    if (!companySettings?.paymentStructure?.bankAccounts) return [];
+    return companySettings.paymentStructure.bankAccounts
+      .filter((a) => a.isActive)
+      .map((a) => ({
+        id: a.id,
+        name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
+        accountNumber: a.accountNumber || "",
+        purpose: a.purpose || "general",
+      }));
+  }, [companySettings]);
+
+  const companyAccount = useMemo(() => {
+    const payrollAccount = bankAccounts.find((a) => a.purpose === "payroll") || bankAccounts[0];
+    return payrollAccount?.accountNumber ?? '';
+  }, [bankAccounts]);
+
+  const loading = loadingTransfers || loadingRuns;
+
+  // ─── Local UI state ────────────────────────────────────────────
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [selectedStatus, setSelectedStatus] = useState("");
   const [selectedPeriod, setSelectedPeriod] = useState("");
@@ -90,10 +124,6 @@ export default function BankTransfers() {
   const [selectedBankFileRun, setSelectedBankFileRun] = useState<string>("");
   const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
   const [generatingFiles, setGeneratingFiles] = useState(false);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [companyName, setCompanyName] = useState(t("bankTransfers.company"));
-  const [companyAccount, setCompanyAccount] = useState("");
-  const [bankFileSummary, setBankFileSummary] = useState<Record<BankCode, number> | null>(null);
 
   const [formData, setFormData] = useState({
     payrollRunId: "",
@@ -102,110 +132,27 @@ export default function BankTransfers() {
     notes: "",
   });
 
-  // Bank accounts from settings
-  const [bankAccounts, setBankAccounts] = useState<Array<{ id: string; name: string; accountNumber: string; purpose: string }>>([]);
+  // ─── Payroll records for bank file generation ──────────────────
+  const { data: bankFileRecords = [] } = usePayrollRecordsByRun(selectedBankFileRun || undefined);
 
-  // Load transfers and payroll runs
+  const bankFileSummary = useMemo(() => {
+    if (!selectedBankFileRun || employees.length === 0 || bankFileRecords.length === 0) return null;
+    const grouped = groupRecordsByBank(bankFileRecords, employees);
+    return {
+      BNU: grouped.BNU.length,
+      MANDIRI: grouped.MANDIRI.length,
+      ANZ: grouped.ANZ.length,
+      BNCTL: grouped.BNCTL.length,
+    } as Record<BankCode, number>;
+  }, [bankFileRecords, employees, selectedBankFileRun]);
+
+  // Pre-select banks that have employees when summary changes
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const [transfersData, runsData] = await Promise.all([
-          payrollService.transfers.getAllTransfers(tenantId),
-          payrollService.runs.getAllPayrollRuns({ tenantId }),
-        ]);
-        setTransfers(transfersData);
-        setPayrollRuns(runsData);
-      } catch (error) {
-        console.error("Failed to load data:", error);
-        toast({
-          title: t("bankTransfers.toastErrorTitle"),
-          description: t("bankTransfers.toastLoadError"),
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadData();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [toast, tenantId]);
-
-  // Load employees and company details for bank file generation
-  useEffect(() => {
-    const loadEmployeesAndSettings = async () => {
-      try {
-        // Load all employees
-        const result = await employeeService.getAllEmployees(tenantId);
-        setEmployees(result);
-
-        // Load company details and bank accounts from settings
-        if (tenantId && tenantId !== "local-dev-tenant") {
-          const settings = await settingsService.getSettings(tenantId);
-          if (settings?.companyDetails) {
-            setCompanyName(settings.companyDetails.legalName || settings.companyDetails.tradingName || t("bankTransfers.company"));
-          }
-          if (settings?.paymentStructure?.bankAccounts) {
-            const accounts = settings.paymentStructure.bankAccounts
-              .filter((a) => a.isActive)
-              .map((a) => ({
-                id: a.id,
-                name: `${a.accountName} - ${a.bankName} ****${(a.accountNumber || "").slice(-4)}`,
-                accountNumber: a.accountNumber || "",
-                purpose: a.purpose || "general",
-              }));
-            setBankAccounts(accounts);
-            // Use the first payroll account (or first available) as company debit account
-            const payrollAccount = accounts.find((a) => a.purpose === "payroll") || accounts[0];
-            if (payrollAccount) {
-              setCompanyAccount(payrollAccount.accountNumber);
-            }
-          }
-        }
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-      }
-    };
-    loadEmployeesAndSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
-
-  // Payroll records for the selected bank file run
-  const [bankFileRecords, setBankFileRecords] = useState<PayrollRecord[]>([]);
-
-  // Load real payroll records and calculate bank file summary when payroll run is selected
-  useEffect(() => {
-    if (!selectedBankFileRun || employees.length === 0) {
-      setBankFileSummary(null);
-      setBankFileRecords([]);
-      return;
+    if (bankFileSummary) {
+      const availableBanks = (Object.keys(bankFileSummary) as BankCode[]).filter(bank => bankFileSummary[bank] > 0);
+      setSelectedBanks(availableBanks);
     }
-
-    const loadRecords = async () => {
-      try {
-        const records = await payrollService.records.getPayrollRecordsByRunId(selectedBankFileRun, tenantId);
-        setBankFileRecords(records);
-
-        const grouped = groupRecordsByBank(records, employees);
-        const summary: Record<BankCode, number> = {
-          BNU: grouped.BNU.length,
-          MANDIRI: grouped.MANDIRI.length,
-          ANZ: grouped.ANZ.length,
-          BNCTL: grouped.BNCTL.length,
-        };
-        setBankFileSummary(summary);
-
-        // Pre-select banks that have employees
-        const availableBanks = (Object.keys(summary) as BankCode[]).filter(bank => summary[bank] > 0);
-        setSelectedBanks(availableBanks);
-      } catch (error) {
-        console.error("Failed to load payroll records:", error);
-        setBankFileSummary(null);
-      }
-    };
-    loadRecords();
-  }, [selectedBankFileRun, employees, tenantId]);
+  }, [bankFileSummary]);
 
   // Handle bank file generation
   const handleGenerateBankFiles = async () => {
@@ -405,58 +352,46 @@ export default function BankTransfers() {
     // Find the bank account name
     const bankAccount = bankAccounts.find((a) => a.id === formData.bankAccount);
 
-    try {
-      setSubmitting(true);
+    // Generate reference number
+    const now = new Date();
+    const reference = `TXN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(transfers.length + 1).padStart(3, "0")}`;
 
-      // Generate reference number
-      const now = new Date();
-      const reference = `TXN-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}-${String(transfers.length + 1).padStart(3, "0")}`;
+    const newTransfer: Omit<BankTransfer, "id" | "tenantId"> = {
+      payrollRunId: formData.payrollRunId,
+      payrollPeriod: formatDateTL(selectedRun.periodStart, { month: "long", year: "numeric" }),
+      amount: selectedRun.totalNetPay,
+      employeeCount: selectedRun.employeeCount,
+      transferDate: formData.transferDate,
+      bankAccountId: formData.bankAccount,
+      bankAccountName: bankAccount?.name || formData.bankAccount,
+      status: "pending",
+      reference,
+      initiatedBy: user?.email || t("bankTransfers.unknown"),
+      notes: formData.notes || "",
+    };
 
-      const newTransfer: Omit<BankTransfer, "id" | "createdAt" | "updatedAt"> = {
-        payrollRunId: formData.payrollRunId,
-        payrollPeriod: formatDateTL(selectedRun.periodStart, { month: "long", year: "numeric" }),
-        amount: selectedRun.totalNetPay,
-        employeeCount: selectedRun.employeeCount,
-        transferDate: formData.transferDate,
-        bankAccountId: formData.bankAccount,
-        bankAccountName: bankAccount?.name || formData.bankAccount,
-        status: "pending",
-        reference,
-        initiatedBy: user?.email || t("bankTransfers.unknown"),
-        notes: formData.notes || undefined,
-      };
-
-      const transferId = await payrollService.transfers.createTransfer(tenantId, newTransfer);
-
-      // Update local state with the new transfer including its ID
-      const createdTransfer: BankTransfer = {
-        ...newTransfer,
-        id: transferId,
-      };
-      setTransfers((prev) => [createdTransfer, ...prev]);
-
-      toast({
-        title: t("bankTransfers.toastTransferSuccess"),
-        description: t("bankTransfers.toastTransferSuccessDesc", { reference }),
-      });
-
-      setFormData({
-        payrollRunId: "",
-        bankAccount: "",
-        transferDate: "",
-        notes: "",
-      });
-      setShowTransferDialog(false);
-    } catch (error) {
-      console.error("Failed to create transfer:", error);
-      toast({
-        title: t("bankTransfers.toastErrorTitle"),
-        description: t("bankTransfers.toastTransferError"),
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+    createTransferMutation.mutate(newTransfer, {
+      onSuccess: () => {
+        toast({
+          title: t("bankTransfers.toastTransferSuccess"),
+          description: t("bankTransfers.toastTransferSuccessDesc", { reference }),
+        });
+        setFormData({
+          payrollRunId: "",
+          bankAccount: "",
+          transferDate: "",
+          notes: "",
+        });
+        setShowTransferDialog(false);
+      },
+      onError: () => {
+        toast({
+          title: t("bankTransfers.toastErrorTitle"),
+          description: t("bankTransfers.toastTransferError"),
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleExportCSV = () => {
@@ -985,16 +920,16 @@ export default function BankTransfers() {
                             variant="outline"
                             onClick={() => setShowTransferDialog(false)}
                             className="flex-1"
-                            disabled={submitting}
+                            disabled={createTransferMutation.isPending}
                           >
                             {t("bankTransfers.cancel")}
                           </Button>
                           <Button
                             type="submit"
                             className="flex-1"
-                            disabled={submitting}
+                            disabled={createTransferMutation.isPending}
                           >
-                            {submitting ? (
+                            {createTransferMutation.isPending ? (
                               <>
                                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                 {t("bankTransfers.processing")}...

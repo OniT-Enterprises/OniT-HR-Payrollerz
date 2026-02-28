@@ -231,41 +231,101 @@ class InvoiceService {
   }
 
   /**
-   * Get all invoices (convenience method)
-   * @deprecated Use getInvoices() with filters for better performance
+   * Get all invoices (fetches every page via getInvoices pagination loop)
    */
-  async getAllInvoices(tenantId: string, maxResults: number = 500): Promise<Invoice[]> {
-    const result = await this.getInvoices(tenantId, { pageSize: maxResults });
-    return result.data;
+  async getAllInvoices(tenantId: string): Promise<Invoice[]> {
+    const MAX_PAGES = 100;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get invoices by status (server-side filtered)
+   * Get invoices by status (server-side filtered, paginated)
    */
   async getInvoicesByStatus(tenantId: string, status: InvoiceStatus): Promise<Invoice[]> {
-    const result = await this.getInvoices(tenantId, { status, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getInvoicesByStatus: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, { status, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get invoices for a customer (server-side filtered)
+   * Get invoices for a customer (server-side filtered, paginated)
    */
   async getInvoicesByCustomer(tenantId: string, customerId: string): Promise<Invoice[]> {
-    const result = await this.getInvoices(tenantId, { customerId, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getInvoicesByCustomer: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, { customerId, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get overdue invoices (server-side filtered)
+   * Get overdue invoices (server-side filtered, paginated)
    */
   async getOverdueInvoices(tenantId: string): Promise<Invoice[]> {
+    const MAX_PAGES = 100;
     const today = getTodayTL();
-    const result = await this.getInvoices(tenantId, {
-      status: ['sent', 'viewed', 'partial'],
-      dueBefore: today,
-      pageSize: 500,
-    });
-    return result.data;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getOverdueInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, {
+        status: ['sent', 'viewed', 'partial'],
+        dueBefore: today,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
@@ -523,8 +583,9 @@ class InvoiceService {
 
   /**
    * Cancel an invoice
+   * Also voids the associated journal entry and creates reversing GL entries
    */
-  async cancelInvoice(tenantId: string, id: string, reason?: string): Promise<boolean> {
+  async cancelInvoice(tenantId: string, id: string, reason?: string, userId?: string): Promise<boolean> {
     const invoice = await this.getInvoiceById(tenantId, id);
     if (!invoice) {
       throw new Error('Invoice not found');
@@ -537,13 +598,33 @@ class InvoiceService {
       throw new Error('Cannot cancel an invoice with recorded payments');
     }
 
-    const docRef = doc(db, paths.invoice(tenantId, id));
-    await updateDoc(docRef, {
-      status: 'cancelled',
-      cancelledAt: serverTimestamp(),
-      cancelReason: reason || null,
-      updatedAt: serverTimestamp(),
+    // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
+    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'invoice', id);
+
+    const invoiceDocRef = doc(db, paths.invoice(tenantId, id));
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Update invoice status to cancelled
+      transaction.update(invoiceDocRef, {
+        status: 'cancelled',
+        cancelledAt: serverTimestamp(),
+        cancelReason: reason || null,
+        updatedAt: serverTimestamp(),
+      });
+
+      // 2. Void the journal entry and create reversing GL entries
+      if (journalEntry?.id) {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          journalEntry.id,
+          journalEntry,
+          transaction,
+          userId || 'system',
+          `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`
+        );
+      }
     });
+
     return true;
   }
 

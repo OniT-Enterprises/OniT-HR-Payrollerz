@@ -1662,8 +1662,11 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
   const { tenantId } = req.params;
 
   // Tenant scoping
-  if (ALLOWED_TENANT_ID && tenantId !== ALLOWED_TENANT_ID) {
-    return res.status(403).json({ success: false, message: 'Access denied for this tenant', requestId });
+  if (ALLOWED_TENANT_ID) {
+    const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
+    if (!allowed.includes(tenantId)) {
+      return res.status(403).json({ success: false, message: 'Access denied for this tenant', requestId });
+    }
   }
 
   if (!OPENCLAW_PASSWORD) {

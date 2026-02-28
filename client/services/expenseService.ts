@@ -9,8 +9,8 @@ import {
   getDocs,
   getDoc,
   addDoc,
+  setDoc,
   updateDoc,
-  deleteDoc,
   query,
   where,
   orderBy,
@@ -164,40 +164,99 @@ class ExpenseService {
   }
 
   /**
-   * Get all expenses
-   * @deprecated Use getExpenses() with filters for better performance
+   * Get all expenses (fetches every page via getExpenses pagination loop)
    */
-  async getAllExpenses(tenantId: string, maxResults: number = 500): Promise<Expense[]> {
-    const result = await this.getExpenses(tenantId, { pageSize: maxResults });
-    return result.data;
+  async getAllExpenses(tenantId: string): Promise<Expense[]> {
+    const MAX_PAGES = 100;
+    const all: Expense[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllExpenses: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getExpenses(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get expenses by category (server-side filtered)
+   * Get expenses by category (server-side filtered, paginated)
    */
   async getExpensesByCategory(tenantId: string, category: ExpenseCategory): Promise<Expense[]> {
-    const result = await this.getExpenses(tenantId, { category, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Expense[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getExpensesByCategory: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getExpenses(tenantId, { category, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get expenses by vendor (server-side filtered)
+   * Get expenses by vendor (server-side filtered, paginated)
    */
   async getExpensesByVendor(tenantId: string, vendorId: string): Promise<Expense[]> {
-    const result = await this.getExpenses(tenantId, { vendorId, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Expense[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getExpensesByVendor: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getExpenses(tenantId, { vendorId, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get expenses for a date range (server-side filtered)
+   * Get expenses for a date range (server-side filtered, paginated)
    */
   async getExpensesByDateRange(
     tenantId: string,
     startDate: string,
     endDate: string
   ): Promise<Expense[]> {
-    const result = await this.getExpenses(tenantId, { startDate, endDate, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Expense[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getExpensesByDateRange: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getExpenses(tenantId, { startDate, endDate, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
@@ -235,7 +294,9 @@ class ExpenseService {
   async createExpense(
     tenantId: string,
     data: ExpenseFormData & { receiptUrl?: string },
-    userId?: string
+    userId?: string,
+    /** Pre-generated Firestore document ID (used when receipt was uploaded before save) */
+    preGeneratedId?: string
   ): Promise<string> {
     if (data.amount <= 0) {
       throw new Error('Expense amount must be greater than zero');
@@ -274,7 +335,9 @@ class ExpenseService {
       };
 
       // ATOMIC: Create expense + journal entry in a single transaction.
-      const expenseDocRef = doc(this.collectionRef(tenantId));
+      const expenseDocRef = preGeneratedId
+        ? doc(this.collectionRef(tenantId), preGeneratedId)
+        : doc(this.collectionRef(tenantId));
       await runTransaction(db, async (transaction) => {
         // Journal entry (only transaction.get for entry number, writes journal + GL)
         await journalEntryService.createFromExpense(
@@ -294,6 +357,14 @@ class ExpenseService {
     }
 
     // No accounting setup — just create expense
+    if (preGeneratedId) {
+      const docRef = doc(this.collectionRef(tenantId), preGeneratedId);
+      await setDoc(docRef, {
+        ...expense,
+        createdAt: serverTimestamp(),
+      });
+      return preGeneratedId;
+    }
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...expense,
       createdAt: serverTimestamp(),
@@ -334,10 +405,32 @@ class ExpenseService {
 
   /**
    * Delete an expense
+   * Also voids the associated journal entry and creates reversing GL entries
    */
-  async deleteExpense(tenantId: string, id: string): Promise<boolean> {
-    const docRef = doc(db, paths.expense(tenantId, id));
-    await deleteDoc(docRef);
+  async deleteExpense(tenantId: string, id: string, userId?: string): Promise<boolean> {
+    // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
+    // Expenses use source='receipt' (see createFromExpense in accountingService)
+    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'receipt', id);
+
+    const expenseDocRef = doc(db, paths.expense(tenantId, id));
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Delete the expense document
+      transaction.delete(expenseDocRef);
+
+      // 2. Void the journal entry and create reversing GL entries
+      if (journalEntry?.id) {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          journalEntry.id,
+          journalEntry,
+          transaction,
+          userId || 'system',
+          `Expense ${id} deleted`
+        );
+      }
+    });
+
     return true;
   }
 

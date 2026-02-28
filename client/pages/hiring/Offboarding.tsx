@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,7 +34,6 @@ import {
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
@@ -59,7 +58,13 @@ import {
   Loader2,
 } from "lucide-react";
 import {
-  offboardingService,
+  useActiveCases,
+  useCompletedCases,
+  useCreateOffboardingCase,
+  useUpdateChecklistItem,
+  useUpdateExitInterviewField,
+} from "@/hooks/useHiring";
+import {
   type OffboardingCase,
   type OffboardingChecklist,
   type DepartureReason,
@@ -71,17 +76,20 @@ export default function Offboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
   const { user } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
 
-  // Data state
-  const [activeCases, setActiveCases] = useState<OffboardingCase[]>([]);
-  const [completedCases, setCompletedCases] = useState<OffboardingCase[]>([]);
+  // Data via React Query
+  const { data: activeCases = [], isLoading: activeCasesLoading } = useActiveCases();
+  const { data: completedCases = [], isLoading: completedCasesLoading } = useCompletedCases();
+  const createOffboardingMutation = useCreateOffboardingCase();
+  const updateChecklistMutation = useUpdateChecklistItem();
+  const updateExitInterviewMutation = useUpdateExitInterviewField();
+
+  const loading = activeCasesLoading || completedCasesLoading;
+
   const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(null);
-  const [loading, setLoading] = useState(true);
   const [showDialog, setShowDialog] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
 
   // New offboarding form data
   const [newOffboarding, setNewOffboarding] = useState({
@@ -93,32 +101,6 @@ export default function Offboarding() {
     department: "all",
     search: "",
   });
-
-  // Load data
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const [active, completed] = await Promise.all([
-        offboardingService.getActiveCases(tenantId),
-        offboardingService.getCompletedCases(tenantId),
-      ]);
-      setActiveCases(active);
-      setCompletedCases(completed);
-    } catch (error) {
-      console.error("Error loading offboarding data:", error);
-      toast({
-        title: t("hiring.offboarding.toast.errorTitle"),
-        description: t("hiring.offboarding.toast.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast, t]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
 
   // Filter employees for selection
   const activeEmployees = employees.filter((emp) => emp.status === "active");
@@ -145,7 +127,7 @@ export default function Offboarding() {
     (c) => c.createdAt && new Date(c.createdAt).getFullYear() === new Date().getFullYear()
   ).length;
 
-  const handleStartOffboarding = async () => {
+  const handleStartOffboarding = () => {
     if (!newOffboarding.employeeId || !newOffboarding.departureReason) {
       toast({
         title: t("hiring.offboarding.toast.validationTitle"),
@@ -158,9 +140,8 @@ export default function Offboarding() {
     const employee = employees.find((emp) => emp.id === newOffboarding.employeeId);
     if (!employee) return;
 
-    setSubmitting(true);
-    try {
-      await offboardingService.createCase(tenantId, {
+    createOffboardingMutation.mutate(
+      {
         employeeId: employee.id!,
         employeeName: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
         department: employee.jobDetails.department,
@@ -168,117 +149,85 @@ export default function Offboarding() {
         departureReason: newOffboarding.departureReason as DepartureReason,
         lastWorkingDay: newOffboarding.lastWorkingDay,
         noticeDate: newOffboarding.noticeDate,
-        notes: newOffboarding.notes || undefined,
+        notes: newOffboarding.notes || "",
         createdBy: user?.email || "Unknown",
-      });
-
-      toast({
-        title: t("hiring.offboarding.toast.startedTitle"),
-        description: t("hiring.offboarding.toast.startedDesc", {
-          name: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
-        }),
-      });
-
-      setShowDialog(false);
-      setNewOffboarding({
-        employeeId: "",
-        departureReason: "",
-        lastWorkingDay: "",
-        noticeDate: "",
-        notes: "",
-        department: "all",
-        search: "",
-      });
-      await loadData();
-    } catch (error) {
-      console.error("Error starting offboarding:", error);
-      toast({
-        title: t("hiring.offboarding.toast.errorTitle"),
-        description: "Failed to start offboarding process",
-        variant: "destructive",
-      });
-    } finally {
-      setSubmitting(false);
-    }
+      },
+      {
+        onSuccess: () => {
+          toast({
+            title: t("hiring.offboarding.toast.startedTitle"),
+            description: t("hiring.offboarding.toast.startedDesc", {
+              name: `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`,
+            }),
+          });
+          setShowDialog(false);
+          setNewOffboarding({
+            employeeId: "",
+            departureReason: "",
+            lastWorkingDay: "",
+            noticeDate: "",
+            notes: "",
+            department: "all",
+            search: "",
+          });
+        },
+        onError: () => {
+          toast({
+            title: t("hiring.offboarding.toast.errorTitle"),
+            description: "Failed to start offboarding process",
+            variant: "destructive",
+          });
+        },
+      }
+    );
   };
 
-  const updateChecklist = async (caseId: string, item: keyof OffboardingChecklist, value: boolean) => {
-    try {
-      await offboardingService.updateChecklistItem(tenantId, caseId, item, value);
-
-      // Update local state
-      const updatedCases = activeCases.map((c) => {
-        if (c.id === caseId) {
-          const updatedChecklist = { ...c.checklist, [item]: value };
-          const progress = getChecklistProgress(updatedChecklist);
-          return {
-            ...c,
-            checklist: updatedChecklist,
-            status: progress === 100 ? "completed" : progress > 0 ? "in_progress" : "pending",
-          } as OffboardingCase;
-        }
-        return c;
-      });
-
-      // Move completed cases to history
-      const stillActive = updatedCases.filter((c) => c.status !== "completed");
-      const newlyCompleted = updatedCases.filter((c) => c.status === "completed");
-
-      setActiveCases(stillActive);
-      if (newlyCompleted.length > 0) {
-        setCompletedCases((prev) => [...newlyCompleted, ...prev]);
+  const updateChecklist = (caseId: string, item: keyof OffboardingChecklist, value: boolean) => {
+    updateChecklistMutation.mutate(
+      { caseId, item, value },
+      {
+        onSuccess: () => {
+          // Optimistically update selected case
+          if (selectedCase?.id === caseId) {
+            const updatedChecklist = { ...selectedCase.checklist, [item]: value };
+            const progress = getChecklistProgress(updatedChecklist);
+            if (progress === 100) {
+              setSelectedCase(null);
+            } else {
+              setSelectedCase({
+                ...selectedCase,
+                checklist: updatedChecklist,
+                status: progress > 0 ? "in_progress" : "pending",
+              } as OffboardingCase);
+            }
+          }
+        },
+        onError: () => {
+          toast({
+            title: "Error",
+            description: "Failed to update checklist",
+            variant: "destructive",
+          });
+        },
       }
-
-      // Update selected case
-      if (selectedCase?.id === caseId) {
-        const updated = updatedCases.find((c) => c.id === caseId);
-        if (updated && updated.status !== "completed") {
-          setSelectedCase(updated);
-        } else {
-          setSelectedCase(null);
-        }
-      }
-    } catch (error) {
-      console.error("Error updating checklist:", error);
-      toast({
-        title: "Error",
-        description: "Failed to update checklist",
-        variant: "destructive",
-      });
-    }
+    );
   };
 
-  const updateExitInterview = async (caseId: string, field: string, value: string) => {
-    try {
-      await offboardingService.updateExitInterviewField(
-        tenantId,
-        caseId,
-        field as keyof OffboardingCase["exitInterview"],
-        value
-      );
-
-      // Update local state
-      const updatedCases = activeCases.map((c) => {
-        if (c.id === caseId) {
-          return {
-            ...c,
-            exitInterview: { ...c.exitInterview, [field]: value },
-          };
-        }
-        return c;
-      });
-
-      setActiveCases(updatedCases);
-
-      if (selectedCase?.id === caseId) {
-        setSelectedCase({
-          ...selectedCase,
-          exitInterview: { ...selectedCase.exitInterview, [field]: value },
-        });
+  const updateExitInterview = (caseId: string, field: string, value: string) => {
+    updateExitInterviewMutation.mutate(
+      { caseId, field: field as keyof OffboardingCase["exitInterview"], value },
+      {
+        onSuccess: () => {
+          // Optimistically update selected case
+          if (selectedCase?.id === caseId) {
+            setSelectedCase({
+              ...selectedCase,
+              exitInterview: { ...selectedCase.exitInterview, [field]: value },
+            });
+          }
+        },
       }
-    } catch (error) {
-      console.error("Error updating exit interview:", error);
-    }
+    );
   };
 
   const saveDraft = () => {
@@ -506,8 +455,8 @@ export default function Offboarding() {
                     <Button variant="outline" onClick={() => setShowDialog(false)}>
                       {t("hiring.offboarding.dialog.cancel")}
                     </Button>
-                    <Button onClick={handleStartOffboarding} disabled={submitting}>
-                      {submitting ? (
+                    <Button onClick={handleStartOffboarding} disabled={createOffboardingMutation.isPending}>
+                      {createOffboardingMutation.isPending ? (
                         <>
                           <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                           Starting...

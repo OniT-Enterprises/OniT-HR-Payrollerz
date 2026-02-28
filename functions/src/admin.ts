@@ -471,6 +471,8 @@ export const bootstrapFirstAdmin = onCall(async (request) => {
           timeleave: true,
           performance: true,
           payroll: true,
+          money: true,
+          accounting: true,
           reports: true,
         },
         settings: {
@@ -486,7 +488,7 @@ export const bootstrapFirstAdmin = onCall(async (request) => {
         email: callerEmail,
         displayName: callerEmail?.split("@")[0] || "Admin",
         role: "owner",
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "reports"],
+        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
         joinedAt: FieldValue.serverTimestamp(),
         lastActiveAt: FieldValue.serverTimestamp(),
         permissions: { admin: true, write: true, read: true },

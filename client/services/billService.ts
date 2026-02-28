@@ -189,28 +189,72 @@ class BillService {
   }
 
   /**
-   * Get all bills
-   * @deprecated Use getBills() with filters for better performance
+   * Get all bills (fetches every page via getBills pagination loop)
    */
-  async getAllBills(tenantId: string, maxResults: number = 500): Promise<Bill[]> {
-    const result = await this.getBills(tenantId, { pageSize: maxResults });
-    return result.data;
+  async getAllBills(tenantId: string): Promise<Bill[]> {
+    const MAX_PAGES = 100;
+    const all: Bill[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getAllBills: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getBills(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get bills by status (server-side filtered)
+   * Get bills by status (server-side filtered, paginated)
    */
   async getBillsByStatus(tenantId: string, status: BillStatus): Promise<Bill[]> {
-    const result = await this.getBills(tenantId, { status, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Bill[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getBillsByStatus: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getBills(tenantId, { status, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
-   * Get bills by vendor (server-side filtered)
+   * Get bills by vendor (server-side filtered, paginated)
    */
   async getBillsByVendor(tenantId: string, vendorId: string): Promise<Bill[]> {
-    const result = await this.getBills(tenantId, { vendorId, pageSize: 500 });
-    return result.data;
+    const MAX_PAGES = 100;
+    const all: Bill[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getBillsByVendor: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getBills(tenantId, { vendorId, pageSize: 500, startAfterDoc: lastDoc });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+    return all;
   }
 
   /**
@@ -399,8 +443,9 @@ class BillService {
 
   /**
    * Cancel a bill
+   * Also voids the associated journal entry and creates reversing GL entries
    */
-  async cancelBill(tenantId: string, id: string): Promise<boolean> {
+  async cancelBill(tenantId: string, id: string, userId?: string): Promise<boolean> {
     const bill = await this.getBillById(tenantId, id);
     if (!bill) {
       throw new Error('Bill not found');
@@ -412,11 +457,31 @@ class BillService {
       throw new Error('Cannot cancel a bill with recorded payments');
     }
 
-    const docRef = doc(db, paths.bill(tenantId, id));
-    await updateDoc(docRef, {
-      status: 'cancelled',
-      updatedAt: serverTimestamp(),
+    // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
+    const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'bill', id);
+
+    const billDocRef = doc(db, paths.bill(tenantId, id));
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Update bill status to cancelled
+      transaction.update(billDocRef, {
+        status: 'cancelled',
+        updatedAt: serverTimestamp(),
+      });
+
+      // 2. Void the journal entry and create reversing GL entries
+      if (journalEntry?.id) {
+        journalEntryService.voidJournalEntryInTransaction(
+          tenantId,
+          journalEntry.id,
+          journalEntry,
+          transaction,
+          userId || 'system',
+          `Bill ${bill.billNumber || id} cancelled`
+        );
+      }
     });
+
     return true;
   }
 

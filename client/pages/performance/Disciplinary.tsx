@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useRef, useMemo } from "react";
+import {
+  useDisciplinaryRecords,
+  useCreateDisciplinaryRecord,
+  useUpdateDisciplinaryRecord,
+  useDeleteDisciplinaryRecord,
+  useCloseDisciplinaryCase,
+} from "@/hooks/usePerformance";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,7 +61,6 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { useToast } from "@/hooks/use-toast";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -88,13 +94,13 @@ import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 
 export default function Disciplinary() {
   const { toast } = useToast();
-  const tenantId = useTenantId();
   const { user } = useAuth();
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
-
-  // Data state
-  const [records, setRecords] = useState<DisciplinaryRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { data: records = [], isLoading: loading } = useDisciplinaryRecords();
+  const createMutation = useCreateDisciplinaryRecord();
+  const updateMutation = useUpdateDisciplinaryRecord();
+  const deleteMutation = useDeleteDisciplinaryRecord();
+  const closeMutation = useCloseDisciplinaryCase();
 
   // Filter state
   const [selectedEmployee, setSelectedEmployee] = useState("");
@@ -123,9 +129,6 @@ export default function Disciplinary() {
     fullDetails: "",
   });
   const [evidenceFile, setEvidenceFile] = useState<File | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [deleting, setDeleting] = useState(false);
-  const [closing, setClosing] = useState(false);
 
   // Edit form state
   const [editFormData, setEditFormData] = useState({
@@ -136,28 +139,6 @@ export default function Disciplinary() {
     fullDetails: "",
     actionTaken: "",
   });
-
-  // Load records
-  const loadRecords = async () => {
-    try {
-      const data = await disciplinaryService.getRecords(tenantId);
-      setRecords(data);
-    } catch (error) {
-      console.error("Error loading disciplinary records:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load disciplinary records",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    loadRecords();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId]);
 
   // Get employee name by ID
   const getEmployeeName = (employeeId: string): string => {
@@ -188,16 +169,17 @@ export default function Disciplinary() {
   const paginatedRecords = filteredRecords.slice(startIndex, startIndex + itemsPerPage);
 
   // Reset page when filters change
-  useEffect(() => {
+  const filterKey = `${selectedEmployee}-${selectedType}-${selectedStatus}`;
+  const prevFilterKeyRef = useRef(filterKey);
+  if (filterKey !== prevFilterKeyRef.current) {
+    prevFilterKeyRef.current = filterKey;
     setCurrentPage(1);
-  }, [selectedEmployee, selectedType, selectedStatus]);
+  }
 
   // Clamp page when items are deleted and current page becomes empty
-  useEffect(() => {
-    if (totalPages > 0 && currentPage > totalPages) {
-      setCurrentPage(totalPages);
-    }
-  }, [totalPages, currentPage]);
+  if (totalPages > 0 && currentPage > totalPages) {
+    setCurrentPage(totalPages);
+  }
 
   const getStatusBadge = (status: DisciplinaryStatus) => {
     switch (status) {
@@ -282,14 +264,12 @@ export default function Disciplinary() {
       return;
     }
 
-    setSubmitting(true);
     try {
       const employeeName = getEmployeeName(formData.employeeId);
       const employee = employees.find((e) => e.id === formData.employeeId);
 
-      await disciplinaryService.createRecord(
-        tenantId,
-        {
+      await createMutation.mutateAsync({
+        record: {
           employeeId: formData.employeeId,
           employeeName,
           department: employee?.jobDetails.department || "",
@@ -297,12 +277,12 @@ export default function Disciplinary() {
           type: formData.type as DisciplinaryType,
           severity: formData.severity as SeverityLevel,
           summary: formData.summary,
-          fullDetails: formData.fullDetails || undefined,
+          fullDetails: formData.fullDetails || "",
           createdBy: user?.email || "Unknown",
           createdDate: getTodayTL(),
         },
-        evidenceFile || undefined
-      );
+        evidenceFile: evidenceFile || undefined,
+      });
 
       toast({
         title: "Success",
@@ -311,7 +291,6 @@ export default function Disciplinary() {
 
       resetForm();
       setShowRecordDialog(false);
-      await loadRecords();
     } catch (error) {
       console.error("Error recording incident:", error);
       toast({
@@ -319,8 +298,6 @@ export default function Disciplinary() {
         description: "Failed to record incident. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -353,15 +330,17 @@ export default function Disciplinary() {
       return;
     }
 
-    setSubmitting(true);
     try {
-      await disciplinaryService.updateRecord(tenantId, editingRecord.id!, {
-        type: editFormData.type as DisciplinaryType,
-        severity: editFormData.severity as SeverityLevel,
-        status: editFormData.status as DisciplinaryStatus,
-        summary: editFormData.summary,
-        fullDetails: editFormData.fullDetails || undefined,
-        actionTaken: editFormData.actionTaken || undefined,
+      await updateMutation.mutateAsync({
+        id: editingRecord.id!,
+        updates: {
+          type: editFormData.type as DisciplinaryType,
+          severity: editFormData.severity as SeverityLevel,
+          status: editFormData.status as DisciplinaryStatus,
+          summary: editFormData.summary,
+          fullDetails: editFormData.fullDetails || "",
+          actionTaken: editFormData.actionTaken || "",
+        },
       });
 
       toast({
@@ -371,7 +350,6 @@ export default function Disciplinary() {
 
       setShowEditDialog(false);
       setEditingRecord(null);
-      await loadRecords();
     } catch (error) {
       console.error("Error updating incident:", error);
       toast({
@@ -379,8 +357,6 @@ export default function Disciplinary() {
         description: "Failed to update incident. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setSubmitting(false);
     }
   };
 
@@ -392,13 +368,11 @@ export default function Disciplinary() {
   const handleCloseCase = async () => {
     if (!selectedRecord) return;
 
-    setClosing(true);
     try {
-      await disciplinaryService.closeCase(
-        tenantId,
-        selectedRecord.id!,
-        user?.email || "Unknown"
-      );
+      await closeMutation.mutateAsync({
+        id: selectedRecord.id!,
+        closedBy: user?.email || "Unknown",
+      });
 
       toast({
         title: "Success",
@@ -408,7 +382,6 @@ export default function Disciplinary() {
       setShowCloseDialog(false);
       setShowViewDialog(false);
       setSelectedRecord(null);
-      await loadRecords();
     } catch (error) {
       console.error("Error closing case:", error);
       toast({
@@ -416,24 +389,20 @@ export default function Disciplinary() {
         description: "Failed to close case. Please try again.",
         variant: "destructive",
       });
-    } finally {
-      setClosing(false);
     }
   };
 
   const handleDelete = async () => {
     if (!deletingRecordId) return;
 
-    setDeleting(true);
     try {
-      await disciplinaryService.deleteRecord(tenantId, deletingRecordId);
+      await deleteMutation.mutateAsync(deletingRecordId);
       toast({
         title: "Success",
         description: "Record deleted successfully.",
       });
       setShowDeleteDialog(false);
       setDeletingRecordId(null);
-      await loadRecords();
     } catch (error) {
       console.error("Error deleting record:", error);
       toast({
@@ -441,8 +410,6 @@ export default function Disciplinary() {
         description: "Failed to delete record.",
         variant: "destructive",
       });
-    } finally {
-      setDeleting(false);
     }
   };
 
@@ -742,8 +709,8 @@ export default function Disciplinary() {
                         >
                           Cancel
                         </Button>
-                        <Button type="submit" disabled={submitting}>
-                          {submitting ? (
+                        <Button type="submit" disabled={createMutation.isPending}>
+                          {createMutation.isPending ? (
                             <>
                               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                               Recording...
@@ -958,8 +925,8 @@ export default function Disciplinary() {
               <Button type="button" variant="outline" onClick={() => setShowEditDialog(false)}>
                 Cancel
               </Button>
-              <Button type="submit" disabled={submitting}>
-                {submitting ? (
+              <Button type="submit" disabled={updateMutation.isPending}>
+                {updateMutation.isPending ? (
                   <>
                     <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                     Saving...
@@ -1069,8 +1036,8 @@ export default function Disciplinary() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleCloseCase} disabled={closing}>
-              {closing ? (
+            <AlertDialogAction onClick={handleCloseCase} disabled={closeMutation.isPending}>
+              {closeMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Closing...
@@ -1097,10 +1064,10 @@ export default function Disciplinary() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={deleting}
+              disabled={deleteMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {deleting ? (
+              {deleteMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Deleting...

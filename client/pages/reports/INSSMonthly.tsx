@@ -6,7 +6,7 @@
  * Note: INSS reporting is submitted via the Social Security portal.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -58,8 +58,14 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { taxFilingService } from "@/services/taxFilingService";
-import { settingsService } from "@/services/settingsService";
+import { useSettings } from "@/hooks/useSettings";
+import {
+  useTaxFilings,
+  useTaxFilingsDueSoon,
+  useGenerateMonthlyINSS,
+  useSaveTaxFiling,
+  useMarkTaxFilingAsFiled,
+} from "@/hooks/useTaxFiling";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type {
   FilingDueDate,
@@ -70,7 +76,6 @@ import type {
 import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenantId } from "@/contexts/TenantContext";
 
 const MONTHS = [
   { value: "01", label: "January" },
@@ -113,13 +118,20 @@ const STATUS_CONFIG = {
 export default function INSSMonthly() {
   const { toast } = useToast();
   const { user } = useAuth();
-  const tenantId = useTenantId();
 
-  const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [company, setCompany] = useState<Partial<CompanyDetails>>({});
-  const [filings, setFilings] = useState<TaxFiling[]>([]);
-  const [dueDates, setDueDates] = useState<FilingDueDate[]>([]);
+  // React Query hooks
+  const { data: settings, isLoading: settingsLoading } = useSettings();
+  const { data: filings = [], isLoading: filingsLoading } = useTaxFilings("inss_monthly");
+  const { data: allDueDates = [], isLoading: duesLoading } = useTaxFilingsDueSoon(6);
+  const generateINSS = useGenerateMonthlyINSS();
+  const saveFiling = useSaveTaxFiling();
+  const markFiled = useMarkTaxFilingAsFiled();
+
+  const company: Partial<CompanyDetails> = settings?.companyDetails || {};
+  const dueDates = useMemo(() => allDueDates.filter(d => d.type === "inss_monthly"), [allDueDates]);
+  const loading = settingsLoading || filingsLoading || duesLoading;
+
+  // Local state
   const [selectedReturn, setSelectedReturn] = useState<MonthlyINSSReturn | null>(null);
   const [showMarkFiledDialog, setShowMarkFiledDialog] = useState(false);
   const [selectedFilingId, setSelectedFilingId] = useState<string | null>(null);
@@ -135,54 +147,18 @@ export default function INSSMonthly() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
 
-  const loadData = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      if (tenantId) {
-        const settings = await settingsService.getSettings(tenantId);
-        if (settings?.companyDetails) setCompany(settings.companyDetails);
-      }
-
-      const allFilings = await taxFilingService.getAllFilings(tenantId, "inss_monthly");
-      setFilings(allFilings);
-
-      const dues = await taxFilingService.getFilingsDueSoon(tenantId, 6);
-      setDueDates(dues.filter(d => d.type === "inss_monthly"));
-    } catch (error) {
-      console.error("Failed to load INSS data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load INSS filing data.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, toast]);
-
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
-
   const handleGenerateReturn = async () => {
     const period = `${selectedYear}-${selectedMonth}`;
     try {
-      setGenerating(true);
-
-      const returnData = await taxFilingService.generateMonthlyINSSReturn(period, company, tenantId);
+      const returnData = await generateINSS.mutateAsync({ period, company });
       setSelectedReturn(returnData);
 
-      await taxFilingService.saveFiling(
-        "inss_monthly",
+      await saveFiling.mutateAsync({
+        type: "inss_monthly",
         period,
-        returnData,
-        user?.uid || "",
-        tenantId
-      );
-
-      const allFilings = await taxFilingService.getAllFilings(tenantId, "inss_monthly");
-      setFilings(allFilings);
+        dataSnapshot: returnData,
+        userId: user?.uid || "",
+      });
 
       toast({
         title: "INSS return generated",
@@ -195,8 +171,6 @@ export default function INSSMonthly() {
         description: "Failed to generate INSS return. Make sure you have paid payroll data for this period.",
         variant: "destructive",
       });
-    } finally {
-      setGenerating(false);
     }
   };
 
@@ -254,13 +228,13 @@ export default function INSSMonthly() {
   const handleMarkFiled = async () => {
     if (!selectedFilingId) return;
     try {
-      await taxFilingService.markAsFiled(
-        selectedFilingId,
-        filedMethod,
-        receiptNumber || undefined,
-        filedNotes || undefined,
-        user?.uid || undefined
-      );
+      await markFiled.mutateAsync({
+        filingId: selectedFilingId,
+        method: filedMethod,
+        receiptNumber: receiptNumber || "",
+        notes: filedNotes || "",
+        userId: user?.uid || "",
+      });
 
       toast({
         title: "Saved",
@@ -270,7 +244,6 @@ export default function INSSMonthly() {
       setShowMarkFiledDialog(false);
       setReceiptNumber("");
       setFiledNotes("");
-      await loadData();
     } catch (error) {
       console.error("Failed to mark INSS filing as filed:", error);
       toast({
@@ -302,6 +275,8 @@ export default function INSSMonthly() {
     if (!due) return "INSS";
     return due.task === "payment" ? "INSS payment" : "INSS statement";
   };
+
+  const generating = generateINSS.isPending || saveFiling.isPending;
 
   if (loading) {
     return (
@@ -435,9 +410,6 @@ export default function INSSMonthly() {
                     </>
                   )}
                 </Button>
-                <Button variant="outline" onClick={loadData}>
-                  Refresh
-                </Button>
               </div>
             </div>
           </CardContent>
@@ -447,7 +419,7 @@ export default function INSSMonthly() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>INSS Return – {selectedReturn.reportingPeriod}</span>
+                <span>INSS Return - {selectedReturn.reportingPeriod}</span>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="h-4 w-4 mr-2" />
@@ -456,7 +428,7 @@ export default function INSSMonthly() {
                 </div>
               </CardTitle>
               <CardDescription>
-                Employer: {selectedReturn.employerName || company.legalName || "—"} • TIN: {selectedReturn.employerTIN || company.tinNumber || "—"}
+                Employer: {selectedReturn.employerName || company.legalName || "-"} | TIN: {selectedReturn.employerTIN || company.tinNumber || "-"}
               </CardDescription>
             </CardHeader>
             <CardContent>
