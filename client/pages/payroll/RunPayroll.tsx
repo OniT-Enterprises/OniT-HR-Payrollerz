@@ -37,9 +37,10 @@ import {
   CheckCircle,
   AlertTriangle,
   Search,
-  Calendar,
-  Pencil,
   AlertCircle,
+  ChevronDown,
+  Building,
+  Lock,
 } from "lucide-react";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useCreatePayrollRunWithRecords } from "@/hooks/usePayroll";
@@ -49,18 +50,18 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
   PayrollLoadingSkeleton,
-  TaxInfoBanner,
-  PayrollSummaryCards,
   PayrollEmployeeRow,
-  TaxSummaryCard,
   PayrollPeriodConfig,
   PayrollComplianceCard,
   PayrollDialogs,
 } from "@/components/payroll";
+import { Separator } from "@/components/ui/separator";
 import {
-  formatPayPeriod,
-  formatPayDate,
-} from "@/lib/payroll/run-payroll-helpers";
+  Collapsible,
+  CollapsibleTrigger,
+  CollapsibleContent,
+} from "@/components/ui/collapsible";
+import { formatCurrencyTL, TL_INSS, TL_INCOME_TAX, TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
 import { usePayrollCalculator } from "@/hooks/usePayrollCalculator";
 
 export default function RunPayroll() {
@@ -90,6 +91,7 @@ export default function RunPayroll() {
   const [showFinalConfirmDialog, setShowFinalConfirmDialog] = useState(false);
 
   // Compliance UI states
+  const [complianceExpanded, setComplianceExpanded] = useState(false);
   const [complianceAcknowledged, setComplianceAcknowledged] = useState(false);
   const [complianceOverrideReason, setComplianceOverrideReason] = useState("");
   const [showAllCompliance, setShowAllCompliance] = useState(false);
@@ -294,192 +296,247 @@ export default function RunPayroll() {
 
       <div className="max-w-7xl mx-auto px-6 py-6">
 
-        {/* Pay Period Banner */}
-        <Card className="mb-6 border-2 border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 animate-fade-up stagger-1">
-          <CardContent className="p-5">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-xl bg-green-100 dark:bg-green-900/50 flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Badge className="bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300 text-sm px-3 py-1">
-                      {t("runPayroll.payPeriod")}
-                    </Badge>
-                    <Badge variant="outline" className="text-xs font-normal capitalize">
-                      {t(`runPayroll.${calc.payFrequency}`)}
-                    </Badge>
-                    {calc.editedCount > 0 && (
-                      <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300 text-xs">
-                        <Pencil className="h-3 w-3 mr-1" />
-                        {t("runPayroll.edited", { count: String(calc.editedCount) })}
-                      </Badge>
-                    )}
-                  </div>
-                  <p className="text-xl font-bold mt-1">
-                    {calc.periodStart && calc.periodEnd ? formatPayPeriod(calc.periodStart, calc.periodEnd) : t("runPayroll.notSet")}
-                  </p>
-                </div>
+        {/* Collapsible Compliance Banner */}
+        {calc.complianceIssues.length > 0 && (
+          <Collapsible open={complianceExpanded} onOpenChange={setComplianceExpanded} className="mb-6">
+            <div className="flex items-center gap-3 p-3 rounded-lg border border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 flex-shrink-0">
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">{t("runPayroll.payDateBanner")}</p>
-                <p className="text-lg font-semibold">{calc.payDate ? formatPayDate(calc.payDate) : t("runPayroll.notSet")}</p>
-              </div>
+              <span className="text-sm font-medium text-amber-800 dark:text-amber-200 flex-1">
+                {t("runPayroll.employeesNeedDocs", { count: String(calc.complianceIssues.length) })}
+              </span>
+              <span className="text-xs text-amber-600 dark:text-amber-400">
+                {t("runPayroll.employeesIncluded", { included: String(activeEmployees.length - calc.excludedEmployees.size), total: String(activeEmployees.length) })}
+              </span>
+              <CollapsibleTrigger asChild>
+                <button type="button" className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
+                  {complianceExpanded ? "Hide" : "Review"}
+                  <ChevronDown className={`h-3 w-3 transition-transform ${complianceExpanded ? "rotate-180" : ""}`} />
+                </button>
+              </CollapsibleTrigger>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* TL Tax Info Banner */}
-        <TaxInfoBanner />
-
-        {/* Compliance Notice */}
-        <PayrollComplianceCard
-          complianceIssues={calc.complianceIssues}
-          excludedEmployees={calc.excludedEmployees}
-          setExcludedEmployees={calc.setExcludedEmployees}
-          complianceAcknowledged={complianceAcknowledged}
-          setComplianceAcknowledged={setComplianceAcknowledged}
-          complianceOverrideReason={complianceOverrideReason}
-          setComplianceOverrideReason={setComplianceOverrideReason}
-          showAllCompliance={showAllCompliance}
-          setShowAllCompliance={setShowAllCompliance}
-          totalEmployees={activeEmployees.length}
-        />
-
-        {/* Period Settings */}
-        <PayrollPeriodConfig
-          payFrequency={calc.payFrequency}
-          setPayFrequency={calc.setPayFrequency}
-          periodStart={calc.periodStart}
-          setPeriodStart={calc.setPeriodStart}
-          periodEnd={calc.periodEnd}
-          setPeriodEnd={calc.setPeriodEnd}
-          payDate={calc.payDate}
-          setPayDate={calc.setPayDate}
-          includeSubsidioAnual={calc.includeSubsidioAnual}
-          setIncludeSubsidioAnual={calc.setIncludeSubsidioAnual}
-          onSyncAttendance={calc.handleSyncFromAttendance}
-          syncingAttendance={calc.syncingAttendance}
-        />
-
-        {/* Summary Cards */}
-        <div className="animate-fade-up stagger-2">
-          <PayrollSummaryCards totals={calc.totals} employeeCount={activeEmployees.length} />
-        </div>
-
-        {/* Tax Summary Card */}
-        <div className="animate-fade-up stagger-3">
-          <TaxSummaryCard totals={calc.totals} />
-        </div>
-
-        {/* Payroll Warnings */}
-        {calc.payrollWarnings.length > 0 && (
-          <Card className="mb-6 border-red-500/30 bg-red-50/30 dark:bg-red-950/10 animate-fade-up">
-            <CardHeader className="pb-3">
-              <CardTitle className="flex items-center gap-2 text-red-800 dark:text-red-200 text-base">
-                <div className="p-1.5 rounded-lg bg-red-500/10">
-                  <AlertTriangle className="h-4 w-4 text-red-600" />
-                </div>
-                {t("runPayroll.payrollWarnings", { count: String(calc.payrollWarnings.length) })}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-1.5">
-                {calc.payrollWarnings.map((w, i) => (
-                  <div key={i} className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300 p-2 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30">
-                    <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
-                    <span className="font-medium">{w.employeeName}:</span>
-                    <span>{w.message}</span>
-                  </div>
-                ))}
+            <CollapsibleContent>
+              <div className="mt-2">
+                <PayrollComplianceCard
+                  complianceIssues={calc.complianceIssues}
+                  excludedEmployees={calc.excludedEmployees}
+                  setExcludedEmployees={calc.setExcludedEmployees}
+                  complianceAcknowledged={complianceAcknowledged}
+                  setComplianceAcknowledged={setComplianceAcknowledged}
+                  complianceOverrideReason={complianceOverrideReason}
+                  setComplianceOverrideReason={setComplianceOverrideReason}
+                  showAllCompliance={showAllCompliance}
+                  setShowAllCompliance={setShowAllCompliance}
+                  totalEmployees={activeEmployees.length}
+                />
               </div>
-            </CardContent>
-          </Card>
+            </CollapsibleContent>
+          </Collapsible>
         )}
 
-        {/* Employee Payroll Table */}
-        <Card className="border-border/50 animate-fade-up stagger-4">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle className="flex items-center gap-2">
-                  <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
-                    <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  {t("runPayroll.employeePayroll")}
-                  <Badge variant="outline" className="text-xs font-normal tabular-nums ml-1">
-                    {calc.filteredData.length}{calc.filteredData.length !== calc.employeePayrollData.length ? ` / ${calc.employeePayrollData.length}` : ''}
-                  </Badge>
-                  {calc.editedCount > 0 && (
-                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
-                      {t("runPayroll.modified", { count: String(calc.editedCount) })}
-                    </Badge>
-                  )}
-                </CardTitle>
-                <CardDescription>
-                  {t("runPayroll.adjustHoursDesc")}
-                </CardDescription>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("runPayroll.searchEmployees")}
-                    value={calc.searchTerm}
-                    onChange={(e) => calc.setSearchTerm(e.target.value)}
-                    className="pl-9 border-border/50"
-                  />
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-8"></TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.employee")}</TableHead>
-                    <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.department")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.hours")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.ot")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.night")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.bonus")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.gross")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.deductions")}</TableHead>
-                    <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.netPay")}</TableHead>
-                    <TableHead className="w-10"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {calc.filteredData.map((data) => (
-                    <PayrollEmployeeRow
-                      key={data.employee.id}
-                      data={data}
-                      isExpanded={calc.expandedRows.has(data.employee.id || "")}
-                      onToggleExpand={calc.toggleRowExpansion}
-                      onInputChange={calc.handleInputChange}
-                      onReset={calc.handleResetRow}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+        {/* 2-Column Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            {calc.filteredData.length === 0 && (
-              <div className="text-center py-16">
-                <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/20 dark:to-emerald-950/10 flex items-center justify-center mb-4">
-                  <Search className="h-7 w-7 text-green-400" />
-                </div>
-                <p className="font-medium text-foreground mb-1">{t("runPayroll.noEmployeesFound")}</p>
-                <p className="text-sm text-muted-foreground">
-                  {t("runPayroll.tryAdjustSearch")}
-                </p>
-              </div>
+          {/* LEFT: Employee Table */}
+          <div className="lg:col-span-2 space-y-6">
+
+            {/* Payroll Warnings */}
+            {calc.payrollWarnings.length > 0 && (
+              <Card className="border-red-500/30 bg-red-50/30 dark:bg-red-950/10">
+                <CardContent className="p-4">
+                  <div className="space-y-1.5">
+                    {calc.payrollWarnings.map((w, i) => (
+                      <div key={i} className="flex items-center gap-2 text-sm text-red-700 dark:text-red-300 p-2 rounded-md bg-red-50/50 dark:bg-red-950/20 border border-red-200/50 dark:border-red-800/30">
+                        <AlertCircle className="h-3.5 w-3.5 flex-shrink-0" />
+                        <span className="font-medium">{w.employeeName}:</span>
+                        <span>{w.message}</span>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
             )}
-          </CardContent>
-        </Card>
+
+            {/* Employee Payroll Table */}
+            <Card className="border-border/50">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
+                        <Users className="h-4 w-4 text-green-600 dark:text-green-400" />
+                      </div>
+                      {t("runPayroll.employeePayroll")}
+                      <Badge variant="outline" className="text-xs font-normal tabular-nums ml-1">
+                        {calc.filteredData.length}{calc.filteredData.length !== calc.employeePayrollData.length ? ` / ${calc.employeePayrollData.length}` : ''}
+                      </Badge>
+                      {calc.editedCount > 0 && (
+                        <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs">
+                          {t("runPayroll.modified", { count: String(calc.editedCount) })}
+                        </Badge>
+                      )}
+                    </CardTitle>
+                    <CardDescription>
+                      {t("runPayroll.adjustHoursDesc")}
+                    </CardDescription>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="relative w-64">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder={t("runPayroll.searchEmployees")}
+                        value={calc.searchTerm}
+                        onChange={(e) => calc.setSearchTerm(e.target.value)}
+                        className="pl-9 border-border/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/30 hover:bg-muted/30">
+                        <TableHead className="w-8"></TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.employee")}</TableHead>
+                        <TableHead className="text-xs font-semibold uppercase tracking-wider">{t("runPayroll.department")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.hours")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.ot")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.night")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.bonus")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.gross")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.deductions")}</TableHead>
+                        <TableHead className="text-right text-xs font-semibold uppercase tracking-wider">{t("runPayroll.netPay")}</TableHead>
+                        <TableHead className="w-10"></TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {calc.filteredData.map((data) => (
+                        <PayrollEmployeeRow
+                          key={data.employee.id}
+                          data={data}
+                          isExpanded={calc.expandedRows.has(data.employee.id || "")}
+                          onToggleExpand={calc.toggleRowExpansion}
+                          onInputChange={calc.handleInputChange}
+                          onReset={calc.handleResetRow}
+                        />
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {calc.filteredData.length === 0 && (
+                  <div className="text-center py-16">
+                    <div className="mx-auto w-14 h-14 rounded-2xl bg-gradient-to-br from-green-100 to-emerald-50 dark:from-green-900/20 dark:to-emerald-950/10 flex items-center justify-center mb-4">
+                      <Search className="h-7 w-7 text-green-400" />
+                    </div>
+                    <p className="font-medium text-foreground mb-1">{t("runPayroll.noEmployeesFound")}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("runPayroll.tryAdjustSearch")}
+                    </p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* RIGHT: Sticky Sidebar */}
+          <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
+
+            {/* Period Config (compact) */}
+            <PayrollPeriodConfig
+              payFrequency={calc.payFrequency}
+              setPayFrequency={calc.setPayFrequency}
+              periodStart={calc.periodStart}
+              setPeriodStart={calc.setPeriodStart}
+              periodEnd={calc.periodEnd}
+              setPeriodEnd={calc.setPeriodEnd}
+              payDate={calc.payDate}
+              setPayDate={calc.setPayDate}
+              includeSubsidioAnual={calc.includeSubsidioAnual}
+              setIncludeSubsidioAnual={calc.setIncludeSubsidioAnual}
+              onSyncAttendance={calc.handleSyncFromAttendance}
+              syncingAttendance={calc.syncingAttendance}
+              compact
+            />
+
+            {/* Payroll Summary (compact) */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Calculator className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+                  {t("runPayroll.totalGrossPay").replace(/\s*\(.*\)/, "") || "Payroll Summary"}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t("runPayroll.totalGrossPay")}</span>
+                  <span className="font-semibold tabular-nums">{formatCurrencyTL(calc.totals.grossPay)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t("runPayroll.employeeDeductions")}</span>
+                  <span className="font-semibold tabular-nums text-red-600">-{formatCurrencyTL(calc.totals.totalDeductions)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{t("runPayroll.netPayToEmployees")}</span>
+                  <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.netPay)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{t("runPayroll.employees")}</span>
+                  <span className="font-semibold tabular-nums">{activeEmployees.length}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tax & INSS Summary (compact) */}
+            <Card className="border-border/50">
+              <CardHeader className="pb-2 pt-4 px-4">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Lock className="h-3 w-3 text-muted-foreground" />
+                  {t("runPayroll.taxInssTitle")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="px-4 pb-4 space-y-2.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.income_tax.tl}</span>
+                  <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.incomeTax)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employee.tl}</span>
+                  <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.inssEmployee)}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employer.tl}</span>
+                  <span className="font-semibold tabular-nums text-amber-600">{formatCurrencyTL(calc.totals.inssEmployer)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between text-sm">
+                  <span className="font-medium">{t("runPayroll.totalEmployerCost")}</span>
+                  <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.totalEmployerCost)}</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* TL Tax Rates Reference */}
+            <div className="flex flex-wrap gap-1.5 px-1">
+              <div className="p-1 rounded bg-amber-500/10 flex-shrink-0">
+                <Building className="h-3 w-3 text-amber-600" />
+              </div>
+              <Badge variant="outline" className="text-[10px] font-normal">
+                WIT {(TL_INCOME_TAX.rate * 100).toFixed(0)}% &gt; ${TL_INCOME_TAX.residentThreshold}
+              </Badge>
+              <Badge variant="outline" className="text-[10px] font-normal">
+                INSS Ee {(TL_INSS.employeeRate * 100).toFixed(0)}%
+              </Badge>
+              <Badge variant="outline" className="text-[10px] font-normal">
+                INSS Er {(TL_INSS.employerRate * 100).toFixed(0)}%
+              </Badge>
+            </div>
+          </div>
+        </div>
 
         <div className="h-8" />
       </div>

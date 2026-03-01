@@ -31,6 +31,7 @@ interface PayrollPeriodConfigProps {
   setIncludeSubsidioAnual: (v: boolean) => void;
   onSyncAttendance: () => void;
   syncingAttendance: boolean;
+  compact?: boolean;
 }
 
 export function PayrollPeriodConfig({
@@ -46,23 +47,26 @@ export function PayrollPeriodConfig({
   setIncludeSubsidioAnual,
   onSyncAttendance,
   syncingAttendance,
+  compact,
 }: PayrollPeriodConfigProps) {
   const { t } = useI18n();
   return (
-    <Card className="mb-6 border-border/50 animate-fade-up stagger-2">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+    <Card className={compact ? "border-border/50" : "mb-6 border-border/50 animate-fade-up stagger-2"}>
+      <CardHeader className={compact ? "pb-2 pt-4 px-4" : undefined}>
+        <CardTitle className={compact ? "text-sm font-semibold flex items-center gap-2" : "flex items-center gap-2"}>
           <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
             <Calculator className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
           {t('runPayroll.periodConfig')}
         </CardTitle>
-        <CardDescription>
-          {t('runPayroll.configureDesc')}
-        </CardDescription>
+        {!compact && (
+          <CardDescription>
+            {t('runPayroll.configureDesc')}
+          </CardDescription>
+        )}
       </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <CardContent className={compact ? "px-4 pb-4" : undefined}>
+        <div className={compact ? "grid grid-cols-2 gap-3" : "grid grid-cols-1 md:grid-cols-4 gap-4"}>
           <div className="space-y-2">
             <Label htmlFor="pay-frequency" className="flex items-center gap-1.5 text-sm">
               <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
@@ -127,7 +131,7 @@ export function PayrollPeriodConfig({
               className="border-border/50"
             />
           </div>
-          <div className="md:col-span-4 pt-2">
+          <div className={compact ? "col-span-2 pt-2" : "md:col-span-4 pt-2"}>
             <div className="mb-3">
               <button
                 type="button"
