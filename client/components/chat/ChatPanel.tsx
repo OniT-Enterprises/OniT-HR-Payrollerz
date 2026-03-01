@@ -495,17 +495,28 @@ const ChatPanel = ({
             <p className="text-sm font-medium text-foreground mb-2">
               Meza HR Assistant
             </p>
-            <p className="text-xs text-muted-foreground leading-relaxed">
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">
               Ask me about employees, payroll, leave, interviews, or finances.
-              I can also run payroll, create journal entries, and manage fiscal
-              periods.
             </p>
-            <ul className="text-xs text-muted-foreground mt-2 space-y-1 text-left">
-              <li>&bull; "How many active employees?"</li>
-              <li>&bull; "Run payroll for March 2026"</li>
-              <li>&bull; "Show overdue invoices"</li>
-              <li>&bull; "Check compliance"</li>
-            </ul>
+            <div className="flex flex-wrap justify-center gap-2 max-w-md">
+              {[
+                "Run payroll",
+                "How many employees?",
+                "Pending leave requests",
+                "Show overdue invoices",
+                "Trial balance",
+                "Check compliance",
+              ].map((q) => (
+                <button
+                  key={q}
+                  type="button"
+                  onClick={() => doSendStreaming(q)}
+                  className="px-3 py-1.5 text-xs rounded-full border border-border bg-muted/50 text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+                >
+                  {q}
+                </button>
+              ))}
+            </div>
           </div>
         )}
         <div className="flex flex-col gap-3">

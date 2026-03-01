@@ -3538,16 +3538,16 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
       }
 
       const contentType = ocRes.headers.get('content-type') || '';
-
       if (contentType.includes('text/event-stream') || contentType.includes('text/plain')) {
         // SSE streaming from OpenClaw
         let fullContent = '';
         const toolNames = [];
         const completedSteps = new Set();
         let buffer = '';
+        const textDecoder = new TextDecoder();
 
         for await (const chunk of ocRes.body) {
-          buffer += chunk.toString();
+          buffer += (typeof chunk === 'string') ? chunk : textDecoder.decode(chunk, { stream: true });
           const lines = buffer.split('\n');
           buffer = lines.pop() || '';
 
@@ -3558,19 +3558,24 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
 
             try {
               const parsed = JSON.parse(payload);
-              const delta = parsed.choices?.[0]?.delta;
-              if (delta?.content) {
-                fullContent += delta.content;
-                sendEvent({ type: 'chunk', content: delta.content });
+              const choice = parsed.choices?.[0];
+              const delta = choice?.delta;
+              const message = choice?.message;
+
+              // Extract content from delta (streaming) or message (non-streaming/final)
+              const content = delta?.content || message?.content;
+              if (content) {
+                fullContent += content;
+                sendEvent({ type: 'chunk', content });
               }
-              // Detect tool calls in stream
-              if (delta?.tool_calls) {
-                for (const tc of delta.tool_calls) {
-                  if (tc.function?.name && !completedSteps.has(tc.function.name)) {
-                    toolNames.push(tc.function.name);
-                    completedSteps.add(tc.function.name);
-                    sendEvent({ type: 'step', content: humanizeToolName(tc.function.name), status: 'running' });
-                  }
+
+              // Detect tool calls in stream (both delta and message formats)
+              const tcList = delta?.tool_calls || message?.tool_calls || [];
+              for (const tc of tcList) {
+                if (tc.function?.name && !completedSteps.has(tc.function.name)) {
+                  toolNames.push(tc.function.name);
+                  completedSteps.add(tc.function.name);
+                  sendEvent({ type: 'step', content: humanizeToolName(tc.function.name), status: 'running' });
                 }
               }
             } catch (_e) {
