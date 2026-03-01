@@ -184,7 +184,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   return (
     <AuthContext.Provider value={value}>
-      {!loading && children}
+      {loading ? <div className="min-h-screen bg-background" /> : children}
     </AuthContext.Provider>
   );
 }

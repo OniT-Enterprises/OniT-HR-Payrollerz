@@ -556,17 +556,20 @@ export function TenantProvider({ children }: TenantProviderProps) {
   // Dismiss the HTML splash overlay once we're past the loading gate
   useEffect(() => {
     if (!loading) {
-      const splash = document.getElementById("splash");
-      if (splash) {
-        splash.style.opacity = "0";
-        setTimeout(() => splash.remove(), 300);
-      }
+      // Use requestAnimationFrame to ensure React content has painted before fading splash
+      requestAnimationFrame(() => {
+        const splash = document.getElementById("splash");
+        if (splash) {
+          splash.style.opacity = "0";
+          setTimeout(() => splash.remove(), 300);
+        }
+      });
     }
   }, [loading]);
 
   return (
     <TenantContext.Provider value={value}>
-      {loading ? null : children}
+      {loading ? <div className="min-h-screen bg-background" /> : children}
     </TenantContext.Provider>
   );
 }

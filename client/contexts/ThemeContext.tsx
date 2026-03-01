@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -21,34 +21,35 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   const [isDark, setIsDark] = useState(false);
 
-  useEffect(() => {
+  // Apply theme class synchronously before paint to prevent flash of wrong theme
+  useLayoutEffect(() => {
     const root = window.document.documentElement;
 
-    const updateTheme = () => {
-      let effectiveTheme: "light" | "dark";
+    let effectiveTheme: "light" | "dark";
+    if (theme === "system") {
+      effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    } else {
+      effectiveTheme = theme;
+    }
 
-      if (theme === "system") {
-        effectiveTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-      } else {
-        effectiveTheme = theme;
-      }
+    setIsDark(effectiveTheme === "dark");
+    root.classList.remove("light", "dark");
+    root.classList.add(effectiveTheme);
+  }, [theme]);
 
-      setIsDark(effectiveTheme === "dark");
+  // Listen for system preference changes
+  useEffect(() => {
+    if (theme !== "system") return;
 
-      root.classList.remove("light", "dark");
-      root.classList.add(effectiveTheme);
-    };
-
-    updateTheme();
-
-    // Listen for system preference changes
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const handleChange = () => {
-      if (theme === "system") {
-        updateTheme();
-      }
+      const root = window.document.documentElement;
+      const effectiveTheme = mediaQuery.matches ? "dark" : "light";
+      setIsDark(effectiveTheme === "dark");
+      root.classList.remove("light", "dark");
+      root.classList.add(effectiveTheme);
     };
 
     mediaQuery.addEventListener("change", handleChange);
