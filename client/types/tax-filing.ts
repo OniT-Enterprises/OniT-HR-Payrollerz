@@ -13,6 +13,7 @@
 // ============================================
 
 export type TaxFilingType = 'monthly_wit' | 'annual_wit' | 'inss_monthly';
+export type TaxFilingTask = 'statement' | 'payment';
 
 export type TaxFilingStatus = 'pending' | 'filed' | 'overdue' | 'draft';
 
@@ -163,6 +164,10 @@ export interface TaxFiling {
   period: string;             // "2025-01" for monthly, "2024" for annual
   status: TaxFilingStatus;
   dueDate: string;
+  statementStatus?: TaxFilingStatus;
+  paymentStatus?: TaxFilingStatus;
+  statementDueDate?: string;
+  paymentDueDate?: string;
 
   // Data Snapshot
   dataSnapshot: MonthlyWITReturn | AnnualWITReturn | MonthlyINSSReturn;
@@ -172,6 +177,14 @@ export interface TaxFiling {
   submissionMethod?: SubmissionMethod;
   receiptNumber?: string;
   notes?: string;
+  statementFiledDate?: string;
+  paymentFiledDate?: string;
+  statementSubmissionMethod?: SubmissionMethod;
+  paymentSubmissionMethod?: SubmissionMethod;
+  statementReceiptNumber?: string;
+  paymentReceiptNumber?: string;
+  statementNotes?: string;
+  paymentNotes?: string;
 
   // Totals (for quick display)
   totalWages: number;
@@ -201,7 +214,7 @@ export interface FilingDueDate {
    * Some obligations have multiple deadlines (e.g., INSS statement vs payment).
    * When present, this distinguishes the deadline task while keeping `type` stable.
    */
-  task?: 'statement' | 'payment';
+  task?: TaxFilingTask;
   period: string;
   dueDate: string;
   status: TaxFilingStatus;

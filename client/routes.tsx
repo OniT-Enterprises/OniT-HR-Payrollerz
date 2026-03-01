@@ -141,6 +141,10 @@ const ChartOfAccounts = lazy(() => import("@/pages/accounting/ChartOfAccounts"))
 const JournalEntries = lazy(() => import("@/pages/accounting/JournalEntries"));
 const GeneralLedger = lazy(() => import("@/pages/accounting/GeneralLedger"));
 const TrialBalance = lazy(() => import("@/pages/accounting/TrialBalance"));
+const IncomeStatement = lazy(() => import("@/pages/accounting/IncomeStatement"));
+const AccountingBalanceSheet = lazy(() => import("@/pages/accounting/BalanceSheet"));
+const FiscalPeriods = lazy(() => import("@/pages/accounting/FiscalPeriods"));
+const AccountingAuditTrail = lazy(() => import("@/pages/accounting/AuditTrail"));
 
 // Reports
 const PayrollReports = lazy(() => import("@/pages/reports/PayrollReports"));
@@ -689,6 +693,38 @@ export const accountingRoutes = (
       element={
         <FeatureRoute requiredModule="accounting">
           <TrialBalance />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/income-statement"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <IncomeStatement />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/balance-sheet"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <AccountingBalanceSheet />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/fiscal-periods"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <FiscalPeriods />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/accounting/audit-trail"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <AccountingAuditTrail />
         </FeatureRoute>
       }
     />

@@ -64,9 +64,9 @@ export interface TLTaxConfig {
 
   // Maternity Leave
   maternityLeave: {
-    totalDays: number;             // e.g., 90
-    preNatalDays: number;          // e.g., 30
-    postNatalDays: number;         // e.g., 60
+    totalDays: number;             // e.g., 84 (12 weeks)
+    preNatalDays: number;          // e.g., 28
+    postNatalDays: number;         // e.g., 56
     payRate: number;               // e.g., 1.0 for 100%
   };
 
@@ -101,7 +101,7 @@ const DEFAULT_TAX_CONFIG: TLTaxConfig = {
   },
   minimumWage: {
     monthly: 115,
-    effectiveDate: '2023-01-01',
+    effectiveDate: '2012-06-22',
   },
   workingHours: {
     standardWeeklyHours: 44,
@@ -127,9 +127,9 @@ const DEFAULT_TAX_CONFIG: TLTaxConfig = {
     reducedPayRate: 0.5,
   },
   maternityLeave: {
-    totalDays: 90,
-    preNatalDays: 30,
-    postNatalDays: 60,
+    totalDays: 84,
+    preNatalDays: 28,
+    postNatalDays: 56,
     payRate: 1.0,
   },
   severance: {
@@ -140,7 +140,7 @@ const DEFAULT_TAX_CONFIG: TLTaxConfig = {
   lastUpdated: null,
   updatedBy: null,
   version: 1,
-  effectiveDate: '2023-01-01',
+  effectiveDate: '2012-06-22',
 };
 
 // ============================================
@@ -189,4 +189,3 @@ export async function getTaxConfig(): Promise<TLTaxConfig> {
     return DEFAULT_TAX_CONFIG;
   }
 }
-

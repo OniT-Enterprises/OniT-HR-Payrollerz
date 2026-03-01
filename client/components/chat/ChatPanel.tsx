@@ -1,12 +1,12 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { Send, Loader2, Bot, Plus, X, Check, XCircle } from "lucide-react";
+import { Send, Loader2, Bot, Plus, X, Check, XCircle, ChevronRight, ChevronDown, Circle } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { auth } from "@/lib/firebase";
 import { useTenantId } from "@/contexts/TenantContext";
-import { useChatStore } from "@/stores/chatStore";
+import { useChatStore, type ProgressStep } from "@/stores/chatStore";
 import { cn } from "@/lib/utils";
 
 const API_BASE = import.meta.env.VITE_MEZA_API_URL || "https://meza.naroman.tl";
@@ -26,6 +26,113 @@ function sanitizeLinkHref(href?: string): string | null {
   }
 }
 
+// ── StepLog Component ────────────────────────────────────────────────────────
+
+function StepLog({
+  steps,
+  collapsed,
+  duration,
+  onToggle,
+}: {
+  steps: ProgressStep[];
+  collapsed: boolean;
+  duration?: number;
+  onToggle: () => void;
+}) {
+  if (!steps?.length) return null;
+
+  if (collapsed) {
+    return (
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
+      >
+        <ChevronRight className="h-3 w-3" />
+        <span>{steps.length} steps</span>
+        {duration != null && (
+          <span className="text-muted-foreground/60">
+            {(duration / 1000).toFixed(1)}s
+          </span>
+        )}
+      </button>
+    );
+  }
+
+  return (
+    <div className="mb-3 space-y-1">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+      >
+        <ChevronDown className="h-3 w-3" />
+        <span>Steps</span>
+        {duration != null && (
+          <span className="text-muted-foreground/60">
+            {(duration / 1000).toFixed(1)}s
+          </span>
+        )}
+      </button>
+      {steps.map((step, i) => (
+        <div key={i} className="flex items-center gap-2 text-xs ml-2">
+          {step.status === "done" ? (
+            <Check className="h-3 w-3 text-green-500 shrink-0" />
+          ) : step.status === "running" ? (
+            <Loader2 className="h-3 w-3 animate-spin text-blue-500 shrink-0" />
+          ) : step.status === "error" ? (
+            <XCircle className="h-3 w-3 text-destructive shrink-0" />
+          ) : (
+            <Circle className="h-3 w-3 text-muted-foreground shrink-0" />
+          )}
+          <span
+            className={cn(
+              step.status === "running"
+                ? "text-foreground"
+                : "text-muted-foreground"
+            )}
+          >
+            {step.content}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ── Contextual loading messages ──────────────────────────────────────────────
+
+const THINKING_MESSAGES: Record<string, string[]> = {
+  payroll: [
+    "Calculating salaries...",
+    "Checking tax rates...",
+    "Running compliance checks...",
+  ],
+  accounting: [
+    "Checking accounts...",
+    "Verifying balances...",
+    "Reviewing entries...",
+  ],
+  leave: [
+    "Checking leave balances...",
+    "Reviewing schedule...",
+  ],
+  default: [
+    "Looking into it...",
+    "Checking the data...",
+    "Almost there...",
+  ],
+};
+
+function getThinkingCategory(lastUserMessage: string): string {
+  const lower = lastUserMessage.toLowerCase();
+  if (/payroll|salary|salaries|wit|inss|pay run/.test(lower)) return "payroll";
+  if (/journal|ledger|trial balance|accounting|entry|debit|credit/.test(lower))
+    return "accounting";
+  if (/leave|vacation|sick|pto/.test(lower)) return "leave";
+  return "default";
+}
+
+// ── ChatPanel ────────────────────────────────────────────────────────────────
+
 interface ChatPanelProps {
   className?: string;
   showHeader?: boolean;
@@ -38,12 +145,22 @@ const ChatPanel = ({
   onClose,
 }: ChatPanelProps) => {
   const tenantId = useTenantId();
-  const { messages, isLoading, sessionKey, addMessage, setLoading, newChat } = useChatStore();
+  const {
+    messages,
+    isLoading,
+    sessionKey,
+    addMessage,
+    updateLastMessage,
+    setLoading,
+    newChat,
+    toggleCollapsed,
+  } = useChatStore();
   const [input, setInput] = useState("");
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const isNearBottomRef = useRef(true);
+  const [thinkingIdx, setThinkingIdx] = useState(0);
 
   // Track whether user is scrolled near the bottom
   useEffect(() => {
@@ -72,61 +189,237 @@ const ChatPanel = ({
     }
   }, []);
 
-  const doSend = useCallback(async (text: string) => {
-    if (!text || isLoading || !tenantId) return;
+  // Rotate thinking message every 3s while loading
+  useEffect(() => {
+    if (!isLoading) {
+      setThinkingIdx(0);
+      return;
+    }
+    const timer = setInterval(() => {
+      setThinkingIdx((i) => i + 1);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [isLoading]);
 
-    const user = auth?.currentUser;
-    if (!user) return;
+  // Fallback: regular non-streaming request (updates streaming placeholder)
+  const doSendFallback = useCallback(
+    async (text: string, token: string, startTime: number) => {
+      try {
+        const res = await fetch(
+          `${API_BASE}/api/tenants/${tenantId}/chat`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ message: text, sessionKey }),
+          }
+        );
 
-    addMessage({ role: "user", text });
-    setLoading(true);
+        if (!res.ok) {
+          const err = await res
+            .json()
+            .catch(() => ({ message: "Request failed" }));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
 
-    try {
-      const token = await user.getIdToken();
-      const payload = {
-        message: text,
-        sessionKey,
-      };
+        const data = await res.json();
+        updateLastMessage({
+          text: data.reply || "I couldn't generate a response.",
+          isStreaming: false,
+          duration: Date.now() - startTime,
+        });
 
-      const res = await fetch(`${API_BASE}/api/tenants/${tenantId}/chat`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
+        if (Array.isArray(data.warnings) && data.warnings.length > 0) {
+          addMessage({
+            role: "assistant",
+            text: `Warning: ${data.warnings.join("\n")}`,
+          });
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Something went wrong";
+        updateLastMessage({
+          text: `Sorry, I encountered an error: ${errorMessage}`,
+          isStreaming: false,
+        });
+      } finally {
+        setLoading(false);
+      }
+    },
+    [tenantId, sessionKey, addMessage, updateLastMessage, setLoading]
+  );
+
+  const doSendStreaming = useCallback(
+    async (text: string) => {
+      if (!text || isLoading || !tenantId) return;
+      const user = auth?.currentUser;
+      if (!user) return;
+
+      addMessage({ role: "user", text });
+      setLoading(true);
+      const startTime = Date.now();
+
+      // Add placeholder assistant message for streaming
+      addMessage({
+        role: "assistant",
+        text: "",
+        isStreaming: true,
+        steps: [],
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({ message: "Request failed", requestId: "" }));
-        const requestIdText = err.requestId ? ` (ref: ${err.requestId})` : "";
-        throw new Error((err.message || `HTTP ${res.status}`) + requestIdText);
-      }
+      try {
+        const token = await user.getIdToken();
+        const res = await fetch(
+          `${API_BASE}/api/tenants/${tenantId}/chat-stream`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ message: text, sessionKey }),
+          }
+        );
 
-      const data = await res.json();
-      addMessage({ role: "assistant", text: data.reply || "I couldn't generate a response." });
+        // If streaming endpoint not available, fall back to regular
+        if (res.status === 404) {
+          return doSendFallback(text, token, startTime);
+        }
 
-      if (Array.isArray(data.warnings) && data.warnings.length > 0) {
-        addMessage({ role: "assistant", text: `Warning: ${data.warnings.join("\n")}` });
+        if (!res.ok) {
+          const err = await res
+            .json()
+            .catch(() => ({ message: "Request failed" }));
+          throw new Error(err.message || `HTTP ${res.status}`);
+        }
+
+        if (!res.body) {
+          throw new Error("No response body for streaming");
+        }
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "";
+        let streamedText = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          buffer += decoder.decode(value, { stream: true });
+          const chunks = buffer.split("\n\n");
+          buffer = chunks.pop() || "";
+
+          for (const chunk of chunks) {
+            if (!chunk.startsWith("data: ")) continue;
+            try {
+              const event = JSON.parse(chunk.slice(6));
+
+              switch (event.type) {
+                case "status":
+                  updateLastMessage({
+                    text: "",
+                    isStreaming: true,
+                  });
+                  break;
+                case "step":
+                  updateLastMessage((prev) => {
+                    const steps = [...(prev.steps || [])];
+                    const existing = steps.findIndex(
+                      (s) => s.content === event.content
+                    );
+                    if (existing >= 0) {
+                      steps[existing] = {
+                        ...steps[existing],
+                        status: event.status || "done",
+                      };
+                    } else {
+                      steps.push({
+                        content: event.content,
+                        status: event.status || "done",
+                        timestamp: Date.now(),
+                      });
+                    }
+                    return { steps };
+                  });
+                  break;
+                case "chunk":
+                  streamedText += event.content;
+                  updateLastMessage({
+                    text: streamedText,
+                    isStreaming: true,
+                  });
+                  break;
+                case "complete":
+                  updateLastMessage({
+                    text: event.content,
+                    isStreaming: false,
+                    collapsed: true,
+                    duration: Date.now() - startTime,
+                  });
+                  break;
+                case "error":
+                  updateLastMessage({
+                    text: `Error: ${event.content}`,
+                    isStreaming: false,
+                  });
+                  break;
+              }
+            } catch {
+              // Ignore malformed SSE chunks
+            }
+          }
+        }
+
+        // If we never got a 'complete' event, finalize
+        const lastState = useChatStore.getState();
+        const lastAssistant = lastState.messages[lastState.messages.length - 1];
+        if (lastAssistant?.isStreaming) {
+          updateLastMessage({
+            text: streamedText || lastAssistant.text,
+            isStreaming: false,
+            duration: Date.now() - startTime,
+            collapsed: true,
+          });
+        }
+      } catch (err) {
+        const errorMessage =
+          err instanceof Error ? err.message : "Something went wrong";
+        updateLastMessage({
+          text: `Sorry, I encountered an error: ${errorMessage}`,
+          isStreaming: false,
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Something went wrong";
-      addMessage({ role: "assistant", text: `Sorry, I encountered an error: ${errorMessage}` });
-    } finally {
-      setLoading(false);
-    }
-  }, [isLoading, tenantId, addMessage, setLoading, sessionKey]);
+    },
+    [
+      isLoading,
+      tenantId,
+      addMessage,
+      updateLastMessage,
+      setLoading,
+      sessionKey,
+      doSendFallback,
+    ]
+  );
 
   const sendMessage = useCallback(() => {
     const trimmed = input.trim();
     if (!trimmed) return;
     setInput("");
-    doSend(trimmed);
-  }, [input, doSend]);
+    doSendStreaming(trimmed);
+  }, [input, doSendStreaming]);
 
   // Check if the last assistant message is asking for confirmation
   const lastMsg = messages[messages.length - 1];
-  const showConfirmButtons = !isLoading && lastMsg?.role === "assistant" && CONFIRM_PATTERN.test(lastMsg.text);
+  const showConfirmButtons =
+    !isLoading &&
+    lastMsg?.role === "assistant" &&
+    !lastMsg.isStreaming &&
+    CONFIRM_PATTERN.test(lastMsg.text);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -134,6 +427,15 @@ const ChatPanel = ({
       sendMessage();
     }
   };
+
+  // Get contextual thinking message
+  const lastUserMsg = [...messages].reverse().find((m) => m.role === "user");
+  const thinkingCategory = lastUserMsg
+    ? getThinkingCategory(lastUserMsg.text)
+    : "default";
+  const thinkingMsgs = THINKING_MESSAGES[thinkingCategory];
+  const currentThinkingMsg =
+    thinkingMsgs[thinkingIdx % thinkingMsgs.length];
 
   if (!tenantId) return null;
 
@@ -181,23 +483,28 @@ const ChatPanel = ({
       <ScrollArea
         className="flex-1 min-h-0 px-4 py-3"
         ref={(node: HTMLDivElement | null) => {
-          viewportRef.current = node?.querySelector<HTMLDivElement>(
-            "[data-radix-scroll-area-viewport]"
-          ) ?? null;
+          viewportRef.current =
+            node?.querySelector<HTMLDivElement>(
+              "[data-radix-scroll-area-viewport]"
+            ) ?? null;
         }}
       >
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
             <Bot className="h-10 w-10 text-muted-foreground/50 mb-3" />
-            <p className="text-sm font-medium text-foreground mb-2">Meza HR Assistant</p>
+            <p className="text-sm font-medium text-foreground mb-2">
+              Meza HR Assistant
+            </p>
             <p className="text-xs text-muted-foreground leading-relaxed">
               Ask me about employees, payroll, leave, interviews, or finances.
+              I can also run payroll, create journal entries, and manage fiscal
+              periods.
             </p>
             <ul className="text-xs text-muted-foreground mt-2 space-y-1 text-left">
               <li>&bull; "How many active employees?"</li>
-              <li>&bull; "Who is on leave today?"</li>
+              <li>&bull; "Run payroll for March 2026"</li>
               <li>&bull; "Show overdue invoices"</li>
-              <li>&bull; "Payroll summary for this month"</li>
+              <li>&bull; "Check compliance"</li>
             </ul>
           </div>
         )}
@@ -213,67 +520,140 @@ const ChatPanel = ({
               )}
             >
               {msg.role === "assistant" ? (
-                <Markdown
-                  skipHtml
-                  remarkPlugins={[remarkGfm]}
-                  components={{
-                    h1: ({ children }) => <p className="font-bold mb-1">{children}</p>,
-                    h2: ({ children }) => <p className="font-bold mb-1">{children}</p>,
-                    h3: ({ children }) => <p className="font-semibold mb-1">{children}</p>,
-                    p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
-                    ul: ({ children }) => <ul className="list-disc ml-4 mb-1.5 last:mb-0">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal ml-4 mb-1.5 last:mb-0">{children}</ol>,
-                    li: ({ children }) => <li className="mb-0.5">{children}</li>,
-                    strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
-                    a: ({ href, children }) => {
-                      const safeHref = sanitizeLinkHref(href);
-                      if (!safeHref) {
-                        return <span className="text-muted-foreground">{children}</span>;
-                      }
-                      return (
-                        <a href={safeHref} target="_blank" rel="noopener noreferrer" className="underline text-primary">
-                          {children}
-                        </a>
-                      );
-                    },
-                    table: ({ children }) => (
-                      <div className="overflow-x-auto mb-1.5 last:mb-0 -mx-1">
-                        <table className="min-w-full text-xs border-collapse">{children}</table>
-                      </div>
-                    ),
-                    thead: ({ children }) => <thead className="border-b border-foreground/20">{children}</thead>,
-                    tbody: ({ children }) => <tbody>{children}</tbody>,
-                    tr: ({ children }) => <tr className="border-b border-foreground/10 last:border-0">{children}</tr>,
-                    th: ({ children }) => <th className="px-1.5 py-1 text-left font-semibold whitespace-nowrap">{children}</th>,
-                    td: ({ children }) => <td className="px-1.5 py-1 whitespace-nowrap">{children}</td>,
-                    code: ({ children }) => (
-                      <code className="bg-background/50 rounded px-1 py-0.5 text-xs">{children}</code>
-                    ),
-                    pre: ({ children }) => (
-                      <pre className="bg-background/50 rounded p-2 text-xs overflow-x-auto mb-1.5 last:mb-0">{children}</pre>
-                    ),
-                  }}
-                >
-                  {msg.text}
-                </Markdown>
+                <>
+                  {/* Step log (for messages with steps) */}
+                  {msg.steps && msg.steps.length > 0 && (
+                    <StepLog
+                      steps={msg.steps}
+                      collapsed={msg.collapsed ?? false}
+                      duration={msg.duration}
+                      onToggle={() => toggleCollapsed(i)}
+                    />
+                  )}
+
+                  {/* Streaming indicator */}
+                  {msg.isStreaming && (!msg.text || msg.text === "") ? (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      <span>{currentThinkingMsg}</span>
+                    </div>
+                  ) : (
+                    <Markdown
+                      skipHtml
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => (
+                          <p className="font-bold mb-1">{children}</p>
+                        ),
+                        h2: ({ children }) => (
+                          <p className="font-bold mb-1">{children}</p>
+                        ),
+                        h3: ({ children }) => (
+                          <p className="font-semibold mb-1">{children}</p>
+                        ),
+                        p: ({ children }) => (
+                          <p className="mb-1.5 last:mb-0">{children}</p>
+                        ),
+                        ul: ({ children }) => (
+                          <ul className="list-disc ml-4 mb-1.5 last:mb-0">
+                            {children}
+                          </ul>
+                        ),
+                        ol: ({ children }) => (
+                          <ol className="list-decimal ml-4 mb-1.5 last:mb-0">
+                            {children}
+                          </ol>
+                        ),
+                        li: ({ children }) => (
+                          <li className="mb-0.5">{children}</li>
+                        ),
+                        strong: ({ children }) => (
+                          <strong className="font-semibold">{children}</strong>
+                        ),
+                        a: ({ href, children }) => {
+                          const safeHref = sanitizeLinkHref(href);
+                          if (!safeHref) {
+                            return (
+                              <span className="text-muted-foreground">
+                                {children}
+                              </span>
+                            );
+                          }
+                          return (
+                            <a
+                              href={safeHref}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="underline text-primary"
+                            >
+                              {children}
+                            </a>
+                          );
+                        },
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto mb-1.5 last:mb-0 -mx-1">
+                            <table className="min-w-full text-xs border-collapse">
+                              {children}
+                            </table>
+                          </div>
+                        ),
+                        thead: ({ children }) => (
+                          <thead className="border-b border-foreground/20">
+                            {children}
+                          </thead>
+                        ),
+                        tbody: ({ children }) => <tbody>{children}</tbody>,
+                        tr: ({ children }) => (
+                          <tr className="border-b border-foreground/10 last:border-0">
+                            {children}
+                          </tr>
+                        ),
+                        th: ({ children }) => (
+                          <th className="px-1.5 py-1 text-left font-semibold whitespace-nowrap">
+                            {children}
+                          </th>
+                        ),
+                        td: ({ children }) => (
+                          <td className="px-1.5 py-1 whitespace-nowrap">
+                            {children}
+                          </td>
+                        ),
+                        code: ({ children }) => (
+                          <code className="bg-background/50 rounded px-1 py-0.5 text-xs">
+                            {children}
+                          </code>
+                        ),
+                        pre: ({ children }) => (
+                          <pre className="bg-background/50 rounded p-2 text-xs overflow-x-auto mb-1.5 last:mb-0">
+                            {children}
+                          </pre>
+                        ),
+                      }}
+                    >
+                      {msg.text}
+                    </Markdown>
+                  )}
+                </>
               ) : (
                 msg.text
               )}
             </div>
           ))}
-          {isLoading && (
-            <div className="mr-auto bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm flex items-center gap-2">
-              <Loader2 className="h-3 w-3 animate-spin" />
-              Thinking...
-            </div>
-          )}
+          {/* Loading indicator (only for non-streaming) */}
+          {isLoading &&
+            !messages.some((m) => m.isStreaming) && (
+              <div className="mr-auto bg-muted text-muted-foreground rounded-lg px-3 py-2 text-sm flex items-center gap-2">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                {currentThinkingMsg}
+              </div>
+            )}
           {showConfirmButtons && (
             <div className="flex gap-2 mr-auto">
               <Button
                 size="sm"
                 variant="default"
                 className="h-7 text-xs gap-1"
-                onClick={() => doSend("Yes, please proceed.")}
+                onClick={() => doSendStreaming("Yes, please proceed.")}
               >
                 <Check className="h-3 w-3" />
                 Confirm
@@ -282,7 +662,7 @@ const ChatPanel = ({
                 size="sm"
                 variant="outline"
                 className="h-7 text-xs gap-1"
-                onClick={() => doSend("No, cancel.")}
+                onClick={() => doSendStreaming("No, cancel.")}
               >
                 <XCircle className="h-3 w-3" />
                 Cancel

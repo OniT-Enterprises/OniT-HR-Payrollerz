@@ -71,6 +71,7 @@ import type {
   FilingDueDate,
   MonthlyINSSReturn,
   SubmissionMethod,
+  TaxFilingTask,
   TaxFiling,
 } from "@/types/tax-filing";
 import type { CompanyDetails } from "@/types/settings";
@@ -135,6 +136,7 @@ export default function INSSMonthly() {
   const [selectedReturn, setSelectedReturn] = useState<MonthlyINSSReturn | null>(null);
   const [showMarkFiledDialog, setShowMarkFiledDialog] = useState(false);
   const [selectedFilingId, setSelectedFilingId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<TaxFilingTask>("statement");
 
   const currentDate = new Date();
   const previousMonthDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
@@ -175,7 +177,23 @@ export default function INSSMonthly() {
   };
 
   const handleViewReturn = async (filing: TaxFiling) => {
-    setSelectedReturn(filing.dataSnapshot as MonthlyINSSReturn);
+    const snapshot = filing.dataSnapshot as MonthlyINSSReturn | undefined;
+    if (!snapshot || !snapshot.employees?.length) {
+      // No data snapshot — regenerate from payroll
+      try {
+        const returnData = await generateINSS.mutateAsync({ period: filing.period, company });
+        setSelectedReturn(returnData);
+        setSelectedFilingId(filing.id);
+      } catch {
+        toast({
+          title: "No data available",
+          description: `No payroll data found for ${filing.period}. Run payroll first, then generate the return.`,
+          variant: "destructive",
+        });
+      }
+      return;
+    }
+    setSelectedReturn(snapshot);
     setSelectedFilingId(filing.id);
   };
 
@@ -220,8 +238,9 @@ export default function INSSMonthly() {
     });
   };
 
-  const handleOpenMarkFiled = (filingId: string) => {
+  const handleOpenMarkFiled = (filingId: string, task: TaxFilingTask) => {
     setSelectedFilingId(filingId);
+    setSelectedTask(task);
     setShowMarkFiledDialog(true);
   };
 
@@ -234,11 +253,12 @@ export default function INSSMonthly() {
         receiptNumber: receiptNumber || "",
         notes: filedNotes || "",
         userId: user?.uid || "",
+        task: selectedTask,
       });
 
       toast({
         title: "Saved",
-        description: "INSS filing marked as filed.",
+        description: `INSS ${selectedTask} marked as filed.`,
       });
 
       setShowMarkFiledDialog(false);
@@ -275,6 +295,19 @@ export default function INSSMonthly() {
     if (!due) return "INSS";
     return due.task === "payment" ? "INSS payment" : "INSS statement";
   };
+
+  const getTaskStatus = (filing: TaxFiling, task: TaxFilingTask) =>
+    task === "statement" ? (filing.statementStatus || filing.status) : (filing.paymentStatus || filing.status);
+
+  const getTaskDueDate = (filing: TaxFiling, task: TaxFilingTask) => {
+    const due = dueDates.find((d) => d.period === filing.period && d.task === task);
+    if (due?.dueDate) return due.dueDate;
+    return task === "statement"
+      ? (filing.statementDueDate || filing.dueDate)
+      : (filing.paymentDueDate || filing.dueDate);
+  };
+
+  const taskLabel = (task: TaxFilingTask) => (task === "payment" ? "Payment" : "Statement");
 
   const generating = generateINSS.isPending || saveFiling.isPending;
 
@@ -497,8 +530,10 @@ export default function INSSMonthly() {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Period</TableHead>
-                    <TableHead>Due</TableHead>
-                    <TableHead>Status</TableHead>
+                    <TableHead>Statement Due</TableHead>
+                    <TableHead>Payment Due</TableHead>
+                    <TableHead>Statement Status</TableHead>
+                    <TableHead>Payment Status</TableHead>
                     <TableHead className="text-right">Employees</TableHead>
                     <TableHead className="text-right">Employee</TableHead>
                     <TableHead className="text-right">Employer</TableHead>
@@ -508,22 +543,33 @@ export default function INSSMonthly() {
                 <TableBody>
                   {filings.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                      <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                         No INSS filings yet. Generate your first return above.
                       </TableCell>
                     </TableRow>
                   ) : (
                     filings.map((f) => {
-                      const status = STATUS_CONFIG[f.status];
-                      const Icon = status.icon;
+                      const statementStatus = getTaskStatus(f, "statement");
+                      const paymentStatus = getTaskStatus(f, "payment");
+                      const statementConfig = STATUS_CONFIG[statementStatus];
+                      const paymentConfig = STATUS_CONFIG[paymentStatus];
+                      const StatementIcon = statementConfig.icon;
+                      const PaymentIcon = paymentConfig.icon;
                       return (
                         <TableRow key={f.id}>
                           <TableCell className="font-medium">{f.period}</TableCell>
-                          <TableCell>{f.dueDate}</TableCell>
+                          <TableCell>{getTaskDueDate(f, "statement")}</TableCell>
+                          <TableCell>{getTaskDueDate(f, "payment")}</TableCell>
                           <TableCell>
-                            <Badge className={status.className}>
-                              <Icon className="h-3 w-3 mr-1" />
-                              {status.label}
+                            <Badge className={statementConfig.className}>
+                              <StatementIcon className="h-3 w-3 mr-1" />
+                              {statementConfig.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={paymentConfig.className}>
+                              <PaymentIcon className="h-3 w-3 mr-1" />
+                              {paymentConfig.label}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">{f.employeeCount}</TableCell>
@@ -534,9 +580,14 @@ export default function INSSMonthly() {
                               <Button size="sm" variant="outline" onClick={() => handleViewReturn(f)}>
                                 View
                               </Button>
-                              {f.status !== "filed" && (
-                                <Button size="sm" onClick={() => handleOpenMarkFiled(f.id)}>
-                                  Mark Filed
+                              {statementStatus !== "filed" && (
+                                <Button size="sm" onClick={() => handleOpenMarkFiled(f.id, "statement")}>
+                                  Mark Statement
+                                </Button>
+                              )}
+                              {paymentStatus !== "filed" && (
+                                <Button size="sm" variant="secondary" onClick={() => handleOpenMarkFiled(f.id, "payment")}>
+                                  Mark Payment
                                 </Button>
                               )}
                             </div>
@@ -555,9 +606,9 @@ export default function INSSMonthly() {
       <Dialog open={showMarkFiledDialog} onOpenChange={setShowMarkFiledDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Mark as Filed</DialogTitle>
+            <DialogTitle>Mark {taskLabel(selectedTask)} as Filed</DialogTitle>
             <DialogDescription>
-              Record submission details for this INSS return.
+              Record {selectedTask} submission details for this INSS return.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">

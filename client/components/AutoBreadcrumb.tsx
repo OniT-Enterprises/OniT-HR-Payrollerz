@@ -59,6 +59,9 @@ const ROUTE_LABELS: Record<string, string> = {
   "journal-entries": "Journal",
   "general-ledger": "Ledger",
   "trial-balance": "Trial Balance",
+  "income-statement": "Income Statement",
+  "balance-sheet": "Balance Sheet",
+  "fiscal-periods": "Fiscal Periods",
 };
 
 function getLabel(segment: string): string {

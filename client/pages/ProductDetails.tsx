@@ -380,8 +380,8 @@ const tlFeatures = [
     title: "INSS (Social Security)",
     description: "Automatic calculation of contributions",
     details: [
-      "Employee contribution: 4% of gross salary",
-      "Employer contribution: 6% of gross salary",
+      "Employee contribution: 4% of contributable remuneration",
+      "Employer contribution: 6% of contributable remuneration",
       "Monthly INSS report generation",
       "INSS number tracking per employee",
     ],
@@ -404,7 +404,7 @@ const tlFeatures = [
     description: "Direct payment file generation",
     details: [
       "BNU (Banco Nacional Ultramarino)",
-      "BNCTL (Banco Central de Timor-Leste)",
+      "BNCTL (Banco Nacional de Comércio de Timor-Leste)",
       "Bank Mandiri Timor-Leste",
       "ANZ Bank",
     ],
@@ -855,6 +855,8 @@ export default function ProductDetails() {
                     </div>
                   ))}
                 </div>
+                <p className="text-xs text-zinc-500 mt-3">Statement due by 10th of following month</p>
+                <p className="text-xs text-zinc-500">Payment window closes by 20th (next business day if needed)</p>
               </div>
             </div>
           </div>

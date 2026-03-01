@@ -35,6 +35,17 @@ export type AuditAction =
   | "employee.terminate"
   | "employee.reactivate"
   | "employee.delete"
+  // Accounting actions
+  | "accounting.account_create"
+  | "accounting.account_update"
+  | "accounting.coa_initialize"
+  | "accounting.journal_post"
+  | "accounting.journal_void"
+  | "accounting.period_create_year"
+  | "accounting.period_close"
+  | "accounting.period_reopen"
+  | "accounting.period_lock"
+  | "accounting.opening_balances_posted"
   // Payroll actions
   | "payroll.run"
   | "payroll.approve"
@@ -71,6 +82,7 @@ export type AuditAction =
 
 export type AuditModule =
   | "employee"
+  | "accounting"
   | "payroll"
   | "tax"
   | "document"
@@ -154,6 +166,7 @@ function getModuleFromAction(action: AuditAction): AuditModule {
   const prefix = action.split(".")[0];
   const moduleMap: Record<string, AuditModule> = {
     employee: "employee",
+    accounting: "accounting",
     payroll: "payroll",
     tax: "tax",
     document: "document",
@@ -172,6 +185,7 @@ function getSeverityFromAction(action: AuditAction): AuditSeverity {
   const criticalActions: AuditAction[] = [
     "employee.delete",
     "employee.terminate",
+    "accounting.journal_void",
     "payroll.approve",
     "admin.user_delete",
     "archive.delete_permanent",
@@ -205,6 +219,16 @@ function generateDescription(
     "employee.terminate": `Terminated employee${entityName ? `: ${entityName}` : ""}`,
     "employee.reactivate": `Reactivated employee${entityName ? `: ${entityName}` : ""}`,
     "employee.delete": `Deleted employee${entityName ? `: ${entityName}` : ""}`,
+    "accounting.account_create": `Created account${entityName ? `: ${entityName}` : ""}`,
+    "accounting.account_update": `Updated account${entityName ? `: ${entityName}` : ""}`,
+    "accounting.coa_initialize": `Initialized chart of accounts`,
+    "accounting.journal_post": `Posted journal entry${entityName ? `: ${entityName}` : ""}`,
+    "accounting.journal_void": `Voided journal entry${entityName ? `: ${entityName}` : ""}`,
+    "accounting.period_create_year": `Created fiscal year${entityName ? `: ${entityName}` : ""}`,
+    "accounting.period_close": `Closed fiscal period${entityName ? `: ${entityName}` : ""}`,
+    "accounting.period_reopen": `Reopened fiscal period${entityName ? `: ${entityName}` : ""}`,
+    "accounting.period_lock": `Locked fiscal period${entityName ? `: ${entityName}` : ""}`,
+    "accounting.opening_balances_posted": `Posted opening balances${entityName ? ` for ${entityName}` : ""}`,
     "payroll.run": `Generated payroll run`,
     "payroll.approve": `Approved payroll run`,
     "payroll.reject": `Rejected payroll run`,

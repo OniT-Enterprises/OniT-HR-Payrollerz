@@ -25,7 +25,6 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
-import { Badge } from '../../components/ui/badge';
 import {
   Scale,
   Download,
@@ -47,13 +46,6 @@ import { getTodayTL } from "@/lib/dateUtils";
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
 
-const ACCOUNT_TYPE_COLORS: Record<AccountType, string> = {
-  asset: 'bg-blue-100 text-blue-800',
-  liability: 'bg-orange-100 text-orange-800',
-  equity: 'bg-purple-100 text-purple-800',
-  revenue: 'bg-green-100 text-green-800',
-  expense: 'bg-red-100 text-red-800',
-};
 
 export default function TrialBalance() {
   const { t } = useI18n();
@@ -63,6 +55,10 @@ export default function TrialBalance() {
 
   // Local UI state
   const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
+  const [periodStart, setPeriodStart] = useState<string>(() => {
+    const year = new Date().getFullYear();
+    return `${year}-01-01`;
+  });
   const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
   const [includeZeroBalances, setIncludeZeroBalances] = useState(false);
 
@@ -71,17 +67,23 @@ export default function TrialBalance() {
   // Generate trial balance
   const handleGenerateTrialBalance = async () => {
     const fiscalYear = new Date(asOfDate).getFullYear();
-    const trialBalance = await generateMutation.mutateAsync({ asOfDate, fiscalYear });
+    const trialBalance = await generateMutation.mutateAsync({ asOfDate, fiscalYear, periodStart });
     setTrialBalanceRows(trialBalance.rows);
   };
 
   // Filter rows based on options
   const filteredRows = useMemo(() => {
-    let rows = trialBalanceRows;
+    let rows = [...trialBalanceRows];
 
     if (!includeZeroBalances) {
       rows = rows.filter(
-        (row) => row.closingDebit !== 0 || row.closingCredit !== 0
+        (row) =>
+          row.openingDebit !== 0 ||
+          row.openingCredit !== 0 ||
+          row.periodDebit !== 0 ||
+          row.periodCredit !== 0 ||
+          row.closingDebit !== 0 ||
+          row.closingCredit !== 0
       );
     }
 
@@ -98,10 +100,14 @@ export default function TrialBalance() {
   const totals = useMemo(() => {
     return filteredRows.reduce(
       (acc, row) => ({
+        openingDebit: acc.openingDebit + row.openingDebit,
+        openingCredit: acc.openingCredit + row.openingCredit,
+        periodDebit: acc.periodDebit + row.periodDebit,
+        periodCredit: acc.periodCredit + row.periodCredit,
         debit: acc.debit + row.closingDebit,
         credit: acc.credit + row.closingCredit,
       }),
-      { debit: 0, credit: 0 }
+      { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0 }
     );
   }, [filteredRows]);
 
@@ -111,15 +117,19 @@ export default function TrialBalance() {
 
   // Group rows by account type for summary
   const summaryByType = useMemo(() => {
-    const summary: Record<AccountType, { debit: number; credit: number; count: number }> = {
-      asset: { debit: 0, credit: 0, count: 0 },
-      liability: { debit: 0, credit: 0, count: 0 },
-      equity: { debit: 0, credit: 0, count: 0 },
-      revenue: { debit: 0, credit: 0, count: 0 },
-      expense: { debit: 0, credit: 0, count: 0 },
+    const summary: Record<AccountType, { openingDebit: number; openingCredit: number; periodDebit: number; periodCredit: number; debit: number; credit: number; count: number }> = {
+      asset: { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0, count: 0 },
+      liability: { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0, count: 0 },
+      equity: { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0, count: 0 },
+      revenue: { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0, count: 0 },
+      expense: { openingDebit: 0, openingCredit: 0, periodDebit: 0, periodCredit: 0, debit: 0, credit: 0, count: 0 },
     };
 
     filteredRows.forEach((row) => {
+      summary[row.accountType].openingDebit += row.openingDebit;
+      summary[row.accountType].openingCredit += row.openingCredit;
+      summary[row.accountType].periodDebit += row.periodDebit;
+      summary[row.accountType].periodCredit += row.periodCredit;
       summary[row.accountType].debit += row.closingDebit;
       summary[row.accountType].credit += row.closingCredit;
       summary[row.accountType].count++;
@@ -128,21 +138,49 @@ export default function TrialBalance() {
     return summary;
   }, [filteredRows]);
 
+  // Helper to translate account type
+  const translateType = (type: AccountType) => {
+    const key = `accounting.chartOfAccounts.${type}` as const;
+    return t(key);
+  };
+
   // Export to CSV
   const exportToCSV = () => {
     if (filteredRows.length === 0) return;
 
-    const headers = ['Account Code', 'Account Name', 'Type', 'Debit', 'Credit'];
+    const headers = [
+      t("accounting.trialBalance.code"),
+      t("accounting.trialBalance.accountName"),
+      t("accounting.trialBalance.type"),
+      t("accounting.trialBalance.openingDebit"),
+      t("accounting.trialBalance.openingCredit"),
+      t("accounting.trialBalance.periodDebit"),
+      t("accounting.trialBalance.periodCredit"),
+      t("accounting.trialBalance.debit"),
+      t("accounting.trialBalance.credit"),
+    ];
     const rows = filteredRows.map((row) => [
       row.accountCode,
       row.accountName,
-      row.accountType,
+      translateType(row.accountType),
+      row.openingDebit.toFixed(2),
+      row.openingCredit.toFixed(2),
+      row.periodDebit.toFixed(2),
+      row.periodCredit.toFixed(2),
       row.closingDebit.toFixed(2),
       row.closingCredit.toFixed(2),
     ]);
 
     // Add totals row
-    rows.push(['', 'TOTALS', '', totals.debit.toFixed(2), totals.credit.toFixed(2)]);
+    const openingDebitTotal = filteredRows.reduce((s, r) => s + r.openingDebit, 0);
+    const openingCreditTotal = filteredRows.reduce((s, r) => s + r.openingCredit, 0);
+    const periodDebitTotal = filteredRows.reduce((s, r) => s + r.periodDebit, 0);
+    const periodCreditTotal = filteredRows.reduce((s, r) => s + r.periodCredit, 0);
+    rows.push(['', t("accounting.trialBalance.totalLabel"), '',
+      openingDebitTotal.toFixed(2), openingCreditTotal.toFixed(2),
+      periodDebitTotal.toFixed(2), periodCreditTotal.toFixed(2),
+      totals.debit.toFixed(2), totals.credit.toFixed(2),
+    ]);
 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -270,6 +308,15 @@ export default function TrialBalance() {
         <CardContent>
           <div className="flex flex-wrap gap-4 items-end">
             <div className="space-y-2">
+              <Label>{t("accounting.trialBalance.periodStartDate")}</Label>
+              <Input
+                type="date"
+                value={periodStart}
+                onChange={(e) => setPeriodStart(e.target.value)}
+                className="w-[180px]"
+              />
+            </div>
+            <div className="space-y-2">
               <Label>{t("accounting.trialBalance.asOfDate")}</Label>
               <Input
                 type="date"
@@ -306,26 +353,26 @@ export default function TrialBalance() {
 
       {/* Balance Status */}
       {trialBalanceRows.length > 0 && (
-        <Card className={isBalanced ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}>
+        <Card className={isBalanced ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30'}>
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 {isBalanced ? (
                   <>
-                    <CheckCircle2 className="h-8 w-8 text-green-600" />
+                    <CheckCircle2 className="h-8 w-8 text-green-600 dark:text-green-400" />
                     <div>
-                      <h3 className="font-semibold text-green-800">{t("accounting.trialBalance.balanced")}</h3>
-                      <p className="text-sm text-green-600">
+                      <h3 className="font-semibold text-green-800 dark:text-green-200">{t("accounting.trialBalance.balanced")}</h3>
+                      <p className="text-sm text-green-600 dark:text-green-400">
                         {t("accounting.trialBalance.balancedDesc")}
                       </p>
                     </div>
                   </>
                 ) : (
                   <>
-                    <XCircle className="h-8 w-8 text-red-600" />
+                    <XCircle className="h-8 w-8 text-red-600 dark:text-red-400" />
                     <div>
-                      <h3 className="font-semibold text-red-800">{t("accounting.trialBalance.notBalanced")}</h3>
-                      <p className="text-sm text-red-600">
+                      <h3 className="font-semibold text-red-800 dark:text-red-200">{t("accounting.trialBalance.notBalanced")}</h3>
+                      <p className="text-sm text-red-600 dark:text-red-400">
                         {t("accounting.trialBalance.notBalancedDesc", { amount: formatCurrencyTL(Math.abs(difference)), direction: difference > 0 ? t("accounting.trialBalance.debitsHigher") : t("accounting.trialBalance.creditsHigher") })}
                       </p>
                     </div>
@@ -349,8 +396,8 @@ export default function TrialBalance() {
           {ACCOUNT_TYPE_ORDER.map((type) => (
             <Card key={type}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium capitalize">
-                  {type}
+                <CardTitle className="text-sm font-medium">
+                  {translateType(type)}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -381,14 +428,23 @@ export default function TrialBalance() {
             <CardDescription>{t("accounting.trialBalance.asOf", { date: asOfDate })}</CardDescription>
           </CardHeader>
           <CardContent>
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[100px]">{t("accounting.trialBalance.code")}</TableHead>
-                  <TableHead>{t("accounting.trialBalance.accountName")}</TableHead>
-                  <TableHead className="w-[100px]">{t("accounting.trialBalance.type")}</TableHead>
-                  <TableHead className="text-right w-[150px]">{t("accounting.trialBalance.debit")}</TableHead>
-                  <TableHead className="text-right w-[150px]">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead rowSpan={2} className="w-[100px] align-bottom border-r">{t("accounting.trialBalance.code")}</TableHead>
+                  <TableHead rowSpan={2} className="align-bottom border-r">{t("accounting.trialBalance.accountName")}</TableHead>
+                  <TableHead colSpan={2} className="text-center border-b border-r">{t("accounting.trialBalance.openingBalance")}</TableHead>
+                  <TableHead colSpan={2} className="text-center border-b border-r">{t("accounting.trialBalance.periodMovement")}</TableHead>
+                  <TableHead colSpan={2} className="text-center border-b">{t("accounting.trialBalance.closingBalance")}</TableHead>
+                </TableRow>
+                <TableRow>
+                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px] border-r">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px] border-r">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.credit")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -401,8 +457,8 @@ export default function TrialBalance() {
                     <React.Fragment key={type}>
                       {/* Type Header */}
                       <TableRow className="bg-muted/30">
-                        <TableCell colSpan={5} className="font-semibold uppercase text-sm">
-                          {type}
+                        <TableCell colSpan={8} className="font-semibold text-sm">
+                          {translateType(type)}
                         </TableCell>
                       </TableRow>
 
@@ -413,32 +469,47 @@ export default function TrialBalance() {
                             {row.accountCode}
                           </TableCell>
                           <TableCell>{row.accountName}</TableCell>
-                          <TableCell>
-                            <Badge variant="outline" className={ACCOUNT_TYPE_COLORS[type]}>
-                              {type}
-                            </Badge>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {row.openingDebit > 0 ? formatCurrencyTL(row.openingDebit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums border-r">
+                            {row.openingCredit > 0 ? formatCurrencyTL(row.openingCredit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {row.periodDebit > 0 ? formatCurrencyTL(row.periodDebit) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums border-r">
+                            {row.periodCredit > 0 ? formatCurrencyTL(row.periodCredit) : '-'}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
                             {row.closingDebit > 0 ? (
-                              <span className="text-green-600">{formatCurrencyTL(row.closingDebit)}</span>
-                            ) : (
-                              '-'
-                            )}
+                              <span className="text-green-600 dark:text-green-400">{formatCurrencyTL(row.closingDebit)}</span>
+                            ) : '-'}
                           </TableCell>
                           <TableCell className="text-right font-mono tabular-nums">
                             {row.closingCredit > 0 ? (
-                              <span className="text-blue-600">{formatCurrencyTL(row.closingCredit)}</span>
-                            ) : (
-                              '-'
-                            )}
+                              <span className="text-blue-600 dark:text-blue-400">{formatCurrencyTL(row.closingCredit)}</span>
+                            ) : '-'}
                           </TableCell>
                         </TableRow>
                       ))}
 
                       {/* Type Subtotal */}
                       <TableRow className="bg-muted/20">
-                        <TableCell colSpan={3} className="text-right font-medium">
-                          {t("accounting.trialBalance.subtotal", { type: type.charAt(0).toUpperCase() + type.slice(1) })}
+                        <TableCell colSpan={2} className="text-right font-medium">
+                          {t("accounting.trialBalance.subtotal", { type: translateType(type) })}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium tabular-nums">
+                          {formatCurrencyTL(summaryByType[type].openingDebit)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium tabular-nums border-r">
+                          {formatCurrencyTL(summaryByType[type].openingCredit)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium tabular-nums">
+                          {formatCurrencyTL(summaryByType[type].periodDebit)}
+                        </TableCell>
+                        <TableCell className="text-right font-mono font-medium tabular-nums border-r">
+                          {formatCurrencyTL(summaryByType[type].periodCredit)}
                         </TableCell>
                         <TableCell className="text-right font-mono font-medium tabular-nums">
                           {formatCurrencyTL(summaryByType[type].debit)}
@@ -453,18 +524,30 @@ export default function TrialBalance() {
 
                 {/* Grand Totals */}
                 <TableRow className="bg-primary/10 font-bold text-lg">
-                  <TableCell colSpan={3} className="text-right">
+                  <TableCell colSpan={2} className="text-right">
                     {t("accounting.trialBalance.totalLabel")}
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums">
+                    {formatCurrencyTL(totals.openingDebit)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums border-r">
+                    {formatCurrencyTL(totals.openingCredit)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
+                    {formatCurrencyTL(totals.periodDebit)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums border-r">
+                    {formatCurrencyTL(totals.periodCredit)}
+                  </TableCell>
+                  <TableCell className="text-right font-mono tabular-nums">
                     <div className="flex items-center justify-end gap-1">
-                      <TrendingUp className="h-4 w-4 text-green-600" />
+                      <TrendingUp className="h-4 w-4 text-green-600 dark:text-green-400" />
                       {formatCurrencyTL(totals.debit)}
                     </div>
                   </TableCell>
                   <TableCell className="text-right font-mono tabular-nums">
                     <div className="flex items-center justify-end gap-1">
-                      <TrendingDown className="h-4 w-4 text-blue-600" />
+                      <TrendingDown className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                       {formatCurrencyTL(totals.credit)}
                     </div>
                   </TableCell>
@@ -472,17 +555,18 @@ export default function TrialBalance() {
 
                 {/* Difference row if not balanced */}
                 {!isBalanced && (
-                  <TableRow className="bg-red-100">
-                    <TableCell colSpan={3} className="text-right font-medium text-red-800">
+                  <TableRow className="bg-red-100 dark:bg-red-950/30">
+                    <TableCell colSpan={6} className="text-right font-medium text-red-800 dark:text-red-200">
                       {t("accounting.trialBalance.differenceLabel")}
                     </TableCell>
-                    <TableCell colSpan={2} className="text-center font-mono font-bold text-red-800">
+                    <TableCell colSpan={2} className="text-center font-mono font-bold text-red-800 dark:text-red-200">
                       {formatCurrencyTL(Math.abs(difference))}
                     </TableCell>
                   </TableRow>
                 )}
               </TableBody>
             </Table>
+            </div>
           </CardContent>
         </Card>
       ) : (

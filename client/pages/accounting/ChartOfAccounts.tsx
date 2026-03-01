@@ -61,6 +61,7 @@ import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
+import { useAuth } from "@/contexts/AuthContext";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -73,6 +74,7 @@ const PAYROLL_LINKED_CODES = [
 export default function ChartOfAccounts() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const { user } = useAuth();
   const { data: accounts = [], isLoading: loading } = useAccounts();
   const createAccountMutation = useCreateAccount();
   const updateAccountMutation = useUpdateAccount();
@@ -99,7 +101,11 @@ export default function ChartOfAccounts() {
   // Initialize default chart of accounts
   const handleInitialize = async () => {
     try {
-      await initializeMutation.mutateAsync();
+      await initializeMutation.mutateAsync({
+        userId: user?.uid || user?.email || "unknown",
+        userEmail: user?.email || "unknown",
+        userName: user?.displayName || undefined,
+      });
       toast({
         title: t("accounting.chartOfAccounts.success"),
         description: t("accounting.chartOfAccounts.initialized"),
@@ -212,6 +218,11 @@ export default function ChartOfAccounts() {
             ...formData,
             level: formData.parentAccountId ? 2 : 1,
           },
+          audit: {
+            userId: user?.uid || user?.email || "unknown",
+            userEmail: user?.email || "unknown",
+            userName: user?.displayName || undefined,
+          },
         });
         toast({
           title: t("accounting.chartOfAccounts.success"),
@@ -219,11 +230,18 @@ export default function ChartOfAccounts() {
         });
       } else {
         await createAccountMutation.mutateAsync({
-          ...formData,
-          isSystem: false,
-          isActive: true,
-          level: formData.parentAccountId ? 2 : 1,
-        } as Omit<Account, 'id' | 'createdAt' | 'updatedAt'>);
+          account: {
+            ...formData,
+            isSystem: false,
+            isActive: true,
+            level: formData.parentAccountId ? 2 : 1,
+          } as Omit<Account, 'id' | 'createdAt' | 'updatedAt'>,
+          audit: {
+            userId: user?.uid || user?.email || "unknown",
+            userEmail: user?.email || "unknown",
+            userName: user?.displayName || undefined,
+          },
+        });
         toast({
           title: t("accounting.chartOfAccounts.success"),
           description: t("accounting.chartOfAccounts.accountCreated"),
@@ -318,12 +336,12 @@ export default function ChartOfAccounts() {
           <TableCell>
             <Badge className={`${typeConfig.bg} ${typeConfig.color} dark:bg-opacity-20`}>
               <TypeIcon className="h-3 w-3 mr-1" />
-              {account.type.charAt(0).toUpperCase() + account.type.slice(1)}
+              {t(`accounting.chartOfAccounts.${account.type}`)}
             </Badge>
           </TableCell>
           <TableCell>
-            <span className="text-sm text-muted-foreground capitalize">
-              {account.subType.replace(/_/g, " ")}
+            <span className="text-sm text-muted-foreground">
+              {t(`accounting.chartOfAccounts.subTypes.${account.subType}`)}
             </span>
           </TableCell>
           <TableCell>
@@ -522,9 +540,17 @@ export default function ChartOfAccounts() {
                           <Label htmlFor="type">{t("accounting.chartOfAccounts.accountType")}</Label>
                           <Select
                             value={formData.type}
-                            onValueChange={(v) =>
-                              setFormData({ ...formData, type: v as AccountType })
-                            }
+                            onValueChange={(v) => {
+                              const newType = v as AccountType;
+                              const defaultSubTypes: Record<AccountType, AccountSubType> = {
+                                asset: 'other_asset',
+                                liability: 'other_liability',
+                                equity: 'owner_equity',
+                                revenue: 'service_revenue',
+                                expense: 'other_expense',
+                              };
+                              setFormData({ ...formData, type: newType, subType: defaultSubTypes[newType] });
+                            }}
                           >
                             <SelectTrigger>
                               <SelectValue />
@@ -535,6 +561,32 @@ export default function ChartOfAccounts() {
                               <SelectItem value="equity">{t("accounting.chartOfAccounts.equity")}</SelectItem>
                               <SelectItem value="revenue">{t("accounting.chartOfAccounts.revenue")}</SelectItem>
                               <SelectItem value="expense">{t("accounting.chartOfAccounts.expense")}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>{t("accounting.chartOfAccounts.subType")}</Label>
+                          <Select
+                            value={formData.subType}
+                            onValueChange={(v) =>
+                              setFormData({ ...formData, subType: v as AccountSubType })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {({
+                                asset: ['cash', 'bank', 'accounts_receivable', 'inventory', 'prepaid_expense', 'fixed_asset', 'accumulated_depreciation', 'other_asset'],
+                                liability: ['accounts_payable', 'accrued_expense', 'salaries_payable', 'tax_payable', 'inss_payable', 'loans_payable', 'other_liability'],
+                                equity: ['share_capital', 'retained_earnings', 'owner_equity', 'dividends'],
+                                revenue: ['service_revenue', 'sales_revenue', 'interest_income', 'other_income'],
+                                expense: ['salary_expense', 'inss_expense', 'rent_expense', 'utilities_expense', 'office_supplies', 'depreciation_expense', 'tax_expense', 'other_expense'],
+                              } as Record<string, string[]>)[formData.type]?.map((value) => (
+                                <SelectItem key={value} value={value}>
+                                  {t(`accounting.chartOfAccounts.subTypes.${value}`)}
+                                </SelectItem>
+                              ))}
                             </SelectContent>
                           </Select>
                         </div>

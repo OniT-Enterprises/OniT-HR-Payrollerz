@@ -78,6 +78,16 @@ const getMonthlySalary = (compensation: { monthlySalary?: number; annualSalary?:
   return compensation.monthlySalary || Math.round((compensation.annualSalary || 0) / 12) || 0;
 };
 
+// Normalize employment type from Firestore (may be lowercase) to enum values
+const normalizeEmploymentType = (value: string): "Full-time" | "Part-time" | "Contractor" => {
+  const map: Record<string, "Full-time" | "Part-time" | "Contractor"> = {
+    'full-time': 'Full-time', 'fulltime': 'Full-time',
+    'part-time': 'Part-time', 'parttime': 'Part-time',
+    'contractor': 'Contractor', 'contract': 'Contractor',
+  };
+  return map[value.toLowerCase()] || 'Full-time';
+};
+
 export default function AddEmployee() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -127,6 +137,7 @@ export default function AddEmployee() {
     handleSubmit,
     watch,
     reset,
+    trigger,
     formState: { errors },
   } = useForm<AddEmployeeFormData>({
     resolver: zodResolver(addEmployeeFormSchema),
@@ -229,7 +240,7 @@ export default function AddEmployee() {
           jobTitle: employee.jobDetails.position,
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
-          employmentType: employee.jobDetails.employmentType as "Full-time" | "Part-time" | "Contractor",
+          employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
           sefopeNumber: employee.jobDetails.sefopeNumber || "",
           sefopeRegistrationDate: employee.jobDetails.sefopeRegistrationDate || "",
           salary: getMonthlySalary(employee.compensation).toString(),
@@ -321,7 +332,15 @@ export default function AddEmployee() {
     return { status: "valid", message: t("addEmployee.documents.status.valid"), variant: "default" as const };
   };
 
-  // Validate current step using form state
+  // Fields to validate per step
+  const stepFields: Record<string, (keyof AddEmployeeFormData)[]> = {
+    basic: ["firstName", "lastName", "email"],
+    job: ["department", "jobTitle", "startDate", "employmentType"],
+    compensation: [],
+    documents: [],
+  };
+
+  // Quick check for enabling/disabling Next button
   const canProceed = () => {
     const step = WIZARD_STEPS[currentStep].id;
     switch (step) {
@@ -330,12 +349,31 @@ export default function AddEmployee() {
       case "job":
         return !!(formValues.department && formValues.jobTitle && formValues.startDate);
       case "compensation":
-        return true; // Optional fields
+        return true;
       case "documents":
-        return true; // Optional step
+        return true;
       default:
         return true;
     }
+  };
+
+  // Validate current step fields with Zod via react-hook-form before advancing
+  const validateStep = async (): Promise<boolean> => {
+    const step = WIZARD_STEPS[currentStep].id;
+    const fields = stepFields[step];
+    if (!fields || fields.length === 0) return true;
+    const valid = await trigger(fields);
+    if (!valid) {
+      const stepErrors = fields
+        .map(f => errors[f]?.message)
+        .filter(Boolean);
+      toast({
+        title: "Missing required fields",
+        description: stepErrors[0] || "Please fill in all required fields before continuing.",
+        variant: "destructive",
+      });
+    }
+    return valid;
   };
 
   // Form submission handler - called by react-hook-form's handleSubmit
@@ -617,6 +655,7 @@ export default function AddEmployee() {
               variant: "destructive",
             });
           })}
+          onBeforeNext={validateStep}
           onCancel={() => navigate("/people/employees")}
           isSubmitting={isSubmitting}
           submitLabel={isEditMode ? t("addEmployee.buttons.updateEmployee") : t("addEmployee.buttons.addEmployee")}

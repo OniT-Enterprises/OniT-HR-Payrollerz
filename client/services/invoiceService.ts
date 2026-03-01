@@ -39,7 +39,7 @@ import type {
   MoneyStats,
 } from '@/types/money';
 import { customerService } from './customerService';
-import { journalEntryService, accountService } from './accountingService';
+import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { firestoreInvoiceSchema } from '@/lib/validations';
 
 // ============================================
@@ -601,6 +601,28 @@ class InvoiceService {
     // Look up the associated journal entry BEFORE the transaction (query not transaction-safe)
     const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'invoice', id);
 
+    // Post-close correction flow:
+    // - If the original journal entry is in a closed/locked period, do NOT void it.
+    // - Instead, create a reversing adjustment entry in the current open period.
+    const journalPeriod = journalEntry?.status === 'posted'
+      ? await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, journalEntry.fiscalYear, journalEntry.fiscalPeriod)
+      : null;
+
+    const needsAdjustment = !!journalPeriod && journalPeriod.status !== 'open';
+    const adjustmentDate = needsAdjustment ? getTodayTL() : null;
+
+    if (needsAdjustment && adjustmentDate) {
+      const adjYear = new Date(adjustmentDate).getFullYear();
+      const adjMonth = new Date(adjustmentDate).getMonth() + 1;
+      const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
+      if (adjPeriod && adjPeriod.status !== 'open') {
+        throw new Error(
+          `Cannot cancel invoice: adjustment period ${adjYear}-${String(adjMonth).padStart(2, '0')} is ${adjPeriod.status}. ` +
+          'Reopen the period (or choose an open adjustment date) to post the reversal entry.'
+        );
+      }
+    }
+
     const invoiceDocRef = doc(db, paths.invoice(tenantId, id));
 
     await runTransaction(db, async (transaction) => {
@@ -614,14 +636,30 @@ class InvoiceService {
 
       // 2. Void the journal entry and create reversing GL entries
       if (journalEntry?.id) {
-        journalEntryService.voidJournalEntryInTransaction(
-          tenantId,
-          journalEntry.id,
-          journalEntry,
-          transaction,
-          userId || 'system',
-          `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`
-        );
+        if (needsAdjustment && adjustmentDate) {
+          const adjustmentEntryId = await journalEntryService.createReversingJournalEntry(
+            tenantId,
+            journalEntry,
+            {
+              date: adjustmentDate,
+              createdBy: userId || 'system',
+              reason: `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`,
+              txn: transaction,
+            }
+          );
+          transaction.update(invoiceDocRef, {
+            cancellationAdjustmentEntryId: adjustmentEntryId,
+          });
+        } else {
+          journalEntryService.voidJournalEntryInTransaction(
+            tenantId,
+            journalEntry.id,
+            journalEntry,
+            transaction,
+            userId || 'system',
+            `Invoice ${invoice.invoiceNumber} cancelled${reason ? ': ' + reason : ''}`
+          );
+        }
       }
     });
 

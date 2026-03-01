@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -67,6 +68,190 @@ import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
 // Compliance filter types for URL params
 type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
+
+const ROW_HEIGHT = 57; // px per table row
+const VIRTUALIZE_THRESHOLD = 100; // only virtualize when > 100 rows
+
+/**
+ * Desktop employee table with virtualization for large datasets.
+ * Falls back to plain rendering when dataset is small.
+ */
+function DesktopEmployeeTable({
+  employees,
+  showSalary,
+  getStatusLabel,
+  formatSalary,
+  onViewEmployee,
+  onEditEmployee,
+  onCreateEkipaAccount,
+  onDeleteEmployee,
+  t,
+}: {
+  employees: Employee[];
+  showSalary: boolean;
+  getStatusLabel: (status: string) => string;
+  formatSalary: (amount: number) => string;
+  onViewEmployee: (emp: Employee) => void;
+  onEditEmployee: (emp: Employee) => void;
+  onCreateEkipaAccount: (emp: Employee) => void;
+  onDeleteEmployee: (emp: Employee) => void;
+  t: (key: string) => string;
+}) {
+  const parentRef = useRef<HTMLDivElement>(null);
+  const useVirtual = employees.length > VIRTUALIZE_THRESHOLD;
+
+  // TanStack Virtual returns functions that React Compiler can't memoize safely.
+  // We don't use React Compiler, so suppress this warning.
+  // eslint-disable-next-line react-hooks/incompatible-library
+  const virtualizer = useVirtualizer({
+    count: employees.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 20,
+    enabled: useVirtual,
+  });
+
+  const renderRow = (employee: Employee, style?: React.CSSProperties) => (
+    <tr
+      key={employee.id}
+      className="hover:bg-muted/50 transition-colors cursor-pointer group"
+      style={style}
+      onClick={() => onViewEmployee(employee)}
+    >
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-9 w-9">
+            <AvatarImage src="" alt={employee.personalInfo.firstName} />
+            <AvatarFallback className="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600">
+              {employee.personalInfo.firstName[0]}
+              {employee.personalInfo.lastName[0]}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0">
+            <p className="font-medium truncate">
+              {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              {employee.jobDetails.employeeId}
+            </p>
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-sm">{employee.jobDetails.department}</span>
+      </td>
+      <td className="px-4 py-3">
+        <span className="text-sm">{employee.jobDetails.position}</span>
+      </td>
+      <td className="px-4 py-3">
+        <Badge
+          className={
+            employee.status === "active"
+              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+              : employee.status === "inactive"
+              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
+              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+          }
+        >
+          {getStatusLabel(employee.status)}
+        </Badge>
+      </td>
+      {showSalary && (
+        <td className="px-4 py-3">
+          <span className="font-medium tabular-nums">
+            {formatSalary(
+              employee.compensation.monthlySalary ||
+                Math.round((employee.compensation.annualSalary ?? 0) / 12) || 0
+            )}
+          </span>
+        </td>
+      )}
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.viewProfile")} onClick={(e) => { e.stopPropagation(); onViewEmployee(employee); }}>
+            <Eye className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.editEmployee")} onClick={(e) => { e.stopPropagation(); onEditEmployee(employee); }}>
+            <Edit className="h-4 w-4" />
+          </Button>
+          {employee.personalInfo?.email && employee.status === 'active' && (
+            <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.createEkipaAccount")} onClick={(e) => { e.stopPropagation(); onCreateEkipaAccount(employee); }}>
+              <Smartphone className="h-4 w-4" />
+            </Button>
+          )}
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" title={t("employees.tooltips.offboardEmployee")} onClick={(e) => { e.stopPropagation(); onDeleteEmployee(employee); }}>
+            <UserMinus className="h-4 w-4" />
+          </Button>
+        </div>
+      </td>
+    </tr>
+  );
+
+  if (!useVirtual) {
+    // Small dataset: render directly (no virtualization overhead)
+    return (
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <thead className="sticky top-0 bg-background border-b z-10">
+            <tr>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.employee")}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
+              <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
+              {showSalary && <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
+              <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border/50">
+            {employees.map((employee) => renderRow(employee))}
+          </tbody>
+        </table>
+      </div>
+    );
+  }
+
+  // Large dataset: virtualized rendering
+  return (
+    <div className="hidden md:block overflow-x-auto">
+      <table className="w-full">
+        <thead className="sticky top-0 bg-background border-b z-10">
+          <tr>
+            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.employee")}</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
+            <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
+            {showSalary && <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
+            <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
+          </tr>
+        </thead>
+      </table>
+      <div
+        ref={parentRef}
+        className="overflow-auto"
+        style={{ maxHeight: '70vh' }}
+      >
+        <div style={{ height: virtualizer.getTotalSize(), position: 'relative' }}>
+          <table className="w-full">
+            <tbody>
+              {virtualizer.getVirtualItems().map((virtualRow) => {
+                const employee = employees[virtualRow.index];
+                return renderRow(employee, {
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: `${virtualRow.size}px`,
+                  transform: `translateY(${virtualRow.start}px)`,
+                  display: 'table-row',
+                });
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function AllEmployees() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -1137,157 +1322,18 @@ export default function AllEmployees() {
               ))}
             </div>
 
-            {/* Desktop Table View */}
-            <div className="hidden md:block overflow-x-auto">
-              <table className="w-full">
-                <thead className="sticky top-0 bg-background border-b z-10">
-                  <tr>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("employees.table.employee")}
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("employees.table.department")}
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("employees.table.position")}
-                    </th>
-                    <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("employees.table.status")}
-                    </th>
-                    {showSalary && (
-                      <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                        {t("employees.table.salary")}
-                      </th>
-                    )}
-                    <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                      {t("employees.table.actions")}
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/50">
-                  {filteredEmployees.map((employee) => (
-                    <tr
-                      key={employee.id}
-                      className="hover:bg-muted/50 transition-colors cursor-pointer group"
-                      onClick={() => handleViewEmployee(employee)}
-                    >
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <Avatar className="h-9 w-9">
-                            <AvatarImage
-                              src=""
-                              alt={employee.personalInfo.firstName}
-                            />
-                            <AvatarFallback className="text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-600">
-                              {employee.personalInfo.firstName[0]}
-                              {employee.personalInfo.lastName[0]}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="min-w-0">
-                            <p className="font-medium truncate">
-                              {employee.personalInfo.firstName}{" "}
-                              {employee.personalInfo.lastName}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              {employee.jobDetails.employeeId}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">
-                          {employee.jobDetails.department}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-sm">
-                          {employee.jobDetails.position}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge
-                          className={
-                            employee.status === "active"
-                              ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                              : employee.status === "inactive"
-                              ? "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                              : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
-                          }
-                        >
-                          {getStatusLabel(employee.status)}
-                        </Badge>
-                      </td>
-                      {showSalary && (
-                        <td className="px-4 py-3">
-                          <span className="font-medium tabular-nums">
-                            {formatSalary(
-                              employee.compensation.monthlySalary ||
-                                Math.round(
-                                  (employee.compensation.annualSalary ?? 0) / 12
-                                ) || 0
-                            )}
-                          </span>
-                        </td>
-                      )}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title={t("employees.tooltips.viewProfile")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleViewEmployee(employee);
-                            }}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            title={t("employees.tooltips.editEmployee")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleEditEmployee(employee);
-                            }}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          {employee.personalInfo?.email && employee.status === 'active' && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              title={t("employees.tooltips.createEkipaAccount")}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleCreateEkipaAccount(employee);
-                              }}
-                            >
-                              <Smartphone className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-red-600"
-                            title={t("employees.tooltips.offboardEmployee")}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDeleteEmployee(employee);
-                            }}
-                          >
-                            <UserMinus className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            {/* Desktop Table View - Virtualized for large datasets */}
+            <DesktopEmployeeTable
+              employees={filteredEmployees}
+              showSalary={showSalary}
+              getStatusLabel={getStatusLabel}
+              formatSalary={formatSalary}
+              onViewEmployee={handleViewEmployee}
+              onEditEmployee={handleEditEmployee}
+              onCreateEkipaAccount={handleCreateEkipaAccount}
+              onDeleteEmployee={handleDeleteEmployee}
+              t={t}
+            />
 
               {/* Loading State - inline skeleton */}
               {loading && <TableSkeleton />}

@@ -119,6 +119,7 @@ export interface Invoice {
   viewedAt?: Date;
   cancelledAt?: Date;
   cancelReason?: string;
+  cancellationAdjustmentEntryId?: string;
 
   // Reminders
   lastReminderAt?: Date;
@@ -295,6 +296,7 @@ export interface Bill {
   createdAt: Date;
   updatedAt: Date;
   paidAt?: Date;
+  cancellationAdjustmentEntryId?: string;
 
   // Payments made (populated by service)
   payments?: BillPayment[];

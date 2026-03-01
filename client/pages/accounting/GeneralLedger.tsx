@@ -69,52 +69,71 @@ export default function GeneralLedger() {
   const accountKey = selectedAccount?.id || selectedAccount?.code;
 
   // Fetch GL entries via React Query
-  const { data: ledgerEntries = [], isLoading: loadingEntries } = useGeneralLedgerEntries(
+  const { data: glData, isLoading: loadingEntries } = useGeneralLedgerEntries(
     accountKey,
-    { startDate, endDate }
+    { startDate, endDate, accountType: selectedAccount?.type, accountSubType: selectedAccount?.subType }
   );
+  const openingBalance = glData?.openingBalance ?? 0;
+  const allEntries = useMemo(() => glData?.entries ?? [], [glData?.entries]);
 
   // Filter entries by search term
   const filteredEntries = useMemo(() => {
-    if (!searchTerm) return ledgerEntries;
+    const entries = allEntries;
+    if (!searchTerm) return entries;
     const term = searchTerm.toLowerCase();
-    return ledgerEntries.filter(
+    return entries.filter(
       (entry) =>
         entry.description.toLowerCase().includes(term) ||
         entry.entryNumber.toLowerCase().includes(term)
     );
-  }, [ledgerEntries, searchTerm]);
+  }, [allEntries, searchTerm]);
 
   // Calculate totals
   const totals = useMemo(() => {
-    return filteredEntries.reduce(
+    return allEntries.reduce(
       (acc, entry) => ({
         debit: acc.debit + entry.debit,
         credit: acc.credit + entry.credit,
       }),
       { debit: 0, credit: 0 }
     );
-  }, [filteredEntries]);
+  }, [allEntries]);
 
   // Get ending balance
   const endingBalance = useMemo(() => {
-    if (filteredEntries.length === 0) return 0;
-    return filteredEntries[filteredEntries.length - 1].balance;
-  }, [filteredEntries]);
+    if (allEntries.length === 0) return openingBalance;
+    return allEntries[allEntries.length - 1].balance;
+  }, [allEntries, openingBalance]);
 
   // Export to CSV
   const exportToCSV = () => {
-    if (!selectedAccount || filteredEntries.length === 0) return;
+    if (!selectedAccount || (allEntries.length === 0 && openingBalance === 0)) return;
 
-    const headers = ['Date', 'Entry #', 'Description', 'Debit', 'Credit', 'Balance'];
-    const rows = filteredEntries.map((entry) => [
-      entry.entryDate,
-      entry.entryNumber,
-      entry.description,
-      entry.debit.toFixed(2),
-      entry.credit.toFixed(2),
-      entry.balance.toFixed(2),
-    ]);
+    const headers = [
+      t("accounting.generalLedger.date"),
+      t("accounting.generalLedger.entryNumber"),
+      t("accounting.generalLedger.description"),
+      t("accounting.generalLedger.debit"),
+      t("accounting.generalLedger.credit"),
+      t("accounting.generalLedger.balance"),
+    ];
+    const rows: string[][] = [];
+
+    // Opening balance row
+    if (openingBalance !== 0) {
+      rows.push([startDate, '', t("accounting.generalLedger.openingBalance"), '', '', openingBalance.toFixed(2)]);
+    }
+
+    for (const entry of allEntries) {
+      rows.push([
+        entry.entryDate,
+        entry.entryNumber,
+        entry.description,
+        entry.debit.toFixed(2),
+        entry.credit.toFixed(2),
+        entry.balance.toFixed(2),
+      ]);
+    }
 
     const csv = [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
     const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' });
@@ -199,6 +218,8 @@ export default function GeneralLedger() {
     );
   }
 
+  const canExport = !!selectedAccount && (allEntries.length > 0 || openingBalance !== 0);
+
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.generalLedger} />
@@ -220,7 +241,7 @@ export default function GeneralLedger() {
                 </p>
               </div>
             </div>
-            <Button onClick={exportToCSV} disabled={filteredEntries.length === 0}>
+            <Button onClick={exportToCSV} disabled={!canExport}>
               <Download className="mr-2 h-4 w-4" />
               {t("accounting.generalLedger.exportCsv")}
             </Button>
@@ -249,7 +270,7 @@ export default function GeneralLedger() {
                     accts.length > 0 ? (
                       <React.Fragment key={type}>
                         <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
-                          {type}
+                          {t(`accounting.chartOfAccounts.${type}`)}
                         </div>
                         {accts.map((account) => (
                           <SelectItem key={account.id} value={account.id!}>
@@ -309,7 +330,7 @@ export default function GeneralLedger() {
                   {selectedAccount.code} - {selectedAccount.name}
                 </CardTitle>
                 <CardDescription>
-                  {selectedAccount.type.charAt(0).toUpperCase() + selectedAccount.type.slice(1)} •{' '}
+                  {t(`accounting.chartOfAccounts.${selectedAccount.type}`)} •{' '}
                   {selectedAccount.subType.replace(/_/g, ' ')}
                 </CardDescription>
               </div>
@@ -331,7 +352,12 @@ export default function GeneralLedger() {
               {t("accounting.generalLedger.transactions")}
             </CardTitle>
             <CardDescription>
-              {t("accounting.generalLedger.transactionsSummary", { start: startDate, end: endDate, count: filteredEntries.length })}
+              {t("accounting.generalLedger.transactionsSummary", { start: startDate, end: endDate, count: allEntries.length })}
+              {searchTerm && allEntries.length > 0 && (
+                <span className="ml-2 text-xs text-muted-foreground">
+                  {t("accounting.generalLedger.showingFiltered", { filtered: filteredEntries.length, total: allEntries.length })}
+                </span>
+              )}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -339,7 +365,7 @@ export default function GeneralLedger() {
               <div className="flex items-center justify-center h-32">
                 <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
               </div>
-            ) : filteredEntries.length === 0 ? (
+            ) : allEntries.length === 0 && openingBalance === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <img src="/images/illustrations/empty-accounting.webp" alt="No transactions yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                 <p>{t("accounting.generalLedger.noTransactions")}</p>
@@ -358,42 +384,63 @@ export default function GeneralLedger() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredEntries.map((entry, index) => (
-                      <TableRow key={entry.id || index}>
-                        <TableCell className="font-mono text-sm">
-                          {entry.entryDate}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-sm font-medium text-blue-600">
-                            {entry.entryNumber}
-                          </span>
-                        </TableCell>
-                        <TableCell>{entry.description}</TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {entry.debit > 0 ? (
-                            <span className="flex items-center justify-end gap-1 text-green-600">
-                              <ArrowUpRight className="h-3 w-3" />
-                              {formatCurrencyTL(entry.debit)}
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono tabular-nums">
-                          {entry.credit > 0 ? (
-                            <span className="flex items-center justify-end gap-1 text-red-600">
-                              <ArrowDownRight className="h-3 w-3" />
-                              {formatCurrencyTL(entry.credit)}
-                            </span>
-                          ) : (
-                            '-'
-                          )}
-                        </TableCell>
+                    {/* Opening Balance Row */}
+                    {openingBalance !== 0 && (
+                      <TableRow className="bg-muted/30 italic">
+                        <TableCell className="font-mono text-sm text-muted-foreground">{startDate}</TableCell>
+                        <TableCell><span className="text-sm text-muted-foreground">—</span></TableCell>
+                        <TableCell className="font-medium">{t("accounting.generalLedger.openingBalance")}</TableCell>
+                        <TableCell className="text-right">-</TableCell>
+                        <TableCell className="text-right">-</TableCell>
                         <TableCell className="text-right font-mono font-medium tabular-nums">
-                          {formatCurrencyTL(entry.balance)}
+                          {formatCurrencyTL(openingBalance)}
                         </TableCell>
                       </TableRow>
-                    ))}
+                    )}
+                    {filteredEntries.length === 0 && allEntries.length > 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={6} className="text-center text-muted-foreground italic py-6">
+                          {t("accounting.generalLedger.noMatches")}
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredEntries.map((entry, index) => (
+                        <TableRow key={entry.id || index}>
+                          <TableCell className="font-mono text-sm">
+                            {entry.entryDate}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium text-blue-600">
+                              {entry.entryNumber}
+                            </span>
+                          </TableCell>
+                          <TableCell>{entry.description}</TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {entry.debit > 0 ? (
+                              <span className="flex items-center justify-end gap-1 text-green-600">
+                                <ArrowUpRight className="h-3 w-3" />
+                                {formatCurrencyTL(entry.debit)}
+                              </span>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono tabular-nums">
+                            {entry.credit > 0 ? (
+                              <span className="flex items-center justify-end gap-1 text-red-600">
+                                <ArrowDownRight className="h-3 w-3" />
+                                {formatCurrencyTL(entry.credit)}
+                              </span>
+                            ) : (
+                              '-'
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right font-mono font-medium tabular-nums">
+                            {formatCurrencyTL(entry.balance)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
 
                     {/* Totals Row */}
                     <TableRow className="bg-muted/50 font-bold">

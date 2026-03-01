@@ -117,6 +117,9 @@ export const paths = {
   fiscalPeriods: (tid: string) => `tenants/${tid}/fiscalPeriods`,
   fiscalPeriod: (tid: string, periodId: string) => `tenants/${tid}/fiscalPeriods/${periodId}`,
 
+  balanceSnapshots: (tid: string) => `tenants/${tid}/balanceSnapshots`,
+  balanceSnapshot: (tid: string, snapshotId: string) => `tenants/${tid}/balanceSnapshots/${snapshotId}`,
+
   accountingSettings: (tid: string) => `tenants/${tid}/settings/accounting`,
 
   // Money (invoicing, AP/AR)

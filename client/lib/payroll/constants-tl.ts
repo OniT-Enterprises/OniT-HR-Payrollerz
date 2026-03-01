@@ -167,7 +167,7 @@ export const TL_OVERTIME_RATES = {
   // Standard overtime (beyond 44 hours/week)
   standard: 1.5,  // 150%
 
-  // Night shift (10pm - 6am)
+  // Night shift premium (night work window is 21:00-06:00 under TL labor law)
   nightShift: 1.25,  // 125% (25% premium)
 
   // Sunday/Rest day work
@@ -297,7 +297,7 @@ export const TL_BANKS = [
 // ============================================
 
 export const TL_MINIMUM_WAGE = {
-  monthly: 115,  // $115 USD (as of 2023)
-  lastUpdated: '2023-01-01',
+  monthly: 115,  // $115 USD (effective 2012-06-22; still current in sources as of 2026)
+  lastUpdated: '2012-06-22',
   // Note: Check for updates annually
 };

@@ -21,8 +21,8 @@ import { useAllEmployees } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
-import { adjustToNextBusinessDayTL } from "@/lib/payroll/tl-holidays";
-import { formatDateTL } from "@/lib/dateUtils";
+import { formatDateTL, getTodayTL, parseDateISO } from "@/lib/dateUtils";
+import { getNextMonthlyAdjustedDeadline, getUrgencyFromDays } from "@/lib/tax/compliance";
 import {
   Calculator,
   DollarSign,
@@ -216,41 +216,34 @@ export default function PayrollDashboard() {
 
   // Calculate compliance deadlines with urgency
   const getComplianceDeadlines = () => {
-    const now = new Date();
-    const pad2 = (n: number) => String(n).padStart(2, "0");
+    const todayIso = getTodayTL();
+    const today = parseDateISO(todayIso);
 
     // WIT due 15th of following month
-    const witCandidate = new Date(now.getFullYear(), now.getMonth(), 15);
-    const witBase = now <= witCandidate
-      ? witCandidate
-      : new Date(now.getFullYear(), now.getMonth() + 1, 15);
-    const witIso = adjustToNextBusinessDayTL(
-      `${witBase.getFullYear()}-${pad2(witBase.getMonth() + 1)}-${pad2(witBase.getDate())}`
-    );
-    const witDate = new Date(`${witIso}T00:00:00`);
-    const witDays = Math.ceil((witDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const witDate = parseDateISO(getNextMonthlyAdjustedDeadline(todayIso, 15));
+    const witDays = Math.ceil((witDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
-    // INSS payment window starts 10th; use 20th as the “latest safe” due date
-    const inssCandidate = new Date(now.getFullYear(), now.getMonth(), 20);
-    const inssBase = now <= inssCandidate
-      ? inssCandidate
-      : new Date(now.getFullYear(), now.getMonth() + 1, 20);
-    const inssIso = adjustToNextBusinessDayTL(
-      `${inssBase.getFullYear()}-${pad2(inssBase.getMonth() + 1)}-${pad2(inssBase.getDate())}`
-    );
-    const inssDate = new Date(`${inssIso}T00:00:00`);
-    const inssDays = Math.ceil((inssDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    // INSS has two practical deadlines: statement by 10th and payment by 20th
+    const inssStatementDate = parseDateISO(getNextMonthlyAdjustedDeadline(todayIso, 10));
+    const inssStatementDays = Math.ceil((inssStatementDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const inssPaymentDate = parseDateISO(getNextMonthlyAdjustedDeadline(todayIso, 20));
+    const inssPaymentDays = Math.ceil((inssPaymentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
 
     return {
       wit: {
         days: witDays,
-        status: witDays > 7 ? 'ok' : witDays > 3 ? 'warning' : 'urgent',
+        status: getUrgencyFromDays(witDays),
         date: formatDateTL(witDate, { month: "short", day: "numeric" }),
       },
-      inss: {
-        days: inssDays,
-        status: inssDays > 7 ? 'ok' : inssDays > 3 ? 'warning' : 'urgent',
-        date: formatDateTL(inssDate, { month: "short", day: "numeric" }),
+      inssStatement: {
+        days: inssStatementDays,
+        status: getUrgencyFromDays(inssStatementDays),
+        date: formatDateTL(inssStatementDate, { month: "short", day: "numeric" }),
+      },
+      inssPayment: {
+        days: inssPaymentDays,
+        status: getUrgencyFromDays(inssPaymentDays),
+        date: formatDateTL(inssPaymentDate, { month: "short", day: "numeric" }),
       },
     };
   };
@@ -1025,19 +1018,36 @@ export default function PayrollDashboard() {
               </div>
               <div className="flex items-center gap-2">
                 <div className={`h-2 w-2 rounded-full ${
-                  compliance.inss.status === 'ok' ? 'bg-emerald-500' :
-                  compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                  compliance.inssStatement.status === 'ok' ? 'bg-emerald-500' :
+                  compliance.inssStatement.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
                 }`} />
-                <span className="text-muted-foreground">{t("payrollDashboard.inssDue")}</span>
-                <span className="font-medium">{compliance.inss.date}</span>
+                <span className="text-muted-foreground">{t("payrollDashboard.inssStatementDue")}</span>
+                <span className="font-medium">{compliance.inssStatement.date}</span>
                 <span className={`text-xs px-1.5 py-0.5 rounded ${
-                  compliance.inss.status === 'ok'
+                  compliance.inssStatement.status === 'ok'
                     ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                    : compliance.inss.status === 'warning'
+                    : compliance.inssStatement.status === 'warning'
                     ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                     : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
                 }`}>
-                  {compliance.inss.days}d
+                  {compliance.inssStatement.days}d
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className={`h-2 w-2 rounded-full ${
+                  compliance.inssPayment.status === 'ok' ? 'bg-emerald-500' :
+                  compliance.inssPayment.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                }`} />
+                <span className="text-muted-foreground">{t("payrollDashboard.inssPaymentDue")}</span>
+                <span className="font-medium">{compliance.inssPayment.date}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  compliance.inssPayment.status === 'ok'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    : compliance.inssPayment.status === 'warning'
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>
+                  {compliance.inssPayment.days}d
                 </span>
               </div>
               <div className="flex items-center gap-2">

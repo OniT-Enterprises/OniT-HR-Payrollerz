@@ -134,7 +134,7 @@ export const TL_LEAVE_TYPES = [
   {
     id: 'sick',
     name: 'Sick Leave (Licença Médica)',
-    daysPerYear: 30,
+    daysPerYear: 12,
     isPaid: true, // First 6 days 100%, next 6 days 50%
     requiresCertificate: true,
     certificateType: 'Medical Certificate',
@@ -577,7 +577,7 @@ class LeaveService {
       employeeName,
       year: targetYear,
       annual: { entitled: 12, used: 0, pending: 0, remaining: 12 },
-      sick: { entitled: 30, used: 0, pending: 0, remaining: 30 },
+      sick: { entitled: 12, used: 0, pending: 0, remaining: 12 },
       maternity: { entitled: 84, used: 0, pending: 0, remaining: 84 },
       paternity: { entitled: 5, used: 0, pending: 0, remaining: 5 },
       unpaid: { entitled: 0, used: 0, pending: 0, remaining: 0 }, // Unlimited

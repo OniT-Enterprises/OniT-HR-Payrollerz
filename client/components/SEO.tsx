@@ -288,6 +288,18 @@ export const seoConfig = {
     keywords: 'trial balance, accounting reports, financial statements',
     url: '/accounting/trial-balance',
   },
+  incomeStatement: {
+    title: 'Income Statement',
+    description: 'View profit and loss for any period with revenue and expense breakdown.',
+    keywords: 'income statement, profit and loss, P&L, financial statements',
+    url: '/accounting/income-statement',
+  },
+  balanceSheet: {
+    title: 'Balance Sheet',
+    description: 'View assets, liabilities, and equity as of any date.',
+    keywords: 'balance sheet, assets, liabilities, equity, financial statements',
+    url: '/accounting/balance-sheet',
+  },
 
   // Reports
   reports: {

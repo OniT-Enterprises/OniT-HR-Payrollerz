@@ -114,7 +114,6 @@ export default function Onboarding() {
     [t],
   );
 
-  // Mock SOPs data
   const departmentSOPs = useMemo(
     () => [
       {
@@ -276,7 +275,7 @@ export default function Onboarding() {
             </div>
             <div className="mt-4">
               <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
-                <span>Progress</span>
+                <span>{t("hiring.onboarding.progress")}</span>
                 <span>{Math.round((currentStep / (steps.length - 1)) * 100)}%</span>
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
@@ -769,12 +768,12 @@ export default function Onboarding() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
-                    { id: "laptop", label: "Laptop / Computer", icon: <Monitor className="h-4 w-4" /> },
-                    { id: "phone", label: "Company Phone", icon: <Phone className="h-4 w-4" /> },
-                    { id: "accessCard", label: "Access Card / Badge", icon: <CreditCard className="h-4 w-4" /> },
-                    { id: "officeKeys", label: "Office Keys", icon: <Shield className="h-4 w-4" /> },
-                    { id: "emailSetup", label: "Email Account Setup", icon: <FileText className="h-4 w-4" /> },
-                    { id: "softwareAccess", label: "Software & Tools Access", icon: <BookOpen className="h-4 w-4" /> },
+                    { id: "laptop", label: t("hiring.onboarding.itEquipment.laptop"), icon: <Monitor className="h-4 w-4" /> },
+                    { id: "phone", label: t("hiring.onboarding.itEquipment.phone"), icon: <Phone className="h-4 w-4" /> },
+                    { id: "accessCard", label: t("hiring.onboarding.itEquipment.accessCard"), icon: <CreditCard className="h-4 w-4" /> },
+                    { id: "officeKeys", label: t("hiring.onboarding.itEquipment.officeKeys"), icon: <Shield className="h-4 w-4" /> },
+                    { id: "emailSetup", label: t("hiring.onboarding.itEquipment.emailSetup"), icon: <FileText className="h-4 w-4" /> },
+                    { id: "softwareAccess", label: t("hiring.onboarding.itEquipment.softwareAccess"), icon: <BookOpen className="h-4 w-4" /> },
                   ].map((item) => (
                     <div key={item.id} className="flex items-center space-x-3 p-4 rounded-lg border border-border/50 hover:bg-muted/30 transition-colors">
                       <Checkbox id={`it-${item.id}`} className="data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500" />
@@ -786,10 +785,10 @@ export default function Onboarding() {
                   ))}
                 </div>
                 <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
-                  <p className="text-sm text-blue-700 dark:text-blue-400">IT Support will contact you within 24 hours to schedule equipment pickup and account setup.</p>
+                  <p className="text-sm text-blue-700 dark:text-blue-400">{t("hiring.onboarding.itEquipment.notice")}</p>
                 </div>
                 <Button onClick={() => setCurrentStep(5)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-                  Continue to Orientation <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("hiring.onboarding.itEquipment.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -812,9 +811,9 @@ export default function Onboarding() {
               <CardContent className="space-y-6">
                 <div className="space-y-4">
                   {[
-                    { day: "Day 1", items: ["Company tour & facility overview", "Meet your team and manager", "HR paperwork completion"] },
-                    { day: "Day 2-3", items: ["Department introduction meetings", "Systems & tools training", "Initial project briefing"] },
-                    { day: "Week 1", items: ["Team lunch/welcome session", "Buddy program pairing", "First week check-in with manager"] },
+                    { day: t("hiring.onboarding.orientation.day1"), items: [t("hiring.onboarding.orientation.day1_tour"), t("hiring.onboarding.orientation.day1_team"), t("hiring.onboarding.orientation.day1_hr")] },
+                    { day: t("hiring.onboarding.orientation.day2_3"), items: [t("hiring.onboarding.orientation.day2_dept"), t("hiring.onboarding.orientation.day2_systems"), t("hiring.onboarding.orientation.day2_project")] },
+                    { day: t("hiring.onboarding.orientation.week1"), items: [t("hiring.onboarding.orientation.week1_lunch"), t("hiring.onboarding.orientation.week1_buddy"), t("hiring.onboarding.orientation.week1_checkin")] },
                   ].map((schedule) => (
                     <div key={schedule.day} className="p-4 rounded-lg border border-border/50">
                       <Badge className="mb-3 bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800">{schedule.day}</Badge>
@@ -830,7 +829,7 @@ export default function Onboarding() {
                   ))}
                 </div>
                 <Button onClick={() => setCurrentStep(6)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-                  Continue to Benefits <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("hiring.onboarding.orientation.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -853,12 +852,12 @@ export default function Onboarding() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   {[
-                    { title: "Health Insurance", desc: "Medical, dental, and vision coverage", status: "Eligible after 30 days" },
-                    { title: "Retirement Plan", desc: "INSS retirement contributions", status: "Enrolled from start date" },
-                    { title: "Paid Time Off", desc: "Annual leave, sick days, holidays", status: "Available immediately" },
-                    { title: "Life Insurance", desc: "Basic life insurance coverage", status: "Eligible after 30 days" },
+                    { id: "health", title: t("hiring.onboarding.benefits.health"), desc: t("hiring.onboarding.benefits.healthDesc"), status: t("hiring.onboarding.benefits.healthStatus") },
+                    { id: "retirement", title: t("hiring.onboarding.benefits.retirement"), desc: t("hiring.onboarding.benefits.retirementDesc"), status: t("hiring.onboarding.benefits.retirementStatus") },
+                    { id: "pto", title: t("hiring.onboarding.benefits.pto"), desc: t("hiring.onboarding.benefits.ptoDesc"), status: t("hiring.onboarding.benefits.ptoStatus") },
+                    { id: "life", title: t("hiring.onboarding.benefits.life"), desc: t("hiring.onboarding.benefits.lifeDesc"), status: t("hiring.onboarding.benefits.lifeStatus") },
                   ].map((benefit) => (
-                    <div key={benefit.title} className="p-4 rounded-lg border border-border/50 hover:shadow-md transition-shadow">
+                    <div key={benefit.id} className="p-4 rounded-lg border border-border/50 hover:shadow-md transition-shadow">
                       <h4 className="font-semibold mb-1">{benefit.title}</h4>
                       <p className="text-sm text-muted-foreground mb-2">{benefit.desc}</p>
                       <Badge variant="outline" className="text-xs">{benefit.status}</Badge>
@@ -866,10 +865,10 @@ export default function Onboarding() {
                   ))}
                 </div>
                 <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
-                  <p className="text-sm text-amber-700 dark:text-amber-400">Benefits enrollment forms will be sent to your email. Please complete within 30 days of your start date.</p>
+                  <p className="text-sm text-amber-700 dark:text-amber-400">{t("hiring.onboarding.benefits.notice")}</p>
                 </div>
                 <Button onClick={() => setCurrentStep(7)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-                  Continue to Probation Setup <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("hiring.onboarding.benefits.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -892,21 +891,21 @@ export default function Onboarding() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Probation Period</Label>
-                    <Input type="text" value="3 months" disabled className="border-border/50 bg-muted" />
+                    <Label>{t("hiring.onboarding.probation.periodLabel")}</Label>
+                    <Input type="text" value={t("hiring.onboarding.probation.periodValue")} disabled className="border-border/50 bg-muted" />
                   </div>
                   <div className="space-y-2">
-                    <Label>Expected End Date</Label>
+                    <Label>{t("hiring.onboarding.probation.endDateLabel")}</Label>
                     <Input type="date" className="border-border/50" />
                   </div>
                 </div>
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Probation Milestones</h4>
+                  <h4 className="font-semibold">{t("hiring.onboarding.probation.milestonesTitle")}</h4>
                   {[
-                    { week: "Week 2", milestone: "Complete all onboarding tasks and initial training" },
-                    { week: "Month 1", milestone: "First performance check-in with manager" },
-                    { week: "Month 2", milestone: "Mid-probation review and goal assessment" },
-                    { week: "Month 3", milestone: "Final probation evaluation and confirmation" },
+                    { week: t("hiring.onboarding.probation.week2"), milestone: t("hiring.onboarding.probation.week2Milestone") },
+                    { week: t("hiring.onboarding.probation.month1"), milestone: t("hiring.onboarding.probation.month1Milestone") },
+                    { week: t("hiring.onboarding.probation.month2"), milestone: t("hiring.onboarding.probation.month2Milestone") },
+                    { week: t("hiring.onboarding.probation.month3"), milestone: t("hiring.onboarding.probation.month3Milestone") },
                   ].map((item) => (
                     <div key={item.week} className="flex items-start gap-3 p-3 rounded-lg border border-border/50">
                       <Badge variant="outline" className="shrink-0">{item.week}</Badge>
@@ -915,7 +914,7 @@ export default function Onboarding() {
                   ))}
                 </div>
                 <Button onClick={() => setCurrentStep(8)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
-                  Continue to Feedback <ArrowRight className="ml-2 h-4 w-4" />
+                  {t("hiring.onboarding.probation.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
             </Card>
@@ -938,25 +937,25 @@ export default function Onboarding() {
               <CardContent className="space-y-6">
                 <div className="grid md:grid-cols-3 gap-4">
                   {[
-                    { day: "Day 30", title: "First Month Check-in", status: "Scheduled" },
-                    { day: "Day 60", title: "Mid-Point Review", status: "Pending" },
-                    { day: "Day 90", title: "Final Evaluation", status: "Pending" },
-                  ].map((feedback) => (
-                    <div key={feedback.day} className="p-4 rounded-lg border border-border/50 text-center">
-                      <Badge className="mb-2 bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800">{feedback.day}</Badge>
-                      <h4 className="font-semibold text-sm mb-1">{feedback.title}</h4>
-                      <p className="text-xs text-muted-foreground">{feedback.status}</p>
+                    { day: t("hiring.onboarding.feedback.day30"), title: t("hiring.onboarding.feedback.day30Title"), status: t("hiring.onboarding.feedback.day30Status") },
+                    { day: t("hiring.onboarding.feedback.day60"), title: t("hiring.onboarding.feedback.day60Title"), status: t("hiring.onboarding.feedback.day60Status") },
+                    { day: t("hiring.onboarding.feedback.day90"), title: t("hiring.onboarding.feedback.day90Title"), status: t("hiring.onboarding.feedback.day90Status") },
+                  ].map((fb) => (
+                    <div key={fb.day} className="p-4 rounded-lg border border-border/50 text-center">
+                      <Badge className="mb-2 bg-emerald-500/10 text-emerald-700 border-emerald-200 dark:text-emerald-400 dark:border-emerald-800">{fb.day}</Badge>
+                      <h4 className="font-semibold text-sm mb-1">{fb.title}</h4>
+                      <p className="text-xs text-muted-foreground">{fb.status}</p>
                     </div>
                   ))}
                 </div>
                 <div className="space-y-4">
-                  <h4 className="font-semibold">Initial Feedback</h4>
-                  <Textarea placeholder="Share your thoughts about your onboarding experience so far..." rows={4} className="border-border/50" />
+                  <h4 className="font-semibold">{t("hiring.onboarding.feedback.initialTitle")}</h4>
+                  <Textarea placeholder={t("hiring.onboarding.feedback.placeholder")} rows={4} className="border-border/50" />
                 </div>
                 <div className="p-6 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-500/10 border border-emerald-200 dark:border-emerald-800 text-center">
                   <CheckCircle className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
-                  <h3 className="text-lg font-semibold mb-1">Onboarding Complete!</h3>
-                  <p className="text-sm text-muted-foreground">You've completed all onboarding steps. Welcome to the team!</p>
+                  <h3 className="text-lg font-semibold mb-1">{t("hiring.onboarding.feedback.completeTitle")}</h3>
+                  <p className="text-sm text-muted-foreground">{t("hiring.onboarding.feedback.completeDesc")}</p>
                 </div>
               </CardContent>
             </Card>

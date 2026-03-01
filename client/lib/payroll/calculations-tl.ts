@@ -708,10 +708,10 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // ========== DEDUCTION CAP (CALC-3) ==========
-  // Based on Portuguese Labour Code Art. 279 (TL Law 4/2012 precedent):
-  // - Statutory deductions (WIT, INSS) and court orders: no cap
-  // - Voluntary deductions (loans, advances, other): capped at 1/6 of gross pay
-  const VOLUNTARY_DEDUCTION_CAP_RATIO = 1 / 6; // ~16.67%
+  // Timor-Leste Labour Law (Law 4/2012, Art. 42):
+  // - Non-statutory deductions are capped at 30% of monthly salary
+  // - Statutory deductions (e.g., WIT, INSS) and court orders are exempt
+  const VOLUNTARY_DEDUCTION_CAP_RATIO = 0.30; // 30%
 
   const _statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
   const voluntaryDeductions = deductions.filter(d => !d.isStatutory);
@@ -721,7 +721,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 
   if (voluntaryTotal > voluntaryCap && voluntaryDeductions.length > 0) {
     warnings.push(
-      `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 1/6 cap ($${voluntaryCap.toFixed(2)}). ` +
+      `Voluntary deductions ($${voluntaryTotal.toFixed(2)}) exceed the 30% cap ($${voluntaryCap.toFixed(2)}). ` +
       `Excess deductions have been reduced proportionally.`
     );
     // Proportionally reduce each voluntary deduction to fit within cap (immutable)
@@ -914,4 +914,3 @@ export function validateTLPayrollInput(input: TLPayrollInput): string[] {
 
   return errors;
 }
-

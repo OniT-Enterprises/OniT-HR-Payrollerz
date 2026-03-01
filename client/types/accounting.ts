@@ -314,6 +314,8 @@ export interface FiscalYear {
   status: 'open' | 'closed' | 'locked';
   closedAt?: FirestoreTimestamp;
   closedBy?: string;
+  lockedAt?: FirestoreTimestamp;
+  lockedBy?: string;
 
   // Opening balances
   openingBalancesPosted: boolean;
@@ -335,6 +337,8 @@ export interface FiscalPeriod {
   status: 'open' | 'closed' | 'locked';
   closedAt?: FirestoreTimestamp;
   closedBy?: string;
+  lockedAt?: FirestoreTimestamp;
+  lockedBy?: string;
 
   createdAt?: FirestoreTimestamp;
 }
@@ -612,6 +616,38 @@ export interface AccountingAuditLog {
   userEmail: string;
   timestamp: FirestoreTimestamp;
   ipAddress?: string;
+}
+
+// ============================================
+// BALANCE SNAPSHOTS (Monthly cumulative balances)
+// ============================================
+
+export interface BalanceSnapshotEntry {
+  accountId: string;
+  accountCode: string;
+  accountName: string;
+  accountType: AccountType;
+  cumulativeDebit: number;   // All-time through period end
+  cumulativeCredit: number;
+  cumulativeNet: number;     // Raw debit - credit
+  periodDebit: number;       // This period only
+  periodCredit: number;
+  periodNet: number;
+}
+
+export interface BalanceSnapshot {
+  id?: string;
+  year: number;
+  period: number;
+  periodEndDate: string;
+  fiscalPeriodId: string;
+  accounts: BalanceSnapshotEntry[];
+  totalCumulativeDebit: number;
+  totalCumulativeCredit: number;
+  isBalanced: boolean;
+  generatedAt: FirestoreTimestamp;
+  generatedBy: string;
+  version: number;
 }
 
 // ============================================

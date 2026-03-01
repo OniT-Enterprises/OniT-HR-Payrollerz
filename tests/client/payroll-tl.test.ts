@@ -391,8 +391,8 @@ describe("Edge cases", () => {
     expect(result.netPay).toBeCloseTo(result.grossPay - result.totalDeductions, 1);
   });
 
-  it("caps voluntary deductions at 1/6 of gross pay", () => {
-    // Gross pay = 800. 1/6 = ~133.33. Voluntary deductions = 300 (should be capped)
+  it("caps voluntary deductions at 30% of gross pay", () => {
+    // Gross pay = 800. 30% = 240. Voluntary deductions = 300 (should be capped)
     const result = calculateTLPayroll(
       makeBaseInput({
         monthlySalary: 800,
@@ -400,14 +400,14 @@ describe("Edge cases", () => {
         advanceRepayment: 150,
       })
     );
-    // Voluntary deductions should be capped at ~133.33
+    // Voluntary deductions should be capped at 30% of gross
     const voluntaryDeductions = result.deductions
       .filter((d) => !d.isStatutory)
       .reduce((sum, d) => sum + d.amount, 0);
-    const cap = result.grossPay / 6;
+    const cap = result.grossPay * 0.30;
     expect(voluntaryDeductions).toBeLessThanOrEqual(cap + 0.01);
     expect(result.warnings.length).toBeGreaterThan(0);
-    expect(result.warnings.some((w) => w.includes("1/6 cap"))).toBe(true);
+    expect(result.warnings.some((w) => w.includes("30% cap"))).toBe(true);
   });
 });
 

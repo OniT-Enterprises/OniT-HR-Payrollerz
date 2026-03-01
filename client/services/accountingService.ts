@@ -22,8 +22,11 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addMoney, subtractMoney, sumMoney, toDecimal, toMoney } from '@/lib/currency';
+import { auditLogService } from '@/services/auditLogService';
 import type {
   Account,
+  AccountType,
+  AccountSubType,
   JournalEntry,
   JournalEntryLine,
   FiscalYear,
@@ -32,6 +35,10 @@ import type {
   TrialBalance,
   TrialBalanceRow,
   GeneralLedgerEntry,
+  IncomeStatement,
+  IncomeStatementRow,
+  BalanceSheet,
+  BalanceSheetRow,
 } from '@/types/accounting';
 import {
   getDefaultAccounts,
@@ -53,22 +60,59 @@ class AccountService {
 
   async createAccount(
     tenantId: string,
-    account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>
+    account: Omit<Account, 'id' | 'createdAt' | 'updatedAt'>,
+    audit?: { userId: string; userEmail: string; userName?: string }
   ): Promise<string> {
     const docRef = await addDoc(this.collectionRef(tenantId), {
       ...account,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    if (audit) {
+      await auditLogService.log({
+        ...audit,
+        tenantId,
+        action: 'accounting.account_create',
+        entityId: docRef.id,
+        entityType: 'account',
+        entityName: `${account.code} - ${account.name}`,
+        description: `Created account ${account.code} - ${account.name}`,
+        newValue: account as unknown as Record<string, unknown>,
+      }).catch(err => console.error('Audit log failed:', err));
+    }
     return docRef.id;
   }
 
-  async updateAccount(tenantId: string, id: string, updates: Partial<Account>): Promise<void> {
+  async updateAccount(
+    tenantId: string,
+    id: string,
+    updates: Partial<Account>,
+    audit?: { userId: string; userEmail: string; userName?: string }
+  ): Promise<void> {
     const docRef = doc(db, paths.account(tenantId, id));
+    const before = audit ? await getDoc(docRef).catch(() => null) : null;
     await updateDoc(docRef, {
       ...updates,
       updatedAt: serverTimestamp(),
     });
+
+    if (audit) {
+      const oldValue = before?.exists() ? (before.data() as Record<string, unknown>) : undefined;
+      await auditLogService.log({
+        ...audit,
+        tenantId,
+        action: 'accounting.account_update',
+        entityId: id,
+        entityType: 'account',
+        entityName: typeof updates.code === 'string' && typeof updates.name === 'string'
+          ? `${updates.code} - ${updates.name}`
+          : id,
+        description: `Updated account ${typeof updates.code === 'string' ? updates.code : id}`,
+        oldValue,
+        newValue: updates as unknown as Record<string, unknown>,
+      }).catch(err => console.error('Audit log failed:', err));
+    }
   }
 
   async getAccount(tenantId: string, id: string): Promise<Account | null> {
@@ -117,7 +161,10 @@ class AccountService {
   /**
    * Initialize chart of accounts with defaults
    */
-  async initializeChartOfAccounts(tenantId: string): Promise<void> {
+  async initializeChartOfAccounts(
+    tenantId: string,
+    audit?: { userId: string; userEmail: string; userName?: string }
+  ): Promise<void> {
     const existingAccounts = await this.getAllAccounts(tenantId);
     if (existingAccounts.length > 0) {
       return;
@@ -136,6 +183,18 @@ class AccountService {
     }
 
     await batch.commit();
+
+    if (audit) {
+      await auditLogService.log({
+        ...audit,
+        tenantId,
+        action: 'accounting.coa_initialize',
+        entityId: tenantId,
+        entityType: 'chart_of_accounts',
+        description: 'Initialized chart of accounts',
+        metadata: { count: defaultAccounts.length },
+      }).catch(err => console.error('Audit log failed:', err));
+    }
   }
 }
 
@@ -146,6 +205,24 @@ class AccountService {
 class JournalEntryService {
   private collectionRef(tenantId: string) {
     return collection(db, paths.journalEntries(tenantId));
+  }
+
+  private async assertFiscalPeriodAllowsPosting(
+    tenantId: string,
+    fiscalYear: number,
+    fiscalPeriod: number
+  ): Promise<void> {
+    const period = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, fiscalYear, fiscalPeriod);
+    if (!period) {
+      // Backwards-compatible: if fiscal periods are not configured yet, allow posting.
+      return;
+    }
+    if (period.status !== 'open') {
+      throw new Error(
+        `Fiscal period ${fiscalYear}-${String(fiscalPeriod).padStart(2, '0')} is ${period.status}. ` +
+        'Reopen the period to post/void entries.'
+      );
+    }
   }
 
   async getJournalEntryBySource(
@@ -204,14 +281,31 @@ class JournalEntryService {
       throw new Error('Journal entry must balance: debits must equal credits');
     }
 
+    // Enforce fiscal period controls (posted entries only).
+    if (entry.status === 'posted') {
+      await this.assertFiscalPeriodAllowsPosting(tenantId, entry.fiscalYear, entry.fiscalPeriod);
+    }
+
     const journalDocRef = doc(this.collectionRef(tenantId));
 
     // Write journal + GL entries atomically so books cannot drift.
     const doWrite = (transaction: Transaction) => {
-      transaction.set(journalDocRef, {
+      const journalPayload: Record<string, unknown> = {
         ...entry,
         createdAt: serverTimestamp(),
-      });
+      };
+
+      if (entry.status === 'posted') {
+        // Ensure posted metadata is present for posted-on-create entries.
+        if (!('postedAt' in journalPayload) || journalPayload.postedAt === undefined) {
+          journalPayload.postedAt = serverTimestamp();
+        }
+        if (!('postedBy' in journalPayload) || journalPayload.postedBy === undefined) {
+          journalPayload.postedBy = entry.postedBy || entry.createdBy || 'system';
+        }
+      }
+
+      transaction.set(journalDocRef, journalPayload);
 
       if (entry.status === 'posted') {
         for (const line of entry.lines) {
@@ -232,6 +326,30 @@ class JournalEntryService {
             createdAt: serverTimestamp(),
           });
         }
+
+        // Audit trail: posted journal entry (includes auto-generated postings)
+        const actor = entry.postedBy || entry.createdBy || 'system';
+        const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${journalDocRef.id}_post`);
+        transaction.set(auditDocRef, {
+          userId: actor,
+          userEmail: actor,
+          action: 'accounting.journal_post',
+          module: 'accounting',
+          description: `Posted journal entry ${entry.entryNumber}`,
+          timestamp: serverTimestamp(),
+          tenantId,
+          entityId: journalDocRef.id,
+          entityType: 'journal_entry',
+          entityName: entry.entryNumber,
+          metadata: {
+            source: entry.source,
+            sourceId: entry.sourceId || null,
+            totalDebit: entry.totalDebit,
+            totalCredit: entry.totalCredit,
+            date: entry.date,
+          },
+          severity: 'info',
+        });
       }
     };
 
@@ -285,6 +403,16 @@ class JournalEntryService {
   async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
     const journalDocRef = doc(db, paths.journalEntry(tenantId, id));
 
+    // Pre-check fiscal period status (query not transaction-safe)
+    const preSnap = await getDoc(journalDocRef);
+    if (!preSnap.exists()) {
+      throw new Error('Journal entry not found');
+    }
+    const preEntry = { id: preSnap.id, ...preSnap.data() } as JournalEntry;
+    if (preEntry.status === 'draft') {
+      await this.assertFiscalPeriodAllowsPosting(tenantId, preEntry.fiscalYear, preEntry.fiscalPeriod);
+    }
+
     // Use transaction to ensure atomicity: journal status update + GL entries creation
     await runTransaction(db, async (transaction) => {
       // Read the journal entry within the transaction
@@ -327,6 +455,29 @@ class JournalEntryService {
           createdAt: serverTimestamp(),
         });
       }
+
+      // Audit trail: posted journal entry
+      const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${id}_post`);
+      transaction.set(auditDocRef, {
+        userId: postedBy,
+        userEmail: postedBy,
+        action: 'accounting.journal_post',
+        module: 'accounting',
+        description: `Posted journal entry ${entry.entryNumber}`,
+        timestamp: serverTimestamp(),
+        tenantId,
+        entityId: id,
+        entityType: 'journal_entry',
+        entityName: entry.entryNumber,
+        metadata: {
+          source: entry.source,
+          sourceId: entry.sourceId || null,
+          totalDebit: entry.totalDebit,
+          totalCredit: entry.totalCredit,
+          date: entry.date,
+        },
+        severity: 'info',
+      });
     });
   }
 
@@ -336,15 +487,65 @@ class JournalEntryService {
     if (!existing.exists()) {
       throw new Error('Journal entry not found');
     }
-    const entry = existing.data() as JournalEntry;
+    const entry = { ...existing.data(), id: existing.id } as JournalEntry;
     if (entry.status !== 'posted') {
       throw new Error('Only posted journal entries can be voided');
     }
-    await updateDoc(docRef, {
-      status: 'void',
-      voidedAt: serverTimestamp(),
-      voidedBy,
-      voidReason: reason,
+
+    await this.assertFiscalPeriodAllowsPosting(tenantId, entry.fiscalYear, entry.fiscalPeriod);
+
+    await runTransaction(db, async (transaction) => {
+      // 1. Mark journal entry as void
+      transaction.update(docRef, {
+        status: 'void',
+        voidedAt: serverTimestamp(),
+        voidedBy,
+        voidReason: reason,
+      });
+
+      // 2. Create reversing GL entries (swap debits and credits)
+      for (const line of entry.lines) {
+        const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
+        transaction.set(glDocRef, {
+          accountId: line.accountId,
+          accountCode: line.accountCode,
+          accountName: line.accountName,
+          journalEntryId: id,
+          entryNumber: `${entry.entryNumber}-VOID`,
+          entryDate: entry.date,
+          description: `VOID: ${line.description || entry.description}`,
+          debit: line.credit,   // Swap: original credit becomes debit
+          credit: line.debit,   // Swap: original debit becomes credit
+          balance: 0,
+          fiscalYear: entry.fiscalYear,
+          fiscalPeriod: entry.fiscalPeriod,
+          createdAt: serverTimestamp(),
+        });
+      }
+
+      // Audit trail: voided journal entry
+      const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${id}_void`);
+      transaction.set(auditDocRef, {
+        userId: voidedBy,
+        userEmail: voidedBy,
+        action: 'accounting.journal_void',
+        module: 'accounting',
+        description: `Voided journal entry ${entry.entryNumber}${reason ? `: ${reason}` : ''}`,
+        timestamp: serverTimestamp(),
+        tenantId,
+        entityId: id,
+        entityType: 'journal_entry',
+        entityName: entry.entryNumber,
+        metadata: {
+          source: entry.source,
+          sourceId: entry.sourceId || null,
+          totalDebit: entry.totalDebit,
+          totalCredit: entry.totalCredit,
+          date: entry.date,
+          reason,
+        },
+        severity: 'critical',
+      });
     });
   }
 
@@ -401,6 +602,82 @@ class JournalEntryService {
         createdAt: serverTimestamp(),
       });
     }
+
+    // Audit trail: voided journal entry (inside parent transaction)
+    const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${journalEntryId}_void`);
+    transaction.set(auditDocRef, {
+      userId: voidedBy,
+      userEmail: voidedBy,
+      action: 'accounting.journal_void',
+      module: 'accounting',
+      description: `Voided journal entry ${journalEntry.entryNumber}${reason ? `: ${reason}` : ''}`,
+      timestamp: serverTimestamp(),
+      tenantId,
+      entityId: journalEntryId,
+      entityType: 'journal_entry',
+      entityName: journalEntry.entryNumber,
+      metadata: {
+        source: journalEntry.source,
+        sourceId: journalEntry.sourceId || null,
+        totalDebit: journalEntry.totalDebit,
+        totalCredit: journalEntry.totalCredit,
+        date: journalEntry.date,
+        reason,
+      },
+      severity: 'critical',
+    });
+  }
+
+  async createReversingJournalEntry(
+    tenantId: string,
+    originalEntry: JournalEntry,
+    params: {
+      date: string;
+      createdBy: string;
+      reason: string;
+      txn?: Transaction;
+    }
+  ): Promise<string> {
+    if (!originalEntry?.id) {
+      throw new Error('Original journal entry is missing id');
+    }
+
+    const year = new Date(params.date).getFullYear();
+    const month = new Date(params.date).getMonth() + 1;
+    const entryNumber = await this.getNextEntryNumber(tenantId, year, params.txn);
+
+    const lines: JournalEntryLine[] = originalEntry.lines.map((line, idx) => ({
+      lineNumber: idx + 1,
+      accountId: line.accountId,
+      accountCode: line.accountCode,
+      accountName: line.accountName,
+      debit: line.credit,
+      credit: line.debit,
+      description: line.description,
+      departmentId: line.departmentId,
+      employeeId: line.employeeId,
+      projectId: line.projectId,
+    }));
+
+    const journalEntry: Omit<JournalEntry, 'id' | 'createdAt'> = {
+      entryNumber,
+      date: params.date,
+      description: `Reversal of ${originalEntry.entryNumber}: ${params.reason}`,
+      source: 'adjustment',
+      sourceId: originalEntry.id,
+      sourceRef: originalEntry.entryNumber,
+      lines,
+      totalDebit: originalEntry.totalDebit,
+      totalCredit: originalEntry.totalCredit,
+      status: 'posted',
+      postedAt: serverTimestamp(),
+      postedBy: params.createdBy,
+      fiscalYear: year,
+      fiscalPeriod: month,
+      createdBy: params.createdBy,
+    };
+
+    return await this.createJournalEntry(tenantId, journalEntry, params.txn);
   }
 
   /**
@@ -466,6 +743,75 @@ class JournalEntryService {
       return doWork(txn);
     }
     return runTransaction(db, doWork);
+  }
+
+  /**
+   * Allocate a block of sequential entry numbers in a single transaction.
+   * Returns { start, end, prefix } where start..end is the inclusive range.
+   * Use this during payroll batch posting to avoid N separate transactions.
+   */
+  async allocateEntryNumberBlock(
+    tenantId: string,
+    year: number,
+    blockSize: number = 10,
+  ): Promise<{ start: number; end: number; prefix: string }> {
+    const settingsRef = doc(db, paths.accountingSettings(tenantId));
+    const currentYear = parseInt(getTodayTL().slice(0, 4), 10);
+
+    return runTransaction(db, async (transaction) => {
+      const settingsSnap = await transaction.get(settingsRef);
+
+      let prefix = 'JE';
+      let nextNum = 1;
+
+      if (settingsSnap.exists()) {
+        const settings = settingsSnap.data() as Partial<AccountingSettings> & {
+          nextJournalNumberByYear?: Record<string, number>;
+        };
+        prefix = settings.journalEntryPrefix || 'JE';
+
+        const byYear = settings.nextJournalNumberByYear || {};
+        const yearKey = String(year);
+        const fromYearCounter = byYear[yearKey];
+
+        if (typeof fromYearCounter === 'number' && fromYearCounter > 0) {
+          nextNum = Math.floor(fromYearCounter);
+        } else if (
+          year === currentYear &&
+          typeof settings.nextJournalNumber === 'number' &&
+          settings.nextJournalNumber > 0
+        ) {
+          nextNum = Math.floor(settings.nextJournalNumber);
+        }
+
+        const newNext = nextNum + blockSize;
+        transaction.set(settingsRef, {
+          journalEntryPrefix: prefix,
+          nextJournalNumber: year === currentYear ? newNext : settings.nextJournalNumber || 1,
+          nextJournalNumberByYear: {
+            ...byYear,
+            [yearKey]: newNext,
+          },
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      } else {
+        transaction.set(settingsRef, {
+          journalEntryPrefix: 'JE',
+          nextJournalNumber: year === currentYear ? 1 + blockSize : 1,
+          nextJournalNumberByYear: {
+            [String(year)]: 1 + blockSize,
+          },
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+
+      return { start: nextNum, end: nextNum + blockSize - 1, prefix };
+    });
+  }
+
+  /** Format an entry number from a block allocation. */
+  formatEntryNumber(prefix: string, year: number, num: number): string {
+    return `${prefix}-${year}-${String(num).padStart(4, '0')}`;
   }
 
   /**
@@ -1215,8 +1561,26 @@ class GeneralLedgerService {
       startDate?: string;
       endDate?: string;
       fiscalYear?: number;
+      accountType?: AccountType;
+      accountSubType?: AccountSubType;
     }
-  ): Promise<GeneralLedgerEntry[]> {
+  ): Promise<{ entries: GeneralLedgerEntry[]; openingBalance: number }> {
+    // Credit-normal accounts: liability, equity, revenue.
+    // Exceptions for contra/temporary accounts in our simplified COA:
+    // - accumulated_depreciation (asset, credit-normal)
+    // - dividends (equity, debit-normal)
+    const isCreditNormal = (() => {
+      const type = options?.accountType;
+      const subType = options?.accountSubType;
+      if (!type) return false;
+
+      if (type === 'asset') return subType === 'accumulated_depreciation';
+      if (type === 'expense') return false;
+      if (type === 'liability' || type === 'revenue') return true;
+      if (type === 'equity') return subType !== 'dividends';
+      return false;
+    })();
+
     // Support legacy rows where accountId stored as accountCode by querying both.
     const queries = [
       query(this.collectionRef(tenantId), where('accountId', '==', accountKey), orderBy('entryDate')),
@@ -1232,17 +1596,17 @@ class GeneralLedgerService {
 
     // Merge and dedupe by doc id
     const seen = new Set<string>();
-    let entries: GeneralLedgerEntry[] = [];
+    let allEntries: GeneralLedgerEntry[] = [];
     snapshots.forEach(snapshot => {
       snapshot.docs.forEach(doc => {
         if (!seen.has(doc.id)) {
           seen.add(doc.id);
-          entries.push({ id: doc.id, ...doc.data() } as GeneralLedgerEntry);
+          allEntries.push({ id: doc.id, ...doc.data() } as GeneralLedgerEntry);
         }
       });
     });
 
-    entries.sort((a, b) => {
+    allEntries.sort((a, b) => {
       const dateCmp = a.entryDate.localeCompare(b.entryDate);
       if (dateCmp !== 0) return dateCmp;
       const numberCmp = (a.entryNumber || '').localeCompare(b.entryNumber || '');
@@ -1250,22 +1614,36 @@ class GeneralLedgerService {
       return (a.id || '').localeCompare(b.id || '');
     });
 
-    // Calculate running balance
-    let runningBalance = 0;
-    entries = entries.map(entry => {
-      runningBalance = addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
+    // Split into pre-period (opening) and in-period entries
+    let openingBalance = 0;
+    let periodEntries: GeneralLedgerEntry[] = allEntries;
+
+    if (options?.startDate) {
+      const prePeriod = allEntries.filter(e => e.entryDate < options.startDate!);
+      periodEntries = allEntries.filter(e => e.entryDate >= options.startDate!);
+
+      // Compute opening balance from pre-period entries
+      for (const entry of prePeriod) {
+        openingBalance = isCreditNormal
+          ? addMoney(openingBalance, subtractMoney(entry.credit, entry.debit))
+          : addMoney(openingBalance, subtractMoney(entry.debit, entry.credit));
+      }
+    }
+
+    if (options?.endDate) {
+      periodEntries = periodEntries.filter(e => e.entryDate <= options.endDate!);
+    }
+
+    // Calculate running balance starting from opening balance
+    let runningBalance = openingBalance;
+    const entries = periodEntries.map(entry => {
+      runningBalance = isCreditNormal
+        ? addMoney(runningBalance, subtractMoney(entry.credit, entry.debit))
+        : addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
       return { ...entry, balance: runningBalance };
     });
 
-    // Filter by date range
-    if (options?.startDate) {
-      entries = entries.filter(e => e.entryDate >= options.startDate!);
-    }
-    if (options?.endDate) {
-      entries = entries.filter(e => e.entryDate <= options.endDate!);
-    }
-
-    return entries;
+    return { entries, openingBalance };
   }
 
   async getAccountBalance(
@@ -1306,61 +1684,127 @@ class GeneralLedgerService {
 // ============================================
 
 class TrialBalanceService {
-  async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number): Promise<TrialBalance> {
-    // Fetch accounts and ALL GL entries in just 2 queries (instead of N×2)
-    const [accounts, glSnapshot] = await Promise.all([
+  /**
+   * Helper: load GL entries, using snapshot+delta when available.
+   * Returns entries split into "before cutoff" and "from cutoff to endDate".
+   * Falls back to full GL scan when no snapshot exists.
+   */
+  private async loadGLWithSnapshot(
+    tenantId: string,
+    cutoffDate: string,
+    endDate: string,
+  ): Promise<{
+    openingById: Map<string, number>;
+    openingByCode: Map<string, number>;
+    periodById: Map<string, number>;
+    periodByCode: Map<string, number>;
+  }> {
+    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+
+    const openingById = new Map<string, number>();
+    const openingByCode = new Map<string, number>();
+    const periodById = new Map<string, number>();
+    const periodByCode = new Map<string, number>();
+
+    // Try to find a snapshot that covers everything before cutoffDate
+    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, cutoffDate);
+
+    if (snapshot) {
+      // Populate opening balances from snapshot
+      for (const entry of snapshot.accounts) {
+        openingById.set(entry.accountId, entry.cumulativeNet);
+        openingByCode.set(entry.accountCode, entry.cumulativeNet);
+      }
+
+      // Query GL entries between snapshot end and cutoffDate for remaining opening
+      if (snapshot.periodEndDate < cutoffDate) {
+        const gapEntries = await balanceSnapshotService.queryGLDelta(
+          tenantId,
+          snapshot.periodEndDate,
+          // We need entries after snapshot end but before cutoff for opening
+          // and entries from cutoff to endDate for period
+          endDate,
+        );
+        for (const e of gapEntries) {
+          const net = subtractMoney(e.debit, e.credit);
+          if (e.entryDate < cutoffDate) {
+            openingById.set(e.accountId, addMoney(openingById.get(e.accountId) ?? 0, net));
+            openingByCode.set(e.accountCode, addMoney(openingByCode.get(e.accountCode) ?? 0, net));
+          } else if (e.entryDate <= endDate) {
+            periodById.set(e.accountId, addMoney(periodById.get(e.accountId) ?? 0, net));
+            periodByCode.set(e.accountCode, addMoney(periodByCode.get(e.accountCode) ?? 0, net));
+          }
+        }
+      } else {
+        // Snapshot covers right up to cutoff, just query period entries
+        const periodEntries = await balanceSnapshotService.queryGLDelta(
+          tenantId,
+          snapshot.periodEndDate,
+          endDate,
+        );
+        for (const e of periodEntries) {
+          const net = subtractMoney(e.debit, e.credit);
+          periodById.set(e.accountId, addMoney(periodById.get(e.accountId) ?? 0, net));
+          periodByCode.set(e.accountCode, addMoney(periodByCode.get(e.accountCode) ?? 0, net));
+        }
+      }
+    } else {
+      // Fallback: full GL scan (backward compatible)
+      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
+      glSnapshot.docs.forEach(glDoc => {
+        const entry = glDoc.data() as GeneralLedgerEntry;
+        if (entry.entryDate > endDate) return;
+        const net = subtractMoney(entry.debit, entry.credit);
+        if (entry.entryDate < cutoffDate) {
+          openingById.set(entry.accountId, addMoney(openingById.get(entry.accountId) ?? 0, net));
+          openingByCode.set(entry.accountCode, addMoney(openingByCode.get(entry.accountCode) ?? 0, net));
+        } else {
+          periodById.set(entry.accountId, addMoney(periodById.get(entry.accountId) ?? 0, net));
+          periodByCode.set(entry.accountCode, addMoney(periodByCode.get(entry.accountCode) ?? 0, net));
+        }
+      });
+    }
+
+    return { openingById, openingByCode, periodById, periodByCode };
+  }
+
+  async generateTrialBalance(tenantId: string, asOfDate: string, fiscalYear: number, periodStart?: string): Promise<TrialBalance> {
+    const effectivePeriodStart = periodStart || `${fiscalYear}-01-01`;
+
+    const [accounts, balanceMaps] = await Promise.all([
       accountService.getAllAccounts(tenantId),
-      getDocs(collection(db, paths.generalLedger(tenantId))),
+      this.loadGLWithSnapshot(tenantId, effectivePeriodStart, asOfDate),
     ]);
 
-    // Build balance map from GL entries, filtering by date
-    const balanceByAccountId = new Map<string, number>();
-    const balanceByAccountCode = new Map<string, number>();
-
-    glSnapshot.docs.forEach(doc => {
-      const entry = doc.data() as GeneralLedgerEntry;
-      if (asOfDate && entry.entryDate > asOfDate) return;
-
-      const net = subtractMoney(entry.debit, entry.credit);
-
-      // Accumulate by accountId
-      const prevById = balanceByAccountId.get(entry.accountId) ?? 0;
-      balanceByAccountId.set(entry.accountId, addMoney(prevById, net));
-
-      // Accumulate by accountCode (for legacy rows)
-      const prevByCode = balanceByAccountCode.get(entry.accountCode) ?? 0;
-      balanceByAccountCode.set(entry.accountCode, addMoney(prevByCode, net));
-    });
+    const { openingById, openingByCode, periodById, periodByCode } = balanceMaps;
 
     const rows: TrialBalanceRow[] = [];
 
     for (const account of accounts) {
       if (!account.isActive) continue;
 
-      // Use accountId balance, fall back to accountCode for legacy data
-      const balance = balanceByAccountId.get(account.id!) ?? balanceByAccountCode.get(account.code) ?? 0;
+      const openingNet = openingById.get(account.id!) ?? openingByCode.get(account.code) ?? 0;
+      const periodNet = periodById.get(account.id!) ?? periodByCode.get(account.code) ?? 0;
+      const closingNet = addMoney(openingNet, periodNet);
 
-      // Skip zero balances for cleaner report
-      if (toDecimal(balance).abs().lessThan(0.01)) continue;
-
-      const debitBalance = balance > 0 ? balance : 0;
-      const creditBalance = balance < 0 ? toMoney(toDecimal(balance).abs()) : 0;
+      if (toDecimal(openingNet).abs().lessThan(0.01)
+        && toDecimal(periodNet).abs().lessThan(0.01)
+        && toDecimal(closingNet).abs().lessThan(0.01)) continue;
 
       rows.push({
         accountId: account.id!,
         accountCode: account.code,
         accountName: account.name,
         accountType: account.type,
-        openingDebit: 0,
-        openingCredit: 0,
-        periodDebit: debitBalance,
-        periodCredit: creditBalance,
-        closingDebit: debitBalance,
-        closingCredit: creditBalance,
+        openingDebit: openingNet > 0 ? openingNet : 0,
+        openingCredit: openingNet < 0 ? toMoney(toDecimal(openingNet).abs()) : 0,
+        periodDebit: periodNet > 0 ? periodNet : 0,
+        periodCredit: periodNet < 0 ? toMoney(toDecimal(periodNet).abs()) : 0,
+        closingDebit: closingNet > 0 ? closingNet : 0,
+        closingCredit: closingNet < 0 ? toMoney(toDecimal(closingNet).abs()) : 0,
       });
     }
 
-    // Sort by account code
     rows.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
 
     const totalDebit = sumMoney(rows.map(r => r.closingDebit));
@@ -1374,6 +1818,262 @@ class TrialBalanceService {
       totalDebit,
       totalCredit,
       isBalanced: toDecimal(totalDebit).minus(totalCredit).abs().lessThan(0.01),
+      generatedAt: new Date(),
+      generatedBy: 'system',
+    };
+  }
+
+  async generateIncomeStatement(
+    tenantId: string,
+    periodStart: string,
+    periodEnd: string,
+    fiscalYear: number,
+  ): Promise<IncomeStatement> {
+    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+
+    // Try snapshot+delta; fallback to full scan
+    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, periodStart);
+
+    const balanceById = new Map<string, number>();
+    const balanceByCode = new Map<string, number>();
+
+    if (snapshot) {
+      // Query only the delta from snapshot end to periodEnd
+      const deltaEntries = await balanceSnapshotService.queryGLDelta(
+        tenantId,
+        snapshot.periodEndDate,
+        periodEnd,
+      );
+      // We only need entries within [periodStart, periodEnd]
+      for (const e of deltaEntries) {
+        if (e.entryDate < periodStart) continue;
+        const net = subtractMoney(e.debit, e.credit);
+        balanceById.set(e.accountId, addMoney(balanceById.get(e.accountId) ?? 0, net));
+        balanceByCode.set(e.accountCode, addMoney(balanceByCode.get(e.accountCode) ?? 0, net));
+      }
+    } else {
+      // Fallback: full GL scan
+      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
+      glSnapshot.docs.forEach(glDoc => {
+        const entry = glDoc.data() as GeneralLedgerEntry;
+        if (entry.entryDate < periodStart || entry.entryDate > periodEnd) return;
+        const net = subtractMoney(entry.debit, entry.credit);
+        balanceById.set(entry.accountId, addMoney(balanceById.get(entry.accountId) ?? 0, net));
+        balanceByCode.set(entry.accountCode, addMoney(balanceByCode.get(entry.accountCode) ?? 0, net));
+      });
+    }
+
+    const revenueItems: IncomeStatementRow[] = [];
+    const expenseItems: IncomeStatementRow[] = [];
+
+    for (const account of accounts) {
+      if (!account.isActive) continue;
+      if (account.type !== 'revenue' && account.type !== 'expense') continue;
+
+      const net = balanceById.get(account.id!) ?? balanceByCode.get(account.code) ?? 0;
+      if (toDecimal(net).abs().lessThan(0.01)) continue;
+
+      const effectiveAmount = account.type === 'revenue'
+        ? toMoney(toDecimal(net).negated())
+        : net;
+
+      const row: IncomeStatementRow = {
+        accountId: account.id!,
+        accountCode: account.code,
+        accountName: account.name,
+        accountType: account.type as 'revenue' | 'expense',
+        amount: effectiveAmount,
+        level: 0,
+        isTotal: false,
+      };
+
+      if (account.type === 'revenue') {
+        revenueItems.push(row);
+      } else {
+        expenseItems.push(row);
+      }
+    }
+
+    revenueItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    expenseItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+    const totalRevenue = sumMoney(revenueItems.map(r => r.amount));
+    const totalExpenses = sumMoney(expenseItems.map(r => r.amount));
+    const netIncome = subtractMoney(totalRevenue, totalExpenses);
+
+    return {
+      periodStart,
+      periodEnd,
+      fiscalYear,
+      revenueItems,
+      totalRevenue,
+      expenseItems,
+      totalExpenses,
+      netIncome,
+      netIncomeLabel: netIncome >= 0 ? 'Net Profit' : 'Net Loss',
+      generatedAt: new Date(),
+      generatedBy: 'system',
+    };
+  }
+
+  async generateBalanceSheet(
+    tenantId: string,
+    asOfDate: string,
+    fiscalYear: number,
+  ): Promise<BalanceSheet> {
+    const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+
+    const accounts = await accountService.getAllAccounts(tenantId);
+    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, asOfDate);
+
+    const balanceById = new Map<string, number>();
+    const balanceByCode = new Map<string, number>();
+    const revenueExpenseById = new Map<string, number>();
+    const fyStart = `${fiscalYear}-01-01`;
+
+    if (snapshot) {
+      // Seed cumulative balances from snapshot
+      for (const entry of snapshot.accounts) {
+        balanceById.set(entry.accountId, entry.cumulativeNet);
+        balanceByCode.set(entry.accountCode, entry.cumulativeNet);
+      }
+
+      // Query delta entries after snapshot through asOfDate
+      const deltaEntries = await balanceSnapshotService.queryGLDelta(
+        tenantId,
+        snapshot.periodEndDate,
+        asOfDate,
+      );
+      for (const e of deltaEntries) {
+        const net = subtractMoney(e.debit, e.credit);
+        balanceById.set(e.accountId, addMoney(balanceById.get(e.accountId) ?? 0, net));
+        balanceByCode.set(e.accountCode, addMoney(balanceByCode.get(e.accountCode) ?? 0, net));
+      }
+
+      // Current year revenue/expense: snapshot cumulative includes pre-FY amounts.
+      // We need only FY-to-date. Use snapshot if its period is in the same FY,
+      // or query from FY start.
+      const fySnapshot = snapshot.year === fiscalYear
+        ? snapshot
+        : await balanceSnapshotService.findLatestSnapshotBefore(tenantId, fyStart);
+
+      if (fySnapshot && fySnapshot.year === fiscalYear) {
+        // Snapshot is within this FY — its period activity covers some FY months.
+        // We need cumulative from FY start through asOfDate.
+        // Compute: snapshot's cumulative - (pre-FY cumulative from an earlier snapshot)
+        // Simpler approach: query GL from FY start to asOfDate for revenue/expense only
+        const fyEntries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
+        for (const e of fyEntries) {
+          if (e.entryDate < fyStart) continue;
+          revenueExpenseById.set(e.accountId, addMoney(revenueExpenseById.get(e.accountId) ?? 0, subtractMoney(e.debit, e.credit)));
+        }
+      } else {
+        // No FY-relevant snapshot; query FY range
+        const fyEntries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
+        for (const e of fyEntries) {
+          if (e.entryDate < fyStart) continue;
+          revenueExpenseById.set(e.accountId, addMoney(revenueExpenseById.get(e.accountId) ?? 0, subtractMoney(e.debit, e.credit)));
+        }
+      }
+    } else {
+      // Fallback: full GL scan
+      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
+      glSnapshot.docs.forEach(glDoc => {
+        const entry = glDoc.data() as GeneralLedgerEntry;
+        if (entry.entryDate > asOfDate) return;
+        const net = subtractMoney(entry.debit, entry.credit);
+        balanceById.set(entry.accountId, addMoney(balanceById.get(entry.accountId) ?? 0, net));
+        balanceByCode.set(entry.accountCode, addMoney(balanceByCode.get(entry.accountCode) ?? 0, net));
+      });
+
+      // Current year earnings from full scan
+      glSnapshot.docs.forEach(glDoc => {
+        const entry = glDoc.data() as GeneralLedgerEntry;
+        if (entry.entryDate < fyStart || entry.entryDate > asOfDate) return;
+        revenueExpenseById.set(entry.accountId, addMoney(revenueExpenseById.get(entry.accountId) ?? 0, subtractMoney(entry.debit, entry.credit)));
+      });
+    }
+
+    const assetItems: BalanceSheetRow[] = [];
+    const liabilityItems: BalanceSheetRow[] = [];
+    const equityItems: BalanceSheetRow[] = [];
+    let currentYearRevenue = 0;
+    let currentYearExpenses = 0;
+
+    for (const account of accounts) {
+      if (!account.isActive) continue;
+
+      const net = balanceById.get(account.id!) ?? balanceByCode.get(account.code) ?? 0;
+
+      if (account.type === 'revenue' || account.type === 'expense') {
+        const fyNet = revenueExpenseById.get(account.id!) ?? 0;
+        if (account.type === 'revenue') {
+          currentYearRevenue = addMoney(currentYearRevenue, toMoney(toDecimal(fyNet).negated()));
+        } else {
+          currentYearExpenses = addMoney(currentYearExpenses, fyNet);
+        }
+        continue;
+      }
+
+      if (toDecimal(net).abs().lessThan(0.01)) continue;
+
+      const displayAmount = (account.type === 'liability' || account.type === 'equity')
+        ? toMoney(toDecimal(net).negated())
+        : net;
+
+      const row: BalanceSheetRow = {
+        accountId: account.id!,
+        accountCode: account.code,
+        accountName: account.name,
+        accountType: account.type as 'asset' | 'liability' | 'equity',
+        amount: displayAmount,
+        level: 0,
+        isTotal: false,
+      };
+
+      if (account.type === 'asset') assetItems.push(row);
+      else if (account.type === 'liability') liabilityItems.push(row);
+      else if (account.type === 'equity') equityItems.push(row);
+    }
+
+    const currentYearEarnings = subtractMoney(currentYearRevenue, currentYearExpenses);
+    if (toDecimal(currentYearEarnings).abs().greaterThanOrEqualTo(0.01)) {
+      equityItems.push({
+        accountId: '__current_year_earnings__',
+        accountCode: '',
+        accountName: 'Current Year Earnings',
+        accountType: 'equity',
+        amount: currentYearEarnings,
+        level: 0,
+        isTotal: false,
+      });
+    }
+
+    assetItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    liabilityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+    equityItems.sort((a, b) => a.accountCode.localeCompare(b.accountCode));
+
+    const totalAssets = sumMoney(assetItems.map(r => r.amount));
+    const totalLiabilities = sumMoney(liabilityItems.map(r => r.amount));
+    const totalEquity = sumMoney(equityItems.map(r => r.amount));
+
+    const isBalanced = toDecimal(totalAssets)
+      .minus(addMoney(totalLiabilities, totalEquity))
+      .abs()
+      .lessThan(0.01);
+
+    return {
+      asOfDate,
+      fiscalYear,
+      assetItems,
+      totalAssets,
+      liabilityItems,
+      totalLiabilities,
+      equityItems,
+      totalEquity,
+      isBalanced,
       generatedAt: new Date(),
       generatedBy: 'system',
     };
@@ -1393,7 +2093,20 @@ class FiscalPeriodService {
     return collection(db, paths.fiscalPeriods(tenantId));
   }
 
-  async createFiscalYear(tenantId: string, year: number): Promise<string> {
+  async getPeriodByYearAndPeriod(tenantId: string, year: number, period: number): Promise<FiscalPeriod | null> {
+    const q = query(
+      this.periodCollection(tenantId),
+      where('year', '==', year),
+      where('period', '==', period),
+      limit(1)
+    );
+    const snapshot = await getDocs(q);
+    if (snapshot.empty) return null;
+    const docSnap = snapshot.docs[0];
+    return { id: docSnap.id, ...docSnap.data() } as FiscalPeriod;
+  }
+
+  async createFiscalYear(tenantId: string, year: number, createdBy?: string): Promise<string> {
     const startDate = `${year}-01-01`;
     const endDate = `${year}-12-31`;
 
@@ -1424,6 +2137,21 @@ class FiscalPeriodService {
     }
     await batch.commit();
 
+    if (createdBy) {
+      await auditLogService.log({
+        userId: createdBy,
+        userEmail: createdBy,
+        action: 'accounting.period_create_year',
+        tenantId,
+        entityId: docRef.id,
+        entityType: 'fiscal_year',
+        entityName: String(year),
+        description: `Created fiscal year ${year}`,
+        metadata: { year },
+        severity: 'info',
+      }).catch(err => console.error('Audit log failed:', err));
+    }
+
     return docRef.id;
   }
 
@@ -1452,12 +2180,122 @@ class FiscalPeriodService {
     return { id: doc.id, ...doc.data() } as FiscalPeriod;
   }
 
+  async getPeriodsForYear(tenantId: string, year: number): Promise<FiscalPeriod[]> {
+    const q = query(
+      this.periodCollection(tenantId),
+      where('year', '==', year),
+      orderBy('period', 'asc')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(d => ({ id: d.id, ...d.data() } as FiscalPeriod));
+  }
+
   async closePeriod(tenantId: string, periodId: string, closedBy: string): Promise<void> {
     const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
+    const before = await getDoc(docRef);
+    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
     await updateDoc(docRef, {
       status: 'closed',
       closedAt: serverTimestamp(),
       closedBy,
+    });
+
+    await auditLogService.log({
+      userId: closedBy,
+      userEmail: closedBy,
+      action: 'accounting.period_close',
+      tenantId,
+      entityId: periodId,
+      entityType: 'fiscal_period',
+      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
+      description: period
+        ? `Closed fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
+        : `Closed fiscal period ${periodId}`,
+      metadata: period ? { year: period.year, period: period.period } : undefined,
+      severity: 'warning',
+    }).catch(err => console.error('Audit log failed:', err));
+
+    // Generate balance snapshot for the closed period (async, non-blocking)
+    if (period) {
+      import('@/services/balanceSnapshotService').then(({ balanceSnapshotService }) =>
+        balanceSnapshotService.generateSnapshot(tenantId, period, closedBy)
+      ).catch(err => console.error('Snapshot generation failed:', err));
+    }
+  }
+
+  async reopenPeriod(tenantId: string, periodId: string, reopenedBy: string): Promise<void> {
+    const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
+    const before = await getDoc(docRef);
+    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
+    if (period?.status === 'locked') {
+      throw new Error('Locked fiscal periods cannot be reopened');
+    }
+    await updateDoc(docRef, {
+      status: 'open',
+      closedAt: null,
+      closedBy: null,
+    });
+
+    await auditLogService.log({
+      userId: reopenedBy,
+      userEmail: reopenedBy,
+      action: 'accounting.period_reopen',
+      tenantId,
+      entityId: periodId,
+      entityType: 'fiscal_period',
+      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
+      description: period
+        ? `Reopened fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
+        : `Reopened fiscal period ${periodId}`,
+      metadata: period ? { year: period.year, period: period.period } : undefined,
+      severity: 'warning',
+    }).catch(err => console.error('Audit log failed:', err));
+
+    // Delete the stale snapshot for the reopened period
+    if (period) {
+      const sid = `${period.year}-${String(period.period).padStart(2, '0')}`;
+      import('@/services/balanceSnapshotService').then(({ balanceSnapshotService }) =>
+        balanceSnapshotService.deleteSnapshot(tenantId, sid)
+      ).catch(err => console.error('Snapshot deletion failed:', err));
+    }
+  }
+
+  async lockPeriod(tenantId: string, periodId: string, lockedBy: string): Promise<void> {
+    const docRef = doc(db, paths.fiscalPeriod(tenantId, periodId));
+    const before = await getDoc(docRef);
+    const period = before.exists() ? ({ id: before.id, ...before.data() } as FiscalPeriod) : null;
+    if (period?.status === 'locked') return;
+    if (period?.status === 'open') {
+      throw new Error('Fiscal period must be closed before it can be locked');
+    }
+
+    await updateDoc(docRef, {
+      status: 'locked',
+      lockedAt: serverTimestamp(),
+      lockedBy,
+    });
+
+    await auditLogService.log({
+      userId: lockedBy,
+      userEmail: lockedBy,
+      action: 'accounting.period_lock',
+      tenantId,
+      entityId: periodId,
+      entityType: 'fiscal_period',
+      entityName: period ? `${period.year}-${String(period.period).padStart(2, '0')}` : periodId,
+      description: period
+        ? `Locked fiscal period ${period.year}-${String(period.period).padStart(2, '0')}`
+        : `Locked fiscal period ${periodId}`,
+      metadata: period ? { year: period.year, period: period.period } : undefined,
+      severity: 'critical',
+    }).catch(err => console.error('Audit log failed:', err));
+  }
+
+  async updateFiscalYear(tenantId: string, yearId: string, updates: Partial<FiscalYear>): Promise<void> {
+    const docRef = doc(db, paths.fiscalYear(tenantId, yearId));
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
     });
   }
 }
@@ -1514,7 +2352,7 @@ export const accountService = new AccountService();
 export const journalEntryService = new JournalEntryService();
 const generalLedgerService = new GeneralLedgerService();
 export const trialBalanceService = new TrialBalanceService();
-const fiscalPeriodService = new FiscalPeriodService();
+export const fiscalPeriodService = new FiscalPeriodService();
 const accountingSettingsService = new AccountingSettingsService();
 
 // Convenience export

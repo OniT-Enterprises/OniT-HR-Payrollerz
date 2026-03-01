@@ -14,6 +14,19 @@ import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase";
 import { PayrollRecord, PayrollRun } from "@/types/payroll";
 
+/**
+ * Escape HTML special characters to prevent XSS in email templates.
+ * Covers the OWASP-recommended set: & < > " ' /
+ */
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // Lazy load PDF generation to avoid loading react-pdf in main bundle
 const generatePayslipBlob = async (
   ...args: Parameters<
@@ -185,8 +198,8 @@ async function sendPayslipEmail(
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #1e40af;">Payslip Notification</h2>
-          <p>Dear ${employeeName},</p>
-          <p>Please find attached your payslip for <strong>${periodMonth}</strong>.</p>
+          <p>Dear ${escapeHtml(employeeName)},</p>
+          <p>Please find attached your payslip for <strong>${escapeHtml(periodMonth)}</strong>.</p>
           <p><strong>Summary:</strong></p>
           <ul style="list-style: none; padding: 0;">
             <li>Gross Pay: $${record.totalGrossPay.toFixed(2)}</li>
@@ -194,12 +207,12 @@ async function sendPayslipEmail(
             <li>Net Pay: $${record.netPay.toFixed(2)}</li>
           </ul>
           <p>
-            <a href="${pdfUrl}" style="display: inline-block; padding: 10px 20px; background-color: #1e40af; color: white; text-decoration: none; border-radius: 5px;">
+            <a href="${encodeURI(pdfUrl)}" style="display: inline-block; padding: 10px 20px; background-color: #1e40af; color: white; text-decoration: none; border-radius: 5px;">
               Download Payslip
             </a>
           </p>
           <p style="color: #666; font-size: 12px; margin-top: 20px;">
-            This is an automated message from ${companyInfo.name || "HR System"}.
+            This is an automated message from ${escapeHtml(companyInfo.name || "HR System")}.
             If you have any questions about your payslip, please contact HR.
           </p>
         </div>
@@ -220,7 +233,7 @@ async function sendPayslipEmail(
       `,
       attachments: [
         {
-          filename: `Payslip_${employeeName.replace(/\s+/g, "_")}_${periodMonth.replace(/\s+/g, "_")}.pdf`,
+          filename: `Payslip_${employeeName.replace(/[^a-zA-Z0-9 ]/g, "").replace(/\s+/g, "_")}_${periodMonth.replace(/\s+/g, "_")}.pdf`,
           url: pdfUrl,
           contentType: "application/pdf",
         },

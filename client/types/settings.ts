@@ -215,7 +215,7 @@ export interface TaxConfig {
 export interface SocialSecurityConfig {
   employeeRate: number; // 4%
   employerRate: number; // 6%
-  paymentDueDay: number; // 10th of following month
+  paymentDueDay: number; // 20th of following month (payment window closes on day 20)
   excludeFoodAllowance: boolean;
   excludePerDiem: boolean;
   // Small business reduction

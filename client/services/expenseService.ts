@@ -28,7 +28,7 @@ import { paths } from '@/lib/paths';
 import { getTodayTL } from '@/lib/dateUtils';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
-import { journalEntryService, accountService } from './accountingService';
+import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
 import { EXPENSE_CATEGORY_TO_ACCOUNT } from '@/lib/accounting/chart-of-accounts';
 
 /**
@@ -412,6 +412,28 @@ class ExpenseService {
     // Expenses use source='receipt' (see createFromExpense in accountingService)
     const journalEntry = await journalEntryService.getJournalEntryBySource(tenantId, 'receipt', id);
 
+    // Post-close correction flow:
+    // - If the original journal entry is in a closed/locked period, do NOT void it.
+    // - Instead, create a reversing adjustment entry in the current open period.
+    const journalPeriod = journalEntry?.status === 'posted'
+      ? await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, journalEntry.fiscalYear, journalEntry.fiscalPeriod)
+      : null;
+
+    const needsAdjustment = !!journalPeriod && journalPeriod.status !== 'open';
+    const adjustmentDate = needsAdjustment ? getTodayTL() : null;
+
+    if (needsAdjustment && adjustmentDate) {
+      const adjYear = new Date(adjustmentDate).getFullYear();
+      const adjMonth = new Date(adjustmentDate).getMonth() + 1;
+      const adjPeriod = await fiscalPeriodService.getPeriodByYearAndPeriod(tenantId, adjYear, adjMonth);
+      if (adjPeriod && adjPeriod.status !== 'open') {
+        throw new Error(
+          `Cannot delete expense: adjustment period ${adjYear}-${String(adjMonth).padStart(2, '0')} is ${adjPeriod.status}. ` +
+          'Reopen the period (or choose an open adjustment date) to post the reversal entry.'
+        );
+      }
+    }
+
     const expenseDocRef = doc(db, paths.expense(tenantId, id));
 
     await runTransaction(db, async (transaction) => {
@@ -420,14 +442,27 @@ class ExpenseService {
 
       // 2. Void the journal entry and create reversing GL entries
       if (journalEntry?.id) {
-        journalEntryService.voidJournalEntryInTransaction(
-          tenantId,
-          journalEntry.id,
-          journalEntry,
-          transaction,
-          userId || 'system',
-          `Expense ${id} deleted`
-        );
+        if (needsAdjustment && adjustmentDate) {
+          await journalEntryService.createReversingJournalEntry(
+            tenantId,
+            journalEntry,
+            {
+              date: adjustmentDate,
+              createdBy: userId || 'system',
+              reason: `Expense ${id} deleted`,
+              txn: transaction,
+            }
+          );
+        } else {
+          journalEntryService.voidJournalEntryInTransaction(
+            tenantId,
+            journalEntry.id,
+            journalEntry,
+            transaction,
+            userId || 'system',
+            `Expense ${id} deleted`
+          );
+        }
       }
     });
 

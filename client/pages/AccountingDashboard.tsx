@@ -29,6 +29,7 @@ import {
   FileSpreadsheet,
   Scale,
   BarChart3,
+  ClipboardList,
   ChevronRight,
   ChevronDown,
   CheckCircle,
@@ -148,7 +149,7 @@ export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { session, hasModule, canManage } = useTenant();
-  const [toolsOpen, setToolsOpen] = useState(true);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
     session,
@@ -218,11 +219,39 @@ export default function AccountingDashboard() {
       path: "/accounting/trial-balance",
     },
     {
-      id: "reports",
-      title: t("accounting.dashboard.financialReports"),
-      description: t("accounting.dashboard.financialReportsDesc"),
+      id: "income-statement",
+      title: t("accounting.dashboard.incomeStatement"),
+      description: t("accounting.dashboard.incomeStatementDesc"),
       icon: BarChart3,
-      path: "/accounting/reports",
+      path: "/accounting/income-statement",
+    },
+    {
+      id: "balance-sheet",
+      title: t("accounting.dashboard.balanceSheet"),
+      description: t("accounting.dashboard.balanceSheetDesc"),
+      icon: Building2,
+      path: "/accounting/balance-sheet",
+    },
+    {
+      id: "bank-reconciliation",
+      title: t("accounting.dashboard.bankReconciliation"),
+      description: t("accounting.dashboard.bankReconciliationDesc"),
+      icon: Calculator,
+      path: "/money/bank-reconciliation",
+    },
+    {
+      id: "fiscal-periods",
+      title: t("accounting.dashboard.fiscalPeriods"),
+      description: t("accounting.dashboard.fiscalPeriodsDesc"),
+      icon: Clock,
+      path: "/accounting/fiscal-periods",
+    },
+    {
+      id: "audit-trail",
+      title: t("accounting.dashboard.auditTrail"),
+      description: t("accounting.dashboard.auditTrailDesc"),
+      icon: ClipboardList,
+      path: "/accounting/audit-trail",
     },
   ];
 
@@ -568,7 +597,7 @@ export default function AccountingDashboard() {
         )}
 
         {/* ═══════════════════════════════════════════════════════════════
-            ACCOUNTING TOOLS - Collapsed by default
+            ACCOUNTING TOOLS - Expanded by default
         ═══════════════════════════════════════════════════════════════ */}
         <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
           <Card className="border-border/50">

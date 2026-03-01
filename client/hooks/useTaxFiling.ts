@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import { taxFilingService } from '@/services/taxFilingService';
 import type { TaxFilingType, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSReturn, SubmissionMethod, CompanyDetails } from '@/services/taxFilingService';
+import type { TaxFilingTask } from '@/types/tax-filing';
 import type { AuditContext } from '@/services/employeeService';
 
 export const taxFilingKeys = {
@@ -89,14 +90,15 @@ export function useMarkTaxFilingAsFiled() {
   const queryClient = useQueryClient();
   const tenantId = useTenantId();
   return useMutation({
-    mutationFn: ({ filingId, method, receiptNumber, notes, userId, audit }: {
+    mutationFn: ({ filingId, method, receiptNumber, notes, userId, audit, task }: {
       filingId: string;
       method: SubmissionMethod;
       receiptNumber?: string;
       notes?: string;
       userId?: string;
       audit?: AuditContext;
-    }) => taxFilingService.markAsFiled(filingId, method, receiptNumber, notes, userId, audit),
+      task?: TaxFilingTask;
+    }) => taxFilingService.markAsFiled(filingId, method, receiptNumber, notes, userId, audit, task),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: taxFilingKeys.all(tenantId) });
     },

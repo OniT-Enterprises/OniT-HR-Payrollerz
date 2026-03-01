@@ -206,7 +206,7 @@ Fully compliant payroll processing for Timor-Leste with automated tax calculatio
 #### Bank Transfers
 - Bank file generation for:
   - BNU (Banco Nacional Ultramarino)
-  - BNCTL (Banco Central de Timor-Leste)
+  - BNCTL (Banco Nacional de Comércio de Timor-Leste)
   - Mandiri
   - ANZ
 - Bulk transfer processing
@@ -430,7 +430,7 @@ System configuration and management tools.
 
 #### Supported Banks
 - **BNU** (Banco Nacional Ultramarino) - File format for bulk transfers
-- **BNCTL** (Banco Central de Timor-Leste) - Payment file generation
+- **BNCTL** (Banco Nacional de Comércio de Timor-Leste) - Payment file generation
 - **Mandiri** - Indonesian bank format support
 - **ANZ** - International format support
 
@@ -875,7 +875,7 @@ Automatic holiday detection for payroll and scheduling.
 | **INSS** | Instituto Nacional de Segurança Social (Social Security) |
 | **SEPFOPE** | Secretaria de Estado da Formação Profissional e Emprego |
 | **BNU** | Banco Nacional Ultramarino |
-| **BNCTL** | Banco Central de Timor-Leste |
+| **BNCTL** | Banco Nacional de Comércio de Timor-Leste |
 | **Kartaun Eleitoral** | Electoral Card (ID document) |
 | **Bilhete de Identidade** | National ID Card |
 | **Imposto sobre Rendimentos** | Income/Withholding Tax |

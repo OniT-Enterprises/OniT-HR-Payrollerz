@@ -318,7 +318,7 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
     expect(month2.newYtdINSSEmployee).toBeCloseTo(month1.inssEmployee + month2.inssEmployee, 1);
   });
 
-  it("deduction cap limits voluntary deductions to 1/6 of gross", () => {
+  it("deduction cap limits voluntary deductions to 30% of gross", () => {
     // Test with large voluntary deductions that would exceed cap
     const emp = makeEmployee({
       employeeId: "deduction-cap-test",
@@ -330,14 +330,14 @@ describe("Integration: Full Payroll Run (Multi-Employee Batch)", () => {
     const result = calculateTLPayroll(emp);
 
     // The cap modifies internal deduction line items (result.deductions array)
-    // Voluntary deductions in the array should be capped at 1/6 of gross (~$50)
+    // Voluntary deductions in the array should be capped at 30% of gross ($90)
     const voluntaryDeductions = result.deductions.filter(d => !d.isStatutory);
     const voluntaryTotal = voluntaryDeductions.reduce((s, d) => s + d.amount, 0);
-    const maxVoluntary = result.grossPay / 6;
+    const maxVoluntary = result.grossPay * 0.30;
     expect(voluntaryTotal).toBeLessThanOrEqual(maxVoluntary + 0.01);
 
     // Should produce a warning about the cap
-    expect(result.warnings.some(w => w.includes("1/6 cap"))).toBe(true);
+    expect(result.warnings.some(w => w.includes("30% cap"))).toBe(true);
   });
 
   it("handles weekly pay frequency with pro-rated threshold", () => {

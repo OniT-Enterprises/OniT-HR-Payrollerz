@@ -24,6 +24,8 @@ interface StepWizardProps {
   children: React.ReactNode;
   onComplete?: () => void;
   onCancel?: () => void;
+  /** Called before advancing to the next step. Return false to block navigation. */
+  onBeforeNext?: () => boolean | Promise<boolean>;
   isSubmitting?: boolean;
   submitLabel?: string;
   canProceed?: boolean;
@@ -38,6 +40,7 @@ export function StepWizard({
   children,
   onComplete,
   onCancel,
+  onBeforeNext,
   isSubmitting = false,
   submitLabel = "Complete",
   canProceed = true,
@@ -48,7 +51,11 @@ export function StepWizard({
   const isLastStep = currentStep === steps.length - 1;
   const currentStepData = steps[currentStep];
 
-  const handleNext = () => {
+  const handleNext = async () => {
+    if (onBeforeNext) {
+      const ok = await onBeforeNext();
+      if (!ok) return;
+    }
     if (isLastStep) {
       onComplete?.();
     } else {

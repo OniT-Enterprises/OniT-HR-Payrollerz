@@ -24,7 +24,15 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
+import { getTodayTL } from "@/lib/dateUtils";
+import {
+  getDaysUntilDueIso,
+  getNextAnnualAdjustedDeadline,
+  getNextMonthlyAdjustedDeadline,
+  getUrgencyFromDays,
+} from "@/lib/tax/compliance";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import {
   Users,
   DollarSign,
@@ -167,7 +175,8 @@ export default function Dashboard() {
   const { t } = useI18n();
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
-  const loading = employeesLoading || leaveStatsLoading;
+  const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2);
+  const loading = employeesLoading || leaveStatsLoading || dueDatesLoading;
   const pendingLeave = leaveStats?.pendingRequests ?? 0;
   const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -196,24 +205,33 @@ export default function Dashboard() {
 
   // Compliance deadlines (Timor-Leste specific)
   const getComplianceStatus = () => {
-    const now = new Date();
-    const currentYear = now.getFullYear();
+    const todayIso = getTodayTL();
+    const getUpcomingObligation = (predicate: (item: (typeof filingDueDates)[number]) => boolean) => {
+      const matches = filingDueDates.filter(predicate).sort((a, b) => a.dueDate.localeCompare(b.dueDate));
+      return matches.find((item) => item.status !== "filed") ?? null;
+    };
 
-    // Subsidio Anual (13th month) - Due December 20
-    const subsidioDate = new Date(currentYear, 11, 20);
-    let daysToSubsidio = Math.ceil((subsidioDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-    if (daysToSubsidio < 0) daysToSubsidio += 365;
+    const witObligation = getUpcomingObligation((item) => item.type === "monthly_wit");
+    const inssObligation = getUpcomingObligation(
+      (item) => item.type === "inss_monthly" && item.task === "payment"
+    );
 
-    // INSS & WIT - Due 15th of following month
-    let taxDate = new Date(now.getFullYear(), now.getMonth() + 1, 15);
-    if (now.getDate() > 15) {
-      taxDate = new Date(now.getFullYear(), now.getMonth() + 2, 15);
-    }
-    const daysToTax = Math.ceil((taxDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    const fallbackWitDue = getNextMonthlyAdjustedDeadline(todayIso, 15);
+    const fallbackInssDue = getNextMonthlyAdjustedDeadline(todayIso, 20);
+
+    const daysToWit = witObligation?.daysUntilDue ?? getDaysUntilDueIso(todayIso, fallbackWitDue);
+    const daysToINSS = inssObligation?.daysUntilDue ?? getDaysUntilDueIso(todayIso, fallbackInssDue);
+    const daysToSubsidio = getDaysUntilDueIso(todayIso, getNextAnnualAdjustedDeadline(todayIso, 12, 20));
 
     return {
-      wit: { days: daysToTax, status: daysToTax > 7 ? 'ok' : daysToTax > 3 ? 'warning' : 'urgent' },
-      inss: { days: daysToTax, status: daysToTax > 7 ? 'ok' : daysToTax > 3 ? 'warning' : 'urgent' },
+      wit: {
+        days: daysToWit,
+        status: getUrgencyFromDays(daysToWit, witObligation?.isOverdue ?? false),
+      },
+      inss: {
+        days: daysToINSS,
+        status: getUrgencyFromDays(daysToINSS, inssObligation?.isOverdue ?? false),
+      },
       subsidio: { days: daysToSubsidio, status: daysToSubsidio > 60 ? 'ok' : daysToSubsidio > 30 ? 'warning' : 'urgent' },
     };
   };

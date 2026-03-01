@@ -10,9 +10,6 @@ const ChatWidget = () => {
   const { isOpen, setOpen } = useChatStore();
   const [isClosing, setIsClosing] = useState(false);
 
-  // Only show for authenticated users
-  if (!user) return null;
-
   const handleClose = useCallback(() => {
     setIsClosing(true);
     setTimeout(() => {
@@ -23,6 +20,7 @@ const ChatWidget = () => {
 
   // Keyboard shortcuts: Cmd+K / Ctrl+K to toggle, Escape to close
   useEffect(() => {
+    if (!user) return;
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === "k") {
         e.preventDefault();
@@ -39,7 +37,7 @@ const ChatWidget = () => {
     };
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
-  }, [isOpen, setOpen, handleClose]);
+  }, [user, isOpen, setOpen, handleClose]);
 
   const handleBackdropClick = useCallback(
     (e: React.MouseEvent) => {
@@ -47,6 +45,9 @@ const ChatWidget = () => {
     },
     [handleClose],
   );
+
+  // Only show for authenticated users
+  if (!user) return null;
 
   return (
     <>

@@ -422,6 +422,12 @@ service cloud.firestore {
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
+      match /balanceSnapshots/{snapshotId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
       // ============================================
       // ANNOUNCEMENTS SUBCOLLECTION (Ekipa)
       // ============================================

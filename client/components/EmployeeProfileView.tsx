@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Dialog,
   DialogContent,
@@ -48,6 +49,7 @@ import {
   Users,
   Download,
   Loader2,
+  Pencil,
 } from "lucide-react";
 
 interface EmployeeProfileViewProps {
@@ -61,6 +63,7 @@ export default function EmployeeProfileView({
   open,
   onOpenChange,
 }: EmployeeProfileViewProps) {
+  const navigate = useNavigate();
   const tenantId = useTenantId();
   const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
   const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
@@ -194,9 +197,20 @@ export default function EmployeeProfileView({
               <Button
                 variant="outline"
                 size="sm"
+                onClick={() => {
+                  onOpenChange(false);
+                  navigate(`/people/add?edit=${employee.id}`);
+                }}
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={handleDownloadSefope}
                 disabled={isGeneratingSefope}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50"
+                className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
               >
                 {isGeneratingSefope ? (
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -557,9 +571,16 @@ export default function EmployeeProfileView({
                       )}
                     </div>
                   ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Not provided
-                    </p>
+                    <button
+                      onClick={() => {
+                        onOpenChange(false);
+                        navigate(`/people/add?edit=${employee.id}`);
+                      }}
+                      className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                    >
+                      <Pencil className="h-3 w-3" />
+                      Add passport
+                    </button>
                   )}
                 </div>
               </div>
@@ -594,12 +615,16 @@ export default function EmployeeProfileView({
                         )}
                       </div>
                     ) : (
-                      <Badge
-                        variant="outline"
-                        className="bg-gray-50 text-gray-600"
+                      <button
+                        onClick={() => {
+                          onOpenChange(false);
+                          navigate(`/people/add?edit=${employee.id}`);
+                        }}
+                        className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                       >
-                        📄 Not uploaded
-                      </Badge>
+                        <Pencil className="h-3 w-3" />
+                        Upload contract
+                      </button>
                     )}
                   </div>
 
@@ -646,18 +671,29 @@ export default function EmployeeProfileView({
                               ✓ Document uploaded
                             </Badge>
                           ) : (
-                            <Badge
-                              variant="outline"
-                              className="bg-gray-50 text-gray-600"
+                            <button
+                              onClick={() => {
+                                onOpenChange(false);
+                                navigate(`/people/add?edit=${employee.id}`);
+                              }}
+                              className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
                             >
-                              📄 Not uploaded
-                            </Badge>
+                              <Pencil className="h-3 w-3" />
+                              Upload visa document
+                            </button>
                           )}
                         </div>
                       ) : (
-                        <p className="text-sm text-muted-foreground">
-                          Not provided
-                        </p>
+                        <button
+                          onClick={() => {
+                            onOpenChange(false);
+                            navigate(`/people/add?edit=${employee.id}`);
+                          }}
+                          className="inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-800 hover:underline cursor-pointer"
+                        >
+                          <Pencil className="h-3 w-3" />
+                          Add visa details
+                        </button>
                       )}
                     </div>
                   )}

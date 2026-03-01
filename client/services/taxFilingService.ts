@@ -27,6 +27,7 @@ import { normalizeLegacyRecord } from '@/lib/payroll/normalize-legacy';
 import { holidayService } from './holidayService';
 import type {
   TaxFiling,
+  TaxFilingTask,
   TaxFilingType,
   TaxFilingStatus,
   SubmissionMethod,
@@ -46,6 +47,7 @@ import { getTaxConfig } from '@/lib/payroll/taxConfig';
 import { adjustToNextBusinessDayTL } from '@/lib/payroll/tl-holidays';
 import { getTodayTL, parseDateISO } from '@/lib/dateUtils';
 import { roundMoney, divideMoney, maxMoney, subtractMoney, applyRate, addMoney } from '@/lib/currency';
+import { getFilingStatusFromDays, resolveTaskStatus } from '@/lib/tax/compliance';
 
 // ============================================
 // CONSTANTS
@@ -749,15 +751,24 @@ class TaxFilingService {
     tenantId: string,
     audit?: AuditContext
   ): Promise<string> {
+    const existing = await this.getFilingByPeriod(type, period, tenantId);
+    const preserveFiled = existing?.status === 'filed';
+
+    const statementDueDate = type === 'inss_monthly'
+      ? await this.getMonthlyINSSStatementDueDate(period, tenantId)
+      : undefined;
+    const paymentDueDate = type === 'inss_monthly'
+      ? await this.getMonthlyINSSPaymentDueDate(period, tenantId)
+      : undefined;
     const dueDate =
       type === 'monthly_wit'
         ? await this.getMonthlyWITDueDate(period, tenantId)
         : type === 'annual_wit'
           ? await this.getAnnualWITDueDate(parseInt(period), tenantId)
-          : await this.getMonthlyINSSStatementDueDate(period, tenantId);
+          : statementDueDate!;
 
     const daysUntilDue = getDaysUntilDue(dueDate);
-    const status: TaxFilingStatus = daysUntilDue < 0 ? 'overdue' : 'pending';
+    const status: TaxFilingStatus = preserveFiled ? 'filed' : getFilingStatusFromDays(daysUntilDue);
 
     const baseFilingData = {
       tenantId,
@@ -788,13 +799,17 @@ class TaxFilingService {
     const filingData = type === 'inss_monthly'
       ? {
           ...baseFilingData,
+          status: (existing?.statementStatus ?? (existing?.status === 'filed' ? 'filed' : undefined) ?? getFilingStatusFromDays(getDaysUntilDue(statementDueDate!))),
+          dueDate: statementDueDate!,
+          statementStatus: (existing?.statementStatus ?? (existing?.status === 'filed' ? 'filed' : undefined) ?? getFilingStatusFromDays(getDaysUntilDue(statementDueDate!))),
+          paymentStatus: (existing?.paymentStatus ?? (existing?.status === 'filed' ? 'filed' : undefined) ?? getFilingStatusFromDays(getDaysUntilDue(paymentDueDate!))),
+          statementDueDate: statementDueDate!,
+          paymentDueDate: paymentDueDate!,
           totalINSSEmployee: (dataSnapshot as MonthlyINSSReturn).totalEmployeeContributions,
           totalINSSEmployer: (dataSnapshot as MonthlyINSSReturn).totalEmployerContributions,
         }
       : baseFilingData;
 
-    // Check if filing already exists
-    const existing = await this.getFilingByPeriod(type, period, tenantId);
     let filingId: string;
 
     if (existing) {
@@ -838,23 +853,76 @@ class TaxFilingService {
     receiptNumber?: string,
     notes?: string,
     userId?: string,
-    audit?: AuditContext
+    audit?: AuditContext,
+    task?: TaxFilingTask
   ): Promise<void> {
-    // Get filing info for audit
-    const filing = audit ? await this.getFilingById(filingId) : null;
+    const filing = await this.getFilingById(filingId);
+    if (!filing) {
+      throw new Error('Tax filing not found');
+    }
 
-    await updateDoc(doc(db, 'taxFilings', filingId), {
-      status: 'filed',
-      filedDate: getTodayTL(),
-      submissionMethod: method,
-      receiptNumber,
-      notes,
-      filedBy: userId,
-      updatedAt: serverTimestamp(),
-    });
+    const today = getTodayTL();
+
+    if (filing.type === 'inss_monthly') {
+      const statementDueDate = filing.statementDueDate || filing.dueDate;
+      const paymentDueDate = filing.paymentDueDate || await this.getMonthlyINSSPaymentDueDate(filing.period, filing.tenantId);
+      const statementStatus = resolveTaskStatus({
+        explicitStatus: filing.statementStatus,
+        legacyStatus: filing.status,
+        daysUntilDue: getDaysUntilDue(statementDueDate),
+      });
+      const paymentStatus = resolveTaskStatus({
+        explicitStatus: filing.paymentStatus,
+        legacyStatus: filing.status,
+        daysUntilDue: getDaysUntilDue(paymentDueDate),
+      });
+
+      const markTask = task || 'statement';
+      const nextStatementStatus = markTask === 'statement' ? 'filed' : statementStatus;
+      const nextPaymentStatus = markTask === 'payment' ? 'filed' : paymentStatus;
+
+      const inssUpdate: Record<string, unknown> = {
+        statementDueDate,
+        paymentDueDate,
+        statementStatus: nextStatementStatus,
+        paymentStatus: nextPaymentStatus,
+        status: nextStatementStatus, // keep legacy top-level status aligned to statement
+        dueDate: statementDueDate,
+        filedBy: userId,
+        updatedAt: serverTimestamp(),
+      };
+
+      if (markTask === 'statement') {
+        inssUpdate.filedDate = today;
+        inssUpdate.statementFiledDate = today;
+        inssUpdate.submissionMethod = method;
+        inssUpdate.statementSubmissionMethod = method;
+        inssUpdate.receiptNumber = receiptNumber;
+        inssUpdate.statementReceiptNumber = receiptNumber;
+        inssUpdate.notes = notes;
+        inssUpdate.statementNotes = notes;
+      } else {
+        inssUpdate.paymentFiledDate = today;
+        inssUpdate.paymentSubmissionMethod = method;
+        inssUpdate.paymentReceiptNumber = receiptNumber;
+        inssUpdate.paymentNotes = notes;
+      }
+
+      await updateDoc(doc(db, 'taxFilings', filingId), inssUpdate);
+    } else {
+      await updateDoc(doc(db, 'taxFilings', filingId), {
+        status: 'filed',
+        filedDate: today,
+        submissionMethod: method,
+        receiptNumber,
+        notes,
+        filedBy: userId,
+        updatedAt: serverTimestamp(),
+      });
+    }
 
     // Log to audit trail if context provided
-    if (audit && filing) {
+    if (audit) {
       const action =
         filing.type === 'annual_wit'
           ? 'tax.annual_filed'
@@ -869,6 +937,7 @@ class TaxFilingService {
         filingId,
         period: filing.period,
         metadata: {
+          task,
           submissionMethod: method,
           receiptNumber,
           totalWIT: filing.totalWITWithheld,
@@ -935,14 +1004,11 @@ class TaxFilingService {
       const inssDaysUntilDue = getDaysUntilDue(inssDueDate);
       const inssFiling = await this.getFilingByPeriod('inss_monthly', period, tenantId);
 
-      let inssStatus: TaxFilingStatus;
-      if (inssFiling?.status === 'filed') {
-        inssStatus = 'filed';
-      } else if (inssDaysUntilDue < 0) {
-        inssStatus = 'overdue';
-      } else {
-        inssStatus = 'pending';
-      }
+      const inssStatus = resolveTaskStatus({
+        explicitStatus: inssFiling?.statementStatus,
+        legacyStatus: inssFiling?.status,
+        daysUntilDue: inssDaysUntilDue,
+      });
 
       dueDates.push({
         type: 'inss_monthly',
@@ -959,14 +1025,11 @@ class TaxFilingService {
       const inssPaymentDueDate = await this.getMonthlyINSSPaymentDueDate(period, tenantId);
       const inssPaymentDaysUntilDue = getDaysUntilDue(inssPaymentDueDate);
 
-      let inssPaymentStatus: TaxFilingStatus;
-      if (inssFiling?.status === 'filed') {
-        inssPaymentStatus = 'filed';
-      } else if (inssPaymentDaysUntilDue < 0) {
-        inssPaymentStatus = 'overdue';
-      } else {
-        inssPaymentStatus = 'pending';
-      }
+      const inssPaymentStatus = resolveTaskStatus({
+        explicitStatus: inssFiling?.paymentStatus,
+        legacyStatus: inssFiling?.status,
+        daysUntilDue: inssPaymentDaysUntilDue,
+      });
 
       dueDates.push({
         type: 'inss_monthly',

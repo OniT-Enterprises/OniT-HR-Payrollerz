@@ -212,7 +212,18 @@ export const addEmployeeFormSchema = z.object({
   jobTitle: z.string().min(1, 'Job title is required'),
   manager: z.string().optional().or(z.literal('')),
   startDate: z.string().min(1, 'Start date is required'),
-  employmentType: z.enum(['Full-time', 'Part-time', 'Contractor']).default('Full-time'),
+  employmentType: z.preprocess(
+    (val) => {
+      if (typeof val !== 'string') return val;
+      const map: Record<string, string> = {
+        'full-time': 'Full-time', 'fulltime': 'Full-time',
+        'part-time': 'Part-time', 'parttime': 'Part-time',
+        'contractor': 'Contractor', 'contract': 'Contractor',
+      };
+      return map[val.toLowerCase()] || val;
+    },
+    z.enum(['Full-time', 'Part-time', 'Contractor']).default('Full-time'),
+  ),
   sefopeNumber: z.string().optional().or(z.literal('')),
   sefopeRegistrationDate: z.string().optional().or(z.literal('')),
 

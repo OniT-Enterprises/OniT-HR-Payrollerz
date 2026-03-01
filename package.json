@@ -36,6 +36,7 @@
     "@hello-pangea/dnd": "^18.0.1",
     "@react-pdf/renderer": "^4.3.2",
     "@sentry/react": "^10.38.0",
+    "@tanstack/react-virtual": "^3.13.19",
     "decimal.js": "^10.6.0",
     "exceljs": "^4.4.0",
     "firebase": "^11.10.0",

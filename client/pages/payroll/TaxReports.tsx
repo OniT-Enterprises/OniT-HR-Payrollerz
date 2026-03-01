@@ -41,18 +41,24 @@ export default function TaxReports() {
   });
 
   const nextWit = useMemo(() => {
-    return dueDates
+    const outstanding = dueDates
       .filter((d) => d.type === "monthly_wit")
-      .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+      .filter((d) => d.status !== "filed")
+      .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+    return outstanding[0];
   }, [dueDates]);
 
   const nextInss = useMemo(() => {
-    return dueDates
+    const outstanding = dueDates
       .filter((d) => d.type === "inss_monthly")
-      .sort((a, b) => a.daysUntilDue - b.daysUntilDue)[0];
+      .filter((d) => d.status !== "filed")
+      .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+    return outstanding[0];
   }, [dueDates]);
 
   const hasOverdue = useMemo(() => dueDates.some((d) => d.isOverdue), [dueDates]);
+  const getInssTaskLabel = (task?: "statement" | "payment") =>
+    task === "payment" ? t("taxReports.inssPaymentTask") : t("taxReports.inssStatementTask");
 
   if (loading) {
     return (
@@ -135,7 +141,7 @@ export default function TaxReports() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {t("taxReports.next")}: {nextWit ? `${nextWit.period} • due ${nextWit.dueDate}` : t("taxReports.noPeriodsFound")}
+                  {t("taxReports.next")}: {nextWit ? `${nextWit.period} • ${t("taxReports.due")} ${nextWit.dueDate}` : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
 
@@ -151,7 +157,9 @@ export default function TaxReports() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-2">
-                  {t("taxReports.next")}: {nextInss ? `${nextInss.period} • due ${nextInss.dueDate}` : t("taxReports.noPeriodsFound")}
+                  {t("taxReports.next")}: {nextInss
+                    ? `${nextInss.period} • ${getInssTaskLabel(nextInss.task)} • ${t("taxReports.due")} ${nextInss.dueDate}`
+                    : t("taxReports.noPeriodsFound")}
                 </p>
               </div>
             </div>
@@ -193,4 +201,3 @@ export default function TaxReports() {
     </div>
   );
 }
-

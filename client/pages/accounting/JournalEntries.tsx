@@ -1,4 +1,5 @@
 import React, { useState, useMemo } from "react";
+import { serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -54,6 +55,7 @@ import {
   ChevronRight,
   Lock,
   AlertCircle,
+  RotateCcw,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAccounts, useJournalEntries, useCreateJournalEntry } from "@/hooks/useAccounting";
@@ -235,7 +237,7 @@ export default function JournalEntries() {
   const removeLine = (index: number) => {
     if (entryLines.length <= 2) {
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: t("accounting.journalEntries.minTwoLines"),
         variant: "destructive",
       });
@@ -329,8 +331,8 @@ export default function JournalEntries() {
       };
 
       if (!asDraft) {
-        entry.postedAt = new Date();
-        entry.postedBy = "current-user";
+        entry.postedAt = serverTimestamp();
+        entry.postedBy = entry.createdBy;
       }
 
       await createEntryMutation.mutateAsync(entry);
@@ -344,9 +346,13 @@ export default function JournalEntries() {
       resetForm();
     } catch (error) {
       console.error("Failed to create entry:", error);
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : t("accounting.journalEntries.errorCreate");
       toast({
-        title: "Error",
-        description: t("accounting.journalEntries.errorCreate"),
+        title: t("common.error"),
+        description: message,
         variant: "destructive",
       });
     }
@@ -365,6 +371,23 @@ export default function JournalEntries() {
   const viewDetails = (entry: JournalEntry) => {
     setSelectedEntry(entry);
     setShowDetailsDialog(true);
+  };
+
+  // Pre-populate create dialog with reversed lines from an existing entry
+  const handleReverse = (entry: JournalEntry) => {
+    setEntryDate(getTodayTL());
+    setEntryDescription(`Reversal of ${entry.entryNumber}: ${entry.description}`);
+    setEntryLines(
+      entry.lines.map((line) => ({
+        accountId: line.accountId,
+        accountCode: line.accountCode,
+        accountName: line.accountName || "",
+        debit: line.credit > 0 ? line.credit.toString() : "",
+        credit: line.debit > 0 ? line.debit.toString() : "",
+        description: line.description || "",
+      }))
+    );
+    setShowAddDialog(true);
   };
 
   // Summary stats
@@ -574,7 +597,7 @@ export default function JournalEntries() {
                                     onChange={(e) =>
                                       updateLine(index, "description", e.target.value)
                                     }
-                                    placeholder="Optional"
+                                    placeholder={t("common.optional")}
                                   />
                                 </TableCell>
                                 <TableCell>
@@ -906,18 +929,34 @@ export default function JournalEntries() {
                                     <span>{t("accounting.journalEntries.reference", { ref: entry.sourceRef })}</span>
                                   )}
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    viewDetails(entry);
-                                  }}
-                                  className="h-7 text-xs"
-                                >
-                                  <Eye className="h-3 w-3 mr-1" />
-                                  {t("accounting.journalEntries.fullDetails")}
-                                </Button>
+                                <div className="flex items-center gap-1">
+                                  {entry.status === "posted" && !isLocked && (
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleReverse(entry);
+                                      }}
+                                      className="h-7 text-xs"
+                                    >
+                                      <RotateCcw className="h-3 w-3 mr-1" />
+                                      {t("accounting.journalEntries.reverseEntry")}
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      viewDetails(entry);
+                                    }}
+                                    className="h-7 text-xs"
+                                  >
+                                    <Eye className="h-3 w-3 mr-1" />
+                                    {t("accounting.journalEntries.fullDetails")}
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </CollapsibleContent>
