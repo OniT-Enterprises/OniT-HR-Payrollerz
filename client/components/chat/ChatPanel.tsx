@@ -1,5 +1,5 @@
 import { useRef, useEffect, useCallback, useState } from "react";
-import { Send, Loader2, Bot, Plus, XCircle, Check } from "lucide-react";
+import { Send, Loader2, Bot, Plus, X, Check, XCircle } from "lucide-react";
 import Markdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Button } from "@/components/ui/button";
@@ -141,7 +141,7 @@ const ChatPanel = ({
     <div className={cn("flex flex-col min-h-0 overflow-hidden", className)}>
       {/* Header */}
       {showHeader && (
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0 bg-gradient-to-r from-primary/5 to-transparent">
           <div className="flex items-center gap-2">
             <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
               <Bot className="h-4 w-4 text-primary" />
@@ -154,10 +154,9 @@ const ChatPanel = ({
             {messages.length > 0 && (
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+                size="sm"
+                className="h-7 w-7 p-0"
                 onClick={newChat}
-                aria-label="New chat"
                 title="New chat"
               >
                 <Plus className="h-4 w-4" />
@@ -166,12 +165,12 @@ const ChatPanel = ({
             {onClose && (
               <Button
                 variant="ghost"
-                size="icon"
-                className="h-7 w-7"
+                size="sm"
+                className="h-7 w-7 p-0"
                 onClick={onClose}
-                aria-label="Close"
+                title="Close"
               >
-                <XCircle className="h-4 w-4" />
+                <X className="h-4 w-4" />
               </Button>
             )}
           </div>

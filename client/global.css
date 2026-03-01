@@ -142,6 +142,88 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   MEZA SPOTLIGHT CHAT - Centered overlay panel
+═══════════════════════════════════════════════════════════════ */
+
+/* Backdrop */
+@keyframes mezaSpotlightBackdropIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mezaSpotlightBackdropOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+.meza-spotlight-backdrop-in {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  animation: mezaSpotlightBackdropIn 0.2s ease-out both;
+}
+.meza-spotlight-backdrop-out {
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  animation: mezaSpotlightBackdropOut 0.15s ease-in both;
+}
+
+/* Glass panel */
+@keyframes mezaSpotlightPanelIn {
+  from { opacity: 0; transform: scale(0.96) translateY(-8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes mezaSpotlightPanelOut {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.97) translateY(-6px); }
+}
+.meza-spotlight-panel {
+  background: hsl(var(--card));
+  border: 1px solid hsl(var(--border));
+  border-radius: 1rem;
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.03),
+    0 2px 6px -1px rgba(0, 0, 0, 0.1),
+    0 8px 24px -4px rgba(0, 0, 0, 0.2);
+}
+.dark .meza-spotlight-panel {
+  background: rgba(20, 27, 38, 0.88);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.04),
+    0 4px 16px -2px rgba(0, 0, 0, 0.4),
+    0 16px 48px -8px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+.meza-spotlight-panel-in { animation: mezaSpotlightPanelIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both; }
+.meza-spotlight-panel-out { animation: mezaSpotlightPanelOut 0.15s ease-in both; }
+
+/* Keyboard hint badges */
+.meza-spotlight-kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 4px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 10px;
+  line-height: 1;
+  font-family: system-ui, sans-serif;
+}
+
+/* Footer */
+.meza-spotlight-footer {
+  padding: 8px 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 0 0 1rem 1rem;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    ANIMATIONS - Polished micro-interactions
 ═══════════════════════════════════════════════════════════════ */
 
