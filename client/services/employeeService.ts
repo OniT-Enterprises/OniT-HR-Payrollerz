@@ -120,6 +120,7 @@ export interface Employee {
     bankName?: string;
     branch?: string;
   };
+  photoUrl?: string;
   status: "active" | "inactive" | "terminated";
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;

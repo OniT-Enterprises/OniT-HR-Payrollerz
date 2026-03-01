@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -50,7 +50,10 @@ import {
   Download,
   Loader2,
   Pencil,
+  ScanFace,
 } from "lucide-react";
+
+const FaceRegistration = lazy(() => import("@/components/attendance/FaceRegistration"));
 
 interface EmployeeProfileViewProps {
   employee: Employee | null;
@@ -67,6 +70,7 @@ export default function EmployeeProfileView({
   const tenantId = useTenantId();
   const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
   const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
+  const [showFaceRegistration, setShowFaceRegistration] = useState(false);
 
   // Preload PDF module so download resolves instantly from cache
   const preloaded = useRef(false);
@@ -175,7 +179,7 @@ export default function EmployeeProfileView({
           <DialogTitle className="flex items-center gap-3">
             <Avatar className="w-12 h-12">
               <AvatarImage
-                src=""
+                src={employee.photoUrl || ""}
                 alt={employee.personalInfo.firstName}
               />
               <AvatarFallback>
@@ -204,6 +208,15 @@ export default function EmployeeProfileView({
               >
                 <Pencil className="h-4 w-4 mr-2" />
                 Edit
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFaceRegistration(true)}
+                className="text-cyan-600 border-cyan-200 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-800 dark:hover:bg-cyan-950"
+              >
+                <ScanFace className="h-4 w-4 mr-2" />
+                Enroll Face
               </Button>
               <Button
                 variant="outline"
@@ -703,6 +716,17 @@ export default function EmployeeProfileView({
           </Card>
         </div>
       </DialogContent>
+
+      {/* Face Registration Dialog (lazy loaded) */}
+      {showFaceRegistration && employee && (
+        <Suspense fallback={null}>
+          <FaceRegistration
+            employee={employee}
+            open={showFaceRegistration}
+            onOpenChange={setShowFaceRegistration}
+          />
+        </Suspense>
+      )}
     </Dialog>
   );
 }

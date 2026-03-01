@@ -9,7 +9,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -92,63 +91,35 @@ function PeopleDashboardSkeleton() {
 
       <div className="p-6 max-w-7xl mx-auto">
         {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <div className="grid gap-4 md:grid-cols-3 mb-5">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border-l-4 border-l-muted">
-              <CardContent className="pt-6">
+              <CardContent className="pt-5 pb-5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Skeleton className="h-9 w-12 mb-1" />
-                    <Skeleton className="h-4 w-28" />
+                    <Skeleton className="h-7 w-10 mb-1" />
+                    <Skeleton className="h-3 w-24" />
                   </div>
-                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Payroll Status Badge */}
-        <div className="mb-4">
-          <Skeleton className="h-6 w-32 rounded-full" />
-        </div>
-
-        {/* Attention Section */}
-        <Card className="mb-6">
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-5 w-36" />
-            </div>
-            <Skeleton className="h-4 w-52" />
-          </CardHeader>
-          <CardContent className="pt-0 space-y-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-20 rounded-md" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {/* Attention banner */}
+        <Skeleton className="h-10 w-full rounded-lg mb-5" />
 
         {/* Employee Table */}
         <Card className="mb-6">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <Skeleton className="h-5 w-28 mb-1" />
                 <Skeleton className="h-4 w-36" />
               </div>
               <Skeleton className="h-9 w-16 rounded-md" />
             </div>
-            {/* Filters */}
             <div className="flex items-center gap-3">
               <Skeleton className="h-9 w-64 rounded-md" />
               <Skeleton className="h-9 w-32 rounded-md" />
@@ -156,7 +127,6 @@ function PeopleDashboardSkeleton() {
             </div>
           </CardHeader>
           <CardContent className="pt-0">
-            {/* Table Header */}
             <div className="grid grid-cols-12 gap-4 px-4 py-2 border-b mb-2">
               <Skeleton className="col-span-4 h-3 w-20" />
               <Skeleton className="col-span-2 h-3 w-12" />
@@ -165,7 +135,6 @@ function PeopleDashboardSkeleton() {
               <Skeleton className="col-span-2 h-3 w-20" />
               <Skeleton className="col-span-1 h-3 w-14" />
             </div>
-            {/* Table Rows */}
             {[1, 2, 3, 4, 5].map((i) => (
               <div key={i} className="grid grid-cols-12 gap-4 px-4 py-3 items-center">
                 <div className="col-span-4 flex items-center gap-3">
@@ -184,26 +153,6 @@ function PeopleDashboardSkeleton() {
             ))}
           </CardContent>
         </Card>
-
-        {/* Collapsible Sections */}
-        <div className="space-y-2 opacity-80">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border border-border/40 shadow-none">
-              <CardHeader className="py-3 px-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Skeleton className="h-7 w-7 rounded-md" />
-                    <div>
-                      <Skeleton className="h-4 w-32 mb-1" />
-                      <Skeleton className="h-3 w-48" />
-                    </div>
-                  </div>
-                  <Skeleton className="h-4 w-4" />
-                </div>
-              </CardHeader>
-            </Card>
-          ))}
-        </div>
       </div>
     </div>
   );
@@ -237,11 +186,8 @@ export default function PeopleDashboard() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
 
   // Collapsible section states
-  const [leaveOpen, setLeaveOpen] = useState(false);
-  const [orgOpen, setOrgOpen] = useState(false);
-  const [hiringOpen, setHiringOpen] = useState(false);
-  const [performanceOpen, setPerformanceOpen] = useState(false);
-  const [commsOpen, setCommsOpen] = useState(false);
+  const [attentionOpen, setAttentionOpen] = useState(false);
+  const [moreOpen, setMoreOpen] = useState(false);
 
   // Filtered employees
   const filteredEmployees = useMemo(() => {
@@ -347,24 +293,22 @@ export default function PeopleDashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         <GuidancePanel section="people" />
 
-        {/* ═══════════════════════════════════════════════════════════════
-            KPIs - 3 Only: Active Employees, Pending Leave, On Leave Today
-        ═══════════════════════════════════════════════════════════════ */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        {/* KPI row */}
+        <div className="grid gap-4 md:grid-cols-3 mb-5">
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
             onClick={() => navigate("/people/employees")}
           >
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold">{stats.activeEmployees}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-2xl font-bold">{stats.activeEmployees}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     {t("people.dashboard.stats.activeEmployees")}
                   </p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600" />
+                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
             </CardContent>
@@ -372,41 +316,29 @@ export default function PeopleDashboard() {
 
           <Card
             className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-              stats.pendingLeave > 0
-                ? "border-l-amber-500"
-                : "border-l-blue-500/50"
+              stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
             }`}
             onClick={() => navigate("/people/leave")}
           >
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold">{stats.pendingLeave}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-2xl font-bold">{stats.pendingLeave}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     {t("people.dashboard.stats.pendingLeave")}
                   </p>
+                  {stats.pendingLeave > 0 && (
+                    <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
+                      {t("people.dashboard.stats.needsReview")}
+                    </Badge>
+                  )}
                 </div>
-                <div
-                  className={`h-12 w-12 rounded-full flex items-center justify-center ${
-                    stats.pendingLeave > 0
-                      ? "bg-amber-100 dark:bg-amber-900/30"
-                      : "bg-muted"
-                  }`}
-                >
-                  <Heart
-                    className={`h-6 w-6 ${
-                      stats.pendingLeave > 0
-                        ? "text-amber-600"
-                        : "text-muted-foreground"
-                    }`}
-                  />
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                  stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
+                }`}>
+                  <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
                 </div>
               </div>
-              {stats.pendingLeave > 0 && (
-                <Badge className="mt-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                  {t("people.dashboard.stats.needsReview")}
-                </Badge>
-              )}
             </CardContent>
           </Card>
 
@@ -414,73 +346,54 @@ export default function PeopleDashboard() {
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
             onClick={() => navigate("/people/attendance")}
           >
-            <CardContent className="pt-6">
+            <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-3xl font-bold">{stats.onLeaveToday}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-2xl font-bold">{stats.onLeaveToday}</p>
+                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
                     {t("people.dashboard.stats.onLeaveToday")}
                   </p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <CalendarDays className="h-6 w-6 text-cyan-600" />
+                <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
+                  <CalendarDays className="h-5 w-5 text-cyan-600" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            PAYROLL READINESS BADGE - Quick status indicator
-        ═══════════════════════════════════════════════════════════════ */}
-        <div className="mb-4 flex items-center gap-2">
-          {attentionItems.length === 0 ? (
-            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 gap-1.5">
-              <CheckCircle className="h-3.5 w-3.5" />
-              Payroll ready
-            </Badge>
-          ) : (
-            <Badge
-              className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 gap-1.5 cursor-pointer"
-              onClick={() => document.getElementById('attention-section')?.scrollIntoView({ behavior: 'smooth' })}
-            >
-              <AlertCircle className="h-3.5 w-3.5" />
-              {attentionItems.length} item{attentionItems.length > 1 ? 's' : ''} needed for payroll
-            </Badge>
-          )}
-        </div>
-
-        {/* ═══════════════════════════════════════════════════════════════
-            ATTENTION REQUIRED - Soft when resolved, prominent when issues
-        ═══════════════════════════════════════════════════════════════ */}
+        {/* Attention banner — collapsed by default, expand for details */}
         {attentionItems.length > 0 ? (
-          <Card id="attention-section" className="mb-6 border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                Complete Before Payroll
-              </CardTitle>
-              <CardDescription>
-                These items are needed to run payroll. This is normal for new employees.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2">
+          <Collapsible open={attentionOpen} onOpenChange={setAttentionOpen} className="mb-5">
+            <CollapsibleTrigger asChild>
+              <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-left hover:bg-amber-100/60 dark:hover:bg-amber-950/30 transition-colors">
+                <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                <span className="text-sm font-medium text-amber-800 dark:text-amber-200 flex-1">
+                  {attentionItems.length} item{attentionItems.length > 1 ? "s" : ""} needed for payroll
+                </span>
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  {attentionOpen ? "Hide" : "Review"}
+                </span>
+                <ChevronDown className={`h-4 w-4 text-amber-500 transition-transform ${attentionOpen ? "rotate-180" : ""}`} />
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent>
+              <div className="mt-2 space-y-1.5">
                 {attentionItems.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
+                    className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
                     onClick={() => navigate(item.path)}
                   >
                     <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-muted">
+                      <Avatar className="h-7 w-7">
+                        <AvatarFallback className="text-[10px] bg-muted">
                           {item.employee.personalInfo.firstName[0]}
                           {item.employee.personalInfo.lastName[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div>
-                        <p className="text-sm font-medium">
+                        <p className="text-sm font-medium leading-tight">
                           {item.employee.personalInfo.firstName}{" "}
                           {item.employee.personalInfo.lastName}
                         </p>
@@ -489,32 +402,31 @@ export default function PeopleDashboard() {
                         </p>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-amber-600 dark:text-amber-400 hover:text-amber-700"
-                    >
+                    <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
                       {item.action}
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
+                      <ChevronRight className="h-3 w-3" />
+                    </span>
                   </div>
                 ))}
               </div>
-            </CardContent>
-          </Card>
-        ) : null}
+            </CollapsibleContent>
+          </Collapsible>
+        ) : (
+          <div className="mb-5 flex items-center gap-2 px-1 text-sm text-emerald-600 dark:text-emerald-400">
+            <CheckCircle className="h-4 w-4" />
+            <span className="font-medium">Payroll ready</span>
+          </div>
+        )}
 
-        {/* ═══════════════════════════════════════════════════════════════
-            PRIMARY: EMPLOYEE TABLE - Default View
-        ═══════════════════════════════════════════════════════════════ */}
+        {/* Employee Table */}
         <Card className="mb-6">
           <CardHeader className="pb-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center justify-between mb-3">
               <div>
                 <CardTitle className="text-lg">All Employees</CardTitle>
-                <CardDescription>
+                <p className="text-sm text-muted-foreground">
                   {filteredEmployees.length} of {employees.length} employees
-                </CardDescription>
+                </p>
               </div>
               <Button
                 size="sm"
@@ -525,7 +437,6 @@ export default function PeopleDashboard() {
                 Add
               </Button>
             </div>
-            {/* Consolidated search & filters row with labels */}
             <div className="flex items-center gap-3 flex-wrap">
               <div className="relative flex-1 min-w-[200px] max-w-[300px]">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -538,19 +449,14 @@ export default function PeopleDashboard() {
               </div>
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">Dept:</span>
-                <Select
-                  value={departmentFilter}
-                  onValueChange={setDepartmentFilter}
-                >
+                <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
                   <SelectTrigger className="w-[130px] h-9">
                     <SelectValue placeholder="All" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All</SelectItem>
                     {departments.map((dept) => (
-                      <SelectItem key={dept} value={dept}>
-                        {dept}
-                      </SelectItem>
+                      <SelectItem key={dept} value={dept}>{dept}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -580,10 +486,7 @@ export default function PeopleDashboard() {
                   className="w-40 h-40 mx-auto mb-4 drop-shadow-lg"
                 />
                 <p className="text-muted-foreground mb-3">No employees found</p>
-                <Button
-                  variant="outline"
-                  onClick={() => navigate("/people/add")}
-                >
+                <Button variant="outline" onClick={() => navigate("/people/add")}>
                   <UserPlus className="h-4 w-4 mr-2" />
                   Add your first employee
                 </Button>
@@ -600,7 +503,6 @@ export default function PeopleDashboard() {
                   <div className="col-span-1 text-right">Actions</div>
                 </div>
 
-                {/* Employee Rows */}
                 {filteredEmployees.slice(0, 10).map((emp) => {
                   const hasINSS = !!emp.documents?.socialSecurityNumber?.number;
                   const hasContract = !!emp.documents?.workContract?.fileUrl;
@@ -623,8 +525,7 @@ export default function PeopleDashboard() {
                         </Avatar>
                         <div className="min-w-0">
                           <p className="font-medium truncate">
-                            {emp.personalInfo.firstName}{" "}
-                            {emp.personalInfo.lastName}
+                            {emp.personalInfo.firstName} {emp.personalInfo.lastName}
                           </p>
                           <p className="text-xs text-muted-foreground truncate">
                             {emp.personalInfo.email}
@@ -660,51 +561,28 @@ export default function PeopleDashboard() {
                           <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                             <AlertCircle className="h-4 w-4" />
                             <span className="text-sm">
-                              {!hasINSS && !hasContract
-                                ? "Docs needed"
-                                : !hasINSS
-                                ? "INSS needed"
-                                : "Contract needed"}
+                              {!hasINSS && !hasContract ? "Docs needed" : !hasINSS ? "INSS needed" : "Contract needed"}
                             </span>
                           </div>
                         )}
                       </div>
-                      {/* Row-level quick actions */}
                       <div className="col-span-1 flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title="View profile"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/people/employees?id=${emp.id}`);
-                          }}
+                          size="icon" variant="ghost" className="h-8 w-8" title="View profile"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/people/employees?id=${emp.id}`); }}
                         >
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8"
-                          title="Edit"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            navigate(`/people/employees?id=${emp.id}&edit=true`);
-                          }}
+                          size="icon" variant="ghost" className="h-8 w-8" title="Edit"
+                          onClick={(e) => { e.stopPropagation(); navigate(`/people/employees?id=${emp.id}&edit=true`); }}
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
                         {!hasContract && (
                           <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-amber-600 dark:text-amber-400"
-                            title="Upload contract"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              navigate(`/people/employees?id=${emp.id}&tab=documents`);
-                            }}
+                            size="icon" variant="ghost" className="h-8 w-8 text-amber-600 dark:text-amber-400" title="Upload contract"
+                            onClick={(e) => { e.stopPropagation(); navigate(`/people/employees?id=${emp.id}&tab=documents`); }}
                           >
                             <Upload className="h-4 w-4" />
                           </Button>
@@ -713,343 +591,54 @@ export default function PeopleDashboard() {
                     </div>
                   );
                 })}
-
-{/* Pagination link removed - count shown in header is sufficient */}
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            COLLAPSIBLE SECTIONS - Secondary Features (Lower Visual Weight)
-        ═══════════════════════════════════════════════════════════════ */}
-        <div className="space-y-2 opacity-80 hover:opacity-100 transition-opacity">
-          {/* Leave & Attendance */}
-          <Collapsible open={leaveOpen} onOpenChange={setLeaveOpen}>
-            <Card className="border border-border/40 shadow-none">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
-                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">
-                          Leave & Attendance
-                        </CardTitle>
-                        <CardDescription className="text-[11px]">
-                          Pending: {stats.pendingLeave} | On leave today:{" "}
-                          {stats.onLeaveToday}
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        leaveOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                    {[
-                      {
-                        label: "Time Tracking",
-                        path: "/people/time-tracking",
-                        icon: Clock,
-                      },
-                      {
-                        label: "Attendance",
-                        path: "/people/attendance",
-                        icon: CalendarDays,
-                      },
-                      {
-                        label: "Leave Requests",
-                        path: "/people/leave",
-                        icon: Heart,
-                      },
-                      {
-                        label: "Shift Schedules",
-                        path: "/people/schedules",
-                        icon: Calendar,
-                      },
-                    ].map((link) => (
-                      <Button
-                        key={link.path}
-                        variant="ghost"
-                        className="justify-start h-9 text-sm"
-                        onClick={() => navigate(link.path)}
-                      >
-                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                        {link.label}
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Organization */}
-          <Collapsible open={orgOpen} onOpenChange={setOrgOpen}>
-            <Card className="border border-border/40 shadow-none">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
-                        <Building className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">Organization</CardTitle>
-                        <CardDescription className="text-[11px]">
-                          Departments, org chart, structure
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        orgOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                    {[
-                      {
-                        label: "Departments",
-                        path: "/people/departments",
-                        icon: Building,
-                      },
-                      {
-                        label: "Org Chart",
-                        path: "/people/org-chart",
-                        icon: Building2,
-                      },
-                      {
-                        label: "All Employees",
-                        path: "/people/employees",
-                        icon: Users,
-                      },
-                      {
-                        label: "Foreign Workers",
-                        path: "/admin/foreign-workers",
-                        icon: Globe,
-                      },
-                    ].map((link) => (
-                      <Button
-                        key={link.path}
-                        variant="ghost"
-                        className="justify-start h-9 text-sm"
-                        onClick={() => navigate(link.path)}
-                      >
-                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                        {link.label}
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Hiring & Onboarding */}
-          <Collapsible open={hiringOpen} onOpenChange={setHiringOpen}>
-            <Card className="border border-border/40 shadow-none">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
-                        <Briefcase className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">
-                          Hiring & Onboarding
-                        </CardTitle>
-                        <CardDescription className="text-[11px]">
-                          Jobs, candidates, new hire setup
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        hiringOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                    {[
-                      {
-                        label: "Job Postings",
-                        path: "/people/jobs",
-                        icon: Briefcase,
-                      },
-                      {
-                        label: "Candidates",
-                        path: "/people/candidates",
-                        icon: UserCheck,
-                      },
-                      {
-                        label: "Interviews",
-                        path: "/people/interviews",
-                        icon: Calendar,
-                      },
-                      {
-                        label: "Onboarding",
-                        path: "/people/onboarding",
-                        icon: UserPlus,
-                      },
-                    ].map((link) => (
-                      <Button
-                        key={link.path}
-                        variant="ghost"
-                        className="justify-start h-9 text-sm"
-                        onClick={() => navigate(link.path)}
-                      >
-                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                        {link.label}
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Reviews & Training (softer name for TL market) */}
-          <Collapsible open={performanceOpen} onOpenChange={setPerformanceOpen}>
-            <Card className="border border-border/40 shadow-none">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
-                        <Award className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">
-                          Reviews & Training
-                        </CardTitle>
-                        <CardDescription className="text-[11px]">
-                          Performance reviews, goals, staff training
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        performanceOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                    {[
-                      { label: "Goals", path: "/people/goals", icon: Target },
-                      { label: "Reviews", path: "/people/reviews", icon: Award },
-                      {
-                        label: "Training",
-                        path: "/people/training",
-                        icon: GraduationCap,
-                      },
-                      {
-                        label: "Disciplinary",
-                        path: "/people/disciplinary",
-                        icon: Shield,
-                      },
-                    ].map((link) => (
-                      <Button
-                        key={link.path}
-                        variant="ghost"
-                        className="justify-start h-9 text-sm"
-                        onClick={() => navigate(link.path)}
-                      >
-                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                        {link.label}
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-
-          {/* Communications & Feedback (Ekipa-powered) */}
-          <Collapsible open={commsOpen} onOpenChange={setCommsOpen}>
-            <Card className="border border-border/40 shadow-none">
-              <CollapsibleTrigger asChild>
-                <CardHeader className="cursor-pointer hover:bg-muted/30 transition-colors py-3 px-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-7 w-7 rounded-md bg-muted/70 flex items-center justify-center">
-                        <Megaphone className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-sm font-medium">
-                          Communications
-                        </CardTitle>
-                        <CardDescription className="text-[11px]">
-                          Announcements & employee feedback via Ekipa
-                        </CardDescription>
-                      </div>
-                    </div>
-                    <ChevronDown
-                      className={`h-4 w-4 text-muted-foreground transition-transform ${
-                        commsOpen ? "rotate-180" : ""
-                      }`}
-                    />
-                  </div>
-                </CardHeader>
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <CardContent className="pt-0 pb-3 px-4">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5">
-                    {[
-                      {
-                        label: "Announcements",
-                        path: "/people/announcements",
-                        icon: Megaphone,
-                      },
-                      {
-                        label: "Grievance Inbox",
-                        path: "/people/grievances",
-                        icon: MessageSquare,
-                      },
-                    ].map((link) => (
-                      <Button
-                        key={link.path}
-                        variant="ghost"
-                        className="justify-start h-9 text-sm"
-                        onClick={() => navigate(link.path)}
-                      >
-                        <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                        {link.label}
-                        <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                      </Button>
-                    ))}
-                  </div>
-                </CardContent>
-              </CollapsibleContent>
-            </Card>
-          </Collapsible>
-        </div>
+        {/* More — all sub-sections as a flat nav grid */}
+        <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+          <CollapsibleTrigger asChild>
+            <button className="w-full flex items-center justify-between py-2 px-1 mb-3 text-muted-foreground hover:text-foreground transition-colors">
+              <span className="text-xs font-semibold uppercase tracking-wide">More</span>
+              <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
+            </button>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 mb-4">
+              {[
+                { label: "Time Tracking", path: "/people/time-tracking", icon: Clock },
+                { label: "Attendance", path: "/people/attendance", icon: CalendarDays },
+                { label: "Leave Requests", path: "/people/leave", icon: Heart },
+                { label: "Shift Schedules", path: "/people/schedules", icon: Calendar },
+                { label: "Departments", path: "/people/departments", icon: Building },
+                { label: "Org Chart", path: "/people/org-chart", icon: Building2 },
+                { label: "Foreign Workers", path: "/admin/foreign-workers", icon: Globe },
+                { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
+                { label: "Candidates", path: "/people/candidates", icon: UserCheck },
+                { label: "Interviews", path: "/people/interviews", icon: Calendar },
+                { label: "Onboarding", path: "/people/onboarding", icon: UserPlus },
+                { label: "Goals", path: "/people/goals", icon: Target },
+                { label: "Reviews", path: "/people/reviews", icon: Award },
+                { label: "Training", path: "/people/training", icon: GraduationCap },
+                { label: "Disciplinary", path: "/people/disciplinary", icon: Shield },
+                { label: "Announcements", path: "/people/announcements", icon: Megaphone },
+                { label: "Grievance Inbox", path: "/people/grievances", icon: MessageSquare },
+              ].map((link) => (
+                <Button
+                  key={link.path}
+                  variant="ghost"
+                  className="justify-start h-9 text-sm"
+                  onClick={() => navigate(link.path)}
+                >
+                  <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                  {link.label}
+                  <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
+                </Button>
+              ))}
+            </div>
+          </CollapsibleContent>
+        </Collapsible>
       </div>
     </div>
   );

@@ -3,7 +3,7 @@
  * Track and manage employee attendance with fingerprint import support
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, lazy, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -58,7 +58,10 @@ import {
   TrendingUp,
   FileUp,
   Loader2,
+  ScanFace,
 } from "lucide-react";
+
+const FaceClockIn = lazy(() => import("@/components/attendance/FaceClockIn"));
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import {
@@ -88,6 +91,7 @@ export default function Attendance() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
+  const [showFaceClockIn, setShowFaceClockIn] = useState(false);
 
   // Is today selected?
   const isToday = selectedDate === today;
@@ -483,7 +487,7 @@ export default function Attendance() {
         <div className="max-w-7xl mx-auto px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
 
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
                 <Clock className="h-8 w-8 text-white" />
@@ -504,7 +508,14 @@ export default function Attendance() {
                 </p>
               </div>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowFaceClockIn(true)}
+              >
+                <ScanFace className="h-4 w-4 mr-2" />
+                Face Clock-In
+              </Button>
               <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -925,6 +936,19 @@ export default function Attendance() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Face Clock-In Dialog (lazy loaded) */}
+      {showFaceClockIn && (
+        <Suspense fallback={null}>
+          <FaceClockIn
+            open={showFaceClockIn}
+            onOpenChange={setShowFaceClockIn}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: attendanceKeys.byDate(tenantId, selectedDate) });
+            }}
+          />
+        </Suspense>
+      )}
     </div>
   );
 }

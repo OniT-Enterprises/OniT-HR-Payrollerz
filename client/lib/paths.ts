@@ -176,6 +176,10 @@ export const paths = {
   vatSettings: (tid: string) => `tenants/${tid}/settings/vat`,
   vatReturns: (tid: string) => `tenants/${tid}/vatReturns`,
   vatReturn: (tid: string, periodId: string) => `tenants/${tid}/vatReturns/${periodId}`,
+
+  // Face recognition embeddings
+  faceEmbeddings: (tid: string) => `tenants/${tid}/face_embeddings`,
+  faceEmbedding: (tid: string, empId: string) => `tenants/${tid}/face_embeddings/${empId}`,
 } as const;
 
 // Type definitions for better TypeScript support

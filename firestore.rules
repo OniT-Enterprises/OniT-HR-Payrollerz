@@ -599,6 +599,14 @@ service cloud.firestore {
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
+      // ============================================
+      // FACE RECOGNITION EMBEDDINGS
+      // ============================================
+      match /face_embeddings/{empId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
       // DEFAULT DENY: Any tenant subcollection not explicitly listed above
       // is blocked by Firestore's default-deny behavior. Do NOT add a catch-all
       // wildcard here — new subcollections must have explicit rules added.
