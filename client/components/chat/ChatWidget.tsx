@@ -1,4 +1,5 @@
 import { useEffect, useCallback, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Bot, Command } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatStore } from "@/stores/chatStore";
@@ -7,7 +8,13 @@ import ChatPanel from "./ChatPanel";
 
 const ChatWidget = () => {
   const { user } = useAuth();
-  const { isOpen, setOpen } = useChatStore();
+  const { isOpen, setOpen, setCurrentRoute } = useChatStore();
+  const location = useLocation();
+
+  // Sync current route to chat store on navigation
+  useEffect(() => {
+    setCurrentRoute(location.pathname);
+  }, [location.pathname, setCurrentRoute]);
   const [isClosing, setIsClosing] = useState(false);
 
   const handleClose = useCallback(() => {

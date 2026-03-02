@@ -149,6 +149,7 @@ const ChatPanel = ({
     messages,
     isLoading,
     sessionKey,
+    currentRoute,
     addMessage,
     updateLastMessage,
     setLoading,
@@ -213,7 +214,7 @@ const ChatPanel = ({
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ message: text, sessionKey }),
+            body: JSON.stringify({ message: text, sessionKey, currentRoute }),
           }
         );
 
@@ -248,7 +249,7 @@ const ChatPanel = ({
         setLoading(false);
       }
     },
-    [tenantId, sessionKey, addMessage, updateLastMessage, setLoading]
+    [tenantId, sessionKey, currentRoute, addMessage, updateLastMessage, setLoading]
   );
 
   const doSendStreaming = useCallback(
@@ -279,7 +280,7 @@ const ChatPanel = ({
               "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ message: text, sessionKey }),
+            body: JSON.stringify({ message: text, sessionKey, currentRoute }),
           }
         );
 
@@ -402,6 +403,7 @@ const ChatPanel = ({
       updateLastMessage,
       setLoading,
       sessionKey,
+      currentRoute,
       doSendFallback,
     ]
   );

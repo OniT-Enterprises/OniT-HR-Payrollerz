@@ -26,6 +26,7 @@ interface ChatState {
   messages: ChatMessage[];
   isLoading: boolean;
   sessionKey: string;
+  currentRoute: string;
 
   setOpen: (open: boolean) => void;
   addMessage: (msg: ChatMessage) => void;
@@ -34,6 +35,7 @@ interface ChatState {
   clearMessages: () => void;
   newChat: () => void;
   toggleCollapsed: (index: number) => void;
+  setCurrentRoute: (route: string) => void;
 }
 
 export const useChatStore = create<ChatState>()((set) => ({
@@ -41,6 +43,7 @@ export const useChatStore = create<ChatState>()((set) => ({
   messages: [],
   isLoading: false,
   sessionKey: createSessionKey(),
+  currentRoute: '/',
 
   setOpen: (open) => set({ isOpen: open }),
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
@@ -56,6 +59,7 @@ export const useChatStore = create<ChatState>()((set) => ({
   setLoading: (loading) => set({ isLoading: loading }),
   clearMessages: () => set({ messages: [] }),
   newChat: () => set({ messages: [], isLoading: false, sessionKey: createSessionKey() }),
+  setCurrentRoute: (route) => set({ currentRoute: route }),
   toggleCollapsed: (index) =>
     set((s) => {
       const msgs = [...s.messages];

@@ -3160,13 +3160,106 @@ async function openClawChat(message, sessionKey) {
   }
 }
 
+// Page context map — maps frontend routes to descriptions for the AI
+const PAGE_CONTEXT_MAP = {
+  '/dashboard': { name: 'Dashboard', description: 'Overview with employee count, pending leave requests, upcoming birthdays, document compliance alerts, recent activity, and quick stats.' },
+  '/people': { name: 'People Hub', description: 'People module dashboard — summary of staff, hiring pipeline, time & leave, and performance.' },
+  '/people/employees': { name: 'All Employees', description: 'Employee directory listing all staff with status, department, position, and contact info.' },
+  '/people/add': { name: 'Add/Edit Employee', description: 'Employee form for creating or editing employee details (personal info, employment, compensation, documents).' },
+  '/people/departments': { name: 'Departments', description: 'Department list showing all departments, headcount, and managers.' },
+  '/people/org-chart': { name: 'Organization Chart', description: 'Visual org chart showing reporting structure.' },
+  '/people/announcements': { name: 'Announcements', description: 'Company announcements and internal communications.' },
+  '/people/grievances': { name: 'Grievance Inbox', description: 'Employee grievances and complaints.' },
+  '/people/jobs': { name: 'Job Postings', description: 'Active job listings and recruitment pipeline.' },
+  '/people/candidates': { name: 'Candidate Selection', description: 'Candidate applications and selection process.' },
+  '/people/interviews': { name: 'Interviews', description: 'Interview schedule and tracking.' },
+  '/people/onboarding': { name: 'Onboarding', description: 'New hire onboarding checklists and progress.' },
+  '/people/offboarding': { name: 'Offboarding', description: 'Employee exit/offboarding process tracking.' },
+  '/people/time-tracking': { name: 'Time Tracking', description: 'Employee time entries and timesheets.' },
+  '/people/attendance': { name: 'Attendance', description: 'Daily attendance records and patterns.' },
+  '/people/leave': { name: 'Leave Requests', description: 'Leave requests, balances, and approval workflow.' },
+  '/people/schedules': { name: 'Shift Scheduling', description: 'Work schedules and shift assignments.' },
+  '/people/goals': { name: 'Goals', description: 'Employee goals and OKR tracking.' },
+  '/people/reviews': { name: 'Performance Reviews', description: 'Performance review cycles and evaluations.' },
+  '/people/training': { name: 'Training & Certifications', description: 'Training programs and certification tracking.' },
+  '/people/disciplinary': { name: 'Disciplinary', description: 'Disciplinary actions and records.' },
+  '/payroll': { name: 'Payroll Dashboard', description: 'Payroll overview with recent runs, upcoming payroll, and salary totals.' },
+  '/payroll/run': { name: 'Run Payroll', description: 'Payroll processing — select period, review calculations (gross, WIT, INSS, deductions, net), and finalize.' },
+  '/payroll/history': { name: 'Payroll History', description: 'Past payroll runs with totals, dates, and details.' },
+  '/payroll/transfers': { name: 'Bank Transfers', description: 'Bank transfer files and payment records for payroll.' },
+  '/payroll/taxes': { name: 'Tax Reports', description: 'WIT and INSS tax filing reports.' },
+  '/payroll/benefits': { name: 'Benefits Enrollment', description: 'Employee benefits enrollment and management.' },
+  '/payroll/deductions': { name: 'Deductions & Advances', description: 'Salary deductions, advances, and loan tracking.' },
+  '/money': { name: 'Money Dashboard', description: 'Financial overview — revenue, expenses, outstanding invoices, and cash position.' },
+  '/money/customers': { name: 'Customers', description: 'Customer directory for invoicing.' },
+  '/money/invoices': { name: 'Invoices', description: 'Invoice list with status (draft, sent, paid, overdue) and totals.' },
+  '/money/invoices/new': { name: 'New Invoice', description: 'Create a new invoice.' },
+  '/money/invoices/settings': { name: 'Invoice Settings', description: 'Invoice numbering, defaults, and template configuration.' },
+  '/money/invoices/recurring': { name: 'Recurring Invoices', description: 'Recurring invoice templates and schedules.' },
+  '/money/payments': { name: 'Payments', description: 'Payment records and reconciliation.' },
+  '/money/vendors': { name: 'Vendors', description: 'Vendor/supplier directory for bills and expenses.' },
+  '/money/expenses': { name: 'Expenses', description: 'Expense records and claims.' },
+  '/money/bills': { name: 'Bills', description: 'Bills payable — list with status and due dates.' },
+  '/money/bills/new': { name: 'New Bill', description: 'Create a new bill.' },
+  '/money/profit-loss': { name: 'Profit & Loss', description: 'P&L statement showing revenue, expenses, and net income.' },
+  '/money/balance-sheet': { name: 'Balance Sheet', description: 'Balance sheet with assets, liabilities, and equity.' },
+  '/money/cashflow': { name: 'Cash Flow', description: 'Cash flow statement and projections.' },
+  '/money/ar-aging': { name: 'AR Aging', description: 'Accounts receivable aging report — overdue invoices by period.' },
+  '/money/ap-aging': { name: 'AP Aging', description: 'Accounts payable aging report — overdue bills by period.' },
+  '/money/bank-reconciliation': { name: 'Bank Reconciliation', description: 'Bank statement reconciliation.' },
+  '/money/vat-settings': { name: 'VAT Settings', description: 'VAT rates and tax configuration.' },
+  '/money/vat-returns': { name: 'VAT Returns', description: 'VAT return filing and reports.' },
+  '/accounting': { name: 'Accounting Dashboard', description: 'Accounting overview with key financial summaries.' },
+  '/accounting/chart-of-accounts': { name: 'Chart of Accounts', description: 'Full chart of accounts with account types and balances.' },
+  '/accounting/journal-entries': { name: 'Journal Entries', description: 'Manual and auto-generated journal entries.' },
+  '/accounting/general-ledger': { name: 'General Ledger', description: 'General ledger with all transactions by account.' },
+  '/accounting/trial-balance': { name: 'Trial Balance', description: 'Trial balance report — debits and credits by account.' },
+  '/accounting/income-statement': { name: 'Income Statement', description: 'Income statement (profit & loss) for a period.' },
+  '/accounting/balance-sheet': { name: 'Accounting Balance Sheet', description: 'Formal balance sheet from the accounting module.' },
+  '/accounting/fiscal-periods': { name: 'Fiscal Periods', description: 'Fiscal year and period management (open/close periods).' },
+  '/accounting/audit-trail': { name: 'Audit Trail', description: 'Accounting audit trail — all changes to financial data.' },
+  '/reports': { name: 'Reports Dashboard', description: 'Reports hub with links to payroll, employee, attendance, and custom reports.' },
+  '/reports/payroll': { name: 'Payroll Reports', description: 'Payroll summary and detail reports.' },
+  '/reports/employees': { name: 'Employee Reports', description: 'Employee data reports (headcount, turnover, demographics).' },
+  '/reports/attendance': { name: 'Attendance Reports', description: 'Attendance summary and detail reports.' },
+  '/reports/custom': { name: 'Custom Reports', description: 'Custom report builder.' },
+  '/reports/departments': { name: 'Department Reports', description: 'Department-level analytics and reports.' },
+  '/reports/setup': { name: 'Setup Reports', description: 'System setup and configuration reports.' },
+  '/reports/attl-monthly-wit': { name: 'ATTL Monthly WIT', description: 'Monthly Withholding Income Tax report for ATTL filing.' },
+  '/reports/inss-monthly': { name: 'INSS Monthly', description: 'Monthly INSS social security contribution report.' },
+  '/reports/inss-annual': { name: 'INSS Annual', description: 'Annual INSS social security report.' },
+  '/reports/payroll-allocation': { name: 'Payroll Allocation', description: 'Payroll cost allocation by department/project/donor.' },
+  '/reports/donor-export': { name: 'Donor Export Pack', description: 'Export pack for donor/grant reporting.' },
+  '/settings': { name: 'Settings', description: 'Company settings, user preferences, and system configuration.' },
+  '/admin/document-alerts': { name: 'Document Alerts', description: 'Employee document expiry alerts and compliance tracking.' },
+  '/admin/foreign-workers': { name: 'Foreign Workers', description: 'Foreign worker permit and visa tracking.' },
+};
+
+function getPageContext(route) {
+  if (!route || typeof route !== 'string') return null;
+  // Exact match first
+  if (PAGE_CONTEXT_MAP[route]) return { route, ...PAGE_CONTEXT_MAP[route] };
+  // Strip query params
+  const clean = route.split('?')[0];
+  if (PAGE_CONTEXT_MAP[clean]) return { route: clean, ...PAGE_CONTEXT_MAP[clean] };
+  // Prefix match for dynamic routes (e.g. /money/invoices/abc123 → /money/invoices)
+  const segments = clean.split('/').filter(Boolean);
+  while (segments.length > 1) {
+    segments.pop();
+    const prefix = '/' + segments.join('/');
+    if (PAGE_CONTEXT_MAP[prefix]) return { route: prefix, ...PAGE_CONTEXT_MAP[prefix] };
+  }
+  return null;
+}
+
 // System prompt prefix for in-app chat
 function buildChatSystemPrefix(user, options = {}) {
   const userName = user.name || user.email || 'a staff member';
   const tenantId = options.tenantId || 'unknown';
   const allowWrites = !!options.allowWrites;
+  const pageContext = getPageContext(options.currentRoute);
 
-  return `[SYSTEM — IN-APP CHAT CONTEXT]
+  let prefix = `[SYSTEM — IN-APP CHAT CONTEXT]
 This is the Meza HR/Payroll management app (in-app chat widget), NOT WhatsApp.
 User: ${userName}${user.name && user.email ? ` (${user.email})` : ''}.
 Current tenantId: ${tenantId}. Operate only on this tenant.
@@ -3185,10 +3278,22 @@ PERSONALITY:
 - Use them sparingly.
 
 RESTRICTIONS:
-- Never delete data in bulk. Single-item changes only.
+- Never delete data in bulk. Single-item changes only.`;
+
+  if (pageContext) {
+    prefix += `
+
+CURRENT PAGE: ${pageContext.name} (${pageContext.route})
+This page shows: ${pageContext.description}
+When the user says "this", "here", "what I see", or references visible items, use your tools to fetch that data.`;
+  }
+
+  prefix += `
 [END SYSTEM CONTEXT]
 
 User message: `;
+
+  return prefix;
 }
 
 // Pending chat action helpers (write confirmation for Phase 2)
@@ -3251,7 +3356,7 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
   req.setTimeout(120000);
 
   try {
-    const { message, sessionKey } = req.body || {};
+    const { message, sessionKey, currentRoute } = req.body || {};
 
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ success: false, message: 'message field is required', requestId });
@@ -3306,7 +3411,7 @@ app.post('/api/tenants/:tenantId/chat', chatLimiter, authenticateFirebaseToken, 
       });
     }
 
-    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites });
+    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites, currentRoute });
     const prefixedMessage = systemPrefix + effectiveMessage;
     const chatSessionKey = `agent:main:${tenantId}:webchat-${req.user.uid}:${safeSessionKey}`;
 
@@ -3453,7 +3558,7 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
   });
 
   try {
-    const { message, sessionKey } = req.body || {};
+    const { message, sessionKey, currentRoute } = req.body || {};
     if (!message || typeof message !== 'string') {
       sendEvent({ type: 'error', content: 'message field is required' });
       return res.end();
@@ -3506,7 +3611,7 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
     // Step 2: Calling AI
     sendEvent({ type: 'status', content: 'Working on it...' });
 
-    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites });
+    const systemPrefix = buildChatSystemPrefix(req.user, { tenantId, allowWrites, currentRoute });
     const prefixedMessage = systemPrefix + effectiveMessage;
     const chatSessionKey = `agent:main:${tenantId}:webchat-${req.user.uid}:${safeSessionKey}`;
 
