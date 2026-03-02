@@ -31,7 +31,6 @@ import {
 } from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { type Employee } from "@/services/employeeService";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { getComplianceIssues } from "@/lib/employeeUtils";

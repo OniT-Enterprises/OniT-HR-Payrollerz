@@ -4,7 +4,7 @@
  * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -237,10 +237,7 @@ export default function Dashboard() {
   };
 
   // Compliance issues — shared utility, single source of truth
-  const getBlockingIssues = useMemo(
-    () => getComplianceIssues(employees).slice(0, 6),
-    [employees],
-  );
+  const getBlockingIssues = getComplianceIssues(employees).slice(0, 6);
 
   const daysUntilPayday = getDaysUntilPayday();
   const compliance = getComplianceStatus();
