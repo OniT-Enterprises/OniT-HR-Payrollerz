@@ -187,7 +187,6 @@ export default function PeopleDashboard() {
 
   // Collapsible section states
   const [attentionOpen, setAttentionOpen] = useState(false);
-  const [moreOpen, setMoreOpen] = useState(false);
 
   // Filtered employees
   const filteredEmployees = useMemo(() => {
@@ -572,49 +571,73 @@ export default function PeopleDashboard() {
           </CardContent>
         </Card>
 
-        {/* More — all sub-sections as a flat nav grid */}
-        <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
-          <CollapsibleTrigger asChild>
-            <button className="w-full flex items-center justify-between py-2 px-1 mb-3 text-muted-foreground hover:text-foreground transition-colors">
-              <span className="text-xs font-semibold uppercase tracking-wide">More</span>
-              <ChevronDown className={`h-4 w-4 transition-transform ${moreOpen ? "rotate-180" : ""}`} />
-            </button>
-          </CollapsibleTrigger>
-          <CollapsibleContent>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5 mb-4">
-              {[
+        {/* Quick navigation — grouped by category, always visible */}
+        <div className="space-y-4 mb-6">
+          {[
+            {
+              title: "Scheduling & Attendance",
+              links: [
                 { label: "Time Tracking", path: "/people/time-tracking", icon: Clock },
                 { label: "Attendance", path: "/people/attendance", icon: CalendarDays },
                 { label: "Leave Requests", path: "/people/leave", icon: Heart },
                 { label: "Shift Schedules", path: "/people/schedules", icon: Calendar },
+              ],
+            },
+            {
+              title: "Organization",
+              links: [
                 { label: "Departments", path: "/people/departments", icon: Building },
                 { label: "Org Chart", path: "/people/org-chart", icon: Building2 },
                 { label: "Foreign Workers", path: "/admin/foreign-workers", icon: Globe },
+              ],
+            },
+            {
+              title: "Hiring",
+              links: [
                 { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
                 { label: "Candidates", path: "/people/candidates", icon: UserCheck },
                 { label: "Interviews", path: "/people/interviews", icon: Calendar },
                 { label: "Onboarding", path: "/people/onboarding", icon: UserPlus },
+              ],
+            },
+            {
+              title: "Performance & Growth",
+              links: [
                 { label: "Goals", path: "/people/goals", icon: Target },
                 { label: "Reviews", path: "/people/reviews", icon: Award },
                 { label: "Training", path: "/people/training", icon: GraduationCap },
+              ],
+            },
+            {
+              title: "Workplace",
+              links: [
                 { label: "Disciplinary", path: "/people/disciplinary", icon: Shield },
                 { label: "Announcements", path: "/people/announcements", icon: Megaphone },
                 { label: "Grievance Inbox", path: "/people/grievances", icon: MessageSquare },
-              ].map((link) => (
-                <Button
-                  key={link.path}
-                  variant="ghost"
-                  className="justify-start h-9 text-sm"
-                  onClick={() => navigate(link.path)}
-                >
-                  <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                  {link.label}
-                  <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
-                </Button>
-              ))}
+              ],
+            },
+          ].map((group) => (
+            <div key={group.title}>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
+                {group.title}
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-1.5">
+                {group.links.map((link) => (
+                  <Button
+                    key={link.path}
+                    variant="ghost"
+                    className="justify-start h-9 text-sm"
+                    onClick={() => navigate(link.path)}
+                  >
+                    <link.icon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                    {link.label}
+                    <ChevronRight className="h-3.5 w-3.5 ml-auto text-muted-foreground" />
+                  </Button>
+                ))}
+              </div>
             </div>
-          </CollapsibleContent>
-        </Collapsible>
+          ))}
+        </div>
       </div>
     </div>
   );
