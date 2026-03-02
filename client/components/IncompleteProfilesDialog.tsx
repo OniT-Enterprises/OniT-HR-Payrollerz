@@ -184,10 +184,10 @@ export default function IncompleteProfilesDialog({
                             key={doc.field}
                             className={`p-2 rounded text-xs ${
                               doc.missing && doc.required
-                                ? "bg-red-50 text-red-700"
+                                ? "bg-red-500/10 text-red-600 dark:text-red-400"
                                 : doc.required
-                                  ? "bg-green-50 text-green-700"
-                                  : "bg-gray-50 text-gray-600"
+                                  ? "bg-green-500/10 text-green-600 dark:text-green-400"
+                                  : "bg-muted text-muted-foreground"
                             }`}
                           >
                             <div className="flex items-center gap-1">
@@ -196,7 +196,7 @@ export default function IncompleteProfilesDialog({
                               ) : doc.required ? (
                                 <CheckCircle className="h-3 w-3" />
                               ) : (
-                                <div className="h-3 w-3 rounded-full bg-gray-400" />
+                                <div className="h-3 w-3 rounded-full bg-muted-foreground/50" />
                               )}
                               <span className="truncate">{doc.field}</span>
                             </div>
@@ -227,14 +227,14 @@ export default function IncompleteProfilesDialog({
         </div>
 
         {incompleteEmployees.length > 0 && (
-          <div className="mt-6 p-4 bg-orange-50 rounded-lg border border-orange-200">
+          <div className="mt-6 p-4 bg-orange-500/10 rounded-lg border border-orange-500/20">
             <div className="flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-orange-500 mt-0.5" />
               <div>
-                <h4 className="font-medium text-orange-900">
+                <h4 className="font-medium text-foreground">
                   Complete Profiles for Better Management
                 </h4>
-                <p className="text-sm text-orange-700 mt-1">
+                <p className="text-sm text-muted-foreground mt-1">
                   Incomplete profiles may affect payroll processing, compliance
                   reporting, and employee management. Please ensure all required
                   information is collected.
