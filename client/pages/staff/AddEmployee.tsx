@@ -51,6 +51,7 @@ import { paths } from "@/lib/paths";
 import { employeeService, type Employee, type ResidencyStatus } from "@/services/employeeService";
 import { fileUploadService } from "@/services/fileUploadService";
 import { departmentService, type Department } from "@/services/departmentService";
+import { NATIONALITY_FLAGS, NATIONALITY_OPTIONS } from "@/lib/constants";
 import CSVColumnMapper, { type ColumnMapping } from "@/components/CSVColumnMapper";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -121,7 +122,6 @@ export default function AddEmployee() {
         title: t("addEmployee.wizard.documentsTitle"),
         description: t("addEmployee.wizard.documentsDesc"),
         icon: FileText,
-        isOptional: true,
       },
     ],
     [t],
@@ -167,13 +167,13 @@ export default function AddEmployee() {
   // Watch form values for canProceed logic
   const formValues = watch();
 
-  // TL-specific documents
-  const [documents, setDocuments] = useState([
-    { id: 1, type: "Bilhete de Identidade", fieldKey: "bilheteIdentidade", number: "", expiryDate: "", required: true, description: "TL National ID" },
-    { id: 2, type: "INSS Number", fieldKey: "socialSecurityNumber", number: "", expiryDate: "", required: true, description: "Social Security" },
-    { id: 3, type: "Electoral Card", fieldKey: "electoralCard", number: "", expiryDate: "", required: false, description: "Kartaun Eleitoral" },
-    { id: 4, type: "Passport", fieldKey: "passport", number: "", expiryDate: "", required: false, description: "For foreign nationals" },
-  ]);
+  // Document entry values stored by fieldKey (persists across nationality switches)
+  const [docValues, setDocValues] = useState<Record<string, { number: string; expiryDate: string }>>({
+    bilheteIdentidade: { number: "", expiryDate: "" },
+    socialSecurityNumber: { number: "", expiryDate: "" },
+    electoralCard: { number: "", expiryDate: "" },
+    passport: { number: "", expiryDate: "" },
+  });
 
   const documentLabelMap: Record<
     string,
@@ -204,7 +204,30 @@ export default function AddEmployee() {
     workingVisaNumber: "",
     workingVisaExpiry: "",
     workingVisaFile: null as File | null,
+    sefopePermitNumber: "",
+    sefopePermitExpiry: "",
+    sefopePermitFile: null as File | null,
+    paymentMethod: "bank_transfer" as "bank_transfer" | "cash",
+    bankName: "",
+    bankAccountNumber: "",
   });
+
+  const isTimorese = additionalInfo.nationality === "Timor-Leste";
+
+  // Contextual document rows based on nationality
+  const documents = useMemo(() => {
+    if (isTimorese) {
+      return [
+        { fieldKey: "bilheteIdentidade", required: true, hasExpiry: true },
+        { fieldKey: "electoralCard", required: false, hasExpiry: true },
+        { fieldKey: "socialSecurityNumber", required: true, hasExpiry: false },
+      ];
+    }
+    return [
+      { fieldKey: "passport", required: true, hasExpiry: true },
+      { fieldKey: "socialSecurityNumber", required: true, hasExpiry: false },
+    ];
+  }, [isTimorese]);
 
   // UI state
   const [showImportDialog, setShowImportDialog] = useState(false);
@@ -254,14 +277,40 @@ export default function AddEmployee() {
           isResident: employee.compensation.isResident ?? true,
         });
 
-        if (employee.documents?.nationality) {
-          setAdditionalInfo(prev => ({
-            ...prev,
-            nationality: employee.documents?.nationality || "Timor-Leste",
-            workingVisaNumber: employee.documents?.workingVisaResidency?.number || "",
-            workingVisaExpiry: employee.documents?.workingVisaResidency?.expiryDate || "",
-          }));
-        }
+        // Populate documents from stored data
+        setDocValues({
+          bilheteIdentidade: {
+            number: employee.documents?.bilheteIdentidade?.number || "",
+            expiryDate: employee.documents?.bilheteIdentidade?.expiryDate || "",
+          },
+          socialSecurityNumber: {
+            number: employee.documents?.socialSecurityNumber?.number || "",
+            expiryDate: employee.documents?.socialSecurityNumber?.expiryDate || "",
+          },
+          electoralCard: {
+            number: employee.documents?.electoralCard?.number || "",
+            expiryDate: employee.documents?.electoralCard?.expiryDate || "",
+          },
+          passport: {
+            number: employee.documents?.passport?.number || "",
+            expiryDate: employee.documents?.passport?.expiryDate || "",
+          },
+        });
+
+        const nat = employee.documents?.nationality || "Timor-Leste";
+        const hasBankAccount = !!(employee.bankName || employee.bankDetails?.bankName);
+        setAdditionalInfo(prev => ({
+          ...prev,
+          nationality: nat,
+          residencyStatus: nat === "Timor-Leste" ? "timorese" : "foreign_worker",
+          workingVisaNumber: employee.documents?.workingVisaResidency?.number || "",
+          workingVisaExpiry: employee.documents?.workingVisaResidency?.expiryDate || "",
+          sefopePermitNumber: employee.documents?.sefopeWorkPermit?.number || "",
+          sefopePermitExpiry: employee.documents?.sefopeWorkPermit?.expiryDate || "",
+          paymentMethod: hasBankAccount ? "bank_transfer" : "cash",
+          bankName: employee.bankName || employee.bankDetails?.bankName || "",
+          bankAccountNumber: employee.bankAccountNumber || employee.bankDetails?.accountNumber || "",
+        }));
       } else {
         toast({
           title: t("addEmployee.toast.errorTitle"),
@@ -311,12 +360,19 @@ export default function AddEmployee() {
     }
   }, [editEmployeeId, tenantId, loadDepartmentsAndManagers, loadEmployeeForEdit]);
 
-  const handleDocumentChange = (id: number, field: string, value: string) => {
-    setDocuments(prev => prev.map(doc => doc.id === id ? { ...doc, [field]: value } : doc));
+  const handleDocumentChange = (fieldKey: string, field: "number" | "expiryDate", value: string) => {
+    setDocValues(prev => ({ ...prev, [fieldKey]: { ...prev[fieldKey], [field]: value } }));
   };
 
   const handleAdditionalInfoChange = (field: string, value: string | File | null) => {
-    setAdditionalInfo(prev => ({ ...prev, [field]: value }));
+    setAdditionalInfo(prev => {
+      const next = { ...prev, [field]: value };
+      // Auto-set residency status when nationality changes
+      if (field === "nationality") {
+        next.residencyStatus = value === "Timor-Leste" ? "timorese" : "foreign_worker";
+      }
+      return next;
+    });
   };
 
   const getExpiryStatus = (expiryDate: string) => {
@@ -387,7 +443,11 @@ export default function AddEmployee() {
     setIsSubmitting(true);
 
     try {
-      const employeeId = documents[0]?.number || `TEMP${Date.now()}`;
+      // Use BI number for Timorese, passport for foreigners as employeeId
+      const primaryDocNumber = isTimorese
+        ? docValues.bilheteIdentidade?.number
+        : docValues.passport?.number;
+      const employeeId = primaryDocNumber || `TEMP${Date.now()}`;
       const currentDate = new Date();
 
       const newEmployee: Omit<Employee, "id"> = {
@@ -400,7 +460,7 @@ export default function AddEmployee() {
           appEligible: data.appEligible,
           address: "",
           dateOfBirth: "",
-          socialSecurityNumber: documents[1]?.number || "",
+          socialSecurityNumber: docValues.socialSecurityNumber?.number || "",
           emergencyContactName: data.emergencyContactName || "",
           emergencyContactPhone: data.emergencyContactPhone || "",
         },
@@ -421,12 +481,12 @@ export default function AddEmployee() {
           isResident: data.isResident,
         },
         documents: {
-          bilheteIdentidade: { number: documents[0]?.number || "", expiryDate: documents[0]?.expiryDate || "", required: true },
-          employeeIdCard: { number: documents[0]?.number || "", expiryDate: documents[0]?.expiryDate || "", required: true },
-          socialSecurityNumber: { number: documents[1]?.number || "", expiryDate: documents[1]?.expiryDate || "", required: true },
-          electoralCard: { number: documents[2]?.number || "", expiryDate: documents[2]?.expiryDate || "", required: false },
+          bilheteIdentidade: { number: docValues.bilheteIdentidade?.number || "", expiryDate: docValues.bilheteIdentidade?.expiryDate || "", required: isTimorese },
+          employeeIdCard: { number: docValues.bilheteIdentidade?.number || "", expiryDate: docValues.bilheteIdentidade?.expiryDate || "", required: isTimorese },
+          socialSecurityNumber: { number: docValues.socialSecurityNumber?.number || "", expiryDate: docValues.socialSecurityNumber?.expiryDate || "", required: true },
+          electoralCard: { number: docValues.electoralCard?.number || "", expiryDate: docValues.electoralCard?.expiryDate || "", required: false },
           idCard: { number: "", expiryDate: "", required: false },
-          passport: { number: documents[3]?.number || "", expiryDate: documents[3]?.expiryDate || "", required: false },
+          passport: { number: docValues.passport?.number || "", expiryDate: docValues.passport?.expiryDate || "", required: !isTimorese },
           workContract: { fileUrl: "", uploadDate: new Date().toISOString() },
           nationality: additionalInfo.nationality,
           residencyStatus: additionalInfo.residencyStatus,
@@ -435,7 +495,15 @@ export default function AddEmployee() {
             expiryDate: additionalInfo.workingVisaExpiry,
             fileUrl: "",
           },
+          sefopeWorkPermit: !isTimorese ? {
+            number: additionalInfo.sefopePermitNumber,
+            expiryDate: additionalInfo.sefopePermitExpiry,
+            fileUrl: "",
+          } : undefined,
         },
+        isForeignWorker: !isTimorese,
+        bankName: additionalInfo.paymentMethod === "bank_transfer" ? additionalInfo.bankName : "",
+        bankAccountNumber: additionalInfo.paymentMethod === "bank_transfer" ? additionalInfo.bankAccountNumber : "",
         status: "active",
       };
 
@@ -460,6 +528,16 @@ export default function AddEmployee() {
         } catch (e) {
           console.error("Visa upload failed:", e);
           failedUploads.push(t("addEmployee.documents.workingVisa") || "working visa");
+        }
+      }
+
+      if (additionalInfo.sefopePermitFile && newEmployee.documents.sefopeWorkPermit) {
+        try {
+          const url = await fileUploadService.uploadEmployeeDocument(additionalInfo.sefopePermitFile, tenantId, employeeIdForUpload, "sefopePermit");
+          newEmployee.documents.sefopeWorkPermit.fileUrl = url;
+        } catch (e) {
+          console.error("SEFOPE permit upload failed:", e);
+          failedUploads.push(t("addEmployee.documents.sefopePermitTitle") || "SEFOPE work permit");
         }
       }
 
@@ -976,15 +1054,55 @@ export default function AddEmployee() {
                 </p>
               </div>
 
-              {/* TL Tax Info */}
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="font-medium">{t("addEmployee.compensation.incomeTaxTitle")}</p>
-                  <p className="text-muted-foreground">{t("addEmployee.compensation.incomeTaxDesc")}</p>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <p className="font-medium">{t("addEmployee.compensation.socialSecurityTitle")}</p>
-                  <p className="text-muted-foreground">{t("addEmployee.compensation.socialSecurityDesc")}</p>
+              {/* Payment Method */}
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>{t("addEmployee.compensation.paymentMethod")}</Label>
+                    <Select
+                      value={additionalInfo.paymentMethod}
+                      onValueChange={v => handleAdditionalInfoChange("paymentMethod", v)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="bank_transfer">{t("addEmployee.compensation.bankTransfer")}</SelectItem>
+                        <SelectItem value="cash">{t("addEmployee.compensation.cash")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {additionalInfo.paymentMethod === "bank_transfer" && (
+                    <>
+                      <div className="space-y-2">
+                        <Label>{t("addEmployee.compensation.bankName")}</Label>
+                        <Select
+                          value={additionalInfo.bankName}
+                          onValueChange={v => handleAdditionalInfoChange("bankName", v)}
+                        >
+                          <SelectTrigger className={fieldBorder(additionalInfo.bankName)}>
+                            <SelectValue placeholder={t("addEmployee.compensation.bankNamePlaceholder")} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="BNCTL">BNCTL</SelectItem>
+                            <SelectItem value="ANZ">ANZ</SelectItem>
+                            <SelectItem value="BNU">BNU</SelectItem>
+                            <SelectItem value="Mandiri">Mandiri</SelectItem>
+                            <SelectItem value="BRI">BRI</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>{t("addEmployee.compensation.accountNumber")}</Label>
+                        <Input
+                          value={additionalInfo.bankAccountNumber}
+                          onChange={e => handleAdditionalInfoChange("bankAccountNumber", e.target.value)}
+                          placeholder={t("addEmployee.compensation.accountNumberPlaceholder")}
+                          className={fieldBorder(additionalInfo.bankAccountNumber)}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -993,6 +1111,23 @@ export default function AddEmployee() {
           {/* Step 4: Documents */}
           <StepContent stepId="documents" currentStepId={WIZARD_STEPS[currentStep].id}>
             <div className="space-y-6">
+              {/* Nationality — drives document requirements */}
+              <div className="space-y-2">
+                <Label htmlFor="nationality">{t("addEmployee.documents.nationality")}</Label>
+                <Select value={additionalInfo.nationality} onValueChange={v => handleAdditionalInfoChange("nationality", v)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {NATIONALITY_OPTIONS.map(nat => (
+                      <SelectItem key={nat} value={nat}>
+                        {NATIONALITY_FLAGS[nat] ? `${NATIONALITY_FLAGS[nat]} ` : ""}{nat === "Other" ? t("addEmployee.documents.nationalityOther") : nat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               {/* Documents Table */}
               <Table>
                 <TableHeader>
@@ -1005,13 +1140,15 @@ export default function AddEmployee() {
                 </TableHeader>
                 <TableBody>
                   {documents.map(doc => {
-                    const status = getExpiryStatus(doc.expiryDate);
+                    const vals = docValues[doc.fieldKey] || { number: "", expiryDate: "" };
+                    const status = doc.hasExpiry ? getExpiryStatus(vals.expiryDate) : null;
                     const labelKey = documentLabelMap[doc.fieldKey]?.labelKey;
                     const descriptionKey = documentLabelMap[doc.fieldKey]?.descriptionKey;
-                    const label = labelKey ? t(labelKey) : doc.type;
-                    const description = descriptionKey ? t(descriptionKey) : doc.description;
+                    const label = labelKey ? t(labelKey) : doc.fieldKey;
+                    const description = descriptionKey ? t(descriptionKey) : "";
+                    const isINSS = doc.fieldKey === "socialSecurityNumber";
                     return (
-                      <TableRow key={doc.id}>
+                      <TableRow key={doc.fieldKey}>
                         <TableCell>
                           <div>
                             <span className="font-medium">{label}</span>
@@ -1025,19 +1162,23 @@ export default function AddEmployee() {
                         </TableCell>
                         <TableCell>
                           <Input
-                            value={doc.number}
-                            onChange={e => handleDocumentChange(doc.id, "number", e.target.value)}
-                            placeholder={t("addEmployee.documents.numberPlaceholder")}
+                            value={vals.number}
+                            onChange={e => handleDocumentChange(doc.fieldKey, "number", e.target.value)}
+                            placeholder={isINSS ? (t("addEmployee.documents.inssPlaceholder") || "100XXXXXX") : t("addEmployee.documents.numberPlaceholder")}
                             className="max-w-[180px]"
                           />
                         </TableCell>
                         <TableCell>
-                          <Input
-                            type="date"
-                            value={doc.expiryDate}
-                            onChange={e => handleDocumentChange(doc.id, "expiryDate", e.target.value)}
-                            className="max-w-[160px]"
-                          />
+                          {doc.hasExpiry ? (
+                            <Input
+                              type="date"
+                              value={vals.expiryDate}
+                              onChange={e => handleDocumentChange(doc.fieldKey, "expiryDate", e.target.value)}
+                              className="max-w-[160px]"
+                            />
+                          ) : (
+                            <span className="text-xs text-muted-foreground">N/A</span>
+                          )}
                         </TableCell>
                         <TableCell>
                           {status && (
@@ -1053,59 +1194,84 @@ export default function AddEmployee() {
                 </TableBody>
               </Table>
 
-              {/* Nationality */}
-              <div className="space-y-2">
-                <Label htmlFor="nationality">{t("addEmployee.documents.nationality")}</Label>
-                <Select value={additionalInfo.nationality} onValueChange={v => handleAdditionalInfoChange("nationality", v)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Timor-Leste">Timor-Leste</SelectItem>
-                    <SelectItem value="Australia">Australia</SelectItem>
-                    <SelectItem value="Indonesia">Indonesia</SelectItem>
-                    <SelectItem value="Portugal">Portugal</SelectItem>
-                    <SelectItem value="Philippines">Philippines</SelectItem>
-                    <SelectItem value="China">China</SelectItem>
-                    <SelectItem value="Other">{t("addEmployee.documents.nationalityOther")}</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Foreign Worker Documents (for non-TL nationals) */}
+              {!isTimorese && (
+                <div className="p-4 border rounded-lg bg-orange-50/50 dark:bg-orange-950/20 space-y-4">
+                  <div>
+                    <h3 className="font-medium flex items-center gap-2 text-orange-800 dark:text-orange-200">
+                      <FileText className="h-4 w-4" />
+                      {t("addEmployee.documents.foreignWorkerTitle")}
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {t("addEmployee.documents.foreignWorkerDesc")}
+                    </p>
+                  </div>
 
-              {/* Working Visa (for non-TL nationals) */}
-              {additionalInfo.nationality !== "Timor-Leste" && (
-                <div className="p-4 border rounded-lg bg-orange-50/50 dark:bg-orange-950/20">
-                  <h3 className="font-medium mb-3 flex items-center gap-2 text-orange-800 dark:text-orange-200">
-                    <FileText className="h-4 w-4" />
-                    {t("addEmployee.documents.visaTitle")}
-                  </h3>
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="workingVisaNumber">{t("addEmployee.documents.visaNumber")}</Label>
-                      <Input
-                        id="workingVisaNumber"
-                        value={additionalInfo.workingVisaNumber}
-                        onChange={e => handleAdditionalInfoChange("workingVisaNumber", e.target.value)}
-                        placeholder={t("addEmployee.documents.visaNumberPlaceholder")}
-                      />
+                  {/* Working Visa */}
+                  <div>
+                    <Label className="text-sm font-medium">{t("addEmployee.documents.visaTitle")}</Label>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="workingVisaNumber" className="text-xs text-muted-foreground">{t("addEmployee.documents.visaNumber")}</Label>
+                        <Input
+                          id="workingVisaNumber"
+                          value={additionalInfo.workingVisaNumber}
+                          onChange={e => handleAdditionalInfoChange("workingVisaNumber", e.target.value)}
+                          placeholder={t("addEmployee.documents.visaNumberPlaceholder")}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="workingVisaExpiry" className="text-xs text-muted-foreground">{t("addEmployee.documents.visaExpiry")}</Label>
+                        <Input
+                          id="workingVisaExpiry"
+                          type="date"
+                          value={additionalInfo.workingVisaExpiry}
+                          onChange={e => handleAdditionalInfoChange("workingVisaExpiry", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="workingVisaFile" className="text-xs text-muted-foreground">{t("addEmployee.documents.visaUpload")}</Label>
+                        <Input
+                          id="workingVisaFile"
+                          type="file"
+                          accept=".pdf,.jpg,.png"
+                          onChange={e => handleAdditionalInfoChange("workingVisaFile", e.target.files?.[0] || null)}
+                        />
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="workingVisaExpiry">{t("addEmployee.documents.visaExpiry")}</Label>
-                      <Input
-                        id="workingVisaExpiry"
-                        type="date"
-                        value={additionalInfo.workingVisaExpiry}
-                        onChange={e => handleAdditionalInfoChange("workingVisaExpiry", e.target.value)}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="workingVisaFile">{t("addEmployee.documents.visaUpload")}</Label>
-                      <Input
-                        id="workingVisaFile"
-                        type="file"
-                        accept=".pdf,.jpg,.png"
-                        onChange={e => handleAdditionalInfoChange("workingVisaFile", e.target.files?.[0] || null)}
-                      />
+                  </div>
+
+                  {/* SEFOPE Work Permit */}
+                  <div>
+                    <Label className="text-sm font-medium">{t("addEmployee.documents.sefopePermitTitle")}</Label>
+                    <div className="grid grid-cols-3 gap-4 mt-2">
+                      <div className="space-y-1">
+                        <Label htmlFor="sefopePermitNumber" className="text-xs text-muted-foreground">{t("addEmployee.documents.sefopePermitNumber")}</Label>
+                        <Input
+                          id="sefopePermitNumber"
+                          value={additionalInfo.sefopePermitNumber}
+                          onChange={e => handleAdditionalInfoChange("sefopePermitNumber", e.target.value)}
+                          placeholder={t("addEmployee.documents.sefopePermitNumberPlaceholder")}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="sefopePermitExpiry" className="text-xs text-muted-foreground">{t("addEmployee.documents.sefopePermitExpiry")}</Label>
+                        <Input
+                          id="sefopePermitExpiry"
+                          type="date"
+                          value={additionalInfo.sefopePermitExpiry}
+                          onChange={e => handleAdditionalInfoChange("sefopePermitExpiry", e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label htmlFor="sefopePermitFile" className="text-xs text-muted-foreground">{t("addEmployee.documents.sefopePermitUpload")}</Label>
+                        <Input
+                          id="sefopePermitFile"
+                          type="file"
+                          accept=".pdf,.jpg,.png"
+                          onChange={e => handleAdditionalInfoChange("sefopePermitFile", e.target.files?.[0] || null)}
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1113,7 +1279,9 @@ export default function AddEmployee() {
 
               {/* Expiry Warnings */}
               {documents.some(d => {
-                const s = getExpiryStatus(d.expiryDate);
+                if (!d.hasExpiry) return false;
+                const vals = docValues[d.fieldKey];
+                const s = vals ? getExpiryStatus(vals.expiryDate) : null;
                 return s && (s.status === "expired" || s.status === "expiring");
               }) && (
                 <Alert>

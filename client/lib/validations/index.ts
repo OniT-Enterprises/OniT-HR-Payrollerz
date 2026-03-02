@@ -94,6 +94,11 @@ export const firestoreEmployeeSchema = z.object({
     residencyStatus: z.string().default('timorese'),
     workingVisaNumber: z.string().optional(),
     workingVisaExpiry: z.string().optional(),
+    sefopeWorkPermit: z.object({
+      number: z.string().default(''),
+      expiryDate: z.string().default(''),
+      fileUrl: z.string().default(''),
+    }).optional(),
   }).default({}),
   status: z.string().default('active'),
   createdAt: firestoreDateSchema,

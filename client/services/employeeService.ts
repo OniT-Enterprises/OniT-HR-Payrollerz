@@ -110,6 +110,12 @@ export interface Employee {
       // TL-specific: Work permit type
       permitType?: 'work_visa' | 'temporary_residence' | 'permanent_residence';
     };
+    // SEFOPE Work Permit (for foreign workers — separate from working visa)
+    sefopeWorkPermit?: {
+      number: string;
+      expiryDate: string;
+      fileUrl: string;
+    };
   };
   // Bank details (optional — used for bank transfers)
   bankName?: string;

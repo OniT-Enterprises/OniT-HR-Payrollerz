@@ -43,31 +43,7 @@ import {
   Flag,
 } from "lucide-react";
 
-/** Map nationality string → emoji flag. Falls back to null. */
-const NATIONALITY_FLAGS: Record<string, string> = {
-  "Timor-Leste": "\u{1F1F9}\u{1F1F1}",
-  "East Timor": "\u{1F1F9}\u{1F1F1}",
-  "Timor Leste": "\u{1F1F9}\u{1F1F1}",
-  "Indonesia": "\u{1F1EE}\u{1F1E9}",
-  "Australia": "\u{1F1E6}\u{1F1FA}",
-  "Portugal": "\u{1F1F5}\u{1F1F9}",
-  "Philippines": "\u{1F1F5}\u{1F1ED}",
-  "China": "\u{1F1E8}\u{1F1F3}",
-  "Malaysia": "\u{1F1F2}\u{1F1FE}",
-  "Brazil": "\u{1F1E7}\u{1F1F7}",
-  "Japan": "\u{1F1EF}\u{1F1F5}",
-  "India": "\u{1F1EE}\u{1F1F3}",
-  "United States": "\u{1F1FA}\u{1F1F8}",
-  "USA": "\u{1F1FA}\u{1F1F8}",
-  "United Kingdom": "\u{1F1EC}\u{1F1E7}",
-  "UK": "\u{1F1EC}\u{1F1E7}",
-  "New Zealand": "\u{1F1F3}\u{1F1FF}",
-  "Singapore": "\u{1F1F8}\u{1F1EC}",
-  "Thailand": "\u{1F1F9}\u{1F1ED}",
-  "Vietnam": "\u{1F1FB}\u{1F1F3}",
-  "South Korea": "\u{1F1F0}\u{1F1F7}",
-  "Korea": "\u{1F1F0}\u{1F1F7}",
-};
+import { NATIONALITY_FLAGS } from "@/lib/constants";
 
 const FaceRegistration = lazy(() => import("@/components/attendance/FaceRegistration"));
 
