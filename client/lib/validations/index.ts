@@ -54,6 +54,7 @@ export const firestoreEmployeeSchema = z.object({
     monthlySalary: z.number().default(0),
     annualLeaveDays: z.number().default(25),
     benefitsPackage: z.string().default('standard'),
+    payFrequency: z.enum(['weekly', 'monthly']).optional(),
     isResident: z.boolean().default(true),
   }).default({}),
   documents: z.object({
@@ -231,6 +232,7 @@ export const addEmployeeFormSchema = z.object({
   salary: z.string().optional().or(z.literal('')),
   leaveDays: z.string().default('25'),
   benefits: z.enum(['basic', 'standard', 'premium', 'executive']).default('standard'),
+  payFrequency: z.enum(['weekly', 'monthly']).default('monthly'),
   isResident: z.boolean().default(true),
 });
 

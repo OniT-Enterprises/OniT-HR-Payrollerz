@@ -35,6 +35,7 @@ import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import { sumMoney } from "@/lib/currency";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import type { Employee } from "@/services/employeeService";
+import { getComplianceIssues } from "@/lib/employeeUtils";
 
 import {
   calculateProRataHours,
@@ -143,7 +144,9 @@ export function usePayrollCalculator({
     const subsidioAnual = includeSubsidioAnual
       ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
       : 0;
-    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
+    // Per-employee frequency overrides the run-level selector
+    const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
+    const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
     const isResident =
       data.employee.compensation?.isResident ??
       (data.employee.documents?.residencyStatus
@@ -153,7 +156,7 @@ export function usePayrollCalculator({
     const input: TLPayrollInput = {
       employeeId: data.employee.id || "",
       monthlySalary,
-      payFrequency,
+      payFrequency: effectiveFrequency,
       totalPeriodsInMonth,
       isHourly: false,
       hourlyRate,
@@ -367,13 +370,16 @@ export function usePayrollCalculator({
   // ─── Compliance issues ──────────────────────────────────────────
 
   const complianceIssues = useMemo(() => {
-    return activeEmployees.map(emp => {
-      const issues: string[] = [];
-      if (!emp.documents?.workContract?.fileUrl) issues.push(t("runPayroll.contractNeeded"));
-      if (!emp.documents?.socialSecurityNumber?.number) issues.push(t("runPayroll.inssNeeded"));
-      return { employee: emp, issues };
-    }).filter(item => item.issues.length > 0);
-  }, [activeEmployees, t]);
+    const raw = getComplianceIssues(activeEmployees);
+    // Group by employee
+    const map = new Map<string, { employee: Employee; issues: string[] }>();
+    raw.forEach(({ employee, issue }) => {
+      const id = employee.id || "";
+      if (!map.has(id)) map.set(id, { employee, issues: [] });
+      map.get(id)!.issues.push(issue);
+    });
+    return Array.from(map.values());
+  }, [activeEmployees]);
 
   const hasComplianceIssues = complianceIssues.length > 0;
 

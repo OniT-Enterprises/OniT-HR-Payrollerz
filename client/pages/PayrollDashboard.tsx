@@ -51,6 +51,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import GuidancePanel from "@/components/GuidancePanel";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import { getComplianceIssues, countBlockedEmployees } from "@/lib/employeeUtils";
 
 const theme = sectionThemes.payroll;
 
@@ -109,13 +110,9 @@ export default function PayrollDashboard() {
     const employeeINSS = inssBaseTotal * TL_INSS.employeeRate;
     const estimatedNet = grossPayroll - employeeINSS; // Simplified - actual would include WIT
 
-    // Count employees with blocking issues
-    const employeesWithoutContracts = activeEmployees.filter(e => !e.documents?.workContract?.fileUrl);
-    const employeesWithoutINSS = activeEmployees.filter(e => !e.documents?.socialSecurityNumber?.number);
-    const blockedEmployees = new Set([
-      ...employeesWithoutContracts.map(e => e.id),
-      ...employeesWithoutINSS.map(e => e.id),
-    ]).size;
+    // Count employees with compliance issues (shared utility)
+    const allIssues = getComplianceIssues(activeEmployees);
+    const blockedEmployees = countBlockedEmployees(allIssues);
 
     // Calculate next pay date (25th of current or next month)
     const now = new Date();
@@ -152,7 +149,11 @@ export default function PayrollDashboard() {
   // Derive checklist from fetched data
   const checklist = useMemo<PayrollChecklistItem[]>(() => {
     const activeEmployees = allEmployees.filter((e) => e.status === "active");
-    const employeesWithoutContracts = activeEmployees.filter(e => !e.documents?.workContract?.fileUrl);
+    const issues = getComplianceIssues(activeEmployees);
+    const contractIssues = issues.filter(i => i.field === "contract").length;
+    const inssIssues = issues.filter(i => i.field === "inss").length;
+    const deptIssues = issues.filter(i => i.field === "department").length;
+    const sefopeIssues = issues.filter(i => i.field === "sefope").length;
     const pendingLeave = leaveStats?.pendingRequests ?? 0;
 
     return [
@@ -180,10 +181,40 @@ export default function PayrollDashboard() {
         label: t("payrollDashboard.checklist.contractsLabel"),
         issueLabel: t("payrollDashboard.checklist.contractsIssue"),
         description: t("payrollDashboard.checklist.contractsDesc"),
-        status: employeesWithoutContracts.length > 0 ? "warning" : "complete",
-        count: employeesWithoutContracts.length > 0 ? employeesWithoutContracts.length : undefined,
+        status: contractIssues > 0 ? "warning" : "complete",
+        count: contractIssues > 0 ? contractIssues : undefined,
         linkPath: "/people/employees?filter=missing-contract",
         linkLabel: t("payrollDashboard.checklist.contractsLink"),
+      },
+      {
+        id: "inss",
+        label: "INSS numbers",
+        issueLabel: "missing INSS",
+        description: "Employees need INSS for tax filing",
+        status: inssIssues > 0 ? "error" : "complete",
+        count: inssIssues > 0 ? inssIssues : undefined,
+        linkPath: "/people/employees?filter=missing-inss",
+        linkLabel: "Review",
+      },
+      {
+        id: "departments",
+        label: "Departments",
+        issueLabel: "no department",
+        description: "Assign departments for reporting",
+        status: deptIssues > 0 ? "warning" : "complete",
+        count: deptIssues > 0 ? deptIssues : undefined,
+        linkPath: "/people/employees",
+        linkLabel: "Review",
+      },
+      {
+        id: "sefope",
+        label: "SEFOPE registration",
+        issueLabel: "missing SEFOPE",
+        description: "Labor ministry registration number",
+        status: sefopeIssues > 0 ? "warning" : "complete",
+        count: sefopeIssues > 0 ? sefopeIssues : undefined,
+        linkPath: "/people/employees",
+        linkLabel: "Review",
       },
       {
         id: "salaries",

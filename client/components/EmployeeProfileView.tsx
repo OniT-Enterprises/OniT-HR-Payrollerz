@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, lazy, Suspense } from "react";
+import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -21,6 +21,9 @@ import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { CompanyDetails } from "@/types/settings";
 import { formatDateTL } from "@/lib/dateUtils";
+import { getComplianceIssues } from "@/lib/employeeUtils";
+import { useAllEmployees } from "@/hooks/useEmployees";
+import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 
 // Lazy load PDF generation to avoid loading react-pdf in main bundle
 const downloadSefopeForm = async (
@@ -51,7 +54,35 @@ import {
   Loader2,
   Pencil,
   ScanFace,
+  AlertTriangle,
+  Flag,
 } from "lucide-react";
+
+/** Map nationality string → emoji flag. Falls back to null. */
+const NATIONALITY_FLAGS: Record<string, string> = {
+  "Timor-Leste": "\u{1F1F9}\u{1F1F1}",
+  "East Timor": "\u{1F1F9}\u{1F1F1}",
+  "Timor Leste": "\u{1F1F9}\u{1F1F1}",
+  "Indonesia": "\u{1F1EE}\u{1F1E9}",
+  "Australia": "\u{1F1E6}\u{1F1FA}",
+  "Portugal": "\u{1F1F5}\u{1F1F9}",
+  "Philippines": "\u{1F1F5}\u{1F1ED}",
+  "China": "\u{1F1E8}\u{1F1F3}",
+  "Malaysia": "\u{1F1F2}\u{1F1FE}",
+  "Brazil": "\u{1F1E7}\u{1F1F7}",
+  "Japan": "\u{1F1EF}\u{1F1F5}",
+  "India": "\u{1F1EE}\u{1F1F3}",
+  "United States": "\u{1F1FA}\u{1F1F8}",
+  "USA": "\u{1F1FA}\u{1F1F8}",
+  "United Kingdom": "\u{1F1EC}\u{1F1E7}",
+  "UK": "\u{1F1EC}\u{1F1E7}",
+  "New Zealand": "\u{1F1F3}\u{1F1FF}",
+  "Singapore": "\u{1F1F8}\u{1F1EC}",
+  "Thailand": "\u{1F1F9}\u{1F1ED}",
+  "Vietnam": "\u{1F1FB}\u{1F1F3}",
+  "South Korea": "\u{1F1F0}\u{1F1F7}",
+  "Korea": "\u{1F1F0}\u{1F1F7}",
+};
 
 const FaceRegistration = lazy(() => import("@/components/attendance/FaceRegistration"));
 
@@ -71,6 +102,28 @@ export default function EmployeeProfileView({
   const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
   const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
   const [showFaceRegistration, setShowFaceRegistration] = useState(false);
+
+  // Resolve manager ID → name
+  const { data: allEmployees = [] } = useAllEmployees();
+  const managerName = useMemo(() => {
+    if (!employee?.jobDetails?.manager) return null;
+    const mgr = employee.jobDetails.manager;
+    // If it looks like an employee ID (EMP###), resolve it
+    const found = allEmployees.find(
+      (e) => e.jobDetails?.employeeId === mgr || e.id === mgr,
+    );
+    if (found) return `${found.personalInfo.firstName} ${found.personalInfo.lastName}`;
+    return mgr; // Fallback to raw value
+  }, [employee, allEmployees]);
+
+  // Compliance issues for this employee
+  const issues = useMemo(
+    () => (employee ? getComplianceIssues([employee]) : []),
+    [employee],
+  );
+
+  // Leave balance
+  const { data: leaveBalance } = useLeaveBalance(employee?.id);
 
   // Preload PDF module so download resolves instantly from cache
   const preloaded = useRef(false);
@@ -240,6 +293,33 @@ export default function EmployeeProfileView({
           </DialogTitle>
         </DialogHeader>
 
+        {/* Compliance warnings */}
+        {issues.length > 0 && (
+          <div className="mt-4 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-950/20 px-4 py-3">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-4 w-4 text-amber-500" />
+              <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
+                {issues.length} item{issues.length > 1 ? "s" : ""} need attention
+              </span>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {issues.map((issue, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => { onOpenChange(false); navigate(issue.path); }}
+                  className={`inline-flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border cursor-pointer transition-colors ${
+                    issue.severity === "error"
+                      ? "bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-950/50"
+                      : "bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/50"
+                  }`}
+                >
+                  {issue.issue}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           {/* Personal Information */}
           <Card>
@@ -375,7 +455,7 @@ export default function EmployeeProfileView({
                 <div className="flex items-center gap-3">
                   <User className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <p className="font-medium">{employee.jobDetails.manager}</p>
+                    <p className="font-medium">{managerName}</p>
                     <p className="text-sm text-muted-foreground">Manager</p>
                   </div>
                 </div>
@@ -416,6 +496,21 @@ export default function EmployeeProfileView({
                     {employee.compensation.annualLeaveDays} days
                   </p>
                   <p className="text-sm text-muted-foreground">Annual Leave</p>
+                  {leaveBalance?.annual && (
+                    <div className="flex items-center gap-2 mt-1">
+                      <span className="text-xs text-emerald-600 dark:text-emerald-400">
+                        {leaveBalance.annual.remaining} remaining
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {leaveBalance.annual.used} used
+                      </span>
+                      {leaveBalance.annual.pending > 0 && (
+                        <span className="text-xs text-amber-600 dark:text-amber-400">
+                          {leaveBalance.annual.pending} pending
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </div>
               <div className="flex items-center gap-3">
@@ -435,13 +530,35 @@ export default function EmployeeProfileView({
           {/* Documents - Full Width */}
           <Card className="lg:col-span-3">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileText className="h-5 w-5" />
-                Documents & Identification
-              </CardTitle>
-              <CardDescription>
-                Employee identification documents with expiry tracking
-              </CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <FileText className="h-5 w-5" />
+                    Documents & Identification
+                  </CardTitle>
+                  <CardDescription>
+                    Employee identification documents with expiry tracking
+                  </CardDescription>
+                </div>
+                {/* Nationality flag */}
+                <div className="flex items-center gap-2">
+                  {employee.documents?.nationality ? (
+                    <>
+                      <span className="text-3xl leading-none">
+                        {NATIONALITY_FLAGS[employee.documents.nationality] || ""}
+                      </span>
+                      <span className="text-sm font-medium">
+                        {employee.documents.nationality}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+                      <Flag className="h-4 w-4" />
+                      No nationality yet
+                    </span>
+                  )}
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">

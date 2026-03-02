@@ -17,8 +17,8 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { type Employee } from "@/services/employeeService";
 import { useAllEmployees } from "@/hooks/useEmployees";
+import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
@@ -236,32 +236,11 @@ export default function Dashboard() {
     };
   };
 
-  // Check for blocking issues (incomplete onboarding)
-  const getBlockingIssues = useMemo(() => {
-    const issues: Array<{ employee: Employee; issue: string; action: string; path: string }> = [];
-
-    employees.forEach((emp) => {
-      if (!emp.documents?.socialSecurityNumber?.number) {
-        issues.push({
-          employee: emp,
-          issue: t("dashboard.missingInss"),
-          action: t("dashboard.addInss"),
-          path: `/people/employees?id=${emp.id}&edit=true`,
-        });
-      }
-      if (!emp.documents?.workContract?.fileUrl) {
-        issues.push({
-          employee: emp,
-          issue: t("dashboard.contractNotUploaded"),
-          action: t("dashboard.upload"),
-          path: `/people/employees?id=${emp.id}&tab=documents`,
-        });
-      }
-    });
-
-    return issues.slice(0, 4); // Show max 4 issues
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employees]);
+  // Compliance issues — shared utility, single source of truth
+  const getBlockingIssues = useMemo(
+    () => getComplianceIssues(employees).slice(0, 6),
+    [employees],
+  );
 
   const daysUntilPayday = getDaysUntilPayday();
   const compliance = getComplianceStatus();

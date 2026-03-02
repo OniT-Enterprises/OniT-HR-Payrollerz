@@ -160,6 +160,7 @@ export default function AddEmployee() {
       salary: "",
       leaveDays: "25",
       benefits: "standard",
+      payFrequency: "monthly",
       isResident: true,
     },
     mode: "onChange", // Validate on change for better UX
@@ -218,6 +219,13 @@ export default function AddEmployee() {
   const [isEditMode, setIsEditMode] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
 
+  // In edit mode, show green border for filled fields and red for empty ones
+  const fieldBorder = (value: unknown): string => {
+    if (!isEditMode) return "";
+    if (value === undefined || value === null || value === "") return "border-red-500";
+    return "border-green-500";
+  };
+
   const loadEmployeeForEdit = useCallback(async (employeeId: string) => {
     try {
       setLoading(true);
@@ -246,6 +254,7 @@ export default function AddEmployee() {
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
           benefits: (employee.compensation.benefitsPackage || "standard") as "basic" | "standard" | "premium" | "executive",
+          payFrequency: employee.compensation.payFrequency || "monthly",
           isResident: employee.compensation.isResident ?? true,
         });
 
@@ -414,6 +423,7 @@ export default function AddEmployee() {
           monthlySalary: parseInt(data.salary || "0", 10) || 0,
           annualLeaveDays: parseInt(data.leaveDays, 10) || 25,
           benefitsPackage: data.benefits || "standard",
+          payFrequency: data.payFrequency,
           isResident: data.isResident,
         },
         documents: {
@@ -793,7 +803,7 @@ export default function AddEmployee() {
                     control={control}
                     render={({ field }) => (
                       <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger className={errors.department ? "border-red-500" : ""}>
+                        <SelectTrigger className={errors.department ? "border-red-500" : fieldBorder(field.value)}>
                           <SelectValue placeholder={t("addEmployee.fields.departmentPlaceholder")} />
                         </SelectTrigger>
                         <SelectContent>
@@ -812,7 +822,7 @@ export default function AddEmployee() {
                     id="jobTitle"
                     {...register("jobTitle")}
                     placeholder={t("addEmployee.fields.jobTitlePlaceholder")}
-                    className={errors.jobTitle ? "border-red-500" : ""}
+                    className={errors.jobTitle ? "border-red-500" : fieldBorder(formValues.jobTitle)}
                   />
                   {errors.jobTitle && <p className="text-sm text-red-500">{errors.jobTitle.message}</p>}
                 </div>
@@ -873,8 +883,8 @@ export default function AddEmployee() {
               </div>
 
               {/* SEFOPE Registration */}
-              <div className="p-4 border rounded-lg bg-blue-50/50 dark:bg-blue-950/20">
-                <h3 className="font-medium mb-3 flex items-center gap-2 text-blue-800 dark:text-blue-200">
+              <div className={`p-4 border rounded-lg ${isEditMode ? (formValues.sefopeNumber ? 'border-green-500 bg-green-50/50 dark:bg-green-950/20' : 'border-red-500 bg-red-50/50 dark:bg-red-950/20') : 'bg-blue-50/50 dark:bg-blue-950/20'}`}>
+                <h3 className={`font-medium mb-3 flex items-center gap-2 ${isEditMode ? (formValues.sefopeNumber ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200') : 'text-blue-800 dark:text-blue-200'}`}>
                   <Briefcase className="h-4 w-4" />
                   {t("addEmployee.fields.sefopeTitle")}
                   <TooltipProvider>
@@ -895,6 +905,7 @@ export default function AddEmployee() {
                       id="sefopeNumber"
                       {...register("sefopeNumber")}
                       placeholder={t("addEmployee.fields.sefopeNumberPlaceholder")}
+                      className={fieldBorder(formValues.sefopeNumber)}
                     />
                   </div>
                   <div className="space-y-2">
@@ -903,6 +914,7 @@ export default function AddEmployee() {
                       id="sefopeRegistrationDate"
                       type="date"
                       {...register("sefopeRegistrationDate")}
+                      className={fieldBorder(formValues.sefopeRegistrationDate)}
                     />
                   </div>
                 </div>
@@ -916,6 +928,7 @@ export default function AddEmployee() {
                   type="file"
                   accept=".pdf,.doc,.docx"
                   onChange={e => handleAdditionalInfoChange("workContract", e.target.files?.[0] || null)}
+                  className={isEditMode ? (additionalInfo.workContract || editingEmployee?.documents?.workContract?.fileUrl ? "border-green-500" : "border-red-500") : ""}
                 />
                   <p className="text-xs text-muted-foreground">{t("addEmployee.fields.workContractHelp")}</p>
               </div>
@@ -925,7 +938,7 @@ export default function AddEmployee() {
           {/* Step 3: Compensation */}
           <StepContent stepId="compensation" currentStepId={WIZARD_STEPS[currentStep].id}>
             <div className="space-y-6">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-4 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="salary">{t("addEmployee.compensation.salaryLabel")}</Label>
                   <Input
@@ -933,6 +946,7 @@ export default function AddEmployee() {
                     type="number"
                     {...register("salary")}
                     placeholder={t("addEmployee.compensation.salaryPlaceholder")}
+                    className={fieldBorder(formValues.salary)}
                   />
                   <p className="text-xs text-muted-foreground">{t("addEmployee.compensation.minWageHint")}</p>
                 </div>
@@ -960,6 +974,24 @@ export default function AddEmployee() {
                           <SelectItem value="standard">{t("addEmployee.compensation.benefitsOptions.standard")}</SelectItem>
                           <SelectItem value="premium">{t("addEmployee.compensation.benefitsOptions.premium")}</SelectItem>
                           <SelectItem value="executive">{t("addEmployee.compensation.benefitsOptions.executive")}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="payFrequency">Pay Frequency</Label>
+                  <Controller
+                    name="payFrequency"
+                    control={control}
+                    render={({ field }) => (
+                      <Select value={field.value} onValueChange={field.onChange}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="monthly">Monthly (Mensal)</SelectItem>
+                          <SelectItem value="weekly">Weekly (Semanal)</SelectItem>
                         </SelectContent>
                       </Select>
                     )}

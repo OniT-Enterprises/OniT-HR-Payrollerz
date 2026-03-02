@@ -73,6 +73,8 @@ export interface Employee {
     annualSalary?: number;       // Legacy: some records store annual instead of monthly
     annualLeaveDays: number;
     benefitsPackage: string;
+    // Per-employee pay frequency (overrides run-level default in payroll)
+    payFrequency?: 'weekly' | 'monthly';
     // TL-specific: Tax residency status affects WIT calculation
     isResident?: boolean;
   };

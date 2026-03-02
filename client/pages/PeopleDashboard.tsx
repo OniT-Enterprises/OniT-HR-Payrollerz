@@ -34,6 +34,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { type Employee } from "@/services/employeeService";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
+import { getComplianceIssues } from "@/lib/employeeUtils";
 import {
   Users,
   UserPlus,
@@ -215,41 +216,11 @@ export default function PeopleDashboard() {
     });
   }, [employees, searchQuery, departmentFilter, statusFilter]);
 
-  // Attention required items
-  const attentionItems = useMemo(() => {
-    const items: Array<{
-      employee: Employee;
-      issue: string;
-      action: string;
-      path: string;
-      type: "warning" | "error";
-    }> = [];
-
-    employees.forEach((emp) => {
-      // Missing INSS number
-      if (!emp.documents?.socialSecurityNumber?.number) {
-        items.push({
-          employee: emp,
-          issue: "INSS number needed",
-          action: "Add INSS",
-          path: `/people/employees?id=${emp.id}&edit=true`,
-          type: "error",
-        });
-      }
-      // Missing contract
-      if (!emp.documents?.workContract?.fileUrl) {
-        items.push({
-          employee: emp,
-          issue: "Contract needed",
-          action: "Upload",
-          path: `/people/employees?id=${emp.id}&tab=documents`,
-          type: "warning",
-        });
-      }
-    });
-
-    return items.slice(0, 5); // Show max 5 issues
-  }, [employees]);
+  // Attention required items — shared compliance checks
+  const attentionItems = useMemo(
+    () => getComplianceIssues(employees).slice(0, 8),
+    [employees],
+  );
 
   if (loading) {
     return <PeopleDashboardSkeleton />;
@@ -369,7 +340,7 @@ export default function PeopleDashboard() {
               <button className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800 text-left hover:bg-amber-100/60 dark:hover:bg-amber-950/30 transition-colors">
                 <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
                 <span className="text-sm font-medium text-amber-800 dark:text-amber-200 flex-1">
-                  {attentionItems.length} item{attentionItems.length > 1 ? "s" : ""} needed for payroll
+                  {attentionItems.length} item{attentionItems.length > 1 ? "s" : ""} need attention
                 </span>
                 <span className="text-xs text-amber-600 dark:text-amber-400">
                   {attentionOpen ? "Hide" : "Review"}
@@ -379,35 +350,38 @@ export default function PeopleDashboard() {
             </CollapsibleTrigger>
             <CollapsibleContent>
               <div className="mt-2 space-y-1.5">
-                {attentionItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(item.path)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-7 w-7">
-                        <AvatarFallback className="text-[10px] bg-muted">
-                          {item.employee.personalInfo.firstName[0]}
-                          {item.employee.personalInfo.lastName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium leading-tight">
-                          {item.employee.personalInfo.firstName}{" "}
-                          {item.employee.personalInfo.lastName}
-                        </p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400">
-                          {item.issue}
-                        </p>
+                {attentionItems.map((item, idx) => {
+                  const isError = item.severity === "error";
+                  return (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between px-4 py-2.5 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
+                      onClick={() => navigate(item.path)}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-7 w-7">
+                          <AvatarFallback className="text-[10px] bg-muted">
+                            {item.employee.personalInfo.firstName[0]}
+                            {item.employee.personalInfo.lastName[0]}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="text-sm font-medium leading-tight">
+                            {item.employee.personalInfo.firstName}{" "}
+                            {item.employee.personalInfo.lastName}
+                          </p>
+                          <p className={`text-xs ${isError ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+                            {item.issue}
+                          </p>
+                        </div>
                       </div>
+                      <span className={`text-xs flex items-center gap-1 ${isError ? "text-red-600 dark:text-red-400" : "text-amber-600 dark:text-amber-400"}`}>
+                        {item.action}
+                        <ChevronRight className="h-3 w-3" />
+                      </span>
                     </div>
-                    <span className="text-xs text-amber-600 dark:text-amber-400 flex items-center gap-1">
-                      {item.action}
-                      <ChevronRight className="h-3 w-3" />
-                    </span>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleContent>
           </Collapsible>
@@ -506,7 +480,10 @@ export default function PeopleDashboard() {
                 {filteredEmployees.slice(0, 10).map((emp) => {
                   const hasINSS = !!emp.documents?.socialSecurityNumber?.number;
                   const hasContract = !!emp.documents?.workContract?.fileUrl;
-                  const isCompliant = hasINSS && hasContract;
+                  const hasDept = !!emp.jobDetails?.department;
+                  const hasSefope = !!emp.jobDetails?.sefopeNumber;
+                  const isCompliant = hasINSS && hasContract && hasDept && hasSefope;
+                  const issueCount = [hasINSS, hasContract, hasDept, hasSefope].filter(v => !v).length;
 
                   return (
                     <div
@@ -561,7 +538,7 @@ export default function PeopleDashboard() {
                           <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400">
                             <AlertCircle className="h-4 w-4" />
                             <span className="text-sm">
-                              {!hasINSS && !hasContract ? "Docs needed" : !hasINSS ? "INSS needed" : "Contract needed"}
+                              {issueCount} issue{issueCount > 1 ? "s" : ""}
                             </span>
                           </div>
                         )}

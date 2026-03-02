@@ -109,3 +109,100 @@ export function getCompletionStatusColor(completeness: number): string {
   if (completeness >= 50) return "text-orange-600";
   return "text-red-600";
 }
+
+// ─── Payroll Compliance ─────────────────────────────────────────────────
+
+export type ComplianceField = "inss" | "contract" | "department" | "sefope";
+export type ComplianceSeverity = "error" | "warning";
+
+export interface ComplianceIssue {
+  employee: Employee;
+  field: ComplianceField;
+  severity: ComplianceSeverity;
+  /** Default English label */
+  issue: string;
+  /** Short CTA text */
+  action: string;
+  /** Route path to fix the issue */
+  path: string;
+}
+
+/**
+ * Single source of truth for employee compliance checks.
+ * Used by Dashboard, PeopleDashboard, PayrollDashboard, and RunPayroll.
+ *
+ * - "error" = blocks payroll (INSS, contract)
+ * - "warning" = should fix but doesn't block payroll (department, SEFOPE)
+ */
+export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
+  const issues: ComplianceIssue[] = [];
+
+  employees.forEach((emp) => {
+    const id = emp.id || "";
+
+    // INSS number — required for tax filing
+    if (!emp.documents?.socialSecurityNumber?.number) {
+      issues.push({
+        employee: emp,
+        field: "inss",
+        severity: "error",
+        issue: "INSS number missing",
+        action: "Add INSS",
+        path: `/people/employees?id=${id}&edit=true`,
+      });
+    }
+
+    // Work contract — required for legal compliance
+    if (!emp.documents?.workContract?.fileUrl) {
+      issues.push({
+        employee: emp,
+        field: "contract",
+        severity: "error",
+        issue: "Contract not uploaded",
+        action: "Upload",
+        path: `/people/employees?id=${id}&tab=documents`,
+      });
+    }
+
+    // Department — needed for reporting
+    if (!emp.jobDetails?.department) {
+      issues.push({
+        employee: emp,
+        field: "department",
+        severity: "warning",
+        issue: "No department assigned",
+        action: "Assign",
+        path: `/people/employees?id=${id}&edit=true`,
+      });
+    }
+
+    // SEFOPE number — TL labor ministry registration
+    if (!emp.jobDetails?.sefopeNumber) {
+      issues.push({
+        employee: emp,
+        field: "sefope",
+        severity: "warning",
+        issue: "SEFOPE number missing",
+        action: "Add SEFOPE",
+        path: `/people/employees?id=${id}&edit=true`,
+      });
+    }
+  });
+
+  // Errors first, then warnings
+  return issues.sort((a, b) => {
+    if (a.severity === "error" && b.severity !== "error") return -1;
+    if (a.severity !== "error" && b.severity === "error") return 1;
+    return 0;
+  });
+}
+
+/** Count unique employees with any compliance issues */
+export function countBlockedEmployees(issues: ComplianceIssue[]): number {
+  return new Set(issues.map((i) => i.employee.id)).size;
+}
+
+/** Only payroll-blocking issues (severity === "error") */
+export function getPayrollBlockers(issues: ComplianceIssue[]): ComplianceIssue[] {
+  return issues.filter((i) => i.severity === "error");
+}
