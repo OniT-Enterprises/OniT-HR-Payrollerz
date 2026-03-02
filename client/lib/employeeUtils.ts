@@ -112,7 +112,7 @@ export function getCompletionStatusColor(completeness: number): string {
 
 // ─── Payroll Compliance ─────────────────────────────────────────────────
 
-export type ComplianceField = "inss" | "contract" | "department" | "sefope";
+export type ComplianceField = "inss" | "contract" | "department";
 export type ComplianceSeverity = "error" | "warning";
 
 export interface ComplianceIssue {
@@ -132,7 +132,7 @@ export interface ComplianceIssue {
  * Used by Dashboard, PeopleDashboard, PayrollDashboard, and RunPayroll.
  *
  * - "error" = blocks payroll (INSS, contract)
- * - "warning" = should fix but doesn't block payroll (department, SEFOPE)
+ * - "warning" = should fix but doesn't block payroll (department)
  */
 export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
   const issues: ComplianceIssue[] = [];
@@ -176,17 +176,6 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
       });
     }
 
-    // SEFOPE number — TL labor ministry registration
-    if (!emp.jobDetails?.sefopeNumber) {
-      issues.push({
-        employee: emp,
-        field: "sefope",
-        severity: "warning",
-        issue: "SEFOPE number missing",
-        action: "Add SEFOPE",
-        path: `/people/employees?id=${id}&edit=true`,
-      });
-    }
   });
 
   // Errors first, then warnings

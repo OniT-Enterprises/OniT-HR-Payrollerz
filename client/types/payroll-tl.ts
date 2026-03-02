@@ -23,7 +23,6 @@ export interface TLEmployeePayrollInfo {
   // Documents
   nationalIdNumber?: string;     // Bilhete de Identidade
   electoralCardNumber?: string;  // Kartaun Eleitoral
-  sefopeNumber?: string;         // SEFOPE work registration
   passportNumber?: string;
   workPermitNumber?: string;     // For foreigners
   inssNumber?: string;           // Social security number
@@ -119,7 +118,7 @@ export interface TLPayrollRecord {
 
   // Employee snapshot
   employeeName: string;
-  employeeNumber: string;        // SEFOPE or internal ID
+  employeeNumber: string;        // Internal employee ID
   department: string;
   position: string;
   isResident: boolean;
@@ -377,49 +376,6 @@ export interface TLTaxReport {
   updatedAt?: FirestoreTimestamp;
 }
 
-// ============================================
-// SEFOPE REGISTRATION
-// ============================================
-
-export interface TLSefopeRegistration {
-  id?: string;
-  employeeId: string;
-
-  // Employee details for form
-  fullName: string;
-  nationalIdNumber: string;
-  dateOfBirth: string;
-  nationality: string;
-  address: string;
-
-  // Work permit (foreigners)
-  workPermitNumber?: string;
-  workPermitExpiry?: string;
-  visaNumber?: string;
-  visaExpiry?: string;
-  residencyPermitNumber?: string;
-
-  // Employment
-  companyName: string;
-  companyTIN: string;
-  position: string;
-  department: string;
-  startDate: string;
-  contractType: TLContractType;
-
-  // Form generation
-  pdfUrl?: string;
-  generatedAt?: FirestoreTimestamp;
-
-  // Submission
-  status: 'draft' | 'generated' | 'submitted' | 'registered';
-  sefopeRegistrationNumber?: string;
-  submittedDate?: string;
-  registeredDate?: string;
-
-  createdAt?: FirestoreTimestamp;
-  updatedAt?: FirestoreTimestamp;
-}
 
 // ============================================
 // SHIFT SCHEDULING (For Security Companies)

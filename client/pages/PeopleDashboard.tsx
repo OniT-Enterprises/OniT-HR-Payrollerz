@@ -479,9 +479,8 @@ export default function PeopleDashboard() {
                   const hasINSS = !!emp.documents?.socialSecurityNumber?.number;
                   const hasContract = !!emp.documents?.workContract?.fileUrl;
                   const hasDept = !!emp.jobDetails?.department;
-                  const hasSefope = !!emp.jobDetails?.sefopeNumber;
-                  const isCompliant = hasINSS && hasContract && hasDept && hasSefope;
-                  const issueCount = [hasINSS, hasContract, hasDept, hasSefope].filter(v => !v).length;
+                  const isCompliant = hasINSS && hasContract && hasDept;
+                  const issueCount = [hasINSS, hasContract, hasDept].filter(v => !v).length;
 
                   return (
                     <div

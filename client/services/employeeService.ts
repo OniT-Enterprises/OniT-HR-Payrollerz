@@ -60,9 +60,6 @@ export interface Employee {
     contractEndDate?: string;  // For fixed-term contracts (YYYY-MM-DD)
     workLocation: string;
     manager: string;
-    // TL-specific: SEFOPE registration for labor ministry compliance
-    sefopeNumber?: string;
-    sefopeRegistrationDate?: string;
     // NGO-specific: Funding source for donor reporting
     fundingSource?: string;
     // Project code for cost allocation

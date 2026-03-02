@@ -73,13 +73,6 @@ export default function Landing() {
       description: t("landing.tlFeatures.thirteenth.description"),
       color: "from-amber-500 to-orange-500",
     },
-    {
-      icon: FileText,
-      title: t("landing.tlFeatures.sefope.title"),
-      subtitle: t("landing.tlFeatures.sefope.subtitle"),
-      description: t("landing.tlFeatures.sefope.description"),
-      color: "from-violet-500 to-purple-500",
-    },
   ];
 
   const laborLawFeatures = [
@@ -1262,7 +1255,6 @@ export default function Landing() {
                 {[
                   t("landing.localSupport.items.whatsapp"),
                   t("landing.localSupport.items.training"),
-                  t("landing.localSupport.items.sefope"),
                   t("landing.localSupport.items.bank"),
                 ].map((item, i) => (
                   <li key={i} className="flex items-center gap-3 text-sm text-zinc-300">

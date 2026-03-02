@@ -165,7 +165,7 @@ export function StepWizard({
             <CardDescription>{currentStepData.description}</CardDescription>
           )}
         </CardHeader>
-        <CardContent>{children}</CardContent>
+        <CardContent className="min-h-[420px]">{children}</CardContent>
       </Card>
 
       {/* Navigation */}

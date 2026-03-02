@@ -153,7 +153,6 @@ export default function PayrollDashboard() {
     const contractIssues = issues.filter(i => i.field === "contract").length;
     const inssIssues = issues.filter(i => i.field === "inss").length;
     const deptIssues = issues.filter(i => i.field === "department").length;
-    const sefopeIssues = issues.filter(i => i.field === "sefope").length;
     const pendingLeave = leaveStats?.pendingRequests ?? 0;
 
     return [
@@ -203,16 +202,6 @@ export default function PayrollDashboard() {
         description: "Assign departments for reporting",
         status: deptIssues > 0 ? "warning" : "complete",
         count: deptIssues > 0 ? deptIssues : undefined,
-        linkPath: "/people/employees",
-        linkLabel: "Review",
-      },
-      {
-        id: "sefope",
-        label: "SEFOPE registration",
-        issueLabel: "missing SEFOPE",
-        description: "Labor ministry registration number",
-        status: sefopeIssues > 0 ? "warning" : "complete",
-        count: sefopeIssues > 0 ? sefopeIssues : undefined,
         linkPath: "/people/employees",
         linkLabel: "Review",
       },

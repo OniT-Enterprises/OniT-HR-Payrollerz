@@ -155,8 +155,6 @@ export default function AddEmployee() {
       manager: "",
       startDate: "",
       employmentType: "Full-time",
-      sefopeNumber: "",
-      sefopeRegistrationDate: "",
       salary: "",
       leaveDays: "25",
       benefits: "standard",
@@ -249,8 +247,6 @@ export default function AddEmployee() {
           manager: employee.jobDetails.manager || "",
           startDate: employee.jobDetails.hireDate,
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
-          sefopeNumber: employee.jobDetails.sefopeNumber || "",
-          sefopeRegistrationDate: employee.jobDetails.sefopeRegistrationDate || "",
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
           benefits: (employee.compensation.benefitsPackage || "standard") as "basic" | "standard" | "premium" | "executive",
@@ -416,8 +412,6 @@ export default function AddEmployee() {
           employmentType: data.employmentType,
           workLocation: "Office",
           manager: data.manager || "",
-          sefopeNumber: data.sefopeNumber || "",
-          sefopeRegistrationDate: data.sefopeRegistrationDate || "",
         },
         compensation: {
           monthlySalary: parseInt(data.salary || "0", 10) || 0,
@@ -651,7 +645,7 @@ export default function AddEmployee() {
           onComplete={handleSubmit(onFormSubmit, (validationErrors) => {
             // Navigate to the step with the first error and show toast
             const basicFields = ["firstName", "lastName", "email", "phone", "phoneApp"];
-            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager", "sefopeNumber", "sefopeRegistrationDate"];
+            const jobFields = ["department", "jobTitle", "startDate", "employmentType", "manager"];
             const errorKeys = Object.keys(validationErrors);
             if (errorKeys.some(k => basicFields.includes(k))) {
               setCurrentStep(0);
@@ -879,44 +873,6 @@ export default function AddEmployee() {
                       </Select>
                     )}
                   />
-                </div>
-              </div>
-
-              {/* SEFOPE Registration */}
-              <div className={`p-4 border rounded-lg ${isEditMode ? (formValues.sefopeNumber ? 'border-green-500 bg-green-50/50 dark:bg-green-950/20' : 'border-red-500 bg-red-50/50 dark:bg-red-950/20') : 'bg-blue-50/50 dark:bg-blue-950/20'}`}>
-                <h3 className={`font-medium mb-3 flex items-center gap-2 ${isEditMode ? (formValues.sefopeNumber ? 'text-green-800 dark:text-green-200' : 'text-red-800 dark:text-red-200') : 'text-blue-800 dark:text-blue-200'}`}>
-                  <Briefcase className="h-4 w-4" />
-                  {t("addEmployee.fields.sefopeTitle")}
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Info className="h-3 w-3 cursor-help" />
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p className="max-w-xs">{t("addEmployee.fields.sefopeTooltip")}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="sefopeNumber">{t("addEmployee.fields.sefopeNumber")}</Label>
-                    <Input
-                      id="sefopeNumber"
-                      {...register("sefopeNumber")}
-                      placeholder={t("addEmployee.fields.sefopeNumberPlaceholder")}
-                      className={fieldBorder(formValues.sefopeNumber)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="sefopeRegistrationDate">{t("addEmployee.fields.sefopeDate")}</Label>
-                    <Input
-                      id="sefopeRegistrationDate"
-                      type="date"
-                      {...register("sefopeRegistrationDate")}
-                      className={fieldBorder(formValues.sefopeRegistrationDate)}
-                    />
-                  </div>
                 </div>
               </div>
 

@@ -45,8 +45,6 @@ export const firestoreEmployeeSchema = z.object({
     employmentType: z.string().default('Full-time'),
     workLocation: z.string().default(''),
     manager: z.string().default(''),
-    sefopeNumber: z.string().optional(),
-    sefopeRegistrationDate: z.string().optional(),
     fundingSource: z.string().optional(),
     projectCode: z.string().optional(),
   }).default({}),
@@ -225,8 +223,6 @@ export const addEmployeeFormSchema = z.object({
     },
     z.enum(['Full-time', 'Part-time', 'Contractor']).default('Full-time'),
   ),
-  sefopeNumber: z.string().optional().or(z.literal('')),
-  sefopeRegistrationDate: z.string().optional().or(z.literal('')),
 
   // Step 3: Compensation
   salary: z.string().optional().or(z.literal('')),

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
+import React, { useState, useMemo, lazy, Suspense } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -17,24 +17,11 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { type Employee } from "@/services/employeeService";
-import { settingsService } from "@/services/settingsService";
-import { useTenantId } from "@/contexts/TenantContext";
-import { CompanyDetails } from "@/types/settings";
 import { formatDateTL } from "@/lib/dateUtils";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 
-// Lazy load PDF generation to avoid loading react-pdf in main bundle
-const downloadSefopeForm = async (
-  employee: Employee,
-  companyDetails: Partial<CompanyDetails>
-) => {
-  const { downloadSefopeForm: download } = await import(
-    "@/components/documents/SefopePDF"
-  );
-  return download(employee, companyDetails);
-};
 import {
   User,
   Mail,
@@ -50,8 +37,6 @@ import {
   CreditCard,
   Globe,
   Users,
-  Download,
-  Loader2,
   Pencil,
   ScanFace,
   AlertTriangle,
@@ -98,9 +83,6 @@ export default function EmployeeProfileView({
   onOpenChange,
 }: EmployeeProfileViewProps) {
   const navigate = useNavigate();
-  const tenantId = useTenantId();
-  const [companyDetails, setCompanyDetails] = useState<Partial<CompanyDetails>>({});
-  const [isGeneratingSefope, setIsGeneratingSefope] = useState(false);
   const [showFaceRegistration, setShowFaceRegistration] = useState(false);
 
   // Resolve manager ID → name
@@ -125,51 +107,6 @@ export default function EmployeeProfileView({
   // Leave balance
   const { data: leaveBalance } = useLeaveBalance(employee?.id);
 
-  // Preload PDF module so download resolves instantly from cache
-  const preloaded = useRef(false);
-  useEffect(() => {
-    if (preloaded.current) return;
-    preloaded.current = true;
-    import("@/components/documents/SefopePDF");
-  }, []);
-
-  // Fetch company details for SEFOPE form
-  useEffect(() => {
-    const fetchCompanyDetails = async () => {
-      if (!tenantId || tenantId === "local-dev-tenant") {
-        // Use default values for local dev
-        setCompanyDetails({
-          legalName: "Meza Demo Company",
-          tinNumber: "000000000",
-          registeredAddress: "Dili, Timor-Leste",
-          city: "Dili",
-          country: "Timor-Leste",
-        });
-        return;
-      }
-      try {
-        const settings = await settingsService.getSettings(tenantId);
-        if (settings?.companyDetails) {
-          setCompanyDetails(settings.companyDetails);
-        }
-      } catch (error) {
-        console.error("Failed to fetch company details:", error);
-      }
-    };
-    fetchCompanyDetails();
-  }, [tenantId]);
-
-  const handleDownloadSefope = async () => {
-    if (!employee) return;
-    setIsGeneratingSefope(true);
-    try {
-      await downloadSefopeForm(employee, companyDetails);
-    } catch (error) {
-      console.error("Failed to generate SEFOPE form:", error);
-    } finally {
-      setIsGeneratingSefope(false);
-    }
-  };
 
   if (!employee) return null;
 
@@ -270,20 +207,6 @@ export default function EmployeeProfileView({
               >
                 <ScanFace className="h-4 w-4 mr-2" />
                 Enroll Face
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadSefope}
-                disabled={isGeneratingSefope}
-                className="text-blue-600 border-blue-200 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-950"
-              >
-                {isGeneratingSefope ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                SEFOPE Form
               </Button>
               <Badge className={getStatusColor(employee.status)}>
                 {employee.status.charAt(0).toUpperCase() +
