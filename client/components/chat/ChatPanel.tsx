@@ -137,12 +137,14 @@ interface ChatPanelProps {
   className?: string;
   showHeader?: boolean;
   onClose?: () => void;
+  headerExtra?: React.ReactNode;
 }
 
 const ChatPanel = ({
   className,
   showHeader = true,
   onClose,
+  headerExtra,
 }: ChatPanelProps) => {
   const tenantId = useTenantId();
   const {
@@ -455,6 +457,7 @@ const ChatPanel = ({
             </span>
           </div>
           <div className="flex items-center gap-1">
+            {headerExtra}
             {messages.length > 0 && (
               <Button
                 variant="ghost"
