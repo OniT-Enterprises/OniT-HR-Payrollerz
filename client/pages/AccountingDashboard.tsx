@@ -4,7 +4,7 @@
  * NOT a full QuickBooks replacement - supports payroll, audits, reports
  */
 
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Card,
@@ -15,11 +15,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -31,7 +26,6 @@ import {
   BarChart3,
   ClipboardList,
   ChevronRight,
-  ChevronDown,
   CheckCircle,
   AlertCircle,
   AlertTriangle,
@@ -149,7 +143,6 @@ export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { session, hasModule, canManage } = useTenant();
-  const [toolsOpen, setToolsOpen] = useState(false);
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
     session,
@@ -348,6 +341,41 @@ export default function AccountingDashboard() {
             </div>
           </div>
         </div>
+
+        {/* ═══════════════════════════════════════════════════════════════
+            ACCOUNTING TOOLS - Always visible, primary navigation
+        ═══════════════════════════════════════════════════════════════ */}
+        <Card className="mb-6 border-border/50">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{t("accounting.dashboard.accountingTools")}</CardTitle>
+            <CardDescription>
+              {t("accounting.dashboard.accountingToolsDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+              {accountingTools.map((tool) => {
+                const ToolIcon = tool.icon;
+                return (
+                  <div
+                    key={tool.id}
+                    className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-orange-500/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                    onClick={() => navigate(tool.path)}
+                  >
+                    <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
+                      <ToolIcon className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium">{tool.title}</p>
+                      <p className="text-xs text-muted-foreground">{tool.description}</p>
+                    </div>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </div>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* ═══════════════════════════════════════════════════════════════
             ACCOUNTING STATUS - Primary question: "Are my books OK?"
@@ -596,55 +624,6 @@ export default function AccountingDashboard() {
           </Card>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
-            ACCOUNTING TOOLS - Expanded by default
-        ═══════════════════════════════════════════════════════════════ */}
-        <Collapsible open={toolsOpen} onOpenChange={setToolsOpen}>
-          <Card className="border-border/50">
-            <CollapsibleTrigger asChild>
-              <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="text-base">{t("accounting.dashboard.accountingTools")}</CardTitle>
-                    <CardDescription>
-                      {t("accounting.dashboard.accountingToolsDesc")}
-                    </CardDescription>
-                  </div>
-                  <ChevronDown
-                    className={`h-5 w-5 text-muted-foreground transition-transform ${
-                      toolsOpen ? "rotate-180" : ""
-                    }`}
-                  />
-                </div>
-              </CardHeader>
-            </CollapsibleTrigger>
-            <CollapsibleContent>
-              <CardContent className="pt-0">
-                <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                  {accountingTools.map((tool) => {
-                    const ToolIcon = tool.icon;
-                    return (
-                      <div
-                        key={tool.id}
-                        className="flex items-center gap-3 p-3 rounded-lg border border-border/50 hover:border-orange-500/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                        onClick={() => navigate(tool.path)}
-                      >
-                        <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-                          <ToolIcon className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">{tool.title}</p>
-                          <p className="text-xs text-muted-foreground">{tool.description}</p>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground flex-shrink-0" />
-                      </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </CollapsibleContent>
-          </Card>
-        </Collapsible>
 
         {/* Last payroll date note */}
         {accountingStatus.lastPayrollDate && (
