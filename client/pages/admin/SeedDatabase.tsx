@@ -10,7 +10,7 @@ import {
   DollarSign, FileText, Star, Calculator, ClipboardCheck, Copy, Download,
   Wallet, Trash2
 } from "lucide-react";
-import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, deleteDoc, type DocumentData } from "firebase/firestore";
+import { collection, doc, setDoc, serverTimestamp, Timestamp, getDocs, deleteDoc, query, where, type DocumentData } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useTenant } from "@/contexts/TenantContext";
 import { getTodayTL, toDateStringTL, formatDateTL } from "@/lib/dateUtils";
@@ -327,17 +327,15 @@ function isProductionEnvironment(): boolean {
   if (import.meta.env.PROD) {
     return true;
   }
-  // Defense-in-depth: check hostname
+  // Defense-in-depth: check hostname (localhost/127.0.0.1 are always dev)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return false; // Always allow on localhost
+    }
     if (PRODUCTION_HOSTNAMES.some(h => hostname.includes(h))) {
       return true;
     }
-  }
-  // Defense-in-depth: check Firebase project ID
-  const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
-  if (projectId && PRODUCTION_PROJECT_IDS.includes(projectId)) {
-    return true;
   }
   return false;
 }
@@ -376,6 +374,7 @@ export default function SeedDatabase() {
     candidates: true,
     leaveRequests: true,
     attendance: true,
+    scheduling: true,
     goals: true,
     reviews: true,
     training: true,
@@ -430,8 +429,11 @@ export default function SeedDatabase() {
       "departments", "positions", "employees", "jobs", "candidates",
       "leaveRequests", "timesheets", "goals", "reviews", "trainings",
       "payruns", "customers", "vendors", "invoices", "bills", "expenses",
-      "payments_received", "bill_payments"
+      "payments_received", "bill_payments", "shifts", "shiftTemplates"
     ];
+
+    // Root-level collections (filtered by tenantId)
+    const rootCollections = ["attendance", "attendanceImports", "leave_requests", "leave_balances"];
 
     const accountingCollections = ["accounts", "journalEntries", "generalLedger", "fiscalPeriods"];
 
@@ -443,6 +445,18 @@ export default function SeedDatabase() {
         let deleted = 0;
         for (const docSnap of snapshot.docs) {
           await deleteDoc(doc(db!, getCollectionPath(collName), docSnap.id));
+          deleted++;
+        }
+        if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
+      }
+
+      // Clear root-level collections (filtered by tenantId)
+      for (const collName of rootCollections) {
+        const q = query(collection(db!, collName), where("tenantId", "==", tenantId));
+        const snapshot = await getDocs(q);
+        let deleted = 0;
+        for (const docSnap of snapshot.docs) {
+          await deleteDoc(doc(db!, collName, docSnap.id));
           deleted++;
         }
         if (deleted > 0) addLog(`✓ Cleared ${collName}: ${deleted} docs`);
@@ -559,81 +573,253 @@ export default function SeedDatabase() {
     return { success, failed };
   };
 
+  // ── Helper: format Date → "YYYY-MM-DD" (TL timezone-aware)
+  const fmtDate = (d: Date) => toDateStringTL(d);
+  // ── Helper: format hours/min → "HH:MM"
+  const fmtTime = (h: number, m: number) => `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+  // ── Helper: count working days between two YYYY-MM-DD strings
+  const workingDaysBetween = (a: string, b: string) => {
+    let count = 0;
+    const d = new Date(a);
+    const end = new Date(b);
+    while (d <= end) { if (d.getDay() !== 0 && d.getDay() !== 6) count++; d.setDate(d.getDate() + 1); }
+    return count;
+  };
+
   const seedLeaveRequests = async () => {
     let success = 0, failed = 0;
-    const statuses = ["pending", "approved", "rejected"];
+    const today = new Date();
+    const todayStr = fmtDate(today);
 
-    for (let i = 0; i < 20; i++) {
+    // Curated leave requests that produce interesting dashboard data:
+    //  - 4 pending (need manager action)
+    //  - 3 approved in the future / overlapping today (people out)
+    //  - 2 approved in the past (used up)
+    //  - 1 rejected
+    const leaveData: {
+      empIdx: number; type: string; typeLabel: string; offsetStart: number; offsetEnd: number;
+      status: "pending" | "approved" | "rejected"; reason: string; hasCert: boolean;
+    }[] = [
+      // ── Pending requests (manager needs to approve) ──
+      { empIdx: 4, type: "annual", typeLabel: "Annual Leave", offsetStart: 3, offsetEnd: 5, status: "pending", reason: "Family vacation to Baucau", hasCert: false },
+      { empIdx: 6, type: "sick", typeLabel: "Sick Leave", offsetStart: 1, offsetEnd: 2, status: "pending", reason: "Doctor appointment and recovery", hasCert: true },
+      { empIdx: 11, type: "annual", typeLabel: "Annual Leave", offsetStart: 7, offsetEnd: 11, status: "pending", reason: "Wedding of a close friend", hasCert: false },
+      { empIdx: 14, type: "paternity", typeLabel: "Paternity Leave", offsetStart: 2, offsetEnd: 6, status: "pending", reason: "Wife expecting baby this week", hasCert: true },
+      // ── Currently on leave (approved, overlapping today) ──
+      { empIdx: 13, type: "annual", typeLabel: "Annual Leave", offsetStart: -2, offsetEnd: 2, status: "approved", reason: "Personal holiday", hasCert: false },
+      { empIdx: 12, type: "sick", typeLabel: "Sick Leave", offsetStart: -1, offsetEnd: 1, status: "approved", reason: "Flu - doctor ordered rest", hasCert: true },
+      // ── Approved future leave ──
+      { empIdx: 9, type: "annual", typeLabel: "Annual Leave", offsetStart: 10, offsetEnd: 14, status: "approved", reason: "Annual family trip", hasCert: false },
+      // ── Past approved leave (already taken) ──
+      { empIdx: 3, type: "annual", typeLabel: "Annual Leave", offsetStart: -15, offsetEnd: -11, status: "approved", reason: "Holiday trip to Atauro Island", hasCert: false },
+      { empIdx: 16, type: "sick", typeLabel: "Sick Leave", offsetStart: -8, offsetEnd: -7, status: "approved", reason: "Dental surgery recovery", hasCert: true },
+      // ── Rejected ──
+      { empIdx: 5, type: "annual", typeLabel: "Annual Leave", offsetStart: 1, offsetEnd: 10, status: "rejected", reason: "Extended vacation", hasCert: false },
+    ];
+
+    for (const lr of leaveData) {
       try {
-        const emp = EMPLOYEES[Math.floor(Math.random() * EMPLOYEES.length)];
-        const leaveType = LEAVE_TYPES[Math.floor(Math.random() * LEAVE_TYPES.length)];
-        const status = statuses[Math.floor(Math.random() * statuses.length)];
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() + Math.floor(Math.random() * 60) - 30);
-        const endDate = new Date(startDate);
-        endDate.setDate(endDate.getDate() + Math.floor(Math.random() * 5) + 1);
+        const emp = EMPLOYEES[lr.empIdx];
+        const startD = new Date(today); startD.setDate(startD.getDate() + lr.offsetStart);
+        const endD = new Date(today); endD.setDate(endD.getDate() + lr.offsetEnd);
+        const startStr = fmtDate(startD);
+        const endStr = fmtDate(endD);
+        const duration = workingDaysBetween(startStr, endStr);
+        const requestD = new Date(startD); requestD.setDate(requestD.getDate() - 5);
 
-        const docRef = doc(collection(db!, getCollectionPath("leaveRequests")));
+        const docRef = doc(collection(db!, "leave_requests"));
         await setDoc(docRef, {
           id: docRef.id,
+          tenantId,
           employeeId: emp.jobDetails.employeeId,
           employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-          leaveType,
-          startDate: Timestamp.fromDate(startDate),
-          endDate: Timestamp.fromDate(endDate),
-          days: Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)),
-          reason: `${leaveType} request`,
-          status,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
+          department: emp.jobDetails.department,
+          departmentId: emp.jobDetails.department.toLowerCase().replace(/\s+/g, "-"),
+          leaveType: lr.type,
+          leaveTypeLabel: lr.typeLabel,
+          startDate: startStr,
+          endDate: endStr,
+          duration,
+          halfDay: false,
+          reason: lr.reason,
+          hasCertificate: lr.hasCert,
+          status: lr.status,
+          requestDate: fmtDate(requestD),
+          ...(lr.status === "approved" ? { approverId: "system", approverName: "Patricia Moore", approvedDate: fmtDate(requestD) } : {}),
+          ...(lr.status === "rejected" ? { approverId: "system", approverName: "Patricia Moore", approvedDate: fmtDate(requestD), rejectionReason: "Insufficient coverage during that period" } : {}),
+          createdAt: requestD,
+          updatedAt: new Date(),
         });
         success++;
-      } catch {
-        failed++;
-      }
+      } catch { failed++; }
     }
-    addLog(`✓ Leave requests: ${success} created`);
+    addLog(`✓ Leave requests: ${success} created (${leaveData.filter(l => l.status === "pending").length} pending)`);
+    return { success, failed };
+  };
+
+  const seedLeaveBalances = async () => {
+    let success = 0, failed = 0;
+    const year = new Date().getFullYear();
+
+    for (const emp of EMPLOYEES) {
+      try {
+        const usedAnnual = Math.floor(Math.random() * 5);
+        const usedSick = Math.floor(Math.random() * 3);
+        const pendingAnnual = Math.floor(Math.random() * 3);
+
+        const docRef = doc(collection(db!, "leave_balances"));
+        await setDoc(docRef, {
+          id: docRef.id,
+          tenantId,
+          employeeId: emp.jobDetails.employeeId,
+          employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+          year,
+          annual: { entitled: 12, used: usedAnnual, pending: pendingAnnual, remaining: 12 - usedAnnual - pendingAnnual },
+          sick: { entitled: 12, used: usedSick, pending: 0, remaining: 12 - usedSick },
+          maternity: { entitled: 84, used: 0, pending: 0, remaining: 84 },
+          paternity: { entitled: 5, used: 0, pending: 0, remaining: 5 },
+          unpaid: { entitled: 0, used: 0, pending: 0, remaining: 0 },
+          carryOver: Math.floor(Math.random() * 4),
+          updatedAt: new Date(),
+        });
+        success++;
+      } catch { failed++; }
+    }
+    addLog(`✓ Leave balances: ${success} created`);
     return { success, failed };
   };
 
   const seedAttendance = async () => {
     let success = 0, failed = 0;
     const today = new Date();
+    const todayStr = fmtDate(today);
 
-    // Create attendance for last 30 days for all employees
-    for (const emp of EMPLOYEES) {
-      for (let day = 0; day < 30; day++) {
+    // Seed 7 working days of attendance (today + last 6 working days)
+    const workDates: string[] = [];
+    const d = new Date(today);
+    while (workDates.length < 7) {
+      if (d.getDay() !== 0 && d.getDay() !== 6) workDates.push(fmtDate(d));
+      d.setDate(d.getDate() - 1);
+    }
+
+    for (const dateStr of workDates) {
+      const isToday = dateStr === todayStr;
+      for (const emp of EMPLOYEES) {
         try {
-          const date = new Date(today);
-          date.setDate(date.getDate() - day);
+          const name = `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`;
+          const rand = Math.random();
 
-          // Skip weekends
-          if (date.getDay() === 0 || date.getDay() === 6) continue;
+          // ~10% absent, ~15% late, ~75% on-time
+          let clockInH = 8, clockInM = Math.floor(Math.random() * 10); // On time: 08:00-08:09
+          let status: string = "present";
 
-          const checkIn = new Date(date);
-          checkIn.setHours(8 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 30), 0);
-          const checkOut = new Date(date);
-          checkOut.setHours(17 + Math.floor(Math.random() * 2), Math.floor(Math.random() * 30), 0);
+          if (rand < 0.10) {
+            // Absent — no clock record for today, skip to make dashboard interesting
+            if (isToday) continue; // Leave gap for "absent today"
+            status = "absent";
+            clockInH = 0; clockInM = 0;
+          } else if (rand < 0.25) {
+            // Late: 08:15 - 09:30
+            clockInH = 8 + Math.floor(Math.random() * 1);
+            clockInM = 15 + Math.floor(Math.random() * 45);
+            if (clockInM >= 60) { clockInH++; clockInM -= 60; }
+            status = "late";
+          }
 
-          const docRef = doc(collection(db!, getCollectionPath("timesheets")));
+          const clockOutH = 17 + Math.floor(Math.random() * 2);
+          const clockOutM = Math.floor(Math.random() * 30);
+
+          const clockIn = status === "absent" ? undefined : fmtTime(clockInH, clockInM);
+          const clockOut = status === "absent" ? undefined : fmtTime(clockOutH, clockOutM);
+
+          // Calculate hours
+          let totalHours = 0, regularHours = 0, overtimeHours = 0, lateMinutes = 0;
+          if (clockIn && clockOut) {
+            const inMin = clockInH * 60 + clockInM;
+            const outMin = clockOutH * 60 + clockOutM;
+            totalHours = Math.round(((outMin - inMin) - 60) * 100) / 100 / 60; // minus 1h break
+            regularHours = Math.min(totalHours, 8);
+            overtimeHours = Math.max(0, totalHours - 8);
+            lateMinutes = Math.max(0, inMin - 8 * 60); // Late if after 08:00
+          }
+
+          const docRef = doc(collection(db!, "attendance"));
           await setDoc(docRef, {
             id: docRef.id,
+            tenantId,
             employeeId: emp.jobDetails.employeeId,
-            employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
-            date: Timestamp.fromDate(date),
-            checkIn: Timestamp.fromDate(checkIn),
-            checkOut: Timestamp.fromDate(checkOut),
-            hoursWorked: ((checkOut.getTime() - checkIn.getTime()) / (1000 * 60 * 60)).toFixed(2),
-            status: Math.random() > 0.1 ? "present" : "late",
+            employeeName: name,
+            department: emp.jobDetails.department,
+            date: dateStr,
+            ...(clockIn ? { clockIn } : {}),
+            ...(clockOut ? { clockOut } : {}),
+            regularHours: Math.round(regularHours * 100) / 100,
+            overtimeHours: Math.round(overtimeHours * 100) / 100,
+            lateMinutes,
+            earlyDepartureMinutes: 0,
+            breakMinutes: 60,
+            totalHours: Math.round(totalHours * 100) / 100,
+            status,
+            source: "manual",
+            isAdjusted: false,
             createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
           });
           success++;
-        } catch {
-          failed++;
-        }
+        } catch { failed++; }
       }
     }
-    addLog(`✓ Attendance records: ${success} created`);
+    addLog(`✓ Attendance: ${success} records across ${workDates.length} days`);
+    return { success, failed };
+  };
+
+  const seedShifts = async () => {
+    let success = 0, failed = 0;
+    const today = new Date();
+
+    // Create shifts for this week (Mon-Fri) for all employees
+    const monday = new Date(today);
+    monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7)); // Go to Monday
+
+    const shiftPatterns = [
+      { start: "08:00", end: "17:00", hours: 8, location: "Dili Head Office" },
+      { start: "07:00", end: "15:00", hours: 7, location: "Dili Head Office" },
+      { start: "09:00", end: "18:00", hours: 8, location: "Dili Head Office" },
+    ];
+
+    for (let dayOffset = 0; dayOffset < 5; dayOffset++) {
+      const shiftDate = new Date(monday);
+      shiftDate.setDate(shiftDate.getDate() + dayOffset);
+      const dateStr = fmtDate(shiftDate);
+      const isPast = shiftDate <= today;
+
+      for (const emp of EMPLOYEES) {
+        try {
+          const pattern = shiftPatterns[Math.floor(Math.random() * shiftPatterns.length)];
+          const docRef = doc(collection(db!, `tenants/${tenantId}/shifts`));
+          await setDoc(docRef, {
+            id: docRef.id,
+            tenantId,
+            employeeId: emp.jobDetails.employeeId,
+            employeeName: `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`,
+            department: emp.jobDetails.department,
+            position: emp.jobDetails.position,
+            date: dateStr,
+            startTime: pattern.start,
+            endTime: pattern.end,
+            hours: pattern.hours,
+            status: isPast ? "confirmed" : dayOffset < 3 ? "published" : "draft",
+            location: emp.jobDetails.workLocation || pattern.location,
+            notes: "",
+            createdBy: "seed-script",
+            createdAt: new Date(),
+            updatedAt: new Date(),
+          });
+          success++;
+        } catch { failed++; }
+      }
+    }
+    addLog(`✓ Shifts: ${success} created for Mon–Fri`);
     return { success, failed };
   };
 
@@ -1678,6 +1864,15 @@ export default function SeedDatabase() {
         setProgress((completedSteps / totalSteps) * 100);
       }
 
+      if (options.scheduling) {
+        setCurrentTask("Seeding scheduling (balances + shifts)...");
+        const balRes = await seedLeaveBalances();
+        const shiftRes = await seedShifts();
+        newResults.scheduling = { success: balRes.success + shiftRes.success, failed: balRes.failed + shiftRes.failed };
+        completedSteps++;
+        setProgress((completedSteps / totalSteps) * 100);
+      }
+
       if (options.goals) {
         setCurrentTask("Seeding goals...");
         newResults.goals = await seedGoals();
@@ -1749,8 +1944,9 @@ export default function SeedDatabase() {
     { key: "employees" as const, label: "Employees", icon: Users, count: EMPLOYEES.length },
     { key: "jobs" as const, label: "Jobs", icon: FileText, count: JOBS.length },
     { key: "candidates" as const, label: "Candidates", icon: UserCheck, count: CANDIDATES.length },
-    { key: "leaveRequests" as const, label: "Leave Requests", icon: Calendar, count: 20 },
-    { key: "attendance" as const, label: "Attendance", icon: Clock, count: "~500" },
+    { key: "leaveRequests" as const, label: "Leave Requests", icon: Calendar, count: 10 },
+    { key: "attendance" as const, label: "Attendance", icon: Clock, count: `~${EMPLOYEES.length * 7}` },
+    { key: "scheduling" as const, label: "Scheduling (Shifts+Bal)", icon: ClipboardCheck, count: `${EMPLOYEES.length * 5}+${EMPLOYEES.length}` },
     { key: "goals" as const, label: "Goals & OKRs", icon: Target, count: EMPLOYEES.length * 3 },
     { key: "reviews" as const, label: "Reviews", icon: Star, count: EMPLOYEES.length },
     { key: "training" as const, label: "Training Courses", icon: GraduationCap, count: TRAINING_COURSES.length },
