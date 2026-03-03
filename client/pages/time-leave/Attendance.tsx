@@ -43,6 +43,7 @@ import {
   ScanFace,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/ui/time-picker";
 
 const FaceClockIn = lazy(() => import("@/components/attendance/FaceClockIn"));
 import { useAllEmployees } from "@/hooks/useEmployees";
@@ -277,7 +278,7 @@ export default function Attendance() {
         department: employee.jobDetails.department,
         date: formData.date,
         clockIn: formData.clockIn,
-        clockOut: formData.clockOut || "",
+        clockOut: formData.clockOut || undefined,
         source: "manual",
         notes: formData.notes || "",
       },
@@ -612,19 +613,19 @@ export default function Attendance() {
                     <div className="grid grid-cols-2 gap-4">
                       <div>
                         <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={formData.clockIn}
-                          onChange={(e) => handleInputChange("clockIn", e.target.value)}
+                          onChange={(v) => handleInputChange("clockIn", v)}
+                          placeholder="Clock in"
                           required
                         />
                       </div>
                       <div>
                         <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
-                        <Input
-                          type="time"
+                        <TimePicker
                           value={formData.clockOut}
-                          onChange={(e) => handleInputChange("clockOut", e.target.value)}
+                          onChange={(v) => handleInputChange("clockOut", v)}
+                          placeholder="Clock out"
                         />
                       </div>
                     </div>

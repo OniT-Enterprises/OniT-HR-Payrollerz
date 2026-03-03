@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { TimePicker } from "@/components/ui/time-picker";
 import {
   Select,
   SelectContent,
@@ -66,6 +67,7 @@ import { useDepartments } from "@/hooks/useDepartments";
 import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
 import { toDateStringTL } from "@/lib/dateUtils";
+import SchedulingSectionNav from "@/components/SchedulingSectionNav";
 
 export default function TimeTracking() {
   const { toast } = useToast();
@@ -420,6 +422,8 @@ export default function TimeTracking() {
         </div>
       </div>
 
+      <SchedulingSectionNav />
+
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
 
@@ -438,100 +442,28 @@ export default function TimeTracking() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
+            <TabsList className="w-full p-1 bg-muted rounded-lg">
+              <TabsTrigger
+                value="daily"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                {t("timeLeave.timeTracking.tabs.daily")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="entries"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                {t("timeLeave.timeTracking.tabs.entries")}
+              </TabsTrigger>
+              <TabsTrigger
+                value="reports"
+                className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                {t("timeLeave.timeTracking.tabs.reports")}
+              </TabsTrigger>
+            </TabsList>
             <TabsContent value="daily" className="mt-6">
               <div className="flex flex-col space-y-6">
-                {/* Quick Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.guardsOnDuty")}
-                          </p>
-                          <p className="text-2xl font-bold">{totalPresent}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.currentlyActive")}
-                          </p>
-                        </div>
-                        <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                          <Users className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            Late Arrivals
-                          </p>
-                          <p className="text-2xl font-bold">{totalLate}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Today
-                          </p>
-                        </div>
-                        <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
-                          <AlertTriangle className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            Absent
-                          </p>
-                          <p className="text-2xl font-bold">{totalAbsent}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Today
-                          </p>
-                        </div>
-                        <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                          <Clock className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-                    <CardContent className="pt-6">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.totalHours")}
-                          </p>
-                          <p className="text-2xl font-bold">{totalHoursToday.toFixed(1)}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("timeLeave.timeTracking.stats.thisWeek")}
-                          </p>
-                        </div>
-                        <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                          <Timer className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
-
-                {/* Tabs positioned after stats */}
-                <TabsList className="flex flex-row flex-wrap gap-[361px] mt-4 mx-auto p-1 bg-muted rounded-lg w-full">
-                  <TabsTrigger
-                    value="daily"
-                    className="data-[state=active]:bg-background data-[state=active]:shadow-sm"
-                  >
-                    {t("timeLeave.timeTracking.tabs.daily")}
-                  </TabsTrigger>
-                  <TabsTrigger value="entries" className="ml-auto">
-                    {t("timeLeave.timeTracking.tabs.entries")}
-                  </TabsTrigger>
-                  <TabsTrigger value="reports" className="ml-auto">
-                    {t("timeLeave.timeTracking.tabs.reports")}
-                  </TabsTrigger>
-                </TabsList>
-
                 {/* Recent Entries Card */}
                 <Card className="mt-6 border-border/50">
                   <CardHeader>
@@ -771,29 +703,22 @@ export default function TimeTracking() {
                                 <Label htmlFor="clock-in">
                                   {t("timeLeave.timeTracking.dialog.clockIn")}
                                 </Label>
-                                <Input
+                                <TimePicker
                                   id="clock-in"
-                                  type="time"
                                   value={formData.clockIn}
-                                  onChange={(e) =>
-                                    handleInputChange("clockIn", e.target.value)
-                                  }
+                                  onChange={(v) => handleInputChange("clockIn", v)}
+                                  placeholder="Clock in"
                                 />
                               </div>
                               <div>
                                 <Label htmlFor="clock-out">
                                   {t("timeLeave.timeTracking.dialog.clockOut")}
                                 </Label>
-                                <Input
+                                <TimePicker
                                   id="clock-out"
-                                  type="time"
                                   value={formData.clockOut}
-                                  onChange={(e) =>
-                                    handleInputChange(
-                                      "clockOut",
-                                      e.target.value,
-                                    )
-                                  }
+                                  onChange={(v) => handleInputChange("clockOut", v)}
+                                  placeholder="Clock out"
                                 />
                               </div>
                             </div>
@@ -1075,6 +1000,58 @@ export default function TimeTracking() {
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Stats Summary */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <Card className="border-border/50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("timeLeave.timeTracking.stats.guardsOnDuty")}
+                    </p>
+                    <p className="text-xl font-bold">{totalPresent}</p>
+                  </div>
+                  <Users className="h-5 w-5 text-cyan-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Late Arrivals</p>
+                    <p className="text-xl font-bold">{totalLate}</p>
+                  </div>
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">Absent</p>
+                    <p className="text-xl font-bold">{totalAbsent}</p>
+                  </div>
+                  <Clock className="h-5 w-5 text-red-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-border/50">
+              <CardContent className="pt-4 pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs text-muted-foreground">
+                      {t("timeLeave.timeTracking.stats.totalHours")}
+                    </p>
+                    <p className="text-xl font-bold">{totalHoursToday.toFixed(1)}</p>
+                  </div>
+                  <Timer className="h-5 w-5 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>

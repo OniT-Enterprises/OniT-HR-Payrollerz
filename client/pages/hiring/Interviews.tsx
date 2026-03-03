@@ -9,6 +9,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1071,13 +1072,11 @@ export default function Interviews() {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="interviewTime">Time *</Label>
-                <Input
+                <TimePicker
                   id="interviewTime"
-                  type="time"
                   value={formData.interviewTime}
-                  onChange={(e) =>
-                    setFormData({ ...formData, interviewTime: e.target.value })
-                  }
+                  onChange={(v) => setFormData({ ...formData, interviewTime: v })}
+                  placeholder="Select time"
                 />
               </div>
               <div className="space-y-2">

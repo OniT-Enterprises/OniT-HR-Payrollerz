@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useCallback } from "react";
 import { cn } from "@/lib/utils";
+import { TimePicker } from "@/components/ui/time-picker";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -1480,11 +1481,11 @@ export default function ShiftScheduling() {
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <Label htmlFor="shift-start">{t("timeLeave.shiftScheduling.create.startTime")}</Label>
-                        <Input id="shift-start" type="time" value={formData.startTime} onChange={(e) => handleInputChange("startTime", e.target.value)} required />
+                        <TimePicker id="shift-start" value={formData.startTime} onChange={(v) => handleInputChange("startTime", v)} required />
                       </div>
                       <div>
                         <Label htmlFor="shift-end">{t("timeLeave.shiftScheduling.create.endTime")}</Label>
-                        <Input id="shift-end" type="time" value={formData.endTime} onChange={(e) => handleInputChange("endTime", e.target.value)} required />
+                        <TimePicker id="shift-end" value={formData.endTime} onChange={(v) => handleInputChange("endTime", v)} required />
                       </div>
                     </div>
                     {formData.startTime && formData.endTime && (
@@ -1617,13 +1618,10 @@ export default function ShiftScheduling() {
                     <Label htmlFor="edit-start">
                       {t("timeLeave.shiftScheduling.edit.startTime")}
                     </Label>
-                    <Input
+                    <TimePicker
                       id="edit-start"
-                      type="time"
                       value={formData.startTime}
-                      onChange={(e) =>
-                        handleInputChange("startTime", e.target.value)
-                      }
+                      onChange={(v) => handleInputChange("startTime", v)}
                       required
                     />
                   </div>
@@ -1631,13 +1629,10 @@ export default function ShiftScheduling() {
                     <Label htmlFor="edit-end">
                       {t("timeLeave.shiftScheduling.edit.endTime")}
                     </Label>
-                    <Input
+                    <TimePicker
                       id="edit-end"
-                      type="time"
                       value={formData.endTime}
-                      onChange={(e) =>
-                        handleInputChange("endTime", e.target.value)
-                      }
+                      onChange={(v) => handleInputChange("endTime", v)}
                       required
                     />
                   </div>
