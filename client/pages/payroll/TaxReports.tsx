@@ -13,6 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -64,6 +66,7 @@ export default function TaxReports() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -87,6 +90,7 @@ export default function TaxReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.taxes} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <AutoBreadcrumb className="mb-4" />

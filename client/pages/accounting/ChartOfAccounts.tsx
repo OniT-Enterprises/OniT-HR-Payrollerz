@@ -59,6 +59,8 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 import { useAuth } from "@/contexts/AuthContext";
@@ -455,6 +457,7 @@ export default function ChartOfAccounts() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -678,6 +681,7 @@ export default function ChartOfAccounts() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
         {/* Summary Cards */}

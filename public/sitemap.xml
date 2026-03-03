@@ -156,13 +156,13 @@
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/payroll/taxes</loc>
+    <loc>https://onit-hr-payroll.web.app/payroll/reports</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/payroll/benefits</loc>
+    <loc>https://onit-hr-payroll.web.app/payroll/setup/benefits</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>

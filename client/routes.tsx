@@ -373,12 +373,12 @@ export const peopleRoutes = (
 );
 
 /**
- * Scheduling Module Routes (Time Tracking, Attendance, Leave, Shifts)
+ * Time & Leave Module Routes (Time Tracking, Attendance, Leave, Shifts)
  */
 export const schedulingRoutes = (
   <>
     <Route
-      path="/scheduling"
+      path="/time-leave"
       element={
         <FeatureRoute requiredModule="timeleave">
           <SchedulingDashboard />
@@ -386,7 +386,7 @@ export const schedulingRoutes = (
       }
     />
     <Route
-      path="/scheduling/time-tracking"
+      path="/time-leave/time-tracking"
       element={
         <FeatureRoute requiredModule="timeleave">
           <TimeTracking />
@@ -394,7 +394,7 @@ export const schedulingRoutes = (
       }
     />
     <Route
-      path="/scheduling/attendance"
+      path="/time-leave/attendance"
       element={
         <FeatureRoute requiredModule="timeleave">
           <Attendance />
@@ -402,7 +402,7 @@ export const schedulingRoutes = (
       }
     />
     <Route
-      path="/scheduling/leave"
+      path="/time-leave/leave"
       element={
         <FeatureRoute requiredModule="timeleave">
           <LeaveRequests />
@@ -410,7 +410,7 @@ export const schedulingRoutes = (
       }
     />
     <Route
-      path="/scheduling/schedules"
+      path="/time-leave/shifts"
       element={
         <FeatureRoute requiredModule="timeleave">
           <ShiftScheduling />
@@ -450,7 +450,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/transfers"
+      path="/payroll/payments"
       element={
         <FeatureRoute requiredModule="payroll">
           <BankTransfers />
@@ -458,7 +458,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/taxes"
+      path="/payroll/reports"
       element={
         <FeatureRoute requiredModule="payroll">
           <TaxReports />
@@ -466,7 +466,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/benefits"
+      path="/payroll/setup/benefits"
       element={
         <FeatureRoute requiredModule="payroll">
           <BenefitsEnrollment />
@@ -474,7 +474,7 @@ export const payrollRoutes = (
       }
     />
     <Route
-      path="/payroll/deductions"
+      path="/payroll/setup/deductions"
       element={
         <FeatureRoute requiredModule="payroll">
           <DeductionsAdvances />
@@ -634,7 +634,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/profit-loss"
+      path="/money/reports/profit-loss"
       element={
         <FeatureRoute requiredModule="money">
           <ProfitLoss />
@@ -642,7 +642,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/balance-sheet"
+      path="/money/reports/balance-sheet"
       element={
         <FeatureRoute requiredModule="money">
           <BalanceSheet />
@@ -650,7 +650,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/cashflow"
+      path="/money/reports/cashflow"
       element={
         <FeatureRoute requiredModule="money">
           <Cashflow />
@@ -658,7 +658,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/ar-aging"
+      path="/money/reports/ar-aging"
       element={
         <FeatureRoute requiredModule="money">
           <ARAgingReport />
@@ -666,7 +666,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/ap-aging"
+      path="/money/reports/ap-aging"
       element={
         <FeatureRoute requiredModule="money">
           <APAgingReport />
@@ -674,7 +674,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/bank-reconciliation"
+      path="/money/reports/reconciliation"
       element={
         <FeatureRoute requiredModule="money">
           <BankReconciliation />
@@ -682,7 +682,7 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/vat-settings"
+      path="/money/reports/vat-settings"
       element={
         <FeatureRoute requiredModule="money">
           <VATSettings />
@@ -690,13 +690,23 @@ export const moneyRoutes = (
       }
     />
     <Route
-      path="/money/vat-returns"
+      path="/money/reports/vat-returns"
       element={
         <FeatureRoute requiredModule="money">
           <VATReturns />
         </FeatureRoute>
       }
     />
+
+    {/* Legacy money report redirects */}
+    <Route path="/money/profit-loss" element={<Navigate to="/money/reports/profit-loss" replace />} />
+    <Route path="/money/balance-sheet" element={<Navigate to="/money/reports/balance-sheet" replace />} />
+    <Route path="/money/cashflow" element={<Navigate to="/money/reports/cashflow" replace />} />
+    <Route path="/money/ar-aging" element={<Navigate to="/money/reports/ar-aging" replace />} />
+    <Route path="/money/ap-aging" element={<Navigate to="/money/reports/ap-aging" replace />} />
+    <Route path="/money/bank-reconciliation" element={<Navigate to="/money/reports/reconciliation" replace />} />
+    <Route path="/money/vat-settings" element={<Navigate to="/money/reports/vat-settings" replace />} />
+    <Route path="/money/vat-returns" element={<Navigate to="/money/reports/vat-returns" replace />} />
   </>
 );
 
@@ -713,8 +723,9 @@ export const accountingRoutes = (
         </FeatureRoute>
       }
     />
+    {/* Core */}
     <Route
-      path="/accounting/chart-of-accounts"
+      path="/accounting/core/chart"
       element={
         <FeatureRoute requiredModule="accounting">
           <ChartOfAccounts />
@@ -722,7 +733,7 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/journal-entries"
+      path="/accounting/core/journal"
       element={
         <FeatureRoute requiredModule="accounting">
           <JournalEntries />
@@ -730,15 +741,17 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/general-ledger"
+      path="/accounting/core/ledger"
       element={
         <FeatureRoute requiredModule="accounting">
           <GeneralLedger />
         </FeatureRoute>
       }
     />
+
+    {/* Reports */}
     <Route
-      path="/accounting/trial-balance"
+      path="/accounting/reports/trial-balance"
       element={
         <FeatureRoute requiredModule="accounting">
           <TrialBalance />
@@ -746,7 +759,7 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/income-statement"
+      path="/accounting/reports/income-statement"
       element={
         <FeatureRoute requiredModule="accounting">
           <IncomeStatement />
@@ -754,7 +767,7 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/balance-sheet"
+      path="/accounting/reports/balance-sheet"
       element={
         <FeatureRoute requiredModule="accounting">
           <AccountingBalanceSheet />
@@ -762,7 +775,7 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/fiscal-periods"
+      path="/accounting/reports/fiscal-periods"
       element={
         <FeatureRoute requiredModule="accounting">
           <FiscalPeriods />
@@ -770,19 +783,10 @@ export const accountingRoutes = (
       }
     />
     <Route
-      path="/accounting/audit-trail"
+      path="/accounting/reports/audit-trail"
       element={
         <FeatureRoute requiredModule="accounting">
           <AccountingAuditTrail />
-        </FeatureRoute>
-      }
-    />
-    {/* Reuses PayrollReports until a dedicated accounting reports page is built */}
-    <Route
-      path="/accounting/reports"
-      element={
-        <FeatureRoute requiredAllModules={["accounting", "reports"]}>
-          <PayrollReports />
         </FeatureRoute>
       }
     />
@@ -927,18 +931,23 @@ export const legacyRedirects = (
     <Route path="/hiring/onboarding" element={<Navigate to="/people/onboarding" replace />} />
     <Route path="/hiring/offboarding" element={<Navigate to="/people/offboarding" replace />} />
 
-    {/* Old Time & Leave routes → now /scheduling/* */}
-    <Route path="/time-leave" element={<Navigate to="/scheduling/time-tracking" replace />} />
-    <Route path="/time-leave/tracking" element={<Navigate to="/scheduling/time-tracking" replace />} />
-    <Route path="/time-leave/attendance" element={<Navigate to="/scheduling/attendance" replace />} />
-    <Route path="/time-leave/requests" element={<Navigate to="/scheduling/leave" replace />} />
-    <Route path="/time-leave/scheduling" element={<Navigate to="/scheduling/schedules" replace />} />
+    {/* Old /scheduling/* routes → now /time-leave/* */}
+    <Route path="/scheduling" element={<Navigate to="/time-leave" replace />} />
+    <Route path="/scheduling/time-tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/scheduling/attendance" element={<Navigate to="/time-leave/attendance" replace />} />
+    <Route path="/scheduling/leave" element={<Navigate to="/time-leave/leave" replace />} />
+    <Route path="/scheduling/schedules" element={<Navigate to="/time-leave/shifts" replace />} />
 
-    {/* Old People time & leave routes → now /scheduling/* */}
-    <Route path="/people/time-tracking" element={<Navigate to="/scheduling/time-tracking" replace />} />
-    <Route path="/people/attendance" element={<Navigate to="/scheduling/attendance" replace />} />
-    <Route path="/people/leave" element={<Navigate to="/scheduling/leave" replace />} />
-    <Route path="/people/schedules" element={<Navigate to="/scheduling/schedules" replace />} />
+    {/* Old /time-leave/* variant routes → canonical /time-leave/* */}
+    <Route path="/time-leave/tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/time-leave/requests" element={<Navigate to="/time-leave/leave" replace />} />
+    <Route path="/time-leave/scheduling" element={<Navigate to="/time-leave/shifts" replace />} />
+
+    {/* Old People time & leave routes → now /time-leave/* */}
+    <Route path="/people/time-tracking" element={<Navigate to="/time-leave/time-tracking" replace />} />
+    <Route path="/people/attendance" element={<Navigate to="/time-leave/attendance" replace />} />
+    <Route path="/people/leave" element={<Navigate to="/time-leave/leave" replace />} />
+    <Route path="/people/schedules" element={<Navigate to="/time-leave/shifts" replace />} />
 
     {/* Old People org routes → now /settings/* */}
     <Route path="/people/departments" element={<Navigate to="/settings/departments" replace />} />
@@ -953,6 +962,23 @@ export const legacyRedirects = (
     <Route path="/performance/reviews" element={<Navigate to="/people/reviews" replace />} />
     <Route path="/performance/training" element={<Navigate to="/people/training" replace />} />
     <Route path="/performance/disciplinary" element={<Navigate to="/people/disciplinary" replace />} />
+
+    {/* Old Payroll routes */}
+    <Route path="/payroll/benefits" element={<Navigate to="/payroll/setup/benefits" replace />} />
+    <Route path="/payroll/deductions" element={<Navigate to="/payroll/setup/deductions" replace />} />
+    <Route path="/payroll/transfers" element={<Navigate to="/payroll/payments" replace />} />
+    <Route path="/payroll/taxes" element={<Navigate to="/payroll/reports" replace />} />
+
+    {/* Old Accounting routes → now /accounting/core/* and /accounting/reports/* */}
+    <Route path="/accounting/chart-of-accounts" element={<Navigate to="/accounting/core/chart" replace />} />
+    <Route path="/accounting/journal-entries" element={<Navigate to="/accounting/core/journal" replace />} />
+    <Route path="/accounting/general-ledger" element={<Navigate to="/accounting/core/ledger" replace />} />
+    <Route path="/accounting/trial-balance" element={<Navigate to="/accounting/reports/trial-balance" replace />} />
+    <Route path="/accounting/income-statement" element={<Navigate to="/accounting/reports/income-statement" replace />} />
+    <Route path="/accounting/balance-sheet" element={<Navigate to="/accounting/reports/balance-sheet" replace />} />
+    <Route path="/accounting/fiscal-periods" element={<Navigate to="/accounting/reports/fiscal-periods" replace />} />
+    <Route path="/accounting/audit-trail" element={<Navigate to="/accounting/reports/audit-trail" replace />} />
+    <Route path="/accounting/reports" element={<Navigate to="/accounting/reports/trial-balance" replace />} />
   </>
 );
 

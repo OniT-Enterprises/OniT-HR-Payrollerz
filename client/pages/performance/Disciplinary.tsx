@@ -65,7 +65,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import {
   Filter,
   Plus,
@@ -467,7 +468,7 @@ export default function Disciplinary() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.disciplinary} />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -487,7 +488,7 @@ export default function Disciplinary() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-6">
         {/* Filters */}

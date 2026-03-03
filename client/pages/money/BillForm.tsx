@@ -37,6 +37,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
@@ -288,6 +290,8 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-64 w-full" />
@@ -305,6 +309,8 @@ export default function BillForm() {
           description="View bill details"
         />
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
 
         <div className="p-6 max-w-4xl mx-auto">
           <AutoBreadcrumb className="mb-6" />
@@ -539,6 +545,7 @@ export default function BillForm() {
         description={isNew ? 'Create a new bill' : 'Edit bill'}
       />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

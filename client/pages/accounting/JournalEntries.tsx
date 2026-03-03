@@ -63,6 +63,8 @@ import { journalEntryService } from "@/services/accountingService";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -467,6 +469,7 @@ export default function JournalEntries() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.journalEntries} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -677,6 +680,7 @@ export default function JournalEntries() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
         {/* Summary Cards */}

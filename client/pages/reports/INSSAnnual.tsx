@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   CalendarDays,
@@ -260,6 +262,7 @@ export default function INSSAnnual() {
     <div className="min-h-screen bg-background">
       <SEO title="INSS Annual Reconciliation" description="Year-end INSS contribution reconciliation for Timor-Leste" />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <AutoBreadcrumb className="mb-4" />

@@ -44,7 +44,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import SchedulingSectionNav from "@/components/SchedulingSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { timeLeaveNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
@@ -1359,6 +1360,7 @@ export default function ShiftScheduling() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.schedules} />
       <MainNavigation />
+      <ModuleSectionNav config={timeLeaveNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
@@ -1380,8 +1382,6 @@ export default function ShiftScheduling() {
           </div>
         </div>
       </div>
-
-      <SchedulingSectionNav />
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">

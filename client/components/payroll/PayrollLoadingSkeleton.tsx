@@ -4,6 +4,8 @@
  */
 
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
@@ -11,6 +13,7 @@ export function PayrollLoadingSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       {/* Hero Section Skeleton */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">

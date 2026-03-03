@@ -22,7 +22,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -226,7 +227,7 @@ export default function CreateJobLocal() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.jobs} />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
@@ -250,7 +251,7 @@ export default function CreateJobLocal() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       <div className="p-6 lg:p-8">
         <div className="max-w-4xl mx-auto">

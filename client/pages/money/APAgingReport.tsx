@@ -14,6 +14,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { useAllBills } from '@/hooks/useBills';
 import { useAllVendors } from '@/hooks/useVendors';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Bill, Vendor } from '@/types/money';
 import {
@@ -142,6 +144,8 @@ export default function APAgingReport() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-6xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -160,6 +164,7 @@ export default function APAgingReport() {
     <div className="min-h-screen bg-background">
       <SEO title="A/P Aging - Meza" description="Accounts payable aging report" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-6xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

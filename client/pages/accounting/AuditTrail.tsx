@@ -6,6 +6,8 @@
 import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { SEO, seoConfig } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -154,6 +156,7 @@ export default function AccountingAuditTrail() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero */}
       <div className="border-b bg-slate-50 dark:bg-slate-950/30">

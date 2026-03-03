@@ -35,6 +35,8 @@ import { billService } from '@/services/billService';
 import { useSmartBills, billKeys } from '@/hooks/useBills';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
 import type { Bill, BillStatus } from '@/types/money';
@@ -135,6 +137,8 @@ export default function Bills() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -157,6 +161,7 @@ export default function Bills() {
     <div className="min-h-screen bg-background">
       <SEO title="Bills - Meza" description="Manage your bills and accounts payable" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

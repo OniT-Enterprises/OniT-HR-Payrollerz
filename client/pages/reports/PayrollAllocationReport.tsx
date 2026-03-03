@@ -19,6 +19,8 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -267,6 +269,7 @@ export default function PayrollAllocationReport() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payrollReports} />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
         <AutoBreadcrumb className="mb-6" />
 

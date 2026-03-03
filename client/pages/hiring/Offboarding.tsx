@@ -34,7 +34,8 @@ import {
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
@@ -296,7 +297,7 @@ export default function Offboarding() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.offboarding} />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
@@ -475,7 +476,7 @@ export default function Offboarding() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       {/* Main Content */}
       <div className="max-w-6xl mx-auto px-6 py-8">

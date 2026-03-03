@@ -30,6 +30,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import {
   useBankTransactions,
   useReconciliationSummary,
@@ -328,6 +330,8 @@ export default function BankReconciliation() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
           <div className="max-w-6xl mx-auto px-6 py-8">
             <Skeleton className="h-4 w-48 mb-4" />
@@ -409,6 +413,7 @@ export default function BankReconciliation() {
     <div className="min-h-screen bg-background">
       <SEO title="Bank Reconciliation - Meza" description="Reconcile bank transactions" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">

@@ -32,6 +32,8 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -148,6 +150,7 @@ export default function VATSettingsPage() {
     <div className="min-h-screen bg-background">
       <SEO title="VAT Settings - Meza" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
       <div className="max-w-3xl mx-auto p-6 space-y-6">
         <AutoBreadcrumb className="mb-2" />
 

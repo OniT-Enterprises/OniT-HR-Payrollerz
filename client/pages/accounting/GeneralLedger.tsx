@@ -43,6 +43,8 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 
@@ -224,6 +226,7 @@ export default function GeneralLedger() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.generalLedger} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -248,6 +251,7 @@ export default function GeneralLedger() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
 

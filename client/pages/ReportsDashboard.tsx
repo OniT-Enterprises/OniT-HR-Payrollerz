@@ -21,6 +21,8 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Users,
@@ -314,6 +316,7 @@ export default function ReportsDashboard() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.reports} />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} />
 
       {/* Hero Section - Simplified */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">

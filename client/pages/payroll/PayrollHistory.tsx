@@ -56,6 +56,8 @@ import { useToast } from "@/hooks/use-toast";
 import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayrollRunAsPaid, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   FileText,
@@ -564,6 +566,7 @@ export default function PayrollHistory() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -625,6 +628,7 @@ export default function PayrollHistory() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payrollHistory} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">

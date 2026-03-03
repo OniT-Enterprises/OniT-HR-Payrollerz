@@ -149,12 +149,14 @@ OniT HR/Payroll
 │   ├── Payroll History (/payroll/history) [WORK PAGE]
 │   │   └── Payrun Detail (modal)
 │   │
-│   ├── Tax Reports (/payroll/taxes)       [WORK PAGE]
+│   ├── Tax Reports (/payroll/reports)      [WORK PAGE]
 │   │   └── WIT, INSS reports
 │   │
-│   ├── Deductions (/payroll/deductions)   [WORK PAGE]
+│   ├── Benefits (/payroll/setup/benefits) [WORK PAGE]
 │   │
-│   └── Bank Transfers (/payroll/transfers)[WORK PAGE]
+│   ├── Deductions (/payroll/setup/deductions) [WORK PAGE]
+│   │
+│   └── Bank Transfers (/payroll/payments) [WORK PAGE]
 │
 ├── Money (/money)                         [HUB - Skippable]
 │   │                                      Day-to-day AR/AP operations

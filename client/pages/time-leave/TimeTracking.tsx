@@ -43,7 +43,8 @@ import { useDepartments } from "@/hooks/useDepartments";
 import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
 import { toDateStringTL } from "@/lib/dateUtils";
-import SchedulingSectionNav from "@/components/SchedulingSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { timeLeaveNavConfig } from "@/lib/moduleNav";
 
 export default function TimeTracking() {
   const { toast } = useToast();
@@ -351,6 +352,7 @@ export default function TimeTracking() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.timeTracking} />
       <MainNavigation />
+      <ModuleSectionNav config={timeLeaveNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
@@ -372,8 +374,6 @@ export default function TimeTracking() {
           </div>
         </div>
       </div>
-
-      <SchedulingSectionNav />
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Inline Toolbar */}

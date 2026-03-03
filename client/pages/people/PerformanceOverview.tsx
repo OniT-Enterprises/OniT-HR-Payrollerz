@@ -8,7 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import {
   Target,
   Award,
@@ -61,7 +62,7 @@ export default function PerformanceOverview() {
         url="/people/performance"
       />
       <MainNavigation />
-      <PeopleSectionNav />
+      <ModuleSectionNav config={peopleNavConfig} />
 
       {/* Hero */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">

@@ -44,6 +44,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Building,
@@ -339,6 +341,7 @@ export default function INSSMonthly() {
     <div className="min-h-screen bg-background">
       <SEO title="INSS Monthly Return" description="Generate and track monthly INSS submissions for Timor-Leste" />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <AutoBreadcrumb className="mb-4" />

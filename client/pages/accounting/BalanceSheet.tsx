@@ -41,6 +41,8 @@ import {
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { SEO, seoConfig } from "@/components/SEO";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
 
@@ -124,6 +126,7 @@ export default function BalanceSheet() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.balanceSheet} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
@@ -154,6 +157,7 @@ export default function BalanceSheet() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
 

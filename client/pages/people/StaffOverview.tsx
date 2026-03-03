@@ -10,7 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import {
@@ -42,7 +43,7 @@ export default function StaffOverview() {
         url="/people/staff"
       />
       <MainNavigation />
-      <PeopleSectionNav />
+      <ModuleSectionNav config={peopleNavConfig} />
 
       {/* Hero */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">

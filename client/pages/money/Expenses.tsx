@@ -49,6 +49,8 @@ import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { getTodayTL, formatDateTL } from '@/lib/dateUtils';
@@ -351,6 +353,8 @@ export default function Expenses() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -373,6 +377,7 @@ export default function Expenses() {
     <div className="min-h-screen bg-background">
       <SEO title="Expenses - Meza" description="Track and manage business expenses" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

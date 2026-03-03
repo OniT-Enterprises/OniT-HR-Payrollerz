@@ -50,9 +50,7 @@ export const translations = {
     "scheduling": "Time & Leave",
     "payroll": "Payroll",
     "money": "Money",
-    "moneySubtitle": "Daily",
     "accounting": "Accounting",
-    "accountingSubtitle": "Formal",
     "reports": "Reports"
   },
   "allowances": {
@@ -4282,9 +4280,7 @@ export const translations = {
     "scheduling": "Tempu & Lisensa",
     "payroll": "Saláriu",
     "money": "Osan",
-    "moneySubtitle": "Loron-loron",
     "accounting": "Kontabilidade",
-    "accountingSubtitle": "Formál",
     "reports": "Relatóriu"
   },
   "allowances": {
@@ -8514,9 +8510,7 @@ pt: {
     "scheduling": "Tempo & Licença",
     "payroll": "Folha de Pagamento",
     "money": "Dinheiro",
-    "moneySubtitle": "Diário",
     "accounting": "Contabilidade",
-    "accountingSubtitle": "Formal",
     "reports": "Relatórios"
   },
   "allowances": {

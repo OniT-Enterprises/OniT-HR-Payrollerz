@@ -27,6 +27,8 @@ import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
 import { useI18n } from "@/i18n/I18nProvider";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { timeLeaveNavConfig } from "@/lib/moduleNav";
 
 const theme = sectionThemes.scheduling;
 
@@ -96,9 +98,10 @@ export default function SchedulingDashboard() {
       <SEO
         title="Scheduling & Attendance"
         description="Manage time tracking, attendance, leave requests, and shift schedules."
-        url="/scheduling"
+        url="/time-leave"
       />
       <MainNavigation />
+      <ModuleSectionNav config={timeLeaveNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
@@ -129,7 +132,7 @@ export default function SchedulingDashboard() {
         <div className="grid gap-4 md:grid-cols-4 mb-6">
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500"
-            onClick={() => navigate("/scheduling/attendance")}
+            onClick={() => navigate("/time-leave/attendance")}
           >
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
@@ -150,7 +153,7 @@ export default function SchedulingDashboard() {
             className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
               stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-cyan-500/50"
             }`}
-            onClick={() => navigate("/scheduling/leave")}
+            onClick={() => navigate("/time-leave/leave")}
           >
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
@@ -176,7 +179,7 @@ export default function SchedulingDashboard() {
 
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
-            onClick={() => navigate("/scheduling/attendance")}
+            onClick={() => navigate("/time-leave/attendance")}
           >
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
@@ -195,7 +198,7 @@ export default function SchedulingDashboard() {
 
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
-            onClick={() => navigate("/scheduling/schedules")}
+            onClick={() => navigate("/time-leave/shifts")}
           >
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">
@@ -219,7 +222,7 @@ export default function SchedulingDashboard() {
             {
               label: "Time Tracking",
               desc: "Clock in/out records, hours worked, overtime. Import from fingerprint devices or enter manually.",
-              path: "/scheduling/time-tracking",
+              path: "/time-leave/time-tracking",
               icon: Clock,
               color: "from-cyan-500 to-teal-500",
               bgHover: "hover:border-cyan-500/40",
@@ -227,7 +230,7 @@ export default function SchedulingDashboard() {
             {
               label: "Attendance",
               desc: "Daily attendance by employee. See who's present, late, or absent. Mark attendance and export reports.",
-              path: "/scheduling/attendance",
+              path: "/time-leave/attendance",
               icon: Calendar,
               color: "from-emerald-500 to-green-500",
               bgHover: "hover:border-emerald-500/40",
@@ -235,7 +238,7 @@ export default function SchedulingDashboard() {
             {
               label: "Leave Requests",
               desc: "Review and approve leave. Track annual, sick, maternity, and other leave balances per employee.",
-              path: "/scheduling/leave",
+              path: "/time-leave/leave",
               icon: CalendarDays,
               color: "from-amber-500 to-orange-500",
               bgHover: "hover:border-amber-500/40",
@@ -243,7 +246,7 @@ export default function SchedulingDashboard() {
             {
               label: "Shift Schedules",
               desc: "Plan weekly rosters. Assign shifts by department, publish drafts, and use templates to save time.",
-              path: "/scheduling/schedules",
+              path: "/time-leave/shifts",
               icon: UserCheck,
               color: "from-violet-500 to-purple-500",
               bgHover: "hover:border-violet-500/40",

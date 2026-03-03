@@ -20,6 +20,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
 import { useAllInvoices } from '@/hooks/useInvoices';
 import { useAllBills } from '@/hooks/useBills';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { formatDateTL } from '@/lib/dateUtils';
 import {
   Scale,
@@ -137,6 +139,8 @@ export default function BalanceSheet() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -150,6 +154,7 @@ export default function BalanceSheet() {
     <div className="min-h-screen bg-background">
       <SEO title="Balance Sheet - Meza" description="View your balance sheet" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

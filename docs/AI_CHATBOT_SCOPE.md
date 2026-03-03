@@ -62,12 +62,12 @@ Accounting Fields:
 | Add employee | `/people/add` | Add Employee |
 | View staff | `/people/employees` | All Employees |
 | Run payroll | `/payroll/run` | Run Payroll |
-| Check tax reports | `/payroll/taxes` | Tax Reports |
+| Check tax reports | `/payroll/reports` | Tax Reports |
 | Submit leave | `/scheduling/leave` | Leave Requests |
 | Track time | `/scheduling/time-tracking` | Time Tracking |
 | See attendance | `/scheduling/attendance` | Attendance |
 | View paystubs | `/payroll/history` | Payroll History |
-| Manage benefits | `/payroll/benefits` | Benefits Enrollment |
+| Manage benefits | `/payroll/setup/benefits` | Benefits Enrollment |
 | Performance review | `/people/reviews` | Performance Reviews |
 | Department reports | `/reports/departments` | Department Reports |
 | Accounting entries | `/accounting/journal-entries` | Journal Entries |
@@ -273,7 +273,7 @@ const NAVIGATION_INTENTS = {
   'employee list': '/people/employees',
   'run payroll': '/payroll/run',
   'payroll history': '/payroll/history',
-  'tax report': '/payroll/taxes',
+  'tax report': '/payroll/reports',
   'leave request': '/scheduling/leave',
   'time tracking': '/scheduling/time-tracking',
   'attendance': '/scheduling/attendance',
@@ -542,7 +542,7 @@ SEVERANCE: 30 days salary per year of service
 - Departments: /settings/departments
 - Run payroll: /payroll/run
 - Payroll history: /payroll/history
-- Tax reports: /payroll/taxes
+- Tax reports: /payroll/reports
 - Leave requests: /scheduling/leave
 - Attendance: /scheduling/attendance
 - Time tracking: /scheduling/time-tracking

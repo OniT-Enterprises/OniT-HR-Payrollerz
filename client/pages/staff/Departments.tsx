@@ -20,7 +20,8 @@ import {
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import type { Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -308,7 +309,7 @@ export default function Departments() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.departments} />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
@@ -366,7 +367,7 @@ export default function Departments() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">

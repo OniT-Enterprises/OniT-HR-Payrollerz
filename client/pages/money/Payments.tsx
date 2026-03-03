@@ -24,6 +24,8 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
 import {
@@ -100,6 +102,8 @@ export default function Payments() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -122,6 +126,7 @@ export default function Payments() {
     <div className="min-h-screen bg-background">
       <SEO title="Payments - Meza" description="View payment history" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

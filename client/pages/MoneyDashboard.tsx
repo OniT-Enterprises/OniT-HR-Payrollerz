@@ -15,6 +15,8 @@ import { SEO } from '@/components/SEO';
 import { useInvoiceStats, useAllInvoices } from '@/hooks/useInvoices';
 import { usePayablesSummary } from '@/hooks/useBills';
 import GuidancePanel from '@/components/GuidancePanel';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import {
   FileText,
   Users,
@@ -111,6 +113,7 @@ export default function MoneyDashboard() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
           <div className="max-w-7xl mx-auto px-6 py-8">
             <Skeleton className="h-4 w-24 mb-4" />
@@ -138,6 +141,7 @@ export default function MoneyDashboard() {
     <div className="min-h-screen bg-background">
       <SEO title={t('money.dashboard.seoTitle')} description={t('money.dashboard.subtitle')} />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
@@ -382,9 +386,9 @@ export default function MoneyDashboard() {
             { label: t('money.dashboard.customers'), path: '/money/customers', icon: Users },
             { label: t('money.dashboard.vendors'), path: '/money/vendors', icon: Users },
             { label: t('money.dashboard.expenses'), path: '/money/expenses', icon: Receipt },
-            { label: t('money.dashboard.reports'), path: '/money/profit-loss', icon: Activity },
-            { label: t('money.dashboard.vatSettings'), path: '/money/vat-settings', icon: Receipt },
-            { label: t('money.dashboard.vatReturns'), path: '/money/vat-returns', icon: FileText },
+            { label: t('money.dashboard.reports'), path: '/money/reports/profit-loss', icon: Activity },
+            { label: t('money.dashboard.vatSettings'), path: '/money/reports/vat-settings', icon: Receipt },
+            { label: t('money.dashboard.vatReturns'), path: '/money/reports/vat-returns', icon: FileText },
           ].map((link) => (
             <Button key={link.path} variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(link.path)}>
               <link.icon className="h-3 w-3 mr-1.5" />

@@ -42,6 +42,8 @@ import { SEO } from '@/components/SEO';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { customerService } from '@/services/customerService';
 import { useAllCustomers, customerKeys } from '@/hooks/useCustomers';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { Customer, CustomerFormData } from '@/types/money';
 import {
@@ -196,6 +198,8 @@ export default function Customers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -213,6 +217,7 @@ export default function Customers() {
     <div className="min-h-screen bg-background">
       <SEO title="Customers - Meza" description="Manage your customers for invoicing" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

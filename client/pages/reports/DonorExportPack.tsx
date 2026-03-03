@@ -11,6 +11,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useJournalEntries } from "@/hooks/useAccounting";
@@ -126,6 +128,7 @@ export default function DonorExportPack() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payrollReports} />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
         <AutoBreadcrumb />
 

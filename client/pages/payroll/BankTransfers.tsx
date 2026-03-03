@@ -36,6 +36,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   DollarSign,
@@ -475,6 +477,7 @@ export default function BankTransfers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -537,6 +540,7 @@ export default function BankTransfers() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.bankTransfers} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">

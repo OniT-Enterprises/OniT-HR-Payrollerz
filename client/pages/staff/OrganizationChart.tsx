@@ -8,7 +8,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -423,7 +424,7 @@ export default function OrganizationChart() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.orgChart} />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
@@ -480,7 +481,7 @@ export default function OrganizationChart() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Statistics Dashboard */}

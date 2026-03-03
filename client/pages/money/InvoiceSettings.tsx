@@ -28,6 +28,8 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { useInvoiceSettings } from '@/hooks/useInvoices';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { InvoiceSettings } from '@/types/money';
 import {
@@ -117,6 +119,8 @@ export default function InvoiceSettingsPage() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -134,6 +138,7 @@ export default function InvoiceSettingsPage() {
     <div className="min-h-screen bg-background">
       <SEO title="Invoice Settings - Meza" description="Configure invoice settings" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

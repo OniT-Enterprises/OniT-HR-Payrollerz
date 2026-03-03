@@ -42,6 +42,8 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   CreditCard,
@@ -322,6 +324,7 @@ export default function DeductionsAdvances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -377,6 +380,7 @@ export default function DeductionsAdvances() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.deductions} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">
@@ -403,6 +407,7 @@ export default function DeductionsAdvances() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={payrollNavConfig} mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
 

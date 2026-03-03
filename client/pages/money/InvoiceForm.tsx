@@ -42,6 +42,8 @@ import { invoiceService } from '@/services/invoiceService';
 import { useActiveCustomers } from '@/hooks/useCustomers';
 import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice, invoiceKeys } from '@/hooks/useInvoices';
 
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
@@ -398,6 +400,8 @@ export default function InvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-96" />
@@ -412,6 +416,8 @@ export default function InvoiceForm() {
       <div className="min-h-screen bg-background">
         <SEO title={`Invoice ${invoice.invoiceNumber} - Meza`} />
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
 
         <div className="p-6 max-w-4xl mx-auto">
           <AutoBreadcrumb className="mb-6" />
@@ -680,6 +686,7 @@ export default function InvoiceForm() {
         title={isNew ? 'New Invoice - Meza' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Meza`}
       />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

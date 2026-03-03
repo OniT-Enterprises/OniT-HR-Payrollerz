@@ -35,6 +35,8 @@ import { useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
@@ -218,6 +220,8 @@ export default function Invoices() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -235,6 +239,7 @@ export default function Invoices() {
     <div className="min-h-screen bg-background">
       <SEO title="Invoices - Meza" description="Manage your invoices" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

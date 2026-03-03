@@ -19,6 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
@@ -143,6 +145,7 @@ export default function EmployeeReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.employeeReports} />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
@@ -178,6 +181,8 @@ export default function EmployeeReports() {
           </div>
         </div>
       </div>
+
+      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Stats Cards */}

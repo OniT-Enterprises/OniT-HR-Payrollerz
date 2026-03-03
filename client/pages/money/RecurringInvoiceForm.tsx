@@ -34,6 +34,8 @@ import {
   useCreateRecurringInvoice,
   useUpdateRecurringInvoice,
 } from '@/hooks/useRecurringInvoices';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
 import type { RecurringFrequency, InvoiceSettings } from '@/types/money';
@@ -252,6 +254,8 @@ export default function RecurringInvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -271,6 +275,7 @@ export default function RecurringInvoiceForm() {
         description={t('money.recurringInvoiceForm.autoGenerate') || 'Set up a recurring invoice template'}
       />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

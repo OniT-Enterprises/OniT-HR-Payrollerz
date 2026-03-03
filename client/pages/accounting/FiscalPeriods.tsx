@@ -59,6 +59,8 @@ import {
   BookOpen,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
@@ -244,6 +246,7 @@ export default function FiscalPeriods() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-slate-50 dark:bg-slate-950/30">
@@ -264,6 +267,7 @@ export default function FiscalPeriods() {
           </div>
         </div>
       </div>
+      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
 

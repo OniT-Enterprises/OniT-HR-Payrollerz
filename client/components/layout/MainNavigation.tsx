@@ -1,7 +1,6 @@
 /**
- * MainNavigation - 7 main tabs with hover dropdown submenus
- * Desktop: hover a tab to see grouped sub-page links
- * Mobile: flat list (no dropdowns)
+ * MainNavigation - 7 main tabs, click-to-navigate (no hover dropdowns).
+ * Sub-navigation is handled by ModuleSectionNav on each page.
  */
 
 import React from "react";
@@ -40,49 +39,19 @@ import {
   Check,
   FolderKanban,
   FileSpreadsheet,
-  UserPlus,
   Clock,
-  Calendar,
-  CalendarDays,
-  Building,
-  Building2,
-  Globe,
-  Briefcase,
-  UserCheck,
-  MessageSquare,
-  ClipboardList,
-  Target,
-  Award,
-  GraduationCap,
-  Play,
-  DollarSign,
-  FileText,
-  Banknote,
-  Receipt,
-  Plus,
-  Scale,
-  Eye,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
-// Submenu group definition
-interface NavSubGroup {
-  title: string;
-  links: Array<{ label: string; path: string; icon: typeof LayoutDashboard }>;
-}
-
-// 7-tab navigation with optional dropdown submenus
+// 7-tab navigation — no dropdowns, click navigates to module hub
 const NAV_ITEMS: Array<{
   id: SectionId;
   label: string;
   labelKey: string;
   path: string;
   icon: typeof LayoutDashboard;
-  subtitle?: string;
-  subtitleKey?: string;
-  subGroups?: NavSubGroup[];
 }> = [
   {
     id: "dashboard",
@@ -97,34 +66,13 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.people",
     path: "/people",
     icon: Users,
-    subGroups: [
-      {
-        title: "",
-        links: [
-          { label: "Staff", path: "/people/staff", icon: Users },
-          { label: "Hiring", path: "/people/hiring", icon: Briefcase },
-          { label: "Performance", path: "/people/performance", icon: Target },
-        ],
-      },
-    ],
   },
   {
     id: "scheduling",
     label: "Time & Leave",
     labelKey: "nav.scheduling",
-    path: "/scheduling",
+    path: "/time-leave",
     icon: Clock,
-    subGroups: [
-      {
-        title: "Scheduling & Attendance",
-        links: [
-          { label: "Time Tracking", path: "/scheduling/time-tracking", icon: Clock },
-          { label: "Attendance", path: "/scheduling/attendance", icon: Calendar },
-          { label: "Leave Requests", path: "/scheduling/leave", icon: CalendarDays },
-          { label: "Shift Schedules", path: "/scheduling/schedules", icon: UserCheck },
-        ],
-      },
-    ],
   },
   {
     id: "payroll",
@@ -132,24 +80,6 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.payroll",
     path: "/payroll",
     icon: Calculator,
-    subGroups: [
-      {
-        title: "Run",
-        links: [
-          { label: "Run Payroll", path: "/payroll/run", icon: Play },
-        ],
-      },
-      {
-        title: "Setup & History",
-        links: [
-          { label: "Benefits", path: "/payroll/benefits", icon: DollarSign },
-          { label: "Deductions", path: "/payroll/deductions", icon: Receipt },
-          { label: "Payroll History", path: "/payroll/history", icon: FileText },
-          { label: "Bank Transfers", path: "/payroll/transfers", icon: Banknote },
-          { label: "Tax Reports", path: "/payroll/taxes", icon: FileSpreadsheet },
-        ],
-      },
-    ],
   },
   {
     id: "money",
@@ -157,34 +87,6 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.money",
     path: "/money",
     icon: Wallet,
-    subtitle: "Daily",
-    subtitleKey: "nav.moneySubtitle",
-    subGroups: [
-      {
-        title: "Money In",
-        links: [
-          { label: "Invoices", path: "/money/invoices", icon: FileText },
-          { label: "New Invoice", path: "/money/invoices/new", icon: Plus },
-          { label: "Customers", path: "/money/customers", icon: Users },
-        ],
-      },
-      {
-        title: "Money Out",
-        links: [
-          { label: "Bills", path: "/money/bills", icon: Receipt },
-          { label: "Expenses", path: "/money/expenses", icon: DollarSign },
-          { label: "Vendors", path: "/money/vendors", icon: Building2 },
-        ],
-      },
-      {
-        title: "Reports",
-        links: [
-          { label: "Profit & Loss", path: "/money/profit-loss", icon: BarChart3 },
-          { label: "VAT Settings", path: "/money/vat-settings", icon: Settings },
-          { label: "VAT Returns", path: "/money/vat-returns", icon: FileSpreadsheet },
-        ],
-      },
-    ],
   },
   {
     id: "accounting",
@@ -192,28 +94,6 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.accounting",
     path: "/accounting",
     icon: Landmark,
-    subtitle: "Formal",
-    subtitleKey: "nav.accountingSubtitle",
-    subGroups: [
-      {
-        title: "Core",
-        links: [
-          { label: "Chart of Accounts", path: "/accounting/chart-of-accounts", icon: BookOpen },
-          { label: "Journal Entries", path: "/accounting/journal-entries", icon: FileText },
-          { label: "General Ledger", path: "/accounting/general-ledger", icon: ClipboardList },
-        ],
-      },
-      {
-        title: "Reports",
-        links: [
-          { label: "Trial Balance", path: "/accounting/trial-balance", icon: Scale },
-          { label: "Income Statement", path: "/accounting/income-statement", icon: BarChart3 },
-          { label: "Balance Sheet", path: "/accounting/balance-sheet", icon: FileSpreadsheet },
-          { label: "Fiscal Periods", path: "/accounting/fiscal-periods", icon: Calendar },
-          { label: "Audit Trail", path: "/accounting/audit-trail", icon: Eye },
-        ],
-      },
-    ],
   },
   {
     id: "reports",
@@ -221,25 +101,6 @@ const NAV_ITEMS: Array<{
     labelKey: "nav.reports",
     path: "/reports",
     icon: BarChart3,
-    subGroups: [
-      {
-        title: "Standard",
-        links: [
-          { label: "Payroll", path: "/reports/payroll", icon: DollarSign },
-          { label: "Employees", path: "/reports/employees", icon: Users },
-          { label: "Attendance", path: "/reports/attendance", icon: Calendar },
-          { label: "Departments", path: "/reports/departments", icon: Building },
-        ],
-      },
-      {
-        title: "Compliance",
-        links: [
-          { label: "Monthly WIT", path: "/reports/attl-monthly-wit", icon: FileText },
-          { label: "Monthly INSS", path: "/reports/inss-monthly", icon: Shield },
-          { label: "Custom Reports", path: "/reports/custom", icon: FileSpreadsheet },
-        ],
-      },
-    ],
   },
 ];
 
@@ -334,86 +195,32 @@ export default function MainNavigation() {
               />
             </button>
 
-            {/* Desktop Navigation - Tabs with dropdown submenus */}
+            {/* Desktop Navigation - Simple click-to-navigate tabs */}
             <div className="hidden md:flex items-center gap-1">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item);
                 const iconColor = navColors[item.id];
                 const indicatorColor = navActiveIndicator[item.id];
-                const dropdownAlign = ["money", "accounting", "reports"].includes(item.id) ? "right-0" : "left-0";
-                const maxCols = item.subGroups?.length ?? 0;
                 return (
-                  <div key={item.id} className="relative group">
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleNavigate(item.path)}
-                      className={`
-                        relative px-3 h-10 text-sm font-medium transition-all
-                        ${active
-                          ? "text-foreground bg-accent"
-                          : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
-                        }
-                      `}
-                    >
-                      <Icon className={`h-4 w-4 mr-2 ${active ? iconColor : ""}`} />
-                      <span className="flex items-center gap-1.5">
-                        {t(item.labelKey) || item.label}
-                        {item.subtitleKey && (
-                          <span className="text-[10px] text-muted-foreground font-normal opacity-70">
-                            ({t(item.subtitleKey) || item.subtitle})
-                          </span>
-                        )}
-                      </span>
-                      {active && (
-                        <span className={`absolute bottom-0 left-2 right-2 h-0.5 ${indicatorColor} rounded-full`} />
-                      )}
-                    </Button>
-                    {item.subGroups && item.subGroups.length > 0 && (
-                      <div
-                        className={`
-                          absolute ${dropdownAlign} top-full pt-2 z-50
-                          hidden group-hover:block
-                        `}
-                      >
-                        <div className="bg-popover border border-border rounded-lg shadow-xl overflow-hidden">
-                          <div className={`h-0.5 ${indicatorColor}`} />
-                          <div
-                            className="p-4 grid gap-x-6 gap-y-4"
-                            style={{ gridTemplateColumns: `repeat(${maxCols}, max-content)` }}
-                          >
-                            {item.subGroups.map((group) => (
-                              <div key={group.title || 'default'}>
-                                {group.title && (
-                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-2">
-                                    {group.title}
-                                  </p>
-                                )}
-                                <div className="space-y-0.5">
-                                  {group.links.map((link) => {
-                                    const LinkIcon = link.icon;
-                                    return (
-                                      <button
-                                        key={link.path}
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          handleNavigate(link.path);
-                                        }}
-                                        className="flex items-center gap-2 w-full px-2 py-1.5 text-sm rounded-md hover:bg-accent text-foreground/80 hover:text-foreground transition-colors text-left whitespace-nowrap"
-                                      >
-                                        <LinkIcon className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-                                        {link.label}
-                                      </button>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
+                  <Button
+                    key={item.id}
+                    variant="ghost"
+                    onClick={() => handleNavigate(item.path)}
+                    className={`
+                      relative px-3 h-10 text-sm font-medium transition-all
+                      ${active
+                        ? "text-foreground bg-accent"
+                        : "text-muted-foreground hover:text-foreground hover:bg-accent/50"
+                      }
+                    `}
+                  >
+                    <Icon className={`h-4 w-4 mr-2 ${active ? iconColor : ""}`} />
+                    {t(item.labelKey) || item.label}
+                    {active && (
+                      <span className={`absolute bottom-0 left-2 right-2 h-0.5 ${indicatorColor} rounded-full`} />
                     )}
-                  </div>
+                  </Button>
                 );
               })}
             </div>

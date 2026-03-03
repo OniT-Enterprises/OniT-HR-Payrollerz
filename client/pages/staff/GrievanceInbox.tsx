@@ -41,7 +41,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -313,7 +314,7 @@ export default function GrievanceInbox() {
         description="Anonymous employee grievance management"
       />
       <MainNavigation />
-      <PeopleSectionNav mode="collapsed" />
+      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
@@ -333,7 +334,7 @@ export default function GrievanceInbox() {
         </div>
       </div>
 
-      <PeopleSectionNav mode="expanded" />
+      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
 

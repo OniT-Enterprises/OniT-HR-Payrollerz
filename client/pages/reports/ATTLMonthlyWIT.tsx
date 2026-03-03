@@ -46,6 +46,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   FileText,
@@ -428,6 +430,7 @@ export default function ATTLMonthlyWIT() {
         description="Generate and track monthly Wage Income Tax returns for Timor-Leste"
       />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-amber-50 dark:bg-amber-950/30">
@@ -457,6 +460,8 @@ export default function ATTLMonthlyWIT() {
           </div>
         </div>
       </div>
+
+      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Alert Banner */}

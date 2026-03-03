@@ -29,6 +29,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   Calculator,
@@ -254,6 +256,7 @@ export default function RunPayroll() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.runPayroll} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">

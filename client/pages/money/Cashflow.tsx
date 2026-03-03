@@ -23,6 +23,8 @@ import { SEO } from '@/components/SEO';
 import { useAllInvoices } from '@/hooks/useInvoices';
 import { useAllBills } from '@/hooks/useBills';
 import { expenseService } from '@/services/expenseService';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import {
   ArrowDownLeft,
@@ -157,6 +159,8 @@ export default function Cashflow() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -170,6 +174,7 @@ export default function Cashflow() {
     <div className="min-h-screen bg-background">
       <SEO title="Cashflow - Meza" description="View your cash flow statement" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

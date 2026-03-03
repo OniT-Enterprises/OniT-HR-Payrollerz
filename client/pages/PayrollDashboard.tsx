@@ -50,6 +50,8 @@ import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import GuidancePanel from "@/components/GuidancePanel";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { payrollNavConfig } from "@/lib/moduleNav";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { getComplianceIssues, countBlockedEmployees } from "@/lib/employeeUtils";
 
@@ -162,7 +164,7 @@ export default function PayrollDashboard() {
         issueLabel: t("payrollDashboard.checklist.attendanceIssue"),
         description: t("payrollDashboard.checklist.attendanceDesc"),
         status: "complete",
-        linkPath: "/scheduling/time-tracking",
+        linkPath: "/time-leave/time-tracking",
         linkLabel: t("payrollDashboard.checklist.attendanceLink"),
       },
       {
@@ -172,7 +174,7 @@ export default function PayrollDashboard() {
         description: t("payrollDashboard.checklist.leaveDesc"),
         status: pendingLeave > 0 ? "warning" : "complete",
         count: pendingLeave > 0 ? pendingLeave : undefined,
-        linkPath: "/scheduling/leave",
+        linkPath: "/time-leave/leave",
         linkLabel: t("payrollDashboard.checklist.leaveLink"),
       },
       {
@@ -310,13 +312,13 @@ export default function PayrollDashboard() {
     {
       label: t("payrollDashboard.links.allowances"),
       description: t("payrollDashboard.links.allowancesDesc"),
-      path: "/payroll/benefits",
+      path: "/payroll/setup/benefits",
       icon: Wallet,
     },
     {
       label: t("payrollDashboard.links.deductions"),
       description: t("payrollDashboard.links.deductionsDesc"),
-      path: "/payroll/deductions",
+      path: "/payroll/setup/deductions",
       icon: DollarSign,
     },
   ];
@@ -331,13 +333,13 @@ export default function PayrollDashboard() {
     {
       label: t("payrollDashboard.links.bankTransfers"),
       description: t("payrollDashboard.links.bankTransfersDesc"),
-      path: "/payroll/transfers",
+      path: "/payroll/payments",
       icon: Banknote,
     },
     {
       label: t("payrollDashboard.links.taxReports"),
       description: t("payrollDashboard.links.taxReportsDesc"),
-      path: "/payroll/taxes",
+      path: "/payroll/reports",
       icon: FileSpreadsheet,
     },
   ];
@@ -365,6 +367,7 @@ export default function PayrollDashboard() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+        <ModuleSectionNav config={payrollNavConfig} />
         {/* Hero Section */}
         <div className="border-b bg-green-50 dark:bg-green-950/30">
           <div className="max-w-7xl mx-auto px-6 py-8">
@@ -459,6 +462,7 @@ export default function PayrollDashboard() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payroll} />
       <MainNavigation />
+      <ModuleSectionNav config={payrollNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">

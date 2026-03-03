@@ -60,7 +60,8 @@ import {
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
-import SchedulingSectionNav from "@/components/SchedulingSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { timeLeaveNavConfig } from "@/lib/moduleNav";
 
 export default function Attendance() {
   const { toast } = useToast();
@@ -479,6 +480,7 @@ export default function Attendance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.attendance} />
       <MainNavigation />
+      <ModuleSectionNav config={timeLeaveNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
@@ -663,8 +665,6 @@ export default function Attendance() {
           </div>
         </div>
       </div>
-
-      <SchedulingSectionNav />
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Inline Toolbar */}

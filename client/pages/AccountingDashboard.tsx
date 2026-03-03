@@ -43,6 +43,8 @@ import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { useAccountingDashboard } from "@/hooks/useAccounting";
 import { formatDateTL } from "@/lib/dateUtils";
 import GuidancePanel from "@/components/GuidancePanel";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { accountingNavConfig } from "@/lib/moduleNav";
 import { useTenant } from "@/contexts/TenantContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
@@ -176,7 +178,7 @@ export default function AccountingDashboard() {
           issue: t("accounting.dashboard.manualEntriesAwaiting", { count: String(accountingStatus.pendingEntries) }),
           hint: t("accounting.dashboard.manualEntriesHint"),
           action: t("accounting.dashboard.review"),
-          path: "/accounting/journal-entries?status=pending",
+          path: "/accounting/core/journal?status=pending",
         },
       ]
     : [];
@@ -188,63 +190,63 @@ export default function AccountingDashboard() {
       title: t("accounting.dashboard.chartOfAccounts"),
       description: t("accounting.dashboard.chartOfAccountsDesc"),
       icon: BookOpen,
-      path: "/accounting/chart-of-accounts",
+      path: "/accounting/core/chart",
     },
     {
       id: "journal-entries",
       title: t("accounting.dashboard.journalEntries"),
       description: t("accounting.dashboard.journalEntriesDesc"),
       icon: FileSpreadsheet,
-      path: "/accounting/journal-entries",
+      path: "/accounting/core/journal",
     },
     {
       id: "general-ledger",
       title: t("accounting.dashboard.generalLedger"),
       description: t("accounting.dashboard.generalLedgerDesc"),
       icon: Landmark,
-      path: "/accounting/general-ledger",
+      path: "/accounting/core/ledger",
     },
     {
       id: "trial-balance",
       title: t("accounting.dashboard.trialBalance"),
       description: t("accounting.dashboard.trialBalanceDesc"),
       icon: Scale,
-      path: "/accounting/trial-balance",
+      path: "/accounting/reports/trial-balance",
     },
     {
       id: "income-statement",
       title: t("accounting.dashboard.incomeStatement"),
       description: t("accounting.dashboard.incomeStatementDesc"),
       icon: BarChart3,
-      path: "/accounting/income-statement",
+      path: "/accounting/reports/income-statement",
     },
     {
       id: "balance-sheet",
       title: t("accounting.dashboard.balanceSheet"),
       description: t("accounting.dashboard.balanceSheetDesc"),
       icon: Building2,
-      path: "/accounting/balance-sheet",
+      path: "/accounting/reports/balance-sheet",
     },
     {
       id: "bank-reconciliation",
       title: t("accounting.dashboard.bankReconciliation"),
       description: t("accounting.dashboard.bankReconciliationDesc"),
       icon: Calculator,
-      path: "/money/bank-reconciliation",
+      path: "/money/reports/reconciliation",
     },
     {
       id: "fiscal-periods",
       title: t("accounting.dashboard.fiscalPeriods"),
       description: t("accounting.dashboard.fiscalPeriodsDesc"),
       icon: Clock,
-      path: "/accounting/fiscal-periods",
+      path: "/accounting/reports/fiscal-periods",
     },
     {
       id: "audit-trail",
       title: t("accounting.dashboard.auditTrail"),
       description: t("accounting.dashboard.auditTrailDesc"),
       icon: ClipboardList,
-      path: "/accounting/audit-trail",
+      path: "/accounting/reports/audit-trail",
     },
   ];
 
@@ -277,6 +279,7 @@ export default function AccountingDashboard() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
+      <ModuleSectionNav config={accountingNavConfig} />
 
       {/* Hero Section - Simplified */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -298,7 +301,7 @@ export default function AccountingDashboard() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => navigate("/accounting/journal-entries?action=new")}
+                onClick={() => navigate("/accounting/core/journal?action=new")}
               >
                 <FilePlus className="h-4 w-4 mr-1.5" />
                 {t("accounting.dashboard.newManualEntry")}
@@ -306,7 +309,7 @@ export default function AccountingDashboard() {
               <Button
                 size="sm"
                 className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
-                onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
+                onClick={() => navigate("/accounting/core/journal?filter=payroll")}
               >
                 <Eye className="h-4 w-4 mr-1.5" />
                 {t("accounting.dashboard.reviewPayrollEntries")}
@@ -461,7 +464,7 @@ export default function AccountingDashboard() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate("/accounting/journal-entries")}
+                  onClick={() => navigate("/accounting/core/journal")}
                 >
                   {t("accounting.dashboard.reviewEntries")}
                   <ArrowRight className="h-4 w-4 ml-1" />
@@ -533,7 +536,7 @@ export default function AccountingDashboard() {
                     variant="ghost"
                     size="sm"
                     className="text-muted-foreground hover:text-foreground -ml-2"
-                    onClick={() => navigate("/accounting/journal-entries?filter=payroll")}
+                    onClick={() => navigate("/accounting/core/journal?filter=payroll")}
                   >
                     {t("accounting.dashboard.viewAllPayrollEntries")}
                     <ChevronRight className="h-4 w-4 ml-1" />

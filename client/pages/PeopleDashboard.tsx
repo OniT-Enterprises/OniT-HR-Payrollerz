@@ -12,7 +12,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { getComplianceIssues } from "@/lib/employeeUtils";
@@ -109,7 +110,7 @@ export default function PeopleDashboard() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.people} />
       <MainNavigation />
-      <PeopleSectionNav />
+      <ModuleSectionNav config={peopleNavConfig} />
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
@@ -169,7 +170,7 @@ export default function PeopleDashboard() {
             className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
               stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
             }`}
-            onClick={() => navigate("/scheduling/leave")}
+            onClick={() => navigate("/time-leave/leave")}
           >
             <CardContent className="pt-5 pb-5">
               <div className="flex items-center justify-between">

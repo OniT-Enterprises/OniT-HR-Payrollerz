@@ -8,7 +8,8 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import PeopleSectionNav from "@/components/PeopleSectionNav";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { peopleNavConfig } from "@/lib/moduleNav";
 import {
   Briefcase,
   UserCheck,
@@ -69,7 +70,7 @@ export default function HiringOverview() {
         url="/people/hiring"
       />
       <MainNavigation />
-      <PeopleSectionNav />
+      <ModuleSectionNav config={peopleNavConfig} />
 
       {/* Hero */}
       <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">

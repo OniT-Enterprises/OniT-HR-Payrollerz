@@ -31,6 +31,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -337,6 +339,7 @@ export default function CustomReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.customReports} />
       <MainNavigation />
+      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
@@ -534,6 +537,8 @@ export default function CustomReports() {
           </div>
         </div>
       </div>
+
+      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         {/* Quick Stats */}

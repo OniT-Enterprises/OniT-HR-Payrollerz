@@ -22,6 +22,8 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { useAllInvoices } from '@/hooks/useInvoices';
 import { expenseService } from '@/services/expenseService';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip } from '@/components/ui/info-tooltip';
 import type { ExpenseCategory } from '@/types/money';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
@@ -163,6 +165,8 @@ export default function ProfitLoss() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -176,6 +180,7 @@ export default function ProfitLoss() {
     <div className="min-h-screen bg-background">
       <SEO title="Profit & Loss - Meza" description="View your profit and loss statement" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-4xl mx-auto">
         <AutoBreadcrumb className="mb-6" />

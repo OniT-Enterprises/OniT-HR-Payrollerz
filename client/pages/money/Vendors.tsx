@@ -42,6 +42,8 @@ import { SEO } from '@/components/SEO';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
 import { useAllVendors, vendorKeys } from '@/hooks/useVendors';
+import ModuleSectionNav from '@/components/ModuleSectionNav';
+import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
@@ -197,6 +199,8 @@ export default function Vendors() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
+        <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -214,6 +218,7 @@ export default function Vendors() {
     <div className="min-h-screen bg-background">
       <SEO title="Vendors - Meza" description="Manage your vendors and suppliers" />
       <MainNavigation />
+      <ModuleSectionNav config={moneyNavConfig} />
 
       <div className="p-6 max-w-7xl mx-auto">
         <AutoBreadcrumb className="mb-6" />
