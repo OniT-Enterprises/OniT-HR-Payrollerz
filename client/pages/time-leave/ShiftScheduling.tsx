@@ -1,4 +1,5 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useCallback } from "react";
+import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -42,24 +43,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import SchedulingSectionNav from "@/components/SchedulingSectionNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
   Plus,
-  Filter,
   Download,
-  Clock,
-  CheckCircle,
   Trash2,
   Copy,
-  RefreshCw,
   AlertTriangle,
   Users,
   FileText,
-  Settings,
   Save,
   Send,
-  BarChart3,
+  ChevronLeft,
+  ChevronRight,
+  GripVertical,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
@@ -111,6 +110,9 @@ export default function ShiftScheduling() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
   const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [draggedShift, setDraggedShift] = useState<ShiftRecord | null>(null);
+  const [dropTarget, setDropTarget] = useState<{ employeeId: string; date: string } | null>(null);
+  const [showAllEmployees, setShowAllEmployees] = useState(true);
 
   const [formData, setFormData] = useState({
     employee: "",
@@ -546,245 +548,394 @@ export default function ShiftScheduling() {
       .reduce((sum, shift) => sum + shift.hours, 0);
   };
 
+  // Date helper for the grid
+  const getDateForOffset = (dayOffset: number): string => {
+    const weekStart = new Date(selectedWeek);
+    const targetDate = new Date(weekStart);
+    targetDate.setDate(weekStart.getDate() + dayOffset);
+    return toDateStringTL(targetDate);
+  };
+
+  const getDayHeaderInfo = (dayOffset: number) => {
+    const weekStart = new Date(selectedWeek);
+    const targetDate = new Date(weekStart);
+    targetDate.setDate(weekStart.getDate() + dayOffset);
+    const dateStr = toDateStringTL(targetDate);
+    const today = toDateStringTL(new Date());
+    return {
+      dateStr,
+      dayName: formatDateTL(targetDate, { weekday: "short" }),
+      dayNum: targetDate.getDate(),
+      monthName: formatDateTL(targetDate, { month: "short" }),
+      isToday: dateStr === today,
+    };
+  };
+
+  // Week navigation
+  const goToPreviousWeek = () => {
+    const start = new Date(selectedWeek);
+    start.setDate(start.getDate() - 7);
+    setSelectedWeek(toDateStringTL(start));
+  };
+
+  const goToNextWeek = () => {
+    const start = new Date(selectedWeek);
+    start.setDate(start.getDate() + 7);
+    setSelectedWeek(toDateStringTL(start));
+  };
+
+  const goToCurrentWeek = () => {
+    setSelectedWeek(getWeekString(new Date()));
+  };
+
+  // Drag and drop handlers
+  const handleShiftDrop = useCallback(async (targetEmployeeId: string, targetDate: string) => {
+    if (!draggedShift?.id) return;
+    // Don't do anything if dropped on same cell
+    if (draggedShift.employeeId === targetEmployeeId && draggedShift.date === targetDate) {
+      setDraggedShift(null);
+      setDropTarget(null);
+      return;
+    }
+
+    const employee = employees.find(e => e.id === targetEmployeeId);
+
+    try {
+      await updateShiftMutation.mutateAsync({
+        shiftId: draggedShift.id,
+        data: {
+          employeeId: targetEmployeeId,
+          employeeName: employee?.name || '',
+          department: employee?.department || draggedShift.department,
+          date: targetDate,
+        },
+      });
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.successTitle"),
+        description: `Shift moved to ${employee?.name || 'employee'} on ${formatDateTL(new Date(targetDate + 'T12:00:00'), { weekday: 'short', month: 'short', day: 'numeric' })}`,
+      });
+    } catch {
+      toast({
+        title: t("timeLeave.shiftScheduling.toast.errorTitle"),
+        description: t("timeLeave.shiftScheduling.toast.updateErrorDesc"),
+        variant: "destructive",
+      });
+    }
+
+    setDraggedShift(null);
+    setDropTarget(null);
+  }, [draggedShift, employees, updateShiftMutation, toast, t]);
+
+  // Quick create shift by clicking an empty cell
+  const quickCreateShift = (employeeId: string, department: string, position: string, date: string) => {
+    const employee = employees.find(e => e.id === employeeId);
+    setFormData({
+      employee: employeeId,
+      position: position || employee?.position || '',
+      date,
+      startTime: '09:00',
+      endTime: '17:00',
+      department: department || employee?.department || '',
+      location: '',
+      notes: '',
+    });
+    setShowCreateDialog(true);
+  };
+
   const stats = getScheduleStats();
 
-  const renderScheduleView = () => (
-    <div className="space-y-6">
-      {/* Schedule Summary & Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("timeLeave.shiftScheduling.summary.totalShifts")}
-                </p>
-                <p className="text-2xl font-bold">{stats.totalShifts}</p>
-              </div>
-              <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                <Clock className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("timeLeave.shiftScheduling.summary.totalHours")}
-                </p>
-                <p className="text-2xl font-bold">
-                  {t("timeLeave.shiftScheduling.summary.totalHoursValue", {
-                    hours: stats.totalHours,
-                  })}
-                </p>
-              </div>
-              <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                <BarChart3 className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("timeLeave.shiftScheduling.summary.staffScheduled")}
-                </p>
-                <p className="text-2xl font-bold">{stats.staffCount}</p>
-              </div>
-              <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
-                <Users className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-          <CardContent className="pt-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">
-                  {t("timeLeave.shiftScheduling.summary.published")}
-                </p>
-                <p className="text-2xl font-bold">{stats.publishedCount}</p>
-              </div>
-              <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
-                <CheckCircle className="h-6 w-6 text-white" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+  const renderScheduleView = () => {
+    const weekShifts = getWeekShifts();
+    const scheduledEmployeeIds = new Set(weekShifts.map(s => s.employeeId).filter(Boolean));
 
-      {/* Action Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          onClick={handlePublishSchedule}
-          disabled={stats.draftCount === 0}
-        >
-          <Send className="h-4 w-4 mr-2" />
-          {t("timeLeave.shiftScheduling.actions.publishSchedule", {
-            count: stats.draftCount,
-          })}
-        </Button>
-        <Button variant="outline" onClick={handleExportPDF}>
-          <Download className="h-4 w-4 mr-2" />
-          {t("timeLeave.shiftScheduling.actions.exportPdf")}
-        </Button>
-        <Button variant="outline" onClick={handleCopyWeek}>
-          <Copy className="h-4 w-4 mr-2" />
-          {t("timeLeave.shiftScheduling.actions.copyWeek")}
-        </Button>
-        <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
-          <DialogTrigger asChild>
-            <Button variant="outline">
-              <FileText className="h-4 w-4 mr-2" />
-              {t("timeLeave.shiftScheduling.actions.applyTemplate")}
+    const relevantEmployees = employees.filter(emp => {
+      const matchesDept = !selectedDepartment || selectedDepartment === 'all' || emp.department === selectedDepartment;
+      return matchesDept && (showAllEmployees || scheduledEmployeeIds.has(emp.id));
+    });
+
+    return (
+      <div className="space-y-3">
+        {/* Compact action bar */}
+        <div className="flex items-center justify-between flex-wrap gap-2">
+          <div className="flex items-center gap-2">
+            {stats.draftCount > 0 && (
+              <Button
+                size="sm"
+                onClick={handlePublishSchedule}
+                className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm"
+              >
+                <Send className="h-3.5 w-3.5" />
+                Publish {stats.draftCount} draft{stats.draftCount !== 1 ? 's' : ''}
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={handleExportPDF} className="gap-1.5">
+              <Download className="h-3.5 w-3.5" />
+              Export
             </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("timeLeave.shiftScheduling.template.title")}</DialogTitle>
-              <DialogDescription>
-                {t("timeLeave.shiftScheduling.template.description")}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-3">
-              {shiftTemplates.map((template) => (
-                <Card
-                  key={template.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                >
-                  <CardContent
-                    className="pt-4"
-                    onClick={() => handleApplyTemplate(template)}
-                  >
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">
-                          {getTemplateLabel(template.name)}
-                        </h4>
-                        <p className="text-sm text-gray-600">
-                          {getDepartmentLabel(template.department)}
-                        </p>
-                        <p className="text-xs text-gray-500">
-                          {t("timeLeave.shiftScheduling.template.shiftCount", {
-                            count: template.shifts.length,
-                          })}
-                        </p>
-                      </div>
-                      <Button size="sm">
-                        {t("timeLeave.shiftScheduling.actions.apply")}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
-
-      {/* Calendar Grid */}
-      <Card className="border-border/50">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                {t("timeLeave.shiftScheduling.calendar.title")}
-              </CardTitle>
-              <CardDescription>
-                {t("timeLeave.shiftScheduling.calendar.weekOf", {
-                  start: getDayName(0),
-                  end: getDayName(6),
-                })}
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button
-                variant={viewMode === "week" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("week")}
-              >
-                {t("timeLeave.shiftScheduling.calendar.weekView")}
-              </Button>
-              <Button
-                variant={viewMode === "day" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setViewMode("day")}
-              >
-                {t("timeLeave.shiftScheduling.calendar.dayView")}
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-7 gap-4">
-            {[0, 1, 2, 3, 4, 5, 6].map((dayOffset) => {
-              const dayShifts = getDayShifts(dayOffset);
-              const dayHours = dayShifts.reduce(
-                (sum, shift) => sum + shift.hours,
-                0,
-              );
-              return (
-                <div
-                  key={dayOffset}
-                  className="border rounded-lg p-3 min-h-[200px]"
-                >
-                  <div className="font-medium text-sm mb-3 text-center border-b pb-2">
-                    <div>{getDayName(dayOffset)}</div>
-                    <div className="text-xs text-gray-500 mt-1">
-                      {t("timeLeave.shiftScheduling.calendar.daySummary", {
-                        count: dayShifts.length,
-                        hours: dayHours,
-                      })}
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    {dayShifts.map((shift) => (
-                      <div
-                        key={shift.id}
-                        className="p-2 rounded text-xs cursor-pointer transition-colors border"
-                        style={{
-                          backgroundColor: `${getDepartmentColor(shift.department)}15`,
-                          borderColor: `${getDepartmentColor(shift.department)}40`,
-                        }}
-                        onClick={() => handleEditShift(shift)}
-                      >
-                        <div className="font-medium truncate">
-                          {shift.employeeName}
-                        </div>
-                        <div className="text-gray-600 truncate">
-                          {getPositionLabel(shift.position)}
-                        </div>
-                        <div className="text-gray-500">
-                          {shift.startTime} - {shift.endTime}
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                          <Badge variant="outline" className="text-xs">
-                            {getLocationLabel(shift.location).split(" - ")[0]}
-                          </Badge>
-                          {getStatusBadge(shift.status)}
-                        </div>
-                        {shift.notes && (
-                          <div className="text-xs text-gray-600 mt-1 truncate">
-                            📝 {getNoteLabel(shift.notes)}
+            <Button variant="outline" size="sm" onClick={handleCopyWeek} className="gap-1.5">
+              <Copy className="h-3.5 w-3.5" />
+              Copy Week
+            </Button>
+            <Dialog open={showTemplateDialog} onOpenChange={setShowTemplateDialog}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-1.5">
+                  <FileText className="h-3.5 w-3.5" />
+                  Template
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>{t("timeLeave.shiftScheduling.template.title")}</DialogTitle>
+                  <DialogDescription>
+                    {t("timeLeave.shiftScheduling.template.description")}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="space-y-3">
+                  {shiftTemplates.map((template) => (
+                    <Card key={template.id} className="cursor-pointer hover:shadow-md transition-shadow">
+                      <CardContent className="pt-4" onClick={() => handleApplyTemplate(template)}>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">{getTemplateLabel(template.name)}</h4>
+                            <p className="text-sm text-muted-foreground">{getDepartmentLabel(template.department)}</p>
+                            <p className="text-xs text-muted-foreground/70">
+                              {t("timeLeave.shiftScheduling.template.shiftCount", { count: template.shifts.length })}
+                            </p>
                           </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
+                          <Button size="sm">{t("timeLeave.shiftScheduling.actions.apply")}</Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              );
-            })}
+              </DialogContent>
+            </Dialog>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:inline tabular-nums">
+              {weekShifts.length} shift{weekShifts.length !== 1 ? 's' : ''} &middot; {stats.totalHours}h
+            </span>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAllEmployees(!showAllEmployees)}
+              className={cn("gap-1.5 text-xs h-8", showAllEmployees && "bg-muted")}
+            >
+              <Users className="h-3.5 w-3.5" />
+              {showAllEmployees ? 'Scheduled only' : 'All staff'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Schedule Grid */}
+        <div className="border border-border/50 rounded-xl overflow-x-auto bg-card shadow-sm">
+          <table className="w-full border-collapse min-w-[900px]">
+            <thead>
+              <tr className="bg-muted/50">
+                <th className="sticky left-0 z-20 bg-muted/50 backdrop-blur-sm text-left px-4 py-3 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider border-b border-r border-border/30 w-[200px] min-w-[200px]">
+                  Staff
+                </th>
+                {[0, 1, 2, 3, 4, 5, 6].map(day => {
+                  const info = getDayHeaderInfo(day);
+                  return (
+                    <th
+                      key={day}
+                      className={cn(
+                        "px-1.5 py-2.5 text-center border-b border-r border-border/30 last:border-r-0 min-w-[100px]",
+                        info.isToday && "bg-cyan-50/80 dark:bg-cyan-950/30"
+                      )}
+                    >
+                      <div className={cn(
+                        "text-[11px] font-semibold uppercase tracking-wide",
+                        info.isToday ? "text-cyan-600 dark:text-cyan-400" : "text-muted-foreground"
+                      )}>
+                        {info.dayName}
+                      </div>
+                      <div className={cn(
+                        "text-base font-bold leading-tight",
+                        info.isToday ? "text-cyan-600 dark:text-cyan-400" : "text-foreground"
+                      )}>
+                        {info.dayNum}
+                      </div>
+                      {(day === 0 || info.dayNum === 1) && (
+                        <div className="text-[10px] text-muted-foreground/60 font-medium">{info.monthName}</div>
+                      )}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+
+            <tbody>
+              {relevantEmployees.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="p-16 text-center">
+                    <Calendar className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">No shifts scheduled this week</p>
+                    <p className="text-xs text-muted-foreground/60 mt-1">
+                      Click &ldquo;All staff&rdquo; to see everyone, or create a shift
+                    </p>
+                  </td>
+                </tr>
+              ) : (
+                relevantEmployees.map((emp) => {
+                  const empHours = getEmployeeWeeklyHours(emp.id);
+                  const overMax = empHours > emp.maxHoursPerWeek;
+
+                  return (
+                    <tr
+                      key={emp.id}
+                      className="group/row hover:bg-muted/10 transition-colors border-b border-border/20 last:border-b-0"
+                    >
+                      {/* Employee cell - sticky left */}
+                      <td className="sticky left-0 z-10 bg-card group-hover/row:bg-muted/10 transition-colors px-3 py-2.5 border-r border-border/30 w-[200px] min-w-[200px]">
+                        <div className="flex items-start gap-2">
+                          <div
+                            className="w-1 h-9 rounded-full flex-shrink-0 mt-0.5"
+                            style={{ backgroundColor: getDepartmentColor(emp.department) }}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-foreground truncate leading-tight">{emp.name}</div>
+                            <div className="text-[11px] text-muted-foreground truncate">{getPositionLabel(emp.position)}</div>
+                            {empHours > 0 && (
+                              <div className={cn(
+                                "text-[10px] font-medium mt-0.5",
+                                overMax ? "text-red-500" : "text-muted-foreground/60"
+                              )}>
+                                {empHours}h / {emp.maxHoursPerWeek}h
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Day cells */}
+                      {[0, 1, 2, 3, 4, 5, 6].map(dayOffset => {
+                        const dateStr = getDateForOffset(dayOffset);
+                        const cellShifts = weekShifts.filter(
+                          s => s.employeeId === emp.id && s.date === dateStr
+                        );
+                        const isTarget = dropTarget?.employeeId === emp.id && dropTarget?.date === dateStr;
+                        const isTodayCol = getDayHeaderInfo(dayOffset).isToday;
+
+                        return (
+                          <td
+                            key={dayOffset}
+                            className={cn(
+                              "px-1 py-1 border-r border-border/30 last:border-r-0 align-top transition-all relative group/cell",
+                              isTodayCol && "bg-cyan-50/30 dark:bg-cyan-950/10",
+                              isTarget && "!bg-cyan-100/70 dark:!bg-cyan-900/40 ring-2 ring-inset ring-cyan-400/70",
+                              !cellShifts.length && "cursor-pointer"
+                            )}
+                            onDragOver={(e) => {
+                              e.preventDefault();
+                              e.dataTransfer.dropEffect = 'move';
+                              if (dropTarget?.employeeId !== emp.id || dropTarget?.date !== dateStr) {
+                                setDropTarget({ employeeId: emp.id, date: dateStr });
+                              }
+                            }}
+                            onDragLeave={(e) => {
+                              const rect = e.currentTarget.getBoundingClientRect();
+                              if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+                                setDropTarget(null);
+                              }
+                            }}
+                            onDrop={(e) => {
+                              e.preventDefault();
+                              handleShiftDrop(emp.id, dateStr);
+                            }}
+                            onClick={() => {
+                              if (!cellShifts.length) quickCreateShift(emp.id, emp.department, emp.position, dateStr);
+                            }}
+                          >
+                            <div className="space-y-1 min-h-[56px]">
+                              {cellShifts.map(shift => (
+                                <div
+                                  key={shift.id}
+                                  draggable
+                                  onDragStart={(e) => {
+                                    setDraggedShift(shift);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                    e.dataTransfer.setDragImage(e.currentTarget, e.currentTarget.offsetWidth / 2, e.currentTarget.offsetHeight / 2);
+                                  }}
+                                  onDragEnd={() => { setDraggedShift(null); setDropTarget(null); }}
+                                  onClick={(e) => { e.stopPropagation(); handleEditShift(shift); }}
+                                  className={cn(
+                                    "group/shift rounded-lg px-2 py-1.5 text-xs cursor-grab active:cursor-grabbing transition-all",
+                                    "border hover:shadow-md hover:-translate-y-px",
+                                    draggedShift?.id === shift.id && "opacity-25 scale-95"
+                                  )}
+                                  style={{
+                                    backgroundColor: `${getDepartmentColor(shift.department)}10`,
+                                    borderColor: `${getDepartmentColor(shift.department)}30`,
+                                  }}
+                                >
+                                  <div className="flex items-center gap-1.5">
+                                    <GripVertical className="h-3 w-3 text-muted-foreground/30 group-hover/shift:text-muted-foreground/60 flex-shrink-0 -ml-0.5 transition-colors" />
+                                    <div className={cn(
+                                      "w-1.5 h-1.5 rounded-full flex-shrink-0",
+                                      shift.status === 'published' && "bg-blue-500",
+                                      shift.status === 'confirmed' && "bg-emerald-500",
+                                      shift.status === 'draft' && "bg-gray-400 dark:bg-gray-500",
+                                      shift.status === 'cancelled' && "bg-red-500",
+                                    )} />
+                                    <span className="font-semibold text-foreground truncate">
+                                      {shift.startTime}&ndash;{shift.endTime}
+                                    </span>
+                                  </div>
+                                  {shift.location && (
+                                    <div className="text-muted-foreground truncate mt-0.5 pl-[22px] text-[10px]">
+                                      {getLocationLabel(shift.location)?.split(' - ')[0] || shift.location}
+                                    </div>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+
+                            {/* Plus icon on empty cell hover */}
+                            {cellShifts.length === 0 && !isTarget && (
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover/cell:opacity-100 transition-opacity pointer-events-none">
+                                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center shadow-sm">
+                                  <Plus className="h-3 w-3 text-muted-foreground" />
+                                </div>
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Legend */}
+        <div className="flex items-center gap-4 text-[11px] text-muted-foreground px-1 flex-wrap">
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-gray-400" />
+            Draft
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-blue-500" />
+            Published
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            Confirmed
+          </div>
+          <div className="flex items-center gap-1.5">
+            <div className="w-2 h-2 rounded-full bg-red-500" />
+            Cancelled
+          </div>
+          <span className="text-muted-foreground/50 ml-auto">
+            Drag shifts to reassign &middot; Click empty cell to create
+          </span>
+        </div>
+      </div>
+    );
+  };
 
   const renderEmployeesView = () => (
     <div className="space-y-6">
@@ -1159,64 +1310,44 @@ export default function ShiftScheduling() {
               <Skeleton className="h-9 w-48 mb-2" />
               <Skeleton className="h-4 w-80" />
             </div>
-            {/* Controls skeleton */}
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-40" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i}>
-                      <Skeleton className="h-4 w-20 mb-2" />
-                      <Skeleton className="h-10 w-full" />
+            {/* Toolbar skeleton */}
+            <div className="flex items-center gap-3 mb-5">
+              <Skeleton className="h-8 w-48 rounded-lg" />
+              <Skeleton className="h-8 w-16" />
+              <Skeleton className="h-8 w-[160px]" />
+              <Skeleton className="h-8 w-[160px]" />
+              <div className="ml-auto"><Skeleton className="h-8 w-28" /></div>
+            </div>
+            {/* Schedule grid skeleton */}
+            <div className="border rounded-xl overflow-hidden">
+              {/* Header */}
+              <div className="grid grid-cols-[200px_repeat(7,1fr)] bg-muted/50 border-b">
+                <div className="px-4 py-3 border-r"><Skeleton className="h-4 w-12" /></div>
+                {[0,1,2,3,4,5,6].map(d => (
+                  <div key={d} className="px-2 py-3 flex flex-col items-center gap-1 border-r last:border-r-0">
+                    <Skeleton className="h-3 w-8" />
+                    <Skeleton className="h-5 w-5" />
+                  </div>
+                ))}
+              </div>
+              {/* Rows */}
+              {[1,2,3,4,5].map(r => (
+                <div key={r} className="grid grid-cols-[200px_repeat(7,1fr)] border-b last:border-b-0">
+                  <div className="px-3 py-3 border-r flex items-center gap-2">
+                    <Skeleton className="w-1 h-9 rounded-full" />
+                    <div>
+                      <Skeleton className="h-4 w-24 mb-1" />
+                      <Skeleton className="h-3 w-16" />
+                    </div>
+                  </div>
+                  {[0,1,2,3,4,5,6].map(d => (
+                    <div key={d} className="px-1 py-1.5 border-r last:border-r-0 min-h-[64px]">
+                      {d % 3 !== 0 && <Skeleton className="h-10 w-full rounded-lg" />}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-            {/* Tabs skeleton */}
-            <Skeleton className="h-10 w-full max-w-md mb-6" />
-            {/* Stats skeleton */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardContent>
-                </Card>
               ))}
             </div>
-            {/* Calendar skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40 mb-2" />
-                <Skeleton className="h-4 w-56" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-7 gap-4">
-                  {[0, 1, 2, 3, 4, 5, 6].map((day) => (
-                    <div key={day} className="border rounded-lg p-3 min-h-[200px]">
-                      <div className="text-center border-b pb-2 mb-3">
-                        <Skeleton className="h-4 w-20 mx-auto mb-1" />
-                        <Skeleton className="h-3 w-16 mx-auto" />
-                      </div>
-                      <div className="space-y-2">
-                        {[1, 2].map((shift) => (
-                          <div key={shift} className="p-2 rounded border">
-                            <Skeleton className="h-3 w-24 mb-1" />
-                            <Skeleton className="h-3 w-20 mb-1" />
-                            <Skeleton className="h-3 w-16" />
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -1249,309 +1380,146 @@ export default function ShiftScheduling() {
         </div>
       </div>
 
+      <SchedulingSectionNav />
+
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
+          {/* Sleek inline toolbar */}
+          <div className="mb-5 flex flex-wrap items-center gap-3">
+            {/* Week navigation */}
+            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Input
+                type="date"
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(e.target.value)}
+                className="h-8 w-[140px] text-sm border-0 bg-transparent text-center font-medium"
+              />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
+              Today
+            </Button>
 
-          {/* Controls */}
-          <Card className="mb-6 border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                {t("timeLeave.shiftScheduling.controls.title")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end">
-                <div>
-                  <Label htmlFor="week">
-                    {t("timeLeave.shiftScheduling.controls.weekStarting")}
-                  </Label>
-                  <Input
-                    id="week"
-                    type="date"
-                    value={selectedWeek}
-                    onChange={(e) => setSelectedWeek(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="department">
-                    {t("timeLeave.shiftScheduling.controls.department")}
-                  </Label>
-                  <Select
-                    value={selectedDepartment}
-                    onValueChange={setSelectedDepartment}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.controls.allDepartments",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("timeLeave.shiftScheduling.controls.allDepartments")}
-                      </SelectItem>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {getDepartmentLabel(dept.name)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="location">
-                    {t("timeLeave.shiftScheduling.controls.location")}
-                  </Label>
-                  <Select
-                    value={selectedLocation}
-                    onValueChange={setSelectedLocation}
-                  >
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t(
-                          "timeLeave.shiftScheduling.controls.allLocations",
-                        )}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("timeLeave.shiftScheduling.controls.allLocations")}
-                      </SelectItem>
-                      {locations.map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {getLocationLabel(location)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Button onClick={handleLoad} className="w-full">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    {t("timeLeave.shiftScheduling.controls.load")}
+            <div className="w-px h-6 bg-border/50 hidden sm:block" />
+
+            {/* Filters */}
+            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allDepartments")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+              <SelectTrigger className="h-8 w-[160px] text-xs">
+                <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allLocations")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
+                {locations.map((location) => (
+                  <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="ml-auto">
+              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                <DialogTrigger asChild>
+                  <Button size="sm" className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm h-8">
+                    <Plus className="h-3.5 w-3.5" />
+                    {t("timeLeave.shiftScheduling.controls.createShift")}
                   </Button>
-                </div>
-                <div>
-                  <Dialog
-                    open={showCreateDialog}
-                    onOpenChange={setShowCreateDialog}
-                  >
-                    <DialogTrigger asChild>
-                      <Button className="w-full">
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("timeLeave.shiftScheduling.controls.createShift")}
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>{t("timeLeave.shiftScheduling.create.title")}</DialogTitle>
+                    <DialogDescription>{t("timeLeave.shiftScheduling.create.description")}</DialogDescription>
+                  </DialogHeader>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="employee">{t("timeLeave.shiftScheduling.create.employee")}</Label>
+                      <Select value={formData.employee} onValueChange={(value) => handleInputChange("employee", value)}>
+                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.employeePlaceholder")} /></SelectTrigger>
+                        <SelectContent>
+                          {employees.map((employee) => (
+                            <SelectItem key={employee.id} value={employee.id}>
+                              {employee.name} - {getPositionLabel(employee.position)}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="department">{t("timeLeave.shiftScheduling.create.department")}</Label>
+                      <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.departmentPlaceholder")} /></SelectTrigger>
+                        <SelectContent>
+                          {departments.map((dept) => (
+                            <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="position">{t("timeLeave.shiftScheduling.create.position")}</Label>
+                      <Input id="position" value={formData.position} onChange={(e) => handleInputChange("position", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.positionPlaceholder")} />
+                    </div>
+                    <div>
+                      <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
+                      <Input id="shift-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label htmlFor="shift-start">{t("timeLeave.shiftScheduling.create.startTime")}</Label>
+                        <Input id="shift-start" type="time" value={formData.startTime} onChange={(e) => handleInputChange("startTime", e.target.value)} required />
+                      </div>
+                      <div>
+                        <Label htmlFor="shift-end">{t("timeLeave.shiftScheduling.create.endTime")}</Label>
+                        <Input id="shift-end" type="time" value={formData.endTime} onChange={(e) => handleInputChange("endTime", e.target.value)} required />
+                      </div>
+                    </div>
+                    {formData.startTime && formData.endTime && (
+                      <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                        {t("timeLeave.shiftScheduling.create.totalHours", { hours: calculateHours(formData.startTime, formData.endTime) })}
+                      </div>
+                    )}
+                    <div>
+                      <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
+                      <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
+                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
+                        <SelectContent>
+                          {locations.map((location) => (
+                            <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="notes">{t("timeLeave.shiftScheduling.create.notes")}</Label>
+                      <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange("notes", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.notesPlaceholder")} rows={2} />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button type="button" variant="outline" onClick={() => { resetForm(); setShowCreateDialog(false); }} className="flex-1">
+                        {t("timeLeave.shiftScheduling.actions.cancel")}
                       </Button>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>
-                          {t("timeLeave.shiftScheduling.create.title")}
-                        </DialogTitle>
-                        <DialogDescription>
-                          {t("timeLeave.shiftScheduling.create.description")}
-                        </DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleSubmit} className="space-y-4">
-                        <div>
-                          <Label htmlFor="employee">
-                            {t("timeLeave.shiftScheduling.create.employee")}
-                          </Label>
-                          <Select
-                            value={formData.employee}
-                            onValueChange={(value) =>
-                              handleInputChange("employee", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={t(
-                                  "timeLeave.shiftScheduling.create.employeePlaceholder",
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {employees.map((employee) => (
-                                <SelectItem
-                                  key={employee.id}
-                                  value={employee.id}
-                                >
-                                  {employee.name} -{" "}
-                                  {getPositionLabel(employee.position)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="department">
-                            {t("timeLeave.shiftScheduling.create.department")}
-                          </Label>
-                          <Select
-                            value={formData.department}
-                            onValueChange={(value) =>
-                              handleInputChange("department", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={t(
-                                  "timeLeave.shiftScheduling.create.departmentPlaceholder",
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {departments.map((dept) => (
-                                <SelectItem key={dept.id} value={dept.name}>
-                                  {getDepartmentLabel(dept.name)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="position">
-                            {t("timeLeave.shiftScheduling.create.position")}
-                          </Label>
-                          <Input
-                            id="position"
-                            value={formData.position}
-                            onChange={(e) =>
-                              handleInputChange("position", e.target.value)
-                            }
-                            placeholder={t(
-                              "timeLeave.shiftScheduling.create.positionPlaceholder",
-                            )}
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="shift-date">
-                            {t("timeLeave.shiftScheduling.create.date")}
-                          </Label>
-                          <Input
-                            id="shift-date"
-                            type="date"
-                            value={formData.date}
-                            onChange={(e) =>
-                              handleInputChange("date", e.target.value)
-                            }
-                            required
-                          />
-                        </div>
-                        <div className="grid grid-cols-2 gap-2">
-                          <div>
-                            <Label htmlFor="shift-start">
-                              {t("timeLeave.shiftScheduling.create.startTime")}
-                            </Label>
-                            <Input
-                              id="shift-start"
-                              type="time"
-                              value={formData.startTime}
-                              onChange={(e) =>
-                                handleInputChange("startTime", e.target.value)
-                              }
-                              required
-                            />
-                          </div>
-                          <div>
-                            <Label htmlFor="shift-end">
-                              {t("timeLeave.shiftScheduling.create.endTime")}
-                            </Label>
-                            <Input
-                              id="shift-end"
-                              type="time"
-                              value={formData.endTime}
-                              onChange={(e) =>
-                                handleInputChange("endTime", e.target.value)
-                              }
-                              required
-                            />
-                          </div>
-                        </div>
-                        {formData.startTime && formData.endTime && (
-                          <div className="text-sm text-gray-600 bg-gray-50 p-2 rounded">
-                            {t("timeLeave.shiftScheduling.create.totalHours", {
-                              hours: calculateHours(
-                                formData.startTime,
-                                formData.endTime,
-                              ),
-                            })}
-                          </div>
-                        )}
-                        <div>
-                          <Label htmlFor="location">
-                            {t("timeLeave.shiftScheduling.create.location")}
-                          </Label>
-                          <Select
-                            value={formData.location}
-                            onValueChange={(value) =>
-                              handleInputChange("location", value)
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue
-                                placeholder={t(
-                                  "timeLeave.shiftScheduling.create.locationPlaceholder",
-                                )}
-                              />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {locations.map((location) => (
-                                <SelectItem key={location} value={location}>
-                                  {getLocationLabel(location)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="notes">
-                            {t("timeLeave.shiftScheduling.create.notes")}
-                          </Label>
-                          <Textarea
-                            id="notes"
-                            value={formData.notes}
-                            onChange={(e) =>
-                              handleInputChange("notes", e.target.value)
-                            }
-                            placeholder={t(
-                              "timeLeave.shiftScheduling.create.notesPlaceholder",
-                            )}
-                            rows={2}
-                          />
-                        </div>
-                        <div className="flex gap-2">
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              resetForm();
-                              setShowCreateDialog(false);
-                            }}
-                            className="flex-1"
-                          >
-                            {t("timeLeave.shiftScheduling.actions.cancel")}
-                          </Button>
-                          <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
-                            {createShiftMutation.isPending
-                              ? (t("common.saving") || "Saving...")
-                              : t("timeLeave.shiftScheduling.actions.createShift")}
-                          </Button>
-                        </div>
-                      </form>
-                    </DialogContent>
-                  </Dialog>
-                </div>
-                <div>
-                  <Button variant="outline" className="w-full">
-                    <Settings className="h-4 w-4 mr-2" />
-                    {t("timeLeave.shiftScheduling.controls.settings")}
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                      <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
+                        {createShiftMutation.isPending ? (t("common.saving") || "Saving...") : t("timeLeave.shiftScheduling.actions.createShift")}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3">
