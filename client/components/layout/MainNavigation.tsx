@@ -353,7 +353,7 @@ export default function MainNavigation() {
                 const iconColor = navColors[item.id];
                 const indicatorColor = navActiveIndicator[item.id];
                 const dropdownAlign = ["money", "accounting", "reports"].includes(item.id) ? "right-0" : "left-0";
-                const maxCols = Math.min(item.subGroups?.length ?? 0, 3);
+                const maxCols = item.subGroups?.length ?? 0;
                 return (
                   <div key={item.id} className="relative group">
                     <Button
