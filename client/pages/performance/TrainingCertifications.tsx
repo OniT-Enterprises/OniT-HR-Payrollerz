@@ -449,9 +449,9 @@ export default function TrainingCertifications() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="max-w-7xl mx-auto px-6 pt-6 pb-6">
         {/* Filters */}
-        <Card className="mb-6 border-border/50 -mt-8 shadow-lg">
+        <Card className="mb-6 border-border/50 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Filter className="h-5 w-5 text-orange-600 dark:text-orange-400" />

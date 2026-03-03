@@ -343,6 +343,14 @@ service cloud.firestore {
     }
 
     // ============================================
+    // PLATFORM CONFIG (Global)
+    // ============================================
+    match /platform/vatConfig {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // ============================================
     // REFERENCE DATA (Global, read-only for users)
     // ============================================
     match /reference/{document=**} {

@@ -63,9 +63,9 @@ Accounting Fields:
 | View staff | `/people/employees` | All Employees |
 | Run payroll | `/payroll/run` | Run Payroll |
 | Check tax reports | `/payroll/taxes` | Tax Reports |
-| Submit leave | `/people/leave` | Leave Requests |
-| Track time | `/people/time-tracking` | Time Tracking |
-| See attendance | `/people/attendance` | Attendance |
+| Submit leave | `/scheduling/leave` | Leave Requests |
+| Track time | `/scheduling/time-tracking` | Time Tracking |
+| See attendance | `/scheduling/attendance` | Attendance |
 | View paystubs | `/payroll/history` | Payroll History |
 | Manage benefits | `/payroll/benefits` | Benefits Enrollment |
 | Performance review | `/people/reviews` | Performance Reviews |
@@ -75,7 +75,7 @@ Accounting Fields:
 **Example Triggers:**
 - "I need to add a new employee" → Redirects to `/people/add`
 - "How do I run payroll?" → Explains + offers to go to `/payroll/run`
-- "Where can I see my team's attendance?" → Redirects to `/people/attendance`
+- "Where can I see my team's attendance?" → Redirects to `/scheduling/attendance`
 
 ### 4. Interactive Calculators
 
@@ -274,13 +274,13 @@ const NAVIGATION_INTENTS = {
   'run payroll': '/payroll/run',
   'payroll history': '/payroll/history',
   'tax report': '/payroll/taxes',
-  'leave request': '/people/leave',
-  'time tracking': '/people/time-tracking',
-  'attendance': '/people/attendance',
+  'leave request': '/scheduling/leave',
+  'time tracking': '/scheduling/time-tracking',
+  'attendance': '/scheduling/attendance',
   'performance review': '/people/reviews',
   'training': '/people/training',
-  'departments': '/people/departments',
-  'org chart': '/people/org-chart',
+  'departments': '/settings/departments',
+  'org chart': '/settings/org-chart',
   'journal entries': '/accounting/journal-entries',
   'chart of accounts': '/accounting/chart-of-accounts',
   // ... more mappings
@@ -539,13 +539,13 @@ SEVERANCE: 30 days salary per year of service
 === NAVIGATION ROUTES ===
 - Add employee: /people/add
 - All employees: /people/employees
-- Departments: /people/departments
+- Departments: /settings/departments
 - Run payroll: /payroll/run
 - Payroll history: /payroll/history
 - Tax reports: /payroll/taxes
-- Leave requests: /people/leave
-- Attendance: /people/attendance
-- Time tracking: /people/time-tracking
+- Leave requests: /scheduling/leave
+- Attendance: /scheduling/attendance
+- Time tracking: /scheduling/time-tracking
 - Performance reviews: /people/reviews
 - Reports: /reports
 

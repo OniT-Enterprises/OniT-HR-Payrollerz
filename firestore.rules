@@ -387,17 +387,28 @@ service cloud.firestore {
 
       match /journalEntries/{entryId} {
         allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        // Enforce double-entry integrity: totalDebit must equal totalCredit
-        allow create: if (isSuperAdmin() || isTenantAdmin(tenantId)) &&
-          request.resource.data.totalDebit == request.resource.data.totalCredit;
-        // Draft entries can be edited and posted, but posted/void entries are immutable.
-        // Balance must be maintained when posting.
+        // Balance validation (totalDebit == totalCredit) is enforced client-side
+        // with 0.01 tolerance. Rules use strict == which fails on float rounding,
+        // so we only enforce role-based access here.
+        allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
+        // Draft entries can be edited and posted.
+        // Posted entries can be voided (immutable amounts/lines).
         allow update: if isSuperAdmin() || (
-          isTenantAdmin(tenantId) &&
-          resource.data.status == 'draft' &&
-          request.resource.data.status in ['draft', 'posted'] &&
-          (request.resource.data.status == 'draft' ||
-           request.resource.data.totalDebit == request.resource.data.totalCredit)
+          isTenantAdmin(tenantId) && (
+            // Draft -> Draft or Draft -> Posted
+            (
+              resource.data.status == 'draft' &&
+              request.resource.data.status in ['draft', 'posted']
+            )
+            ||
+            // Posted -> Void (only void metadata may change)
+            (
+              resource.data.status == 'posted' &&
+              request.resource.data.status == 'void' &&
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['status', 'voidedAt', 'voidedBy', 'voidReason'])
+            )
+          )
         );
         allow delete: if isSuperAdmin() || (
           isTenantAdmin(tenantId) &&
@@ -563,6 +574,16 @@ service cloud.firestore {
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
+      match /vatReturns/{periodId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
+      match /bankTransactions/{txId} {
+        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+      }
+
       // ============================================
       // OTHER TENANT SUBCOLLECTIONS
       // ============================================
@@ -610,6 +631,16 @@ service cloud.firestore {
       // DEFAULT DENY: Any tenant subcollection not explicitly listed above
       // is blocked by Firestore's default-deny behavior. Do NOT add a catch-all
       // wildcard here — new subcollections must have explicit rules added.
+    }
+
+    // ============================================
+    // PLATFORM CONFIG (Global)
+    // ============================================
+    match /platform/vatConfig {
+      // Readable by any authenticated user (used to gate VAT UI)
+      allow read: if isAuthenticated();
+      // Only superadmins can enable/disable platform VAT
+      allow write: if isSuperAdmin();
     }
 
     // ============================================

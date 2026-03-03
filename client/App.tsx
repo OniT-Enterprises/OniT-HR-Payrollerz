@@ -24,6 +24,7 @@ import {
   Landing,
   authRoutes,
   peopleRoutes,
+  schedulingRoutes,
   payrollRoutes,
   moneyRoutes,
   accountingRoutes,
@@ -90,8 +91,11 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
                           {/* Auth & Core */}
                           {authRoutes}
 
-                          {/* People Module (Staff, Hiring, Time, Performance) */}
+                          {/* People Module (Staff, Hiring, Performance) */}
                           {peopleRoutes}
+
+                          {/* Scheduling Module (Time Tracking, Attendance, Leave, Shifts) */}
+                          {schedulingRoutes}
 
                           {/* Payroll Module */}
                           {payrollRoutes}

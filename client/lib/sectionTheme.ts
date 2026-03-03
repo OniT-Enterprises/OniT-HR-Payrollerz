@@ -3,7 +3,7 @@
  * Defines color theming for each major section of the app
  */
 
-export type SectionId = "dashboard" | "people" | "payroll" | "money" | "accounting" | "reports";
+export type SectionId = "dashboard" | "people" | "scheduling" | "payroll" | "money" | "accounting" | "reports";
 
 export interface SectionTheme {
   id: SectionId;
@@ -40,6 +40,17 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
     borderLeft: "border-l-4 border-l-blue-500",
     gradient: "from-blue-500 to-blue-600",
     ring: "ring-blue-500",
+  },
+  scheduling: {
+    id: "scheduling",
+    text: "text-cyan-600 dark:text-cyan-400",
+    textMuted: "text-cyan-500 dark:text-cyan-500",
+    bg: "bg-cyan-100 dark:bg-cyan-900/30",
+    bgSubtle: "bg-cyan-50 dark:bg-cyan-950/30",
+    border: "border-cyan-300 dark:border-cyan-800",
+    borderLeft: "border-l-4 border-l-cyan-500",
+    gradient: "from-cyan-500 to-teal-500",
+    ring: "ring-cyan-500",
   },
   payroll: {
     id: "payroll",
@@ -93,6 +104,7 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
 export const navColors: Record<SectionId, string> = {
   dashboard: "text-slate-600 dark:text-slate-400",
   people: "text-blue-500",
+  scheduling: "text-cyan-500",
   payroll: "text-green-500",
   money: "text-indigo-500",
   accounting: "text-orange-500",
@@ -105,6 +117,7 @@ export const navColors: Record<SectionId, string> = {
 export const navActiveIndicator: Record<SectionId, string> = {
   dashboard: "bg-slate-500",
   people: "bg-blue-500",
+  scheduling: "bg-cyan-500",
   payroll: "bg-green-500",
   money: "bg-indigo-500",
   accounting: "bg-orange-500",

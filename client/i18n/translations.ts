@@ -47,6 +47,7 @@ export const translations = {
   },
   "nav": {
     "people": "People",
+    "scheduling": "Time & Leave",
     "payroll": "Payroll",
     "money": "Money",
     "moneySubtitle": "Daily",
@@ -1634,7 +1635,7 @@ export const translations = {
       "title": "Time Tracking",
       "subtitle": "Monitor attendance, shifts, and hours",
       "stats": {
-        "guardsOnDuty": "Guards on Duty",
+        "guardsOnDuty": "On Duty",
         "currentlyActive": "Currently active",
         "sitesCovered": "Sites Covered",
         "activeLocations": "Active locations",
@@ -1650,15 +1651,15 @@ export const translations = {
       },
       "recent": {
         "title": "Recent Activity Logs",
-        "description": "Latest security guard time entries and daily activities",
+        "description": "Latest time entries and daily activities",
         "incident": "Incident reported"
       },
       "filters": {
         "title": "Filters",
         "startDate": "Start Date",
         "endDate": "End Date",
-        "guard": "Security Guard",
-        "allGuards": "All guards",
+        "guard": "Employee",
+        "allGuards": "All employees",
         "site": "Site",
         "allSites": "All sites",
         "client": "Client",
@@ -1672,10 +1673,10 @@ export const translations = {
         "logActivity": "Log Activity"
       },
       "dialog": {
-        "title": "Log Security Activity",
-        "description": "Record daily activities, incidents, and equipment checks",
-        "guard": "Security Guard *",
-        "guardPlaceholder": "Select guard",
+        "title": "Log Time Entry",
+        "description": "Record clock in/out times and shift notes",
+        "guard": "Employee *",
+        "guardPlaceholder": "Select employee",
         "date": "Date *",
         "shiftType": "Shift Type *",
         "site": "Site Assignment *",
@@ -1687,14 +1688,14 @@ export const translations = {
         "activities": "Activities Performed *",
         "equipment": "Equipment Checked",
         "incidents": "Incidents/Observations",
-        "incidentsPlaceholder": "Describe any incidents, unusual observations, or security concerns...",
+        "incidentsPlaceholder": "Describe any incidents or observations...",
         "notes": "Additional Notes",
         "notesPlaceholder": "Any additional notes about the shift...",
         "cancel": "Cancel",
         "submit": "Submit Entry"
       },
       "table": {
-        "guard": "Guard",
+        "guard": "Employee",
         "dateShift": "Date/Shift",
         "site": "Site",
         "hours": "Hours",
@@ -1710,11 +1711,11 @@ export const translations = {
         "exportTimesheet": "Export Timesheet CSV",
         "clientBilling": "Generate Client Billing Report",
         "incidentSummary": "Export Incident Summary",
-        "guardPerformance": "Guard Performance Report",
+        "guardPerformance": "Employee Performance Report",
         "coverageTitle": "Site Coverage Summary",
-        "coverageDescription": "Current security coverage across all locations",
+        "coverageDescription": "Current staffing across all locations",
         "coverageSites": "{{count}} sites",
-        "coverageGuards": "{{count}} guards",
+        "coverageGuards": "{{count}} employees",
         "coverageStatus": "Active"
       },
       "activities": {
@@ -1776,11 +1777,11 @@ export const translations = {
         "filterTitle": "Filter Applied",
         "filterDesc": "Filtering entries from {{startDate}} to {{endDate}}",
         "exportTitle": "Export Started",
-        "exportDesc": "Security timesheet CSV will be downloaded shortly.",
+        "exportDesc": "Timesheet CSV will be downloaded shortly.",
         "reportTitle": "Report Generated",
         "reportClientBilling": "Client billing report created successfully.",
         "reportIncident": "Incident summary report created successfully.",
-        "reportPerformance": "Guard performance report created successfully."
+        "reportPerformance": "Employee performance report created successfully."
       },
       "csv": {
         "badgeNumber": "Badge Number",
@@ -4221,6 +4222,8 @@ export const translations = {
     "dashboardBody": "This is your home base \u2014 a quick snapshot of what\u2019s happening across your company today. Check payroll status, review compliance, and jump into any module from here.",
     "peopleTitle": "Welcome to your People hub.",
     "peopleBody": "This is where you manage everyone who works for your company \u2014 employees, contracts, departments, and teams. Start by adding your first employee using the button above. From there you can track leave, run payroll, and keep everything organized. Each section below expands to show more tools.",
+    "schedulingTitle": "Welcome to Time & Leave.",
+    "schedulingBody": "Track attendance, manage leave requests, review timesheets, and set up shift schedules. This is your day-to-day hub for knowing who\u2019s here and who\u2019s away.",
     "payrollTitle": "Welcome to Payroll.",
     "payrollBody": "This is where you prepare and run payroll each month. The checklist below walks you through each step \u2014 employee data, attendance, calculations, and approval. Once everything is green, you\u2019re ready to process.",
     "moneyTitle": "Welcome to Money.",
@@ -4276,6 +4279,7 @@ export const translations = {
   },
   "nav": {
     "people": "Ema",
+    "scheduling": "Tempu & Lisensa",
     "payroll": "Saláriu",
     "money": "Osan",
     "moneySubtitle": "Loron-loron",
@@ -5863,7 +5867,7 @@ export const translations = {
       "title": "Kontrola Tempu",
       "subtitle": "Monitoriza presensa, turnu no oras",
       "stats": {
-        "guardsOnDuty": "Guarda iha servisu",
+        "guardsOnDuty": "Iha servisu",
         "currentlyActive": "Ativu agora",
         "sitesCovered": "Postu kobertu",
         "activeLocations": "Lokal ativu",
@@ -5879,15 +5883,15 @@ export const translations = {
       },
       "recent": {
         "title": "Log atividade foun",
-        "description": "Registu tempu guarda no atividade loron-loron",
+        "description": "Registu tempu no atividade loron-loron",
         "incident": "Incidente relata"
       },
       "filters": {
         "title": "Filtru",
         "startDate": "Data hahu",
         "endDate": "Data remata",
-        "guard": "Guarda seguransa",
-        "allGuards": "Guarda hotu",
+        "guard": "Empregadu",
+        "allGuards": "Empregadu hotu",
         "site": "Lokal",
         "allSites": "Lokal hotu",
         "client": "Cliente",
@@ -5901,10 +5905,10 @@ export const translations = {
         "logActivity": "Rejista atividade"
       },
       "dialog": {
-        "title": "Rejista atividade seguransa",
-        "description": "Rekorda atividade, incidente no verifikasaun ekipamentu",
-        "guard": "Guarda seguransa *",
-        "guardPlaceholder": "Hili guarda",
+        "title": "Rejista tempu",
+        "description": "Rekorda tempu tama/sai no nota turnu",
+        "guard": "Empregadu *",
+        "guardPlaceholder": "Hili empregadu",
         "date": "Data *",
         "shiftType": "Tipu turnu *",
         "site": "Lokal *",
@@ -5916,14 +5920,14 @@ export const translations = {
         "activities": "Atividade halo *",
         "equipment": "Ekipamentu verifika",
         "incidents": "Incidente/Observasaun",
-        "incidentsPlaceholder": "Deskreve incidente ka preocupasaun seguransa...",
+        "incidentsPlaceholder": "Deskreve incidente ka observasaun...",
         "notes": "Nota adicional",
         "notesPlaceholder": "Nota adicional kona ba turnu...",
         "cancel": "Kansela",
         "submit": "Submete registu"
       },
       "table": {
-        "guard": "Guarda",
+        "guard": "Empregadu",
         "dateShift": "Data/Turnu",
         "site": "Lokal",
         "hours": "Oras",
@@ -5939,11 +5943,11 @@ export const translations = {
         "exportTimesheet": "Exporta CSV ponto",
         "clientBilling": "Halo relatoriu faturasaun",
         "incidentSummary": "Exporta resumo incidente",
-        "guardPerformance": "Relatoriu desempenho guarda",
+        "guardPerformance": "Relatoriu desempenho empregadu",
         "coverageTitle": "Resumo kobertura",
-        "coverageDescription": "Kobertura seguransa iha lokal hotu",
+        "coverageDescription": "Pessoal iha lokal hotu",
         "coverageSites": "{{count}} lokal",
-        "coverageGuards": "{{count}} guarda",
+        "coverageGuards": "{{count}} empregadu",
         "coverageStatus": "Ativu"
       },
       "activities": {
@@ -8450,6 +8454,8 @@ export const translations = {
     "dashboardBody": "Ida ne\u2019e ita-nia baze prinsip\u00e1l \u2014 vizaun ger\u00e1l badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estat\u00fatu folha pagamentu, reviza konformidade, no tama ba m\u00f3dulu hotu husi ne\u2019e.",
     "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
     "peopleBody": "Ida ne\u2019e mak fatin atu jer\u00e9ncia ema hotu ne\u2019eb\u00e9 serbisu iha ita-nia empreza \u2014 empreg\u00e1du, kontratu, departamentu, no ekipa. Hah\u00fa liu husi aumenta ita-nia empreg\u00e1du primeiru ho bot\u00e3u iha leten. Husi ne\u2019eb\u00e1 ita bele akompanha lisensa, halo folha pagamentu, no mantein organiz\u00e1du. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
+    "schedulingTitle": "Bemvindu ba Tempu & Lisensa.",
+    "schedulingBody": "Akompanha prezensia, jer\u00e9ncia pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne\u2019e ita-nia hub lor-loron atu hatene s\u00e9 mak iha no s\u00e9 mak la iha.",
     "payrollTitle": "Bemvindu ba Folha Pagamentu.",
     "payrollBody": "Ida ne\u2019e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak \u2014 dad\u00f3s empreg\u00e1du, prezensia, k\u00e1lkulu, no aprov\u00e1saun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
     "moneyTitle": "Bemvindu ba Osan.",
@@ -8505,6 +8511,7 @@ pt: {
   },
   "nav": {
     "people": "Pessoas",
+    "scheduling": "Tempo & Licença",
     "payroll": "Folha de Pagamento",
     "money": "Dinheiro",
     "moneySubtitle": "Diário",
@@ -10197,7 +10204,7 @@ pt: {
       "title": "Registo de Tempo",
       "subtitle": "Monitorizar assiduidade, turnos e horas",
       "stats": {
-        "guardsOnDuty": "Guardas de Serviço",
+        "guardsOnDuty": "Em Serviço",
         "currentlyActive": "Atualmente ativos",
         "sitesCovered": "Locais Cobertos",
         "activeLocations": "Locais ativos",
@@ -10213,15 +10220,15 @@ pt: {
       },
       "recent": {
         "title": "Registos de Atividade Recentes",
-        "description": "Últimos registos de tempo e atividades diárias dos guardas de segurança",
+        "description": "Últimos registos de tempo e atividades diárias",
         "incident": "Incidente reportado"
       },
       "filters": {
         "title": "Filtros",
         "startDate": "Data de Início",
         "endDate": "Data de Fim",
-        "guard": "Guarda de Segurança",
-        "allGuards": "Todos os guardas",
+        "guard": "Funcionário",
+        "allGuards": "Todos os funcionários",
         "site": "Local",
         "allSites": "Todos os locais",
         "client": "Cliente",
@@ -10235,10 +10242,10 @@ pt: {
         "logActivity": "Registar Atividade"
       },
       "dialog": {
-        "title": "Registar Atividade de Segurança",
-        "description": "Registar atividades diárias, incidentes e verificações de equipamento",
-        "guard": "Guarda de Segurança *",
-        "guardPlaceholder": "Selecionar guarda",
+        "title": "Registar Tempo",
+        "description": "Registar horários de entrada/saída e notas do turno",
+        "guard": "Funcionário *",
+        "guardPlaceholder": "Selecionar funcionário",
         "date": "Data *",
         "shiftType": "Tipo de Turno *",
         "site": "Atribuição de Local *",
@@ -10250,14 +10257,14 @@ pt: {
         "activities": "Atividades Realizadas *",
         "equipment": "Equipamento Verificado",
         "incidents": "Incidentes/Observações",
-        "incidentsPlaceholder": "Descreva quaisquer incidentes, observações invulgares ou preocupações de segurança...",
+        "incidentsPlaceholder": "Descreva quaisquer incidentes ou observações...",
         "notes": "Notas Adicionais",
         "notesPlaceholder": "Quaisquer notas adicionais sobre o turno...",
         "cancel": "Cancelar",
         "submit": "Submeter Registo"
       },
       "table": {
-        "guard": "Guarda",
+        "guard": "Funcionário",
         "dateShift": "Data/Turno",
         "site": "Local",
         "hours": "Horas",
@@ -10273,11 +10280,11 @@ pt: {
         "exportTimesheet": "Exportar Folha de Presença CSV",
         "clientBilling": "Gerar Relatório de Faturação ao Cliente",
         "incidentSummary": "Exportar Resumo de Incidentes",
-        "guardPerformance": "Relatório de Desempenho dos Guardas",
+        "guardPerformance": "Relatório de Desempenho dos Funcionários",
         "coverageTitle": "Resumo de Cobertura de Locais",
-        "coverageDescription": "Cobertura de segurança atual em todos os locais",
+        "coverageDescription": "Pessoal atual em todos os locais",
         "coverageSites": "{{count}} locais",
-        "coverageGuards": "{{count}} guardas",
+        "coverageGuards": "{{count}} funcionários",
         "coverageStatus": "Ativo"
       },
       "activities": {
@@ -10339,11 +10346,11 @@ pt: {
         "filterTitle": "Filtro Aplicado",
         "filterDesc": "A filtrar registos de {{startDate}} a {{endDate}}",
         "exportTitle": "Exportação Iniciada",
-        "exportDesc": "O CSV da folha de presença de segurança será descarregado em breve.",
+        "exportDesc": "O CSV da folha de presença será descarregado em breve.",
         "reportTitle": "Relatório Gerado",
         "reportClientBilling": "Relatório de faturação ao cliente criado com sucesso.",
         "reportIncident": "Relatório de resumo de incidentes criado com sucesso.",
-        "reportPerformance": "Relatório de desempenho dos guardas criado com sucesso."
+        "reportPerformance": "Relatório de desempenho dos funcionários criado com sucesso."
       },
       "csv": {
         "badgeNumber": "Número do Crachá",
@@ -13049,6 +13056,8 @@ pt: {
     "dashboardBody": "Esta é a sua base — uma visão rápida do que está a acontecer na sua empresa hoje. Verifique o estado da folha, reveja a conformidade e entre em qualquer módulo a partir daqui.",
     "peopleTitle": "Bem-vindo ao seu hub de Pessoas.",
     "peopleBody": "É aqui que gere todos os que trabalham para a sua empresa — funcionários, contratos, departamentos e equipas. Comece adicionando o seu primeiro funcionário usando o botão acima. A partir daí pode acompanhar licenças, processar folha e manter tudo organizado. Cada secção abaixo expande para mostrar mais ferramentas.",
+    "schedulingTitle": "Bem-vindo a Tempo & Licença.",
+    "schedulingBody": "Acompanhe a assiduidade, gerir pedidos de licença, reveja folhas de ponto e configure turnos. Este é o seu hub diário para saber quem está e quem não está.",
     "payrollTitle": "Bem-vindo à Folha de Pagamento.",
     "payrollBody": "É aqui que prepara e processa a folha de pagamento cada mês. A lista de verificação abaixo guia-o por cada passo — dados dos funcionários, assiduidade, cálculos e aprovação. Quando tudo estiver verde, está pronto para processar.",
     "moneyTitle": "Bem-vindo ao Dinheiro.",

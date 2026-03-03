@@ -1,5 +1,5 @@
 /**
- * MainNavigation - 6 main tabs with hover dropdown submenus
+ * MainNavigation - 7 main tabs with hover dropdown submenus
  * Desktop: hover a tab to see grouped sub-page links
  * Mobile: flat list (no dropdowns)
  */
@@ -73,7 +73,7 @@ interface NavSubGroup {
   links: Array<{ label: string; path: string; icon: typeof LayoutDashboard }>;
 }
 
-// 6-tab navigation with optional dropdown submenus
+// 7-tab navigation with optional dropdown submenus
 const NAV_ITEMS: Array<{
   id: SectionId;
   label: string;
@@ -106,23 +106,6 @@ const NAV_ITEMS: Array<{
         ],
       },
       {
-        title: "Scheduling & Attendance",
-        links: [
-          { label: "Time Tracking", path: "/people/time-tracking", icon: Clock },
-          { label: "Attendance", path: "/people/attendance", icon: Calendar },
-          { label: "Leave Requests", path: "/people/leave", icon: CalendarDays },
-          { label: "Shift Schedules", path: "/people/schedules", icon: UserCheck },
-        ],
-      },
-      {
-        title: "Organization",
-        links: [
-          { label: "Departments", path: "/people/departments", icon: Building },
-          { label: "Org Chart", path: "/people/org-chart", icon: Building2 },
-          { label: "Foreign Workers", path: "/admin/foreign-workers", icon: Globe },
-        ],
-      },
-      {
         title: "Hiring",
         links: [
           { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
@@ -137,6 +120,24 @@ const NAV_ITEMS: Array<{
           { label: "Goals", path: "/people/goals", icon: Target },
           { label: "Reviews", path: "/people/reviews", icon: Award },
           { label: "Training", path: "/people/training", icon: GraduationCap },
+        ],
+      },
+    ],
+  },
+  {
+    id: "scheduling",
+    label: "Time & Leave",
+    labelKey: "nav.scheduling",
+    path: "/scheduling",
+    icon: Clock,
+    subGroups: [
+      {
+        title: "Scheduling & Attendance",
+        links: [
+          { label: "Time Tracking", path: "/scheduling/time-tracking", icon: Clock },
+          { label: "Attendance", path: "/scheduling/attendance", icon: Calendar },
+          { label: "Leave Requests", path: "/scheduling/leave", icon: CalendarDays },
+          { label: "Shift Schedules", path: "/scheduling/schedules", icon: UserCheck },
         ],
       },
     ],
@@ -280,9 +281,13 @@ export default function MainNavigation() {
     }
 
     if (item.id === "people") {
-      return (["staff", "hiring", "timeleave", "performance"] as const).some((module) =>
+      return (["staff", "hiring", "performance"] as const).some((module) =>
         hasModule(module)
       );
+    }
+
+    if (item.id === "scheduling") {
+      return hasModule("timeleave");
     }
 
     if (item.id === "payroll") {

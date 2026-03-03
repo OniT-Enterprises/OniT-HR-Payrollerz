@@ -114,7 +114,7 @@ export function useKeyboardShortcuts(config: ShortcutConfig = {}) {
           navigate("/people/add");
           return;
         case "l":
-          navigate("/people/leave");
+          navigate("/scheduling/leave");
           return;
         case "j":
           navigate("/people/jobs");

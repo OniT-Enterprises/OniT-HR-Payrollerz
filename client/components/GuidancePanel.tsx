@@ -8,6 +8,7 @@ import { sectionThemes, type SectionId } from "@/lib/sectionTheme";
 const keyMap: Record<SectionId, { title: string; body: string }> = {
   dashboard:  { title: "guidance.dashboardTitle",  body: "guidance.dashboardBody" },
   people:     { title: "guidance.peopleTitle",      body: "guidance.peopleBody" },
+  scheduling: { title: "guidance.schedulingTitle",  body: "guidance.schedulingBody" },
   payroll:    { title: "guidance.payrollTitle",     body: "guidance.payrollBody" },
   money:      { title: "guidance.moneyTitle",       body: "guidance.moneyBody" },
   accounting: { title: "guidance.accountingTitle",  body: "guidance.accountingBody" },

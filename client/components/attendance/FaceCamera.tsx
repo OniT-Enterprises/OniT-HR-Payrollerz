@@ -202,41 +202,9 @@ export default function FaceCamera({
     );
   }
 
-  if (status === 'loading') {
-    return (
-      <div className="flex flex-col items-center justify-center h-80 bg-muted rounded-lg">
-        <Loader2 className="h-8 w-8 animate-spin text-cyan-500 mb-3" />
-        <p className="text-sm text-muted-foreground">Loading camera & face detection models...</p>
-      </div>
-    );
-  }
-
-  if (status === 'permission-denied') {
-    return (
-      <div className="flex flex-col items-center justify-center h-80 bg-muted rounded-lg">
-        <AlertTriangle className="h-8 w-8 text-yellow-500 mb-3" />
-        <p className="text-sm font-medium">Camera Permission Required</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Please allow camera access in your browser settings.
-        </p>
-      </div>
-    );
-  }
-
-  if (status === 'no-camera') {
-    return (
-      <div className="flex flex-col items-center justify-center h-80 bg-muted rounded-lg">
-        <Camera className="h-8 w-8 text-muted-foreground mb-3" />
-        <p className="text-sm font-medium">No Camera Found</p>
-        <p className="text-xs text-muted-foreground mt-1">
-          Connect a camera or use a device with a built-in camera.
-        </p>
-      </div>
-    );
-  }
-
   return (
     <div className="relative w-full aspect-[4/3] bg-black rounded-lg overflow-hidden">
+      {/* Video is always in the DOM so videoRef is available when stream arrives */}
       <video
         ref={videoRef}
         className="absolute inset-0 w-full h-full object-cover mirror"
@@ -250,6 +218,34 @@ export default function FaceCamera({
         className="absolute inset-0 w-full h-full pointer-events-none"
         style={{ transform: 'scaleX(-1)' }}
       />
+
+      {/* Overlay states on top of the video */}
+      {status === 'loading' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+          <Loader2 className="h-8 w-8 animate-spin text-cyan-500 mb-3" />
+          <p className="text-sm text-muted-foreground">Loading camera & face detection models...</p>
+        </div>
+      )}
+
+      {status === 'permission-denied' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+          <AlertTriangle className="h-8 w-8 text-yellow-500 mb-3" />
+          <p className="text-sm font-medium">Camera Permission Required</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Please allow camera access in your browser settings.
+          </p>
+        </div>
+      )}
+
+      {status === 'no-camera' && (
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-muted">
+          <Camera className="h-8 w-8 text-muted-foreground mb-3" />
+          <p className="text-sm font-medium">No Camera Found</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Connect a camera or use a device with a built-in camera.
+          </p>
+        </div>
+      )}
     </div>
   );
 }

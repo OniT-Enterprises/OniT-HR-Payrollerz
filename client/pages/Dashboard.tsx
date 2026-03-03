@@ -263,7 +263,7 @@ export default function Dashboard() {
       return { label: t("dashboard.fixBlockingIssues", { count: getBlockingIssues.length }), path: getBlockingIssues[0].path, urgent: true };
     }
     if (pendingLeave > 0) {
-      return { label: t("dashboard.reviewLeaveRequests", { count: pendingLeave }), path: "/people/leave", urgent: false };
+      return { label: t("dashboard.reviewLeaveRequests", { count: pendingLeave }), path: "/scheduling/leave", urgent: false };
     }
     return null;
   };

@@ -3,6 +3,7 @@
  * Loads TenantSettings, renders tab components
  */
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -21,6 +22,8 @@ import {
   Calendar,
   Calculator,
   Plug,
+  Globe,
+  ChevronRight,
 } from "lucide-react";
 import {
   QuickBooksSettings,
@@ -35,6 +38,7 @@ import {
 
 export default function Settings() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const tenantId = useTenantId();
   const { t } = useI18n();
 
@@ -80,6 +84,35 @@ export default function Settings() {
           <div>
             <h1 className="text-2xl font-bold">{t("settings.headerTitle")}</h1>
             <p className="text-muted-foreground">{t("settings.headerSubtitle")}</p>
+          </div>
+        </div>
+
+        {/* Organization Quick Links */}
+        <div className="mb-6">
+          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
+            Organization
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            {[
+              { label: "Departments", path: "/settings/departments", icon: Building, description: "Manage departments and teams" },
+              { label: "Org Chart", path: "/settings/org-chart", icon: Building2, description: "View reporting structure" },
+              { label: "Foreign Workers", path: "/settings/foreign-workers", icon: Globe, description: "Work permits and compliance" },
+            ].map((link) => (
+              <button
+                key={link.path}
+                onClick={() => navigate(link.path)}
+                className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
+              >
+                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                  <link.icon className="h-4 w-4 text-muted-foreground" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{link.label}</p>
+                  <p className="text-xs text-muted-foreground">{link.description}</p>
+                </div>
+                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            ))}
           </div>
         </div>
 

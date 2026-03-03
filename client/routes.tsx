@@ -77,6 +77,7 @@ const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
 
 // Section Dashboards
 const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
+const SchedulingDashboard = lazy(() => import("@/pages/SchedulingDashboard"));
 const PayrollDashboard = lazy(() => import("@/pages/PayrollDashboard"));
 const AccountingDashboard = lazy(() => import("@/pages/AccountingDashboard"));
 const ReportsDashboard = lazy(() => import("@/pages/ReportsDashboard"));
@@ -189,6 +190,23 @@ export const authRoutes = (
     <Route path="/landing" element={<Landing />} />
     <Route path="/features" element={<ProductDetails />} />
     <Route path="/settings" element={<Settings />} />
+    <Route
+      path="/settings/departments"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <Departments />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/settings/org-chart"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <OrganizationChart />
+        </FeatureRoute>
+      }
+    />
+    <Route path="/settings/foreign-workers" element={<ForeignWorkers />} />
     <Route path="/setup" element={<SetupWizard />} />
     <Route path="/sitemap" element={<Sitemap />} />
   </>
@@ -223,22 +241,6 @@ export const peopleRoutes = (
       element={
         <FeatureRoute requiredModule="staff">
           <AddEmployee />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/departments"
-      element={
-        <FeatureRoute requiredModule="staff">
-          <Departments />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/org-chart"
-      element={
-        <FeatureRoute requiredModule="staff">
-          <OrganizationChart />
         </FeatureRoute>
       }
     />
@@ -301,40 +303,6 @@ export const peopleRoutes = (
       }
     />
 
-    {/* Time & Leave */}
-    <Route
-      path="/people/time-tracking"
-      element={
-        <FeatureRoute requiredModule="timeleave">
-          <TimeTracking />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/attendance"
-      element={
-        <FeatureRoute requiredModule="timeleave">
-          <Attendance />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/leave"
-      element={
-        <FeatureRoute requiredModule="timeleave">
-          <LeaveRequests />
-        </FeatureRoute>
-      }
-    />
-    <Route
-      path="/people/schedules"
-      element={
-        <FeatureRoute requiredModule="timeleave">
-          <ShiftScheduling />
-        </FeatureRoute>
-      }
-    />
-
     {/* Performance */}
     <Route
       path="/people/goals"
@@ -365,6 +333,54 @@ export const peopleRoutes = (
       element={
         <FeatureRoute requiredModule="performance">
           <Disciplinary />
+        </FeatureRoute>
+      }
+    />
+  </>
+);
+
+/**
+ * Scheduling Module Routes (Time Tracking, Attendance, Leave, Shifts)
+ */
+export const schedulingRoutes = (
+  <>
+    <Route
+      path="/scheduling"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <SchedulingDashboard />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/scheduling/time-tracking"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <TimeTracking />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/scheduling/attendance"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <Attendance />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/scheduling/leave"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <LeaveRequests />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/scheduling/schedules"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <ShiftScheduling />
         </FeatureRoute>
       }
     />
@@ -866,8 +882,8 @@ export const legacyRedirects = (
     <Route path="/staff" element={<Navigate to="/people/employees" replace />} />
     <Route path="/staff/employees" element={<Navigate to="/people/employees" replace />} />
     <Route path="/staff/add" element={<Navigate to="/people/add" replace />} />
-    <Route path="/staff/departments" element={<Navigate to="/people/departments" replace />} />
-    <Route path="/staff/org-chart" element={<Navigate to="/people/org-chart" replace />} />
+    <Route path="/staff/departments" element={<Navigate to="/settings/departments" replace />} />
+    <Route path="/staff/org-chart" element={<Navigate to="/settings/org-chart" replace />} />
 
     {/* Old Hiring routes */}
     <Route path="/hiring" element={<Navigate to="/people/jobs" replace />} />
@@ -878,12 +894,25 @@ export const legacyRedirects = (
     <Route path="/hiring/onboarding" element={<Navigate to="/people/onboarding" replace />} />
     <Route path="/hiring/offboarding" element={<Navigate to="/people/offboarding" replace />} />
 
-    {/* Old Time & Leave routes */}
-    <Route path="/time-leave" element={<Navigate to="/people/time-tracking" replace />} />
-    <Route path="/time-leave/tracking" element={<Navigate to="/people/time-tracking" replace />} />
-    <Route path="/time-leave/attendance" element={<Navigate to="/people/attendance" replace />} />
-    <Route path="/time-leave/requests" element={<Navigate to="/people/leave" replace />} />
-    <Route path="/time-leave/scheduling" element={<Navigate to="/people/schedules" replace />} />
+    {/* Old Time & Leave routes → now /scheduling/* */}
+    <Route path="/time-leave" element={<Navigate to="/scheduling/time-tracking" replace />} />
+    <Route path="/time-leave/tracking" element={<Navigate to="/scheduling/time-tracking" replace />} />
+    <Route path="/time-leave/attendance" element={<Navigate to="/scheduling/attendance" replace />} />
+    <Route path="/time-leave/requests" element={<Navigate to="/scheduling/leave" replace />} />
+    <Route path="/time-leave/scheduling" element={<Navigate to="/scheduling/schedules" replace />} />
+
+    {/* Old People time & leave routes → now /scheduling/* */}
+    <Route path="/people/time-tracking" element={<Navigate to="/scheduling/time-tracking" replace />} />
+    <Route path="/people/attendance" element={<Navigate to="/scheduling/attendance" replace />} />
+    <Route path="/people/leave" element={<Navigate to="/scheduling/leave" replace />} />
+    <Route path="/people/schedules" element={<Navigate to="/scheduling/schedules" replace />} />
+
+    {/* Old People org routes → now /settings/* */}
+    <Route path="/people/departments" element={<Navigate to="/settings/departments" replace />} />
+    <Route path="/people/org-chart" element={<Navigate to="/settings/org-chart" replace />} />
+
+    {/* Old admin foreign-workers → now /settings/foreign-workers */}
+    <Route path="/admin/foreign-workers" element={<Navigate to="/settings/foreign-workers" replace />} />
 
     {/* Old Performance routes */}
     <Route path="/performance" element={<Navigate to="/people/goals" replace />} />
@@ -903,8 +932,6 @@ export const adminRoutes = (
     <Route path="/admin/setup" element={<AdminSetup />} />
     {/* Document alerts - accessible to all HR users */}
     <Route path="/admin/document-alerts" element={<DocumentAlerts />} />
-    {/* Foreign workers - accessible to all HR users */}
-    <Route path="/admin/foreign-workers" element={<ForeignWorkers />} />
     <Route path="/admin" element={<Navigate to="/admin/tenants" replace />} />
     <Route
       path="/admin/tenants"

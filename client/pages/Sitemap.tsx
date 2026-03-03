@@ -58,6 +58,22 @@ const sitemapData: SitemapSection[] = [
         path: '/settings',
         description: 'Configure your account preferences, notifications, and system settings',
       },
+      {
+        name: 'Departments',
+        path: '/settings/departments',
+        description: 'Manage organizational departments, teams, and reporting structures',
+      },
+      {
+        name: 'Organization Chart',
+        path: '/settings/org-chart',
+        description: 'Visual hierarchy showing reporting relationships across your organization',
+      },
+      {
+        name: 'Foreign Workers',
+        path: '/settings/foreign-workers',
+        description: 'Manage work permits and visa compliance for foreign employees',
+        badge: 'TL Compliance',
+      },
     ],
   },
   {
@@ -83,26 +99,10 @@ const sitemapData: SitemapSection[] = [
         description: 'Register new employees with personal details, employment info, and documents',
       },
       {
-        name: 'Departments',
-        path: '/people/departments',
-        description: 'Manage organizational departments, teams, and reporting structures',
-      },
-      {
-        name: 'Organization Chart',
-        path: '/people/org-chart',
-        description: 'Visual hierarchy showing reporting relationships across your organization',
-      },
-      {
         name: 'Document Alerts',
         path: '/admin/document-alerts',
         description: 'Track expiring documents (passports, work permits, licenses)',
         badge: 'Compliance',
-      },
-      {
-        name: 'Foreign Workers',
-        path: '/admin/foreign-workers',
-        description: 'Manage work permits and visa compliance for foreign employees',
-        badge: 'TL Compliance',
       },
       {
         name: 'Announcements',
@@ -153,30 +153,35 @@ const sitemapData: SitemapSection[] = [
     ],
   },
   {
-    title: 'Time & Attendance',
+    title: 'Scheduling & Attendance',
     description: 'Track working hours, attendance, and leave requests',
     icon: Clock,
-    color: 'text-orange-600',
-    bgColor: 'bg-orange-100 dark:bg-orange-900',
+    color: 'text-cyan-600',
+    bgColor: 'bg-cyan-100 dark:bg-cyan-900',
     pages: [
       {
+        name: 'Scheduling Dashboard',
+        path: '/scheduling',
+        description: 'Overview of attendance, leave, and scheduling at a glance',
+      },
+      {
         name: 'Time Tracking',
-        path: '/people/time-tracking',
+        path: '/scheduling/time-tracking',
         description: 'Clock in/out, track hours worked, and manage timesheets',
       },
       {
         name: 'Attendance',
-        path: '/people/attendance',
+        path: '/scheduling/attendance',
         description: 'Daily attendance records with late arrivals and early departures',
       },
       {
         name: 'Leave Requests',
-        path: '/people/leave',
+        path: '/scheduling/leave',
         description: 'Submit, approve, and track vacation, sick leave, and other absences',
       },
       {
         name: 'Shift Scheduling',
-        path: '/people/schedules',
+        path: '/scheduling/schedules',
         description: 'Create and manage work schedules, shifts, and rotations',
       },
     ],

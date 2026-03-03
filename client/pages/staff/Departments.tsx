@@ -343,7 +343,7 @@ export default function Departments() {
                     <Plus className="mr-2 h-4 w-4" />
                     {t("departments.addDepartment")}
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate("/people/org-chart")}>
+                  <DropdownMenuItem onClick={() => navigate("/settings/org-chart")}>
                     <Users className="mr-2 h-4 w-4" />
                     {t("departments.organizationChart")}
                   </DropdownMenuItem>

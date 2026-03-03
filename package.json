@@ -34,6 +34,7 @@
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
+    "@radix-ui/react-popover": "^1.1.15",
     "@react-pdf/renderer": "^4.3.2",
     "@sentry/react": "^10.38.0",
     "@tanstack/react-virtual": "^3.13.19",

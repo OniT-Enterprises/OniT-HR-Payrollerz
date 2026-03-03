@@ -116,13 +116,13 @@ export const seoConfig = {
     title: 'Departments',
     description: 'Organize your workforce into departments and manage team structures.',
     keywords: 'departments, teams, organizational structure, team management',
-    url: '/people/departments',
+    url: '/settings/departments',
   },
   orgChart: {
     title: 'Organization Chart',
     description: 'Visualize your company structure with an interactive organization chart.',
     keywords: 'org chart, organizational chart, company structure, hierarchy',
-    url: '/people/org-chart',
+    url: '/settings/org-chart',
   },
 
   // Hiring
@@ -157,30 +157,36 @@ export const seoConfig = {
     url: '/people/offboarding',
   },
 
-  // Time & Leave
+  // Scheduling & Attendance
+  schedulingDashboard: {
+    title: 'Scheduling & Attendance',
+    description: 'Manage time tracking, attendance, leave requests, and shift schedules.',
+    keywords: 'scheduling, attendance, time tracking, leave management, shift scheduling',
+    url: '/scheduling',
+  },
   timeTracking: {
     title: 'Time Tracking',
     description: 'Track employee work hours with clock in/out and timesheet management.',
     keywords: 'time tracking, timesheets, work hours, clock in, clock out',
-    url: '/people/time-tracking',
+    url: '/scheduling/time-tracking',
   },
   attendance: {
     title: 'Attendance',
     description: 'Monitor employee attendance patterns and manage absences.',
     keywords: 'attendance, absence management, employee attendance, attendance tracking',
-    url: '/people/attendance',
+    url: '/scheduling/attendance',
   },
   leave: {
     title: 'Leave Requests',
     description: 'Manage employee leave requests, approvals, and PTO balances.',
     keywords: 'leave management, PTO, vacation, sick leave, time off',
-    url: '/people/leave',
+    url: '/scheduling/leave',
   },
   schedules: {
     title: 'Shift Scheduling',
     description: 'Create and manage employee work schedules and shifts.',
     keywords: 'shift scheduling, work schedules, roster, shift management',
-    url: '/people/schedules',
+    url: '/scheduling/schedules',
   },
 
   // Performance

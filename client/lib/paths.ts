@@ -146,6 +146,10 @@ export const paths = {
 
   expenses: (tid: string) => `tenants/${tid}/expenses`,
   expense: (tid: string, expenseId: string) => `tenants/${tid}/expenses/${expenseId}`,
+
+  // Bank reconciliation (imported statement transactions)
+  bankTransactions: (tid: string) => `tenants/${tid}/bankTransactions`,
+  bankTransaction: (tid: string, txId: string) => `tenants/${tid}/bankTransactions/${txId}`,
   
   // Analytics and reports
   analytics: (tid: string) => `tenants/${tid}/analytics`,
@@ -187,5 +191,4 @@ export type TenantPath = ReturnType<typeof paths.tenant>;
 export type DepartmentPath = ReturnType<typeof paths.departments>;
 export type EmployeePath = ReturnType<typeof paths.employees>;
 export type JobPath = ReturnType<typeof paths.jobs>;
-
 

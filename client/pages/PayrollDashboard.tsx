@@ -162,7 +162,7 @@ export default function PayrollDashboard() {
         issueLabel: t("payrollDashboard.checklist.attendanceIssue"),
         description: t("payrollDashboard.checklist.attendanceDesc"),
         status: "complete",
-        linkPath: "/people/time-tracking",
+        linkPath: "/scheduling/time-tracking",
         linkLabel: t("payrollDashboard.checklist.attendanceLink"),
       },
       {
@@ -172,7 +172,7 @@ export default function PayrollDashboard() {
         description: t("payrollDashboard.checklist.leaveDesc"),
         status: pendingLeave > 0 ? "warning" : "complete",
         count: pendingLeave > 0 ? pendingLeave : undefined,
-        linkPath: "/people/leave",
+        linkPath: "/scheduling/leave",
         linkLabel: t("payrollDashboard.checklist.leaveLink"),
       },
       {

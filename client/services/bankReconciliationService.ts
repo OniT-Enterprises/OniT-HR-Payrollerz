@@ -17,6 +17,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { formatDateISO } from '@/lib/dateUtils';
+import { paths } from '@/lib/paths';
 import type {
   BankTransaction,
   ReconciliationStatus,
@@ -25,7 +26,7 @@ export type { BankTransaction };
 
 // Get tenant-scoped collection
 const getCollection = (tenantId: string) =>
-  collection(db, 'tenants', tenantId, 'bankTransactions');
+  collection(db, paths.bankTransactions(tenantId));
 
 class BankReconciliationService {
   private tenantId: string | null = null;
@@ -231,17 +232,20 @@ class BankReconciliationService {
     const tenantId = this.ensureTenant();
     const q = query(
       getCollection(tenantId),
-      where('status', 'in', ['unmatched', 'matched']),
-      orderBy('date', 'desc')
+      where('status', 'in', ['unmatched', 'matched'])
     );
 
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({
+    const transactions = snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate() || new Date(),
       reconciledAt: doc.data().reconciledAt?.toDate(),
     })) as BankTransaction[];
+
+    // Sort in memory to avoid requiring composite indexes for (status in ...) + orderBy(date)
+    transactions.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+    return transactions;
   }
 
   /**

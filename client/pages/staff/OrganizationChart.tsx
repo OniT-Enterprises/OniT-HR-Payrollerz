@@ -478,10 +478,10 @@ export default function OrganizationChart() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Statistics Dashboard */}
         {employees.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8 -mt-8">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
               <CardContent className="p-5">
                 <div className="flex items-center justify-between">

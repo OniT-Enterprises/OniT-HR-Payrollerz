@@ -37,12 +37,9 @@ import { getComplianceIssues } from "@/lib/employeeUtils";
 import {
   Users,
   UserPlus,
-  Building,
-  Building2,
   Briefcase,
   UserCheck,
   Calendar,
-  Clock,
   CalendarDays,
   Heart,
   Target,
@@ -61,7 +58,6 @@ import {
   Pencil,
   Upload,
   Plus,
-  Globe,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
@@ -261,75 +257,6 @@ export default function PeopleDashboard() {
 
       <div className="p-6 max-w-7xl mx-auto">
         <GuidancePanel section="people" />
-
-        {/* KPI row */}
-        <div className="grid gap-4 md:grid-cols-3 mb-5">
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
-            onClick={() => navigate("/people/employees")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.activeEmployees}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.activeEmployees")}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-              stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
-            }`}
-            onClick={() => navigate("/people/leave")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.pendingLeave}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.pendingLeave")}
-                  </p>
-                  {stats.pendingLeave > 0 && (
-                    <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      {t("people.dashboard.stats.needsReview")}
-                    </Badge>
-                  )}
-                </div>
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                }`}>
-                  <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
-            onClick={() => navigate("/people/attendance")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.onLeaveToday}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.onLeaveToday")}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <CalendarDays className="h-5 w-5 text-cyan-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Attention banner — collapsed by default, expand for details */}
         {attentionItems.length > 0 ? (
@@ -574,23 +501,6 @@ export default function PeopleDashboard() {
         <div className="space-y-4 mb-6">
           {[
             {
-              title: "Scheduling & Attendance",
-              links: [
-                { label: "Time Tracking", path: "/people/time-tracking", icon: Clock },
-                { label: "Attendance", path: "/people/attendance", icon: CalendarDays },
-                { label: "Leave Requests", path: "/people/leave", icon: Heart },
-                { label: "Shift Schedules", path: "/people/schedules", icon: Calendar },
-              ],
-            },
-            {
-              title: "Organization",
-              links: [
-                { label: "Departments", path: "/people/departments", icon: Building },
-                { label: "Org Chart", path: "/people/org-chart", icon: Building2 },
-                { label: "Foreign Workers", path: "/admin/foreign-workers", icon: Globe },
-              ],
-            },
-            {
               title: "Hiring",
               links: [
                 { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
@@ -636,6 +546,43 @@ export default function PeopleDashboard() {
               </div>
             </div>
           ))}
+        </div>
+
+        {/* Stats Summary */}
+        <div className="grid grid-cols-3 gap-4 mt-8">
+          <Card className="border-border/50 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/people/employees")}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("people.dashboard.stats.activeEmployees")}</p>
+                  <p className="text-xl font-bold">{stats.activeEmployees}</p>
+                </div>
+                <Users className="h-5 w-5 text-blue-500" />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/scheduling/leave")}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("people.dashboard.stats.pendingLeave")}</p>
+                  <p className="text-xl font-bold">{stats.pendingLeave}</p>
+                </div>
+                <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-500" : "text-muted-foreground"}`} />
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-border/50 cursor-pointer hover:bg-accent/50 transition-colors" onClick={() => navigate("/scheduling/attendance")}>
+            <CardContent className="pt-4 pb-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-muted-foreground">{t("people.dashboard.stats.onLeaveToday")}</p>
+                  <p className="text-xl font-bold">{stats.onLeaveToday}</p>
+                </div>
+                <CalendarDays className="h-5 w-5 text-cyan-500" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

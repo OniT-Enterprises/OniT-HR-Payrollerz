@@ -123,14 +123,10 @@ OniT HR/Payroll
 │   │
 │   ├── Add Employee (/people/add)         [WORK PAGE - Form]
 │   │
-│   ├── Departments (/people/departments)  [WORK PAGE]
 │   │
-│   ├── Org Chart (/people/org-chart)      [WORK PAGE]
-│   │
-│   ├── Time & Leave                       [Sub-section]
-│   │   ├── Time Tracking (/people/time-tracking)
-│   │   ├── Leave Requests (/people/leave)
-│   │   └── Attendance (/people/attendance)
+│   ├── [Departments moved to /settings/departments]
+│   ├── [Org Chart moved to /settings/org-chart]
+│   ├── [Time & Leave moved to /scheduling/*]
 │   │
 │   ├── Hiring                             [Sub-section]
 │   │   ├── Job Postings (/people/jobs)
@@ -357,7 +353,7 @@ These pages get extra optimization - keyboard shortcuts, prominent placement:
 | Expenses | `/money/expenses` | Frequent data entry |
 | Journal Entries | `/accounting/journal-entries` | Most-used accounting tool |
 | Payroll Reports | `/reports/payroll` | Most-used reports |
-| Leave Requests | `/people/leave` | Frequent approvals |
+| Leave Requests | `/scheduling/leave` | Frequent approvals |
 
 ---
 

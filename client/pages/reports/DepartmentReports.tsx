@@ -531,7 +531,7 @@ export default function DepartmentReports() {
                 <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>No departments found</p>
                 <p className="text-sm mb-4">Create departments in Staff &gt; Departments</p>
-                <Button variant="outline" onClick={() => navigate("/people/departments")}>
+                <Button variant="outline" onClick={() => navigate("/settings/departments")}>
                   <Building className="h-4 w-4 mr-2" />
                   Go to Departments
                 </Button>

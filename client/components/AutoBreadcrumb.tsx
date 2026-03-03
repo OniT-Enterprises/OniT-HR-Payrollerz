@@ -21,6 +21,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "": "Dashboard",
   "dashboard": "Dashboard",
   "people": "People",
+  "scheduling": "Time & Leave",
   "payroll": "Payroll",
   "accounting": "Accounting",
   "reports": "Reports",
@@ -45,6 +46,7 @@ const ROUTE_LABELS: Record<string, string> = {
   "reviews": "Reviews",
   "training": "Training",
   "disciplinary": "Disciplinary",
+  "foreign-workers": "Foreign Workers",
 
   // Payroll sub-routes
   "run": "Run Payroll",
