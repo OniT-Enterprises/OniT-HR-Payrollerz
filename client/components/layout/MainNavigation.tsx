@@ -99,27 +99,11 @@ const NAV_ITEMS: Array<{
     icon: Users,
     subGroups: [
       {
-        title: "Staff",
+        title: "",
         links: [
-          { label: "Employees", path: "/people/employees", icon: Users },
-          { label: "Add Employee", path: "/people/add", icon: UserPlus },
-        ],
-      },
-      {
-        title: "Hiring",
-        links: [
-          { label: "Job Postings", path: "/people/jobs", icon: Briefcase },
-          { label: "Candidates", path: "/people/candidates", icon: ClipboardList },
-          { label: "Interviews", path: "/people/interviews", icon: MessageSquare },
-          { label: "Onboarding", path: "/people/onboarding", icon: UserPlus },
-        ],
-      },
-      {
-        title: "Performance",
-        links: [
-          { label: "Goals", path: "/people/goals", icon: Target },
-          { label: "Reviews", path: "/people/reviews", icon: Award },
-          { label: "Training", path: "/people/training", icon: GraduationCap },
+          { label: "Staff", path: "/people/staff", icon: Users },
+          { label: "Hiring", path: "/people/hiring", icon: Briefcase },
+          { label: "Performance", path: "/people/performance", icon: Target },
         ],
       },
     ],
@@ -309,11 +293,11 @@ export default function MainNavigation() {
     return true;
   });
 
-  const isActive = (path: string) => {
-    if (path === "/") {
+  const isActive = (item: typeof NAV_ITEMS[number]) => {
+    if (item.path === "/") {
       return location.pathname === "/" || location.pathname === "/dashboard";
     }
-    return location.pathname.startsWith(path);
+    return location.pathname.startsWith(item.path);
   };
 
   const handleNavigate = (path: string) => {
@@ -354,7 +338,7 @@ export default function MainNavigation() {
             <div className="hidden md:flex items-center gap-1">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.path);
+                const active = isActive(item);
                 const iconColor = navColors[item.id];
                 const indicatorColor = navActiveIndicator[item.id];
                 const dropdownAlign = ["money", "accounting", "reports"].includes(item.id) ? "right-0" : "left-0";
@@ -399,10 +383,12 @@ export default function MainNavigation() {
                             style={{ gridTemplateColumns: `repeat(${maxCols}, max-content)` }}
                           >
                             {item.subGroups.map((group) => (
-                              <div key={group.title}>
-                                <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-2">
-                                  {group.title}
-                                </p>
+                              <div key={group.title || 'default'}>
+                                {group.title && (
+                                  <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 px-2">
+                                    {group.title}
+                                  </p>
+                                )}
                                 <div className="space-y-0.5">
                                   {group.links.map((link) => {
                                     const LinkIcon = link.icon;
@@ -576,7 +562,7 @@ export default function MainNavigation() {
             <div className="flex flex-col gap-1">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
-                const active = isActive(item.path);
+                const active = isActive(item);
                 const iconColor = navColors[item.id];
                 const indicatorColor = navActiveIndicator[item.id];
                 return (

@@ -77,6 +77,9 @@ const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
 
 // Section Dashboards
 const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
+const StaffOverview = lazy(() => import("@/pages/people/StaffOverview"));
+const HiringOverview = lazy(() => import("@/pages/people/HiringOverview"));
+const PerformanceOverview = lazy(() => import("@/pages/people/PerformanceOverview"));
 const SchedulingDashboard = lazy(() => import("@/pages/SchedulingDashboard"));
 const PayrollDashboard = lazy(() => import("@/pages/PayrollDashboard"));
 const AccountingDashboard = lazy(() => import("@/pages/AccountingDashboard"));
@@ -223,6 +226,36 @@ export const peopleRoutes = (
       element={
         <FeatureRoute requiredAnyModules={["staff", "hiring", "timeleave", "performance"]}>
           <PeopleDashboard />
+        </FeatureRoute>
+      }
+    />
+
+    {/* Staff Overview Hub */}
+    <Route
+      path="/people/staff"
+      element={
+        <FeatureRoute requiredModule="staff">
+          <StaffOverview />
+        </FeatureRoute>
+      }
+    />
+
+    {/* Hiring Overview Hub */}
+    <Route
+      path="/people/hiring"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <HiringOverview />
+        </FeatureRoute>
+      }
+    />
+
+    {/* Performance Overview Hub */}
+    <Route
+      path="/people/performance"
+      element={
+        <FeatureRoute requiredModule="performance">
+          <PerformanceOverview />
         </FeatureRoute>
       }
     />
@@ -879,14 +912,14 @@ export const reportsRoutes = (
 export const legacyRedirects = (
   <>
     {/* Old Staff routes */}
-    <Route path="/staff" element={<Navigate to="/people/employees" replace />} />
+    <Route path="/staff" element={<Navigate to="/people/staff" replace />} />
     <Route path="/staff/employees" element={<Navigate to="/people/employees" replace />} />
     <Route path="/staff/add" element={<Navigate to="/people/add" replace />} />
     <Route path="/staff/departments" element={<Navigate to="/settings/departments" replace />} />
     <Route path="/staff/org-chart" element={<Navigate to="/settings/org-chart" replace />} />
 
     {/* Old Hiring routes */}
-    <Route path="/hiring" element={<Navigate to="/people/jobs" replace />} />
+    <Route path="/hiring" element={<Navigate to="/people/hiring" replace />} />
     <Route path="/hiring/create-job" element={<Navigate to="/people/jobs" replace />} />
     <Route path="/hiring/jobs/create" element={<Navigate to="/people/jobs" replace />} />
     <Route path="/hiring/candidates" element={<Navigate to="/people/candidates" replace />} />
@@ -915,7 +948,7 @@ export const legacyRedirects = (
     <Route path="/admin/foreign-workers" element={<Navigate to="/settings/foreign-workers" replace />} />
 
     {/* Old Performance routes */}
-    <Route path="/performance" element={<Navigate to="/people/goals" replace />} />
+    <Route path="/performance" element={<Navigate to="/people/performance" replace />} />
     <Route path="/performance/goals" element={<Navigate to="/people/goals" replace />} />
     <Route path="/performance/reviews" element={<Navigate to="/people/reviews" replace />} />
     <Route path="/performance/training" element={<Navigate to="/people/training" replace />} />

@@ -22,6 +22,24 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://onit-hr-payroll.web.app/people/staff</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/people/hiring</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/people/performance</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://onit-hr-payroll.web.app/people/employees</loc>
     <lastmod>2026-01-11</lastmod>
     <changefreq>daily</changefreq>

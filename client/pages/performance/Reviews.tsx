@@ -40,6 +40,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import {
   PerformanceReview,
   ReviewType,
@@ -416,6 +417,7 @@ export default function Reviews() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.reviews} />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -434,6 +436,8 @@ export default function Reviews() {
           </div>
         </div>
       </div>
+
+      <PeopleSectionNav mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         {employees.length === 0 ? (

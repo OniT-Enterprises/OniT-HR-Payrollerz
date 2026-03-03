@@ -42,6 +42,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import {
   type OKR,
   type Goal,
@@ -444,6 +445,7 @@ export default function Goals() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.goals} />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
@@ -487,6 +489,8 @@ export default function Goals() {
           </div>
         </div>
       </div>
+
+      <PeopleSectionNav mode="expanded" />
 
       <div className="max-w-7xl mx-auto px-6 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab}>

@@ -41,6 +41,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -312,24 +313,29 @@ export default function GrievanceInbox() {
         description="Anonymous employee grievance management"
       />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900 flex items-center justify-center">
-              <ShieldAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+      {/* Hero Section */}
+      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center gap-4">
+            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
+              <ShieldAlert className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold">Grievance Inbox</h1>
-              <p className="text-muted-foreground">
+              <h1 className="text-3xl font-bold text-foreground">Grievance Inbox</h1>
+              <p className="text-muted-foreground mt-1">
                 Anonymous employee concerns and complaints
               </p>
             </div>
           </div>
         </div>
+      </div>
+
+      <PeopleSectionNav mode="expanded" />
+
+      <div className="p-6 max-w-7xl mx-auto">
 
         {/* Anonymity Notice */}
         <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">

@@ -89,6 +89,11 @@ const sitemapData: SitemapSection[] = [
         description: 'Central dashboard for all people management activities',
       },
       {
+        name: 'Staff Overview',
+        path: '/people/staff',
+        description: 'Staff hub — employee directory, announcements, and grievances',
+      },
+      {
         name: 'All Employees',
         path: '/people/employees',
         description: 'Complete employee directory with search, filters, and detailed profiles',
@@ -125,6 +130,11 @@ const sitemapData: SitemapSection[] = [
     color: 'text-violet-600',
     bgColor: 'bg-violet-100 dark:bg-violet-900',
     pages: [
+      {
+        name: 'Hiring Overview',
+        path: '/people/hiring',
+        description: 'Hiring hub — job postings, candidates, interviews, and workforce transitions',
+      },
       {
         name: 'Job Postings',
         path: '/people/jobs',
@@ -193,6 +203,11 @@ const sitemapData: SitemapSection[] = [
     color: 'text-pink-600',
     bgColor: 'bg-pink-100 dark:bg-pink-900',
     pages: [
+      {
+        name: 'Performance Overview',
+        path: '/people/performance',
+        description: 'Performance hub — goals, reviews, training, and disciplinary management',
+      },
       {
         name: 'Goals',
         path: '/people/goals',

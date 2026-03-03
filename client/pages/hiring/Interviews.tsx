@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -564,6 +565,7 @@ export default function Interviews() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.interviews} />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
@@ -598,6 +600,8 @@ export default function Interviews() {
           </div>
         </div>
       </div>
+
+      <PeopleSectionNav mode="expanded" />
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-8">

@@ -41,6 +41,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO } from "@/components/SEO";
@@ -324,28 +325,35 @@ export default function Announcements() {
     <div className="min-h-screen bg-background">
       <SEO title="Announcements - Meza" description="Manage company announcements for Ekipa" />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
+
+      {/* Hero Section */}
+      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <AutoBreadcrumb className="mb-4" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
+                <Megaphone className="h-8 w-8 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-foreground">Announcements</h1>
+                <p className="text-muted-foreground mt-1">
+                  Broadcast messages to all employees via Ekipa
+                </p>
+              </div>
+            </div>
+            <Button onClick={openCreateDialog} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600" size="lg">
+              <Plus className="h-5 w-5 mr-2" />
+              New Announcement
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <PeopleSectionNav mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900 flex items-center justify-center">
-              <Megaphone className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">Announcements</h1>
-              <p className="text-muted-foreground">
-                Broadcast messages to all employees via Ekipa
-              </p>
-            </div>
-          </div>
-          <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700">
-            <Plus className="h-4 w-4 mr-2" />
-            New Announcement
-          </Button>
-        </div>
 
         {/* Summary */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

@@ -44,6 +44,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PeopleSectionNav from "@/components/PeopleSectionNav";
 import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWizard";
 import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -639,6 +640,7 @@ export default function AddEmployee() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.addEmployee} />
       <MainNavigation />
+      <PeopleSectionNav mode="collapsed" />
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
@@ -698,6 +700,8 @@ export default function AddEmployee() {
           </div>
         </div>
       </div>
+
+      <PeopleSectionNav mode="expanded" />
 
       <div className="max-w-5xl mx-auto px-6 py-8 -mt-6">
 
