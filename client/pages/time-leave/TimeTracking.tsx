@@ -32,7 +32,6 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
-  FileText,
   Building,
   User,
 } from "lucide-react";
@@ -99,9 +98,6 @@ export default function TimeTracking() {
     [timeEntries]);
   const totalLate = useMemo(() =>
     timeEntries.filter(e => e.status === 'late').length,
-    [timeEntries]);
-  const totalAbsent = useMemo(() =>
-    timeEntries.filter(e => e.status === 'absent').length,
     [timeEntries]);
   const totalHoursToday = useMemo(() =>
     timeEntries.reduce((sum, e) => sum + e.totalHours, 0),

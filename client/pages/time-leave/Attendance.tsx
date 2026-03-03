@@ -6,7 +6,6 @@
 import React, { useState, useMemo, lazy, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -206,10 +205,6 @@ export default function Attendance() {
         {cfg.label}
       </span>
     );
-  };
-
-  const getStatusDotColor = (status: AttendanceStatus) => {
-    return statusConfig[status]?.dot || "bg-muted-foreground";
   };
 
   const getStatusBorderColor = (status: AttendanceStatus) => {

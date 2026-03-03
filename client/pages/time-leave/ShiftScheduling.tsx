@@ -111,7 +111,7 @@ export default function ShiftScheduling() {
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
-  const [viewMode, setViewMode] = useState<"week" | "day">("week");
+  const [_viewMode, _setViewMode] = useState<"week" | "day">("week");
   const [draggedShift, setDraggedShift] = useState<ShiftRecord | null>(null);
   const [dropTarget, setDropTarget] = useState<{ employeeId: string; date: string } | null>(null);
   const [showAllEmployees, setShowAllEmployees] = useState(true);
@@ -203,16 +203,6 @@ export default function ShiftScheduling() {
     "Client Site B": t("timeLeave.shiftScheduling.data.locations.clientSiteB"),
   };
 
-  const noteLabels: Record<string, string> = {
-    "Team meeting at 10 AM": t("timeLeave.shiftScheduling.data.notes.teamMeeting"),
-    "Training new representatives": t("timeLeave.shiftScheduling.data.notes.trainingNewReps"),
-    "Client presentation at 2 PM": t("timeLeave.shiftScheduling.data.notes.clientPresentation"),
-    "Inventory check": t("timeLeave.shiftScheduling.data.notes.inventoryCheck"),
-    "Client meeting": t("timeLeave.shiftScheduling.data.notes.clientMeeting"),
-    "Evening shift coverage": t("timeLeave.shiftScheduling.data.notes.eveningShift"),
-    "Data analysis project": t("timeLeave.shiftScheduling.data.notes.dataAnalysis"),
-  };
-
   const templateLabels: Record<string, string> = {
     "Standard Operations Week": t("timeLeave.shiftScheduling.data.templates.standardOperationsWeek"),
   };
@@ -221,7 +211,6 @@ export default function ShiftScheduling() {
     departmentLabels[department] || department;
   const getPositionLabel = (position: string) => positionLabels[position] || position;
   const getLocationLabel = (location: string) => locationLabels[location] || location;
-  const getNoteLabel = (note: string) => noteLabels[note] || note;
   const getTemplateLabel = (name: string) => templateLabels[name] || name;
 
   // Helper function to get week string
@@ -394,15 +383,6 @@ export default function ShiftScheduling() {
     }
   };
 
-  const handleLoad = () => {
-    toast({
-      title: t("timeLeave.shiftScheduling.toast.scheduleLoadedTitle"),
-      description: t("timeLeave.shiftScheduling.toast.scheduleLoadedDesc", {
-        week: selectedWeek,
-      }),
-    });
-  };
-
   const handlePublishSchedule = async () => {
     try {
       const count = await publishMutation.mutateAsync({ startDate: selectedWeek, endDate: weekEndDate });
@@ -460,57 +440,6 @@ export default function ShiftScheduling() {
         shift.location === selectedLocation;
       return matchesDepartment && matchesLocation;
     });
-  };
-
-  const getDayShifts = (dayOffset: number) => {
-    const weekStart = new Date(selectedWeek);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayOffset);
-    const dateString = toDateStringTL(targetDate);
-
-    return getWeekShifts().filter((shift) => shift.date === dateString);
-  };
-
-  const getDayName = (dayOffset: number) => {
-    const weekStart = new Date(selectedWeek);
-    const targetDate = new Date(weekStart);
-    targetDate.setDate(weekStart.getDate() + dayOffset);
-    return formatDateTL(targetDate, {
-      weekday: "short",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
-  const getStatusBadge = (status: ShiftRecord["status"]) => {
-    switch (status) {
-      case "draft":
-        return (
-          <Badge className="bg-gray-100 text-gray-800">
-            {t("timeLeave.shiftScheduling.status.draft")}
-          </Badge>
-        );
-      case "published":
-        return (
-          <Badge className="bg-blue-100 text-blue-800">
-            {t("timeLeave.shiftScheduling.status.published")}
-          </Badge>
-        );
-      case "confirmed":
-        return (
-          <Badge className="bg-green-100 text-green-800">
-            {t("timeLeave.shiftScheduling.status.confirmed")}
-          </Badge>
-        );
-      case "cancelled":
-        return (
-          <Badge className="bg-red-100 text-red-800">
-            {t("timeLeave.shiftScheduling.status.cancelled")}
-          </Badge>
-        );
-      default:
-        return <Badge variant="outline">{status}</Badge>;
-    }
   };
 
   const getDepartmentColor = (departmentName: string) => {

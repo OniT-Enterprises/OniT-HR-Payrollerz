@@ -6,7 +6,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   faceRecognitionService,
-  type FaceEmbeddingDoc,
 } from '@/services/faceRecognitionService';
 
 export const faceEmbeddingKeys = {

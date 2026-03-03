@@ -42,7 +42,6 @@ import {
   CreditCard,
   TrendingUp,
   DollarSign,
-  PiggyBank,
   ArrowUpRight,
   ArrowDownRight,
   Building,

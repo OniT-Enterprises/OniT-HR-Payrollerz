@@ -24,7 +24,6 @@ import {
   Target,
   ChevronRight,
   Heart,
-  CalendarDays,
   AlertTriangle,
   CheckCircle,
 } from "lucide-react";

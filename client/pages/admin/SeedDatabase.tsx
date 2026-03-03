@@ -184,7 +184,7 @@ const CANDIDATES = [
   { firstName: "Lucia", lastName: "Correia", email: "lucia.c@email.com", phone: "+670-7755-0006", jobTitle: "HR Specialist", stage: "interview", rating: 4, source: "Indeed" },
 ];
 
-const LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Maternity Leave", "Paternity Leave", "Unpaid Leave", "Bereavement Leave"];
+const _LEAVE_TYPES = ["Annual Leave", "Sick Leave", "Maternity Leave", "Paternity Leave", "Unpaid Leave", "Bereavement Leave"];
 
 const TRAINING_COURSES = [
   { name: "Lei Trabalho Timor-Leste", category: "Compliance", duration: 8, provider: "SEFOPE", mandatory: true },
@@ -320,7 +320,7 @@ const EXPENSES = [
 
 // Production safety check - NEVER allow seeding/clearing in production
 const PRODUCTION_HOSTNAMES = ['payroll.naroman.tl', 'app.onithr.com', 'onithr.com'];
-const PRODUCTION_PROJECT_IDS = ['onit-hr-payroll']; // Add production project IDs here
+const _PRODUCTION_PROJECT_IDS = ['onit-hr-payroll']; // Add production project IDs here
 
 function isProductionEnvironment(): boolean {
   // Primary check: Vite sets this to true for production builds
@@ -589,7 +589,6 @@ export default function SeedDatabase() {
   const seedLeaveRequests = async () => {
     let success = 0, failed = 0;
     const today = new Date();
-    const todayStr = fmtDate(today);
 
     // Curated leave requests that produce interesting dashboard data:
     //  - 4 pending (need manager action)

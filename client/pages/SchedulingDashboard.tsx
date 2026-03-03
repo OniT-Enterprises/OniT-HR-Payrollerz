@@ -7,7 +7,6 @@
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -30,7 +29,7 @@ import { useI18n } from "@/i18n/I18nProvider";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { timeLeaveNavConfig } from "@/lib/moduleNav";
 
-const theme = sectionThemes.scheduling;
+const _theme = sectionThemes.scheduling;
 
 function SchedulingDashboardSkeleton() {
   return (
@@ -71,7 +70,7 @@ function SchedulingDashboardSkeleton() {
 
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const { t: _t } = useI18n();
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const loading = employeesLoading || leaveStatsLoading;

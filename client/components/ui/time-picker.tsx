@@ -56,7 +56,7 @@ export function TimePicker({
   value,
   onChange,
   placeholder = "Select time",
-  required,
+  required: _required,
   className,
   id,
 }: TimePickerProps) {
