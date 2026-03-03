@@ -8,6 +8,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
@@ -29,14 +30,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +53,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import SchedulingSectionNav from "@/components/SchedulingSectionNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
@@ -67,10 +61,7 @@ import {
   Check,
   X,
   Clock,
-  FileText,
   Users,
-  CalendarCheck,
-  CalendarX,
   AlertTriangle,
   Loader2,
   Umbrella,
@@ -456,28 +447,28 @@ export default function LeaveRequests() {
     switch (status) {
       case "approved":
         return (
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">
+          <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/15">
             <Check className="h-3 w-3 mr-1" />
             {t("timeLeave.leaveRequests.status.approved")}
           </Badge>
         );
       case "pending":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 hover:bg-amber-500/15">
             <Clock className="h-3 w-3 mr-1" />
             {t("timeLeave.leaveRequests.status.pending")}
           </Badge>
         );
       case "rejected":
         return (
-          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+          <Badge className="bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20 hover:bg-red-500/15">
             <X className="h-3 w-3 mr-1" />
             {t("timeLeave.leaveRequests.status.rejected")}
           </Badge>
         );
       case "cancelled":
         return (
-          <Badge variant="secondary">
+          <Badge className="bg-muted text-muted-foreground border border-border/50">
             <X className="h-3 w-3 mr-1" />
             {t("timeLeave.leaveRequests.status.cancelled")}
           </Badge>
@@ -842,122 +833,84 @@ export default function LeaveRequests() {
         </div>
       </div>
 
+      <SchedulingSectionNav />
+
       <div className="p-6">
         <div className="max-w-7xl mx-auto space-y-6">
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-4 -mt-8">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {t("timeLeave.leaveRequests.stats.pending")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.pending}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-yellow-500 to-orange-500 rounded-xl">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {t("timeLeave.leaveRequests.stats.approved")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.approved}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                    <CalendarCheck className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {t("timeLeave.leaveRequests.stats.onLeaveToday")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.onLeaveToday}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">
-                      {t("timeLeave.leaveRequests.stats.rejected")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.rejected}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                    <CalendarX className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
           {/* Employee Self-Service: Leave Balance Cards */}
           {(isEmployee || isManager) && myBalance && (
-            <Card className="border-border/50 shadow-lg">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg">My Leave Balance</CardTitle>
-                <CardDescription>Your current leave entitlements and usage</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {[
-                    { key: "annual" as const, label: "Annual", icon: <Umbrella className="h-4 w-4" />, color: "cyan" },
-                    { key: "sick" as const, label: "Sick", icon: <Heart className="h-4 w-4" />, color: "red" },
-                    { key: "maternity" as const, label: "Maternity", icon: <Baby className="h-4 w-4" />, color: "pink" },
-                    { key: "paternity" as const, label: "Paternity", icon: <Baby className="h-4 w-4" />, color: "blue" },
-                  ].map(({ key, label, icon, color: _color }) => {
-                    const bal = myBalance[key];
-                    if (typeof bal !== "object" || !("remaining" in bal)) return null;
-                    return (
-                      <div key={key} className="p-3 bg-muted rounded-lg">
-                        <div className="flex items-center gap-2 mb-1">
-                          {icon}
-                          <span className="text-sm font-medium">{label}</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {[
+                { key: "annual" as const, label: "Annual", icon: <Umbrella className="h-4 w-4" />, barColor: "bg-cyan-500", bgTint: "bg-cyan-500/10", iconColor: "text-cyan-600 dark:text-cyan-400" },
+                { key: "sick" as const, label: "Sick", icon: <Heart className="h-4 w-4" />, barColor: "bg-red-500", bgTint: "bg-red-500/10", iconColor: "text-red-600 dark:text-red-400" },
+                { key: "maternity" as const, label: "Maternity", icon: <Baby className="h-4 w-4" />, barColor: "bg-pink-500", bgTint: "bg-pink-500/10", iconColor: "text-pink-600 dark:text-pink-400" },
+                { key: "paternity" as const, label: "Paternity", icon: <Baby className="h-4 w-4" />, barColor: "bg-blue-500", bgTint: "bg-blue-500/10", iconColor: "text-blue-600 dark:text-blue-400" },
+              ].map(({ key, label, icon, barColor, bgTint, iconColor }) => {
+                const bal = myBalance[key];
+                if (typeof bal !== "object" || !("remaining" in bal)) return null;
+                const entitled = bal.remaining + bal.used + bal.pending;
+                const usedPct = entitled > 0 ? ((bal.used + bal.pending) / entitled) * 100 : 0;
+                return (
+                  <Card key={key} className="border-border/50 overflow-hidden">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                          <div className={cn("p-1.5 rounded-lg", bgTint)}>
+                            <span className={iconColor}>{icon}</span>
+                          </div>
+                          <span className="text-sm font-semibold">{label}</span>
                         </div>
-                        <p className="text-2xl font-bold">{bal.remaining}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {bal.used} used, {bal.pending} pending
-                        </p>
+                        <span className="text-2xl font-bold tabular-nums">{bal.remaining}</span>
                       </div>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                      <div className="h-1.5 bg-muted rounded-full overflow-hidden">
+                        <div className={cn("h-full rounded-full transition-all duration-500", barColor)} style={{ width: `${Math.min(usedPct, 100)}%` }} />
+                      </div>
+                      <div className="flex items-center justify-between mt-2 text-[11px] text-muted-foreground">
+                        <span>{bal.used} used</span>
+                        {bal.pending > 0 && <span className="text-amber-600 dark:text-amber-400">{bal.pending} pending</span>}
+                        <span>{entitled} total</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
           )}
 
-          {/* Requests Table */}
+          {/* Inline stats strip */}
+          <div className="flex items-center gap-4 text-sm flex-wrap">
+            {stats.pending > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20">
+                <Clock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                <span className="font-semibold text-amber-600 dark:text-amber-400">{stats.pending}</span>
+                <span className="text-amber-600/80 dark:text-amber-400/80 text-xs">{t("timeLeave.leaveRequests.stats.pending")}</span>
+              </div>
+            )}
+            {stats.onLeaveToday > 0 && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-cyan-500/10 border border-cyan-500/20">
+                <Users className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
+                <span className="font-semibold text-cyan-600 dark:text-cyan-400">{stats.onLeaveToday}</span>
+                <span className="text-cyan-600/80 dark:text-cyan-400/80 text-xs">{t("timeLeave.leaveRequests.stats.onLeaveToday")}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-3 text-xs text-muted-foreground ml-auto">
+              <span>{stats.approved} approved</span>
+              <span>&middot;</span>
+              <span>{leaveRequests.length} total</span>
+            </div>
+          </div>
+
+          {/* Requests */}
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList>
               <TabsTrigger value="all">
                 {t("timeLeave.leaveRequests.tabs.all")}
-                <Badge variant="secondary" className="ml-2">
-                  {leaveRequests.length}
-                </Badge>
+                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5">{leaveRequests.length}</Badge>
               </TabsTrigger>
               <TabsTrigger value="pending">
                 {t("timeLeave.leaveRequests.tabs.pending")}
                 {stats.pending > 0 && (
-                  <Badge className="ml-2 bg-yellow-100 text-yellow-800">
-                    {stats.pending}
-                  </Badge>
+                  <Badge className="ml-2 text-[10px] px-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">{stats.pending}</Badge>
                 )}
               </TabsTrigger>
               <TabsTrigger value="approved">
@@ -969,142 +922,144 @@ export default function LeaveRequests() {
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
-              <Card className="border-border/50">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                    {t("timeLeave.leaveRequests.table.title")}
-                  </CardTitle>
-                  <CardDescription>
-                    {t("timeLeave.leaveRequests.table.summary", {
-                      count: filteredRequests.length,
-                    })}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredRequests.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl mb-4">
-                        <Calendar className="h-8 w-8 text-white" />
-                      </div>
-                      <p className="text-muted-foreground">{t("timeLeave.leaveRequests.table.empty")}</p>
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>{t("timeLeave.leaveRequests.table.employee")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.type")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.startDate")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.endDate")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.duration")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.status")}</TableHead>
-                          <TableHead>{t("timeLeave.leaveRequests.table.actions")}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredRequests.map((request) => (
-                          <TableRow key={request.id}>
-                            <TableCell>
-                              <div>
-                                <p className="font-medium">
-                                  {request.employeeName}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  {request.department}
-                                </p>
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                {getLeaveTypeIcon(request.leaveType)}
-                                <span>
-                                  {getLeaveTypeLabel(request.leaveType)}
-                                </span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{request.startDate}</TableCell>
-                            <TableCell>{request.endDate}</TableCell>
-                            <TableCell>
-                              {t("timeLeave.leaveRequests.table.durationValue", {
-                                days: request.duration,
-                              })}
+              {filteredRequests.length === 0 ? (
+                <div className="text-center py-16">
+                  <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl mb-4 shadow-lg shadow-cyan-500/20">
+                    <Calendar className="h-7 w-7 text-white" />
+                  </div>
+                  <p className="text-muted-foreground">{t("timeLeave.leaveRequests.table.empty")}</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredRequests.map((request) => {
+                    const isPending = request.status === "pending";
+                    const leaveTypeColor = {
+                      annual: "border-l-cyan-500",
+                      sick: "border-l-red-500",
+                      maternity: "border-l-pink-500",
+                      paternity: "border-l-blue-500",
+                      bereavement: "border-l-gray-500",
+                      unpaid: "border-l-orange-500",
+                      marriage: "border-l-rose-500",
+                      study: "border-l-violet-500",
+                      custom: "border-l-gray-400",
+                    }[request.leaveType] || "border-l-gray-400";
+
+                    return (
+                      <div
+                        key={request.id}
+                        className={cn(
+                          "flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card transition-all hover:shadow-sm border-l-4",
+                          leaveTypeColor,
+                          isPending && "bg-amber-500/[0.02] dark:bg-amber-500/[0.03]"
+                        )}
+                      >
+                        {/* Leave type icon */}
+                        <div className="flex-shrink-0 hidden sm:block">
+                          <div className="p-2 rounded-lg bg-muted">
+                            {getLeaveTypeIcon(request.leaveType)}
+                          </div>
+                        </div>
+
+                        {/* Main info */}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-semibold text-sm text-foreground">{request.employeeName}</span>
+                            <span className="text-xs text-muted-foreground">&middot;</span>
+                            <span className="text-xs text-muted-foreground">{request.department}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground flex-wrap">
+                            <span className="font-medium text-foreground/80">{getLeaveTypeLabel(request.leaveType)}</span>
+                            <span>&middot;</span>
+                            <span>
+                              {(() => {
+                                try {
+                                  const start = new Date(request.startDate + 'T12:00:00');
+                                  const end = new Date(request.endDate + 'T12:00:00');
+                                  const fmt = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                                  return request.startDate === request.endDate ? fmt(start) : `${fmt(start)} – ${fmt(end)}`;
+                                } catch { return `${request.startDate} – ${request.endDate}`; }
+                              })()}
+                            </span>
+                            <span>&middot;</span>
+                            <span className="font-medium">
+                              {t("timeLeave.leaveRequests.table.durationValue", { days: request.duration })}
                               {request.halfDay && (
-                                <span className="text-xs text-muted-foreground ml-1">
-                                  ({t("timeLeave.leaveRequests.table.halfDay", {
-                                    type:
-                                      request.halfDayType === "morning"
-                                        ? t("timeLeave.leaveRequests.dialog.halfDayMorning")
-                                        : t("timeLeave.leaveRequests.dialog.halfDayAfternoon"),
-                                  })})
+                                <span className="ml-1">
+                                  ({request.halfDayType === "morning"
+                                    ? t("timeLeave.leaveRequests.dialog.halfDayMorning")
+                                    : t("timeLeave.leaveRequests.dialog.halfDayAfternoon")})
                                 </span>
                               )}
-                            </TableCell>
-                            <TableCell>
-                              {getStatusBadge(request.status)}
-                            </TableCell>
-                            <TableCell>
-                              {request.status === "pending" && !isEmployee && (
-                                <div className="flex gap-1">
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-green-600 hover:text-green-700 hover:bg-green-50"
-                                    onClick={() => handleApprove(request)}
-                                    disabled={saving}
-                                  >
-                                    <Check className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                    onClick={() => {
-                                      setSelectedRequest(request);
-                                      setShowRejectDialog(true);
-                                    }}
-                                    disabled={saving}
-                                  >
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              )}
-                              {request.status === "pending" && isEmployee && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  className="text-xs text-muted-foreground"
-                                  onClick={async () => {
-                                    try {
-                                      await leaveService.cancelLeaveRequest(tenantId, request.id!);
-                                      queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
-                                      toast({ title: "Leave request cancelled" });
-                                    } catch {
-                                      toast({ title: "Failed to cancel", variant: "destructive" });
-                                    }
-                                  }}
-                                  disabled={saving}
-                                >
-                                  Cancel
-                                </Button>
-                              )}
-                              {request.status === "rejected" &&
-                                request.rejectionReason && (
-                                  <span
-                                    className="text-xs text-muted-foreground cursor-help"
-                                    title={request.rejectionReason}
-                                  >
-                                    {t("timeLeave.leaveRequests.table.viewReason")}
-                                  </span>
-                                )}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                            </span>
+                          </div>
+                          {request.reason && (
+                            <p className="text-xs text-muted-foreground/70 mt-1 truncate max-w-md">{request.reason}</p>
+                          )}
+                        </div>
+
+                        {/* Status */}
+                        <div className="flex-shrink-0">
+                          {getStatusBadge(request.status)}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex-shrink-0">
+                          {isPending && !isEmployee && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                                onClick={() => handleApprove(request)}
+                                disabled={saving}
+                              >
+                                <Check className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                onClick={() => {
+                                  setSelectedRequest(request);
+                                  setShowRejectDialog(true);
+                                }}
+                                disabled={saving}
+                              >
+                                <X className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          )}
+                          {isPending && isEmployee && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-xs text-muted-foreground h-8"
+                              onClick={async () => {
+                                try {
+                                  await leaveService.cancelLeaveRequest(tenantId, request.id!);
+                                  queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
+                                  toast({ title: "Leave request cancelled" });
+                                } catch {
+                                  toast({ title: "Failed to cancel", variant: "destructive" });
+                                }
+                              }}
+                              disabled={saving}
+                            >
+                              Cancel
+                            </Button>
+                          )}
+                          {request.status === "rejected" && request.rejectionReason && (
+                            <span className="text-xs text-muted-foreground cursor-help" title={request.rejectionReason}>
+                              {t("timeLeave.leaveRequests.table.viewReason")}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </TabsContent>
           </Tabs>
         </div>
