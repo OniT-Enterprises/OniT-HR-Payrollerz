@@ -6,15 +6,8 @@
 import React, { useState, useMemo, lazy, Suspense } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -24,14 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import {
   Dialog,
   DialogContent,
@@ -47,19 +32,17 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
-  Filter,
   Plus,
   Download,
   Clock,
   Upload,
-  CheckCircle,
-  AlertTriangle,
-  Users,
-  TrendingUp,
+  ChevronLeft,
+  ChevronRight,
   FileUp,
   Loader2,
   ScanFace,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const FaceClockIn = lazy(() => import("@/components/attendance/FaceClockIn"));
 import { useAllEmployees } from "@/hooks/useEmployees";
@@ -76,6 +59,7 @@ import {
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import SchedulingSectionNav from "@/components/SchedulingSectionNav";
 
 export default function Attendance() {
   const { toast } = useToast();
@@ -131,6 +115,18 @@ export default function Attendance() {
     return `${dayName}, ${monthDay}`;
   };
 
+  const goToPreviousDay = () => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() - 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
+  const goToNextDay = () => {
+    const d = new Date(selectedDate + 'T00:00:00');
+    d.setDate(d.getDate() + 1);
+    setSelectedDate(d.toISOString().split('T')[0]);
+  };
+
   // Calculate statistics
   const stats = useMemo(() => {
     const totalEmployees = employees.length;
@@ -167,36 +163,63 @@ export default function Attendance() {
     });
   }, [attendanceRecords, selectedDepartment, selectedStatus]);
 
-  const getStatusBadge = (status: AttendanceStatus) => {
-    const configs: Record<AttendanceStatus, { class: string; label: string }> = {
-      present: {
-        class: "bg-green-100 text-green-800",
-        label: t("timeLeave.attendance.status.present"),
-      },
-      late: {
-        class: "bg-yellow-100 text-yellow-800",
-        label: t("timeLeave.attendance.status.late"),
-      },
-      absent: {
-        class: "bg-red-100 text-red-800",
-        label: t("timeLeave.attendance.status.absent"),
-      },
-      half_day: {
-        class: "bg-orange-100 text-orange-800",
-        label: t("timeLeave.attendance.status.halfDay"),
-      },
-      leave: {
-        class: "bg-blue-100 text-blue-800",
-        label: t("timeLeave.attendance.status.leave"),
-      },
-      holiday: {
-        class: "bg-purple-100 text-purple-800",
-        label: t("timeLeave.attendance.status.holiday"),
-      },
-    };
+  const statusConfig: Record<AttendanceStatus, { color: string; dot: string; label: string }> = {
+    present: {
+      color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
+      dot: "bg-emerald-500",
+      label: t("timeLeave.attendance.status.present"),
+    },
+    late: {
+      color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
+      dot: "bg-amber-500",
+      label: t("timeLeave.attendance.status.late"),
+    },
+    absent: {
+      color: "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
+      dot: "bg-red-500",
+      label: t("timeLeave.attendance.status.absent"),
+    },
+    half_day: {
+      color: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20",
+      dot: "bg-orange-500",
+      label: t("timeLeave.attendance.status.halfDay"),
+    },
+    leave: {
+      color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
+      dot: "bg-blue-500",
+      label: t("timeLeave.attendance.status.leave"),
+    },
+    holiday: {
+      color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
+      dot: "bg-purple-500",
+      label: t("timeLeave.attendance.status.holiday"),
+    },
+  };
 
-    const config = configs[status] || { class: "bg-gray-100 text-gray-800", label: status };
-    return <Badge className={config.class}>{config.label}</Badge>;
+  const getStatusBadge = (status: AttendanceStatus) => {
+    const cfg = statusConfig[status] || { color: "bg-muted text-muted-foreground border border-border", dot: "bg-muted-foreground", label: status };
+    return (
+      <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium", cfg.color)}>
+        <span className={cn("h-1.5 w-1.5 rounded-full", cfg.dot)} />
+        {cfg.label}
+      </span>
+    );
+  };
+
+  const getStatusDotColor = (status: AttendanceStatus) => {
+    return statusConfig[status]?.dot || "bg-muted-foreground";
+  };
+
+  const getStatusBorderColor = (status: AttendanceStatus) => {
+    const map: Record<string, string> = {
+      present: "border-l-emerald-500",
+      late: "border-l-amber-500",
+      absent: "border-l-red-500",
+      half_day: "border-l-orange-500",
+      leave: "border-l-blue-500",
+      holiday: "border-l-purple-500",
+    };
+    return map[status] || "border-l-muted-foreground";
   };
 
   const getStatusLabel = (status: AttendanceStatus) => {
@@ -433,44 +456,18 @@ export default function Attendance() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
+          <AutoBreadcrumb className="mb-6" />
           <div className="max-w-7xl mx-auto">
             <div className="mb-6">
               <Skeleton className="h-9 w-40 mb-2" />
               <Skeleton className="h-4 w-64" />
             </div>
-            {/* Stats skeleton */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="pt-6">
-                    <Skeleton className="h-4 w-20 mb-2" />
-                    <Skeleton className="h-8 w-12" />
-                  </CardContent>
-                </Card>
+            <Skeleton className="h-12 w-full rounded-lg mb-6" />
+            <div className="space-y-2">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
               ))}
             </div>
-            {/* Table skeleton */}
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <div key={i} className="flex gap-4 py-3 border-b">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-16" />
-                      <Skeleton className="h-4 w-12" />
-                      <Skeleton className="h-5 w-16 rounded-full" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
           </div>
         </div>
       </div>
@@ -666,275 +663,193 @@ export default function Attendance() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 -mt-8">
-          <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("timeLeave.attendance.stats.employees")}
-                  </p>
-                  <p className="text-2xl font-bold">{stats.totalEmployees}</p>
-                  <p className="text-xs text-muted-foreground">{t("timeLeave.attendance.stats.active")}</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
+      <SchedulingSectionNav />
+
+      <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
+        {/* Inline Toolbar */}
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">
+          {/* Date navigation */}
+          <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="h-9 w-[160px] text-sm"
+            />
+            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToNextDay}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            {!isToday && (
+              <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setSelectedDate(today)}>
+                {t("timeLeave.attendance.actions.today") || "Today"}
+              </Button>
+            )}
+          </div>
+
+          <div className="hidden lg:block h-6 w-px bg-border" />
+
+          {/* Filters */}
+          <div className="flex items-center gap-2 flex-wrap">
+            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+              <SelectTrigger className="h-9 w-[160px] text-sm">
+                <SelectValue placeholder={t("timeLeave.attendance.filters.allDepartments")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("timeLeave.attendance.filters.allDepartments")}</SelectItem>
+                {departments.map((dept) => (
+                  <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger className="h-9 w-[140px] text-sm">
+                <SelectValue placeholder={t("timeLeave.attendance.filters.allStatuses")} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t("timeLeave.attendance.filters.allStatuses")}</SelectItem>
+                <SelectItem value="present">{t("timeLeave.attendance.status.present")}</SelectItem>
+                <SelectItem value="late">{t("timeLeave.attendance.status.late")}</SelectItem>
+                <SelectItem value="absent">{t("timeLeave.attendance.status.absent")}</SelectItem>
+                <SelectItem value="half_day">{t("timeLeave.attendance.status.halfDay")}</SelectItem>
+                <SelectItem value="leave">{t("timeLeave.attendance.status.leave")}</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button variant="outline" size="sm" className="h-9" onClick={handleExportCSV}>
+              <Download className="h-3.5 w-3.5 mr-1.5" />
+              {t("timeLeave.attendance.actions.export")}
+            </Button>
+          </div>
+
+          {/* Inline Stats */}
+          {attendanceRecords.length > 0 && (
+            <>
+              <div className="hidden lg:block h-6 w-px bg-border" />
+              <div className="flex items-center gap-3 ml-auto text-xs text-muted-foreground">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {stats.present} {t("timeLeave.attendance.status.present")}
+                </span>
+                {stats.late > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                    {stats.late} {t("timeLeave.attendance.status.late")}
+                  </span>
+                )}
+                {stats.absent > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-red-500" />
+                    {stats.absent} {t("timeLeave.attendance.status.absent")}
+                  </span>
+                )}
+                <span className="font-medium text-foreground">
+                  {stats.attendanceRate.toFixed(0)}%
+                </span>
               </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("timeLeave.attendance.stats.present")}
-                  </p>
-                  {attendanceRecords.length === 0 ? (
-                    <>
-                      <p className="text-lg font-medium text-muted-foreground/70">{t("timeLeave.attendance.stats.notRecorded")}</p>
-                    </>
-                  ) : (
-                    <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">{stats.present}</p>
-                  )}
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-green-500 rounded-xl">
-                  <CheckCircle className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("timeLeave.attendance.stats.late")}
-                  </p>
-                  {attendanceRecords.length === 0 ? (
-                    <p className="text-lg font-medium text-muted-foreground/70">—</p>
-                  ) : (
-                    <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.late}</p>
-                  )}
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-amber-500 to-yellow-500 rounded-xl">
-                  <AlertTriangle className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {t("timeLeave.attendance.stats.rate")}
-                  </p>
-                  {attendanceRecords.length === 0 ? (
-                    <p className="text-lg font-medium text-muted-foreground/70">—</p>
-                  ) : (
-                    <p className="text-2xl font-bold text-cyan-600 dark:text-cyan-400">
-                      {stats.attendanceRate.toFixed(1)}%
-                    </p>
-                  )}
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-xl">
-                  <TrendingUp className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+            </>
+          )}
         </div>
 
-        {/* Filters */}
-        <Card className="border-border/50 mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Filter className="h-5 w-5" />
-              {t("timeLeave.attendance.filters.title")}
-            </CardTitle>
-          </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label>{t("timeLeave.attendance.filters.date")}</Label>
-                  <Input
-                    type="date"
-                    value={selectedDate}
-                    onChange={(e) => setSelectedDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <Label>{t("timeLeave.attendance.filters.department")}</Label>
-                  <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t("timeLeave.attendance.filters.allDepartments")}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("timeLeave.attendance.filters.allDepartments")}
-                      </SelectItem>
-                      {departments.map((dept) => (
-                        <SelectItem key={dept.id} value={dept.name}>
-                          {dept.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>{t("timeLeave.attendance.filters.status")}</Label>
-                  <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-                    <SelectTrigger>
-                      <SelectValue
-                        placeholder={t("timeLeave.attendance.filters.allStatuses")}
-                      />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">
-                        {t("timeLeave.attendance.filters.allStatuses")}
-                      </SelectItem>
-                      <SelectItem value="present">
-                        {t("timeLeave.attendance.status.present")}
-                      </SelectItem>
-                      <SelectItem value="late">
-                        {t("timeLeave.attendance.status.late")}
-                      </SelectItem>
-                      <SelectItem value="absent">
-                        {t("timeLeave.attendance.status.absent")}
-                      </SelectItem>
-                      <SelectItem value="half_day">
-                        {t("timeLeave.attendance.status.halfDay")}
-                      </SelectItem>
-                      <SelectItem value="leave">
-                        {t("timeLeave.attendance.status.leave")}
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              <div className="flex items-end">
-                <Button
-                  variant="outline"
-                  onClick={handleExportCSV}
-                  className="w-full"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  {t("timeLeave.attendance.actions.export")}
-                </Button>
-              </div>
+        {/* Attendance Records */}
+        {filteredRecords.length === 0 ? (
+          <div className="text-center py-16">
+            <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
+              <Clock className="h-12 w-12 text-cyan-500" />
             </div>
-          </CardContent>
-        </Card>
+            <h3 className="font-semibold text-lg text-foreground mb-1">
+              {isToday ? t("timeLeave.attendance.empty.titleToday") : t("timeLeave.attendance.empty.title")}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
+              {t("timeLeave.attendance.empty.instructions")}
+            </p>
+            <div className="flex justify-center gap-3">
+              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                {t("timeLeave.attendance.empty.importButton")}
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+                onClick={() => setShowMarkDialog(true)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {/* Column headers */}
+            <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 px-5 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              <span>{t("timeLeave.attendance.table.employee")}</span>
+              <span>{t("timeLeave.attendance.table.clockIn")}</span>
+              <span>{t("timeLeave.attendance.table.clockOut")}</span>
+              <span className="text-right">{t("timeLeave.attendance.table.regular")}</span>
+              <span className="text-right">{t("timeLeave.attendance.table.overtime")}</span>
+              <span className="text-right">{t("timeLeave.attendance.table.late")}</span>
+              <span className="text-right">{t("timeLeave.attendance.table.status")}</span>
+            </div>
 
-        {/* Attendance Table */}
-        <Card className="border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-              {t("timeLeave.attendance.table.title")}
-            </CardTitle>
-              <CardDescription>
-                {t("timeLeave.attendance.table.summary", {
-                  count: filteredRecords.length,
-                  date: selectedDate,
-                })}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-            {filteredRecords.length === 0 ? (
-              <div className="text-center py-12">
-                <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
-                  <Clock className="h-12 w-12 text-cyan-500" />
+            {filteredRecords.map((record) => (
+              <div
+                key={record.id}
+                className={cn(
+                  "group rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors",
+                  "border-l-[3px]",
+                  getStatusBorderColor(record.status),
+                )}
+              >
+                {/* Desktop layout */}
+                <div className="hidden md:grid md:grid-cols-[1fr_140px_140px_80px_80px_80px_100px] gap-3 items-center px-5 py-3">
+                  <div>
+                    <p className="font-medium text-sm text-foreground">{record.employeeName}</p>
+                    <p className="text-xs text-muted-foreground">{record.department}</p>
+                  </div>
+                  <span className="font-mono text-sm text-foreground">{record.clockIn || "—"}</span>
+                  <span className="font-mono text-sm text-foreground">{record.clockOut || "—"}</span>
+                  <span className="font-mono text-sm text-right text-foreground">{record.regularHours.toFixed(1)}h</span>
+                  <span className="font-mono text-sm text-right">
+                    {record.overtimeHours > 0 ? (
+                      <span className="text-orange-600 dark:text-orange-400">+{record.overtimeHours.toFixed(1)}h</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+                  <span className="font-mono text-sm text-right">
+                    {record.lateMinutes > 0 ? (
+                      <span className="text-red-600 dark:text-red-400">{record.lateMinutes}m</span>
+                    ) : (
+                      <span className="text-muted-foreground">—</span>
+                    )}
+                  </span>
+                  <div className="flex justify-end">{getStatusBadge(record.status)}</div>
                 </div>
-                <h3 className="font-semibold text-lg text-foreground mb-1">
-                  {isToday ? t("timeLeave.attendance.empty.titleToday") : t("timeLeave.attendance.empty.title")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                  {t("timeLeave.attendance.empty.instructions")}
-                </p>
-                <div className="flex justify-center gap-3">
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowImportDialog(true)}
-                  >
-                    <Upload className="h-4 w-4 mr-2" />
-                    {t("timeLeave.attendance.empty.importButton")}
-                  </Button>
-                  <Button
-                    className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
-                    onClick={() => setShowMarkDialog(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
-                  </Button>
+
+                {/* Mobile layout */}
+                <div className="md:hidden px-4 py-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium text-sm text-foreground">{record.employeeName}</p>
+                      <p className="text-xs text-muted-foreground">{record.department}</p>
+                    </div>
+                    {getStatusBadge(record.status)}
+                  </div>
+                  <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                    <span className="font-mono">{record.clockIn || "—"} → {record.clockOut || "—"}</span>
+                    <span className="font-mono font-medium text-foreground">{record.regularHours.toFixed(1)}h</span>
+                    {record.overtimeHours > 0 && (
+                      <span className="font-mono text-orange-600 dark:text-orange-400">+{record.overtimeHours.toFixed(1)}h OT</span>
+                    )}
+                    {record.lateMinutes > 0 && (
+                      <span className="font-mono text-red-600 dark:text-red-400">{record.lateMinutes}m late</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>{t("timeLeave.attendance.table.employee")}</TableHead>
-                      <TableHead>{t("timeLeave.attendance.table.department")}</TableHead>
-                      <TableHead>{t("timeLeave.attendance.table.clockIn")}</TableHead>
-                      <TableHead>{t("timeLeave.attendance.table.clockOut")}</TableHead>
-                      <TableHead className="text-right">
-                        {t("timeLeave.attendance.table.regular")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("timeLeave.attendance.table.overtime")}
-                      </TableHead>
-                      <TableHead className="text-right">
-                        {t("timeLeave.attendance.table.late")}
-                      </TableHead>
-                      <TableHead>{t("timeLeave.attendance.table.status")}</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredRecords.map((record) => (
-                      <TableRow key={record.id}>
-                        <TableCell className="font-medium">
-                          {record.employeeName}
-                        </TableCell>
-                        <TableCell>{record.department}</TableCell>
-                        <TableCell className="font-mono">
-                          {record.clockIn || "-"}
-                        </TableCell>
-                        <TableCell className="font-mono">
-                          {record.clockOut || "-"}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {record.regularHours.toFixed(1)}h
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {record.overtimeHours > 0 ? (
-                            <span className="text-orange-600">
-                              +{record.overtimeHours.toFixed(1)}h
-                            </span>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {record.lateMinutes > 0 ? (
-                            <span className="text-red-600">
-                              {record.lateMinutes}m
-                            </span>
-                          ) : (
-                            "-"
-                          )}
-                        </TableCell>
-                        <TableCell>{getStatusBadge(record.status)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-            )}
-          </CardContent>
-        </Card>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Face Clock-In Dialog (lazy loaded) */}
