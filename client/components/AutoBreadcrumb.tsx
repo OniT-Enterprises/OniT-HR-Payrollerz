@@ -52,20 +52,36 @@ const ROUTE_LABELS: Record<string, string> = {
 
   // Payroll sub-routes
   "run": "Run Payroll",
+  "setup": "Setup",
   "history": "History",
-  "transfers": "Transfers",
-  "taxes": "Taxes",
+  "payments": "Payments",
   "benefits": "Benefits",
   "deductions": "Deductions",
 
   // Accounting sub-routes
-  "chart-of-accounts": "Accounts",
-  "journal-entries": "Journal",
-  "general-ledger": "Ledger",
+  "core": "Core",
+  "chart": "Chart of Accounts",
+  "journal": "Journal Entries",
+  "ledger": "General Ledger",
+  "reconciliation": "Reconciliation",
   "trial-balance": "Trial Balance",
   "income-statement": "Income Statement",
   "balance-sheet": "Balance Sheet",
   "fiscal-periods": "Fiscal Periods",
+  "audit-trail": "Audit Trail",
+
+  // Money sub-routes
+  "invoices": "Invoices",
+  "customers": "Customers",
+  "bills": "Bills",
+  "vendors": "Vendors",
+  "expenses": "Expenses",
+  "profit-loss": "Profit & Loss",
+  "cashflow": "Cash Flow",
+  "ar-aging": "AR Aging",
+  "ap-aging": "AP Aging",
+  "vat-settings": "VAT Settings",
+  "vat-returns": "VAT Returns",
 };
 
 function getLabel(segment: string): string {

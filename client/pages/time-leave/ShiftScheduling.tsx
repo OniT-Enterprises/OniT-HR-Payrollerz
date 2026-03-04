@@ -61,7 +61,10 @@ import {
   ChevronLeft,
   ChevronRight,
   GripVertical,
+  LayoutGrid,
+  MapPin,
 } from "lucide-react";
+import LocationGridView from "@/components/shifts/LocationGridView";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -112,6 +115,7 @@ export default function ShiftScheduling() {
   const [showTemplateDialog, setShowTemplateDialog] = useState(false);
   const [selectedShift, setSelectedShift] = useState<ShiftRecord | null>(null);
   const [_viewMode, _setViewMode] = useState<"week" | "day">("week");
+  const [scheduleViewMode, setScheduleViewMode] = useState<"employee" | "location">("location");
   const [draggedShift, setDraggedShift] = useState<ShiftRecord | null>(null);
   const [dropTarget, setDropTarget] = useState<{ employeeId: string; date: string } | null>(null);
   const [showAllEmployees, setShowAllEmployees] = useState(true);
@@ -1314,145 +1318,8 @@ export default function ShiftScheduling() {
 
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
-          {/* Sleek inline toolbar */}
-          <div className="mb-5 flex flex-wrap items-center gap-3">
-            {/* Week navigation */}
-            <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
-                <ChevronLeft className="h-4 w-4" />
-              </Button>
-              <Input
-                type="date"
-                value={selectedWeek}
-                onChange={(e) => setSelectedWeek(e.target.value)}
-                className="h-8 w-[140px] text-sm border-0 bg-transparent text-center font-medium"
-              />
-              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
-                <ChevronRight className="h-4 w-4" />
-              </Button>
-            </div>
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
-              Today
-            </Button>
-
-            <div className="w-px h-6 bg-border/50 hidden sm:block" />
-
-            {/* Filters */}
-            <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="h-8 w-[160px] text-xs">
-                <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allDepartments")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
-                {departments.map((dept) => (
-                  <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-              <SelectTrigger className="h-8 w-[160px] text-xs">
-                <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allLocations")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
-                {locations.map((location) => (
-                  <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            <div className="ml-auto">
-              <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                <DialogTrigger asChild>
-                  <Button size="sm" className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm h-8">
-                    <Plus className="h-3.5 w-3.5" />
-                    {t("timeLeave.shiftScheduling.controls.createShift")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-md">
-                  <DialogHeader>
-                    <DialogTitle>{t("timeLeave.shiftScheduling.create.title")}</DialogTitle>
-                    <DialogDescription>{t("timeLeave.shiftScheduling.create.description")}</DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label htmlFor="employee">{t("timeLeave.shiftScheduling.create.employee")}</Label>
-                      <Select value={formData.employee} onValueChange={(value) => handleInputChange("employee", value)}>
-                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.employeePlaceholder")} /></SelectTrigger>
-                        <SelectContent>
-                          {employees.map((employee) => (
-                            <SelectItem key={employee.id} value={employee.id}>
-                              {employee.name} - {getPositionLabel(employee.position)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="department">{t("timeLeave.shiftScheduling.create.department")}</Label>
-                      <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
-                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.departmentPlaceholder")} /></SelectTrigger>
-                        <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="position">{t("timeLeave.shiftScheduling.create.position")}</Label>
-                      <Input id="position" value={formData.position} onChange={(e) => handleInputChange("position", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.positionPlaceholder")} />
-                    </div>
-                    <div>
-                      <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
-                      <Input id="shift-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <Label htmlFor="shift-start">{t("timeLeave.shiftScheduling.create.startTime")}</Label>
-                        <TimePicker id="shift-start" value={formData.startTime} onChange={(v) => handleInputChange("startTime", v)} required />
-                      </div>
-                      <div>
-                        <Label htmlFor="shift-end">{t("timeLeave.shiftScheduling.create.endTime")}</Label>
-                        <TimePicker id="shift-end" value={formData.endTime} onChange={(v) => handleInputChange("endTime", v)} required />
-                      </div>
-                    </div>
-                    {formData.startTime && formData.endTime && (
-                      <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
-                        {t("timeLeave.shiftScheduling.create.totalHours", { hours: calculateHours(formData.startTime, formData.endTime) })}
-                      </div>
-                    )}
-                    <div>
-                      <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
-                      <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
-                        <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
-                        <SelectContent>
-                          {locations.map((location) => (
-                            <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="notes">{t("timeLeave.shiftScheduling.create.notes")}</Label>
-                      <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange("notes", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.notesPlaceholder")} rows={2} />
-                    </div>
-                    <div className="flex gap-2">
-                      <Button type="button" variant="outline" onClick={() => { resetForm(); setShowCreateDialog(false); }} className="flex-1">
-                        {t("timeLeave.shiftScheduling.actions.cancel")}
-                      </Button>
-                      <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
-                        {createShiftMutation.isPending ? (t("common.saving") || "Saving...") : t("timeLeave.shiftScheduling.actions.createShift")}
-                      </Button>
-                    </div>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-3 mb-5">
               <TabsTrigger value="schedule">
                 {t("timeLeave.shiftScheduling.tabs.schedule")}
               </TabsTrigger>
@@ -1464,8 +1331,184 @@ export default function ShiftScheduling() {
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="schedule" className="mt-6">
-              {renderScheduleView()}
+            {/* Toolbar — only shows for schedule tab */}
+            {activeTab === "schedule" && (
+              <div className="mb-5 flex flex-wrap items-center gap-3">
+                {/* Week navigation */}
+                <div className="flex items-center gap-1 bg-muted/50 rounded-lg p-1">
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToPreviousWeek}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Input
+                    type="date"
+                    value={selectedWeek}
+                    onChange={(e) => setSelectedWeek(e.target.value)}
+                    className="h-8 w-[140px] text-sm border-0 bg-transparent text-center font-medium"
+                  />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={goToNextWeek}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+                <Button variant="ghost" size="sm" className="text-xs h-8" onClick={goToCurrentWeek}>
+                  Today
+                </Button>
+
+                <div className="w-px h-6 bg-border/50 hidden sm:block" />
+
+                {/* Filters */}
+                <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs">
+                    <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allDepartments")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allDepartments")}</SelectItem>
+                    {departments.map((dept) => (
+                      <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={selectedLocation} onValueChange={setSelectedLocation}>
+                  <SelectTrigger className="h-8 w-[160px] text-xs">
+                    <SelectValue placeholder={t("timeLeave.shiftScheduling.controls.allLocations")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("timeLeave.shiftScheduling.controls.allLocations")}</SelectItem>
+                    {locations.map((location) => (
+                      <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+
+                {/* View toggle */}
+                <div className="flex items-center gap-0.5 bg-muted/50 rounded-lg p-0.5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "employee" && "bg-card shadow-sm text-foreground")}
+                    onClick={() => setScheduleViewMode("employee")}
+                  >
+                    <LayoutGrid className="h-3.5 w-3.5" />
+                    Employee
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={cn("h-7 gap-1.5 text-xs rounded-md", scheduleViewMode === "location" && "bg-card shadow-sm text-foreground")}
+                    onClick={() => setScheduleViewMode("location")}
+                  >
+                    <MapPin className="h-3.5 w-3.5" />
+                    Location
+                  </Button>
+                </div>
+
+                <div className="ml-auto">
+                  <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
+                    <DialogTrigger asChild>
+                      <Button size="sm" className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm h-8">
+                        <Plus className="h-3.5 w-3.5" />
+                        {t("timeLeave.shiftScheduling.controls.createShift")}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-md">
+                      <DialogHeader>
+                        <DialogTitle>{t("timeLeave.shiftScheduling.create.title")}</DialogTitle>
+                        <DialogDescription>{t("timeLeave.shiftScheduling.create.description")}</DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleSubmit} className="space-y-4">
+                        <div>
+                          <Label htmlFor="employee">{t("timeLeave.shiftScheduling.create.employee")}</Label>
+                          <Select value={formData.employee} onValueChange={(value) => handleInputChange("employee", value)}>
+                            <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.employeePlaceholder")} /></SelectTrigger>
+                            <SelectContent>
+                              {employees.map((employee) => (
+                                <SelectItem key={employee.id} value={employee.id}>
+                                  {employee.name} - {getPositionLabel(employee.position)}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="department">{t("timeLeave.shiftScheduling.create.department")}</Label>
+                          <Select value={formData.department} onValueChange={(value) => handleInputChange("department", value)}>
+                            <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.departmentPlaceholder")} /></SelectTrigger>
+                            <SelectContent>
+                              {departments.map((dept) => (
+                                <SelectItem key={dept.id} value={dept.name}>{getDepartmentLabel(dept.name)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="position">{t("timeLeave.shiftScheduling.create.position")}</Label>
+                          <Input id="position" value={formData.position} onChange={(e) => handleInputChange("position", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.positionPlaceholder")} />
+                        </div>
+                        <div>
+                          <Label htmlFor="shift-date">{t("timeLeave.shiftScheduling.create.date")}</Label>
+                          <Input id="shift-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
+                        </div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <Label htmlFor="shift-start">{t("timeLeave.shiftScheduling.create.startTime")}</Label>
+                            <TimePicker id="shift-start" value={formData.startTime} onChange={(v) => handleInputChange("startTime", v)} required />
+                          </div>
+                          <div>
+                            <Label htmlFor="shift-end">{t("timeLeave.shiftScheduling.create.endTime")}</Label>
+                            <TimePicker id="shift-end" value={formData.endTime} onChange={(v) => handleInputChange("endTime", v)} required />
+                          </div>
+                        </div>
+                        {formData.startTime && formData.endTime && (
+                          <div className="text-sm text-muted-foreground bg-muted p-2 rounded">
+                            {t("timeLeave.shiftScheduling.create.totalHours", { hours: calculateHours(formData.startTime, formData.endTime) })}
+                          </div>
+                        )}
+                        <div>
+                          <Label htmlFor="location">{t("timeLeave.shiftScheduling.create.location")}</Label>
+                          <Select value={formData.location} onValueChange={(value) => handleInputChange("location", value)}>
+                            <SelectTrigger><SelectValue placeholder={t("timeLeave.shiftScheduling.create.locationPlaceholder")} /></SelectTrigger>
+                            <SelectContent>
+                              {locations.map((location) => (
+                                <SelectItem key={location} value={location}>{getLocationLabel(location)}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="notes">{t("timeLeave.shiftScheduling.create.notes")}</Label>
+                          <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange("notes", e.target.value)} placeholder={t("timeLeave.shiftScheduling.create.notesPlaceholder")} rows={2} />
+                        </div>
+                        <div className="flex gap-2">
+                          <Button type="button" variant="outline" onClick={() => { resetForm(); setShowCreateDialog(false); }} className="flex-1">
+                            {t("timeLeave.shiftScheduling.actions.cancel")}
+                          </Button>
+                          <Button type="submit" className="flex-1" disabled={createShiftMutation.isPending}>
+                            {createShiftMutation.isPending ? (t("common.saving") || "Saving...") : t("timeLeave.shiftScheduling.actions.createShift")}
+                          </Button>
+                        </div>
+                      </form>
+                    </DialogContent>
+                  </Dialog>
+                </div>
+              </div>
+            )}
+
+            <TabsContent value="schedule" className="mt-0">
+              {scheduleViewMode === "employee" ? (
+                renderScheduleView()
+              ) : (
+                <LocationGridView
+                  employees={employees}
+                  shifts={shifts}
+                  selectedWeek={selectedWeek}
+                  locations={locations}
+                  getLocationLabel={getLocationLabel}
+                  onCreateShift={(data) => createShiftMutation.mutateAsync(data)}
+                  onDeleteShift={(id) => deleteShiftMutation.mutateAsync(id)}
+                  goToPreviousWeek={goToPreviousWeek}
+                  goToNextWeek={goToNextWeek}
+                  goToCurrentWeek={goToCurrentWeek}
+                />
+              )}
             </TabsContent>
 
             <TabsContent value="employees" className="mt-6">

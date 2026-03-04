@@ -90,33 +90,33 @@
     <priority>0.6</priority>
   </url>
 
-  <!-- Scheduling & Attendance -->
+  <!-- Time & Leave -->
   <url>
-    <loc>https://onit-hr-payroll.web.app/scheduling</loc>
+    <loc>https://onit-hr-payroll.web.app/time-leave</loc>
     <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/scheduling/time-tracking</loc>
+    <loc>https://onit-hr-payroll.web.app/time-leave/time-tracking</loc>
     <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/scheduling/attendance</loc>
+    <loc>https://onit-hr-payroll.web.app/time-leave/attendance</loc>
     <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/scheduling/leave</loc>
+    <loc>https://onit-hr-payroll.web.app/time-leave/leave</loc>
     <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/scheduling/schedules</loc>
+    <loc>https://onit-hr-payroll.web.app/time-leave/shifts</loc>
     <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
@@ -168,6 +168,38 @@
     <priority>0.7</priority>
   </url>
 
+  <!-- Money -->
+  <url>
+    <loc>https://onit-hr-payroll.web.app/money</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/money/invoices</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/money/bills</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/money/expenses</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://onit-hr-payroll.web.app/money/reports/profit-loss</loc>
+    <lastmod>2026-03-03</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
   <!-- Accounting -->
   <url>
     <loc>https://onit-hr-payroll.web.app/accounting</loc>
@@ -176,26 +208,26 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/accounting/chart-of-accounts</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://onit-hr-payroll.web.app/accounting/core/chart</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/accounting/journal-entries</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://onit-hr-payroll.web.app/accounting/core/journal</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/accounting/general-ledger</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://onit-hr-payroll.web.app/accounting/core/ledger</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://onit-hr-payroll.web.app/accounting/trial-balance</loc>
-    <lastmod>2026-01-11</lastmod>
+    <loc>https://onit-hr-payroll.web.app/accounting/reports/trial-balance</loc>
+    <lastmod>2026-03-03</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>

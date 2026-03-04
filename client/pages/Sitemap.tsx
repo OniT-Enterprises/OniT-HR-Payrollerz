@@ -374,23 +374,23 @@ const sitemapData: SitemapSection[] = [
       },
       {
         name: 'Chart of Accounts',
-        path: '/accounting/chart-of-accounts',
+        path: '/accounting/core/chart',
         description: 'Standard TL chart of accounts (Assets, Liabilities, Equity, Revenue, Expenses)',
         badge: 'TL Standard',
       },
       {
         name: 'Journal Entries',
-        path: '/accounting/journal-entries',
+        path: '/accounting/core/journal',
         description: 'View and create double-entry journal entries with auto-posting',
       },
       {
         name: 'General Ledger',
-        path: '/accounting/general-ledger',
+        path: '/accounting/core/ledger',
         description: 'Complete transaction history by account with running balances',
       },
       {
         name: 'Trial Balance',
-        path: '/accounting/trial-balance',
+        path: '/accounting/reports/trial-balance',
         description: 'Verify debits equal credits across all accounts',
       },
     ],

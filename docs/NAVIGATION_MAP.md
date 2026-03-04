@@ -29,14 +29,10 @@ When designing any page, ask:
 Purpose: Switch between domains of work.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  [Logo]   Dashboard   People   Payroll   Money   Accounting*   Reports   ⚙️  │
-└─────────────────────────────────────────────────────────────────────────────┘
-                                           ↑         ↑
-                                       Day-to-day  Advanced
-                                         AR/AP     Ledger
+┌──────────────────────────────────────────────────────────────────────────────────────┐
+│  [Logo]   Dashboard   People   Time & Leave   Payroll   Money   Accounting   Reports   ⚙️  │
+└──────────────────────────────────────────────────────────────────────────────────────┘
 ```
-*Accounting shows "Advanced" subtitle to reduce intimidation for non-accountants.
 
 Rules:
 - Always flat, no dropdowns
@@ -52,9 +48,10 @@ Purpose: Orient users when entering a section.
 |-----|-----|------------|-------|
 | Dashboard | `/` | No | Command center, always needed |
 | People Hub | `/people` | Yes | **Compliance-first**, then navigation. Power users → `/people/employees` |
+| Time & Leave | `/time-leave` | Yes | Scheduling, attendance, leave, shifts |
 | Payroll Hub | `/payroll` | Yes | Power users → direct to `/payroll/run` |
 | Money Hub | `/money` | Yes | **Day-to-day AR/AP** for small businesses. Power users → `/money/invoices` |
-| Accounting Hub | `/accounting` | Yes | **Advanced** ledger/compliance. Payroll-scoped. Power users → `/accounting/journal-entries` |
+| Accounting Hub | `/accounting` | Yes | Ledger/compliance. Payroll-scoped. Power users → `/accounting/core/journal` |
 | Reports Hub | `/reports` | Soft | Remember last category. First visit → hub, repeat visits → last used |
 
 Rules:
@@ -114,126 +111,98 @@ OniT HR/Payroll
 │
 ├── People (/people)                       [HUB - Skippable]
 │   │
-│   ├── All Employees (/people/employees)  [WORK PAGE]
-│   │   └── Employee Profile (modal/page)  [WORK PAGE - Tabs]
-│   │       ├── Details tab
-│   │       ├── Salary tab
-│   │       ├── Documents tab
-│   │       └── History tab
+│   ├── Staff                              [Section]
+│   │   ├── Employees (/people/employees)  [WORK PAGE]
+│   │   │   └── Employee Profile (modal)
+│   │   ├── Add Employee (/people/add)     [WORK PAGE - Form]
+│   │   ├── Announcements (/people/announcements) [WORK PAGE]
+│   │   └── Grievances (/people/grievances) [WORK PAGE]
 │   │
-│   ├── Add Employee (/people/add)         [WORK PAGE - Form]
-│   │
-│   │
-│   ├── [Departments moved to /settings/departments]
-│   ├── [Org Chart moved to /settings/org-chart]
-│   ├── [Time & Leave moved to /scheduling/*]
-│   │
-│   ├── Hiring                             [Sub-section]
-│   │   ├── Job Postings (/people/jobs)
+│   ├── Hiring                             [Section]
+│   │   ├── Jobs (/people/jobs)
 │   │   ├── Candidates (/people/candidates)
+│   │   ├── Interviews (/people/interviews)
 │   │   ├── Onboarding (/people/onboarding)
 │   │   └── Offboarding (/people/offboarding)
 │   │
-│   └── Performance                        [Sub-section]
+│   └── Performance                        [Section]
 │       ├── Goals (/people/goals)
 │       ├── Reviews (/people/reviews)
-│       └── Training (/people/training)
+│       ├── Training (/people/training)
+│       └── Disciplinary (/people/disciplinary)
+│
+├── Time & Leave (/time-leave)             [HUB - Skippable]
+│   ├── Time Tracking (/time-leave/time-tracking) [WORK PAGE]
+│   ├── Attendance (/time-leave/attendance)       [WORK PAGE]
+│   ├── Leave (/time-leave/leave)                 [WORK PAGE]
+│   └── Shifts (/time-leave/shifts)               [WORK PAGE]
 │
 ├── Payroll (/payroll)                     [HUB - Skippable]
 │   │
 │   ├── Run Payroll (/payroll/run)         [WORK PAGE - Wizard]
-│   │   └── Steps: Select → Review → Taxes → Confirm → Success
-│   │   └── Button language: "Confirm & Process Payroll", "Save as Draft"
-│   │   └── Auto-posts journal entry to Accounting when processed
 │   │
-│   ├── Payroll History (/payroll/history) [WORK PAGE]
-│   │   └── Payrun Detail (modal)
+│   ├── Setup                              [Section]
+│   │   ├── Benefits (/payroll/setup/benefits) [WORK PAGE]
+│   │   └── Deductions (/payroll/setup/deductions) [WORK PAGE]
 │   │
-│   ├── Tax Reports (/payroll/reports)      [WORK PAGE]
-│   │   └── WIT, INSS reports
-│   │
-│   ├── Benefits (/payroll/setup/benefits) [WORK PAGE]
-│   │
-│   ├── Deductions (/payroll/setup/deductions) [WORK PAGE]
-│   │
-│   └── Bank Transfers (/payroll/payments) [WORK PAGE]
+│   ├── History (/payroll/history)         [WORK PAGE]
+│   ├── Payments (/payroll/payments)       [WORK PAGE]
+│   └── Reports (/payroll/reports)         [WORK PAGE]
 │
 ├── Money (/money)                         [HUB - Skippable]
-│   │                                      Day-to-day AR/AP operations
-│   │                                      Target: Small business owners
 │   │
-│   ├── Accounts Receivable (A/R)          [Sub-section]
-│   │   ├── Customers (/money/customers)   [WORK PAGE]
-│   │   │   └── Customer Detail (modal)
+│   ├── Invoices                           [Section]
 │   │   ├── Invoices (/money/invoices)     [WORK PAGE]
-│   │   │   └── Invoice Form (create/edit/view)
-│   │   │   └── Invoice sharing via token
-│   │   └── Payments Received (/money/payments) [WORK PAGE]
-│   │       └── Link payments to invoices
+│   │   ├── Customers (/money/customers)   [WORK PAGE]
+│   │   └── Payments (/money/payments)     [WORK PAGE]
 │   │
-│   ├── Accounts Payable (A/P)             [Sub-section]
-│   │   ├── Vendors (/money/vendors)       [WORK PAGE]
-│   │   │   └── Vendor Detail (modal)
+│   ├── Bills                              [Section]
 │   │   ├── Bills (/money/bills)           [WORK PAGE]
-│   │   │   └── Bill Detail (modal)
-│   │   │   └── Record bill payments
-│   │   └── Expenses (/money/expenses)     [WORK PAGE]
-│   │       └── Receipt upload (mobile-friendly)
-│   │       └── Category tracking
+│   │   └── Vendors (/money/vendors)       [WORK PAGE]
 │   │
-│   └── Reports                            [Sub-section]
-│       ├── Profit & Loss (/money/profit-loss) [WORK PAGE]
-│       │   └── Period selection
-│       ├── Balance Sheet (/money/balance-sheet) [WORK PAGE]
-│       │   └── Point-in-time view
-│       ├── Cash Flow (/money/cashflow)    [WORK PAGE]
-│       │   └── Inflows/Outflows summary
-│       ├── A/R Aging (/money/ar-aging)    [WORK PAGE]
-│       │   └── Customer breakdown
-│       │   └── Buckets: Current, 30, 60, 90+ days
-│       ├── A/P Aging (/money/ap-aging)    [WORK PAGE]
-│       │   └── Vendor breakdown
-│       │   └── Buckets: Current, 30, 60, 90+ days
-│       └── Bank Reconciliation (/money/bank-reconciliation) [WORK PAGE]
-│           └── CSV import
-│           └── Transaction matching
-│           └── Bulk reconciliation
+│   ├── Expenses (/money/expenses)         [WORK PAGE]
+│   │
+│   └── Reports                            [Section]
+│       ├── Profit & Loss (/money/reports/profit-loss)
+│       ├── Balance Sheet (/money/reports/balance-sheet)
+│       ├── Cashflow (/money/reports/cashflow)
+│       ├── AR Aging (/money/reports/ar-aging)
+│       ├── AP Aging (/money/reports/ap-aging)
+│       ├── Reconciliation (/money/reports/reconciliation)
+│       ├── VAT Settings (/money/reports/vat-settings)
+│       └── VAT Returns (/money/reports/vat-returns)
 │
 ├── Accounting (/accounting)               [HUB - Skippable]
-│   │                                      "Advanced" - Ledger & compliance
-│   │                                      Target: Accountants & auditors
 │   │
-│   ├── Chart of Accounts                  [WORK PAGE]
-│   │   (/accounting/chart-of-accounts)
+│   ├── Core                               [Section]
+│   │   ├── Chart of Accounts (/accounting/core/chart)
+│   │   ├── Journal Entries (/accounting/core/journal)
+│   │   ├── General Ledger (/accounting/core/ledger)
+│   │   └── Reconciliation (/accounting/core/reconciliation)
 │   │
-│   ├── Journal Entries                    [WORK PAGE]
-│   │   (/accounting/journal-entries)
-│   │   └── Entry Detail (modal)
-│   │
-│   ├── General Ledger                     [WORK PAGE]
-│   │   (/accounting/general-ledger)
-│   │
-│   └── Trial Balance                      [WORK PAGE]
-│       (/accounting/trial-balance)
+│   └── Reports                            [Section]
+│       ├── Trial Balance (/accounting/reports/trial-balance)
+│       ├── Income Statement (/accounting/reports/income-statement)
+│       ├── Balance Sheet (/accounting/reports/balance-sheet)
+│       ├── Fiscal Periods (/accounting/reports/fiscal-periods)
+│       └── Audit Trail (/accounting/reports/audit-trail)
 │
-├── Reports (/reports)                     [HUB - Not Skippable]
+├── Reports (/reports)                     [HUB]
 │   │
-│   ├── Payroll Reports (/reports/payroll) [WORK PAGE]
-│   │   ├── Summary
-│   │   ├── Tax Liability
-│   │   └── YTD Earnings
+│   ├── Standard                           [Section]
+│   │   ├── Payroll (/reports/payroll)
+│   │   ├── Employees (/reports/employees)
+│   │   ├── Attendance (/reports/attendance)
+│   │   └── Departments (/reports/departments)
 │   │
-│   ├── Employee Reports (/reports/employees)[WORK PAGE]
-│   │   ├── Headcount
-│   │   ├── New Hires
-│   │   └── Turnover
+│   ├── Compliance                         [Section]
+│   │   ├── Monthly WIT (/reports/attl-monthly-wit)
+│   │   ├── Monthly INSS (/reports/inss-monthly)
+│   │   └── Annual INSS (/reports/inss-annual)
 │   │
-│   ├── Attendance Reports (/reports/attendance)[WORK PAGE]
-│   │
-│   ├── Department Reports (/reports/departments)[WORK PAGE]
-│   │
-│   └── Custom Reports (/reports/custom)   [WORK PAGE]
-│       └── Report Builder, Saved, Scheduled
+│   └── Custom                             [Section]
+│       ├── Custom Reports (/reports/custom)
+│       └── Report Setup (/reports/setup)
 │
 └── Settings (/settings)                   [WORK PAGE - Tabs]
     ├── Organization tab
@@ -353,9 +322,9 @@ These pages get extra optimization - keyboard shortcuts, prominent placement:
 | Run Payroll | `/payroll/run` | Monthly critical path |
 | Invoices | `/money/invoices` | Daily use for business owners |
 | Expenses | `/money/expenses` | Frequent data entry |
-| Journal Entries | `/accounting/journal-entries` | Most-used accounting tool |
+| Journal Entries | `/accounting/core/journal` | Most-used accounting tool |
 | Payroll Reports | `/reports/payroll` | Most-used reports |
-| Leave Requests | `/scheduling/leave` | Frequent approvals |
+| Leave Requests | `/time-leave/leave` | Frequent approvals |
 
 ---
 
@@ -421,5 +390,5 @@ This map is a **contract**, not a suggestion.
 
 ---
 
-*Last updated: January 2026*
+*Last updated: March 2026*
 *Philosophy: Hubs help users decide. Work pages help users finish. Never mix the two.*

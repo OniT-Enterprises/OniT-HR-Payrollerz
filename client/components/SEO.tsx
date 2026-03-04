@@ -274,37 +274,37 @@ export const seoConfig = {
     title: 'Chart of Accounts',
     description: 'Manage your chart of accounts and financial account structure.',
     keywords: 'chart of accounts, COA, general ledger accounts, accounting',
-    url: '/accounting/chart-of-accounts',
+    url: '/accounting/core/chart',
   },
   journalEntries: {
     title: 'Journal Entries',
     description: 'Create and manage journal entries for financial transactions.',
     keywords: 'journal entries, accounting entries, bookkeeping',
-    url: '/accounting/journal-entries',
+    url: '/accounting/core/journal',
   },
   generalLedger: {
     title: 'General Ledger',
     description: 'View your complete general ledger with all financial transactions.',
     keywords: 'general ledger, GL, financial records, accounting ledger',
-    url: '/accounting/general-ledger',
+    url: '/accounting/core/ledger',
   },
   trialBalance: {
     title: 'Trial Balance',
     description: 'Generate trial balance reports to verify account balances.',
     keywords: 'trial balance, accounting reports, financial statements',
-    url: '/accounting/trial-balance',
+    url: '/accounting/reports/trial-balance',
   },
   incomeStatement: {
     title: 'Income Statement',
     description: 'View profit and loss for any period with revenue and expense breakdown.',
     keywords: 'income statement, profit and loss, P&L, financial statements',
-    url: '/accounting/income-statement',
+    url: '/accounting/reports/income-statement',
   },
   balanceSheet: {
     title: 'Balance Sheet',
     description: 'View assets, liabilities, and equity as of any date.',
     keywords: 'balance sheet, assets, liabilities, equity, financial statements',
-    url: '/accounting/balance-sheet',
+    url: '/accounting/reports/balance-sheet',
   },
 
   // Reports
