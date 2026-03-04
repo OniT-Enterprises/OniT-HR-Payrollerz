@@ -327,7 +327,10 @@ class LeaveService {
       const querySnapshot = await getDocs(q);
       const requests: LeaveRequest[] = [];
 
+      const seen = new Set<string>();
       querySnapshot.forEach((doc) => {
+        if (seen.has(doc.id)) return;
+        seen.add(doc.id);
         const data = doc.data();
         requests.push({
           ...data,

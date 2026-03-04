@@ -79,6 +79,7 @@ import {
   calculateWorkingDays,
 } from "@/services/leaveService";
 import { SEO, seoConfig } from "@/components/SEO";
+import LeaveCalendar from "@/components/leave/LeaveCalendar";
 import { useTenant, useTenantId, useCurrentEmployeeId } from "@/contexts/TenantContext";
 import { getTodayTL } from "@/lib/dateUtils";
 import { useAuth } from "@/contexts/AuthContext";
@@ -917,10 +918,16 @@ export default function LeaveRequests() {
               <TabsTrigger value="rejected">
                 {t("timeLeave.leaveRequests.tabs.rejected")}
               </TabsTrigger>
+              <TabsTrigger value="calendar">
+                <Calendar className="h-3.5 w-3.5 mr-1.5" />
+                Calendar
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value={activeTab} className="mt-4">
-              {filteredRequests.length === 0 ? (
+              {activeTab === "calendar" ? (
+                <LeaveCalendar requests={leaveRequests} departments={departments} />
+              ) : filteredRequests.length === 0 ? (
                 <div className="text-center py-16">
                   <div className="inline-flex items-center justify-center w-14 h-14 bg-gradient-to-br from-cyan-500 to-teal-500 rounded-2xl mb-4 shadow-lg shadow-cyan-500/20">
                     <Calendar className="h-7 w-7 text-white" />
