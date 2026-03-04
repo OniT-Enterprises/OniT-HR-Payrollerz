@@ -208,6 +208,8 @@ export const addEmployeeFormSchema = z.object({
   phone: z.string().optional().or(z.literal('')),
   phoneApp: z.string().optional().or(z.literal('')),
   appEligible: z.boolean().default(false),
+  dateOfBirth: z.string().optional().or(z.literal('')),
+  address: z.string().optional().or(z.literal('')),
   emergencyContactName: z.string().optional().or(z.literal('')),
   emergencyContactPhone: z.string().optional().or(z.literal('')),
 

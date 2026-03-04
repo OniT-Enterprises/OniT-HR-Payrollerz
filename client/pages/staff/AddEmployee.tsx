@@ -265,6 +265,8 @@ export default function AddEmployee() {
           phone: employee.personalInfo.phone || "",
           phoneApp: employee.personalInfo.phoneApp || "",
           appEligible: employee.personalInfo.appEligible || false,
+          dateOfBirth: employee.personalInfo.dateOfBirth || "",
+          address: employee.personalInfo.address || "",
           emergencyContactName: employee.personalInfo.emergencyContactName || "",
           emergencyContactPhone: employee.personalInfo.emergencyContactPhone || "",
           department: employee.jobDetails.department,
@@ -460,8 +462,8 @@ export default function AddEmployee() {
           phone: data.phone || "",
           phoneApp: data.phoneApp || "",
           appEligible: data.appEligible,
-          address: "",
-          dateOfBirth: "",
+          address: data.address || "",
+          dateOfBirth: data.dateOfBirth || "",
           socialSecurityNumber: docValues.socialSecurityNumber?.number || "",
           emergencyContactName: data.emergencyContactName || "",
           emergencyContactPhone: data.emergencyContactPhone || "",
@@ -777,6 +779,28 @@ export default function AddEmployee() {
                 </div>
               </div>
 
+              {/* Date of Birth + Address Row */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="dateOfBirth">{t("addEmployee.fields.dateOfBirth")}</Label>
+                  <Input
+                    id="dateOfBirth"
+                    type="date"
+                    {...register("dateOfBirth")}
+                    className={fieldBorder(watch("dateOfBirth"))}
+                  />
+                </div>
+                <div className="space-y-2 col-span-2">
+                  <Label htmlFor="address">{t("addEmployee.fields.address")}</Label>
+                  <Input
+                    id="address"
+                    {...register("address")}
+                    placeholder={t("addEmployee.fields.address")}
+                    className={fieldBorder(watch("address"))}
+                  />
+                </div>
+              </div>
+
               {/* Contact Row */}
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
@@ -1038,77 +1062,73 @@ export default function AddEmployee() {
                 </div>
               </div>
 
-              {/* Tax Residency */}
-              <div className="p-4 border rounded-lg bg-amber-50/50 dark:bg-amber-950/20">
-                <h3 className="font-medium mb-3 text-amber-800 dark:text-amber-200">
-                  {t("addEmployee.compensation.taxInfoTitle")}
-                </h3>
-                <div className="flex items-center gap-3">
+              {/* Payment Method & Bank Details */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("addEmployee.compensation.paymentMethod")}</Label>
+                  <Select
+                    value={additionalInfo.paymentMethod}
+                    onValueChange={v => handleAdditionalInfoChange("paymentMethod", v)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bank_transfer">{t("addEmployee.compensation.bankTransfer")}</SelectItem>
+                      <SelectItem value="cash">{t("addEmployee.compensation.cash")}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                {additionalInfo.paymentMethod === "bank_transfer" && (
+                  <>
+                    <div className="space-y-2">
+                      <Label>{t("addEmployee.compensation.bankName")}</Label>
+                      <Select
+                        value={additionalInfo.bankName}
+                        onValueChange={v => handleAdditionalInfoChange("bankName", v)}
+                      >
+                        <SelectTrigger className={fieldBorder(additionalInfo.bankName)}>
+                          <SelectValue placeholder={t("addEmployee.compensation.bankNamePlaceholder")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="BNCTL">BNCTL</SelectItem>
+                          <SelectItem value="ANZ">ANZ</SelectItem>
+                          <SelectItem value="BNU">BNU</SelectItem>
+                          <SelectItem value="Mandiri">Mandiri</SelectItem>
+                          <SelectItem value="BRI">BRI</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t("addEmployee.compensation.accountNumber")}</Label>
+                      <Input
+                        value={additionalInfo.bankAccountNumber}
+                        onChange={e => handleAdditionalInfoChange("bankAccountNumber", e.target.value)}
+                        placeholder={t("addEmployee.compensation.accountNumberPlaceholder")}
+                        className={fieldBorder(additionalInfo.bankAccountNumber)}
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Tax & Deductions Summary */}
+              <div className="flex items-center gap-6 p-3 border rounded-lg bg-muted/30">
+                <div className="flex items-center gap-2">
                   <input
                     type="checkbox"
                     id="isResident"
                     className="rounded border-blue-300 text-blue-600 focus:ring-blue-500 data-[state=checked]:bg-blue-500"
                     {...register("isResident")}
                   />
-                  <Label htmlFor="isResident" className="cursor-pointer">
+                  <Label htmlFor="isResident" className="cursor-pointer text-sm">
                     {t("addEmployee.compensation.taxResidentLabel")}
                   </Label>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {t("addEmployee.compensation.taxResidentHint")}
-                </p>
-              </div>
-
-              {/* Payment Method */}
-              <div className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-2">
-                    <Label>{t("addEmployee.compensation.paymentMethod")}</Label>
-                    <Select
-                      value={additionalInfo.paymentMethod}
-                      onValueChange={v => handleAdditionalInfoChange("paymentMethod", v)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="bank_transfer">{t("addEmployee.compensation.bankTransfer")}</SelectItem>
-                        <SelectItem value="cash">{t("addEmployee.compensation.cash")}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {additionalInfo.paymentMethod === "bank_transfer" && (
-                    <>
-                      <div className="space-y-2">
-                        <Label>{t("addEmployee.compensation.bankName")}</Label>
-                        <Select
-                          value={additionalInfo.bankName}
-                          onValueChange={v => handleAdditionalInfoChange("bankName", v)}
-                        >
-                          <SelectTrigger className={fieldBorder(additionalInfo.bankName)}>
-                            <SelectValue placeholder={t("addEmployee.compensation.bankNamePlaceholder")} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="BNCTL">BNCTL</SelectItem>
-                            <SelectItem value="ANZ">ANZ</SelectItem>
-                            <SelectItem value="BNU">BNU</SelectItem>
-                            <SelectItem value="Mandiri">Mandiri</SelectItem>
-                            <SelectItem value="BRI">BRI</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t("addEmployee.compensation.accountNumber")}</Label>
-                        <Input
-                          value={additionalInfo.bankAccountNumber}
-                          onChange={e => handleAdditionalInfoChange("bankAccountNumber", e.target.value)}
-                          placeholder={t("addEmployee.compensation.accountNumberPlaceholder")}
-                          className={fieldBorder(additionalInfo.bankAccountNumber)}
-                        />
-                      </div>
-                    </>
-                  )}
-                </div>
+                <span className="text-xs text-muted-foreground">|</span>
+                <span className="text-xs text-muted-foreground">{t("addEmployee.compensation.incomeTaxTitle")}: {t("addEmployee.compensation.incomeTaxDesc")}</span>
+                <span className="text-xs text-muted-foreground">|</span>
+                <span className="text-xs text-muted-foreground">{t("addEmployee.compensation.socialSecurityTitle")}: {t("addEmployee.compensation.socialSecurityDesc")}</span>
               </div>
             </div>
           </StepContent>
