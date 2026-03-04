@@ -43,10 +43,6 @@ function formatDateKey(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
-function isSameDay(a: Date, b: Date) {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
 function getMonthDays(year: number, month: number): Date[] {
   const firstDay = new Date(year, month, 1);
   const startOffset = firstDay.getDay(); // 0=Sun
@@ -102,16 +98,16 @@ export default function LeaveCalendar({ requests, departments }: LeaveCalendarPr
   }, [requests, selectedDepartment]);
 
   // Build holiday map for visible years
+  const currentYear = currentDate.getFullYear();
   const holidayMap = useMemo(() => {
     const map = new Map<string, TLHoliday>();
-    const year = currentDate.getFullYear();
-    for (const y of [year - 1, year, year + 1]) {
+    for (const y of [currentYear - 1, currentYear, currentYear + 1]) {
       for (const h of getTLPublicHolidays(y)) {
         map.set(h.date, h);
       }
     }
     return map;
-  }, [currentDate.getFullYear()]);
+  }, [currentYear]);
 
   // Build a map of dateKey -> leave requests for that day
   const leavesByDate = useMemo(() => {
