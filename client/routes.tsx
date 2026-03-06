@@ -748,6 +748,14 @@ export const accountingRoutes = (
         </FeatureRoute>
       }
     />
+    <Route
+      path="/accounting/core/reconciliation"
+      element={
+        <FeatureRoute requiredModule="accounting">
+          <BankReconciliation />
+        </FeatureRoute>
+      }
+    />
 
     {/* Reports */}
     <Route
