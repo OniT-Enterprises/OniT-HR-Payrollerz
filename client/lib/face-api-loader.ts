@@ -3,16 +3,23 @@
  * Lazy-loads models, runs detection, and matches embeddings — all client-side
  */
 
-import * as faceapi from '@vladmandic/face-api';
-
 const MODEL_URL = '/models/face-api';
 let modelsLoaded = false;
+let faceApiModulePromise: Promise<typeof import('@vladmandic/face-api')> | null = null;
+
+function getFaceApi() {
+  if (!faceApiModulePromise) {
+    faceApiModulePromise = import('@vladmandic/face-api');
+  }
+  return faceApiModulePromise;
+}
 
 /**
  * Lazy-load the 3 required models (SSD MobileNet, Landmarks 68, Recognition)
  */
 export async function ensureModelsLoaded(): Promise<void> {
   if (modelsLoaded) return;
+  const faceapi = await getFaceApi();
 
   await Promise.all([
     faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
@@ -26,7 +33,11 @@ export async function ensureModelsLoaded(): Promise<void> {
 export interface DetectionResult {
   descriptor: Float32Array;
   box: { x: number; y: number; width: number; height: number };
-  landmarks: faceapi.FaceLandmarks68;
+  landmarks: FaceLandmarksLike;
+}
+
+export interface FaceLandmarksLike {
+  getNose(): Array<{ x: number; y: number }>;
 }
 
 /**
@@ -36,6 +47,7 @@ export interface DetectionResult {
 export async function detectAndDescribe(
   input: HTMLVideoElement | HTMLCanvasElement
 ): Promise<DetectionResult | null> {
+  const faceapi = await getFaceApi();
   const result = await faceapi
     .detectSingleFace(input)
     .withFaceLandmarks()
@@ -55,10 +67,15 @@ export async function detectAndDescribe(
  * Euclidean distance between two 128-dim embeddings
  */
 export function computeDistance(a: Float32Array | number[], b: Float32Array | number[]): number {
-  return faceapi.euclideanDistance(
-    a instanceof Float32Array ? Array.from(a) : a,
-    b instanceof Float32Array ? Array.from(b) : b,
-  );
+  const left = a instanceof Float32Array ? a : Float32Array.from(a);
+  const right = b instanceof Float32Array ? b : Float32Array.from(b);
+  const length = Math.min(left.length, right.length);
+  let sum = 0;
+  for (let i = 0; i < length; i += 1) {
+    const diff = left[i] - right[i];
+    sum += diff * diff;
+  }
+  return Math.sqrt(sum);
 }
 
 export interface MatchResult {
@@ -100,8 +117,8 @@ export function findBestMatch(
  * Returns true if head movement detected (nose displacement > minPixels)
  */
 export function checkLiveness(
-  landmarks1: faceapi.FaceLandmarks68,
-  landmarks2: faceapi.FaceLandmarks68,
+  landmarks1: FaceLandmarksLike,
+  landmarks2: FaceLandmarksLike,
   minPixels: number = 2
 ): boolean {
   const nose1 = landmarks1.getNose()[3]; // nose tip

@@ -22,11 +22,17 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     outDir: "dist/spa",
+    // Remaining large chunks are opt-in ML/PDF/export features that load on demand.
+    // Keep warnings focused on app-shell regressions instead of known lazy bundles.
+    chunkSizeWarningLimit: 1400,
     // SEC-4: Strip console.log/warn in production to prevent PII leaks
     minify: "esbuild",
     rollupOptions: {
       output: {
         manualChunks(id) {
+          if (id.includes("client/i18n/translations.ts")) {
+            return "translations";
+          }
           // Core React runtime
           if (id.includes("node_modules/react-dom") || id.includes("node_modules/react/")) {
             return "vendor-react";
@@ -34,9 +40,43 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("node_modules/react-router")) {
             return "vendor-router";
           }
-          // Firebase SDK
+          // Heavy export/rendering libraries
+          if (id.includes("node_modules/exceljs")) {
+            return "vendor-exceljs";
+          }
+          if (
+            id.includes("node_modules/@react-pdf/pdfkit") ||
+            id.includes("node_modules/pdfkit") ||
+            id.includes("node_modules/fontkit") ||
+            id.includes("node_modules/restructure") ||
+            id.includes("node_modules/linebreak")
+          ) {
+            return "vendor-pdfkit";
+          }
+          if (id.includes("node_modules/@react-pdf")) {
+            return "vendor-react-pdf";
+          }
+          if (id.includes("node_modules/@vladmandic/face-api")) {
+            return "vendor-face-api";
+          }
+          // Firebase SDK split by product to keep the app shell smaller
           if (id.includes("node_modules/firebase") || id.includes("node_modules/@firebase")) {
-            return "vendor-firebase";
+            if (id.includes("firestore")) {
+              return "vendor-firebase-firestore";
+            }
+            if (id.includes("auth")) {
+              return "vendor-firebase-auth";
+            }
+            if (id.includes("storage")) {
+              return "vendor-firebase-storage";
+            }
+            if (id.includes("functions")) {
+              return "vendor-firebase-functions";
+            }
+            if (id.includes("app-check")) {
+              return "vendor-firebase-app-check";
+            }
+            return "vendor-firebase-core";
           }
           // UI components (Radix)
           if (id.includes("node_modules/@radix-ui")) {

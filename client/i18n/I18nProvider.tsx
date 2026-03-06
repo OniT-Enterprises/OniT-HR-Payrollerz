@@ -1,7 +1,9 @@
-import React, { createContext, useCallback, useContext, useMemo, useState } from "react";
-import { translations, type Locale } from "./translations";
+import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type TranslationParams = Record<string, string | number>;
+export type Locale = "en" | "tet" | "pt";
+type TranslationTree = Record<string, unknown>;
+type TranslationBundle = Record<Locale, TranslationTree>;
 
 interface I18nContextValue {
   locale: Locale;
@@ -15,9 +17,9 @@ const I18nContext = createContext<I18nContextValue | null>(null);
 const LOCALE_STORAGE_KEY = "onit:locale";
 
 const localeLabels: Record<Locale, string> = {
-  en: (translations.en as unknown as Record<string, Record<string, string>>).locale?.en || 'English',
-  tet: (translations.tet as unknown as Record<string, Record<string, string>>).locale?.tet || 'Tetun',
-  pt: (translations.pt as unknown as Record<string, Record<string, string>>).locale?.pt || 'Português',
+  en: "English",
+  tet: "Tetun",
+  pt: "Português",
 };
 
 const resolvePath = (obj: unknown, path: string): unknown =>
@@ -60,6 +62,29 @@ const getInitialLocale = (): Locale => {
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
+  const [translationBundle, setTranslationBundle] = useState<TranslationBundle | null>(null);
+
+  useEffect(() => {
+    let active = true;
+
+    void import("./translations")
+      .then((module) => {
+        if (!active) return;
+        setTranslationBundle(module.translations as TranslationBundle);
+      })
+      .catch(() => {
+        if (!active) return;
+        setTranslationBundle({
+          en: {},
+          tet: {},
+          pt: {},
+        });
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
@@ -70,12 +95,15 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const t = useCallback(
     (key: string, params?: TranslationParams) => {
-      const current = resolvePath(translations[locale], key);
-      const fallback = resolvePath(translations.en, key);
+      if (!translationBundle) {
+        return key;
+      }
+      const current = resolvePath(translationBundle[locale], key);
+      const fallback = resolvePath(translationBundle.en, key);
       const value = typeof current === "string" ? current : typeof fallback === "string" ? fallback : key;
       return formatString(value, params);
     },
-    [locale]
+    [locale, translationBundle]
   );
 
   const value = useMemo<I18nContextValue>(
@@ -87,6 +115,10 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }),
     [locale, setLocale, t]
   );
+
+  if (!translationBundle) {
+    return null;
+  }
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 };
