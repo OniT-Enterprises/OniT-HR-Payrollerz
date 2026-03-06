@@ -16,7 +16,8 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { httpsCallable } from 'firebase/functions';
+import { db, functions } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { TenantConfig, TenantStatus, TenantPlan, PLAN_LIMITS } from '@/types/tenant';
 import { UserProfile, AdminAuditEntry, AuditLogEntry } from '@/types/user';
@@ -86,88 +87,86 @@ class AdminService {
   async createTenant(
     name: string,
     ownerEmail: string,
-    ownerUid: string,
     plan: TenantPlan = 'free',
-    createdBy: string
+    createdBy: string,
+    actorEmail: string
   ): Promise<string> {
     if (!db) throw new Error('Database not available');
 
     try {
       const tenantId = generateTenantId(name);
-      const tenantRef = doc(db, paths.tenant(tenantId));
+      const normalizedOwnerEmail = ownerEmail.trim().toLowerCase();
+      const provisionTenant = httpsCallable<
+        {
+          name: string;
+          ownerEmail: string;
+          slug: string;
+          config: {
+            features: TenantConfig['features'];
+            settings: TenantConfig['settings'];
+          };
+        },
+        { tenantId: string; ownerUid: string; message: string }
+      >(functions, 'provisionTenant');
 
-      const tenantConfig: Omit<TenantConfig, 'id'> = {
-        name,
-        slug: generateTenantSlug(name),
-        status: 'active',
-        plan,
-        limits: PLAN_LIMITS[plan],
-        billingEmail: ownerEmail,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        createdBy,
-        features: {
-          hiring: true,
-          timeleave: true,
-          performance: true,
-          payroll: plan !== 'free',
-          money: true,
-          accounting: true,
-          reports: true,
-        },
-        settings: {
-          timezone: 'Asia/Dili',
-          currency: 'USD',
-          dateFormat: 'DD/MM/YYYY',
-        },
+      const features: TenantConfig['features'] = {
+        hiring: true,
+        timeleave: true,
+        performance: true,
+        payroll: plan !== 'free',
+        money: true,
+        accounting: true,
+        reports: true,
+      };
+      const settings: TenantConfig['settings'] = {
+        timezone: 'Asia/Dili',
+        currency: 'USD',
+        dateFormat: 'DD/MM/YYYY',
       };
 
-      await setDoc(tenantRef, tenantConfig);
-
-      // Create owner membership
-      const memberRef = doc(db, paths.member(tenantId, ownerUid));
-      await setDoc(memberRef, {
-        uid: ownerUid,
-        email: ownerEmail,
-        role: 'owner',
-        modules: ['hiring', 'staff', 'timeleave', 'performance', 'payroll', 'money', 'accounting', 'reports'],
-        joinedAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp(),
+      const result = await provisionTenant({
+        name,
+        ownerEmail: normalizedOwnerEmail,
+        slug: tenantId,
+        config: { features, settings },
       });
 
-      // Update user's tenantIds and tenantAccess (denormalized for faster loading)
-      const userRef = doc(db, paths.user(ownerUid));
-      const userSnap = await getDoc(userRef);
-      if (userSnap.exists()) {
-        const userData = userSnap.data();
-        const tenantIds = userData.tenantIds || [];
-        const tenantAccess = userData.tenantAccess || {};
+      const createdTenantId = result.data.tenantId;
+      const ownerUid = result.data.ownerUid;
+      const tenantRef = doc(db, paths.tenant(createdTenantId));
+      const tenantSettingsRef = doc(db, paths.settings(createdTenantId));
 
-        if (!tenantIds.includes(tenantId)) {
-          await updateDoc(userRef, {
-            tenantIds: [...tenantIds, tenantId],
-            tenantAccess: {
-              ...tenantAccess,
-              [tenantId]: { name, role: 'owner' },
-            },
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
+      await Promise.all([
+        updateDoc(tenantRef, {
+          status: 'active',
+          plan,
+          limits: PLAN_LIMITS[plan],
+          billingEmail: normalizedOwnerEmail,
+          createdBy,
+          features,
+          settings,
+          updatedAt: serverTimestamp(),
+        }),
+        updateDoc(tenantSettingsRef, {
+          features,
+          settings,
+          updatedAt: serverTimestamp(),
+        }),
+      ]);
 
       // Log the action
       await this.logAdminAction({
         action: 'tenant_created',
         actorUid: createdBy,
-        actorEmail: ownerEmail,
+        actorEmail,
         targetType: 'tenant',
-        targetId: tenantId,
+        targetId: createdTenantId,
         targetName: name,
-        details: { plan, ownerUid },
+        details: { plan, ownerUid, ownerEmail: normalizedOwnerEmail },
         timestamp: Timestamp.now(),
       });
 
-      return tenantId;
+      return createdTenantId;
     } catch (error) {
       console.error('Error creating tenant:', error);
       throw error;

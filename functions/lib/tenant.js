@@ -23,6 +23,28 @@ const DEFAULT_MODULES_BY_ROLE = {
     manager: ["staff", "timeleave", "performance"],
     viewer: [],
 };
+function getModulesForFeatures(features) {
+    const enabled = new Set(["staff"]);
+    if ((features === null || features === void 0 ? void 0 : features.hiring) !== false)
+        enabled.add("hiring");
+    if ((features === null || features === void 0 ? void 0 : features.timeleave) !== false)
+        enabled.add("timeleave");
+    if ((features === null || features === void 0 ? void 0 : features.performance) !== false)
+        enabled.add("performance");
+    if ((features === null || features === void 0 ? void 0 : features.payroll) !== false)
+        enabled.add("payroll");
+    if ((features === null || features === void 0 ? void 0 : features.money) !== false)
+        enabled.add("money");
+    if ((features === null || features === void 0 ? void 0 : features.accounting) !== false)
+        enabled.add("accounting");
+    if ((features === null || features === void 0 ? void 0 : features.reports) !== false)
+        enabled.add("reports");
+    return ALLOWED_MODULES.filter((module) => enabled.has(module));
+}
+function limitModulesToFeatures(modules, features) {
+    const enabledModules = new Set(getModulesForFeatures(features));
+    return modules.filter((module) => enabledModules.has(module));
+}
 /**
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
@@ -96,7 +118,7 @@ exports.provisionTenant = (0, https_1.onCall)(async (request) => {
         const ownerMemberData = {
             uid: ownerUser.uid,
             role: "owner",
-            modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+            modules: limitModulesToFeatures(DEFAULT_MODULES_BY_ROLE.owner, tenantData.features),
             email: ownerEmail,
             displayName: ownerUser.displayName || null,
             joinedAt: new Date(),
@@ -240,6 +262,7 @@ async function createDefaultTenantData(db, tenantId) {
  * Cloud Function to add a user to an existing tenant
  */
 exports.addTenantMember = (0, https_1.onCall)(async (request) => {
+    var _a;
     const { tenantId, userEmail, role, modules, employeeId, tenantName } = request.data;
     const authContext = (0, authz_1.requireAuth)(request);
     if (!tenantId) {
@@ -270,14 +293,16 @@ exports.addTenantMember = (0, https_1.onCall)(async (request) => {
         throw new https_1.HttpsError("invalid-argument", "modules contains invalid entries");
     }
     const normalizedModules = Array.from(new Set(requestedModules));
-    const effectiveModules = Array.isArray(modules)
-        ? normalizedModules
-        : DEFAULT_MODULES_BY_ROLE[role];
     try {
         const callerMember = await (0, authz_1.requireTenantAdmin)(tenantId, authContext.uid);
         if (role === "owner" && callerMember.role !== "owner") {
             throw new https_1.HttpsError("permission-denied", "Only tenant owners can assign owner role");
         }
+        const tenantSnap = await db.collection("tenants").doc(tenantId).get();
+        const tenantFeatures = tenantSnap.exists ? (_a = tenantSnap.data()) === null || _a === void 0 ? void 0 : _a.features : undefined;
+        const effectiveModules = limitModulesToFeatures(Array.isArray(modules)
+            ? normalizedModules
+            : DEFAULT_MODULES_BY_ROLE[role], tenantFeatures);
         // Find or create the user
         let targetUser;
         let isNewUser = false;

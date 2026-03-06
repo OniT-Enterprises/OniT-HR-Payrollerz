@@ -3,8 +3,9 @@
  * Path: tenants/{tid}/employees/{empId}
  */
 import { create } from 'zustand';
-import { doc, getDoc, Timestamp } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { normalizeEmployeeDoc } from '../lib/employeeDoc';
 
 export interface Employee {
   id: string;
@@ -35,6 +36,12 @@ export interface Employee {
 
   // Photo
   photoUrl?: string;
+
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  bankAccountName?: string;
+  bankAccountNumber?: string;
+  qrCode?: string;
 }
 
 export interface EmployeeDocument {
@@ -64,32 +71,8 @@ export const useEmployeeStore = create<EmployeeState>((set) => ({
     try {
       const empDoc = await getDoc(doc(db, `tenants/${tenantId}/employees/${employeeId}`));
       if (empDoc.exists()) {
-        const data = empDoc.data();
         set({
-          employee: {
-            id: empDoc.id,
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            email: data.email || '',
-            phone: data.phone,
-            dateOfBirth: data.dateOfBirth,
-            gender: data.gender,
-            address: data.address,
-            nationalId: data.nationalId,
-            department: data.department,
-            departmentId: data.departmentId,
-            position: data.position,
-            positionId: data.positionId,
-            employmentType: data.employmentType,
-            startDate: data.startDate instanceof Timestamp
-              ? data.startDate.toDate().toISOString().split('T')[0]
-              : data.startDate,
-            status: data.status || 'active',
-            baseSalary: data.baseSalary,
-            currency: data.currency || 'USD',
-            documents: data.documents || [],
-            photoUrl: data.photoUrl,
-          },
+          employee: normalizeEmployeeDoc(empDoc.id, empDoc.data()),
           loading: false,
         });
       } else {

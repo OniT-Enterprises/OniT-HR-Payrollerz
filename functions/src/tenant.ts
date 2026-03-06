@@ -37,6 +37,28 @@ const DEFAULT_MODULES_BY_ROLE: Record<TenantRole, AllowedModule[]> = {
   viewer: [],
 };
 
+function getModulesForFeatures(features?: Record<string, unknown>): AllowedModule[] {
+  const enabled = new Set<AllowedModule>(["staff"]);
+
+  if (features?.hiring !== false) enabled.add("hiring");
+  if (features?.timeleave !== false) enabled.add("timeleave");
+  if (features?.performance !== false) enabled.add("performance");
+  if (features?.payroll !== false) enabled.add("payroll");
+  if (features?.money !== false) enabled.add("money");
+  if (features?.accounting !== false) enabled.add("accounting");
+  if (features?.reports !== false) enabled.add("reports");
+
+  return ALLOWED_MODULES.filter((module) => enabled.has(module));
+}
+
+function limitModulesToFeatures(
+  modules: AllowedModule[],
+  features?: Record<string, unknown>,
+): AllowedModule[] {
+  const enabledModules = new Set(getModulesForFeatures(features));
+  return modules.filter((module) => enabledModules.has(module));
+}
+
 /**
  * Cloud Function to provision a new tenant
  * Creates tenant document, settings, owner member, and sets custom claims
@@ -151,7 +173,7 @@ export const provisionTenant = onCall(
       const ownerMemberData = {
         uid: ownerUser.uid,
         role: "owner" as const,
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
+        modules: limitModulesToFeatures(DEFAULT_MODULES_BY_ROLE.owner, tenantData.features),
         email: ownerEmail,
         displayName: ownerUser.displayName || null,
         joinedAt: new Date(),
@@ -378,15 +400,21 @@ export const addTenantMember = onCall(
     }
 
     const normalizedModules = Array.from(new Set(requestedModules)) as AllowedModule[];
-    const effectiveModules = Array.isArray(modules)
-      ? normalizedModules
-      : DEFAULT_MODULES_BY_ROLE[role];
 
     try {
       const callerMember = await requireTenantAdmin(tenantId, authContext.uid);
       if (role === "owner" && callerMember.role !== "owner") {
         throw new HttpsError("permission-denied", "Only tenant owners can assign owner role");
       }
+
+      const tenantSnap = await db.collection("tenants").doc(tenantId).get();
+      const tenantFeatures = tenantSnap.exists ? tenantSnap.data()?.features : undefined;
+      const effectiveModules = limitModulesToFeatures(
+        Array.isArray(modules)
+          ? normalizedModules
+          : DEFAULT_MODULES_BY_ROLE[role],
+        tenantFeatures,
+      );
 
       // Find or create the user
       let targetUser;

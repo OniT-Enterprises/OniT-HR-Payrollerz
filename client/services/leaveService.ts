@@ -224,15 +224,7 @@ class LeaveService {
     try {
       // Calculate duration if not provided
       const duration = request.duration || calculateWorkingDays(request.startDate, request.endDate);
-
-      // Pre-read: get current balance for the batch write
-      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
-
-      const batch = writeBatch(db);
-
-      // Write 1: Create leave request
-      const docRef = doc(collection(db, LEAVE_REQUESTS_COLLECTION));
-      batch.set(docRef, {
+      const docRef = await addDoc(collection(db, LEAVE_REQUESTS_COLLECTION), {
         ...request,
         tenantId,
         duration,
@@ -241,24 +233,6 @@ class LeaveService {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-
-      // Write 2: Update pending balance (if balance exists)
-      if (balance?.id) {
-        const typeKey = request.leaveType as keyof LeaveBalance;
-        if (typeof balance[typeKey] === 'object') {
-          const currentBalance = balance[typeKey] as LeaveBalanceItem;
-          const newPending = Math.max(0, currentBalance.pending + duration);
-          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
-          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
-          batch.update(balanceRef, {
-            [`${request.leaveType}.pending`]: newPending,
-            [`${request.leaveType}.remaining`]: newRemaining,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
       return docRef.id;
     } catch (error) {
       console.error('Error creating leave request:', error);
@@ -472,35 +446,11 @@ class LeaveService {
       if (!request) throw new Error('Leave request not found');
       if (request.status !== 'pending') throw new Error('Only pending requests can be cancelled');
 
-      // Pre-read balance for batch
-      const balance = await this.getLeaveBalance(tenantId, request.employeeId);
-
-      const batch = writeBatch(db);
-
-      // Write 1: Update request status
       const requestRef = doc(db, LEAVE_REQUESTS_COLLECTION, requestId);
-      batch.update(requestRef, {
+      await updateDoc(requestRef, {
         status: 'cancelled',
         updatedAt: serverTimestamp(),
       });
-
-      // Write 2: Remove from pending balance
-      if (balance?.id) {
-        const typeKey = request.leaveType as keyof LeaveBalance;
-        if (typeof balance[typeKey] === 'object') {
-          const currentBalance = balance[typeKey] as LeaveBalanceItem;
-          const newPending = Math.max(0, currentBalance.pending - request.duration);
-          const newRemaining = currentBalance.entitled - currentBalance.used - newPending;
-          const balanceRef = doc(db, LEAVE_BALANCES_COLLECTION, balance.id);
-          batch.update(balanceRef, {
-            [`${request.leaveType}.pending`]: newPending,
-            [`${request.leaveType}.remaining`]: newRemaining,
-            updatedAt: serverTimestamp(),
-          });
-        }
-      }
-
-      await batch.commit();
     } catch (error) {
       console.error('Error cancelling leave request:', error);
       throw error;

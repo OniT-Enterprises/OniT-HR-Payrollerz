@@ -10,54 +10,110 @@ service cloud.firestore {
       return request.auth != null;
     }
 
-    // Check if user is a superadmin (via custom claims or user document)
+    // Check if user is a superadmin via the user document
     function isSuperAdmin() {
       return isAuthenticated() && (
-        request.auth.token.superadmin == true ||
-        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
-         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true)
+        (
+          request.auth.token.keys().hasAny(['superadmin']) &&
+          request.auth.token.superadmin == true
+        ) ||
+        (
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isSuperAdmin == true
+        )
       );
     }
 
     // Check if user is a member of the specified tenant
-    // Uses custom claims fast-path (zero-cost) before falling back to document reads
     function isTenantMember(tenantId) {
-      return isAuthenticated() && (
-        // Fast path: check custom claims token (zero Firestore reads)
-        (request.auth.token.tenants is map && tenantId in request.auth.token.tenants) ||
-        // Fallback: check member document (1 Firestore read)
-        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid))
-      );
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
 
-    // Get the user's role in the specified tenant (from claims or document)
+    // Get the user's role in the specified tenant
     function getTenantRole(tenantId) {
-      return (request.auth.token.tenants is map && tenantId in request.auth.token.tenants)
-        ? request.auth.token.tenants[tenantId]
-        : get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role;
+      return isTenantMember(tenantId)
+        ? get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid)).data.role
+        : null;
     }
 
     // Check if user is owner or hr-admin in the tenant
-    // Uses custom claims fast-path to avoid document reads when possible
     function isTenantAdmin(tenantId) {
-      return isAuthenticated() && (
-        // Fast path: check custom claims (zero reads)
-        (request.auth.token.tenants is map &&
-         tenantId in request.auth.token.tenants &&
-         request.auth.token.tenants[tenantId] in ['owner', 'hr-admin']) ||
-        // Fallback: check member document
-        getTenantRole(tenantId) in ['owner', 'hr-admin']
-      );
+      return isAuthenticated() &&
+        isTenantMember(tenantId) &&
+        getTenantRole(tenantId) in ['owner', 'hr-admin'];
     }
 
     // Check if user is the tenant owner
     function isTenantOwner(tenantId) {
-      return isAuthenticated() && (
-        (request.auth.token.tenants is map &&
-         tenantId in request.auth.token.tenants &&
-         request.auth.token.tenants[tenantId] == 'owner') ||
-        getTenantRole(tenantId) == 'owner'
-      );
+      return isAuthenticated() &&
+        isTenantMember(tenantId) &&
+        getTenantRole(tenantId) == 'owner';
+    }
+
+    function getTenantMember(tenantId) {
+      return get(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+    }
+
+    function getTenantModules(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid))
+        ? getTenantMember(tenantId).data.modules
+        : [];
+    }
+
+    function getTenantEmployeeId(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)/members/$(request.auth.uid))
+        ? getTenantMember(tenantId).data.employeeId
+        : null;
+    }
+
+    function isTenantManagerOrAdmin(tenantId) {
+      return isAuthenticated() &&
+        isTenantMember(tenantId) &&
+        getTenantRole(tenantId) in ['owner', 'hr-admin', 'manager'];
+    }
+
+    function hasTenantModule(tenantId, module) {
+      return isAuthenticated() &&
+        isTenantMember(tenantId) && (
+          getTenantRole(tenantId) in ['owner', 'hr-admin'] ||
+          (getTenantModules(tenantId) is list &&
+           getTenantModules(tenantId).hasAny([module]))
+        );
+    }
+
+    function canAccessStaffRecords(tenantId) {
+      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'staff');
+    }
+
+    function canAccessHiringRecords(tenantId) {
+      return hasTenantModule(tenantId, 'hiring');
+    }
+
+    function canAccessPerformanceRecords(tenantId) {
+      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'performance');
+    }
+
+    function canAccessTimeLeaveRecords(tenantId) {
+      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'timeleave');
+    }
+
+    function canAccessPayrollRecords(tenantId) {
+      return hasTenantModule(tenantId, 'payroll');
+    }
+
+    function canAccessMoneyRecords(tenantId) {
+      return hasTenantModule(tenantId, 'money') || hasTenantModule(tenantId, 'accounting');
+    }
+
+    function canAccessAccountingRecords(tenantId) {
+      return hasTenantModule(tenantId, 'accounting');
+    }
+
+    function isSelfEmployee(tenantId, employeeId) {
+      return isAuthenticated() &&
+        isTenantMember(tenantId) &&
+        getTenantEmployeeId(tenantId) == employeeId;
     }
 
     // ============================================
@@ -193,8 +249,52 @@ service cloud.firestore {
       // EMPLOYEES SUBCOLLECTION
       // ============================================
       match /employees/{employeeId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessStaffRecords(tenantId) ||
+          isSelfEmployee(tenantId, employeeId);
+
+        allow create, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+
+        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) || (
+          isSelfEmployee(tenantId, employeeId) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'personalInfo',
+            'phone',
+            'address',
+            'emergencyContactName',
+            'emergencyContactPhone',
+            'updatedAt',
+          ]) &&
+          (
+            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['personalInfo']) ||
+            (
+              request.resource.data.keys().hasAny(['personalInfo']) &&
+              request.resource.data.personalInfo is map &&
+              (
+                (
+                  resource.data.keys().hasAny(['personalInfo']) &&
+                  resource.data.personalInfo is map &&
+                  request.resource.data.personalInfo.diff(resource.data.personalInfo).affectedKeys()
+                    .hasOnly([
+                      'phone',
+                      'address',
+                      'emergencyContactName',
+                      'emergencyContactPhone',
+                    ])
+                ) ||
+                (
+                  !resource.data.keys().hasAny(['personalInfo']) &&
+                  request.resource.data.personalInfo.keys().hasOnly([
+                    'phone',
+                    'address',
+                    'emergencyContactName',
+                    'emergencyContactPhone',
+                  ])
+                )
+              )
+            )
+          )
+        );
       }
 
       // ============================================
@@ -209,7 +309,7 @@ service cloud.firestore {
       // POSITIONS SUBCOLLECTION
       // ============================================
       match /positions/{positionId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -217,7 +317,7 @@ service cloud.firestore {
       // JOBS SUBCOLLECTION
       // ============================================
       match /jobs/{jobId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -225,7 +325,7 @@ service cloud.firestore {
       // CANDIDATES SUBCOLLECTION
       // ============================================
       match /candidates/{candidateId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -233,7 +333,7 @@ service cloud.firestore {
       // INTERVIEWS SUBCOLLECTION
       // ============================================
       match /interviews/{interviewId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -241,7 +341,7 @@ service cloud.firestore {
       // CONTRACTS SUBCOLLECTION
       // ============================================
       match /contracts/{contractId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -249,46 +349,57 @@ service cloud.firestore {
       // LEAVE REQUESTS SUBCOLLECTION
       // ============================================
       match /leaveRequests/{requestId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
 
-        // SECURITY: Employees can only request leave for themselves
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+        allow create: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) ||
+          (request.resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, request.resource.data.employeeId));
 
-        // Admins can update/delete. Employees can only cancel their own pending requests.
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) &&
-           resource.data.employeeId == request.auth.uid &&
-           request.resource.data.status == 'cancelled' &&
-           request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt']));
+        allow update: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) || (
+            resource.data.employeeId != null &&
+            isSelfEmployee(tenantId, resource.data.employeeId) &&
+            resource.data.status == 'pending' &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          );
 
-        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
       }
 
       // ============================================
       // TIMESHEETS SUBCOLLECTION
       // ============================================
       match /timesheets/{timesheetId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
 
-        // SECURITY: Employees can only log their own time
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+        allow create: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) ||
+          (request.resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, request.resource.data.employeeId));
 
-        // Employees can only update their own timesheets, and cannot reassign employeeId
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) &&
-           resource.data.employeeId == request.auth.uid &&
-           request.resource.data.employeeId == resource.data.employeeId);
+        allow update: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) || (
+            resource.data.employeeId != null &&
+            isSelfEmployee(tenantId, resource.data.employeeId) &&
+            request.resource.data.employeeId == resource.data.employeeId
+          );
 
-        allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow delete: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
       }
 
       // ============================================
       // PAYROLL RUNS SUBCOLLECTION
       // ============================================
       match /payruns/{payrunId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessPayrollRecords(tenantId);
         allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
         // Prevent createdBy tampering + two-person approval rule
         allow update: if isSuperAdmin() || (
@@ -301,7 +412,11 @@ service cloud.firestore {
 
         // Payslips under payrun
         match /payslips/{payslipId} {
-          allow read: if isSuperAdmin() || isTenantMember(tenantId);
+          allow read: if isSuperAdmin() ||
+            canAccessPayrollRecords(tenantId) ||
+            isSelfEmployee(tenantId, payslipId) ||
+            (resource.data.employeeId != null &&
+             isSelfEmployee(tenantId, resource.data.employeeId));
           allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
         }
       }
@@ -310,7 +425,9 @@ service cloud.firestore {
       // GOALS SUBCOLLECTION
       // ============================================
       match /goals/{goalId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessPerformanceRecords(tenantId) ||
+          resource.data.createdById == request.auth.uid;
 
         // SECURITY: Employees can only create goals they own
         allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
@@ -327,7 +444,10 @@ service cloud.firestore {
       // REVIEWS SUBCOLLECTION
       // ============================================
       match /reviews/{reviewId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessPerformanceRecords(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -335,7 +455,10 @@ service cloud.firestore {
       // TRAININGS SUBCOLLECTION
       // ============================================
       match /trainings/{trainingId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessPerformanceRecords(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -381,12 +504,12 @@ service cloud.firestore {
       // ACCOUNTING MODULE SUBCOLLECTIONS
       // ============================================
       match /accounts/{accountId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /journalEntries/{entryId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         // Balance validation (totalDebit == totalCredit) is enforced client-side
         // with 0.01 tolerance. Rules use strict == which fails on float rounding,
         // so we only enforce role-based access here.
@@ -417,24 +540,24 @@ service cloud.firestore {
       }
 
       match /generalLedger/{glId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         // Ledger rows are append-only.
         allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
         allow update, delete: if false;
       }
 
       match /fiscalYears/{yearId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /fiscalPeriods/{periodId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /balanceSnapshots/{snapshotId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessAccountingRecords(tenantId);
         allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
@@ -453,18 +576,21 @@ service cloud.firestore {
       // EXPENSES SUBCOLLECTION (Employee reimbursements — Ekipa)
       // ============================================
       match /expenses/{expenseId} {
-        // All tenant members can read (managers need to see for approval)
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          isTenantManagerOrAdmin(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
 
-        // SECURITY: Employees can only submit expenses for themselves
-        allow create: if isSuperAdmin() || isTenantAdmin(tenantId) ||
-          (isTenantMember(tenantId) && request.resource.data.employeeId == request.auth.uid);
+        allow create: if isSuperAdmin() ||
+          isTenantManagerOrAdmin(tenantId) ||
+          (request.resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, request.resource.data.employeeId));
 
         // Admins can approve/reject. Employees can update their own pending expenses
         // but CANNOT change status (prevents self-approval) or reassign employeeId
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId) || (
-          isTenantMember(tenantId) &&
-          resource.data.employeeId == request.auth.uid &&
+        allow update: if isSuperAdmin() || isTenantManagerOrAdmin(tenantId) || (
+          resource.data.employeeId != null &&
+          isSelfEmployee(tenantId, resource.data.employeeId) &&
           request.resource.data.employeeId == resource.data.employeeId &&
           resource.data.status == 'submitted' &&
           request.resource.data.status == 'submitted'
@@ -510,29 +636,29 @@ service cloud.firestore {
       // ============================================
       match /employees/{employeeId}/document_requests/{requestId} {
         // Employee can read their own requests; admins can read all
-        allow read: if isSuperAdmin() || isTenantAdmin(tenantId) || (
-          isTenantMember(tenantId) && request.auth.uid == employeeId
+        allow read: if isSuperAdmin() || canAccessStaffRecords(tenantId) || (
+          isSelfEmployee(tenantId, employeeId)
         );
         // Employee can create requests for themselves
         allow create: if isSuperAdmin() || (
-          isTenantMember(tenantId) && request.auth.uid == employeeId
+          isSelfEmployee(tenantId, employeeId)
         );
         // Only admins can update (mark ready/rejected)
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow update: if isSuperAdmin() || canAccessStaffRecords(tenantId);
         allow delete: if isSuperAdmin();
       }
 
       match /employees/{employeeId}/change_requests/{requestId} {
         // Employee can read their own; admins can read all
-        allow read: if isSuperAdmin() || isTenantAdmin(tenantId) || (
-          isTenantMember(tenantId) && request.auth.uid == employeeId
+        allow read: if isSuperAdmin() || canAccessStaffRecords(tenantId) || (
+          isSelfEmployee(tenantId, employeeId)
         );
         // Employee can create change requests for themselves
         allow create: if isSuperAdmin() || (
-          isTenantMember(tenantId) && request.auth.uid == employeeId
+          isSelfEmployee(tenantId, employeeId)
         );
         // Only admins can approve/reject
-        allow update: if isSuperAdmin() || isTenantAdmin(tenantId);
+        allow update: if isSuperAdmin() || canAccessStaffRecords(tenantId);
         allow delete: if isSuperAdmin();
       }
 
@@ -540,47 +666,47 @@ service cloud.firestore {
       // MONEY MODULE SUBCOLLECTIONS
       // ============================================
       match /customers/{customerId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /invoices/{invoiceId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /payments_received/{paymentId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /recurring_invoices/{recurringId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /vendors/{vendorId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /bills/{billId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /bill_payments/{paymentId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /vatReturns/{periodId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /bankTransactions/{txId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessMoneyRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -593,18 +719,20 @@ service cloud.firestore {
       }
 
       match /analytics/{docId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || hasTenantModule(tenantId, 'reports');
         allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
         allow delete: if isSuperAdmin();
       }
 
       match /offers/{offerId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() || canAccessHiringRecords(tenantId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
       match /employmentSnapshots/{snapshotId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessHiringRecords(tenantId) ||
+          canAccessStaffRecords(tenantId);
         allow create, update: if isSuperAdmin() || isTenantAdmin(tenantId);
         allow delete: if isSuperAdmin();
       }
@@ -615,8 +743,11 @@ service cloud.firestore {
       }
 
       match /leaveBalances/{balanceId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
-        allow create, update: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessTimeLeaveRecords(tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(tenantId, resource.data.employeeId));
+        allow create, update: if isSuperAdmin() || canAccessTimeLeaveRecords(tenantId);
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -624,7 +755,9 @@ service cloud.firestore {
       // FACE RECOGNITION EMBEDDINGS
       // ============================================
       match /face_embeddings/{empId} {
-        allow read: if isSuperAdmin() || isTenantMember(tenantId);
+        allow read: if isSuperAdmin() ||
+          canAccessStaffRecords(tenantId) ||
+          isSelfEmployee(tenantId, empId);
         allow create, update, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
       }
 
@@ -676,7 +809,7 @@ service cloud.firestore {
 
     match /candidates/{candidateId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update, delete: if isSuperAdmin() || (
@@ -688,7 +821,19 @@ service cloud.firestore {
 
     match /jobs/{jobId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
+      allow update, delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /interviews/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update, delete: if isSuperAdmin() || (
@@ -705,56 +850,156 @@ service cloud.firestore {
     }
 
     match /leave_requests/{docId} {
-      allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow read: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        )
+      );
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(request.resource.data.tenantId) ||
+          (request.resource.data.employeeId != null &&
+           isSelfEmployee(request.resource.data.tenantId, request.resource.data.employeeId))
+        )
+      );
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        request.resource.data.tenantId == resource.data.tenantId && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (
+            resource.data.employeeId != null &&
+            isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
+            resource.data.status == 'pending' &&
+            request.resource.data.status == 'cancelled' &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt'])
+          )
+        )
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        canAccessTimeLeaveRecords(resource.data.tenantId)
       );
     }
 
     match /leave_balances/{docId} {
-      allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+      allow read: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        )
+      );
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null &&
+         canAccessTimeLeaveRecords(request.resource.data.tenantId));
       allow update, delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        isTenantAdmin(resource.data.tenantId)
+        canAccessTimeLeaveRecords(resource.data.tenantId)
       );
     }
 
     match /timesheets/{docId} {
-      allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+      allow read: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        )
+      );
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(request.resource.data.tenantId) ||
+          (request.resource.data.employeeId != null &&
+           isSelfEmployee(request.resource.data.tenantId, request.resource.data.employeeId))
+        )
+      );
       allow update, delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
+        request.resource.data.tenantId == resource.data.tenantId && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (
+            resource.data.employeeId != null &&
+            isSelfEmployee(resource.data.tenantId, resource.data.employeeId) &&
+            request.resource.data.employeeId == resource.data.employeeId
+          )
+        )
+      );
+    }
+
+    match /okrs/{docId} {
+      allow read: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessPerformanceRecords(resource.data.tenantId) ||
+          resource.data.ownerId == request.auth.uid
+        )
+      );
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null && (
+          isTenantAdmin(request.resource.data.tenantId) ||
+          (
+            isTenantMember(request.resource.data.tenantId) &&
+            request.resource.data.ownerId == request.auth.uid
+          )
+        )
+      );
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId && (
+          isTenantAdmin(resource.data.tenantId) ||
+          (
+            isTenantMember(resource.data.tenantId) &&
+            resource.data.ownerId == request.auth.uid
+          )
+        )
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
 
     match /goals/{docId} {
-      allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+      allow read: if isSuperAdmin() || (
+        resource.data.tenantId != null && (
+          canAccessPerformanceRecords(resource.data.tenantId) ||
+          resource.data.createdById == request.auth.uid
+        )
+      );
+      allow create: if isSuperAdmin() || (
+        request.resource.data.tenantId != null && (
+          isTenantAdmin(request.resource.data.tenantId) ||
+          (
+            isTenantMember(request.resource.data.tenantId) &&
+            request.resource.data.createdById == request.auth.uid
+          )
+        )
+      );
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        request.resource.data.tenantId == resource.data.tenantId &&
+        request.resource.data.tenantId == resource.data.tenantId && (
+          isTenantAdmin(resource.data.tenantId) ||
+          (
+            isTenantMember(resource.data.tenantId) &&
+            resource.data.createdById == request.auth.uid
+          )
+        )
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
 
     match /reviews/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessPerformanceRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update, delete: if isSuperAdmin() || (
@@ -766,7 +1011,11 @@ service cloud.firestore {
 
     match /trainings/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessPerformanceRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update, delete: if isSuperAdmin() || (
@@ -776,9 +1025,25 @@ service cloud.firestore {
       );
     }
 
+    match /disciplinary/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessPerformanceRecords(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && canAccessPerformanceRecords(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessPerformanceRecords(resource.data.tenantId)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
     match /payruns/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
       allow update: if isSuperAdmin() || (
@@ -797,8 +1062,15 @@ service cloud.firestore {
 
       match /payslips/{payslipId} {
         allow read: if isSuperAdmin() ||
-          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
-           isTenantMember(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
+          (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null && (
+            canAccessPayrollRecords(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId) ||
+            isSelfEmployee(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId, payslipId) ||
+            (resource.data.employeeId != null &&
+             isSelfEmployee(
+               get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId,
+               resource.data.employeeId
+             ))
+          ));
         allow write: if isSuperAdmin() ||
           (get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId != null &&
            isTenantAdmin(get(/databases/$(database)/documents/payruns/$(docId)).data.tenantId));
@@ -808,7 +1080,7 @@ service cloud.firestore {
     // Payroll module collections
     match /payrollRuns/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -832,7 +1104,11 @@ service cloud.firestore {
 
     match /payrollRecords/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessPayrollRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -846,7 +1122,11 @@ service cloud.firestore {
 
     match /benefitEnrollments/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessPayrollRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -860,7 +1140,11 @@ service cloud.firestore {
 
     match /recurringDeductions/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessPayrollRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -874,7 +1158,7 @@ service cloud.firestore {
 
     match /taxReports/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -888,7 +1172,7 @@ service cloud.firestore {
 
     match /bankTransfers/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -903,7 +1187,7 @@ service cloud.firestore {
     // Tax filings (TL WIT + INSS tracking)
     match /taxFilings/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessPayrollRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
         (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
@@ -918,23 +1202,29 @@ service cloud.firestore {
     // Attendance tracking
     match /attendance/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && (
+          canAccessTimeLeaveRecords(resource.data.tenantId) ||
+          (resource.data.employeeId != null &&
+           isSelfEmployee(resource.data.tenantId, resource.data.employeeId))
+        ));
 
-      // Standard creates (non-supervisor) — any tenant member
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null &&
-         isTenantMember(request.resource.data.tenantId) &&
-         // Supervisor creates require manager+ role and matching supervisorId
-         (request.resource.data.source != 'supervisor' ||
-          (request.resource.data.supervisorId == request.auth.uid &&
-           getTenantRole(request.resource.data.tenantId) in ['owner', 'hr-admin', 'manager'])));
+        (request.resource.data.tenantId != null && (
+          (
+            request.resource.data.source == 'supervisor' &&
+            isTenantManagerOrAdmin(request.resource.data.tenantId) &&
+            request.resource.data.supervisorId == request.auth.uid
+          ) ||
+          (
+            request.resource.data.source != 'supervisor' &&
+            canAccessTimeLeaveRecords(request.resource.data.tenantId)
+          )
+        ));
 
-      // Admins can update/delete any record; supervisors can update their own (clock-out)
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        (isTenantAdmin(resource.data.tenantId) ||
-         // Supervisor clock-out: same supervisor, immutable fields unchanged
+        (canAccessTimeLeaveRecords(resource.data.tenantId) ||
          (resource.data.source == 'supervisor' &&
           resource.data.supervisorId == request.auth.uid &&
           request.resource.data.supervisorId == resource.data.supervisorId &&
@@ -944,17 +1234,17 @@ service cloud.firestore {
 
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
-        isTenantAdmin(resource.data.tenantId)
+        canAccessTimeLeaveRecords(resource.data.tenantId)
       );
     }
 
     // Attendance import batches
     match /attendanceImports/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && isTenantMember(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessTimeLeaveRecords(resource.data.tenantId));
 
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantMember(request.resource.data.tenantId));
+        (request.resource.data.tenantId != null && canAccessTimeLeaveRecords(request.resource.data.tenantId));
 
       allow update, delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1053,6 +1343,28 @@ service cloud.firestore {
 
     match /expenses/{docId} {
       allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // OFFBOARDING
+    // ============================================
+    match /offboarding/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessStaffRecords(resource.data.tenantId));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && canAccessStaffRecords(request.resource.data.tenantId));
+
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessStaffRecords(resource.data.tenantId)
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
     }
 
     // ============================================

@@ -10,6 +10,7 @@ import {
   where,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import { normalizeEmployeeDoc, sortByEmployeeName } from '../lib/employeeDoc';
 import {
   insertBatch,
   insertClockIn,
@@ -102,17 +103,19 @@ export const useCrewStore = create<CrewState>((set, get) => ({
         where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      const workers: CrewMember[] = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          employeeId: d.id,
-          firstName: data.firstName || data.name?.split(' ')[0] || '',
-          lastName: data.lastName || data.name?.split(' ').slice(1).join(' ') || '',
-          department: data.department || '',
-          position: data.position || '',
-          qrCode: data.qrCode || d.id,
-        };
-      });
+      const workers: CrewMember[] = sortByEmployeeName(
+        snap.docs.map((d) => {
+          const employee = normalizeEmployeeDoc(d.id, d.data());
+          return {
+            employeeId: d.id,
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            department: employee.department || '',
+            position: employee.position || '',
+            qrCode: employee.qrCode || d.id,
+          };
+        })
+      );
       set({ workers, workersLoading: false });
     } catch {
       set({ workers: [], workersLoading: false, error: 'Failed to fetch workers' });

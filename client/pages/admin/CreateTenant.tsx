@@ -58,14 +58,12 @@ export default function CreateTenant() {
     try {
       setLoading(true);
 
-      // For now, we'll create the tenant with the current user as owner
-      // In a full implementation, you'd look up the user by email or send an invite
       const tenantId = await adminService.createTenant(
         formData.name,
         formData.ownerEmail,
-        user.uid, // Using current user as owner for now
         formData.plan,
-        user.uid
+        user.uid,
+        user.email || userProfile?.email || ''
       );
 
       toast.success(t("admin.createTenant.success"));

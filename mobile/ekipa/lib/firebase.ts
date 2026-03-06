@@ -5,7 +5,7 @@
 import { initializeApp, getApps } from 'firebase/app';
 import {
   initializeAuth,
-  // @ts-ignore - getReactNativePersistence is exported in the RN bundle
+  // @ts-expect-error - getReactNativePersistence is exported by the React Native bundle
   getReactNativePersistence,
   getAuth,
   type Auth,

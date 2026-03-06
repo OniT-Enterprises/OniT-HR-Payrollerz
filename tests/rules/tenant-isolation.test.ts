@@ -18,6 +18,7 @@ import {
 import { doc, getDoc, setDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
 
 const PROJECT_ID = 'test-tenant-isolation';
+const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8081);
 
 interface TestUser {
   uid: string;
@@ -67,7 +68,7 @@ describe('Tenant Isolation Security Rules', () => {
       firestore: {
         rules: await import('../../firestore.rules?raw').then(m => m.default),
         host: 'localhost',
-        port: 8081,
+        port: FIRESTORE_EMULATOR_PORT,
       },
     });
   });
@@ -475,7 +476,7 @@ describe('Tenant Isolation Security Rules', () => {
     it('should allow authenticated users to read reference data', async () => {
       await testEnv.withSecurityRulesDisabled(async (context) => {
         const adminDb = context.firestore();
-        await setDoc(doc(adminDb, 'reference/holidays/2024-01-01'), {
+        await setDoc(doc(adminDb, 'reference/global/holidays/2024-01-01'), {
           name: 'New Year Day',
           type: 'public',
         });
@@ -486,13 +487,13 @@ describe('Tenant Isolation Security Rules', () => {
       }).firestore();
 
       await assertSucceeds(
-        getDoc(doc(userDb, 'reference/holidays/2024-01-01'))
+        getDoc(doc(userDb, 'reference/global/holidays/2024-01-01'))
       );
 
       const anonDb = testEnv.unauthenticatedContext().firestore();
       
       await assertFails(
-        getDoc(doc(anonDb, 'reference/holidays/2024-01-01'))
+        getDoc(doc(anonDb, 'reference/global/holidays/2024-01-01'))
       );
     });
 
@@ -502,7 +503,7 @@ describe('Tenant Isolation Security Rules', () => {
       }).firestore();
 
       await assertSucceeds(
-        setDoc(doc(superDb, 'reference/holidays/2024-12-25'), {
+        setDoc(doc(superDb, 'reference/global/holidays/2024-12-25'), {
           name: 'Christmas',
           type: 'public',
         })
@@ -515,7 +516,7 @@ describe('Tenant Isolation Security Rules', () => {
       }).firestore();
 
       await assertFails(
-        setDoc(doc(db, 'reference/holidays/2024-12-25'), {
+        setDoc(doc(db, 'reference/global/holidays/2024-12-25'), {
           name: 'Christmas',
           type: 'public',
         })

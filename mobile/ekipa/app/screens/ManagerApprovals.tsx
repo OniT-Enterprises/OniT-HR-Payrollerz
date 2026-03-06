@@ -38,12 +38,13 @@ import {
   orderBy,
   limit,
   doc,
-  updateDoc,
+  writeBatch,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
+import { useAuthStore } from '../../stores/authStore';
 import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { EmptyState } from '../../components/EmptyState';
@@ -65,12 +66,20 @@ interface PendingLeave {
   requestDate: string;
 }
 
+interface LeaveBalanceBucket {
+  entitled: number;
+  used: number;
+  pending: number;
+  remaining: number;
+}
+
 export default function ManagerApprovals() {
   const t = useT();
   const insets = useSafeAreaInsets();
   const tenantId = useTenantStore((s) => s.tenantId);
   const role = useTenantStore((s) => s.role);
   const employee = useEmployeeStore((s) => s.employee);
+  const user = useAuthStore((s) => s.user);
 
   const [activeTab, setActiveTab] = useState<ApprovalTab>('leave');
   const [pendingLeaves, setPendingLeaves] = useState<PendingLeave[]>([]);
@@ -132,16 +141,20 @@ export default function ManagerApprovals() {
   }, [fetchPendingLeaves]);
 
   const handleAction = async (action: 'approved' | 'rejected') => {
-    if (!selectedItem || !employee || processing) return;
+    if (!selectedItem || !employee || !tenantId || processing) return;
     setProcessing(true);
     try {
+      const batch = writeBatch(db);
+      const requestRef = doc(db, 'leave_requests', selectedItem.id);
       const updateData: Record<string, unknown> = {
         status: action,
-        approverId: employee.id,
+        approverId: user?.uid || employee.id,
         approverName: `${employee.firstName} ${employee.lastName}`,
-        approvedDate: new Date().toISOString().split('T')[0],
         updatedAt: serverTimestamp(),
       };
+      if (action === 'approved') {
+        updateData.approvedDate = new Date().toISOString().split('T')[0];
+      }
       if (action === 'rejected' && comment.trim()) {
         updateData.rejectionReason = comment.trim();
       }
@@ -149,7 +162,41 @@ export default function ManagerApprovals() {
         updateData.approverComment = comment.trim();
       }
 
-      await updateDoc(doc(db, 'leave_requests', selectedItem.id), updateData);
+      batch.update(requestRef, updateData);
+
+      const balanceYear = Number.parseInt(selectedItem.startDate.slice(0, 4), 10) || new Date().getFullYear();
+      const balanceQuery = query(
+        collection(db, 'leave_balances'),
+        where('tenantId', '==', tenantId),
+        where('employeeId', '==', selectedItem.employeeId),
+        where('year', '==', balanceYear),
+        limit(1)
+      );
+      const balanceSnap = await getDocs(balanceQuery);
+
+      if (!balanceSnap.empty) {
+        const balanceDoc = balanceSnap.docs[0];
+        const balanceData = balanceDoc.data();
+        const currentBalance = balanceData[selectedItem.leaveType] as LeaveBalanceBucket | undefined;
+
+        if (currentBalance) {
+          const balanceRef = doc(db, 'leave_balances', balanceDoc.id);
+          const nextPending = Math.max(0, (currentBalance.pending || 0) - selectedItem.duration);
+          const nextUsed = action === 'approved'
+            ? (currentBalance.used || 0) + selectedItem.duration
+            : (currentBalance.used || 0);
+          const nextRemaining = (currentBalance.entitled || 0) - nextUsed - nextPending;
+
+          batch.update(balanceRef, {
+            [`${selectedItem.leaveType}.used`]: nextUsed,
+            [`${selectedItem.leaveType}.pending`]: nextPending,
+            [`${selectedItem.leaveType}.remaining`]: nextRemaining,
+            updatedAt: serverTimestamp(),
+          });
+        }
+      }
+
+      await batch.commit();
 
       // Remove from local state
       setPendingLeaves((prev) => prev.filter((item) => item.id !== selectedItem.id));

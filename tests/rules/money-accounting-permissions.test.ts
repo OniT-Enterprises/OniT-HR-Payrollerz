@@ -18,6 +18,7 @@ import {
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 
 const PROJECT_ID = 'test-money-accounting-perms';
+const FIRESTORE_EMULATOR_PORT = Number(process.env.FIRESTORE_EMULATOR_PORT || 8081);
 
 describe('Money + Accounting Rules', () => {
   let testEnv: RulesTestEnvironment;
@@ -28,7 +29,7 @@ describe('Money + Accounting Rules', () => {
       firestore: {
         rules: await import('../../firestore.rules?raw').then(m => m.default),
         host: 'localhost',
-        port: 8081,
+        port: FIRESTORE_EMULATOR_PORT,
       },
     });
   });
@@ -53,7 +54,7 @@ describe('Money + Accounting Rules', () => {
       await setDoc(doc(adminDb, 'tenants/tenant-a/members/viewer-a'), {
         uid: 'viewer-a',
         role: 'viewer',
-        modules: [],
+        modules: ['money', 'accounting'],
       });
 
       // Seed global platform vatConfig
@@ -196,4 +197,3 @@ describe('Money + Accounting Rules', () => {
     }));
   });
 });
-

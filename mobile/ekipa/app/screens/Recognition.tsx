@@ -39,7 +39,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
@@ -50,6 +49,7 @@ import { colors } from '../../lib/colors';
 import { EmptyState } from '../../components/EmptyState';
 import type { RecognitionCategory } from '../../types/recognition';
 import type { DirectoryEntry } from '../../types/directory';
+import { normalizeEmployeeDoc, sortByEmployeeName } from '../../lib/employeeDoc';
 
 /** Category configuration: label key, icon, color */
 const CATEGORIES: {
@@ -128,25 +128,25 @@ export default function Recognition() {
     try {
       const q = query(
         collection(db, `tenants/${tenantId}/employees`),
-        where('status', '==', 'active'),
-        orderBy('firstName')
+        where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      const entries: DirectoryEntry[] = snap.docs
-        .map((d) => {
-          const data = d.data();
+      const entries: DirectoryEntry[] = sortByEmployeeName(
+        snap.docs.map((d) => {
+          const employeeDoc = normalizeEmployeeDoc(d.id, d.data());
           return {
-            id: d.id,
-            firstName: data.firstName || '',
-            lastName: data.lastName || '',
-            email: data.email || '',
-            phone: data.phone,
-            department: data.department,
-            position: data.position,
-            photoUrl: data.photoUrl,
-            status: data.status || 'active',
+            id: employeeDoc.id,
+            firstName: employeeDoc.firstName,
+            lastName: employeeDoc.lastName,
+            email: employeeDoc.email,
+            phone: employeeDoc.phone,
+            department: employeeDoc.department,
+            position: employeeDoc.position,
+            photoUrl: employeeDoc.photoUrl,
+            status: employeeDoc.status || 'active',
           };
         })
+      )
         .filter((e) => e.id !== employeeId); // Exclude self
       setColleagues(entries);
     } catch {

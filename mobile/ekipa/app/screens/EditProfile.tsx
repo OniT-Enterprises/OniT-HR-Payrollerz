@@ -60,12 +60,10 @@ export default function EditProfile() {
     if (employee) {
       setPhone(employee.phone || '');
       setAddress(employee.address || '');
-      // Emergency & bank fields are read from employee doc if available
-      const emp = employee as any;
-      setEmergencyName(emp.emergencyContactName || '');
-      setEmergencyPhone(emp.emergencyContactPhone || '');
-      setBankAccountName(emp.bankAccountName || '');
-      setBankAccountNumber(emp.bankAccountNumber || '');
+      setEmergencyName(employee.emergencyContactName || '');
+      setEmergencyPhone(employee.emergencyContactPhone || '');
+      setBankAccountName(employee.bankAccountName || '');
+      setBankAccountNumber(employee.bankAccountNumber || '');
     }
   }, [employee]);
 
@@ -77,6 +75,10 @@ export default function EditProfile() {
       // 1. Update non-sensitive fields directly
       const empRef = doc(db, `tenants/${tenantId}/employees/${employeeId}`);
       await updateDoc(empRef, {
+        'personalInfo.phone': phone.trim(),
+        'personalInfo.address': address.trim(),
+        'personalInfo.emergencyContactName': emergencyName.trim(),
+        'personalInfo.emergencyContactPhone': emergencyPhone.trim(),
         phone: phone.trim(),
         address: address.trim(),
         emergencyContactName: emergencyName.trim(),
@@ -86,8 +88,8 @@ export default function EditProfile() {
 
       // 2. Bank details: create change request instead of direct update
       const hasBankChanges =
-        bankAccountName.trim() !== ((employee as any)?.bankAccountName || '') ||
-        bankAccountNumber.trim() !== ((employee as any)?.bankAccountNumber || '');
+        bankAccountName.trim() !== (employee?.bankAccountName || '') ||
+        bankAccountNumber.trim() !== (employee?.bankAccountNumber || '');
 
       if (hasBankChanges && (bankAccountName.trim() || bankAccountNumber.trim())) {
         await addDoc(
@@ -102,8 +104,8 @@ export default function EditProfile() {
               bankAccountNumber: bankAccountNumber.trim(),
             },
             previousValues: {
-              bankAccountName: (employee as any)?.bankAccountName || '',
-              bankAccountNumber: (employee as any)?.bankAccountNumber || '',
+              bankAccountName: employee?.bankAccountName || '',
+              bankAccountNumber: employee?.bankAccountNumber || '',
             },
           }
         );

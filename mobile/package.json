@@ -4,7 +4,7 @@
   "private": true,
   "description": "Shared mobile workspace — ensures React 19 + react-native resolve together",
   "dependencies": {
-    "react": "19.1.0",
-    "react-native": "0.81.5"
+    "react": "19.2.0",
+    "react-native": "0.83.2"
   }
 }

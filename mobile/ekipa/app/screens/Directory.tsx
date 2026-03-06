@@ -31,7 +31,6 @@ import {
   getDocs,
   query,
   where,
-  orderBy,
 } from 'firebase/firestore';
 import { db } from '../../lib/firebase';
 import { useTenantStore } from '../../stores/tenantStore';
@@ -39,6 +38,7 @@ import { useT } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 import { EmptyState } from '../../components/EmptyState';
 import type { DirectoryEntry } from '../../types/directory';
+import { normalizeEmployeeDoc, sortByEmployeeName } from '../../lib/employeeDoc';
 
 interface DirectorySection {
   title: string;
@@ -65,24 +65,25 @@ export default function Directory() {
     try {
       const q = query(
         collection(db, `tenants/${tenantId}/employees`),
-        where('status', '==', 'active'),
-        orderBy('firstName')
+        where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      const entries: DirectoryEntry[] = snap.docs.map((d) => {
-        const data = d.data();
-        return {
-          id: d.id,
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.email || '',
-          phone: data.phone,
-          department: data.department || t('directory.noDepartment'),
-          position: data.position,
-          photoUrl: data.photoUrl,
-          status: data.status || 'active',
-        };
-      });
+      const entries: DirectoryEntry[] = sortByEmployeeName(
+        snap.docs.map((d) => {
+          const employee = normalizeEmployeeDoc(d.id, d.data());
+          return {
+            id: employee.id,
+            firstName: employee.firstName,
+            lastName: employee.lastName,
+            email: employee.email,
+            phone: employee.phone,
+            department: employee.department || t('directory.noDepartment'),
+            position: employee.position,
+            photoUrl: employee.photoUrl,
+            status: employee.status || 'active',
+          };
+        })
+      );
       setEmployees(entries);
     } catch {
       setEmployees([]);
