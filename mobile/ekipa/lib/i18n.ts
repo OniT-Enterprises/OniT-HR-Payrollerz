@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type Language = 'tet' | 'en' | 'pt' | 'id';
+export type Language = 'tet' | 'en' | 'pt' | 'id';
 
 interface I18nState {
   language: Language;

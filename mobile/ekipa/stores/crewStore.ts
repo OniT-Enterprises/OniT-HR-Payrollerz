@@ -39,6 +39,19 @@ function todayYYYYMMDD(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
+function getErrorMessage(error: unknown): string | undefined {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const { message } = error;
+    if (typeof message === 'string' && message) {
+      return message;
+    }
+  }
+  return undefined;
+}
+
 interface CrewState {
   // Workers
   workers: CrewMember[];
@@ -239,12 +252,12 @@ export const useCrewStore = create<CrewState>((set, get) => ({
         currentPhoto: null,
       });
       return { ok: true };
-    } catch (err: any) {
+    } catch (err: unknown) {
       set({ submitting: false, error: 'submission_failed' });
       return {
         ok: false,
         error: 'submission_failed',
-        details: err?.message ? String(err.message) : undefined,
+        details: getErrorMessage(err),
       };
     }
   },

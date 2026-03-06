@@ -25,15 +25,11 @@ import {
   ArrowUpRight,
   ArrowRight,
   CalendarClock,
-  CalendarDays,
   CheckCircle2,
-  AlertTriangle,
-  XCircle,
 } from 'lucide-react-native';
 import { colors } from '../../lib/colors';
 import { useT } from '../../lib/i18n';
 import { useTenantStore } from '../../stores/tenantStore';
-import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAttendanceStore } from '../../stores/attendanceStore';
 import { useShiftStore } from '../../stores/shiftStore';
 import { useCrewStore } from '../../stores/crewStore';
@@ -58,7 +54,6 @@ export default function TimeScreen() {
   const tenantId = useTenantStore((s) => s.tenantId);
   const employeeId = useTenantStore((s) => s.employeeId);
   const role = useTenantStore((s) => s.role);
-  const employee = useEmployeeStore((s) => s.employee);
   const isSupervisor = SUPERVISOR_ROLES.includes(role || '');
 
   // Personal attendance
@@ -130,10 +125,6 @@ export default function TimeScreen() {
     setMode('clock_out');
     router.push('/screens/CrewClockOut');
   }, [setMode, router]);
-
-  const displayName = employee
-    ? employee.firstName
-    : '';
 
   return (
     <ScrollView

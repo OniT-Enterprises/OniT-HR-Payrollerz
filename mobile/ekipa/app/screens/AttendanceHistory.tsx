@@ -33,6 +33,7 @@ import { EmptyState } from '../../components/EmptyState';
 import type { AttendanceRecord, AttendanceStatus } from '../../types/attendance';
 
 const ACCENT = colors.cyan;
+type StatusIcon = typeof CheckCircle2;
 
 function getMonthOptions(): { label: string; value: string }[] {
   const months: { label: string; value: string }[] = [];
@@ -63,7 +64,7 @@ function formatDate(dateStr: string): string {
   return `${weekday}, ${day} ${month}`;
 }
 
-const STATUS_CONFIG: Record<AttendanceStatus, { color: string; bg: string; icon: any }> = {
+const STATUS_CONFIG: Record<AttendanceStatus, { color: string; bg: string; icon: StatusIcon }> = {
   present: { color: colors.emerald, bg: colors.successBg, icon: CheckCircle2 },
   late: { color: colors.warning, bg: colors.warningBg, icon: AlertTriangle },
   absent: { color: colors.error, bg: colors.errorBg, icon: XCircle },

@@ -15,6 +15,7 @@ import {
   Platform,
   Linking,
   Switch,
+  type DimensionValue,
 } from 'react-native';
 import {
   User,
@@ -39,7 +40,7 @@ import { useAuthStore } from '../../stores/authStore';
 import { useTenantStore } from '../../stores/tenantStore';
 import { useEmployeeStore } from '../../stores/employeeStore';
 import { useAttendanceStore } from '../../stores/attendanceStore';
-import { useI18nStore, useT } from '../../lib/i18n';
+import { useI18nStore, useT, type Language } from '../../lib/i18n';
 import { colors } from '../../lib/colors';
 
 /* ── Info Row ─────────────────────────────────────────── */
@@ -115,10 +116,15 @@ export default function ProfileScreen() {
     await setBiometricEnabled(value);
   }, []);
 
-  const LANG_CYCLE = ['tet', 'en', 'pt', 'id'] as const;
-  const LANG_LABELS: Record<string, string> = { tet: 'Tetum', en: 'English', pt: 'Português', id: 'Bahasa' };
+  const LANG_CYCLE: readonly Language[] = ['tet', 'en', 'pt', 'id'];
+  const LANG_LABELS: Record<Language, string> = {
+    tet: 'Tetum',
+    en: 'English',
+    pt: 'Português',
+    id: 'Bahasa',
+  };
   const toggleLanguage = () => {
-    const idx = LANG_CYCLE.indexOf(language as any);
+    const idx = LANG_CYCLE.indexOf(language);
     const next = LANG_CYCLE[(idx + 1) % LANG_CYCLE.length];
     setLanguage(next);
   };
@@ -203,7 +209,8 @@ export default function ProfileScreen() {
               {employee.documents.map((docItem, i) => {
                 const isExpired = docItem.expiryDate && new Date(docItem.expiryDate) < new Date();
                 const isLast = i === employee.documents!.length - 1;
-                const hasUrl = !!(docItem as any).url;
+                const documentUrl = docItem.url;
+                const hasUrl = typeof documentUrl === 'string' && documentUrl.length > 0;
                 const Row = hasUrl ? TouchableOpacity : View;
                 return (
                   <Row
@@ -211,7 +218,11 @@ export default function ProfileScreen() {
                     style={[styles.docRow, isLast && styles.docRowLast]}
                     {...(hasUrl ? {
                       activeOpacity: 0.7,
-                      onPress: () => Linking.openURL((docItem as any).url),
+                      onPress: () => {
+                        if (documentUrl) {
+                          void Linking.openURL(documentUrl);
+                        }
+                      },
                     } : {})}
                   >
                     <View style={styles.docLeft}>
@@ -393,7 +404,7 @@ const styles = StyleSheet.create({
   bannerDecor3: {
     position: 'absolute',
     top: 20,
-    left: '50%' as any,
+    left: '50%' as DimensionValue,
     width: 80,
     height: 80,
     borderRadius: 40,
@@ -648,7 +659,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   quickLink: {
-    width: '48%' as any,
+    width: '48%' as DimensionValue,
     backgroundColor: colors.bgCard,
     borderRadius: 14,
     padding: 16,

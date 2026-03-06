@@ -9,6 +9,55 @@ const DB_NAME = 'ekipa_crew.db';
 
 let _db: SQLite.SQLiteDatabase | null = null;
 
+interface SyncBatchRow {
+  id: string;
+  tenant_id: string;
+  supervisor_id: string;
+  supervisor_name: string;
+  record_type: SyncBatch['recordType'];
+  date: string;
+  site_id: string | null;
+  site_name: string | null;
+  worker_count: number;
+  photo_local_path: string | null;
+  photo_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy: number | null;
+  sync_status: SyncStatus;
+  sync_error: string | null;
+  sync_attempts: number;
+  created_at: string;
+  synced_at: string | null;
+}
+
+interface PendingClockInRow {
+  id: string;
+  batch_id: string;
+  tenant_id: string;
+  employee_id: string;
+  employee_name: string;
+  department: string | null;
+  date: string;
+  clock_in: string | null;
+  clock_out: string | null;
+  record_type: PendingClockIn['recordType'];
+  supervisor_id: string;
+  supervisor_name: string;
+  photo_local_path: string | null;
+  photo_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  location_accuracy: number | null;
+  site_id: string | null;
+  site_name: string | null;
+  sync_status: SyncStatus;
+  sync_error: string | null;
+  sync_attempts: number;
+  created_at: string;
+  synced_at: string | null;
+}
+
 export function getDb(): SQLite.SQLiteDatabase {
   if (!_db) {
     _db = SQLite.openDatabaseSync(DB_NAME);
@@ -130,7 +179,7 @@ export function insertClockIn(record: PendingClockIn): void {
 
 export function getPendingBatches(): SyncBatch[] {
   const db = getDb();
-  const rows = db.getAllSync<Record<string, any>>(
+  const rows = db.getAllSync<SyncBatchRow>(
     `SELECT * FROM sync_batches WHERE sync_status IN ('pending', 'error') ORDER BY created_at DESC`
   );
   return rows.map(mapBatchRow);
@@ -138,7 +187,7 @@ export function getPendingBatches(): SyncBatch[] {
 
 export function getRecentBatches(limit: number = 5): SyncBatch[] {
   const db = getDb();
-  const rows = db.getAllSync<Record<string, any>>(
+  const rows = db.getAllSync<SyncBatchRow>(
     `SELECT * FROM sync_batches ORDER BY created_at DESC LIMIT ?`,
     [limit]
   );
@@ -147,7 +196,7 @@ export function getRecentBatches(limit: number = 5): SyncBatch[] {
 
 export function getBatchRecords(batchId: string): PendingClockIn[] {
   const db = getDb();
-  const rows = db.getAllSync<Record<string, any>>(
+  const rows = db.getAllSync<PendingClockInRow>(
     `SELECT * FROM pending_clockins WHERE batch_id = ?`,
     [batchId]
   );
@@ -182,7 +231,7 @@ export function getTodayClockInIds(tenantId: string, date: string): string[] {
 
 export function getTodayClockInsWithoutClockOut(tenantId: string, date: string): PendingClockIn[] {
   const db = getDb();
-  const rows = db.getAllSync<Record<string, any>>(
+  const rows = db.getAllSync<PendingClockInRow>(
     `SELECT ci.* FROM pending_clockins ci
      WHERE ci.tenant_id = ? AND ci.date = ? AND ci.record_type = 'clock_in'
      AND ci.employee_id NOT IN (
@@ -196,7 +245,7 @@ export function getTodayClockInsWithoutClockOut(tenantId: string, date: string):
 
 export function getAllBatchesByMonth(tenantId: string, yearMonth: string): SyncBatch[] {
   const db = getDb();
-  const rows = db.getAllSync<Record<string, any>>(
+  const rows = db.getAllSync<SyncBatchRow>(
     `SELECT * FROM sync_batches WHERE tenant_id = ? AND date LIKE ? ORDER BY created_at DESC`,
     [tenantId, `${yearMonth}%`]
   );
@@ -253,7 +302,7 @@ export function deleteBatch(batchId: string): void {
 
 // ── Row mappers ──────────────────────────────────────────
 
-function mapBatchRow(row: Record<string, any>): SyncBatch {
+function mapBatchRow(row: SyncBatchRow): SyncBatch {
   return {
     id: row.id,
     tenantId: row.tenant_id,
@@ -277,7 +326,7 @@ function mapBatchRow(row: Record<string, any>): SyncBatch {
   };
 }
 
-function mapClockInRow(row: Record<string, any>): PendingClockIn {
+function mapClockInRow(row: PendingClockInRow): PendingClockIn {
   return {
     id: row.id,
     batchId: row.batch_id,

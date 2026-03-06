@@ -10,7 +10,6 @@ import {
   query,
   where,
   orderBy,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { Shift } from '../types/shift';

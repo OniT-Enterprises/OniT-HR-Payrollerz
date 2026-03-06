@@ -8,7 +8,6 @@ import {
   query,
   where,
   orderBy,
-  Timestamp,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import type { AttendanceRecord, AttendanceSummary } from '../types/attendance';

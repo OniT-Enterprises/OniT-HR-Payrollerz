@@ -30,6 +30,16 @@ interface AuthState {
   clearError: () => void;
 }
 
+function getAuthErrorCode(error: unknown): string | null {
+  if (typeof error === 'object' && error !== null && 'code' in error) {
+    const { code } = error;
+    if (typeof code === 'string' && code) {
+      return code;
+    }
+  }
+  return null;
+}
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   profile: null,
@@ -41,13 +51,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // onAuthStateChanged will handle the rest
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const code = getAuthErrorCode(err);
       set({
         loading: false,
         error:
-          err.code === 'auth/invalid-credential'
+          code === 'auth/invalid-credential'
             ? 'invalid'
-            : err.code === 'auth/too-many-requests'
+            : code === 'auth/too-many-requests'
               ? 'tooMany'
               : 'generic',
       });

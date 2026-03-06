@@ -41,6 +41,19 @@ let _polling = false;
 let _pollTimer: ReturnType<typeof setInterval> | null = null;
 let _syncing = false;
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === 'object' && error !== null && 'message' in error) {
+    const { message } = error;
+    if (typeof message === 'string' && message) {
+      return message;
+    }
+  }
+  return 'Unknown sync error';
+}
+
 // ── Hour calculation helpers (ported from web attendanceService) ──
 
 function calculateHoursBetween(start: string, end: string): number {
@@ -115,8 +128,8 @@ async function syncBatch(batch: SyncBatch): Promise<void> {
     if (batch.photoLocalPath) {
       cleanupLocalPhoto(batch.photoLocalPath);
     }
-  } catch (err: any) {
-    const errorMsg = err?.message || 'Unknown sync error';
+  } catch (err: unknown) {
+    const errorMsg = getErrorMessage(err);
     updateBatchSyncStatus(batch.id, 'error', errorMsg);
 
     // Schedule retry with exponential backoff
