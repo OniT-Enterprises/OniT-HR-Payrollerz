@@ -4,6 +4,7 @@
  */
 
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -11,13 +12,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { useAllBills } from '@/hooks/useBills';
-import { useAllVendors } from '@/hooks/useVendors';
+import { billService } from '@/services/billService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
-import type { Bill, Vendor } from '@/types/money';
+import type { Bill } from '@/types/money';
 import {
   Clock,
   AlertTriangle,
@@ -46,32 +47,27 @@ interface VendorAging {
 export default function APAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: allBills = [], isLoading: loadingBills } = useAllBills();
-  const { data: allVendors = [], isLoading: loadingVendors } = useAllVendors();
-  const loading = loadingBills || loadingVendors;
+  const tenantId = useTenantId();
+  const { data: allBills = [], isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'apAging'],
+    queryFn: () => billService.getUnpaidBills(tenantId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
 
   const { buckets, vendorAging, totalPayable } = useMemo(() => {
-    if (allBills.length === 0 && allVendors.length === 0) {
+    if (allBills.length === 0) {
       return { buckets: [] as AgingBucket[], vendorAging: [] as VendorAging[], totalPayable: 0 };
     }
-
-    // Create vendor lookup
-    const vendorMap = new Map<string, Vendor>();
-    allVendors.forEach(v => vendorMap.set(v.id, v));
-
-    // Filter to only unpaid bills
-    const unpaidBills = allBills.filter(
-      bill => bill.status !== 'paid' && bill.status !== 'cancelled'
-    );
 
     const now = new Date();
 
     // Calculate days overdue for each bill
-    const billsWithAge = unpaidBills.map(bill => {
+    const billsWithAge = allBills.map(bill => {
       const dueDate = new Date(bill.dueDate);
       const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
-      const vendor = vendorMap.get(bill.vendorId);
-      return { ...bill, daysOverdue, vendorName: vendor?.name || 'Unknown Vendor' };
+      return { ...bill, daysOverdue, vendorName: bill.vendorName || 'Unknown Vendor' };
     });
 
     // Group into aging buckets
@@ -127,9 +123,9 @@ export default function APAgingReport() {
     return {
       buckets: computedBuckets,
       vendorAging: sortedVendors,
-      totalPayable: calcTotal(unpaidBills),
+      totalPayable: calcTotal(allBills),
     };
-  }, [allBills, allVendors, t]);
+  }, [allBills, t]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

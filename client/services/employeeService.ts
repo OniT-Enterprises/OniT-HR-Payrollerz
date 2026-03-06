@@ -298,7 +298,10 @@ class EmployeeService {
   /**
    * Get all employees (fetches every page via getEmployees pagination loop)
    */
-  async getAllEmployees(tenantId: string): Promise<Employee[]> {
+  async getAllEmployees(
+    tenantId: string,
+    filters: Omit<EmployeeFilters, 'pageSize' | 'startAfterDoc'> = {}
+  ): Promise<Employee[]> {
     const MAX_PAGES = 100;
     const all: Employee[] = [];
     let lastDoc: DocumentSnapshot | undefined;
@@ -310,7 +313,11 @@ class EmployeeService {
         console.warn(`getAllEmployees: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
         break;
       }
-      const result = await this.getEmployees(tenantId, { pageSize: 500, startAfterDoc: lastDoc });
+      const result = await this.getEmployees(tenantId, {
+        ...filters,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
       all.push(...result.data);
       lastDoc = result.lastDoc ?? undefined;
       hasMore = result.hasMore;

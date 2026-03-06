@@ -57,6 +57,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   BookOpen,
+  RefreshCw,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import ModuleSectionNav from "@/components/ModuleSectionNav";
@@ -75,6 +76,7 @@ import {
   useCloseFiscalPeriod,
   useReopenFiscalPeriod,
   useLockFiscalPeriod,
+  useBackfillBalanceSnapshots,
   usePostOpeningBalances,
 } from '@/hooks/useAccounting';
 import type { Account } from '@/types/accounting';
@@ -90,12 +92,14 @@ export default function FiscalPeriods() {
   const { data: fiscalYear, isLoading: loadingYear } = useFiscalYear(selectedYear);
   const { data: periods = [], isLoading: loadingPeriods } = useFiscalPeriods(selectedYear);
 
-  const { data: allAccounts = [] } = useAccounts();
+  const [needAccounts, setNeedAccounts] = useState(false);
+  const { data: allAccounts = [] } = useAccounts(needAccounts);
 
   const createYearMutation = useCreateFiscalYear();
   const closePeriodMutation = useCloseFiscalPeriod();
   const reopenPeriodMutation = useReopenFiscalPeriod();
   const lockPeriodMutation = useLockFiscalPeriod();
+  const backfillSnapshotsMutation = useBackfillBalanceSnapshots();
   const openingBalanceMutation = usePostOpeningBalances();
 
   // Opening balance dialog state
@@ -111,7 +115,8 @@ export default function FiscalPeriods() {
   );
 
   const openOpeningDialog = useCallback(() => {
-    // Initialize amounts from scratch
+    // Trigger lazy account load and open dialog
+    setNeedAccounts(true);
     const init: Record<string, { debit: string; credit: string }> = {};
     bsAccounts.forEach((a: Account) => { init[a.id!] = { debit: '', credit: '' }; });
     setObAmounts(init);
@@ -238,6 +243,36 @@ export default function FiscalPeriods() {
     }
   };
 
+  const handleBackfillSnapshots = async () => {
+    if (!fiscalYear) return;
+
+    try {
+      const result = await backfillSnapshotsMutation.mutateAsync({
+        upToDate: fiscalYear.endDate,
+        generatedBy: user?.email || 'unknown',
+      });
+
+      if (result.generatedCount > 0) {
+        toast({
+          title: 'Snapshots backfilled',
+          description: `Created ${result.generatedCount} missing snapshot${result.generatedCount === 1 ? '' : 's'} through ${selectedYear}.`,
+        });
+        return;
+      }
+
+      toast({
+        title: 'Snapshots already up to date',
+        description: `No missing closed-period snapshots were found through ${selectedYear}.`,
+      });
+    } catch {
+      toast({
+        title: t("common.error"),
+        description: 'Unable to backfill balance snapshots.',
+        variant: "destructive",
+      });
+    }
+  };
+
   const openCount = periods.filter(p => p.status === 'open').length;
   const closedCount = periods.filter(p => p.status === 'closed').length;
   const lockedCount = periods.filter(p => p.status === 'locked').length;
@@ -299,7 +334,27 @@ export default function FiscalPeriods() {
                 {t("accounting.fiscalPeriods.createYear", { year: selectedYear })}
               </Button>
             )}
+
+            {!loading && fiscalYear && (
+              <Button
+                variant="outline"
+                onClick={handleBackfillSnapshots}
+                disabled={backfillSnapshotsMutation.isPending}
+              >
+                {backfillSnapshotsMutation.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                )}
+                Backfill snapshots
+              </Button>
+            )}
           </div>
+          {!loading && fiscalYear && (
+            <p className="mt-3 text-sm text-muted-foreground">
+              Builds any missing closed-period balance snapshots through {selectedYear}.
+            </p>
+          )}
         </CardContent>
       </Card>
 

@@ -17,7 +17,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
@@ -85,8 +85,8 @@ export default function PayrollDashboard() {
     canManage()
   );
 
-  // React Query: fetch all employees, payroll runs, and leave stats
-  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
+  // React Query: fetch active employees, payroll runs, and leave stats
+  const { data: activeEmployees = [], isLoading: loadingEmployees } = useEmployeeDirectory({ status: 'active' });
   const { data: allPayrollRuns = [], isLoading: loadingRuns } = usePayrollRuns({ status: 'paid', limit: 1 });
   const { data: leaveStats, isLoading: loadingLeave } = useQuery({
     queryKey: ['tenants', tenantId, 'leaveStats'],
@@ -97,7 +97,6 @@ export default function PayrollDashboard() {
 
   // Derive stats from fetched data
   const stats = useMemo(() => {
-    const activeEmployees = allEmployees.filter((e) => e.status === "active");
     const grossPayroll = activeEmployees.reduce(
       (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
       0
@@ -146,11 +145,10 @@ export default function PayrollDashboard() {
       currentMonth: payrollMonth,
       blockedEmployees,
     };
-  }, [allEmployees, allPayrollRuns]);
+  }, [activeEmployees, allPayrollRuns]);
 
   // Derive checklist from fetched data
   const checklist = useMemo<PayrollChecklistItem[]>(() => {
-    const activeEmployees = allEmployees.filter((e) => e.status === "active");
     const issues = getComplianceIssues(activeEmployees);
     const contractIssues = issues.filter(i => i.field === "contract").length;
     const inssIssues = issues.filter(i => i.field === "inss").length;
@@ -217,7 +215,7 @@ export default function PayrollDashboard() {
         linkLabel: t("payrollDashboard.checklist.salariesLink"),
       },
     ];
-  }, [allEmployees, leaveStats, t]);
+  }, [activeEmployees, leaveStats, t]);
 
   // Calculate payroll status based on checklist
   const payrollStatus = useMemo<PayrollStatus>(() => {

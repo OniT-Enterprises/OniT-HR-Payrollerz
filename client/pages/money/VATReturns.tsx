@@ -39,11 +39,11 @@ import {
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
-import { formatDateTL } from '@/lib/dateUtils';
-import { useAllInvoices } from '@/hooks/useInvoices';
-import { useAllBills } from '@/hooks/useBills';
-import { useAllExpenses } from '@/hooks/useExpenses';
+import { formatDateTL, toDateStringTL } from '@/lib/dateUtils';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { invoiceService } from '@/services/invoiceService';
+import { billService } from '@/services/billService';
+import { expenseService } from '@/services/expenseService';
 import {
   Receipt,
   ArrowLeft,
@@ -109,11 +109,6 @@ export default function VATReturnsPage() {
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
 
-  // Fetch all invoices, bills, expenses via React Query
-  const { data: invoices, isLoading: invoicesLoading } = useAllInvoices();
-  const { data: bills, isLoading: billsLoading } = useAllBills();
-  const { data: expenses, isLoading: expensesLoading } = useAllExpenses();
-
   // Fetch saved VAT return for the selected period
   const { data: savedReturn, isLoading: returnLoading } = useQuery({
     queryKey: ['vatReturn', tenantId, selectedPeriod],
@@ -137,74 +132,43 @@ export default function VATReturnsPage() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Compute VAT summary from invoices, bills, expenses for selected period
-  const summary = useMemo<VATSummary | null>(() => {
-    if (!invoices || !bills || !expenses) return null;
+  const { data: summary, isLoading: summaryLoading } = useQuery({
+    queryKey: ['vatSummary', tenantId, selectedPeriod],
+    queryFn: async (): Promise<VATSummary | null> => {
+      const [year, month] = selectedPeriod.split('-').map(Number);
+      const periodStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
+      const periodEndStr = toDateStringTL(new Date(year, month, 0));
 
-    const [year, month] = selectedPeriod.split('-').map(Number);
-    const periodStartStr = `${year}-${String(month).padStart(2, '0')}-01`;
-    // First day of next month
-    const nextMonth = month === 12 ? 1 : month + 1;
-    const nextYear = month === 12 ? year + 1 : year;
-    const periodEndStr = `${nextYear}-${String(nextMonth).padStart(2, '0')}-01`;
+      const [invoiceVAT, billVAT, expenseVAT] = await Promise.all([
+        invoiceService.getVATSummary(tenantId, periodStartStr, periodEndStr),
+        billService.getVATSummary(tenantId, periodStartStr, periodEndStr),
+        expenseService.getVATSummary(tenantId, periodStartStr, periodEndStr),
+      ]);
 
-    // Output VAT from invoices
-    let outputVAT = 0;
-    let salesCount = 0;
-    for (const inv of invoices) {
-      if (inv.issueDate >= periodStartStr && inv.issueDate < periodEndStr) {
-        const taxAmount = Number(inv.taxAmount) || 0;
-        if (taxAmount > 0) {
-          outputVAT += taxAmount;
-          salesCount++;
-        }
-      }
-    }
+      const outputVAT = invoiceVAT.outputVAT;
+      const inputVAT = billVAT.inputVAT + expenseVAT.inputVAT;
+      const salesCount = invoiceVAT.salesCount;
+      const expenseCount = billVAT.expenseCount + expenseVAT.expenseCount;
+      const netDue = outputVAT - inputVAT;
 
-    // Input VAT from expenses
-    let inputVAT = 0;
-    let expenseCount = 0;
-    for (const exp of expenses) {
-      if (exp.date >= periodStartStr && exp.date < periodEndStr) {
-        const vatAmount = Number(exp.vatAmount) || 0;
-        if (vatAmount > 0) {
-          inputVAT += vatAmount;
-          expenseCount++;
-        }
-      }
-    }
+      if (salesCount === 0 && expenseCount === 0) return null;
 
-    // Input VAT from bills
-    for (const bill of bills) {
-      if (bill.billDate >= periodStartStr && bill.billDate < periodEndStr) {
-        const vatAmount = Number(bill.vatAmount) || 0;
-        if (vatAmount > 0) {
-          inputVAT += vatAmount;
-          expenseCount++;
-        }
-      }
-    }
+      return { outputVAT, inputVAT, netDue, salesCount, expenseCount };
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
 
-    const netDue = outputVAT - inputVAT;
-
-    if (salesCount === 0 && expenseCount === 0) return null;
-
-    return { outputVAT, inputVAT, netDue, salesCount, expenseCount };
-  }, [invoices, bills, expenses, selectedPeriod]);
-
-  const loading = invoicesLoading || billsLoading || expensesLoading || returnLoading;
+  const loading = summaryLoading || returnLoading;
 
   const saveReturn = async (markAsFiled = false) => {
     if (!tenantId || !summary) return;
     setSaving(true);
     try {
       const [year, month] = selectedPeriod.split('-').map(Number);
-      const periodStart = new Date(year, month - 1, 1)
-        .toISOString()
-        .split('T')[0];
-      const periodEnd = new Date(year, month, 0)
-        .toISOString()
-        .split('T')[0];
+      const periodStart = toDateStringTL(new Date(year, month - 1, 1));
+      const periodEnd = toDateStringTL(new Date(year, month, 0));
 
       const returnData = {
         periodStart,

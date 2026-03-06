@@ -9,6 +9,8 @@ import {
   doc,
   getDocs,
   getDoc,
+  getAggregateFromServer,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -23,6 +25,7 @@ import {
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
+  sum,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -70,6 +73,15 @@ export interface PaginatedResult<T> {
 }
 
 const PAYMENT_EPSILON = 0.00001;
+const TL_TIMEZONE_OFFSET = '+09:00';
+
+function startOfTLDay(dateISO: string): Date {
+  return new Date(`${dateISO}T00:00:00.000${TL_TIMEZONE_OFFSET}`);
+}
+
+function endOfTLDay(dateISO: string): Date {
+  return new Date(`${dateISO}T23:59:59.999${TL_TIMEZONE_OFFSET}`);
+}
 
 // ============================================
 // MAPPER FUNCTION
@@ -181,6 +193,14 @@ class InvoiceService {
       constraints.push(where('dueDate', '<', dueBefore));
     }
 
+    if (dateFrom) {
+      constraints.push(where('issueDate', '>=', dateFrom));
+    }
+
+    if (dateTo) {
+      constraints.push(where('issueDate', '<=', dateTo));
+    }
+
     // Ordering and pagination
     constraints.push(orderBy('issueDate', 'desc'));
 
@@ -251,6 +271,125 @@ class InvoiceService {
       hasMore = result.hasMore;
     }
     return all;
+  }
+
+  async getInvoicesByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    extraFilters: Omit<InvoiceFilters, 'pageSize' | 'startAfterDoc' | 'dateFrom' | 'dateTo'> = {}
+  ): Promise<Invoice[]> {
+    const MAX_PAGES = 100;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getInvoicesByDateRange: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, {
+        ...extraFilters,
+        dateFrom: startDate,
+        dateTo: endDate,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+
+    return all;
+  }
+
+  async getOutstandingInvoices(tenantId: string, asOfDate?: string): Promise<Invoice[]> {
+    const MAX_PAGES = 100;
+    const all: Invoice[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getOutstandingInvoices: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getInvoices(tenantId, {
+        status: ['sent', 'viewed', 'partial', 'overdue'],
+        ...(asOfDate ? { dateTo: asOfDate } : {}),
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+
+    return all;
+  }
+
+  async getOutstandingReceivablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const invoices = await this.getOutstandingInvoices(tenantId, asOfDate);
+    return sumMoney(invoices.map((invoice) => invoice.total - (invoice.amountPaid || 0)));
+  }
+
+  async getPaidInvoiceTotalByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<number> {
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', '==', 'paid'),
+        where('paidAt', '>=', startOfTLDay(startDate)),
+        where('paidAt', '<=', endOfTLDay(endDate)),
+      ),
+      {
+        totalAmount: sum('total'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+  }
+
+  async getPaidInvoiceTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', '==', 'paid'),
+        where('paidAt', '<=', endOfTLDay(asOfDate)),
+      ),
+      {
+        totalAmount: sum('total'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+  }
+
+  async getVATSummary(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ outputVAT: number; salesCount: number }> {
+    const invoices = await this.getInvoicesByDateRange(tenantId, startDate, endDate);
+
+    let outputVAT = 0;
+    let salesCount = 0;
+
+    for (const invoice of invoices) {
+      const taxAmount = Number(invoice.taxAmount) || 0;
+      if (taxAmount > 0) {
+        outputVAT = addMoney(outputVAT, taxAmount);
+        salesCount += 1;
+      }
+    }
+
+    return { outputVAT, salesCount };
   }
 
   /**
@@ -914,6 +1053,24 @@ class InvoiceService {
     return querySnapshot.docs.map(mapPayment);
   }
 
+  async getPaymentCandidates(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    maxResults: number = 50,
+  ): Promise<PaymentReceived[]> {
+    const candidateQuery = query(
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+      orderBy('date', 'desc'),
+      limit(maxResults),
+    );
+
+    const querySnapshot = await getDocs(candidateQuery);
+    return querySnapshot.docs.map(mapPayment);
+  }
+
   // ----------------------------------------
   // Settings
   // ----------------------------------------
@@ -979,30 +1136,41 @@ class InvoiceService {
    * Note: For very large datasets, consider using Firestore aggregation queries
    */
   async getStats(tenantId: string): Promise<MoneyStats> {
-    const invoices = await this.getAllInvoices(tenantId);
-
     const now = new Date();
     const thisMonth = formatDateISO(now).slice(0, 7); // YYYY-MM
     const lastMonth = formatDateISO(new Date(now.getFullYear(), now.getMonth() - 1, 1)).slice(0, 7);
-
-    // Calculate stats
-    const paidInvoices = invoices.filter((inv) => inv.status === 'paid');
-    const outstandingInvoices = invoices.filter((inv) =>
-      ['sent', 'viewed', 'partial'].includes(inv.status)
-    );
-
-    const totalRevenue = sumMoney(paidInvoices.map(inv => inv.total));
-    const revenueThisMonth = sumMoney(paidInvoices
-      .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(thisMonth))
-      .map(inv => inv.total));
-    const revenuePreviousMonth = sumMoney(paidInvoices
-      .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(lastMonth))
-      .map(inv => inv.total));
-
-    const totalOutstanding = sumMoney(outstandingInvoices.map(inv => inv.balanceDue));
-
+    const thisMonthStart = `${thisMonth}-01`;
+    const thisMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth() + 1, 0));
+    const lastMonthStart = `${lastMonth}-01`;
+    const lastMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth(), 0));
     const today = getTodayTL();
     const todayDate = parseDateISO(today);
+
+    const [
+      outstandingInvoices,
+      draftCountSnapshot,
+      sentCountSnapshot,
+      viewedCountSnapshot,
+      totalRevenueSnapshot,
+      revenueThisMonth,
+      revenuePreviousMonth,
+      recentInvoicesPage,
+    ] = await Promise.all([
+      this.getOutstandingInvoices(tenantId),
+      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
+      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'sent'))),
+      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'viewed'))),
+      getAggregateFromServer(query(this.collectionRef(tenantId), where('status', '==', 'paid')), {
+        totalAmount: sum('total'),
+      }),
+      this.getPaidInvoiceTotalByDateRange(tenantId, thisMonthStart, thisMonthEnd),
+      this.getPaidInvoiceTotalByDateRange(tenantId, lastMonthStart, lastMonthEnd),
+      this.getInvoices(tenantId, { pageSize: 100 }),
+    ]);
+
+    // Calculate stats
+    const totalRevenue = Number(totalRevenueSnapshot.data().totalAmount ?? 0);
+    const totalOutstanding = sumMoney(outstandingInvoices.map(inv => inv.balanceDue));
     const overdueInvoices = outstandingInvoices.filter((inv) => inv.dueDate < today);
     const overdueAmount = sumMoney(overdueInvoices.map(inv => inv.balanceDue));
 
@@ -1026,22 +1194,25 @@ class InvoiceService {
     });
 
     // Calculate cash flow for last 6 months
-    const cashFlow: MoneyStats['cashFlow'] = [];
-    for (let i = 5; i >= 0; i--) {
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      const monthKey = formatDateISO(monthDate).slice(0, 7);
-      const monthName = monthDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' });
+    const cashFlowTotals = await Promise.all(
+      Array.from({ length: 6 }, (_, index) => {
+        const monthOffset = 5 - index;
+        const monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+        const periodStart = formatDateISO(monthDate);
+        const periodEnd = formatDateISO(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0));
 
-      const received = sumMoney(paidInvoices
-        .filter((inv) => inv.paidAt && formatDateISO(inv.paidAt).startsWith(monthKey))
-        .map(inv => inv.total));
-
-      cashFlow.push({
-        month: monthName,
+        return this.getPaidInvoiceTotalByDateRange(tenantId, periodStart, periodEnd);
+      })
+    );
+    const cashFlow: MoneyStats['cashFlow'] = cashFlowTotals.map((received, index) => {
+      const monthOffset = 5 - index;
+      const monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
+      return {
+        month: monthDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' }),
         received,
-        spent: 0, // Will be filled from expense service
-      });
-    }
+        spent: 0,
+      };
+    });
 
     // Top customers by outstanding balance
     const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number; oldestInvoiceDays: number }>();
@@ -1066,7 +1237,7 @@ class InvoiceService {
       .slice(0, 5);
 
     // Recent activity (from invoice updates)
-    const recentActivity: MoneyStats['recentActivity'] = invoices
+    const recentActivity: MoneyStats['recentActivity'] = recentInvoicesPage.data
       .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
       .slice(0, 10)
       .map((inv) => {
@@ -1103,10 +1274,8 @@ class InvoiceService {
       revenuePreviousMonth,
       totalOutstanding,
       overdueAmount,
-      invoicesDraft: invoices.filter((inv) => inv.status === 'draft').length,
-      invoicesSent: invoices.filter((inv) =>
-        ['sent', 'viewed'].includes(inv.status)
-      ).length,
+      invoicesDraft: draftCountSnapshot.data().count,
+      invoicesSent: sentCountSnapshot.data().count + viewedCountSnapshot.data().count,
       invoicesOverdue: overdueInvoices.length,
       totalExpenses: 0, // From expense service
       expensesThisMonth: 0, // From expense service
@@ -1181,12 +1350,7 @@ class InvoiceService {
    * Call this periodically (e.g., daily) or on dashboard load
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {
-    const today = getTodayTL();
-    const invoices = await this.getAllInvoices(tenantId);
-
-    const overdue = invoices.filter(
-      inv => ['sent', 'viewed', 'partial'].includes(inv.status) && inv.dueDate < today
-    );
+    const overdue = await this.getOverdueInvoices(tenantId);
 
     // Batch all updates (max 500 per batch)
     for (let i = 0; i < overdue.length; i += 499) {

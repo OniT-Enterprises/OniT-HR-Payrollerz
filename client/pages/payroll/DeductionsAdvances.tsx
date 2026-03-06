@@ -60,9 +60,8 @@ import {
   Percent,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Employee } from "@/services/employeeService";
 import { useRecurringDeductions, useCreateDeduction, useUpdateDeduction, usePauseDeduction, useDeleteDeduction } from "@/hooks/usePayroll";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { formatCurrency } from "@/lib/payroll/constants";
 import { TL_DEDUCTION_TYPE_LABELS } from "@/lib/payroll/constants-tl";
 import type { RecurringDeduction, DeductionType, PayFrequency } from "@/types/payroll";
@@ -76,8 +75,7 @@ export default function DeductionsAdvances() {
 
   // React Query data
   const { data: deductions = [], isLoading: loadingDeductions } = useRecurringDeductions();
-  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
-  const employees = useMemo(() => allEmployees.filter((e: Employee) => e.status === "active"), [allEmployees]);
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({ status: 'active' });
   const loading = loadingDeductions || loadingEmployees;
 
   // Mutations

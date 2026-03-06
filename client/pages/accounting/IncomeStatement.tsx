@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import type { IncomeStatement as IncomeStatementType } from '../../types/accounting';
-import { useGenerateIncomeStatement } from '@/hooks/useAccounting';
+import { useIncomeStatement } from '@/hooks/useAccounting';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -45,22 +45,44 @@ import { getTodayTL } from "@/lib/dateUtils";
 
 export default function IncomeStatement() {
   const { t } = useI18n();
-  const generateMutation = useGenerateIncomeStatement();
 
   // Local UI state
-  const [report, setReport] = useState<IncomeStatementType | null>(null);
   const [periodStart, setPeriodStart] = useState<string>(() => {
     const year = new Date().getFullYear();
     return `${year}-01-01`;
   });
   const [periodEnd, setPeriodEnd] = useState<string>(() => getTodayTL());
+  const [requestedReport, setRequestedReport] = useState<{
+    periodStart: string;
+    periodEnd: string;
+    fiscalYear: number;
+  } | null>(null);
 
-  const generating = generateMutation.isPending;
+  const reportQuery = useIncomeStatement(
+    requestedReport?.periodStart ?? periodStart,
+    requestedReport?.periodEnd ?? periodEnd,
+    requestedReport?.fiscalYear ?? new Date(periodEnd).getFullYear(),
+    !!requestedReport,
+  );
+
+  const report: IncomeStatementType | null = reportQuery.data ?? null;
+  const generating = reportQuery.isFetching;
 
   const handleGenerate = async () => {
-    const fiscalYear = new Date(periodEnd).getFullYear();
-    const result = await generateMutation.mutateAsync({ periodStart, periodEnd, fiscalYear });
-    setReport(result);
+    const nextRequest = {
+      periodStart,
+      periodEnd,
+      fiscalYear: new Date(periodEnd).getFullYear(),
+    };
+    const isSameRequest = requestedReport
+      && requestedReport.periodStart === nextRequest.periodStart
+      && requestedReport.periodEnd === nextRequest.periodEnd
+      && requestedReport.fiscalYear === nextRequest.fiscalYear;
+
+    setRequestedReport(nextRequest);
+    if (isSameRequest) {
+      await reportQuery.refetch();
+    }
   };
 
   // Export to CSV

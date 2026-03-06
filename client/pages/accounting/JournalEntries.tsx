@@ -58,14 +58,18 @@ import {
   RotateCcw,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAccounts, useJournalEntries, useCreateJournalEntry } from "@/hooks/useAccounting";
-import { journalEntryService } from "@/services/accountingService";
+import {
+  useAccounts,
+  useCreateJournalEntry,
+  useJournalEntries,
+  useJournalEntrySummary,
+  usePaginatedJournalEntries,
+} from "@/hooks/useAccounting";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
+import type { JournalEntry, JournalEntryLine, JournalEntryStatus } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
-import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
@@ -82,7 +86,6 @@ interface EntryLineForm {
 export default function JournalEntries() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const tenantId = useTenantId();
   const { user } = useAuth();
 
   // Filters (yearFilter must be declared before useJournalEntries)
@@ -90,16 +93,38 @@ export default function JournalEntries() {
   const [sourceFilter, setSourceFilter] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [yearFilter, setYearFilter] = useState(new Date().getFullYear().toString());
-
-  // React Query hooks
-  const { data: accounts = [] } = useAccounts();
-  const activeAccounts = useMemo(() => accounts.filter(a => a.isActive), [accounts]);
-  const { data: entries = [], isLoading: loading } = useJournalEntries({ fiscalYear: parseInt(yearFilter) });
-  const createEntryMutation = useCreateJournalEntry();
+  const fiscalYear = parseInt(yearFilter, 10);
+  const statusQuery = statusFilter !== "all" ? statusFilter as JournalEntryStatus : undefined;
+  const sourceQuery = sourceFilter !== "all" ? sourceFilter : undefined;
 
   const [selectedEntry, setSelectedEntry] = useState<JournalEntry | null>(null);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const isSearching = searchTerm.trim().length > 0;
+
+  // React Query hooks
+  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(showAddDialog);
+  const activeAccounts = useMemo(() => accounts.filter(a => a.isActive), [accounts]);
+  const paginatedEntriesQuery = usePaginatedJournalEntries({
+    fiscalYear,
+    status: statusQuery,
+    source: sourceQuery,
+    pageSize: 100,
+  }, !isSearching);
+  const { data: searchEntries = [], isLoading: loadingSearchEntries } = useJournalEntries({
+    fiscalYear,
+    status: statusQuery,
+    source: sourceQuery,
+  }, isSearching);
+  const { data: summary, isLoading: loadingSummary } = useJournalEntrySummary(fiscalYear);
+  const createEntryMutation = useCreateJournalEntry();
+
+  const entries = isSearching
+    ? searchEntries
+    : paginatedEntriesQuery.entries;
+  const loadingEntries = isSearching
+    ? loadingSearchEntries
+    : paginatedEntriesQuery.isLoading;
 
   // Expanded entries state
   const [expandedEntries, setExpandedEntries] = useState<Set<string>>(new Set());
@@ -115,8 +140,6 @@ export default function JournalEntries() {
   // Filter entries
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
-      if (statusFilter !== "all" && entry.status !== statusFilter) return false;
-      if (sourceFilter !== "all" && entry.source !== sourceFilter) return false;
       if (searchTerm) {
         const term = searchTerm.toLowerCase();
         return (
@@ -126,7 +149,7 @@ export default function JournalEntries() {
       }
       return true;
     });
-  }, [entries, statusFilter, sourceFilter, searchTerm]);
+  }, [entries, searchTerm]);
 
   // Toggle entry expansion
   const toggleExpanded = (entryId: string) => {
@@ -306,7 +329,6 @@ export default function JournalEntries() {
     try {
       const year = new Date(entryDate).getFullYear();
       const month = new Date(entryDate).getMonth() + 1;
-      const entryNumber = await journalEntryService.getNextEntryNumber(tenantId, year);
 
       const lines: JournalEntryLine[] = validLines.map((line, index) => ({
         lineNumber: index + 1,
@@ -318,8 +340,7 @@ export default function JournalEntries() {
         description: line.description,
       }));
 
-      const entry: Omit<JournalEntry, "id" | "createdAt"> = {
-        entryNumber,
+      const entry: Omit<JournalEntry, "id" | "createdAt" | "entryNumber"> = {
         date: entryDate,
         description: entryDescription,
         source: "manual",
@@ -341,7 +362,9 @@ export default function JournalEntries() {
 
       toast({
         title: t("accounting.journalEntries.success"),
-        description: t("accounting.journalEntries.entryCreated", { number: entryNumber, status: asDraft ? t("accounting.journalEntries.savedAsDraft") : t("accounting.journalEntries.entryPosted") }),
+        description: asDraft
+          ? t("accounting.journalEntries.savedAsDraft")
+          : t("accounting.journalEntries.entryPosted"),
       });
 
       setShowAddDialog(false);
@@ -393,20 +416,14 @@ export default function JournalEntries() {
   };
 
   // Summary stats
-  const stats = useMemo(() => {
-    const posted = entries.filter((e) => e.status === "posted");
-    const drafts = entries.filter((e) => e.status === "draft");
-    const totalDebit = posted.reduce((sum, e) => sum + e.totalDebit, 0);
+  const stats = summary ?? {
+    total: 0,
+    posted: 0,
+    drafts: 0,
+    totalDebit: 0,
+  };
 
-    return {
-      total: entries.length,
-      posted: posted.length,
-      drafts: drafts.length,
-      totalDebit,
-    };
-  }, [entries]);
-
-  if (loading) {
+  if (loadingEntries || loadingSummary) {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
@@ -560,10 +577,15 @@ export default function JournalEntries() {
                                     value={line.accountId}
                                     onValueChange={(v) => updateLine(index, "accountId", v)}
                                   >
-                                    <SelectTrigger className="w-full">
-                                      <SelectValue placeholder={t("accounting.journalEntries.selectAccount")} />
+                                    <SelectTrigger className="w-full" disabled={loadingAccounts}>
+                                      <SelectValue placeholder={loadingAccounts ? t("common.loading") : t("accounting.journalEntries.selectAccount")} />
                                     </SelectTrigger>
                                     <SelectContent>
+                                      {loadingAccounts && (
+                                        <div className="px-2 py-2 text-sm text-muted-foreground">
+                                          {t("common.loading")}
+                                        </div>
+                                      )}
                                       {activeAccounts.map((acc) => (
                                         <SelectItem key={acc.id} value={acc.id!}>
                                           {acc.code} - {acc.name}
@@ -783,7 +805,9 @@ export default function JournalEntries() {
             <CardHeader>
               <CardTitle>{t("accounting.journalEntries.journalEntriesLabel")}</CardTitle>
               <CardDescription>
-                {t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}
+                {isSearching
+                  ? t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })
+                  : `${t("accounting.journalEntries.showingEntries", { count: filteredEntries.length, year: yearFilter })}${stats.total > filteredEntries.length ? ` • Loaded ${filteredEntries.length} of ${stats.total}` : ""}`}
                 {sourceFilter !== "all" && ` • ${t("accounting.journalEntries.source")}: ${sourceFilter}`}
                 {statusFilter !== "all" && ` • ${t("accounting.journalEntries.statusLabel")}: ${statusFilter}`}
               </CardDescription>
@@ -968,6 +992,24 @@ export default function JournalEntries() {
                       </Collapsible>
                     );
                   })}
+                  {!isSearching && paginatedEntriesQuery.hasNextPage && (
+                    <div className="pt-4 flex justify-center">
+                      <Button
+                        variant="outline"
+                        onClick={() => paginatedEntriesQuery.fetchNextPage()}
+                        disabled={paginatedEntriesQuery.isFetchingNextPage}
+                      >
+                        {paginatedEntriesQuery.isFetchingNextPage ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Loading...
+                          </>
+                        ) : (
+                          "Load more"
+                        )}
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>

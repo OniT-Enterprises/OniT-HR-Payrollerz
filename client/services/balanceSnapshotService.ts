@@ -18,6 +18,7 @@ import {
   query,
   where,
   orderBy,
+  limit,
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -80,6 +81,9 @@ function snapshotId(year: number, period: number): string {
 // ────────────────────────────────────────────
 
 class BalanceSnapshotService {
+  private periodCollection(tenantId: string) {
+    return collection(db, paths.fiscalPeriods(tenantId));
+  }
 
   /**
    * Generate a balance snapshot for a closed fiscal period.
@@ -116,7 +120,7 @@ class BalanceSnapshotService {
 
     if (priorSnapshot) {
       // Incremental: prior snapshot + this period's GL entries only
-      const periodEntries = await this.queryGLEntriesForPeriod(
+      const periodEntries = await this.queryGLRange(
         tenantId,
         period.startDate,
         period.endDate,
@@ -170,40 +174,103 @@ class BalanceSnapshotService {
     tenantId: string,
     beforeDate: string,
   ): Promise<BalanceSnapshot | null> {
-    // Parse beforeDate to determine starting year/month
-    const [yearStr, monthStr] = beforeDate.split('-');
-    let year = parseInt(yearStr, 10);
-    let month = parseInt(monthStr, 10);
+    const snapshotsRef = collection(db, paths.balanceSnapshots(tenantId));
+    const snapshotQuery = query(
+      snapshotsRef,
+      where('periodEndDate', '<', beforeDate),
+      orderBy('periodEndDate', 'desc'),
+      limit(1),
+    );
+    const snapshotDocs = await getDocs(snapshotQuery);
 
-    // The snapshot for a month covers through that month's end.
-    // We need a snapshot whose periodEndDate < beforeDate.
-    // Start checking from the month before the beforeDate's month.
-    month -= 1;
-    if (month < 1) {
-      month = 12;
-      year -= 1;
+    if (snapshotDocs.empty) {
+      return null;
     }
 
-    // Walk backward up to 36 months (3 years max)
-    for (let i = 0; i < 36; i++) {
-      const sid = snapshotId(year, month);
-      const snapshot = await this.getSnapshot(tenantId, sid);
-      if (snapshot && snapshot.periodEndDate < beforeDate) {
-        return snapshot;
-      }
-      month -= 1;
-      if (month < 1) {
-        month = 12;
-        year -= 1;
-      }
+    const latestSnapshot = snapshotDocs.docs[0];
+    return { id: latestSnapshot.id, ...latestSnapshot.data() } as BalanceSnapshot;
+  }
+
+  /**
+   * Ensure there is a recent snapshot before `beforeDate`.
+   * Backfills the latest closed/locked fiscal period when older tenants have no snapshot coverage.
+   */
+  async ensureSnapshotCoverageBefore(
+    tenantId: string,
+    beforeDate: string,
+    generatedBy: string = 'system',
+  ): Promise<BalanceSnapshot | null> {
+    const [latestSnapshot, latestClosedPeriod] = await Promise.all([
+      this.findLatestSnapshotBefore(tenantId, beforeDate),
+      this.findLatestClosedPeriodBefore(tenantId, beforeDate),
+    ]);
+
+    if (!latestClosedPeriod) {
+      return latestSnapshot;
     }
 
-    return null;
+    if (latestSnapshot && latestSnapshot.periodEndDate >= latestClosedPeriod.endDate) {
+      return latestSnapshot;
+    }
+
+    return this.generateSnapshot(tenantId, latestClosedPeriod, generatedBy);
+  }
+
+  /**
+   * Backfill missing snapshots for every closed/locked period up to `upToDate`.
+   * Runs oldest → newest so later snapshots can build incrementally.
+   */
+  async backfillSnapshots(
+    tenantId: string,
+    upToDate: string,
+    generatedBy: string = 'system',
+  ): Promise<{
+    eligibleCount: number;
+    generatedCount: number;
+    skippedCount: number;
+  }> {
+    const [eligiblePeriods, existingSnapshotIds] = await Promise.all([
+      this.listEligiblePeriodsUpTo(tenantId, upToDate),
+      this.listSnapshotIdsUpTo(tenantId, upToDate),
+    ]);
+
+    let generatedCount = 0;
+    let skippedCount = 0;
+
+    for (const period of eligiblePeriods) {
+      const sid = snapshotId(period.year, period.period);
+      if (existingSnapshotIds.has(sid)) {
+        skippedCount += 1;
+        continue;
+      }
+
+      await this.generateSnapshot(tenantId, period, generatedBy);
+      existingSnapshotIds.add(sid);
+      generatedCount += 1;
+    }
+
+    return {
+      eligibleCount: eligiblePeriods.length,
+      generatedCount,
+      skippedCount,
+    };
   }
 
   /** Delete a snapshot (called when a period is reopened). */
   async deleteSnapshot(tenantId: string, sid: string): Promise<void> {
     await deleteDoc(doc(db, paths.balanceSnapshot(tenantId, sid)));
+  }
+
+  /** Delete snapshots from the reopened period onward. */
+  async deleteSnapshotsFromDate(tenantId: string, fromDate: string): Promise<void> {
+    const snapshotsRef = collection(db, paths.balanceSnapshots(tenantId));
+    const snapshotQuery = query(
+      snapshotsRef,
+      where('periodEndDate', '>=', fromDate),
+      orderBy('periodEndDate', 'asc'),
+    );
+    const snapshotDocs = await getDocs(snapshotQuery);
+    await Promise.all(snapshotDocs.docs.map((snapshotDoc) => deleteDoc(snapshotDoc.ref)));
   }
 
   /**
@@ -237,6 +304,23 @@ class BalanceSnapshotService {
     return snap.docs.map(d => ({ id: d.id, ...d.data() } as GeneralLedgerEntry));
   }
 
+  /** Query GL entries for a specific date range [startDate, endDate]. */
+  async queryGLRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+  ): Promise<GeneralLedgerEntry[]> {
+    const glRef = collection(db, paths.generalLedger(tenantId));
+    const q = query(
+      glRef,
+      where('entryDate', '>=', startDate),
+      where('entryDate', '<=', endDate),
+      orderBy('entryDate', 'asc'),
+    );
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() } as GeneralLedgerEntry));
+  }
+
   // ────────────────────────────────────────────
   // Private methods
   // ────────────────────────────────────────────
@@ -256,21 +340,57 @@ class BalanceSnapshotService {
     return this.getSnapshot(tenantId, snapshotId(priorYear, priorPeriod));
   }
 
-  /** Query GL entries for a specific date range [startDate, endDate]. */
-  private async queryGLEntriesForPeriod(
+  private async findLatestClosedPeriodBefore(
     tenantId: string,
-    startDate: string,
-    endDate: string,
-  ): Promise<GeneralLedgerEntry[]> {
-    const glRef = collection(db, paths.generalLedger(tenantId));
-    const q = query(
-      glRef,
-      where('entryDate', '>=', startDate),
-      where('entryDate', '<=', endDate),
-      orderBy('entryDate', 'asc'),
+    beforeDate: string,
+  ): Promise<FiscalPeriod | null> {
+    const periodQuery = query(
+      this.periodCollection(tenantId),
+      where('endDate', '<', beforeDate),
+      orderBy('endDate', 'desc'),
     );
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() } as GeneralLedgerEntry));
+    const periodDocs = await getDocs(periodQuery);
+    const periodDoc = periodDocs.docs.find((docSnap) => {
+      const period = docSnap.data() as FiscalPeriod;
+      return period.status === 'closed' || period.status === 'locked';
+    });
+
+    if (!periodDoc) {
+      return null;
+    }
+
+    return { id: periodDoc.id, ...periodDoc.data() } as FiscalPeriod;
+  }
+
+  private async listEligiblePeriodsUpTo(
+    tenantId: string,
+    upToDate: string,
+  ): Promise<FiscalPeriod[]> {
+    const periodQuery = query(
+      this.periodCollection(tenantId),
+      where('endDate', '<=', upToDate),
+      orderBy('endDate', 'asc'),
+    );
+    const periodDocs = await getDocs(periodQuery);
+
+    return periodDocs.docs
+      .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() } as FiscalPeriod))
+      .filter((period) => period.status === 'closed' || period.status === 'locked');
+  }
+
+  private async listSnapshotIdsUpTo(
+    tenantId: string,
+    upToDate: string,
+  ): Promise<Set<string>> {
+    const snapshotsRef = collection(db, paths.balanceSnapshots(tenantId));
+    const snapshotQuery = query(
+      snapshotsRef,
+      where('periodEndDate', '<=', upToDate),
+      orderBy('periodEndDate', 'asc'),
+    );
+    const snapshotDocs = await getDocs(snapshotQuery);
+
+    return new Set(snapshotDocs.docs.map((snapshotDoc) => snapshotDoc.id));
   }
 
   /**

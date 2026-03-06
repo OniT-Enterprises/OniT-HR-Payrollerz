@@ -12,7 +12,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { peopleNavConfig } from "@/lib/moduleNav";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import {
   Users,
@@ -28,12 +28,12 @@ import GuidancePanel from "@/components/GuidancePanel";
 
 export default function StaffOverview() {
   const navigate = useNavigate();
-  const { data: employees = [] } = useAllEmployees();
+  const { data: activeEmployees = [] } = useEmployeeDirectory({ status: "active" });
 
   const stats = useMemo(() => ({
-    active: employees.filter((e) => e.status === "active").length,
-    issues: getComplianceIssues(employees).length,
-  }), [employees]);
+    active: activeEmployees.length,
+    issues: getComplianceIssues(activeEmployees).length,
+  }), [activeEmployees]);
 
   return (
     <div className="min-h-screen bg-background">

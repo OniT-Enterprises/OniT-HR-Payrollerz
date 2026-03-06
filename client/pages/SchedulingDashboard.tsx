@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import {
   Clock,
@@ -71,17 +71,17 @@ function SchedulingDashboardSkeleton() {
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
   const { t: _t } = useI18n();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const loading = employeesLoading || leaveStatsLoading;
 
   const stats = useMemo(
     () => ({
-      activeEmployees: employees.filter((e) => e.status === "active").length,
+      activeEmployees: activeEmployees.length,
       pendingLeave: leaveStats?.pendingRequests ?? 0,
       onLeaveToday: leaveStats?.employeesOnLeaveToday ?? 0,
     }),
-    [employees, leaveStats]
+    [activeEmployees, leaveStats]
   );
 
   const attendanceRate = stats.activeEmployees > 0

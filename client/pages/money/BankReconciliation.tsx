@@ -45,7 +45,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
 import type { BankTransaction } from '@/types/money';
-import { toDateStringTL } from '@/lib/dateUtils';
+import { addDays, formatDateISO } from '@/lib/dateUtils';
 import { BankReconciliationSummary } from '@/components/money/BankReconciliationSummary';
 import { BankMatchDialog, type MatchOption } from '@/components/money/BankMatchDialog';
 import {
@@ -145,41 +145,43 @@ export default function BankReconciliation() {
 
     try {
       const options: MatchOption[] = [];
+      const startDate = formatDateISO(addDays(transaction.date, -45));
+      const endDate = formatDateISO(addDays(transaction.date, 45));
 
       if (transaction.type === 'deposit') {
-        // For deposits, suggest paid invoices
-        const invoices = await invoiceService.getAllInvoices(tenantId);
-        invoices
-          .filter(inv => inv.status === 'paid' && inv.total > 0)
-          .forEach(inv => {
+        const payments = await invoiceService.getPaymentCandidates(tenantId, startDate, endDate, 50);
+        payments.forEach((payment) => {
+          if (payment.amount <= 0) return;
             options.push({
               type: 'invoice_payment',
-              id: inv.id,
-              description: `${inv.invoiceNumber} - ${inv.customerName}`,
-              amount: inv.total,
-              date: inv.paidAt ? toDateStringTL(inv.paidAt) : inv.issueDate,
+              id: payment.invoiceId || payment.id,
+              description: `${payment.invoiceNumber || 'Payment'} - ${payment.customerName || 'Customer payment'}`,
+              amount: payment.amount,
+              date: payment.date,
             });
           });
       } else {
-        // For withdrawals, suggest bills and expenses
-        const [bills, expenses] = await Promise.all([
-          billService.getAllBills(tenantId),
-          expenseService.getAllExpenses(tenantId),
+        const [billPayments, expenses] = await Promise.all([
+          billService.getPaymentCandidates(tenantId, startDate, endDate, 50),
+          expenseService.getExpenses(tenantId, {
+            startDate,
+            endDate,
+            pageSize: 50,
+          }),
         ]);
 
-        bills
-          .filter(bill => bill.status === 'paid')
-          .forEach(bill => {
+        billPayments.forEach((payment) => {
+          if (payment.amount <= 0) return;
             options.push({
               type: 'bill_payment',
-              id: bill.id,
-              description: `Bill: ${bill.description} - ${bill.vendorName}`,
-              amount: -bill.total,
-              date: bill.paidAt ? toDateStringTL(bill.paidAt) : bill.billDate,
+              id: payment.billId,
+              description: `Bill: ${payment.billDescription || payment.billNumber || payment.billId} - ${payment.vendorName || 'Vendor payment'}`,
+              amount: -payment.amount,
+              date: payment.date,
             });
           });
 
-        expenses.forEach(exp => {
+        expenses.data.forEach(exp => {
           options.push({
             type: 'expense',
             id: exp.id,

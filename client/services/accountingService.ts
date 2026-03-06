@@ -10,14 +10,19 @@ import {
   updateDoc,
   getDoc,
   getDocs,
+  getAggregateFromServer,
+  getCountFromServer,
   query,
   where,
   orderBy,
   limit,
+  startAfter,
   serverTimestamp,
+  sum,
   writeBatch,
   runTransaction,
   Transaction,
+  DocumentSnapshot,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -54,8 +59,35 @@ import type { Invoice, Expense, Bill, PaymentMethod } from '@/types/money';
 // ============================================
 
 class AccountService {
+  private readonly cacheTtlMs = 5 * 60 * 1000;
+  private readonly accountCache = new Map<string, { accounts: Account[]; fetchedAt: number }>();
+
   private collectionRef(tenantId: string) {
     return collection(db, paths.accounts(tenantId));
+  }
+
+  private isCacheFresh(tenantId: string): boolean {
+    const cached = this.accountCache.get(tenantId);
+    return !!cached && (Date.now() - cached.fetchedAt) < this.cacheTtlMs;
+  }
+
+  private async getCachedAccounts(tenantId: string, forceRefresh: boolean = false): Promise<Account[]> {
+    if (!forceRefresh && this.isCacheFresh(tenantId)) {
+      return this.accountCache.get(tenantId)!.accounts;
+    }
+
+    const q = query(this.collectionRef(tenantId), orderBy('code'));
+    const snapshot = await getDocs(q);
+    const accounts = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+    this.accountCache.set(tenantId, {
+      accounts,
+      fetchedAt: Date.now(),
+    });
+    return accounts;
+  }
+
+  invalidateCache(tenantId: string): void {
+    this.accountCache.delete(tenantId);
   }
 
   async createAccount(
@@ -68,6 +100,7 @@ class AccountService {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+    this.invalidateCache(tenantId);
 
     if (audit) {
       await auditLogService.log({
@@ -96,6 +129,7 @@ class AccountService {
       ...updates,
       updatedAt: serverTimestamp(),
     });
+    this.invalidateCache(tenantId);
 
     if (audit) {
       const oldValue = before?.exists() ? (before.data() as Record<string, unknown>) : undefined;
@@ -116,6 +150,10 @@ class AccountService {
   }
 
   async getAccount(tenantId: string, id: string): Promise<Account | null> {
+    if (this.isCacheFresh(tenantId)) {
+      return this.accountCache.get(tenantId)!.accounts.find((account) => account.id === id) ?? null;
+    }
+
     const docRef = doc(db, paths.account(tenantId, id));
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
@@ -125,28 +163,17 @@ class AccountService {
   }
 
   async getAccountByCode(tenantId: string, code: string): Promise<Account | null> {
-    const q = query(this.collectionRef(tenantId), where('code', '==', code), limit(1));
-    const snapshot = await getDocs(q);
-    if (snapshot.empty) return null;
-    const doc = snapshot.docs[0];
-    return { id: doc.id, ...doc.data() } as Account;
+    const accounts = await this.getCachedAccounts(tenantId);
+    return accounts.find((account) => account.code === code) ?? null;
   }
 
-  async getAllAccounts(tenantId: string): Promise<Account[]> {
-    const q = query(this.collectionRef(tenantId), orderBy('code'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+  async getAllAccounts(tenantId: string, forceRefresh: boolean = false): Promise<Account[]> {
+    return this.getCachedAccounts(tenantId, forceRefresh);
   }
 
   async getAccountsByType(tenantId: string, type: Account['type']): Promise<Account[]> {
-    const q = query(
-      this.collectionRef(tenantId),
-      where('type', '==', type),
-      where('isActive', '==', true),
-      orderBy('code')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Account));
+    const accounts = await this.getCachedAccounts(tenantId);
+    return accounts.filter((account) => account.type === type && account.isActive);
   }
 
   async deleteAccount(tenantId: string, id: string): Promise<void> {
@@ -156,6 +183,7 @@ class AccountService {
       isActive: false,
       updatedAt: serverTimestamp(),
     });
+    this.invalidateCache(tenantId);
   }
 
   /**
@@ -165,7 +193,7 @@ class AccountService {
     tenantId: string,
     audit?: { userId: string; userEmail: string; userName?: string }
   ): Promise<void> {
-    const existingAccounts = await this.getAllAccounts(tenantId);
+    const existingAccounts = await this.getAllAccounts(tenantId, true);
     if (existingAccounts.length > 0) {
       return;
     }
@@ -183,6 +211,7 @@ class AccountService {
     }
 
     await batch.commit();
+    this.invalidateCache(tenantId);
 
     if (audit) {
       await auditLogService.log({
@@ -244,7 +273,7 @@ class JournalEntryService {
 
   async createJournalEntry(
     tenantId: string,
-    entry: Omit<JournalEntry, 'id' | 'createdAt'>,
+    entry: Omit<JournalEntry, 'id' | 'createdAt' | 'entryNumber'> & { entryNumber?: string },
     txn?: Transaction
   ): Promise<string> {
     if (!Array.isArray(entry.lines) || entry.lines.length === 0) {
@@ -289,64 +318,70 @@ class JournalEntryService {
     const journalDocRef = doc(this.collectionRef(tenantId));
 
     // Write journal + GL entries atomically so books cannot drift.
-    const doWrite = (transaction: Transaction) => {
+    const doWrite = async (transaction: Transaction) => {
+      const finalEntry = entry.entryNumber
+        ? entry
+        : {
+            ...entry,
+            entryNumber: await this.getNextEntryNumber(tenantId, entry.fiscalYear, transaction),
+          };
       const journalPayload: Record<string, unknown> = {
-        ...entry,
+        ...finalEntry,
         createdAt: serverTimestamp(),
       };
 
-      if (entry.status === 'posted') {
+      if (finalEntry.status === 'posted') {
         // Ensure posted metadata is present for posted-on-create entries.
         if (!('postedAt' in journalPayload) || journalPayload.postedAt === undefined) {
           journalPayload.postedAt = serverTimestamp();
         }
         if (!('postedBy' in journalPayload) || journalPayload.postedBy === undefined) {
-          journalPayload.postedBy = entry.postedBy || entry.createdBy || 'system';
+          journalPayload.postedBy = finalEntry.postedBy || finalEntry.createdBy || 'system';
         }
       }
 
       transaction.set(journalDocRef, journalPayload);
 
-      if (entry.status === 'posted') {
-        for (const line of entry.lines) {
+      if (finalEntry.status === 'posted') {
+        for (const line of finalEntry.lines) {
           const glDocRef = doc(collection(db, paths.generalLedger(tenantId)));
           transaction.set(glDocRef, {
             accountId: line.accountId,
             accountCode: line.accountCode,
             accountName: line.accountName,
             journalEntryId: journalDocRef.id,
-            entryNumber: entry.entryNumber,
-            entryDate: entry.date,
-            description: line.description || entry.description,
+            entryNumber: finalEntry.entryNumber,
+            entryDate: finalEntry.date,
+            description: line.description || finalEntry.description,
             debit: line.debit,
             credit: line.credit,
             balance: 0,
-            fiscalYear: entry.fiscalYear,
-            fiscalPeriod: entry.fiscalPeriod,
+            fiscalYear: finalEntry.fiscalYear,
+            fiscalPeriod: finalEntry.fiscalPeriod,
             createdAt: serverTimestamp(),
           });
         }
 
         // Audit trail: posted journal entry (includes auto-generated postings)
-        const actor = entry.postedBy || entry.createdBy || 'system';
+        const actor = finalEntry.postedBy || finalEntry.createdBy || 'system';
         const auditDocRef = doc(db, paths.auditLogs(tenantId), `acct_${journalDocRef.id}_post`);
         transaction.set(auditDocRef, {
           userId: actor,
           userEmail: actor,
           action: 'accounting.journal_post',
           module: 'accounting',
-          description: `Posted journal entry ${entry.entryNumber}`,
+          description: `Posted journal entry ${finalEntry.entryNumber}`,
           timestamp: serverTimestamp(),
           tenantId,
           entityId: journalDocRef.id,
           entityType: 'journal_entry',
-          entityName: entry.entryNumber,
+          entityName: finalEntry.entryNumber,
           metadata: {
-            source: entry.source,
-            sourceId: entry.sourceId || null,
-            totalDebit: entry.totalDebit,
-            totalCredit: entry.totalCredit,
-            date: entry.date,
+            source: finalEntry.source,
+            sourceId: finalEntry.sourceId || null,
+            totalDebit: finalEntry.totalDebit,
+            totalCredit: finalEntry.totalCredit,
+            date: finalEntry.date,
           },
           severity: 'info',
         });
@@ -354,7 +389,7 @@ class JournalEntryService {
     };
 
     if (txn) {
-      doWrite(txn);
+      await doWrite(txn);
     } else {
       await runTransaction(db, async (transaction) => doWrite(transaction));
     }
@@ -373,31 +408,147 @@ class JournalEntryService {
 
   async getAllJournalEntries(tenantId: string, options?: {
     status?: JournalEntry['status'];
+    source?: string;
     startDate?: string;
     endDate?: string;
     fiscalYear?: number;
   }): Promise<JournalEntry[]> {
-    let q = query(this.collectionRef(tenantId), orderBy('date', 'desc'));
-
-    if (options?.status) {
-      q = query(q, where('status', '==', options.status));
-    }
-    if (options?.fiscalYear) {
-      q = query(q, where('fiscalYear', '==', options.fiscalYear));
-    }
+    const { queryConstraints } = this.buildJournalEntryQueryConstraints(options);
+    const q = query(this.collectionRef(tenantId), ...queryConstraints);
 
     const snapshot = await getDocs(q);
-    let entries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry));
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as JournalEntry));
+  }
 
-    // Filter by date range in memory (Firestore limitation)
+  async getJournalEntriesPage(tenantId: string, options?: {
+    status?: JournalEntry['status'];
+    source?: string;
+    startDate?: string;
+    endDate?: string;
+    fiscalYear?: number;
+    pageSize?: number;
+    startAfterDoc?: DocumentSnapshot;
+  }): Promise<{
+    entries: JournalEntry[];
+    lastDoc: DocumentSnapshot | null;
+    hasMore: boolean;
+  }> {
+    const pageSize = options?.pageSize ?? 100;
+    const { queryConstraints } = this.buildJournalEntryQueryConstraints(options);
+    queryConstraints.push(limit(pageSize + 1));
+
+    if (options?.startAfterDoc) {
+      queryConstraints.push(startAfter(options.startAfterDoc));
+    }
+
+    const pagedQuery = query(this.collectionRef(tenantId), ...queryConstraints);
+    const snapshot = await getDocs(pagedQuery);
+
+    const docs = snapshot.docs.slice(0, pageSize);
+    return {
+      entries: docs.map((doc) => ({ id: doc.id, ...doc.data() } as JournalEntry)),
+      lastDoc: docs.length > 0 ? docs[docs.length - 1] : null,
+      hasMore: snapshot.docs.length > pageSize,
+    };
+  }
+
+  private buildJournalEntryQueryConstraints(options?: {
+    status?: JournalEntry['status'];
+    source?: string;
+    startDate?: string;
+    endDate?: string;
+    fiscalYear?: number;
+  }) {
+    const constraints: Parameters<typeof query>[1][] = [];
+
+    if (options?.status) {
+      constraints.push(where('status', '==', options.status));
+    }
+    if (options?.source) {
+      constraints.push(where('source', '==', options.source));
+    }
+    if (options?.fiscalYear) {
+      constraints.push(where('fiscalYear', '==', options.fiscalYear));
+    }
     if (options?.startDate) {
-      entries = entries.filter(e => e.date >= options.startDate!);
+      constraints.push(where('date', '>=', options.startDate));
     }
     if (options?.endDate) {
-      entries = entries.filter(e => e.date <= options.endDate!);
+      constraints.push(where('date', '<=', options.endDate));
     }
 
-    return entries;
+    constraints.push(orderBy('date', 'desc'));
+
+    return { queryConstraints: constraints };
+  }
+
+  async getJournalEntrySummary(
+    tenantId: string,
+    fiscalYear: number,
+  ): Promise<{
+    total: number;
+    posted: number;
+    drafts: number;
+    totalDebit: number;
+  }> {
+    const baseQuery = query(this.collectionRef(tenantId), where('fiscalYear', '==', fiscalYear));
+    const postedQuery = query(
+      this.collectionRef(tenantId),
+      where('fiscalYear', '==', fiscalYear),
+      where('status', '==', 'posted'),
+    );
+    const draftsQuery = query(
+      this.collectionRef(tenantId),
+      where('fiscalYear', '==', fiscalYear),
+      where('status', '==', 'draft'),
+    );
+
+    const [totalSnapshot, postedSnapshot, draftSnapshot, postedTotals] = await Promise.all([
+      getCountFromServer(baseQuery),
+      getCountFromServer(postedQuery),
+      getCountFromServer(draftsQuery),
+      getAggregateFromServer(postedQuery, {
+        totalDebit: sum('totalDebit'),
+      }),
+    ]);
+
+    return {
+      total: totalSnapshot.data().count,
+      posted: postedSnapshot.data().count,
+      drafts: draftSnapshot.data().count,
+      totalDebit: Number(postedTotals.data().totalDebit ?? 0),
+    };
+  }
+
+  async getEntryCountByStatus(
+    tenantId: string,
+    status: JournalEntry['status'],
+  ): Promise<number> {
+    const countQuery = query(this.collectionRef(tenantId), where('status', '==', status));
+    const snapshot = await getCountFromServer(countQuery);
+    return snapshot.data().count;
+  }
+
+  async getLatestPayrollDashboardEntry(tenantId: string): Promise<JournalEntry | null> {
+    const recentLimit = 100;
+    const recentPostedQuery = query(
+      this.collectionRef(tenantId),
+      where('status', '==', 'posted'),
+      orderBy('date', 'desc'),
+      limit(recentLimit),
+    );
+    const recentPostedSnapshot = await getDocs(recentPostedQuery);
+    const recentEntries = recentPostedSnapshot.docs.map(
+      doc => ({ id: doc.id, ...doc.data() } as JournalEntry),
+    );
+
+    const latestPayrollEntry = recentEntries.find(entry => entry.source === 'payroll') ?? null;
+    if (latestPayrollEntry || recentPostedSnapshot.size < recentLimit) {
+      return latestPayrollEntry;
+    }
+
+    const allPostedEntries = await this.getAllJournalEntries(tenantId, { status: 'posted' });
+    return allPostedEntries.find(entry => entry.source === 'payroll') ?? null;
   }
 
   async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
@@ -1558,6 +1709,7 @@ class GeneralLedgerService {
     tenantId: string,
     accountKey: string,
     options?: {
+      accountCode?: string;
       startDate?: string;
       endDate?: string;
       fiscalYear?: number;
@@ -1580,6 +1732,62 @@ class GeneralLedgerService {
       if (type === 'equity') return subType !== 'dividends';
       return false;
     })();
+
+    if (options?.accountCode) {
+      const periodQueryConstraints = [where('accountCode', '==', options.accountCode)];
+
+      if (options.startDate) {
+        periodQueryConstraints.push(where('entryDate', '>=', options.startDate));
+      }
+      if (options.endDate) {
+        periodQueryConstraints.push(where('entryDate', '<=', options.endDate));
+      }
+
+      const periodQuery = query(
+        this.collectionRef(tenantId),
+        ...periodQueryConstraints,
+        orderBy('entryDate'),
+      );
+      const periodSnapshot = await getDocs(periodQuery);
+      const periodEntries = periodSnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() } as GeneralLedgerEntry))
+        .sort((a, b) => {
+          const dateCmp = a.entryDate.localeCompare(b.entryDate);
+          if (dateCmp !== 0) return dateCmp;
+          const numberCmp = (a.entryNumber || '').localeCompare(b.entryNumber || '');
+          if (numberCmp !== 0) return numberCmp;
+          return (a.id || '').localeCompare(b.id || '');
+        });
+
+      let openingBalance = 0;
+      if (options.startDate) {
+        const openingQuery = query(
+          this.collectionRef(tenantId),
+          where('accountCode', '==', options.accountCode),
+          where('entryDate', '<', options.startDate),
+        );
+        const openingTotals = await getAggregateFromServer(openingQuery, {
+          totalDebit: sum('debit'),
+          totalCredit: sum('credit'),
+        });
+
+        const openingDebit = Number(openingTotals.data().totalDebit ?? 0);
+        const openingCredit = Number(openingTotals.data().totalCredit ?? 0);
+        openingBalance = isCreditNormal
+          ? subtractMoney(openingCredit, openingDebit)
+          : subtractMoney(openingDebit, openingCredit);
+      }
+
+      let runningBalance = openingBalance;
+      const entries = periodEntries.map(entry => {
+        runningBalance = isCreditNormal
+          ? addMoney(runningBalance, subtractMoney(entry.credit, entry.debit))
+          : addMoney(runningBalance, subtractMoney(entry.debit, entry.credit));
+        return { ...entry, balance: runningBalance };
+      });
+
+      return { entries, openingBalance };
+    }
 
     // Support legacy rows where accountId stored as accountCode by querying both.
     const queries = [
@@ -1684,6 +1892,33 @@ class GeneralLedgerService {
 // ============================================
 
 class TrialBalanceService {
+  async getBalanceHealth(
+    tenantId: string,
+    asOfDate: string,
+    _fiscalYear: number,
+  ): Promise<{ isBalanced: boolean; source: 'aggregate' | 'empty' }> {
+    const ledgerUpToDate = query(
+      collection(db, paths.generalLedger(tenantId)),
+      where('entryDate', '<=', asOfDate),
+    );
+    const totals = await getAggregateFromServer(ledgerUpToDate, {
+      totalDebit: sum('debit'),
+      totalCredit: sum('credit'),
+    });
+
+    const totalDebit = Number(totals.data().totalDebit ?? 0);
+    const totalCredit = Number(totals.data().totalCredit ?? 0);
+
+    if (totalDebit === 0 && totalCredit === 0) {
+      return { isBalanced: true, source: 'empty' };
+    }
+
+    return {
+      isBalanced: toDecimal(totalDebit).minus(totalCredit).abs().lessThan(0.01),
+      source: 'aggregate',
+    };
+  }
+
   /**
    * Helper: load GL entries, using snapshot+delta when available.
    * Returns entries split into "before cutoff" and "from cutoff to endDate".
@@ -1707,7 +1942,7 @@ class TrialBalanceService {
     const periodByCode = new Map<string, number>();
 
     // Try to find a snapshot that covers everything before cutoffDate
-    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, cutoffDate);
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, cutoffDate);
 
     if (snapshot) {
       // Populate opening balances from snapshot
@@ -1749,10 +1984,8 @@ class TrialBalanceService {
         }
       }
     } else {
-      // Fallback: full GL scan (backward compatible)
-      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
-      glSnapshot.docs.forEach(glDoc => {
-        const entry = glDoc.data() as GeneralLedgerEntry;
+      const entries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, endDate);
+      entries.forEach(entry => {
         if (entry.entryDate > endDate) return;
         const net = subtractMoney(entry.debit, entry.credit);
         if (entry.entryDate < cutoffDate) {
@@ -1834,7 +2067,7 @@ class TrialBalanceService {
     const accounts = await accountService.getAllAccounts(tenantId);
 
     // Try snapshot+delta; fallback to full scan
-    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, periodStart);
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, periodStart);
 
     const balanceById = new Map<string, number>();
     const balanceByCode = new Map<string, number>();
@@ -1854,11 +2087,8 @@ class TrialBalanceService {
         balanceByCode.set(e.accountCode, addMoney(balanceByCode.get(e.accountCode) ?? 0, net));
       }
     } else {
-      // Fallback: full GL scan
-      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
-      glSnapshot.docs.forEach(glDoc => {
-        const entry = glDoc.data() as GeneralLedgerEntry;
-        if (entry.entryDate < periodStart || entry.entryDate > periodEnd) return;
+      const entries = await balanceSnapshotService.queryGLRange(tenantId, periodStart, periodEnd);
+      entries.forEach(entry => {
         const net = subtractMoney(entry.debit, entry.credit);
         balanceById.set(entry.accountId, addMoney(balanceById.get(entry.accountId) ?? 0, net));
         balanceByCode.set(entry.accountCode, addMoney(balanceByCode.get(entry.accountCode) ?? 0, net));
@@ -1926,7 +2156,7 @@ class TrialBalanceService {
     const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
 
     const accounts = await accountService.getAllAccounts(tenantId);
-    const snapshot = await balanceSnapshotService.findLatestSnapshotBefore(tenantId, asOfDate);
+    const snapshot = await balanceSnapshotService.ensureSnapshotCoverageBefore(tenantId, asOfDate);
 
     const balanceById = new Map<string, number>();
     const balanceByCode = new Map<string, number>();
@@ -1952,46 +2182,20 @@ class TrialBalanceService {
         balanceByCode.set(e.accountCode, addMoney(balanceByCode.get(e.accountCode) ?? 0, net));
       }
 
-      // Current year revenue/expense: snapshot cumulative includes pre-FY amounts.
-      // We need only FY-to-date. Use snapshot if its period is in the same FY,
-      // or query from FY start.
-      const fySnapshot = snapshot.year === fiscalYear
-        ? snapshot
-        : await balanceSnapshotService.findLatestSnapshotBefore(tenantId, fyStart);
-
-      if (fySnapshot && fySnapshot.year === fiscalYear) {
-        // Snapshot is within this FY — its period activity covers some FY months.
-        // We need cumulative from FY start through asOfDate.
-        // Compute: snapshot's cumulative - (pre-FY cumulative from an earlier snapshot)
-        // Simpler approach: query GL from FY start to asOfDate for revenue/expense only
-        const fyEntries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
-        for (const e of fyEntries) {
-          if (e.entryDate < fyStart) continue;
-          revenueExpenseById.set(e.accountId, addMoney(revenueExpenseById.get(e.accountId) ?? 0, subtractMoney(e.debit, e.credit)));
-        }
-      } else {
-        // No FY-relevant snapshot; query FY range
-        const fyEntries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
-        for (const e of fyEntries) {
-          if (e.entryDate < fyStart) continue;
-          revenueExpenseById.set(e.accountId, addMoney(revenueExpenseById.get(e.accountId) ?? 0, subtractMoney(e.debit, e.credit)));
-        }
+      const fyEntries = await balanceSnapshotService.queryGLRange(tenantId, fyStart, asOfDate);
+      for (const e of fyEntries) {
+        revenueExpenseById.set(e.accountId, addMoney(revenueExpenseById.get(e.accountId) ?? 0, subtractMoney(e.debit, e.credit)));
       }
     } else {
-      // Fallback: full GL scan
-      const glSnapshot = await getDocs(collection(db, paths.generalLedger(tenantId)));
-      glSnapshot.docs.forEach(glDoc => {
-        const entry = glDoc.data() as GeneralLedgerEntry;
-        if (entry.entryDate > asOfDate) return;
+      const entries = await balanceSnapshotService.queryGLDelta(tenantId, undefined, asOfDate);
+      entries.forEach(entry => {
         const net = subtractMoney(entry.debit, entry.credit);
         balanceById.set(entry.accountId, addMoney(balanceById.get(entry.accountId) ?? 0, net));
         balanceByCode.set(entry.accountCode, addMoney(balanceByCode.get(entry.accountCode) ?? 0, net));
       });
 
-      // Current year earnings from full scan
-      glSnapshot.docs.forEach(glDoc => {
-        const entry = glDoc.data() as GeneralLedgerEntry;
-        if (entry.entryDate < fyStart || entry.entryDate > asOfDate) return;
+      entries.forEach(entry => {
+        if (entry.entryDate < fyStart) return;
         revenueExpenseById.set(entry.accountId, addMoney(revenueExpenseById.get(entry.accountId) ?? 0, subtractMoney(entry.debit, entry.credit)));
       });
     }
@@ -2251,11 +2455,10 @@ class FiscalPeriodService {
       severity: 'warning',
     }).catch(err => console.error('Audit log failed:', err));
 
-    // Delete the stale snapshot for the reopened period
+    // Delete stale snapshots for the reopened period and everything after it
     if (period) {
-      const sid = `${period.year}-${String(period.period).padStart(2, '0')}`;
       import('@/services/balanceSnapshotService').then(({ balanceSnapshotService }) =>
-        balanceSnapshotService.deleteSnapshot(tenantId, sid)
+        balanceSnapshotService.deleteSnapshotsFromDate(tenantId, period.endDate)
       ).catch(err => console.error('Snapshot deletion failed:', err));
     }
   }

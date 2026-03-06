@@ -69,7 +69,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL, formatDateTL } from "@/lib/dateUtils";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import {
   useShiftsByRange,
@@ -134,7 +134,7 @@ export default function ShiftScheduling() {
   // Real data hooks
   const tenantId = useTenantId();
   const { user } = useAuth();
-  const { data: realEmployees = [], isLoading: empLoading } = useAllEmployees();
+  const { data: realEmployees = [], isLoading: empLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: realDepartments = [], isLoading: deptLoading } = useDepartments(tenantId);
 
   const weekEndDate = useMemo(() => {
@@ -155,7 +155,6 @@ export default function ShiftScheduling() {
 
   // Map real employees for UI
   const employees: MappedEmployee[] = useMemo(() => realEmployees
-    .filter((e) => e.status === 'active')
     .map((e) => ({
       id: e.id!,
       name: `${e.personalInfo.firstName} ${e.personalInfo.lastName}`,

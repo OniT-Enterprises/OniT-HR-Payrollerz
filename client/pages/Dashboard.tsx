@@ -17,7 +17,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAuth } from "@/contexts/AuthContext";
@@ -173,7 +173,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
   const { t } = useI18n();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: "active" });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2);
   const loading = employeesLoading || leaveStatsLoading || dueDatesLoading;
@@ -187,7 +187,6 @@ export default function Dashboard() {
   });
 
   // Derived data
-  const activeEmployees = employees.filter((e) => e.status === "active");
   const totalPayroll = activeEmployees.reduce(
     (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
     0
@@ -237,7 +236,7 @@ export default function Dashboard() {
   };
 
   // Compliance issues — shared utility, single source of truth
-  const getBlockingIssues = getComplianceIssues(employees).slice(0, 6);
+  const getBlockingIssues = getComplianceIssues(activeEmployees).slice(0, 6);
 
   const daysUntilPayday = getDaysUntilPayday();
   const compliance = getComplianceStatus();

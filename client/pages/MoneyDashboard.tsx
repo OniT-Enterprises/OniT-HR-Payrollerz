@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
-import { useInvoiceStats, useAllInvoices } from '@/hooks/useInvoices';
+import { useInvoiceStats } from '@/hooks/useInvoices';
 import { usePayablesSummary } from '@/hooks/useBills';
 import GuidancePanel from '@/components/GuidancePanel';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
@@ -38,9 +38,8 @@ export default function MoneyDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { data: stats = null, isLoading: statsLoading } = useInvoiceStats();
-  const { isLoading: invoicesLoading } = useAllInvoices();
   const { data: payablesSummary = null, isLoading: payablesLoading } = usePayablesSummary();
-  const loading = statsLoading || invoicesLoading || payablesLoading;
+  const loading = statsLoading || payablesLoading;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

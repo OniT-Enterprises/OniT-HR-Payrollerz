@@ -7,7 +7,7 @@
  * Calculation logic extracted to usePayrollCalculator hook.
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -44,7 +44,7 @@ import {
   Building,
   Lock,
 } from "lucide-react";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useCreatePayrollRunWithRecords } from "@/hooks/usePayroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL } from "@/lib/dateUtils";
@@ -73,9 +73,8 @@ export default function RunPayroll() {
   const { user } = useAuth();
   const tenantId = useTenantId();
 
-  // React Query: fetch all employees
-  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
-  const activeEmployees = useMemo(() => allEmployees.filter(e => e.status === 'active'), [allEmployees]);
+  // React Query: fetch active employees only
+  const { data: activeEmployees = [], isLoading: loadingEmployees } = useEmployeeDirectory({ status: 'active' });
 
   // React Query: mutation for creating payroll runs
   const createPayrollMutation = useCreatePayrollRunWithRecords();

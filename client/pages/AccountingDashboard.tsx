@@ -40,7 +40,7 @@ import {
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
-import { useAccountingDashboard } from "@/hooks/useAccounting";
+import { useAccountingBalanceHealth, useAccountingDashboard } from "@/hooks/useAccounting";
 import { formatDateTL } from "@/lib/dateUtils";
 import GuidancePanel from "@/components/GuidancePanel";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
@@ -152,11 +152,12 @@ export default function AccountingDashboard() {
     canManage()
   );
 
-  const { data: dashboardData, isLoading: loading } = useAccountingDashboard();
+  const { data: dashboardData, isLoading: summaryLoading } = useAccountingDashboard();
+  const { data: balanceHealth, isLoading: balanceLoading } = useAccountingBalanceHealth();
 
   const accountingStatus = {
     payrollPosted: dashboardData?.payrollPosted ?? false,
-    trialBalanced: dashboardData?.trialBalanced ?? false,
+    trialBalanced: balanceHealth?.trialBalanced ?? null,
     pendingEntries: dashboardData?.pendingEntries ?? 0,
     lastPayrollAmount: dashboardData?.lastPayrollAmount ?? 0,
     lastPayrollDate: dashboardData?.lastPayrollDate
@@ -271,7 +272,7 @@ export default function AccountingDashboard() {
       ]
     : [];
 
-  if (loading) {
+  if (summaryLoading) {
     return <AccountingDashboardSkeleton />;
   }
 
@@ -408,36 +409,55 @@ export default function AccountingDashboard() {
               </div>
 
               {/* Trial Balance - Primary health indicator */}
-              <div className={`flex items-center gap-3 p-3 rounded-lg ${
-                accountingStatus.trialBalanced
-                  ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50"
-                  : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50"
-              }`}>
-                {accountingStatus.trialBalanced ? (
-                  <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
-                ) : (
-                  <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{t("accounting.dashboard.trialBalanceLabel")}</p>
-                  <p className={`text-xs ${
-                    accountingStatus.trialBalanced
-                      ? "text-emerald-600 dark:text-emerald-400"
-                      : "text-red-600 dark:text-red-400"
-                  }`}>
-                    {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.outOfBalance")}
-                  </p>
+              {accountingStatus.trialBalanced === null ? (
+                <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 border border-border/50">
+                  <AlertCircle className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{t("accounting.dashboard.trialBalanceLabel")}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {balanceLoading ? "Checking…" : t("accounting.dashboard.check")}
+                    </p>
+                  </div>
+                  {balanceLoading ? (
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                  ) : (
+                    <Badge variant="outline" className="text-xs font-semibold">
+                      {t("accounting.dashboard.check")}
+                    </Badge>
+                  )}
                 </div>
-                <Badge
-                  className={`text-xs font-semibold ${
-                    accountingStatus.trialBalanced
-                      ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700"
-                      : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700"
-                  }`}
-                >
-                  {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.check")}
-                </Badge>
-              </div>
+              ) : (
+                <div className={`flex items-center gap-3 p-3 rounded-lg ${
+                  accountingStatus.trialBalanced
+                    ? "bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50"
+                    : "bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800/50"
+                }`}>
+                  {accountingStatus.trialBalanced ? (
+                    <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400 flex-shrink-0" />
+                  ) : (
+                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                  )}
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{t("accounting.dashboard.trialBalanceLabel")}</p>
+                    <p className={`text-xs ${
+                      accountingStatus.trialBalanced
+                        ? "text-emerald-600 dark:text-emerald-400"
+                        : "text-red-600 dark:text-red-400"
+                    }`}>
+                      {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.outOfBalance")}
+                    </p>
+                  </div>
+                  <Badge
+                    className={`text-xs font-semibold ${
+                      accountingStatus.trialBalanced
+                        ? "bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700"
+                        : "bg-red-100 dark:bg-red-900/50 text-red-700 dark:text-red-300 border-red-200 dark:border-red-700"
+                    }`}
+                  >
+                    {accountingStatus.trialBalanced ? t("accounting.dashboard.balanced") : t("accounting.dashboard.check")}
+                  </Badge>
+                </div>
+              )}
 
               {/* Pending Items */}
               <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
@@ -459,7 +479,7 @@ export default function AccountingDashboard() {
             </div>
 
             {/* CTA if there are issues */}
-            {(!accountingStatus.payrollPosted || !accountingStatus.trialBalanced || accountingStatus.pendingEntries > 0) && (
+            {(!accountingStatus.payrollPosted || accountingStatus.trialBalanced === false || accountingStatus.pendingEntries > 0) && (
               <div className="mt-4 pt-4 border-t border-border/50">
                 <Button
                   variant="outline"

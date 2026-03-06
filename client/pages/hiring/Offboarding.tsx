@@ -37,7 +37,7 @@ import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { peopleNavConfig } from "@/lib/moduleNav";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -79,7 +79,7 @@ export default function Offboarding() {
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
-  const { data: employees = [], isLoading: employeesLoading } = useAllEmployees();
+  const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
 
   // Data via React Query
   const { data: activeCases = [], isLoading: activeCasesLoading } = useActiveCases();
@@ -105,8 +105,7 @@ export default function Offboarding() {
   });
 
   // Filter employees for selection
-  const activeEmployees = employees.filter((emp) => emp.status === "active");
-  const filteredEmployees = activeEmployees.filter((employee) => {
+  const filteredEmployees = employees.filter((employee) => {
     const matchesDepartment =
       newOffboarding.department === "all" ||
       employee.jobDetails.department === newOffboarding.department;
@@ -319,7 +318,7 @@ export default function Offboarding() {
               </div>
             </div>
 
-            {activeEmployees.length > 0 && (
+            {employees.length > 0 && (
               <Dialog open={showDialog} onOpenChange={setShowDialog}>
                 <DialogTrigger asChild>
                   <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg">

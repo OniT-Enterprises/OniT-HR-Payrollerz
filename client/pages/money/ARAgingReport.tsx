@@ -4,6 +4,7 @@
  */
 
 import { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -11,8 +12,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { useAllInvoices } from '@/hooks/useInvoices';
+import { invoiceService } from '@/services/invoiceService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
@@ -45,22 +47,24 @@ interface CustomerAging {
 export default function ARAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: allInvoices = [], isLoading: loading } = useAllInvoices();
+  const tenantId = useTenantId();
+  const { data: allInvoices = [], isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'arAging'],
+    queryFn: () => invoiceService.getOutstandingInvoices(tenantId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
 
   const { buckets, customerAging, totalOutstanding } = useMemo(() => {
     if (allInvoices.length === 0) {
       return { buckets: [] as AgingBucket[], customerAging: [] as CustomerAging[], totalOutstanding: 0 };
     }
 
-    // Filter to only unpaid invoices
-    const unpaidInvoices = allInvoices.filter(
-      inv => inv.status !== 'paid' && inv.status !== 'cancelled' && inv.status !== 'draft'
-    );
-
     const now = new Date();
 
     // Calculate days overdue for each invoice
-    const invoicesWithAge = unpaidInvoices.map(inv => {
+    const invoicesWithAge = allInvoices.map(inv => {
       const dueDate = new Date(inv.dueDate);
       const daysOverdue = Math.floor((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
       return { ...inv, daysOverdue };
@@ -119,7 +123,7 @@ export default function ARAgingReport() {
     return {
       buckets: computedBuckets,
       customerAging: sortedCustomers,
-      totalOutstanding: calcTotal(unpaidInvoices),
+      totalOutstanding: calcTotal(allInvoices),
     };
   }, [allInvoices, t]);
 

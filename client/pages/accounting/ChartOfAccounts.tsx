@@ -121,7 +121,7 @@ export default function ChartOfAccounts() {
     }
   };
 
-  // Group accounts by type with deduplication
+  // Group accounts by type with deduplication + precompute children map
   const groupedAccounts = useMemo(() => {
     // First, deduplicate by code (in case of data issues)
     const uniqueByCode = new Map<string, Account>();
@@ -154,20 +154,36 @@ export default function ChartOfAccounts() {
     const childCodes = new Set(children.map(c => c.code));
     const cleanTopLevel = topLevel.filter(a => !childCodes.has(a.code));
 
-    return { topLevel: cleanTopLevel, children, all: filtered };
+    // Build a lookup map: parentId → children[]  (avoids per-row rescanning)
+    const idToCode = new Map<string, string>();
+    accounts.forEach((a) => { if (a.id) idToCode.set(a.id, a.code); });
+
+    const childrenByParent = new Map<string, Account[]>();
+    children.forEach((child) => {
+      const keys: string[] = [];
+      if (child.parentAccountId) keys.push(child.parentAccountId);
+      if (child.parentCode) keys.push(child.parentCode);
+      keys.forEach((key) => {
+        const arr = childrenByParent.get(key);
+        if (arr) arr.push(child);
+        else childrenByParent.set(key, [child]);
+      });
+    });
+
+    return { topLevel: cleanTopLevel, childrenByParent, idToCode, all: filtered };
   }, [accounts, typeFilter, searchTerm]);
 
-  // Get children of an account
+  // Get children of an account (O(1) lookup)
   const getChildren = (parentId: string) => {
-    // Support both stored parent document IDs and legacy parent codes
-    const parent = accounts.find((a) => a.id === parentId);
-    const parentCode = parent?.code;
-
-    return groupedAccounts.children.filter(
-      (a) =>
-        a.parentAccountId === parentId ||
-        (!!parentCode && (a.parentAccountId === parentCode || a.parentCode === parentCode))
-    );
+    const byId = groupedAccounts.childrenByParent.get(parentId) ?? [];
+    const parentCode = groupedAccounts.idToCode.get(parentId);
+    if (!parentCode || parentCode === parentId) return byId;
+    const byCode = groupedAccounts.childrenByParent.get(parentCode) ?? [];
+    // Merge, deduplicating by id
+    if (byId.length === 0) return byCode;
+    if (byCode.length === 0) return byId;
+    const seen = new Set(byId.map(a => a.id));
+    return [...byId, ...byCode.filter(a => !seen.has(a.id))];
   };
 
   // Toggle expand/collapse
@@ -385,16 +401,19 @@ export default function ChartOfAccounts() {
     );
   };
 
-  // Summary stats
+  // Summary stats (single pass)
   const stats = useMemo(() => {
-    return {
-      total: accounts.length,
-      assets: accounts.filter((a) => a.type === "asset").length,
-      liabilities: accounts.filter((a) => a.type === "liability").length,
-      equity: accounts.filter((a) => a.type === "equity").length,
-      revenue: accounts.filter((a) => a.type === "revenue").length,
-      expenses: accounts.filter((a) => a.type === "expense").length,
-    };
+    const counts = { total: accounts.length, assets: 0, liabilities: 0, equity: 0, revenue: 0, expenses: 0 };
+    for (const a of accounts) {
+      switch (a.type) {
+        case "asset": counts.assets++; break;
+        case "liability": counts.liabilities++; break;
+        case "equity": counts.equity++; break;
+        case "revenue": counts.revenue++; break;
+        case "expense": counts.expenses++; break;
+      }
+    }
+    return counts;
   }, [accounts]);
 
   if (loading) {

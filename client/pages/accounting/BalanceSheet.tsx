@@ -6,7 +6,7 @@
 
 import React, { useState } from 'react';
 import type { BalanceSheet as BalanceSheetType } from '../../types/accounting';
-import { useGenerateBalanceSheet } from '@/hooks/useAccounting';
+import { useBalanceSheet } from '@/hooks/useAccounting';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -48,17 +48,36 @@ import { getTodayTL } from "@/lib/dateUtils";
 
 export default function BalanceSheet() {
   const { t } = useI18n();
-  const generateMutation = useGenerateBalanceSheet();
 
-  const [report, setReport] = useState<BalanceSheetType | null>(null);
   const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
+  const [requestedReport, setRequestedReport] = useState<{
+    asOfDate: string;
+    fiscalYear: number;
+  } | null>(null);
 
-  const generating = generateMutation.isPending;
+  const reportQuery = useBalanceSheet(
+    requestedReport?.asOfDate ?? asOfDate,
+    requestedReport?.fiscalYear ?? new Date(asOfDate).getFullYear(),
+    !!requestedReport,
+  );
+
+  const report: BalanceSheetType | null = reportQuery.data ?? null;
+
+  const generating = reportQuery.isFetching;
 
   const handleGenerate = async () => {
-    const fiscalYear = new Date(asOfDate).getFullYear();
-    const result = await generateMutation.mutateAsync({ asOfDate, fiscalYear });
-    setReport(result);
+    const nextRequest = {
+      asOfDate,
+      fiscalYear: new Date(asOfDate).getFullYear(),
+    };
+    const isSameRequest = requestedReport
+      && requestedReport.asOfDate === nextRequest.asOfDate
+      && requestedReport.fiscalYear === nextRequest.fiscalYear;
+
+    setRequestedReport(nextRequest);
+    if (isSameRequest) {
+      await reportQuery.refetch();
+    }
   };
 
   // Export to CSV

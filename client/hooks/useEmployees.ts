@@ -19,6 +19,8 @@ export const employeeKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'employees'] as const,
   lists: (tenantId: string) => [...employeeKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, filters: EmployeeFilters) => [...employeeKeys.lists(tenantId), filters] as const,
+  directory: (tenantId: string, filters: Omit<EmployeeFilters, 'pageSize' | 'startAfterDoc'>) =>
+    [...employeeKeys.all(tenantId), 'directory', filters] as const,
   details: (tenantId: string) => [...employeeKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...employeeKeys.details(tenantId), id] as const,
   counts: (tenantId: string) => [...employeeKeys.all(tenantId), 'counts'] as const,
@@ -52,6 +54,20 @@ export function useAllEmployees(maxResults: number = SEARCH_FETCH_LIMIT, enabled
     gcTime: 30 * 60 * 1000,
     enabled,
     select: (data: PaginatedResult<Employee>) => data.data, // Return just the array
+  });
+}
+
+export function useEmployeeDirectory(
+  filters: Omit<EmployeeFilters, 'pageSize' | 'startAfterDoc'> = {},
+  enabled: boolean = true,
+) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: employeeKeys.directory(tenantId, filters),
+    queryFn: () => employeeService.getAllEmployees(tenantId, filters),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 

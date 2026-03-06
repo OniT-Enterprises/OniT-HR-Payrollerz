@@ -78,8 +78,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useBenefitEnrollments, useCreateBenefitEnrollment, useUpdateBenefitEnrollment, useTerminateBenefitEnrollment } from "@/hooks/usePayroll";
-import { useAllEmployees } from "@/hooks/useEmployees";
-import type { Employee } from "@/services/employeeService";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BenefitEnrollment } from "@/types/payroll";
 import { SEO } from "@/components/SEO";
@@ -131,8 +130,7 @@ export default function EmployeeAllowances() {
 
   // React Query data hooks
   const { data: allowances = [], isLoading: loadingAllowances } = useBenefitEnrollments();
-  const { data: allEmployees = [], isLoading: loadingEmployees } = useAllEmployees();
-  const employees = useMemo(() => allEmployees.filter((e: Employee) => e.status === "active"), [allEmployees]);
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({ status: 'active' });
   const loading = loadingAllowances || loadingEmployees;
 
   // React Query mutation hooks

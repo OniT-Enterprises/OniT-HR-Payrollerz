@@ -4,6 +4,7 @@
  */
 
 import { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,12 +18,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
+import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { useAllInvoices } from '@/hooks/useInvoices';
-import { useAllBills } from '@/hooks/useBills';
+import { invoiceService } from '@/services/invoiceService';
+import { billService } from '@/services/billService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
-import { formatDateTL } from '@/lib/dateUtils';
+import { formatDateTL, toDateStringTL } from '@/lib/dateUtils';
 import {
   Scale,
   Calendar,
@@ -46,11 +48,8 @@ interface BalanceSheetData {
 
 export default function BalanceSheet() {
   const { t } = useI18n();
+  const tenantId = useTenantId();
   const [asOfDate, setAsOfDate] = useState<string>('today');
-
-  const { data: allInvoices = [], isLoading: loadingInvoices } = useAllInvoices();
-  const { data: allBills = [], isLoading: loadingBills } = useAllBills();
-  const loading = loadingInvoices || loadingBills;
 
   const asOf = useMemo(() => {
     const now = new Date();
@@ -69,50 +68,51 @@ export default function BalanceSheet() {
         return now;
     }
   }, [asOfDate]);
+  const asOfStr = toDateStringTL(asOf);
 
-  const data = useMemo<BalanceSheetData>(() => {
-    // Calculate Accounts Receivable (unpaid invoices as of date)
-    const accountsReceivable = allInvoices
-      .filter(inv => {
-        const invoiceDate = new Date(inv.issueDate);
-        return invoiceDate <= asOf && inv.status !== 'paid' && inv.status !== 'cancelled';
-      })
-      .reduce((sum, inv) => sum + (inv.total - (inv.amountPaid || 0)), 0);
+  const { data = {
+    cashAndBank: 0,
+    accountsReceivable: 0,
+    totalAssets: 0,
+    accountsPayable: 0,
+    totalLiabilities: 0,
+    retainedEarnings: 0,
+    totalEquity: 0,
+  }, isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'balanceSheet', asOfStr],
+    queryFn: async (): Promise<BalanceSheetData> => {
+      const [
+        accountsReceivable,
+        accountsPayable,
+        cashReceived,
+        cashPaid,
+      ] = await Promise.all([
+        invoiceService.getOutstandingReceivablesTotalAsOf(tenantId, asOfStr),
+        billService.getOutstandingPayablesTotalAsOf(tenantId, asOfStr),
+        invoiceService.getPaidInvoiceTotalAsOf(tenantId, asOfStr),
+        billService.getPaidBillAmountAsOf(tenantId, asOfStr),
+      ]);
 
-    // Calculate Accounts Payable (unpaid bills as of date)
-    const accountsPayable = allBills
-      .filter(bill => {
-        const billDate = new Date(bill.billDate);
-        return billDate <= asOf && bill.status !== 'paid' && bill.status !== 'cancelled';
-      })
-      .reduce((sum, bill) => sum + (bill.amount - (bill.amountPaid || 0)), 0);
+      const cashAndBank = cashReceived - cashPaid;
+      const totalAssets = cashAndBank + accountsReceivable;
+      const totalLiabilities = accountsPayable;
+      const retainedEarnings = totalAssets - totalLiabilities;
+      const totalEquity = retainedEarnings;
 
-    // Calculate cash received (simplified - sum of paid invoices)
-    const cashReceived = allInvoices
-      .filter(inv => inv.status === 'paid' && inv.paidAt && new Date(inv.paidAt) <= asOf)
-      .reduce((sum, inv) => sum + inv.total, 0);
-
-    // Calculate cash paid (simplified - sum of paid bills)
-    const cashPaid = allBills
-      .filter(bill => bill.status === 'paid' && bill.paidAt && new Date(bill.paidAt) <= asOf)
-      .reduce((sum, bill) => sum + bill.amount, 0);
-
-    const cashAndBank = cashReceived - cashPaid;
-    const totalAssets = cashAndBank + accountsReceivable;
-    const totalLiabilities = accountsPayable;
-    const retainedEarnings = totalAssets - totalLiabilities;
-    const totalEquity = retainedEarnings;
-
-    return {
-      cashAndBank,
-      accountsReceivable,
-      totalAssets,
-      accountsPayable,
-      totalLiabilities,
-      retainedEarnings,
-      totalEquity,
-    };
-  }, [allBills, allInvoices, asOf]);
+      return {
+        cashAndBank,
+        accountsReceivable,
+        totalAssets,
+        accountsPayable,
+        totalLiabilities,
+        retainedEarnings,
+        totalEquity,
+      };
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
+  });
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

@@ -8,6 +8,7 @@ import {
   doc,
   getDocs,
   getDoc,
+  getAggregateFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -22,6 +23,8 @@ import {
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
+  documentId,
+  sum,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -48,6 +51,8 @@ export interface BillFilters {
   status?: BillStatus;
   vendorId?: string;
   category?: ExpenseCategory;
+  dateFrom?: string;
+  dateTo?: string;
 
   // Pagination
   pageSize?: number;
@@ -118,6 +123,8 @@ class BillService {
       status,
       vendorId,
       category,
+      dateFrom,
+      dateTo,
       pageSize = 100,
       startAfterDoc,
       searchTerm,
@@ -136,6 +143,12 @@ class BillService {
     }
     if (category) {
       constraints.push(where('category', '==', category));
+    }
+    if (dateFrom) {
+      constraints.push(where('billDate', '>=', dateFrom));
+    }
+    if (dateTo) {
+      constraints.push(where('billDate', '<=', dateTo));
     }
 
     // Ordering and pagination
@@ -209,6 +222,103 @@ class BillService {
       hasMore = result.hasMore;
     }
     return all;
+  }
+
+  async getBillsByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    extraFilters: Omit<BillFilters, 'pageSize' | 'startAfterDoc' | 'dateFrom' | 'dateTo'> = {}
+  ): Promise<Bill[]> {
+    const MAX_PAGES = 100;
+    const all: Bill[] = [];
+    let lastDoc: DocumentSnapshot | undefined;
+    let hasMore = true;
+    let pages = 0;
+
+    while (hasMore) {
+      if (++pages > MAX_PAGES) {
+        console.warn(`getBillsByDateRange: safety limit of ${MAX_PAGES} pages reached, returning ${all.length} records`);
+        break;
+      }
+      const result = await this.getBills(tenantId, {
+        ...extraFilters,
+        dateFrom: startDate,
+        dateTo: endDate,
+        pageSize: 500,
+        startAfterDoc: lastDoc,
+      });
+      all.push(...result.data);
+      lastDoc = result.lastDoc ?? undefined;
+      hasMore = result.hasMore;
+    }
+
+    return all;
+  }
+
+  async getOutstandingPayablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const unpaidBills = await this.getUnpaidBills(tenantId);
+    return sumMoney(
+      unpaidBills
+        .filter((bill) => bill.billDate <= asOfDate)
+        .map((bill) => bill.amount - (bill.amountPaid || 0))
+    );
+  }
+
+  async getPaidBillAmountByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<number> {
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', '==', 'paid'),
+        where('paidAt', '>=', new Date(`${startDate}T00:00:00.000+09:00`)),
+        where('paidAt', '<=', new Date(`${endDate}T23:59:59.999+09:00`)),
+      ),
+      {
+        totalAmount: sum('amount'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+  }
+
+  async getPaidBillAmountAsOf(tenantId: string, asOfDate: string): Promise<number> {
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', '==', 'paid'),
+        where('paidAt', '<=', new Date(`${asOfDate}T23:59:59.999+09:00`)),
+      ),
+      {
+        totalAmount: sum('amount'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+  }
+
+  async getVATSummary(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ inputVAT: number; expenseCount: number }> {
+    const bills = await this.getBillsByDateRange(tenantId, startDate, endDate);
+
+    let inputVAT = 0;
+    let expenseCount = 0;
+
+    for (const bill of bills) {
+      const vatAmount = Number(bill.vatAmount) || 0;
+      if (vatAmount > 0) {
+        inputVAT = addMoney(inputVAT, vatAmount);
+        expenseCount += 1;
+      }
+    }
+
+    return { inputVAT, expenseCount };
   }
 
   /**
@@ -709,6 +819,66 @@ class BillService {
     });
   }
 
+  async getPaymentCandidates(
+    tenantId: string,
+    startDate: string,
+    endDate: string,
+    maxResults: number = 50,
+  ): Promise<Array<BillPayment & {
+    billId: string;
+    billNumber?: string;
+    billDescription?: string;
+    vendorName?: string;
+  }>> {
+    const paymentsQuery = query(
+      this.paymentsRef(tenantId),
+      where('date', '>=', startDate),
+      where('date', '<=', endDate),
+      orderBy('date', 'desc'),
+      limit(maxResults),
+    );
+    const querySnapshot = await getDocs(paymentsQuery);
+
+    const payments = querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        billId: data.billId,
+        date: data.date,
+        amount: data.amount,
+        method: data.method,
+        reference: data.reference,
+        notes: data.notes,
+        createdAt: data.createdAt?.toDate() || new Date(),
+      } as BillPayment & { billId: string };
+    });
+
+    const uniqueBillIds = Array.from(new Set(payments.map((payment) => payment.billId).filter(Boolean)));
+    const billsById = new Map<string, Bill>();
+
+    for (let index = 0; index < uniqueBillIds.length; index += 10) {
+      const chunk = uniqueBillIds.slice(index, index + 10);
+      const billsQuery = query(
+        this.collectionRef(tenantId),
+        where(documentId(), 'in', chunk),
+      );
+      const billSnapshot = await getDocs(billsQuery);
+      billSnapshot.docs.forEach((billDoc) => {
+        billsById.set(billDoc.id, mapBill(billDoc));
+      });
+    }
+
+    return payments.map((payment) => {
+      const bill = billsById.get(payment.billId);
+      return {
+        ...payment,
+        billNumber: bill?.billNumber,
+        billDescription: bill?.description,
+        vendorName: bill?.vendorName,
+      };
+    });
+  }
+
   // ----------------------------------------
   // Stats
   // ----------------------------------------
@@ -784,12 +954,7 @@ class BillService {
    * Update overdue status for all bills
    */
   async updateOverdueStatuses(tenantId: string): Promise<number> {
-    const today = getTodayTL();
-    const bills = await this.getAllBills(tenantId);
-
-    const overdue = bills.filter(
-      b => ['pending', 'partial'].includes(b.status) && b.dueDate < today
-    );
+    const overdue = await this.getOverdueBills(tenantId);
 
     // Batch all updates (max 500 per batch)
     for (let i = 0; i < overdue.length; i += 499) {

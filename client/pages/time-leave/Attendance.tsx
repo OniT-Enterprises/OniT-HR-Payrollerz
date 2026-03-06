@@ -45,7 +45,7 @@ import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
 
 const FaceClockIn = lazy(() => import("@/components/attendance/FaceClockIn"));
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import {
   useAttendanceByDate,
@@ -82,14 +82,14 @@ export default function Attendance() {
   const isToday = selectedDate === today;
 
   // Data fetching via React Query
-  const employeesQuery = useAllEmployees();
+  const employeesQuery = useEmployeeDirectory({ status: 'active' });
   const deptQuery = useDepartments(tenantId);
   const attendanceQuery = useAttendanceByDate(selectedDate);
   const markAttendanceMutation = useMarkAttendance();
 
   const loading = employeesQuery.isLoading || deptQuery.isLoading || attendanceQuery.isLoading;
   const employees = useMemo(
-    () => (employeesQuery.data ?? []).filter((e: Employee) => e.status === 'active'),
+    () => employeesQuery.data ?? [],
     [employeesQuery.data]
   );
   const departments = deptQuery.data ?? [];

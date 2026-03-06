@@ -54,7 +54,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayrollRunAsPaid, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { payrollNavConfig } from "@/lib/moduleNav";
@@ -120,7 +120,6 @@ export default function PayrollHistory() {
 
   // React Query: payroll runs
   const { data: payrollRuns = [], isLoading: loading } = usePayrollRuns();
-  const { data: employees = [] } = useAllEmployees(2000);
 
   // React Query: mutations
   const approveMutation = useApprovePayrollRun();
@@ -146,6 +145,7 @@ export default function PayrollHistory() {
   // Approval/Rejection
   const [approveRun, setApproveRun] = useState<PayrollRun | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({}, showApproveDialog);
   const [approveRunRecords, setApproveRunRecords] = useState<PayrollRecord[]>([]);
   const [loadingApproveAllocationCheck, setLoadingApproveAllocationCheck] = useState(false);
   const [approveUnassignedEmployeeCount, setApproveUnassignedEmployeeCount] = useState(0);
@@ -189,6 +189,10 @@ export default function PayrollHistory() {
     let cancelled = false;
 
     const loadApprovalChecks = async () => {
+      if (loadingEmployees) {
+        setLoadingApproveAllocationCheck(true);
+        return;
+      }
       setLoadingApproveAllocationCheck(true);
       setConfirmUnassignedAllocation(false);
       try {
@@ -224,6 +228,7 @@ export default function PayrollHistory() {
   }, [
     approveRun?.id,
     employeeAllocationMeta,
+    loadingEmployees,
     showApproveDialog,
     t,
     tenantId,

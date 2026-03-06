@@ -3,7 +3,7 @@
  * Shows cash inflows and outflows over a period
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -20,8 +20,8 @@ import {
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { useAllInvoices } from '@/hooks/useInvoices';
-import { useAllBills } from '@/hooks/useBills';
+import { invoiceService } from '@/services/invoiceService';
+import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -90,59 +90,44 @@ export default function Cashflow() {
   const startStr = toDateStringTL(start);
   const endStr = toDateStringTL(end);
 
-  const { data: allInvoices = [], isLoading: invoicesLoading } = useAllInvoices();
-  const { data: allBills = [], isLoading: billsLoading } = useAllBills();
-  const { data: expenses = [], isLoading: expensesLoading } = useQuery({
-    queryKey: ['expenses', tenantId, 'dateRange', startStr, endStr],
-    queryFn: () => expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
+  const { data = {
+    customerPayments: 0,
+    totalInflows: 0,
+    vendorPayments: 0,
+    expenses: 0,
+    totalOutflows: 0,
+    netCashflow: 0,
+    openingBalance: 0,
+    closingBalance: 0,
+  }, isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'cashflow', startStr, endStr],
+    queryFn: async (): Promise<CashflowData> => {
+      const [customerPayments, vendorPayments, expenseTotal] = await Promise.all([
+        invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+        billService.getPaidBillAmountByDateRange(tenantId, startStr, endStr),
+        expenseService.getTotalExpenses(tenantId, startStr, endStr),
+      ]);
+
+      const totalInflows = customerPayments;
+      const totalOutflows = vendorPayments + expenseTotal;
+      const netCashflow = totalInflows - totalOutflows;
+      const openingBalance = 0;
+
+      return {
+        customerPayments,
+        totalInflows,
+        vendorPayments,
+        expenses: expenseTotal,
+        totalOutflows,
+        netCashflow,
+        openingBalance,
+        closingBalance: openingBalance + netCashflow,
+      };
+    },
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled: !!tenantId,
   });
-
-  const loading = invoicesLoading || billsLoading || expensesLoading;
-
-  const data = useMemo<CashflowData>(() => {
-    // Calculate customer payments (cash inflows from paid invoices in period)
-    const customerPayments = allInvoices
-      .filter(inv => {
-        if (inv.status !== 'paid' || !inv.paidAt) return false;
-        const paidDate = new Date(inv.paidAt);
-        return paidDate >= start && paidDate <= end;
-      })
-      .reduce((sum, inv) => sum + inv.total, 0);
-
-    // Calculate vendor payments (cash outflows from paid bills in period)
-    const vendorPayments = allBills
-      .filter(bill => {
-        if (bill.status !== 'paid' || !bill.paidAt) return false;
-        const paidDate = new Date(bill.paidAt);
-        return paidDate >= start && paidDate <= end;
-      })
-      .reduce((sum, bill) => sum + bill.amount, 0);
-
-    // Calculate expenses in period
-    const expenseTotal = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-    const totalInflows = customerPayments;
-    const totalOutflows = vendorPayments + expenseTotal;
-    const netCashflow = totalInflows - totalOutflows;
-
-    // For simplicity, opening balance is 0 (would need historical data)
-    const openingBalance = 0;
-    const closingBalance = openingBalance + netCashflow;
-
-    return {
-      customerPayments,
-      totalInflows,
-      vendorPayments,
-      expenses: expenseTotal,
-      totalOutflows,
-      netCashflow,
-      openingBalance,
-      closingBalance,
-    };
-  }, [allInvoices, allBills, expenses, start, end]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {

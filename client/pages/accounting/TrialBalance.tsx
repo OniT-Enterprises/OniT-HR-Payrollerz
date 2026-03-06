@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { AccountType, TrialBalanceRow } from '../../types/accounting';
-import { useAccounts, useGenerateTrialBalance } from '@/hooks/useAccounting';
+import { useTrialBalance } from '@/hooks/useAccounting';
 import { formatCurrencyTL } from '../../lib/payroll/constants-tl';
 import {
   Card,
@@ -38,7 +38,6 @@ import {
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
@@ -51,26 +50,46 @@ const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'reve
 
 export default function TrialBalance() {
   const { t } = useI18n();
-  // Data hooks
-  const { isLoading: loading } = useAccounts();
-  const generateMutation = useGenerateTrialBalance();
 
   // Local UI state
-  const [trialBalanceRows, setTrialBalanceRows] = useState<TrialBalanceRow[]>([]);
   const [periodStart, setPeriodStart] = useState<string>(() => {
     const year = new Date().getFullYear();
     return `${year}-01-01`;
   });
   const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
   const [includeZeroBalances, setIncludeZeroBalances] = useState(false);
+  const [requestedReport, setRequestedReport] = useState<{
+    asOfDate: string;
+    fiscalYear: number;
+    periodStart: string;
+  } | null>(null);
 
-  const generating = generateMutation.isPending;
+  const trialBalanceQuery = useTrialBalance(
+    requestedReport?.asOfDate ?? asOfDate,
+    requestedReport?.fiscalYear ?? new Date(asOfDate).getFullYear(),
+    !!requestedReport,
+    requestedReport?.periodStart,
+  );
+
+  const trialBalanceRows: TrialBalanceRow[] = trialBalanceQuery.data?.rows ?? [];
+  const generating = trialBalanceQuery.isFetching;
 
   // Generate trial balance
   const handleGenerateTrialBalance = async () => {
-    const fiscalYear = new Date(asOfDate).getFullYear();
-    const trialBalance = await generateMutation.mutateAsync({ asOfDate, fiscalYear, periodStart });
-    setTrialBalanceRows(trialBalance.rows);
+    const nextRequest = {
+      asOfDate,
+      fiscalYear: new Date(asOfDate).getFullYear(),
+      periodStart,
+    };
+    const isSameRequest = requestedReport
+      && requestedReport.asOfDate === nextRequest.asOfDate
+      && requestedReport.fiscalYear === nextRequest.fiscalYear
+      && requestedReport.periodStart === nextRequest.periodStart;
+
+    setRequestedReport(nextRequest);
+    if (isSameRequest) {
+      await trialBalanceQuery.refetch();
+    }
   };
 
   // Filter rows based on options
@@ -198,72 +217,6 @@ export default function TrialBalance() {
   const handlePrint = () => {
     window.print();
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-48" />
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-4 items-end">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-44" />
-                  </div>
-                  <Skeleton className="h-10 w-48" />
-                  <Skeleton className="h-10 w-28" />
-                </div>
-              </CardContent>
-            </Card>
-            <div className="grid gap-4 md:grid-cols-5 mb-6">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <Card key={i}>
-                  <CardHeader className="pb-2">
-                    <Skeleton className="h-4 w-20" />
-                  </CardHeader>
-                  <CardContent>
-                    <Skeleton className="h-8 w-24 mb-1" />
-                    <Skeleton className="h-3 w-16" />
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-48 mb-2" />
-                <Skeleton className="h-4 w-32" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-40" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-24 ml-auto" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-background">

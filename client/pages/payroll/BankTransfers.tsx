@@ -58,7 +58,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useBankTransfers, usePayrollRuns, usePayrollRecordsByRun, useCreateBankTransfer } from "@/hooks/usePayroll";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { payrollService } from "@/services/payrollService";
 import { formatCurrency } from "@/lib/payroll/constants";
 import type { BankTransfer } from "@/types/payroll";
@@ -84,7 +84,6 @@ export default function BankTransfers() {
   // ─── React Query data fetching ──────────────────────────────────
   const { data: transfers = [], isLoading: loadingTransfers } = useBankTransfers();
   const { data: payrollRuns = [], isLoading: loadingRuns } = usePayrollRuns();
-  const { data: employees = [] } = useAllEmployees();
   const createTransferMutation = useCreateBankTransfer();
 
   const { data: companySettings } = useQuery({
@@ -126,6 +125,8 @@ export default function BankTransfers() {
   const [selectedBankFileRun, setSelectedBankFileRun] = useState<string>("");
   const [selectedBanks, setSelectedBanks] = useState<BankCode[]>([]);
   const [generatingFiles, setGeneratingFiles] = useState(false);
+  const shouldLoadEmployees = showBankFileDialog || !!selectedBankFileRun;
+  const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({}, shouldLoadEmployees);
 
   const [formData, setFormData] = useState({
     payrollRunId: "",
@@ -179,6 +180,10 @@ export default function BankTransfers() {
 
     setGeneratingFiles(true);
     try {
+      if (loadingEmployees) {
+        throw new Error(t("bankTransfers.toastEmployeesLoading") || "Employees are still loading");
+      }
+
       // Use real payroll records (already loaded when run was selected)
       const records = bankFileRecords.length > 0
         ? bankFileRecords
@@ -745,6 +750,13 @@ export default function BankTransfers() {
                         </div>
 
                         {/* Bank Summary & Selection */}
+                        {selectedBankFileRun && loadingEmployees && (
+                          <div className="flex items-center gap-2 rounded-lg border p-3 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            <span>{t("bankTransfers.loadingEmployees") || "Loading employees..."}</span>
+                          </div>
+                        )}
+
                         {bankFileSummary && (
                           <div className="space-y-3">
                             <Label>{t("bankTransfers.selectBanksToGenerate")}</Label>
@@ -810,7 +822,7 @@ export default function BankTransfers() {
                           </Button>
                           <Button
                             onClick={handleGenerateBankFiles}
-                            disabled={!selectedBankFileRun || selectedBanks.length === 0 || generatingFiles}
+                            disabled={!selectedBankFileRun || selectedBanks.length === 0 || generatingFiles || loadingEmployees}
                             className="flex-1 bg-green-600 hover:bg-green-700"
                           >
                             {generatingFiles ? (

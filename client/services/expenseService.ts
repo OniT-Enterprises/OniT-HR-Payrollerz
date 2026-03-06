@@ -26,6 +26,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { getTodayTL } from '@/lib/dateUtils';
+import { addMoney } from '@/lib/currency';
 import type { Expense, ExpenseFormData, ExpenseCategory } from '@/types/money';
 import { vendorService } from './vendorService';
 import { journalEntryService, accountService, fiscalPeriodService } from './accountingService';
@@ -487,12 +488,57 @@ class ExpenseService {
     return totals as Record<ExpenseCategory, number>;
   }
 
+  async getExpenseSummaryByDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{
+    totalExpenses: number;
+    expensesByCategory: Record<string, number>;
+  }> {
+    const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
+
+    let totalExpenses = 0;
+    const expensesByCategory: Record<string, number> = {};
+
+    for (const expense of expenses) {
+      totalExpenses = addMoney(totalExpenses, expense.amount);
+      expensesByCategory[expense.category] = addMoney(expensesByCategory[expense.category] || 0, expense.amount);
+    }
+
+    return {
+      totalExpenses,
+      expensesByCategory,
+    };
+  }
+
   /**
    * Get total expenses for a period
    */
   async getTotalExpenses(tenantId: string, startDate: string, endDate: string): Promise<number> {
     const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
     return expenses.reduce((sum, expense) => sum + expense.amount, 0);
+  }
+
+  async getVATSummary(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<{ inputVAT: number; expenseCount: number }> {
+    const expenses = await this.getExpensesByDateRange(tenantId, startDate, endDate);
+
+    let inputVAT = 0;
+    let expenseCount = 0;
+
+    for (const expense of expenses) {
+      const vatAmount = Number(expense.vatAmount) || 0;
+      if (vatAmount > 0) {
+        inputVAT = addMoney(inputVAT, vatAmount);
+        expenseCount += 1;
+      }
+    }
+
+    return { inputVAT, expenseCount };
   }
 
 }

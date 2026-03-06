@@ -41,7 +41,6 @@ import {
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { Skeleton } from '@/components/ui/skeleton';
 import { SEO, seoConfig } from "@/components/SEO";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
@@ -53,6 +52,7 @@ export default function GeneralLedger() {
 
   // Local UI state
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
+  const [needAccounts, setNeedAccounts] = useState(false);
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
     date.setMonth(date.getMonth() - 1);
@@ -64,7 +64,7 @@ export default function GeneralLedger() {
   const [searchTerm, setSearchTerm] = useState('');
 
   // Fetch accounts via React Query
-  const { data: accounts = [], isLoading: loading } = useAccounts();
+  const { data: accounts = [], isLoading: loadingAccounts } = useAccounts(needAccounts);
 
   // Derive selected account from fetched accounts
   const selectedAccount = accounts.find(a => a.id === selectedAccountId);
@@ -73,7 +73,13 @@ export default function GeneralLedger() {
   // Fetch GL entries via React Query
   const { data: glData, isLoading: loadingEntries } = useGeneralLedgerEntries(
     accountKey,
-    { startDate, endDate, accountType: selectedAccount?.type, accountSubType: selectedAccount?.subType }
+    {
+      accountCode: selectedAccount?.code,
+      startDate,
+      endDate,
+      accountType: selectedAccount?.type,
+      accountSubType: selectedAccount?.subType,
+    }
   );
   const openingBalance = glData?.openingBalance ?? 0;
   const allEntries = useMemo(() => glData?.entries ?? [], [glData?.entries]);
@@ -160,66 +166,6 @@ export default function GeneralLedger() {
     // eslint-disable-next-line react-hooks/preserve-manual-memoization -- accounts is stable from React Query
   }, [accounts]);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="p-6">
-          <div className="max-w-7xl mx-auto">
-            <div className="flex items-center gap-3 mb-6">
-              <Skeleton className="h-8 w-8 rounded" />
-              <div>
-                <Skeleton className="h-8 w-48 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </div>
-            </div>
-            <Card className="mb-6">
-              <CardHeader>
-                <Skeleton className="h-6 w-56" />
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-4">
-                  <div className="space-y-2 md:col-span-2">
-                    <Skeleton className="h-4 w-16" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-10 w-full" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <Skeleton className="h-6 w-40 mb-2" />
-                <Skeleton className="h-4 w-64" />
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {[1, 2, 3, 4, 5, 6].map((i) => (
-                    <div key={i} className="flex items-center gap-4 py-3 border-b border-border/50">
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-20" />
-                      <Skeleton className="h-4 w-40 flex-1" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24" />
-                      <Skeleton className="h-4 w-24" />
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const canExport = !!selectedAccount && (allEntries.length > 0 || openingBalance !== 0);
 
   return (
@@ -265,27 +211,49 @@ export default function GeneralLedger() {
             {/* Account Select */}
             <div className="space-y-2 md:col-span-2">
               <Label>{t("accounting.generalLedger.account")}</Label>
-              <Select value={selectedAccountId} onValueChange={setSelectedAccountId}>
+              <Select
+                value={selectedAccountId}
+                onValueChange={setSelectedAccountId}
+                onOpenChange={(open) => {
+                  if (open) setNeedAccounts(true);
+                }}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("accounting.generalLedger.selectAccount")} />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(groupedAccounts).map(([type, accts]) =>
-                    accts.length > 0 ? (
-                      <React.Fragment key={type}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
-                          {t(`accounting.chartOfAccounts.${type}`)}
-                        </div>
-                        {accts.map((account) => (
-                          <SelectItem key={account.id} value={account.id!}>
-                            {account.code} - {account.name}
-                          </SelectItem>
-                        ))}
-                      </React.Fragment>
-                    ) : null
+                  {loadingAccounts ? (
+                    <div className="flex items-center gap-2 px-2 py-3 text-sm text-muted-foreground">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Loading accounts…
+                    </div>
+                  ) : !needAccounts ? (
+                    <div className="px-2 py-3 text-sm text-muted-foreground">
+                      Open this list to load accounts.
+                    </div>
+                  ) : (
+                    Object.entries(groupedAccounts).map(([type, accts]) =>
+                      accts.length > 0 ? (
+                        <React.Fragment key={type}>
+                          <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase">
+                            {t(`accounting.chartOfAccounts.${type}`)}
+                          </div>
+                          {accts.map((account) => (
+                            <SelectItem key={account.id} value={account.id!}>
+                              {account.code} - {account.name}
+                            </SelectItem>
+                          ))}
+                        </React.Fragment>
+                      ) : null
+                    )
                   )}
                 </SelectContent>
               </Select>
+              {!needAccounts && (
+                <p className="text-xs text-muted-foreground">
+                  Open the selector to load the chart of accounts.
+                </p>
+              )}
             </div>
 
             {/* Date Range */}

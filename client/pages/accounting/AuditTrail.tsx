@@ -4,7 +4,8 @@
  */
 
 import React, { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { DocumentSnapshot } from "firebase/firestore";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
@@ -40,8 +41,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
-import { auditLogService, type AuditAction, type AuditLogEntry, type AuditSeverity } from "@/services/auditLogService";
-import { ClipboardList, RefreshCw, Search, Eye } from "lucide-react";
+import {
+  auditLogService,
+  type AuditAction,
+  type AuditLogEntry,
+  type AuditSeverity,
+  type PaginatedAuditLogs,
+} from "@/services/auditLogService";
+import { ClipboardList, RefreshCw, Search, Eye, Loader2 } from "lucide-react";
 
 const ACCOUNTING_ACTIONS: Array<{ value: "all" | AuditAction; labelKey: string }> = [
   { value: "all", labelKey: "accounting.auditTrail.actions.all" },
@@ -112,29 +119,51 @@ export default function AccountingAuditTrail() {
 
   const [selected, setSelected] = useState<AuditLogEntry | null>(null);
 
-  const queryFilters = useMemo(() => {
-    const start = startDate ? new Date(`${startDate}T00:00:00`) : undefined;
-    const end = endDate ? new Date(`${endDate}T23:59:59`) : undefined;
-
+  const serverFilters = useMemo(() => {
     return {
       tenantId,
-      module: "accounting" as const,
+      module: action === "all" ? ("accounting" as const) : undefined,
       action: action === "all" ? undefined : action,
       severity: severity === "all" ? undefined : severity,
-      startDate: start,
-      endDate: end,
-      pageSize: 200,
+      startDate: startDate || undefined,
+      endDate: endDate || undefined,
+      pageSize: 100,
     };
   }, [tenantId, action, severity, startDate, endDate]);
 
-  const { data, isLoading, isFetching, error, refetch } = useQuery({
-    queryKey: ["tenants", tenantId, "auditLogs", "accounting", queryFilters] as const,
-    queryFn: () => auditLogService.getLogs(queryFilters),
-    staleTime: 30 * 1000,
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    error,
+    refetch,
+    fetchNextPage,
+    hasNextPage,
+  } = useInfiniteQuery({
+    queryKey: ["tenants", tenantId, "auditLogs", "accounting", serverFilters] as const,
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    queryFn: async ({ pageParam }) =>
+      auditLogService.getLogs({
+        tenantId: serverFilters.tenantId,
+        module: serverFilters.module,
+        action: serverFilters.action,
+        severity: serverFilters.severity,
+        startDate: serverFilters.startDate ? new Date(`${serverFilters.startDate}T00:00:00`) : undefined,
+        endDate: serverFilters.endDate ? new Date(`${serverFilters.endDate}T23:59:59`) : undefined,
+        pageSize: serverFilters.pageSize,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      }),
+    getNextPageParam: (lastPage) => (lastPage.hasMore ? lastPage.lastDoc : undefined),
+    staleTime: 2 * 60 * 1000,
   });
 
+  const logs = useMemo(
+    () => data?.pages.flatMap((page: PaginatedAuditLogs) => page.logs) ?? [],
+    [data?.pages]
+  );
+
   const filtered = useMemo(() => {
-    const logs = data?.logs ?? [];
     if (!search) return logs;
     const term = search.toLowerCase();
     return logs.filter((l) => {
@@ -150,7 +179,7 @@ export default function AccountingAuditTrail() {
         .toLowerCase();
       return haystack.includes(term);
     });
-  }, [data?.logs, search]);
+  }, [logs, search]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -332,6 +361,24 @@ export default function AccountingAuditTrail() {
                     ))}
                   </TableBody>
                 </Table>
+                {hasNextPage && (
+                  <div className="mt-4 flex justify-center">
+                    <Button
+                      variant="outline"
+                      onClick={() => fetchNextPage()}
+                      disabled={isFetchingNextPage}
+                    >
+                      {isFetchingNextPage ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading...
+                        </>
+                      ) : (
+                        "Load more"
+                      )}
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
           </CardContent>

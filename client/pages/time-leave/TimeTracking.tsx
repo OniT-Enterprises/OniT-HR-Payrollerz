@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SEO, seoConfig } from "@/components/SEO";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -58,7 +58,7 @@ export default function TimeTracking() {
   const itemsPerPage = 20;
 
   // Real data hooks
-  const { data: realEmployees = [], isLoading: empLoading } = useAllEmployees();
+  const { data: realEmployees = [], isLoading: empLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: departments = [] } = useDepartments(tenantId);
   const { data: attendanceRecords = [], isLoading: attendanceLoading } = useAttendanceByDate(selectedDate);
   const markAttendanceMutation = useMarkAttendance();
@@ -66,7 +66,6 @@ export default function TimeTracking() {
 
   // Map real employees for dropdowns
   const employees = useMemo(() => realEmployees
-    .filter(e => e.status === 'active')
     .map(e => ({
       id: e.id!,
       name: `${e.personalInfo.firstName} ${e.personalInfo.lastName}`,

@@ -3,7 +3,8 @@
  * Wraps accountingService (accounts, journal entries, GL, trial balance)
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import { accountingService, journalEntryService, trialBalanceService, fiscalPeriodService } from '@/services/accountingService';
 import { auditLogService } from '@/services/auditLogService';
@@ -11,6 +12,8 @@ import type {
   Account,
   AccountType,
   AccountSubType,
+  BalanceSheet,
+  IncomeStatement,
   JournalEntry,
   JournalEntryStatus,
 } from '@/types/accounting';
@@ -28,22 +31,37 @@ export const accountKeys = {
 export const journalEntryKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'journalEntries'] as const,
   lists: (tenantId: string) => [...journalEntryKeys.all(tenantId), 'list'] as const,
-  list: (tenantId: string, filters?: { status?: JournalEntryStatus; fiscalYear?: number; startDate?: string; endDate?: string }) =>
+  list: (tenantId: string, filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string }) =>
     [...journalEntryKeys.lists(tenantId), filters ?? {}] as const,
+  paginated: (tenantId: string, filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string; pageSize?: number }) =>
+    [...journalEntryKeys.lists(tenantId), 'paginated', filters ?? {}] as const,
   details: (tenantId: string) => [...journalEntryKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...journalEntryKeys.details(tenantId), id] as const,
+  summary: (tenantId: string, fiscalYear: number) => [...journalEntryKeys.all(tenantId), 'summary', fiscalYear] as const,
 };
 
 export const generalLedgerKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'generalLedger'] as const,
-  byAccount: (tenantId: string, accountKey: string, options?: { startDate?: string; endDate?: string; accountType?: AccountType; accountSubType?: AccountSubType }) =>
+  byAccount: (tenantId: string, accountKey: string, options?: { accountCode?: string; startDate?: string; endDate?: string; accountType?: AccountType; accountSubType?: AccountSubType }) =>
     [...generalLedgerKeys.all(tenantId), accountKey, options ?? {}] as const,
 };
 
 export const trialBalanceKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'trialBalance'] as const,
+  report: (tenantId: string, asOfDate: string, fiscalYear: number, periodStart?: string) =>
+    [...trialBalanceKeys.all(tenantId), asOfDate, fiscalYear, periodStart ?? null] as const,
+};
+
+export const incomeStatementKeys = {
+  all: (tenantId: string) => ['tenants', tenantId, 'incomeStatement'] as const,
+  report: (tenantId: string, periodStart: string, periodEnd: string, fiscalYear: number) =>
+    [...incomeStatementKeys.all(tenantId), periodStart, periodEnd, fiscalYear] as const,
+};
+
+export const balanceSheetKeys = {
+  all: (tenantId: string) => ['tenants', tenantId, 'balanceSheet'] as const,
   report: (tenantId: string, asOfDate: string, fiscalYear: number) =>
-    [...trialBalanceKeys.all(tenantId), asOfDate, fiscalYear] as const,
+    [...balanceSheetKeys.all(tenantId), asOfDate, fiscalYear] as const,
 };
 
 export const balanceSnapshotKeys = {
@@ -52,18 +70,31 @@ export const balanceSnapshotKeys = {
 
 export const accountingDashboardKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'accountingDashboard'] as const,
+  summary: (tenantId: string) => [...accountingDashboardKeys.all(tenantId), 'summary'] as const,
+  health: (tenantId: string) => [...accountingDashboardKeys.all(tenantId), 'health'] as const,
 };
+
+async function invalidateAccountingDerivedData(queryClient: ReturnType<typeof useQueryClient>, tenantId: string) {
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) }),
+    queryClient.invalidateQueries({ queryKey: generalLedgerKeys.all(tenantId) }),
+    queryClient.invalidateQueries({ queryKey: trialBalanceKeys.all(tenantId) }),
+    queryClient.invalidateQueries({ queryKey: incomeStatementKeys.all(tenantId) }),
+    queryClient.invalidateQueries({ queryKey: balanceSheetKeys.all(tenantId) }),
+  ]);
+}
 
 // ─── Account hooks ───────────────────────────────────────────────
 
 /** Fetch all accounts */
-export function useAccounts() {
+export function useAccounts(enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: accountKeys.list(tenantId),
     queryFn: () => accountingService.accounts.getAllAccounts(tenantId),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
+    enabled,
+    staleTime: 30 * 60 * 1000,
+    gcTime: 2 * 60 * 60 * 1000,
   });
 }
 
@@ -73,7 +104,7 @@ export function useAccountsByType(type: AccountType) {
   return useQuery({
     queryKey: accountKeys.byType(tenantId, type),
     queryFn: () => accountingService.accounts.getAccountsByType(tenantId, type),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 30 * 60 * 1000,
   });
 }
 
@@ -99,8 +130,9 @@ export function useCreateAccount() {
       audit?: { userId: string; userEmail: string; userName?: string };
     }) =>
       accountingService.accounts.createAccount(tenantId, params.account, params.audit),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: accountKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -117,9 +149,12 @@ export function useUpdateAccount() {
       audit?: { userId: string; userEmail: string; userName?: string };
     }) =>
       accountingService.accounts.updateAccount(tenantId, params.id, params.updates, params.audit),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: accountKeys.lists(tenantId) });
+    onSuccess: async (_, { id }) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: accountKeys.detail(tenantId, id) }),
+        queryClient.invalidateQueries({ queryKey: accountKeys.lists(tenantId) }),
+      ]);
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -132,8 +167,9 @@ export function useInitializeChartOfAccounts() {
   return useMutation({
     mutationFn: (audit?: { userId: string; userEmail: string; userName?: string }) =>
       accountingService.accounts.initializeChartOfAccounts(tenantId, audit),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: accountKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: accountKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -141,13 +177,55 @@ export function useInitializeChartOfAccounts() {
 // ─── Journal Entry hooks ─────────────────────────────────────────
 
 /** Fetch journal entries with optional filters */
-export function useJournalEntries(filters?: { status?: JournalEntryStatus; fiscalYear?: number; startDate?: string; endDate?: string }) {
+export function useJournalEntries(
+  filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string },
+  enabled: boolean = true,
+) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: journalEntryKeys.list(tenantId, filters),
     queryFn: () => journalEntryService.getAllJournalEntries(tenantId, filters),
+    enabled,
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
+/** Fetch journal entries page-by-page for default browsing */
+export function usePaginatedJournalEntries(
+  filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string; pageSize?: number },
+  enabled: boolean = true,
+) {
+  const tenantId = useTenantId();
+  const query = useInfiniteQuery({
+    queryKey: journalEntryKeys.paginated(tenantId, filters),
+    queryFn: async ({ pageParam }) => {
+      return journalEntryService.getJournalEntriesPage(tenantId, {
+        ...filters,
+        startAfterDoc: pageParam as DocumentSnapshot | undefined,
+      });
+    },
+    initialPageParam: undefined as DocumentSnapshot | undefined,
+    getNextPageParam: (lastPage) => lastPage.hasMore ? lastPage.lastDoc : undefined,
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  return {
+    ...query,
+    entries: query.data?.pages.flatMap((page) => page.entries) ?? [],
+  };
+}
+
+/** Fetch journal entry summary stats for a fiscal year */
+export function useJournalEntrySummary(fiscalYear: number) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: journalEntryKeys.summary(tenantId, fiscalYear),
+    queryFn: () => journalEntryService.getJournalEntrySummary(tenantId, fiscalYear),
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -168,11 +246,11 @@ export function useCreateJournalEntry() {
   const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: (entry: Omit<JournalEntry, 'id' | 'createdAt'>) =>
+    mutationFn: (entry: Omit<JournalEntry, 'id' | 'createdAt' | 'entryNumber'> & { entryNumber?: string }) =>
       journalEntryService.createJournalEntry(tenantId, entry),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -185,9 +263,9 @@ export function usePostJournalEntry() {
   return useMutation({
     mutationFn: ({ id, postedBy }: { id: string; postedBy: string }) =>
       journalEntryService.postJournalEntry(tenantId, id, postedBy),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -200,9 +278,9 @@ export function useVoidJournalEntry() {
   return useMutation({
     mutationFn: ({ id, voidedBy, reason }: { id: string; voidedBy: string; reason: string }) =>
       journalEntryService.voidJournalEntry(tenantId, id, voidedBy, reason),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -223,7 +301,7 @@ export function useNextEntryNumber(year: number, enabled: boolean = true) {
 /** Fetch GL entries for a specific account */
 export function useGeneralLedgerEntries(
   accountKey: string | undefined,
-  options?: { startDate?: string; endDate?: string; accountType?: AccountType; accountSubType?: AccountSubType },
+  options?: { accountCode?: string; startDate?: string; endDate?: string; accountType?: AccountType; accountSubType?: AccountSubType },
 ) {
   const tenantId = useTenantId();
   return useQuery({
@@ -237,13 +315,19 @@ export function useGeneralLedgerEntries(
 // ─── Trial Balance hooks ─────────────────────────────────────────
 
 /** Generate trial balance report */
-export function useTrialBalance(asOfDate: string, fiscalYear: number, enabled: boolean = false) {
+export function useTrialBalance(
+  asOfDate: string,
+  fiscalYear: number,
+  enabled: boolean = false,
+  periodStart?: string,
+) {
   const tenantId = useTenantId();
   return useQuery({
-    queryKey: trialBalanceKeys.report(tenantId, asOfDate, fiscalYear),
-    queryFn: () => trialBalanceService.generateTrialBalance(tenantId, asOfDate, fiscalYear),
+    queryKey: trialBalanceKeys.report(tenantId, asOfDate, fiscalYear, periodStart),
+    queryFn: () => trialBalanceService.generateTrialBalance(tenantId, asOfDate, fiscalYear, periodStart),
     enabled,
     staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
   });
 }
 
@@ -255,34 +339,66 @@ export function useGenerateTrialBalance() {
   return useMutation({
     mutationFn: ({ asOfDate, fiscalYear, periodStart }: { asOfDate: string; fiscalYear: number; periodStart?: string }) =>
       trialBalanceService.generateTrialBalance(tenantId, asOfDate, fiscalYear, periodStart),
-    onSuccess: (data, { asOfDate, fiscalYear }) => {
+    onSuccess: (data, { asOfDate, fiscalYear, periodStart }) => {
       // Seed the query cache so useTrialBalance can read it
-      queryClient.setQueryData(trialBalanceKeys.report(tenantId, asOfDate, fiscalYear), data);
+      queryClient.setQueryData(trialBalanceKeys.report(tenantId, asOfDate, fiscalYear, periodStart), data);
     },
   });
 }
 
 // ─── Income Statement hooks ─────────────────────────────────────
 
+/** Generate income statement report */
+export function useIncomeStatement(periodStart: string, periodEnd: string, fiscalYear: number, enabled: boolean = false) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: incomeStatementKeys.report(tenantId, periodStart, periodEnd, fiscalYear),
+    queryFn: () => trialBalanceService.generateIncomeStatement(tenantId, periodStart, periodEnd, fiscalYear),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 /** Generate income statement on demand */
 export function useGenerateIncomeStatement() {
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ periodStart, periodEnd, fiscalYear }: { periodStart: string; periodEnd: string; fiscalYear: number }) =>
       trialBalanceService.generateIncomeStatement(tenantId, periodStart, periodEnd, fiscalYear),
+    onSuccess: (data, { periodStart, periodEnd, fiscalYear }) => {
+      queryClient.setQueryData(incomeStatementKeys.report(tenantId, periodStart, periodEnd, fiscalYear), data);
+    },
   });
 }
 
 // ─── Balance Sheet hooks ────────────────────────────────────────
 
+/** Generate balance sheet report */
+export function useBalanceSheet(asOfDate: string, fiscalYear: number, enabled: boolean = false) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: balanceSheetKeys.report(tenantId, asOfDate, fiscalYear),
+    queryFn: () => trialBalanceService.generateBalanceSheet(tenantId, asOfDate, fiscalYear),
+    enabled,
+    staleTime: 5 * 60 * 1000,
+    placeholderData: (previousData) => previousData,
+  });
+}
+
 /** Generate balance sheet on demand */
 export function useGenerateBalanceSheet() {
   const tenantId = useTenantId();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: ({ asOfDate, fiscalYear }: { asOfDate: string; fiscalYear: number }) =>
       trialBalanceService.generateBalanceSheet(tenantId, asOfDate, fiscalYear),
+    onSuccess: (data, { asOfDate, fiscalYear }) => {
+      queryClient.setQueryData(balanceSheetKeys.report(tenantId, asOfDate, fiscalYear), data);
+    },
   });
 }
 
@@ -337,11 +453,12 @@ export function useCloseFiscalPeriod() {
   return useMutation({
     mutationFn: ({ periodId, closedBy }: { periodId: string; closedBy: string }) =>
       fiscalPeriodService.closePeriod(tenantId, periodId, closedBy),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: balanceSnapshotKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: trialBalanceKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) }),
+        queryClient.invalidateQueries({ queryKey: balanceSnapshotKeys.all(tenantId) }),
+      ]);
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -354,10 +471,12 @@ export function useReopenFiscalPeriod() {
   return useMutation({
     mutationFn: ({ periodId, reopenedBy }: { periodId: string; reopenedBy: string }) =>
       fiscalPeriodService.reopenPeriod(tenantId, periodId, reopenedBy),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: balanceSnapshotKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: trialBalanceKeys.all(tenantId) });
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) }),
+        queryClient.invalidateQueries({ queryKey: balanceSnapshotKeys.all(tenantId) }),
+      ]);
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -370,8 +489,26 @@ export function useLockFiscalPeriod() {
   return useMutation({
     mutationFn: ({ periodId, lockedBy }: { periodId: string; lockedBy: string }) =>
       fiscalPeriodService.lockPeriod(tenantId, periodId, lockedBy),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) });
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
+    },
+  });
+}
+
+/** Backfill missing balance snapshots through a cutoff date */
+export function useBackfillBalanceSnapshots() {
+  const queryClient = useQueryClient();
+  const tenantId = useTenantId();
+
+  return useMutation({
+    mutationFn: async ({ upToDate, generatedBy }: { upToDate: string; generatedBy?: string }) => {
+      const { balanceSnapshotService } = await import('@/services/balanceSnapshotService');
+      return balanceSnapshotService.backfillSnapshots(tenantId, upToDate, generatedBy);
+    },
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: balanceSnapshotKeys.all(tenantId) });
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
@@ -434,20 +571,21 @@ export function usePostOpeningBalances() {
 
       return { entryId, year };
     },
-    onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.fiscalYear(tenantId, result.year) });
-      queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: accountingDashboardKeys.all(tenantId) });
+    onSuccess: async (result) => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.all(tenantId) }),
+        queryClient.invalidateQueries({ queryKey: fiscalPeriodKeys.fiscalYear(tenantId, result.year) }),
+        queryClient.invalidateQueries({ queryKey: journalEntryKeys.all(tenantId) }),
+      ]);
+      await invalidateAccountingDerivedData(queryClient, tenantId);
     },
   });
 }
 
 // ─── Accounting Dashboard hook ───────────────────────────────────
 
-interface AccountingDashboardData {
+interface AccountingDashboardSummaryData {
   payrollPosted: boolean;
-  trialBalanced: boolean;
   pendingEntries: number;
   lastPayrollAmount: number;
   lastPayrollDate: string | null;
@@ -459,34 +597,26 @@ interface AccountingDashboardData {
   } | null;
 }
 
-/** Fetch aggregated accounting dashboard data */
+interface AccountingBalanceHealthData {
+  trialBalanced: boolean;
+  source: 'aggregate' | 'empty';
+}
+
+/** Fetch fast accounting dashboard summary data */
 export function useAccountingDashboard() {
   const tenantId = useTenantId();
 
   return useQuery({
-    queryKey: accountingDashboardKeys.all(tenantId),
-    queryFn: async (): Promise<AccountingDashboardData> => {
-      const today = new Date().toISOString().split('T')[0];
-      const currentYear = new Date().getFullYear();
-
-      const [postedEntries, draftEntries, trialBalance] = await Promise.all([
-        journalEntryService.getAllJournalEntries(tenantId, { status: 'posted' }),
-        journalEntryService.getAllJournalEntries(tenantId, { status: 'draft' }),
-        trialBalanceService.generateTrialBalance(tenantId, today, currentYear),
+    queryKey: accountingDashboardKeys.summary(tenantId),
+    queryFn: async (): Promise<AccountingDashboardSummaryData> => {
+      const [latestPayroll, pendingEntries] = await Promise.all([
+        journalEntryService.getLatestPayrollDashboardEntry(tenantId),
+        journalEntryService.getEntryCountByStatus(tenantId, 'draft'),
       ]);
 
-      // Find most recent payroll journal entry
-      const payrollEntries = postedEntries.filter(e => e.source === 'payroll');
-      const latestPayroll = payrollEntries.sort((a, b) =>
-        (b.date || '').localeCompare(a.date || '')
-      )[0] || null;
-
-      const trialBalanced = trialBalance.isBalanced;
-
       return {
-        payrollPosted: payrollEntries.length > 0,
-        trialBalanced,
-        pendingEntries: draftEntries.length,
+        payrollPosted: !!latestPayroll,
+        pendingEntries,
         lastPayrollAmount: latestPayroll?.totalDebit || 0,
         lastPayrollDate: latestPayroll?.date || null,
         lastPayrollEntry: latestPayroll ? {
@@ -502,5 +632,25 @@ export function useAccountingDashboard() {
       };
     },
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+/** Fetch slower balance health separately so the dashboard can render sooner */
+export function useAccountingBalanceHealth() {
+  const tenantId = useTenantId();
+
+  return useQuery({
+    queryKey: accountingDashboardKeys.health(tenantId),
+    queryFn: async (): Promise<AccountingBalanceHealthData> => {
+      const today = new Date().toISOString().split('T')[0];
+      const currentYear = new Date().getFullYear();
+      const health = await trialBalanceService.getBalanceHealth(tenantId, today, currentYear);
+
+      return {
+        trialBalanced: health.isBalanced,
+        source: health.source,
+      };
+    },
+    staleTime: 30 * 60 * 1000,
   });
 }

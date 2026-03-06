@@ -3,7 +3,7 @@
  * Simple income statement showing revenue vs expenses
  */
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
@@ -20,7 +20,7 @@ import {
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import { useAllInvoices } from '@/hooks/useInvoices';
+import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -105,41 +105,30 @@ export default function ProfitLoss() {
 
   const { start: startStr, end: endStr } = getDateRange(period);
 
-  // Fetch all invoices via React Query hook
-  const { data: allInvoices = [], isLoading: loadingInvoices } = useAllInvoices();
+  const { data = {
+    revenue: 0,
+    expenses: 0,
+    expensesByCategory: {},
+    profit: 0,
+  }, isLoading: loading } = useQuery({
+    queryKey: ['tenants', tenantId, 'money', 'profitLoss', startStr, endStr],
+    queryFn: async (): Promise<PeriodData> => {
+      const [revenue, expenseSummary] = await Promise.all([
+        invoiceService.getPaidInvoiceTotalByDateRange(tenantId, startStr, endStr),
+        expenseService.getExpenseSummaryByDateRange(tenantId, startStr, endStr),
+      ]);
 
-  // Fetch expenses for the selected date range
-  const { data: expenses = [], isLoading: loadingExpenses } = useQuery({
-    queryKey: ['tenants', tenantId, 'expenses', 'dateRange', startStr, endStr],
-    queryFn: () => expenseService.getExpensesByDateRange(tenantId, startStr, endStr),
+      return {
+        revenue,
+        expenses: expenseSummary.totalExpenses,
+        expensesByCategory: expenseSummary.expensesByCategory,
+        profit: revenue - expenseSummary.totalExpenses,
+      };
+    },
     staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled: !!tenantId,
   });
-
-  const loading = loadingInvoices || loadingExpenses;
-
-  // Compute P&L data from fetched invoices + expenses
-  const data = useMemo<PeriodData>(() => {
-    const paidInvoices = allInvoices.filter((inv) => {
-      if (inv.status !== 'paid' || !inv.paidAt) return false;
-      const paidDate = toDateStringTL(inv.paidAt);
-      return paidDate >= startStr && paidDate <= endStr;
-    });
-
-    const revenue = paidInvoices.reduce((sum, inv) => sum + inv.total, 0);
-    const totalExpenses = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-
-    const expensesByCategory: Record<string, number> = {};
-    expenses.forEach((exp) => {
-      expensesByCategory[exp.category] = (expensesByCategory[exp.category] || 0) + exp.amount;
-    });
-
-    return {
-      revenue,
-      expenses: totalExpenses,
-      expensesByCategory,
-      profit: revenue - totalExpenses,
-    };
-  }, [allInvoices, expenses, startStr, endStr]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
