@@ -3,7 +3,7 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 type TranslationParams = Record<string, string | number>;
 export type Locale = "en" | "tet" | "pt";
 type TranslationTree = Record<string, unknown>;
-type TranslationBundle = Record<Locale, TranslationTree>;
+type TranslationBundle = Partial<Record<Locale, TranslationTree>>;
 
 interface I18nContextValue {
   locale: Locale;
@@ -20,6 +20,12 @@ const localeLabels: Record<Locale, string> = {
   en: "English",
   tet: "Tetun",
   pt: "Português",
+};
+
+const translationLoaders: Record<Locale, () => Promise<TranslationTree>> = {
+  en: () => import("./locales/en").then((module) => module.default as TranslationTree),
+  tet: () => import("./locales/tet").then((module) => module.default as TranslationTree),
+  pt: () => import("./locales/pt").then((module) => module.default as TranslationTree),
 };
 
 const resolvePath = (obj: unknown, path: string): unknown =>
@@ -62,29 +68,35 @@ const getInitialLocale = (): Locale => {
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>(getInitialLocale);
-  const [translationBundle, setTranslationBundle] = useState<TranslationBundle | null>(null);
+  const [translationBundle, setTranslationBundle] = useState<TranslationBundle>({});
 
   useEffect(() => {
     let active = true;
 
-    void import("./translations")
-      .then((module) => {
+    const requiredLocales: Locale[] = locale === "en" ? ["en"] : ["en", locale];
+    const missingLocales = requiredLocales.filter((item) => !translationBundle[item]);
+
+    if (missingLocales.length === 0) {
+      return () => {
+        active = false;
+      };
+    }
+
+    void Promise.all(
+      missingLocales.map(async (item) => [item, await translationLoaders[item]()] as const)
+    )
+      .then((entries) => {
         if (!active) return;
-        setTranslationBundle(module.translations as TranslationBundle);
-      })
-      .catch(() => {
-        if (!active) return;
-        setTranslationBundle({
-          en: {},
-          tet: {},
-          pt: {},
-        });
+        setTranslationBundle((current) => ({
+          ...current,
+          ...Object.fromEntries(entries),
+        }));
       });
 
     return () => {
       active = false;
     };
-  }, []);
+  }, [locale, translationBundle]);
 
   const setLocale = useCallback((next: Locale) => {
     setLocaleState(next);
@@ -95,11 +107,13 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const t = useCallback(
     (key: string, params?: TranslationParams) => {
-      if (!translationBundle) {
+      const fallbackTree = translationBundle.en;
+      const currentTree = translationBundle[locale];
+      if (!fallbackTree || !currentTree) {
         return key;
       }
-      const current = resolvePath(translationBundle[locale], key);
-      const fallback = resolvePath(translationBundle.en, key);
+      const current = resolvePath(currentTree, key);
+      const fallback = resolvePath(fallbackTree, key);
       const value = typeof current === "string" ? current : typeof fallback === "string" ? fallback : key;
       return formatString(value, params);
     },
@@ -116,7 +130,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [locale, setLocale, t]
   );
 
-  if (!translationBundle) {
+  if (!translationBundle.en || !translationBundle[locale]) {
     return null;
   }
 

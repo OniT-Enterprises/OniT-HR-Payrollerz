@@ -35,6 +35,7 @@
     "backfill:gl-ids": "node scripts/backfill-gl-account-ids.mjs",
     "backfill:tenant-modules": "node scripts/backfill-tenant-modules.mjs",
     "i18n:check": "tsx scripts/check-i18n.ts && tsx scripts/check-i18n-usage.ts",
+    "i18n:split-locales": "tsx scripts/split-i18n-locales.ts",
     "seed:prod": "node scripts/clearAndSeedData.mjs",
     "audit:data": "node scripts/auditData.mjs",
     "lint": "eslint .",

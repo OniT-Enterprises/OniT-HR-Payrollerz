@@ -18,6 +18,8 @@ export default [
       "netlify/",
       "server/",
       "mobile/",
+      "client/i18n/translations.ts",
+      "client/i18n/locales/",
       "*.config.js",
       "*.config.ts",
     ],
