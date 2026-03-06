@@ -114,7 +114,11 @@ export default function Cashflow() {
 
     // Calculate vendor payments (cash outflows from paid bills in period)
     const vendorPayments = allBills
-      .filter(bill => bill.status === 'paid')
+      .filter(bill => {
+        if (bill.status !== 'paid' || !bill.paidAt) return false;
+        const paidDate = new Date(bill.paidAt);
+        return paidDate >= start && paidDate <= end;
+      })
       .reduce((sum, bill) => sum + bill.amount, 0);
 
     // Calculate expenses in period
@@ -159,7 +163,6 @@ export default function Cashflow() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />

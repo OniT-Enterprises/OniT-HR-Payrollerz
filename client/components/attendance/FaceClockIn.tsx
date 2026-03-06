@@ -50,10 +50,19 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
   const lastMatchIdRef = useRef<string | null>(null);
   const prevLandmarksRef = useRef<DetectionResult['landmarks'] | null>(null);
   const livenessPassedRef = useRef(false);
+  const transitionTimeoutRef = useRef<number | null>(null);
+
+  const clearTransitionTimeout = useCallback(() => {
+    if (transitionTimeoutRef.current !== null) {
+      window.clearTimeout(transitionTimeoutRef.current);
+      transitionTimeoutRef.current = null;
+    }
+  }, []);
 
   // Reset state when dialog opens
   useEffect(() => {
     if (open) {
+      clearTransitionTimeout();
       setState(embeddingsLoading ? 'loading' : 'scanning');
       setMatchedEmployee(null);
       matchCountRef.current = 0;
@@ -61,7 +70,9 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
       prevLandmarksRef.current = null;
       livenessPassedRef.current = false;
     }
-  }, [open, embeddingsLoading]);
+  }, [open, embeddingsLoading, clearTransitionTimeout]);
+
+  useEffect(() => clearTransitionTimeout, [clearTransitionTimeout]);
 
   useEffect(() => {
     if (!embeddingsLoading && state === 'loading') {
@@ -153,9 +164,11 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
       });
 
       // Auto-close after 2s
-      setTimeout(() => {
+      clearTransitionTimeout();
+      transitionTimeoutRef.current = window.setTimeout(() => {
         onOpenChange(false);
         onSuccess?.();
+        transitionTimeoutRef.current = null;
       }, 2000);
     } catch (error) {
       console.error('Clock-in failed:', error);
@@ -171,19 +184,21 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
   };
 
   const handleNotRecognized = () => {
+    clearTransitionTimeout();
     setState('not-recognized');
+    setMatchedEmployee(null);
     // Auto-reset after 3s
-    setTimeout(() => {
-      if (state === 'not-recognized') {
-        setState('scanning');
-        matchCountRef.current = 0;
-        lastMatchIdRef.current = null;
-        livenessPassedRef.current = false;
-      }
+    transitionTimeoutRef.current = window.setTimeout(() => {
+      setState('scanning');
+      matchCountRef.current = 0;
+      lastMatchIdRef.current = null;
+      livenessPassedRef.current = false;
+      transitionTimeoutRef.current = null;
     }, 3000);
   };
 
   const handleClose = () => {
+    clearTransitionTimeout();
     onOpenChange(false);
   };
 

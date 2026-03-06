@@ -29,8 +29,33 @@ export default function FaceCamera({
   const streamRef = useRef<MediaStream | null>(null);
   const rafRef = useRef<number>(0);
   const lastDetectionRef = useRef<DetectionResult | null>(null);
+  const onFaceDetectedRef = useRef(onFaceDetected);
+  const onCaptureRef = useRef(onCapture);
+  const onErrorRef = useRef(onError);
+  const autoCaptureRef = useRef(autoCapture);
+  const showBoundingBoxRef = useRef(showBoundingBox);
 
   const [status, setStatus] = useState<'loading' | 'ready' | 'no-camera' | 'permission-denied'>('loading');
+
+  useEffect(() => {
+    onFaceDetectedRef.current = onFaceDetected;
+  }, [onFaceDetected]);
+
+  useEffect(() => {
+    onCaptureRef.current = onCapture;
+  }, [onCapture]);
+
+  useEffect(() => {
+    onErrorRef.current = onError;
+  }, [onError]);
+
+  useEffect(() => {
+    autoCaptureRef.current = autoCapture;
+  }, [autoCapture]);
+
+  useEffect(() => {
+    showBoundingBoxRef.current = showBoundingBox;
+  }, [showBoundingBox]);
 
   const stopStream = useCallback(() => {
     if (streamRef.current) {
@@ -50,6 +75,7 @@ export default function FaceCamera({
     }
 
     let cancelled = false;
+    setStatus('loading');
 
     async function init() {
       try {
@@ -80,13 +106,13 @@ export default function FaceCamera({
         const message = err instanceof Error ? err.message : String(err);
         if (message.includes('Permission') || message.includes('NotAllowed')) {
           setStatus('permission-denied');
-          onError?.('Camera permission denied. Please allow camera access.');
+          onErrorRef.current?.('Camera permission denied. Please allow camera access.');
         } else if (message.includes('NotFound') || message.includes('DevicesNotFound')) {
           setStatus('no-camera');
-          onError?.('No camera found on this device.');
+          onErrorRef.current?.('No camera found on this device.');
         } else {
           setStatus('no-camera');
-          onError?.(message);
+          onErrorRef.current?.(message);
         }
       }
     }
@@ -104,10 +130,10 @@ export default function FaceCamera({
             const result = await detectAndDescribe(videoRef.current);
             if (result) {
               lastDetectionRef.current = result;
-              onFaceDetected?.(result);
+              onFaceDetectedRef.current?.(result);
               drawOverlay(result);
 
-              if (autoCapture && onCapture) {
+              if (autoCaptureRef.current && onCaptureRef.current) {
                 captureFrame(result.descriptor);
               }
             } else {
@@ -131,11 +157,10 @@ export default function FaceCamera({
       cancelled = true;
       stopStream();
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active]);
+  }, [active, stopStream]);
 
   function drawOverlay(result: DetectionResult) {
-    if (!showBoundingBox || !canvasRef.current || !videoRef.current) return;
+    if (!showBoundingBoxRef.current || !canvasRef.current || !videoRef.current) return;
 
     const ctx = canvasRef.current.getContext('2d');
     if (!ctx) return;
@@ -195,7 +220,7 @@ export default function FaceCamera({
 
     tempCanvas.toBlob(
       blob => {
-        if (blob) onCapture?.(blob, descriptor);
+        if (blob) onCaptureRef.current?.(blob, descriptor);
       },
       'image/jpeg',
       0.85

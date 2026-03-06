@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -87,18 +87,7 @@ export default function DepartmentManager({
     { name: "Cyan", value: "#06B6D4" },
   ];
 
-  useEffect(() => {
-    if (open) {
-      loadData();
-      if (mode === "add") {
-        setShowAddForm(true);
-        resetForm();
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, mode]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     try {
       setLoading(true);
       const [deptData, empData] = await Promise.all([
@@ -117,7 +106,17 @@ export default function DepartmentManager({
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId, toast]);
+
+  useEffect(() => {
+    if (open) {
+      void loadData();
+      if (mode === "add") {
+        setShowAddForm(true);
+        resetForm();
+      }
+    }
+  }, [loadData, mode, open]);
 
   const resetForm = () => {
     setFormData({
@@ -174,7 +173,7 @@ export default function DepartmentManager({
 
       resetForm();
       setShowAddForm(false);
-      loadData();
+      void loadData();
       onDepartmentChange?.();
     } catch (error) {
       console.error("Error saving department:", error);
@@ -220,7 +219,7 @@ export default function DepartmentManager({
         description:
           "Department removed from both Organization Chart and Departments page",
       });
-      loadData();
+      void loadData();
       onDepartmentChange?.();
     } catch (error) {
       console.error("Error deleting department:", error);

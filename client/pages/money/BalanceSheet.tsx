@@ -52,7 +52,7 @@ export default function BalanceSheet() {
   const { data: allBills = [], isLoading: loadingBills } = useAllBills();
   const loading = loadingInvoices || loadingBills;
 
-  const getAsOfDateValue = (): Date => {
+  const asOf = useMemo(() => {
     const now = new Date();
     switch (asOfDate) {
       case 'today':
@@ -68,11 +68,9 @@ export default function BalanceSheet() {
       default:
         return now;
     }
-  };
+  }, [asOfDate]);
 
   const data = useMemo<BalanceSheetData>(() => {
-    const asOf = getAsOfDateValue();
-
     // Calculate Accounts Receivable (unpaid invoices as of date)
     const accountsReceivable = allInvoices
       .filter(inv => {
@@ -96,7 +94,7 @@ export default function BalanceSheet() {
 
     // Calculate cash paid (simplified - sum of paid bills)
     const cashPaid = allBills
-      .filter(bill => bill.status === 'paid')
+      .filter(bill => bill.status === 'paid' && bill.paidAt && new Date(bill.paidAt) <= asOf)
       .reduce((sum, bill) => sum + bill.amount, 0);
 
     const cashAndBank = cashReceived - cashPaid;
@@ -114,8 +112,7 @@ export default function BalanceSheet() {
       retainedEarnings,
       totalEquity,
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [allInvoices, allBills, asOfDate]);
+  }, [allBills, allInvoices, asOf]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -127,8 +124,7 @@ export default function BalanceSheet() {
   };
 
   const getAsOfLabel = () => {
-    const date = getAsOfDateValue();
-    return formatDateTL(date, {
+    return formatDateTL(asOf, {
       month: 'long',
       day: 'numeric',
       year: 'numeric'
@@ -139,7 +135,6 @@ export default function BalanceSheet() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />

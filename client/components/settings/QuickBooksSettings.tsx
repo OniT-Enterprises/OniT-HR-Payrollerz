@@ -3,7 +3,7 @@
  * Allows users to configure account mappings for QuickBooks integration
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   CardContent,
@@ -61,38 +61,37 @@ interface QuickBooksSettingsProps {
   tenantId: string;
 }
 
+const createDefaultSettings = (): QBExportSettings => ({
+  defaultFormat: 'csv',
+  includeEmployeeDetail: false,
+  groupByDepartment: false,
+  accountMappings: [...DEFAULT_TL_ACCOUNT_MAPPINGS],
+});
+
 export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
   const { t } = useI18n();
   const { toast } = useToast();
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [settings, setSettings] = useState<QBExportSettings>({
-    defaultFormat: 'csv',
-    includeEmployeeDetail: false,
-    groupByDepartment: false,
-    accountMappings: [...DEFAULT_TL_ACCOUNT_MAPPINGS],
-  });
+  const [settings, setSettings] = useState<QBExportSettings>(() => createDefaultSettings());
 
-  // Load settings on mount
-  useEffect(() => {
-    loadSettings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
-  const loadSettings = async () => {
+  const loadSettings = useCallback(async () => {
     try {
       setLoading(true);
       const existingSettings = await getExportSettingsForTenant(tenantId);
-      if (existingSettings) {
-        setSettings(existingSettings);
-      }
+      setSettings(existingSettings ?? createDefaultSettings());
     } catch (error) {
       console.error('Error loading QuickBooks settings:', error);
+      setSettings(createDefaultSettings());
     } finally {
       setLoading(false);
     }
-  };
+  }, [tenantId]);
+
+  useEffect(() => {
+    void loadSettings();
+  }, [loadSettings]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -439,4 +438,3 @@ export function QuickBooksSettings({ tenantId }: QuickBooksSettingsProps) {
     </Card>
   );
 }
-
