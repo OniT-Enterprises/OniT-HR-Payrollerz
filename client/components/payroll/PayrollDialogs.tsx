@@ -1,5 +1,5 @@
 /**
- * PayrollDialogs — Save draft, approve, and final confirm dialogs
+ * PayrollDialogs — Save draft and review & submit dialogs
  * Extracted from RunPayroll.tsx
  */
 import { Button } from '@/components/ui/button';
@@ -15,14 +15,13 @@ import {
   Save,
   CheckCircle,
   Loader2,
-  ChevronDown,
   Lock,
   FileText,
   Calculator,
   Calendar,
   Pencil,
-  AlertCircle,
 } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
 import { formatCurrencyTL } from '@/lib/payroll/constants-tl';
 import { formatPayPeriod, formatPayDate } from '@/lib/payroll/run-payroll-helpers';
 
@@ -37,20 +36,14 @@ interface PayrollTotals {
 }
 
 interface PayrollDialogsProps {
-  // Save dialog
   showSaveDialog: boolean;
   setShowSaveDialog: (v: boolean) => void;
   handleSaveDraft: () => void;
   saving: boolean;
-  // Approve dialog
   showApproveDialog: boolean;
   setShowApproveDialog: (v: boolean) => void;
-  // Final confirm dialog
-  showFinalConfirmDialog: boolean;
-  setShowFinalConfirmDialog: (v: boolean) => void;
   handleProcessPayroll: () => void;
   processing: boolean;
-  // Shared data
   periodStart: string;
   periodEnd: string;
   payDate: string;
@@ -67,8 +60,6 @@ export function PayrollDialogs({
   saving,
   showApproveDialog,
   setShowApproveDialog,
-  showFinalConfirmDialog,
-  setShowFinalConfirmDialog,
   handleProcessPayroll,
   processing,
   periodStart,
@@ -140,7 +131,7 @@ export function PayrollDialogs({
         </DialogContent>
       </Dialog>
 
-      {/* Approve Dialog — Review summary */}
+      {/* Review & Submit Dialog */}
       <Dialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -155,7 +146,6 @@ export function PayrollDialogs({
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
-            {/* Period highlight */}
             <div className="p-4 bg-green-50 dark:bg-green-950/30 rounded-lg border border-green-200 dark:border-green-800">
               <div className="flex items-center gap-2 mb-2">
                 <Calendar className="h-4 w-4 text-green-600" />
@@ -169,7 +159,6 @@ export function PayrollDialogs({
               </p>
             </div>
 
-            {/* Summary */}
             <div className="grid grid-cols-2 gap-3">
               <div className="p-3 rounded-lg bg-muted/50 border border-border/30">
                 <p className="text-xs text-muted-foreground">{t('runPayroll.employees')}</p>
@@ -189,7 +178,6 @@ export function PayrollDialogs({
               </div>
             </div>
 
-            {/* Total employer cost */}
             <div className="p-3 rounded-lg bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10 border border-amber-500/10">
               <div className="flex items-center justify-between">
                 <div>
@@ -208,55 +196,9 @@ export function PayrollDialogs({
                 </span>
               </div>
             )}
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
-              {t('runPayroll.backToEdit')}
-            </Button>
-            <Button
-              onClick={() => {
-                setShowApproveDialog(false);
-                setShowFinalConfirmDialog(true);
-              }}
-              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
-            >
-              {t('runPayroll.continueToConfirm')}
-              <ChevronDown className="h-4 w-4 ml-2 rotate-[-90deg]" />
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
-      {/* Final Confirm Dialog — Point of no return */}
-      <Dialog open={showFinalConfirmDialog} onOpenChange={setShowFinalConfirmDialog}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-amber-500/10">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-              </div>
-              <span className="text-amber-700 dark:text-amber-400">{t('runPayroll.submitForApprovalTitle')}</span>
-            </DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            {/* Warning banner */}
-            <div className="p-4 bg-amber-50 dark:bg-amber-950/30 rounded-lg border-2 border-amber-300 dark:border-amber-700">
-              <p className="font-semibold text-amber-800 dark:text-amber-200 mb-3">
-                {t('runPayroll.aboutToSubmit', { count: String(employeeCount) })}
-              </p>
-              <div className="space-y-2 text-sm text-amber-700 dark:text-amber-300">
-                <div className="flex justify-between">
-                  <span>{t('runPayroll.payDateLabel')}</span>
-                  <span className="font-medium">{payDate ? formatPayDate(payDate) : t('runPayroll.notSet')}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>{t('runPayroll.totalNetPay')}</span>
-                  <span className="font-medium">{formatCurrencyTL(totals.netPay)}</span>
-                </div>
-              </div>
-            </div>
+            <Separator />
 
-            {/* Consequences */}
             <div className="p-4 bg-red-50 dark:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-800">
               <p className="font-medium text-amber-800 dark:text-amber-200 mb-2">
                 {t('runPayroll.thisActionWill')}
@@ -278,19 +220,13 @@ export function PayrollDialogs({
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                setShowFinalConfirmDialog(false);
-                setShowApproveDialog(true);
-              }}
-            >
-              {t('runPayroll.back')}
+            <Button variant="outline" onClick={() => setShowApproveDialog(false)}>
+              {t('runPayroll.backToEdit')}
             </Button>
             <Button
               onClick={handleProcessPayroll}
               disabled={processing}
-              className="bg-green-600 hover:bg-green-700 text-white shadow-lg shadow-green-500/25"
+              className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25"
             >
               {processing ? (
                 <>

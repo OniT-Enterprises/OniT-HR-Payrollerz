@@ -28,6 +28,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
+import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -99,6 +100,7 @@ export default function VATReturnsPage() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const queryClient = useQueryClient();
 
   const [saving, setSaving] = useState(false);
@@ -282,6 +284,7 @@ export default function VATReturnsPage() {
             )}
 
             {/* Summary Cards */}
+            {!isSimple && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {/* Output VAT */}
               <Card className="border-green-500/20">
@@ -352,6 +355,7 @@ export default function VATReturnsPage() {
                 </CardContent>
               </Card>
             </div>
+            )}
 
             {/* Breakdown */}
             <Card>

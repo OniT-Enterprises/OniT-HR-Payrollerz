@@ -29,6 +29,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
+import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -69,6 +70,7 @@ export default function BankReconciliation() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -463,9 +465,11 @@ export default function BankReconciliation() {
 
       <div className="max-w-6xl mx-auto px-6 py-6">
         {/* Summary Cards */}
+        {!isSimple && (
         <div className="animate-fade-up stagger-1">
           <BankReconciliationSummary summary={summary} formatCurrency={formatCurrency} />
         </div>
+        )}
 
         {/* Actions Bar */}
         {selectedIds.size > 0 && (

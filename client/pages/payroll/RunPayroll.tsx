@@ -89,7 +89,6 @@ export default function RunPayroll() {
   // Dialog states (UI-only, kept in component)
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showSaveDialog, setShowSaveDialog] = useState(false);
-  const [showFinalConfirmDialog, setShowFinalConfirmDialog] = useState(false);
 
   // Compliance UI states
   const [complianceExpanded, setComplianceExpanded] = useState(false);
@@ -227,7 +226,6 @@ export default function RunPayroll() {
             description: t("runPayroll.toastSubmittedDesc", { count: String(includedData.length) }),
           });
 
-          setShowFinalConfirmDialog(false);
           setShowApproveDialog(false);
 
           navigate("/payroll/history");
@@ -551,8 +549,6 @@ export default function RunPayroll() {
         saving={saving}
         showApproveDialog={showApproveDialog}
         setShowApproveDialog={setShowApproveDialog}
-        showFinalConfirmDialog={showFinalConfirmDialog}
-        setShowFinalConfirmDialog={setShowFinalConfirmDialog}
         handleProcessPayroll={handleProcessPayroll}
         processing={processing}
         periodStart={calc.periodStart}

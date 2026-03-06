@@ -49,6 +49,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import GuidancePanel from "@/components/GuidancePanel";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { payrollNavConfig } from "@/lib/moduleNav";
@@ -77,6 +78,7 @@ export default function PayrollDashboard() {
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const [secondaryOpen, setSecondaryOpen] = useState(false);
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
@@ -555,6 +557,7 @@ export default function PayrollDashboard() {
         {/* COMPLIANCE DEADLINES  */}
         {/* Promoted: time-sensitive */}
         {/* ===================== */}
+        {!isSimple && (
         <div className="mb-6 flex flex-wrap items-center gap-4 text-sm px-1">
           <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
             <Shield className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
@@ -581,10 +584,12 @@ export default function PayrollDashboard() {
             </span>
           ))}
         </div>
+        )}
 
         {/* ==================== */}
         {/* FINANCIAL SUMMARY    */}
         {/* ==================== */}
+        {!isSimple && (
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {/* Gross Payroll with breakdown */}
           <Card className={`${theme.borderLeft} relative overflow-hidden`}>
@@ -697,6 +702,7 @@ export default function PayrollDashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* ================== */}
         {/* PAYROLL CHECKLIST  */}

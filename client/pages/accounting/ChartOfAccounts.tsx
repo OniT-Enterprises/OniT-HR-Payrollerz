@@ -62,6 +62,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -76,6 +77,7 @@ const PAYROLL_LINKED_CODES = [
 export default function ChartOfAccounts() {
   const { toast } = useToast();
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
   const { user } = useAuth();
   const { data: accounts = [], isLoading: loading } = useAccounts();
   const createAccountMutation = useCreateAccount();
@@ -494,6 +496,7 @@ export default function ChartOfAccounts() {
                 <p className="text-muted-foreground mt-1">
                   {t("accounting.chartOfAccounts.subtitle")}
                 </p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">Your list of categories for tracking where money goes</p>
               </div>
             </div>
               <div className="flex items-center gap-3">
@@ -704,6 +707,7 @@ export default function ChartOfAccounts() {
 
       <div className="p-6 max-w-7xl mx-auto">
         {/* Summary Cards */}
+          {!isSimple && (
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
             <Card className="border-border/50">
               <CardContent className="p-3">
@@ -742,6 +746,7 @@ export default function ChartOfAccounts() {
               </CardContent>
             </Card>
           </div>
+          )}
 
           {/* Filters */}
           <Card className="mb-6 border-border/50">

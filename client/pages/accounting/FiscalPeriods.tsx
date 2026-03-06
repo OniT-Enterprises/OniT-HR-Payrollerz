@@ -67,6 +67,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { formatCurrencyTL } from '@/lib/payroll/constants-tl';
 import {
   useAccounts,
@@ -83,6 +84,7 @@ import type { Account } from '@/types/accounting';
 
 export default function FiscalPeriods() {
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -297,6 +299,7 @@ export default function FiscalPeriods() {
                 <p className="text-muted-foreground mt-1">
                   {t("accounting.fiscalPeriods.subtitle")}
                 </p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">Open and close monthly accounting periods for your financial year</p>
               </div>
             </div>
           </div>
@@ -413,6 +416,7 @@ export default function FiscalPeriods() {
           )}
 
           {/* Summary */}
+          {!isSimple && (
           <div className="grid gap-4 md:grid-cols-4">
             <Card>
               <CardHeader className="pb-2">
@@ -468,6 +472,7 @@ export default function FiscalPeriods() {
               </CardContent>
             </Card>
           </div>
+          )}
 
           {/* Periods Table */}
           <Card>

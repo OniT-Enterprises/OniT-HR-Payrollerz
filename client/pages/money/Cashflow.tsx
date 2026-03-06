@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
+import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -52,6 +53,7 @@ interface CashflowData {
 export default function Cashflow() {
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const [period, setPeriod] = useState<string>('this_month');
 
   const getDateRange = (periodValue: string): { start: Date; end: Date } => {
@@ -197,6 +199,7 @@ export default function Cashflow() {
         </div>
 
         {/* Summary Cards */}
+        {!isSimple && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
@@ -256,6 +259,7 @@ export default function Cashflow() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Detailed Statement */}
         <Card>

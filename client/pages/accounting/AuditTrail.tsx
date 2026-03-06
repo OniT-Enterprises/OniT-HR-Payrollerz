@@ -199,6 +199,7 @@ export default function AccountingAuditTrail() {
               <div>
                 <h1 className="text-3xl font-bold text-foreground">{t("accounting.auditTrail.title")}</h1>
                 <p className="text-muted-foreground mt-1">{t("accounting.auditTrail.subtitle")}</p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">Who changed what and when — a complete record of accounting actions</p>
               </div>
             </div>
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>

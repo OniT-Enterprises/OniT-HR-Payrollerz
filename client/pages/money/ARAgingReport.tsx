@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
+import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
@@ -48,6 +49,7 @@ export default function ARAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const { data: allInvoices = [], isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'arAging'],
     queryFn: () => invoiceService.getOutstandingInvoices(tenantId),
@@ -190,6 +192,7 @@ export default function ARAgingReport() {
         </div>
 
         {/* Aging Buckets */}
+        {!isSimple && (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
           {buckets.map((bucket, index) => (
             <Card key={bucket.label} className={index >= 3 ? 'border-red-200 dark:border-red-800' : ''}>
@@ -207,6 +210,7 @@ export default function ARAgingReport() {
             </Card>
           ))}
         </div>
+        )}
 
         {/* Customer Breakdown */}
         <Card>

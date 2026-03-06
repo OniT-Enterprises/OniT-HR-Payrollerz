@@ -43,6 +43,7 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -50,6 +51,7 @@ const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'reve
 
 export default function TrialBalance() {
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
@@ -238,6 +240,7 @@ export default function TrialBalance() {
                 <p className="text-muted-foreground mt-1">
                   {t("accounting.trialBalance.subtitle")}
                 </p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">Check that all your accounts add up correctly</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -309,7 +312,7 @@ export default function TrialBalance() {
       </Card>
 
       {/* Balance Status */}
-      {trialBalanceRows.length > 0 && (
+      {!isSimple && trialBalanceRows.length > 0 && (
         <Card className={isBalanced ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30'}>
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
@@ -348,7 +351,7 @@ export default function TrialBalance() {
       )}
 
       {/* Summary Cards */}
-      {trialBalanceRows.length > 0 && (
+      {!isSimple && trialBalanceRows.length > 0 && (
         <div className="grid gap-4 md:grid-cols-5">
           {ACCOUNT_TYPE_ORDER.map((type) => (
             <Card key={type}>
@@ -396,12 +399,12 @@ export default function TrialBalance() {
                   <TableHead colSpan={2} className="text-center border-b">{t("accounting.trialBalance.closingBalance")}</TableHead>
                 </TableRow>
                 <TableRow>
-                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
-                  <TableHead className="text-right w-[120px] border-r">{t("accounting.trialBalance.credit")}</TableHead>
-                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
-                  <TableHead className="text-right w-[120px] border-r">{t("accounting.trialBalance.credit")}</TableHead>
-                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.debit")}</TableHead>
-                  <TableHead className="text-right w-[120px]">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead className="text-right w-[120px]" title="Money coming in to this account">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px] border-r" title="Money going out of this account">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead className="text-right w-[120px]" title="Money coming in to this account">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px] border-r" title="Money going out of this account">{t("accounting.trialBalance.credit")}</TableHead>
+                  <TableHead className="text-right w-[120px]" title="Money coming in to this account">{t("accounting.trialBalance.debit")}</TableHead>
+                  <TableHead className="text-right w-[120px]" title="Money going out of this account">{t("accounting.trialBalance.credit")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

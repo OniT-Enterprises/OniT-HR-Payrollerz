@@ -10,6 +10,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useGuidance } from "@/contexts/GuidanceContext";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   DropdownMenu,
@@ -40,6 +41,7 @@ import {
   FolderKanban,
   FileSpreadsheet,
   Clock,
+  Zap,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
@@ -111,6 +113,7 @@ export default function MainNavigation() {
   const { session, hasModule, canManage } = useTenant();
   const { isDark, toggleTheme } = useTheme();
   const { guidanceEnabled, toggleGuidance } = useGuidance();
+  const { isSimple, toggleSimpleMode } = useSimpleMode();
   const { t, locale, setLocale, localeLabels } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const localeOptions = Object.entries(localeLabels) as Array<[typeof locale, string]>;
@@ -264,6 +267,17 @@ export default function MainNavigation() {
                 ))}
               </DropdownMenuContent>
             </DropdownMenu>
+
+            {/* Simple Mode Toggle */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleSimpleMode}
+              className={`h-9 w-9 ${isSimple ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}
+              title={isSimple ? "Simple mode on" : "Simple mode off"}
+            >
+              <Zap className="h-4 w-4" />
+            </Button>
 
             {/* Theme Toggle */}
             <Button

@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 
 function PeopleDashboardSkeleton() {
@@ -83,6 +84,7 @@ function PeopleDashboardSkeleton() {
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const loading = employeesLoading || leaveStatsLoading;
@@ -145,6 +147,7 @@ export default function PeopleDashboard() {
         <GuidancePanel section="people" />
 
         {/* KPI row */}
+        {!isSimple && (
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
@@ -229,6 +232,7 @@ export default function PeopleDashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Section cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

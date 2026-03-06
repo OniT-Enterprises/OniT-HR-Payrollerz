@@ -22,6 +22,7 @@ import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { getTodayTL } from "@/lib/dateUtils";
@@ -172,6 +173,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
+  const { isSimple } = useSimpleMode();
   const { t } = useI18n();
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: "active" });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
@@ -300,6 +302,7 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════════════════════════
             TODAY'S STATUS - 3 Cards: Payroll (PRIMARY), Compliance, Team
         ═══════════════════════════════════════════════════════════════ */}
+        {!isSimple && (
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {/* PAYROLL STATUS - PRIMARY CARD */}
           <Card
@@ -431,6 +434,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════
             NEXT RECOMMENDED ACTION - Smart suggestion
@@ -468,6 +472,7 @@ export default function Dashboard() {
         {/* ═══════════════════════════════════════════════════════════════
             KPIs - 3 Only: Active Employees, Monthly Payroll, Next Payroll
         ═══════════════════════════════════════════════════════════════ */}
+        {!isSimple && (
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/people/employees")}>
             <CardContent className="pt-5 pb-4">
@@ -511,6 +516,7 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* ═══════════════════════════════════════════════════════════════
             QUICK ACTIONS - Payroll, HR, Reports, NGO exports

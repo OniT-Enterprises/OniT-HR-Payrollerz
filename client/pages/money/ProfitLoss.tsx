@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
+import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { expenseService } from '@/services/expenseService';
@@ -62,6 +63,7 @@ const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 export default function ProfitLoss() {
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const { isSimple } = useSimpleMode();
   const [period, setPeriod] = useState<string>('this_month');
 
   const getDateRange = (periodValue: string): { start: string; end: string } => {
@@ -210,6 +212,7 @@ export default function ProfitLoss() {
         </div>
 
         {/* Summary Cards */}
+        {!isSimple && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
           <Card>
             <CardContent className="pt-6">
@@ -272,6 +275,7 @@ export default function ProfitLoss() {
             </CardContent>
           </Card>
         </div>
+        )}
 
         {/* Detailed P&L Statement */}
         <Card>

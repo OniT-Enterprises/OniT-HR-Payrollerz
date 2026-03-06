@@ -46,9 +46,11 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 
 export default function GeneralLedger() {
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
 
   // Local UI state
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -188,6 +190,7 @@ export default function GeneralLedger() {
                 <p className="text-muted-foreground mt-1">
                   {t("accounting.generalLedger.subtitle")}
                 </p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">See every transaction for a specific account over time</p>
               </div>
             </div>
             <Button onClick={exportToCSV} disabled={!canExport}>
@@ -293,7 +296,7 @@ export default function GeneralLedger() {
       </Card>
 
       {/* Account Summary */}
-      {selectedAccount && (
+      {!isSimple && selectedAccount && (
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -350,8 +353,8 @@ export default function GeneralLedger() {
                       <TableHead>{t("accounting.generalLedger.date")}</TableHead>
                       <TableHead>{t("accounting.generalLedger.entryNumber")}</TableHead>
                       <TableHead className="w-[40%]">{t("accounting.generalLedger.description")}</TableHead>
-                      <TableHead className="text-right">{t("accounting.generalLedger.debit")}</TableHead>
-                      <TableHead className="text-right">{t("accounting.generalLedger.credit")}</TableHead>
+                      <TableHead className="text-right" title="Money coming in to this account">{t("accounting.generalLedger.debit")}</TableHead>
+                      <TableHead className="text-right" title="Money going out of this account">{t("accounting.generalLedger.credit")}</TableHead>
                       <TableHead className="text-right">{t("accounting.generalLedger.balance")}</TableHead>
                     </TableRow>
                   </TableHeader>

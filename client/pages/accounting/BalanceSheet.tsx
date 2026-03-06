@@ -45,9 +45,11 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
+import { useSimpleMode } from "@/contexts/SimpleModeContext";
 
 export default function BalanceSheet() {
   const { t } = useI18n();
+  const { isSimple } = useSimpleMode();
 
   const [asOfDate, setAsOfDate] = useState<string>(() => getTodayTL());
   const [requestedReport, setRequestedReport] = useState<{
@@ -161,6 +163,7 @@ export default function BalanceSheet() {
                 <p className="text-muted-foreground mt-1">
                   {t("accounting.balanceSheet.subtitle")}
                 </p>
+                <p className="text-sm text-muted-foreground/70 mt-0.5">What your business owns vs what it owes, right now</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -209,7 +212,7 @@ export default function BalanceSheet() {
       </Card>
 
       {/* Balance Check Status */}
-      {report && (
+      {!isSimple && report && (
         <Card className={report.isBalanced
           ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30'
           : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30'
@@ -248,7 +251,7 @@ export default function BalanceSheet() {
       )}
 
       {/* Summary Cards */}
-      {report && (
+      {!isSimple && report && (
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
