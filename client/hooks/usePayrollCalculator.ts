@@ -11,7 +11,7 @@
  * - Validation, build run/records for submission
  */
 
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAttendanceSummary } from "@/hooks/useAttendance";
@@ -49,6 +49,22 @@ interface UsePayrollCalculatorOptions {
   userId: string;
 }
 
+function getInitialPayrollDates() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  const payDay = new Date(year, month + 1, 5);
+
+  return {
+    periodStart: toDateStringTL(firstDay),
+    periodEnd: toDateStringTL(lastDay),
+    payDate: toDateStringTL(payDay),
+  };
+}
+
 export function usePayrollCalculator({
   activeEmployees,
   tenantId,
@@ -62,10 +78,11 @@ export function usePayrollCalculator({
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // Payroll period settings
+  const initialPayrollDates = useMemo(() => getInitialPayrollDates(), []);
   const [payFrequency, setPayFrequency] = useState<TLPayFrequency>("monthly");
-  const [periodStart, setPeriodStart] = useState("");
-  const [periodEnd, setPeriodEnd] = useState("");
-  const [payDate, setPayDate] = useState("");
+  const [periodStart, setPeriodStart] = useState(initialPayrollDates.periodStart);
+  const [periodEnd, setPeriodEnd] = useState(initialPayrollDates.periodEnd);
+  const [payDate, setPayDate] = useState(initialPayrollDates.payDate);
   const [includeSubsidioAnual, setIncludeSubsidioAnual] = useState(false);
 
   const {
@@ -77,24 +94,13 @@ export function usePayrollCalculator({
   // Compliance states
   const [excludedEmployees, setExcludedEmployees] = useState<Set<string>>(new Set());
 
-  // Initialize dates to current month
-  useEffect(() => {
-    const now = new Date();
-    const year = now.getFullYear();
-    const month = now.getMonth();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const payDay = new Date(year, month + 1, 5);
-
-    setPeriodStart(toDateStringTL(firstDay));
-    setPeriodEnd(toDateStringTL(lastDay));
-    setPayDate(toDateStringTL(payDay));
-  }, []);
-
   // Initialize payroll data when active employees change
   useEffect(() => {
-    if (activeEmployees.length === 0) return;
+    if (activeEmployees.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing payroll rows is the intended reset when there are no active employees
+      setEmployeePayrollData([]);
+      return;
+    }
 
     const monthlyHours = (TL_WORKING_HOURS.standardWeeklyHours * 52) / 12;
     const defaultHours = monthlyHours / TL_PAY_PERIODS[payFrequency].periodsPerMonth;
@@ -199,28 +205,35 @@ export function usePayrollCalculator({
     }
   }, [payFrequency, payDate, includeSubsidioAnual]);
 
-  // Track recalculation
-  const calculationVersion = useRef(0);
-
   // Initial calculation when data is first loaded
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
-    if (employeePayrollData.every(d => d.calculation !== null)) return;
+    if (employeePayrollData.every((data) => data.calculation !== null)) return;
 
-    calculationVersion.current++;
-    const updatedData = employeePayrollData.map((data) => ({
-      ...data,
-      calculation: calculateForEmployee(data),
-    }));
-    setEmployeePayrollData(updatedData);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [employeePayrollData.length, calculateForEmployee]);
+    const updatedData = employeePayrollData.map((data) =>
+      data.calculation !== null
+        ? data
+        : {
+            ...data,
+            calculation: calculateForEmployee(data),
+          }
+    );
+
+    const hasChanges = updatedData.some(
+      (data, index) => data.calculation !== employeePayrollData[index]?.calculation,
+    );
+
+    if (hasChanges) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- rows need one post-reset pass to hydrate missing calculations
+      setEmployeePayrollData(updatedData);
+    }
+  }, [employeePayrollData, calculateForEmployee]);
 
   // Recalculate when pay frequency changes
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
 
-    calculationVersion.current++;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- recalculates existing rows when payroll assumptions change
     setEmployeePayrollData((prev) =>
       prev.map((data) => ({
         ...data,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -290,15 +290,7 @@ export default function CSVColumnMapper({
   const [unmappedColumns, setUnmappedColumns] = useState<CSVColumn[]>([]);
   const [step, setStep] = useState<"upload" | "map" | "preview">("upload");
 
-
-  useEffect(() => {
-    if (csvFile) {
-      parseCSVFile();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [csvFile]);
-
-  const autoMapColumns = (columns: CSVColumn[]): ColumnMapping[] => {
+  const autoMapColumns = useCallback((columns: CSVColumn[]): ColumnMapping[] => {
     const mappings: ColumnMapping[] = [];
 
     columns.forEach((csvColumn) => {
@@ -316,66 +308,82 @@ export default function CSVColumnMapper({
     });
 
     return mappings;
-  };
+  }, []);
 
-  const parseCSVFile = async () => {
-    if (!csvFile) return;
-
-    try {
-      const text = await csvFile.text();
-
-      // Use papaparse for robust CSV handling:
-      // - Correctly handles quoted fields with commas (e.g., "Address: Apt 1, Dili")
-      // - Handles escaped quotes within quoted fields
-      // - Handles different line endings (CRLF vs LF)
-      // - Handles newlines within quoted fields
-      const { default: PapaParse } = await import("papaparse");
-      const result = PapaParse.parse<Record<string, string>>(text, {
-        header: true,
-        skipEmptyLines: true,
-        transformHeader: (header) => header.trim(),
-        transform: (value) => value.trim(),
-      });
-
-      if (result.errors.length > 0) {
-        console.warn("CSV parsing warnings:", result.errors);
-      }
-
-      const data = result.data;
-      const headers = result.meta.fields || [];
-
-      if (headers.length === 0 || data.length === 0) {
-        throw new Error(
-          "CSV file must have at least a header row and one data row",
-        );
-      }
-
-      const columns: CSVColumn[] = headers.map((header, index) => ({
-        id: `csv-col-${index}`,
-        name: header,
-        sample: data[0]?.[header] || "",
-      }));
-
-      setCsvColumns(columns);
-      setCsvData(data);
-      setUnmappedColumns([...columns]);
-
-      // Auto-map columns that match exactly with employee field IDs
-      const autoMappings = autoMapColumns(columns);
-      setMappings(autoMappings);
-
-      // Remove auto-mapped columns from unmapped list
-      const mappedColumnNames = autoMappings.map((m) => m.csvColumn);
-      setUnmappedColumns(
-        columns.filter((col) => !mappedColumnNames.includes(col.name)),
-      );
-
-      setStep("map");
-    } catch (error) {
-      console.error("Error parsing CSV:", error);
-      alert("Error parsing CSV file. Please check the file format.");
+  useEffect(() => {
+    if (!csvFile) {
+      setCsvColumns([]);
+      setCsvData([]);
+      setMappings([]);
+      setUnmappedColumns([]);
+      setStep("upload");
+      return;
     }
-  };
+
+    let cancelled = false;
+
+    const parseCSVFile = async () => {
+      try {
+        const text = await csvFile.text();
+
+        // Use papaparse for robust CSV handling:
+        // - Correctly handles quoted fields with commas (e.g., "Address: Apt 1, Dili")
+        // - Handles escaped quotes within quoted fields
+        // - Handles different line endings (CRLF vs LF)
+        // - Handles newlines within quoted fields
+        const { default: PapaParse } = await import("papaparse");
+        const result = PapaParse.parse<Record<string, string>>(text, {
+          header: true,
+          skipEmptyLines: true,
+          transformHeader: (header) => header.trim(),
+          transform: (value) => value.trim(),
+        });
+
+        if (result.errors.length > 0) {
+          console.warn("CSV parsing warnings:", result.errors);
+        }
+
+        const data = result.data;
+        const headers = result.meta.fields || [];
+
+        if (headers.length === 0 || data.length === 0) {
+          throw new Error(
+            "CSV file must have at least a header row and one data row",
+          );
+        }
+
+        const columns: CSVColumn[] = headers.map((header, index) => ({
+          id: `csv-col-${index}`,
+          name: header,
+          sample: data[0]?.[header] || "",
+        }));
+
+        if (cancelled) return;
+
+        // Auto-map columns that match exactly with employee field IDs
+        const autoMappings = autoMapColumns(columns);
+        const mappedColumnNames = autoMappings.map((mapping) => mapping.csvColumn);
+
+        setCsvColumns(columns);
+        setCsvData(data);
+        setMappings(autoMappings);
+        setUnmappedColumns(
+          columns.filter((column) => !mappedColumnNames.includes(column.name)),
+        );
+        setStep("map");
+      } catch (error) {
+        if (cancelled) return;
+        console.error("Error parsing CSV:", error);
+        alert("Error parsing CSV file. Please check the file format.");
+      }
+    };
+
+    void parseCSVFile();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [csvFile, autoMapColumns]);
 
   const handleDragEnd = (result: DropResult) => {
     const { source, destination } = result;

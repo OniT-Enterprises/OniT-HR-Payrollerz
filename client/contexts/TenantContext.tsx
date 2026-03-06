@@ -118,7 +118,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const [impersonatedTenantName, setImpersonatedTenantName] = useState<string | null>(null);
 
   // Get current user and custom claims
-  const getCurrentUserAndClaims = async (): Promise<{
+  const getCurrentUserAndClaims = useCallback(async (): Promise<{
     user: User | null;
     claims: CustomClaims | null;
   }> => {
@@ -134,11 +134,11 @@ export function TenantProvider({ children }: TenantProviderProps) {
       console.error("Failed to get user claims:", error);
       return { user: auth.currentUser, claims: null };
     }
-  };
+  }, []);
 
   // Load available tenants for current user
   // Optimized: Uses denormalized tenantAccess when available (1 read vs N×2 reads)
-  const loadAvailableTenants = async (
+  const loadAvailableTenants = useCallback(async (
     firebaseUser: User,
   ): Promise<Array<{ id: string; name: string; role: TenantRole }>> => {
     if (!db) {
@@ -241,10 +241,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
       console.error("Failed to load available tenants:", error);
       return [];
     }
-  };
+  }, [getCurrentUserAndClaims, userProfile]);
 
   // Load tenant session data (for superadmin impersonation, skip membership check)
-  const loadTenantSession = async (
+  const loadTenantSession = useCallback(async (
     tid: string,
     firebaseUser: User,
     bypassMembershipCheck = false,
@@ -304,7 +304,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       console.error(`Failed to load tenant session for ${tid}:`, error);
       throw error;
     }
-  };
+  }, []);
 
   // Start impersonation (superadmin only)
   const startImpersonation = useCallback(async (tenantId: string, tenantName: string) => {
@@ -337,7 +337,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [user, isSuperAdmin]);
+  }, [user, isSuperAdmin, loadTenantSession]);
 
   // Stop impersonation
   const stopImpersonation = useCallback(async () => {
@@ -377,11 +377,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, loadAvailableTenants, loadTenantSession]);
 
   // Switch to a different tenant
-  const switchTenant = async (tid: string) => {
+  const switchTenant = useCallback(async (tid: string) => {
     if (!user) {
       throw new Error("No authenticated user");
     }
@@ -409,10 +408,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, isImpersonating, stopImpersonation, loadTenantSession]);
 
   // Refresh current session
-  const refreshSession = async () => {
+  const refreshSession = useCallback(async () => {
     if (!session || !user) return;
 
     try {
@@ -428,10 +427,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
       console.error("Failed to refresh session:", error);
       setError("Failed to refresh session");
     }
-  };
+  }, [session, user, isImpersonating, loadTenantSession]);
 
   // Refresh available tenants
-  const refreshTenants = async () => {
+  const refreshTenants = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -440,7 +439,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } catch (error) {
       console.error("Failed to refresh tenants:", error);
     }
-  };
+  }, [user, loadAvailableTenants]);
 
   // Initialize tenant session
   useEffect(() => {
@@ -515,9 +514,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
       }
     };
 
-    initializeTenant();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user, isSuperAdmin, userProfile]);
+    void initializeTenant();
+  }, [user, isSuperAdmin, loadAvailableTenants, loadTenantSession]);
 
   // Permission helpers
   const hasModule = (module: ModulePermission): boolean => {
@@ -555,16 +553,28 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   // Dismiss the HTML splash overlay once we're past the loading gate
   useEffect(() => {
-    if (!loading) {
-      // Use requestAnimationFrame to ensure React content has painted before fading splash
-      requestAnimationFrame(() => {
-        const splash = document.getElementById("splash");
-        if (splash) {
-          splash.style.opacity = "0";
-          setTimeout(() => splash.remove(), 300);
-        }
-      });
-    }
+    if (loading) return;
+
+    let removeTimer: number | null = null;
+
+    // Use requestAnimationFrame to ensure React content has painted before fading splash
+    const frame = requestAnimationFrame(() => {
+      const splash = document.getElementById("splash");
+      if (splash) {
+        splash.style.opacity = "0";
+        removeTimer = window.setTimeout(() => {
+          splash.remove();
+          removeTimer = null;
+        }, 300);
+      }
+    });
+
+    return () => {
+      cancelAnimationFrame(frame);
+      if (removeTimer !== null) {
+        window.clearTimeout(removeTimer);
+      }
+    };
   }, [loading]);
 
   return (

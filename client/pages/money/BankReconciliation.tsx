@@ -330,7 +330,6 @@ export default function BankReconciliation() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
           <div className="max-w-6xl mx-auto px-6 py-8">

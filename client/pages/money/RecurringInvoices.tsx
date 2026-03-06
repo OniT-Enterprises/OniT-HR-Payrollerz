@@ -159,7 +159,6 @@ export default function RecurringInvoices() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-7xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />

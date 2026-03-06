@@ -136,7 +136,6 @@ export default function ARAgingReport() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-6xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />

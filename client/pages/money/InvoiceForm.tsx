@@ -400,7 +400,6 @@ export default function InvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
@@ -416,7 +415,6 @@ export default function InvoiceForm() {
       <div className="min-h-screen bg-background">
         <SEO title={`Invoice ${invoice.invoiceNumber} - Meza`} />
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
 
         <div className="p-6 max-w-4xl mx-auto">

@@ -290,7 +290,6 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="p-6 max-w-4xl mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
@@ -309,7 +308,6 @@ export default function BillForm() {
           description="View bill details"
         />
         <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
         <ModuleSectionNav config={moneyNavConfig} />
 
         <div className="p-6 max-w-4xl mx-auto">
