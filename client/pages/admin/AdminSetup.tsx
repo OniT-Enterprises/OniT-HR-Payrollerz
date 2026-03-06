@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +19,16 @@ export default function AdminSetup() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [alreadySetup, setAlreadySetup] = useState(false);
+  const redirectTimeoutRef = useRef<number | null>(null);
+
+  const clearRedirectTimeout = useCallback(() => {
+    if (redirectTimeoutRef.current !== null) {
+      window.clearTimeout(redirectTimeoutRef.current);
+      redirectTimeoutRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearRedirectTimeout, [clearRedirectTimeout]);
 
   // Company/Tenant info
   const [companyName, setCompanyName] = useState("Meza Demo Company");
@@ -70,8 +80,10 @@ export default function AdminSetup() {
       setSuccess(true);
 
       // Navigate to dashboard after short delay
-      setTimeout(() => {
+      clearRedirectTimeout();
+      redirectTimeoutRef.current = window.setTimeout(() => {
         navigate("/");
+        redirectTimeoutRef.current = null;
       }, 2000);
     } catch (err: unknown) {
       console.error("Setup error:", err);

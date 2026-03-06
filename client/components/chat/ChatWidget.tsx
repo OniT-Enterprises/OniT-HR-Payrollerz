@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from "react";
+import { useEffect, useCallback, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
 import { Bot, Command, Minimize2, Maximize2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -17,14 +17,26 @@ const ChatWidget = () => {
   }, [location.pathname, setCurrentRoute]);
   const [isClosing, setIsClosing] = useState(false);
   const [isMini, setIsMini] = useState(false);
+  const closeTimerRef = useRef<number | null>(null);
+
+  const clearCloseTimer = useCallback(() => {
+    if (closeTimerRef.current !== null) {
+      window.clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearCloseTimer, [clearCloseTimer]);
 
   const handleClose = useCallback(() => {
+    clearCloseTimer();
     setIsClosing(true);
-    setTimeout(() => {
+    closeTimerRef.current = window.setTimeout(() => {
       setOpen(false);
       setIsClosing(false);
+      closeTimerRef.current = null;
     }, 150);
-  }, [setOpen]);
+  }, [clearCloseTimer, setOpen]);
 
   // Keyboard shortcuts: Cmd+K / Ctrl+K to toggle, Escape to close
   useEffect(() => {
@@ -68,7 +80,11 @@ const ChatWidget = () => {
       {/* Floating button */}
       {!isOpen && (
         <button
-          onClick={() => setOpen(true)}
+          onClick={() => {
+            clearCloseTimer();
+            setIsClosing(false);
+            setOpen(true);
+          }}
           className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center print:hidden ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
           aria-label="Open Meza assistant (⌘K)"
         >

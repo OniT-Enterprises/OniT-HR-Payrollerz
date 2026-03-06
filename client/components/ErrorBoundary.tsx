@@ -14,6 +14,8 @@ interface ErrorBoundaryProps {
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  private resetTimeoutId: number | null = null;
+
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
@@ -41,9 +43,20 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
         error.message?.includes('The node to be removed is not a child')) {
       console.warn('DOM manipulation error caught and handled by ErrorBoundary');
       // Reset the error state after a brief delay
-      setTimeout(() => {
+      if (this.resetTimeoutId !== null) {
+        window.clearTimeout(this.resetTimeoutId);
+      }
+      this.resetTimeoutId = window.setTimeout(() => {
         this.setState({ hasError: false, error: null });
+        this.resetTimeoutId = null;
       }, 100);
+    }
+  }
+
+  componentWillUnmount() {
+    if (this.resetTimeoutId !== null) {
+      window.clearTimeout(this.resetTimeoutId);
+      this.resetTimeoutId = null;
     }
   }
 
