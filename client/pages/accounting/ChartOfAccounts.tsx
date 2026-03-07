@@ -62,9 +62,9 @@ import { SEO, seoConfig } from "@/components/SEO";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 import { useAuth } from "@/contexts/AuthContext";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 // Payroll-linked account codes - these should not be edited carelessly
 const PAYROLL_LINKED_CODES = [
@@ -77,7 +77,6 @@ const PAYROLL_LINKED_CODES = [
 export default function ChartOfAccounts() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { user } = useAuth();
   const { data: accounts = [], isLoading: loading } = useAccounts();
   const createAccountMutation = useCreateAccount();
@@ -706,9 +705,8 @@ export default function ChartOfAccounts() {
       <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Summary Cards */}
-          {!isSimple && (
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-3 mb-6">
+        <MoreDetailsSection className="mb-6">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <Card className="border-border/50">
               <CardContent className="p-3">
                 <p className="text-xs text-muted-foreground">{t("accounting.chartOfAccounts.total")}</p>
@@ -746,7 +744,7 @@ export default function ChartOfAccounts() {
               </CardContent>
             </Card>
           </div>
-          )}
+        </MoreDetailsSection>
 
           {/* Filters */}
           <Card className="mb-6 border-border/50">

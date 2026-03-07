@@ -11,13 +11,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
-import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { useInvoiceStats } from '@/hooks/useInvoices';
 import { usePayablesSummary } from '@/hooks/useBills';
 import GuidancePanel from '@/components/GuidancePanel';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   FileText,
   Users,
@@ -38,7 +38,6 @@ import {
 export default function MoneyDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { data: stats = null, isLoading: statsLoading } = useInvoiceStats();
   const { data: payablesSummary = null, isLoading: payablesLoading } = usePayablesSummary();
   const loading = statsLoading || payablesLoading;
@@ -203,8 +202,7 @@ export default function MoneyDashboard() {
           </div>
         )}
 
-        {/* Money In / Money Out */}
-        {!isSimple && (
+        <MoreDetailsSection className="mb-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Money Coming In */}
           <Card className="border-l-4 border-l-green-500">
@@ -307,7 +305,7 @@ export default function MoneyDashboard() {
             </CardContent>
           </Card>
         </div>
-        )}
+        </MoreDetailsSection>
 
         {/* Who Owes You — compact table */}
         {stats?.topCustomers && stats.topCustomers.length > 0 && (

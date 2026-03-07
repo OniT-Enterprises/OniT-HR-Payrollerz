@@ -245,6 +245,66 @@ export default function RunPayroll() {
   const saving = createPayrollMutation.isPending;
   const processing = createPayrollMutation.isPending;
 
+  const payrollSummaryCard = (
+    <Card className="border-border/50">
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <Calculator className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+          {t("runPayroll.payrollSummary")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 space-y-2.5">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{t("runPayroll.totalGrossPay")}</span>
+          <span className="font-semibold tabular-nums">{formatCurrencyTL(calc.totals.grossPay)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{t("runPayroll.employeeDeductions")}</span>
+          <span className="font-semibold tabular-nums text-red-600">-{formatCurrencyTL(calc.totals.totalDeductions)}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between text-sm">
+          <span className="font-medium">{t("runPayroll.netPayToEmployees")}</span>
+          <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.netPay)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{t("runPayroll.employees")}</span>
+          <span className="font-semibold tabular-nums">{activeEmployees.length}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const taxSummaryCard = (
+    <Card className="border-border/50">
+      <CardHeader className="pb-2 pt-4 px-4">
+        <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          <Lock className="h-3 w-3 text-muted-foreground" />
+          {t("runPayroll.taxInssTitle")}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="px-4 pb-4 space-y-2.5">
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.income_tax.tl}</span>
+          <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.incomeTax)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employee.tl}</span>
+          <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.inssEmployee)}</span>
+        </div>
+        <div className="flex justify-between text-sm">
+          <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employer.tl}</span>
+          <span className="font-semibold tabular-nums text-amber-600">{formatCurrencyTL(calc.totals.inssEmployer)}</span>
+        </div>
+        <Separator />
+        <div className="flex justify-between text-sm">
+          <span className="font-medium">{t("runPayroll.totalEmployerCost")}</span>
+          <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.totalEmployerCost)}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   if (loadingEmployees) {
     return <PayrollLoadingSkeleton />;
   }
@@ -311,7 +371,7 @@ export default function RunPayroll() {
               </span>
               <CollapsibleTrigger asChild>
                 <button type="button" className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-medium rounded-md border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/30 transition-colors">
-                  {complianceExpanded ? "Hide" : "Review"}
+                  {complianceExpanded ? t("common.hide") : t("common.review")}
                   <ChevronDown className={`h-3 w-3 transition-transform ${complianceExpanded ? "rotate-180" : ""}`} />
                 </button>
               </CollapsibleTrigger>
@@ -335,11 +395,45 @@ export default function RunPayroll() {
           </Collapsible>
         )}
 
-        {/* 2-Column Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="mb-6 space-y-4">
+          <PayrollPeriodConfig
+            payFrequency={calc.payFrequency}
+            setPayFrequency={calc.setPayFrequency}
+            periodStart={calc.periodStart}
+            setPeriodStart={calc.setPeriodStart}
+            periodEnd={calc.periodEnd}
+            setPeriodEnd={calc.setPeriodEnd}
+            payDate={calc.payDate}
+            setPayDate={calc.setPayDate}
+            includeSubsidioAnual={calc.includeSubsidioAnual}
+            setIncludeSubsidioAnual={calc.setIncludeSubsidioAnual}
+            onSyncAttendance={calc.handleSyncFromAttendance}
+            syncingAttendance={calc.syncingAttendance}
+          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {payrollSummaryCard}
+            {taxSummaryCard}
+          </div>
+          <div className="flex flex-wrap gap-1.5 px-1">
+            <div className="p-1 rounded bg-amber-500/10 flex-shrink-0">
+              <Building className="h-3 w-3 text-amber-600" />
+            </div>
+            <Badge variant="outline" className="text-[10px] font-normal">
+              WIT {(TL_INCOME_TAX.rate * 100).toFixed(0)}% &gt; ${TL_INCOME_TAX.residentThreshold}
+            </Badge>
+            <Badge variant="outline" className="text-[10px] font-normal">
+              INSS Ee {(TL_INSS.employeeRate * 100).toFixed(0)}%
+            </Badge>
+            <Badge variant="outline" className="text-[10px] font-normal">
+              INSS Er {(TL_INSS.employerRate * 100).toFixed(0)}%
+            </Badge>
+          </div>
+        </div>
+
+        <div className="space-y-6">
 
           {/* LEFT: Employee Table */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="space-y-6">
 
             {/* Payroll Warnings */}
             {calc.payrollWarnings.length > 0 && (
@@ -361,7 +455,7 @@ export default function RunPayroll() {
             {/* Employee Payroll Table */}
             <Card className="border-border/50">
               <CardHeader>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-4">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <div className="p-1.5 rounded-lg bg-gradient-to-r from-green-500/10 to-emerald-500/10">
@@ -382,7 +476,7 @@ export default function RunPayroll() {
                     </CardDescription>
                   </div>
                   <div className="flex items-center gap-3">
-                    <div className="relative w-64">
+                    <div className="relative w-full">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                       <Input
                         placeholder={t("runPayroll.searchEmployees")}
@@ -440,101 +534,6 @@ export default function RunPayroll() {
                 )}
               </CardContent>
             </Card>
-          </div>
-
-          {/* RIGHT: Sticky Sidebar */}
-          <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
-
-            {/* Period Config (compact) */}
-            <PayrollPeriodConfig
-              payFrequency={calc.payFrequency}
-              setPayFrequency={calc.setPayFrequency}
-              periodStart={calc.periodStart}
-              setPeriodStart={calc.setPeriodStart}
-              periodEnd={calc.periodEnd}
-              setPeriodEnd={calc.setPeriodEnd}
-              payDate={calc.payDate}
-              setPayDate={calc.setPayDate}
-              includeSubsidioAnual={calc.includeSubsidioAnual}
-              setIncludeSubsidioAnual={calc.setIncludeSubsidioAnual}
-              onSyncAttendance={calc.handleSyncFromAttendance}
-              syncingAttendance={calc.syncingAttendance}
-              compact
-            />
-
-            {/* Payroll Summary (compact) */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-2 pt-4 px-4">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Calculator className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                  {t("runPayroll.totalGrossPay").replace(/\s*\(.*\)/, "") || "Payroll Summary"}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-2.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("runPayroll.totalGrossPay")}</span>
-                  <span className="font-semibold tabular-nums">{formatCurrencyTL(calc.totals.grossPay)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("runPayroll.employeeDeductions")}</span>
-                  <span className="font-semibold tabular-nums text-red-600">-{formatCurrencyTL(calc.totals.totalDeductions)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">{t("runPayroll.netPayToEmployees")}</span>
-                  <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.netPay)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{t("runPayroll.employees")}</span>
-                  <span className="font-semibold tabular-nums">{activeEmployees.length}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Tax & INSS Summary (compact) */}
-            <Card className="border-border/50">
-              <CardHeader className="pb-2 pt-4 px-4">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Lock className="h-3 w-3 text-muted-foreground" />
-                  {t("runPayroll.taxInssTitle")}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-2.5">
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.income_tax.tl}</span>
-                  <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.incomeTax)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employee.tl}</span>
-                  <span className="font-semibold tabular-nums text-red-600">{formatCurrencyTL(calc.totals.inssEmployee)}</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">{TL_DEDUCTION_TYPE_LABELS.inss_employer.tl}</span>
-                  <span className="font-semibold tabular-nums text-amber-600">{formatCurrencyTL(calc.totals.inssEmployer)}</span>
-                </div>
-                <Separator />
-                <div className="flex justify-between text-sm">
-                  <span className="font-medium">{t("runPayroll.totalEmployerCost")}</span>
-                  <span className="font-bold tabular-nums text-emerald-600">{formatCurrencyTL(calc.totals.totalEmployerCost)}</span>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* TL Tax Rates Reference */}
-            <div className="flex flex-wrap gap-1.5 px-1">
-              <div className="p-1 rounded bg-amber-500/10 flex-shrink-0">
-                <Building className="h-3 w-3 text-amber-600" />
-              </div>
-              <Badge variant="outline" className="text-[10px] font-normal">
-                WIT {(TL_INCOME_TAX.rate * 100).toFixed(0)}% &gt; ${TL_INCOME_TAX.residentThreshold}
-              </Badge>
-              <Badge variant="outline" className="text-[10px] font-normal">
-                INSS Ee {(TL_INSS.employeeRate * 100).toFixed(0)}%
-              </Badge>
-              <Badge variant="outline" className="text-[10px] font-normal">
-                INSS Er {(TL_INSS.employerRate * 100).toFixed(0)}%
-              </Badge>
-            </div>
           </div>
         </div>
 

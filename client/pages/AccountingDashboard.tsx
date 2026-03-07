@@ -46,8 +46,8 @@ import GuidancePanel from "@/components/GuidancePanel";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useTenant } from "@/contexts/TenantContext";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 function AccountingDashboardSkeleton() {
   return (
@@ -145,7 +145,6 @@ function AccountingDashboardSkeleton() {
 export default function AccountingDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { session, hasModule, canManage } = useTenant();
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
@@ -386,8 +385,8 @@ export default function AccountingDashboard() {
         {/* ═══════════════════════════════════════════════════════════════
             ACCOUNTING STATUS - Primary question: "Are my books OK?"
         ═══════════════════════════════════════════════════════════════ */}
-        {!isSimple && (
-        <Card className="mb-6">
+        <MoreDetailsSection className="mb-6">
+        <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">{t("accounting.dashboard.thisMonth")}</CardTitle>
           </CardHeader>
@@ -496,7 +495,7 @@ export default function AccountingDashboard() {
             )}
           </CardContent>
         </Card>
-        )}
+        </MoreDetailsSection>
 
         {/* ═══════════════════════════════════════════════════════════════
             PAYROLL → ACCOUNTING - Shows how payroll flows to books

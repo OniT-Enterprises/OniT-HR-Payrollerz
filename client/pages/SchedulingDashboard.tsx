@@ -25,10 +25,10 @@ import {
 import { sectionThemes } from "@/lib/sectionTheme";
 import { SEO } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { timeLeaveNavConfig } from "@/lib/moduleNav";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 const _theme = sectionThemes.scheduling;
 
@@ -72,7 +72,6 @@ function SchedulingDashboardSkeleton() {
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
   const { t: _t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const loading = employeesLoading || leaveStatsLoading;
@@ -129,9 +128,8 @@ export default function SchedulingDashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         <GuidancePanel section="scheduling" />
 
-        {/* KPI row */}
-        {!isSimple && (
-        <div className="grid gap-4 md:grid-cols-4 mb-6">
+        <MoreDetailsSection className="mb-6">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500"
             onClick={() => navigate("/time-leave/attendance")}
@@ -217,7 +215,7 @@ export default function SchedulingDashboard() {
             </CardContent>
           </Card>
         </div>
-        )}
+        </MoreDetailsSection>
 
         {/* Section tools */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

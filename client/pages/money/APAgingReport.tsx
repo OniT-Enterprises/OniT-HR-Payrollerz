@@ -13,12 +13,12 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
-import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { billService } from '@/services/billService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import type { Bill } from '@/types/money';
 import {
   Clock,
@@ -49,7 +49,6 @@ export default function APAgingReport() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { isSimple } = useSimpleMode();
   const { data: allBills = [], isLoading: loading } = useQuery({
     queryKey: ['tenants', tenantId, 'money', 'apAging'],
     queryFn: () => billService.getUnpaidBills(tenantId),
@@ -192,8 +191,8 @@ export default function APAgingReport() {
         </div>
 
         {/* Aging Buckets */}
-        {!isSimple && (
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+        <MoreDetailsSection className="mb-8">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {buckets.map((bucket, index) => (
             <Card key={bucket.label} className={index >= 3 ? 'border-red-200 dark:border-red-800' : ''}>
               <CardContent className="pt-4 pb-3">
@@ -210,7 +209,7 @@ export default function APAgingReport() {
             </Card>
           ))}
         </div>
-        )}
+        </MoreDetailsSection>
 
         {/* Vendor Breakdown */}
         <Card>

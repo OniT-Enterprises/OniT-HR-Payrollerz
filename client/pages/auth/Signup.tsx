@@ -12,9 +12,12 @@ import { auth, db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useI18n } from "@/i18n/I18nProvider";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 
 export default function Signup() {
   const navigate = useNavigate();
+  const { t } = useI18n();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"account" | "organization">("account");
@@ -47,17 +50,17 @@ export default function Signup() {
     setError(null);
 
     if (password.length < 6) {
-      setError("Password must be at least 6 characters");
+      setError(t("auth.errors.passwordTooShort"));
       return;
     }
 
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError(t("auth.errors.passwordsDoNotMatch"));
       return;
     }
 
     if (!displayName.trim()) {
-      setError("Please enter your name");
+      setError(t("auth.errors.nameRequired"));
       return;
     }
 
@@ -70,7 +73,7 @@ export default function Signup() {
     setLoading(true);
 
     if (!companyName.trim()) {
-      setError("Please enter your company name");
+      setError(t("auth.errors.companyNameRequired"));
       setLoading(false);
       return;
     }
@@ -147,13 +150,13 @@ export default function Signup() {
     } catch (err: unknown) {
       console.error("Signup error:", err);
       const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
-      const errMessage = err instanceof Error ? err.message : "Failed to create account. Please try again.";
+      const errMessage = err instanceof Error ? err.message : t("auth.errors.signupFailed");
       if (errCode === "auth/email-already-in-use") {
-        setError("An account with this email already exists. Please log in instead.");
+        setError(t("auth.errors.accountExists"));
       } else if (errCode === "auth/weak-password") {
-        setError("Password is too weak. Please use a stronger password.");
+        setError(t("auth.errors.weakPassword"));
       } else if (errCode === "auth/invalid-email") {
-        setError("Invalid email address.");
+        setError(t("auth.errors.invalidEmail"));
       } else {
         setError(errMessage);
       }
@@ -166,6 +169,10 @@ export default function Signup() {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-primary/5 p-4">
       <SEO {...seoConfig.signup} />
       <div className="w-full max-w-md">
+        <div className="mb-4 flex justify-end">
+          <LocaleSwitcher variant="buttons" className="justify-end" />
+        </div>
+
         {/* Logo */}
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
@@ -180,12 +187,12 @@ export default function Signup() {
         <Card className="border-border/50 shadow-xl">
           <CardHeader className="space-y-1 pb-4">
             <CardTitle className="text-2xl font-bold text-center">
-              {step === "account" ? "Create Your Account" : "Set Up Your Organization"}
+              {step === "account" ? t("auth.signup.titleAccount") : t("auth.signup.titleOrganization")}
             </CardTitle>
             <CardDescription className="text-center">
               {step === "account"
-                ? "Start your free trial - no credit card required"
-                : "Tell us about your company"}
+                ? t("auth.signup.subtitleAccount")
+                : t("auth.signup.subtitleOrganization")}
             </CardDescription>
           </CardHeader>
 
@@ -200,7 +207,7 @@ export default function Signup() {
                 }`}>
                   {step === "organization" ? <CheckCircle2 className="h-5 w-5" /> : "1"}
                 </div>
-                <span className="text-sm font-medium hidden sm:inline">Account</span>
+                <span className="text-sm font-medium hidden sm:inline">{t("auth.signup.stepAccount")}</span>
               </div>
               <div className="w-8 h-0.5 bg-border" />
               <div className={`flex items-center gap-2 ${step === "organization" ? "text-primary" : "text-muted-foreground"}`}>
@@ -211,7 +218,7 @@ export default function Signup() {
                 }`}>
                   2
                 </div>
-                <span className="text-sm font-medium hidden sm:inline">Organization</span>
+                <span className="text-sm font-medium hidden sm:inline">{t("auth.signup.stepOrganization")}</span>
               </div>
             </div>
 
@@ -224,13 +231,13 @@ export default function Signup() {
             {step === "account" ? (
               <form onSubmit={handleAccountSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="displayName">Full Name</Label>
+                  <Label htmlFor="displayName">{t("auth.signup.fullName")}</Label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="displayName"
                       type="text"
-                      placeholder="John Smith"
+                      placeholder={t("auth.signup.fullNamePlaceholder")}
                       value={displayName}
                       onChange={(e) => setDisplayName(e.target.value)}
                       className="pl-9"
@@ -240,13 +247,13 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="email">Work Email</Label>
+                  <Label htmlFor="email">{t("auth.signup.workEmail")}</Label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="email"
                       type="email"
-                      placeholder="you@company.com"
+                      placeholder={t("auth.signup.workEmailPlaceholder")}
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       className="pl-9"
@@ -256,13 +263,13 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">{t("auth.password")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="password"
                       type="password"
-                      placeholder="At least 6 characters"
+                      placeholder={t("auth.signup.passwordHint")}
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       className="pl-9"
@@ -273,13 +280,13 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm Password</Label>
+                  <Label htmlFor="confirmPassword">{t("auth.signup.confirmPassword")}</Label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="confirmPassword"
                       type="password"
-                      placeholder="Confirm your password"
+                      placeholder={t("auth.signup.confirmPasswordPlaceholder")}
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       className="pl-9"
@@ -289,20 +296,20 @@ export default function Signup() {
                 </div>
 
                 <Button type="submit" className="w-full gap-2">
-                  Continue
+                  {t("auth.signup.continue")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </form>
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="companyName">Company Name</Label>
+                  <Label htmlFor="companyName">{t("auth.signup.companyName")}</Label>
                   <div className="relative">
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                     <Input
                       id="companyName"
                       type="text"
-                      placeholder="Acme Inc."
+                      placeholder={t("auth.signup.companyNamePlaceholder")}
                       value={companyName}
                       onChange={(e) => handleCompanyNameChange(e.target.value)}
                       className="pl-9"
@@ -312,20 +319,20 @@ export default function Signup() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="companySlug">Company URL</Label>
+                  <Label htmlFor="companySlug">{t("auth.signup.companyUrl")}</Label>
                   <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">app.onit.hr/</span>
+                    <span className="text-sm text-muted-foreground">{t("auth.signup.companyUrlPrefix")}</span>
                     <Input
                       id="companySlug"
                       type="text"
-                      placeholder="acme-inc"
+                      placeholder={t("auth.signup.companySlugPlaceholder")}
                       value={companySlug}
                       onChange={(e) => setCompanySlug(generateSlug(e.target.value))}
                       className="flex-1"
                     />
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    This will be your unique organization identifier
+                    {t("auth.signup.companyUrlHint")}
                   </p>
                 </div>
 
@@ -337,17 +344,17 @@ export default function Signup() {
                     className="flex-1"
                     disabled={loading}
                   >
-                    Back
+                    {t("common.back")}
                   </Button>
                   <Button type="submit" className="flex-1 gap-2" disabled={loading}>
                     {loading ? (
                       <>
                         <Loader2 className="h-4 w-4 animate-spin" />
-                        Creating...
+                        {t("auth.signup.creating")}
                       </>
                     ) : (
                       <>
-                        Create Account
+                        {t("auth.signup.createAccount")}
                         <ArrowRight className="h-4 w-4" />
                       </>
                     )}
@@ -364,17 +371,17 @@ export default function Signup() {
               </div>
               <div className="relative flex justify-center text-xs uppercase">
                 <span className="bg-card px-2 text-muted-foreground">
-                  Already have an account?
+                  {t("auth.signup.alreadyHaveAccount")}
                 </span>
               </div>
             </div>
 
             <Button variant="outline" asChild className="w-full">
-              <Link to="/auth/login">Sign In</Link>
+              <Link to="/auth/login">{t("auth.signIn")}</Link>
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              By creating an account, you agree to our Terms of Service and Privacy Policy.
+              {t("auth.signup.terms")}
             </p>
           </CardFooter>
         </Card>
@@ -382,16 +389,16 @@ export default function Signup() {
         {/* Features */}
         <div className="mt-8 grid grid-cols-3 gap-4 text-center">
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-primary">Free</div>
-            <div className="text-xs text-muted-foreground">14-day trial</div>
+            <div className="text-2xl font-bold text-primary">{t("auth.signup.trialLabel")}</div>
+            <div className="text-xs text-muted-foreground">{t("auth.signup.trialValue")}</div>
           </div>
           <div className="space-y-1">
             <div className="text-2xl font-bold text-primary">5</div>
-            <div className="text-xs text-muted-foreground">Employees</div>
+            <div className="text-xs text-muted-foreground">{t("auth.signup.employeesLabel")}</div>
           </div>
           <div className="space-y-1">
-            <div className="text-2xl font-bold text-primary">All</div>
-            <div className="text-xs text-muted-foreground">Features</div>
+            <div className="text-2xl font-bold text-primary">{t("auth.signup.allValue")}</div>
+            <div className="text-xs text-muted-foreground">{t("auth.signup.featuresLabel")}</div>
           </div>
         </div>
       </div>

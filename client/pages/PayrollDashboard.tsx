@@ -5,7 +5,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -49,12 +49,12 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import GuidancePanel from "@/components/GuidancePanel";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { getComplianceIssues, countBlockedEmployees } from "@/lib/employeeUtils";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 const theme = sectionThemes.payroll;
 
@@ -78,7 +78,6 @@ export default function PayrollDashboard() {
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
-  const { isSimple } = useSimpleMode();
   const [secondaryOpen, setSecondaryOpen] = useState(false);
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
@@ -96,6 +95,7 @@ export default function PayrollDashboard() {
     staleTime: 5 * 60 * 1000,
   });
   const loading = loadingEmployees || loadingRuns || loadingLeave;
+  const pendingLeaveCount = leaveStats?.pendingRequests ?? 0;
 
   // Derive stats from fetched data
   const stats = useMemo(() => {
@@ -306,6 +306,54 @@ export default function PayrollDashboard() {
   };
 
   const currentStatus = statusConfig[payrollStatus];
+  const simpleFlowSteps = [
+    {
+      id: "people",
+      title: t("payrollDashboard.simpleFlow.peopleTitle"),
+      description: stats.blockedEmployees > 0
+        ? t("payrollDashboard.simpleFlow.peoplePending", { count: String(stats.blockedEmployees) })
+        : t("payrollDashboard.simpleFlow.peopleReady"),
+      path: stats.blockedEmployees > 0 ? "/people/employees?filter=blocking-issues" : "/people/employees",
+      actionLabel: stats.blockedEmployees > 0 ? t("common.review") : t("payrollDashboard.checklist.contractsLink"),
+      icon: stats.blockedEmployees > 0 ? AlertTriangle : Users,
+      tone: stats.blockedEmployees > 0 ? "warning" as const : "complete" as const,
+      meta: stats.blockedEmployees > 0 ? String(stats.blockedEmployees) : `${stats.totalEmployees}/${stats.totalEmployees}`,
+    },
+    {
+      id: "time",
+      title: t("payrollDashboard.simpleFlow.timeTitle"),
+      description: pendingLeaveCount > 0
+        ? t("payrollDashboard.simpleFlow.timePending", { count: String(pendingLeaveCount) })
+        : t("payrollDashboard.simpleFlow.timeReady"),
+      path: pendingLeaveCount > 0 ? "/time-leave/leave" : "/time-leave/attendance",
+      actionLabel: pendingLeaveCount > 0 ? t("payrollDashboard.checklist.leaveLink") : t("payrollDashboard.checklist.attendanceLink"),
+      icon: pendingLeaveCount > 0 ? Calendar : Clock,
+      tone: pendingLeaveCount > 0 ? "warning" as const : "complete" as const,
+      meta: String(pendingLeaveCount),
+    },
+    {
+      id: "run",
+      title: t("payrollDashboard.simpleFlow.runTitle"),
+      description: canRunPayroll
+        ? t("payrollDashboard.allVerifiedProceed")
+        : t("payrollDashboard.simpleFlow.runPending"),
+      path: "/payroll/run",
+      actionLabel: canRunPayroll ? t("payrollDashboard.confirmRunPayroll") : t("payrollDashboard.reviewPayroll"),
+      icon: canRunPayroll ? Play : Calculator,
+      tone: canRunPayroll ? "ready" as const : "warning" as const,
+      meta: currentStatus.label,
+    },
+    {
+      id: "pay",
+      title: t("payrollDashboard.simpleFlow.payTitle"),
+      description: t("payrollDashboard.simpleFlow.payDesc"),
+      path: "/payroll/payments",
+      actionLabel: t("payrollDashboard.links.bankTransfers"),
+      icon: Banknote,
+      tone: "neutral" as const,
+      meta: t("payrollDashboard.links.bankTransfersDesc"),
+    },
+  ];
 
   // Primary and secondary links
   const primaryLinks = [
@@ -553,44 +601,97 @@ export default function PayrollDashboard() {
           </CardContent>
         </Card>
 
-        {/* ===================== */}
-        {/* COMPLIANCE DEADLINES  */}
-        {/* Promoted: time-sensitive */}
-        {/* ===================== */}
-        {!isSimple && (
-        <div className="mb-6 flex flex-wrap items-center gap-4 text-sm px-1">
-          <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
-            <Shield className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-            {t("payrollDashboard.complianceDeadlines")}
-          </span>
-          {[
-            { label: t("payrollDashboard.witDue"), ...compliance.wit },
-            { label: t("payrollDashboard.inssStatementDue"), ...compliance.inssStatement },
-            { label: t("payrollDashboard.inssPaymentDue"), ...compliance.inssPayment },
-          ].map((d) => (
-            <span key={d.label} className="inline-flex items-center gap-1.5">
-              <span className={`h-2 w-2 rounded-full ${
-                d.status === 'ok' ? 'bg-emerald-500' : d.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
-              }`} />
-              <span className="text-muted-foreground">{d.label}</span>
-              <span className="font-medium">{d.date}</span>
-              <span className={`text-xs px-1.5 py-0.5 rounded ${
-                d.status === 'ok'
-                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                  : d.status === 'warning'
-                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-              }`}>{d.days}d</span>
-            </span>
-          ))}
-        </div>
-        )}
+        <Card className="mb-6 border-border/60">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">{t("payrollDashboard.simpleFlowTitle")}</CardTitle>
+            <CardDescription>{t("payrollDashboard.simpleFlowDesc")}</CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-3 md:grid-cols-2">
+            {simpleFlowSteps.map((step, index) => {
+              const StepIcon = step.icon;
+              const toneClasses = step.tone === "warning"
+                ? {
+                    card: "border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/20",
+                    badge: "bg-amber-500 text-white",
+                    meta: "text-amber-700 dark:text-amber-300",
+                  }
+                : step.tone === "ready"
+                  ? {
+                      card: "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/40 dark:bg-emerald-950/20",
+                      badge: "bg-emerald-500 text-white",
+                      meta: "text-emerald-700 dark:text-emerald-300",
+                    }
+                  : step.tone === "complete"
+                    ? {
+                        card: "border-blue-200 bg-blue-50/60 dark:border-blue-900/40 dark:bg-blue-950/20",
+                        badge: "bg-blue-500 text-white",
+                        meta: "text-blue-700 dark:text-blue-300",
+                      }
+                    : {
+                        card: "border-border/60 bg-muted/20",
+                        badge: "bg-muted text-foreground",
+                        meta: "text-muted-foreground",
+                      };
 
-        {/* ==================== */}
-        {/* FINANCIAL SUMMARY    */}
-        {/* ==================== */}
-        {!isSimple && (
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+              return (
+                <div
+                  key={step.id}
+                  className={`rounded-xl border p-4 text-left transition-all hover:shadow-sm ${toneClasses.card}`}
+                >
+                  <div className="mb-3 flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-semibold ${toneClasses.badge}`}>
+                          {index + 1}
+                        </span>
+                        <p className="font-medium">{step.title}</p>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{step.description}</p>
+                    </div>
+                    <StepIcon className="mt-0.5 h-5 w-5 shrink-0 text-muted-foreground" />
+                  </div>
+                  <div className="flex items-center justify-between gap-3 border-t border-border/50 pt-3">
+                    <span className={`text-xs font-medium ${toneClasses.meta}`}>{step.meta}</span>
+                    <Button size="sm" variant="outline" onClick={() => navigate(step.path)}>
+                      {step.actionLabel}
+                      <ChevronRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        <MoreDetailsSection className="mb-6">
+          <div className="mb-6 flex flex-wrap items-center gap-4 text-sm px-1">
+            <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+              <Shield className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+              {t("payrollDashboard.complianceDeadlines")}
+            </span>
+            {[
+              { label: t("payrollDashboard.witDue"), ...compliance.wit },
+              { label: t("payrollDashboard.inssStatementDue"), ...compliance.inssStatement },
+              { label: t("payrollDashboard.inssPaymentDue"), ...compliance.inssPayment },
+            ].map((d) => (
+              <span key={d.label} className="inline-flex items-center gap-1.5">
+                <span className={`h-2 w-2 rounded-full ${
+                  d.status === 'ok' ? 'bg-emerald-500' : d.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+                }`} />
+                <span className="text-muted-foreground">{d.label}</span>
+                <span className="font-medium">{d.date}</span>
+                <span className={`text-xs px-1.5 py-0.5 rounded ${
+                  d.status === 'ok'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                    : d.status === 'warning'
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                }`}>{d.days}d</span>
+              </span>
+            ))}
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-3">
           {/* Gross Payroll with breakdown */}
           <Card className={`${theme.borderLeft} relative overflow-hidden`}>
             <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5" />
@@ -701,8 +802,8 @@ export default function PayrollDashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
-        )}
+          </div>
+        </MoreDetailsSection>
 
         {/* ================== */}
         {/* PAYROLL CHECKLIST  */}

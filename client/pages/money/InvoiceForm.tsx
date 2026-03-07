@@ -11,6 +11,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -845,6 +846,7 @@ export default function InvoiceForm() {
                           onClick={() => removeLineItem(index)}
                           disabled={fields.length === 1}
                           className="shrink-0"
+                          title={t('common.remove') || 'Remove'}
                         >
                           <Trash2 className="h-4 w-4 text-muted-foreground" />
                         </Button>
@@ -862,32 +864,33 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
-            {/* Notes & Terms */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">
-                  {t('money.invoices.additionalInfo') || 'Additional Information'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t('money.invoices.notes') || 'Notes'}</Label>
-                  <Textarea
-                    {...register('notes')}
-                    placeholder={t('money.invoices.notesPlaceholder') || 'Notes visible to customer'}
-                    rows={2}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('money.invoices.terms') || 'Terms & Conditions'}</Label>
-                  <Textarea
-                    {...register('terms')}
-                    placeholder={t('money.invoices.termsPlaceholder') || 'Payment terms'}
-                    rows={2}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+            <MoreDetailsSection>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">
+                    {t('money.invoices.additionalInfo') || 'Additional Information'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t('money.invoices.notes') || 'Notes'}</Label>
+                    <Textarea
+                      {...register('notes')}
+                      placeholder={t('money.invoices.notesPlaceholder') || 'Notes visible to customer'}
+                      rows={2}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t('money.invoices.terms') || 'Terms & Conditions'}</Label>
+                    <Textarea
+                      {...register('terms')}
+                      placeholder={t('money.invoices.termsPlaceholder') || 'Payment terms'}
+                      rows={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </MoreDetailsSection>
           </div>
 
           {/* Sidebar */}
@@ -929,38 +932,39 @@ export default function InvoiceForm() {
               </CardContent>
             </Card>
 
-            {/* Tax */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base flex items-center gap-1.5">
-                  {t('money.invoices.tax') || 'Tax'}
-                  <InfoTooltip content={MoneyTooltips.tlSpecific.taxRate} title="TL Tax Rate" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Controller
-                  name="taxRate"
-                  control={control}
-                  render={({ field }) => (
-                    <Select
-                      value={String(field.value)}
-                      onValueChange={(v) => field.onChange(parseFloat(v))}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {TAX_RATES.map((rate) => (
-                          <SelectItem key={rate.value} value={rate.value.toString()}>
-                            {rate.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
-                />
-              </CardContent>
-            </Card>
+            <MoreDetailsSection>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base flex items-center gap-1.5">
+                    {t('money.invoices.tax') || 'Tax'}
+                    <InfoTooltip content={MoneyTooltips.tlSpecific.taxRate} title="TL Tax Rate" />
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Controller
+                    name="taxRate"
+                    control={control}
+                    render={({ field }) => (
+                      <Select
+                        value={String(field.value)}
+                        onValueChange={(v) => field.onChange(parseFloat(v))}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {TAX_RATES.map((rate) => (
+                            <SelectItem key={rate.value} value={rate.value.toString()}>
+                              {rate.label}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  />
+                </CardContent>
+              </Card>
+            </MoreDetailsSection>
 
             {/* Summary */}
             <Card>

@@ -32,9 +32,22 @@ const messages = {
     "unknown": "La hatene",
     "remove": "Hasai",
     "loaded": "karrega",
+    "loading": "Karreta hela...",
     "more": "Tan",
     "moreActions": "Asaun tan",
     "of": "hosi",
+    "basicMode": "Modu Básiku",
+    "adminConsole": "Konsola Admin",
+    "sitemap": "Mapa Pájina",
+    "guidance": "Orientasaun",
+    "hide": "Subar",
+    "moreDetails": "Detallu tan",
+    "review": "Reviza",
+    "retry": "Koko fali",
+    "connectionIssueTitle": "Problema ligasaun",
+    "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
+    "offlineTitle": "Agora laiha ligasaun",
+    "offlineDesc": "Mudansa sira bele seidauk rai to'o internet fila fali.",
     "months": {
       "1": "Janeiru",
       "2": "Fevereiru",
@@ -56,7 +69,9 @@ const messages = {
     "payroll": "Saláriu",
     "money": "Osan",
     "accounting": "Kontabilidade",
-    "reports": "Relatóriu"
+    "reports": "Relatóriu",
+    "setupBannerTitle": "Setup seidauk remata",
+    "setupBannerDesc": "Remata dadus empreza, banku, lisensa no saláriu. {{percent}}% kompletu."
   },
   "allowances": {
     "title": "Subsidiu",
@@ -159,7 +174,12 @@ const messages = {
     "upload": "Upload",
     "preparePayroll": "Prepara saláriu",
     "fixBlockingIssues": "Rezolve problema {{count}}",
-    "reviewLeaveRequests": "Reviza pedidu lisensa {{count}}"
+    "reviewLeaveRequests": "Reviza pedidu lisensa {{count}}",
+    "simpleOverview": "Hahu iha ne'e",
+    "simpleOverviewDesc": "Uza kartaun tolu ne'e ba tarefa importante liu ohin loron.",
+    "finishSetup": "Kompleta setup",
+    "resumeSetup": "Kontinua setup",
+    "setupProgress": "{{percent}}% kompletu"
   },
   "documentAlerts": {
     "title": "Alerta Dokumentu",
@@ -205,7 +225,46 @@ const messages = {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
     "errors": {
-      "signInFailed": "Labele tama"
+      "signInFailed": "Labele tama",
+      "passwordTooShort": "Password tenke iha karakter 6 pelumenus",
+      "passwordsDoNotMatch": "Password sira la hanesan",
+      "nameRequired": "Favor hatama ita-nia naran",
+      "companyNameRequired": "Favor hatama naran kompanhia",
+      "signupFailed": "La konsege kria konta. Favór koko fali.",
+      "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
+      "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
+      "invalidEmail": "Enderesu email invállidu."
+    },
+    "signup": {
+      "titleAccount": "Kria Ita-nia Konta",
+      "titleOrganization": "Konfigura Ita-nia Organizasaun",
+      "subtitleAccount": "Hahu trial grátis. La presiza kartaun kreditu.",
+      "subtitleOrganization": "Hatete mai kona-ba ita-nia kompanhia",
+      "stepAccount": "Konta",
+      "stepOrganization": "Organizasaun",
+      "fullName": "Naran Kompletu",
+      "fullNamePlaceholder": "João da Silva",
+      "workEmail": "Email Servisu",
+      "workEmailPlaceholder": "ita@kompanhia.com",
+      "passwordHint": "Pelo menus karakter 6",
+      "confirmPassword": "Konfirma Password",
+      "confirmPasswordPlaceholder": "Konfirma ita-nia password",
+      "continue": "Kontinua",
+      "companyName": "Naran Kompanhia",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "URL Kompanhia",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "Ida ne'e sei sai ita-nia identificador úniku ba organizasaun",
+      "alreadyHaveAccount": "Iha ona konta?",
+      "terms": "Hosi kria konta, ita konkorda ho Termu Servisu no Politika Privasidade.",
+      "creating": "Kria hela...",
+      "createAccount": "Kria Konta",
+      "trialLabel": "Grátis",
+      "trialValue": "Trial loron 14",
+      "employeesLabel": "Empregadu",
+      "featuresLabel": "Fitur",
+      "allValue": "Hotu"
     }
   },
   "notFound": {
@@ -1037,7 +1096,8 @@ const messages = {
     },
     "directory": {
       "title": "Diretóriu Empregadu",
-      "countSummary": "{{shown}} hosi {{total}} empregadu"
+      "countSummary": "{{shown}} hosi {{total}} empregadu",
+      "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu."
     },
     "table": {
       "employee": "Empregadu",
@@ -1159,6 +1219,9 @@ const messages = {
     },
     "toast": {
       "errorTitle": "Erru",
+      "requiredFieldsTitle": "Kampu obrigatóriu sira falta",
+      "requiredFieldsDesc": "Favor kompleta kampu obrigatóriu sira antes kontinua.",
+      "fillRequiredFields": "Favor kompleta kampu obrigatóriu sira.",
       "employeeNotFound": "Empregadu la hetan",
       "loadFailed": "La bele karrega empregadu",
       "loadDepartmentsFailed": "La bele karrega departamentu",
@@ -1914,6 +1977,8 @@ const messages = {
       "actions": {
         "newRequest": "Pedido Foun",
         "cancel": "Kansela",
+        "approve": "Aprova",
+        "reject": "Rejeita",
         "submit": "Submete Pedido"
       },
       "dialog": {
@@ -1950,7 +2015,8 @@ const messages = {
         "all": "Pedido hotu",
         "pending": "Pendente",
         "approved": "Aprova",
-        "rejected": "Rejeita"
+        "rejected": "Rejeita",
+        "calendar": "Kalendariu"
       },
       "table": {
         "title": "Pedidos Lisensa",
@@ -2012,7 +2078,9 @@ const messages = {
         "rejectedTitle": "Susesu",
         "rejectedDesc": "Pedido {{name}} rejeita.",
         "rejectFailed": "Falha rejeita pedido.",
-        "rejectionReasonMissing": "Hatama razao rejeisaun."
+        "rejectionReasonMissing": "Hatama razao rejeisaun.",
+        "cancelledDesc": "Pedido lisensa kansela ona.",
+        "cancelFailed": "Falha kansela pedido lisensa."
       }
     },
     "attendance": {
@@ -2023,6 +2091,7 @@ const messages = {
         "import": "Importa",
         "mark": "Marka presensa",
         "markToday": "Marka Presensa Ohin",
+        "today": "Ohin",
         "cancel": "Kansela",
         "export": "Exporta CSV"
       },
@@ -2415,6 +2484,20 @@ const messages = {
     "minimumWage": "Saláriu mínimu:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Reviza ikus husi {{name}}",
+    "simpleFlowTitle": "Fluxu folha simples",
+    "simpleFlowDesc": "Halo pasu sira ne'e tuir orden iha loron selu.",
+    "simpleFlow": {
+      "peopleTitle": "Verifika rejistu trabalhador",
+      "peoplePending": "Rejistu trabalhador {{count}} seidauk kompletu ho kontratu ka detallu INSS.",
+      "peopleReady": "Rejistu trabalhador sira hanesan prontu ba folha ida-ne'e.",
+      "timeTitle": "Verifika tempu no lisensa",
+      "timePending": "Pedidu lisensa {{count}} seidauk reviza molok folha.",
+      "timeReady": "Lisensa no attendance hanesan atualiza ona ba períodu ida-ne'e.",
+      "runTitle": "Hala'o folha",
+      "runPending": "Kompleta uluk itens iha lista verifikasaun molok hala'o folha.",
+      "payTitle": "Selu saláriu",
+      "payDesc": "Loke transferénsia banku depois de folha aprova ona."
+    },
     "checklist": {
       "attendanceLabel": "Prezensa finaliza",
       "attendanceIssue": "folha tempu pendente aprovasaun",
@@ -2467,6 +2550,11 @@ const messages = {
     },
     "welcome": "Bemvindu! Atu konfigura ita-nia konta",
     "welcomeDesc": "Kompleta pasu sira hodi hahú ho Meza",
+    "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
+    "progressTitle": "Progresu setup",
+    "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
+    "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
+    "savedAutomaticallyDesc": "Bele sai no fila depois. Meza sei kontinua iha fatin ne'ebé ita husik.",
     "stepOf": "Pasu {{current}} husi {{total}}",
     "requiredFields": "Kampu Obrigatóriu",
     "companyNameTinRequired": "Naran empreza no TIN presiza.",
@@ -2485,6 +2573,9 @@ const messages = {
     "tradingNamePlaceholder": "Ita-nia Empreza",
     "tinNumber": "Numeru TIN *",
     "tinPlaceholder": "Numeru Identifikasaun Impostu",
+    "teamSize": "Medida Ekipa Aproximadu",
+    "selectTeamSize": "Hili medida ekipa",
+    "teamSizeHint": "Ida ne'e ajuda Meza hili padraun di'ak liu ba ekipa ki'ik ka boot.",
     "address": "Enderesu",
     "addressPlaceholder": "Enderesu dalan",
     "city": "Sidade",
@@ -2526,7 +2617,8 @@ const messages = {
     "allSet": "Pronto ona!",
     "allSetDesc": "Ita-nia konta konfigurasaun ona. Agora bele hahú hatama trabalhador, prosesu saláriu, no jere ita-nia ekipa.",
     "back": "Fila",
-    "doLater": "Hau sei halo depois",
+    "doLater": "Ba painél agora daudaun",
+    "finishLaterHint": "Ita bele fila ba setup iha dashboard bainhira deit molok hala'o ita-nia folha primeiru.",
     "saving": "Rai hela...",
     "goToDashboard": "Ba Painél",
     "next": "Tuir"
@@ -3286,8 +3378,28 @@ const messages = {
       "stats": {
         "activeEmployees": "Empregadu aktivu",
         "pendingLeave": "Lisensa pendente",
+        "complianceIssues": "Problema konformidade",
         "needsReview": "Presiza avaliacao",
         "onLeaveToday": "Iha lisensa ohin"
+      },
+      "badges": {
+        "needsReview": "Presiza reviza",
+        "needsAttention": "Presiza atensaun",
+        "allClear": "Diak hotu"
+      },
+      "sections": {
+        "staff": {
+          "title": "Staff",
+          "description": "Diretóriu funsionáriu, departamentu, organograma, avizu, no keixa."
+        },
+        "hiring": {
+          "title": "Rekrutamentu",
+          "description": "Anúnsiu servisu, kandidatu, entrevista, onboarding, no offboarding."
+        },
+        "performance": {
+          "title": "Dezempenu",
+          "description": "Objetivu, avaliasaun dezempenhu, formasaun, sertifikasaun, no asaun disiplinár."
+        }
       }
     }
   },
@@ -4252,6 +4364,7 @@ const messages = {
     "inssEmployeeLabel": "INSS Trabalhador (4%)",
     "inssEmployerLabel": "INSS Empreza (6%)",
     "grossPlusInss": "Brutu + INSS Empreza",
+    "payrollSummary": "Sumáriu Folha",
     "periodConfig": "Konfigurasaun Períodu Pagamentu",
     "configureDesc": "Konfigura períodu saláriu no data pagamentu",
     "payFrequency": "Frekuensia Pagamentu",
@@ -4553,6 +4666,7 @@ const messages = {
     "adjustFilters": "Koko ajusta filtru.",
     "amount": "Montante",
     "employees": "Empregadu",
+    "loadingEmployees": "Karreta empregadu sira...",
     "transferDate": "Data Transferensia",
     "bankAccount": "Konta Banku",
     "reference": "Referensia",
@@ -4560,6 +4674,7 @@ const messages = {
     "viewDetails": "Haree detalle",
     "toastErrorTitle": "Erru",
     "toastLoadError": "La konsege karrega transferensia. Favór atualiza pájina.",
+    "toastEmployeesLoading": "Empregadu sira seidauk karrega hotu",
     "toastSelectRunAndBank": "Favór hili folha pagamentu no banku ida pelumenus.",
     "toastRunNotFound": "Folha pagamentu hili tiha la hetan.",
     "toastBankFilesSuccess": "Kria {{count}} ficheiro banku ho susesu.",

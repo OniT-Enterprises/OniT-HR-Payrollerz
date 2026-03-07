@@ -36,9 +36,22 @@ export const translations = {
     "unknown": "Unknown",
     "remove": "Remove",
     "loaded": "loaded",
+    "loading": "Loading...",
     "more": "More",
     "moreActions": "More actions",
     "of": "of",
+    "basicMode": "Basic mode",
+    "adminConsole": "Admin Console",
+    "sitemap": "Sitemap",
+    "guidance": "Guidance",
+    "hide": "Hide",
+    "moreDetails": "More details",
+    "review": "Review",
+    "retry": "Retry",
+    "connectionIssueTitle": "Connection problem",
+    "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
+    "offlineTitle": "You are offline",
+    "offlineDesc": "Changes may not save until your internet returns.",
     "months": {
       "1": "January", "2": "February", "3": "March", "4": "April",
       "5": "May", "6": "June", "7": "July", "8": "August",
@@ -51,7 +64,9 @@ export const translations = {
     "payroll": "Payroll",
     "money": "Money",
     "accounting": "Accounting",
-    "reports": "Reports"
+    "reports": "Reports",
+    "setupBannerTitle": "Setup is not finished yet",
+    "setupBannerDesc": "Finish your company, bank, leave, and payroll details. {{percent}}% complete."
   },
   "allowances": {
     "title": "Allowances",
@@ -154,7 +169,12 @@ export const translations = {
     "upload": "Upload",
     "preparePayroll": "Prepare payroll",
     "fixBlockingIssues": "Fix {{count}} blocking issues",
-    "reviewLeaveRequests": "Review {{count}} leave requests"
+    "reviewLeaveRequests": "Review {{count}} leave requests",
+    "simpleOverview": "Start here",
+    "simpleOverviewDesc": "Use these three cards for the most important tasks today.",
+    "finishSetup": "Finish setup",
+    "resumeSetup": "Resume setup",
+    "setupProgress": "{{percent}}% complete"
   },
   "documentAlerts": {
     "title": "Document Alerts",
@@ -200,7 +220,46 @@ export const translations = {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
     "errors": {
-      "signInFailed": "Failed to sign in"
+      "signInFailed": "Failed to sign in",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "nameRequired": "Please enter your name",
+      "companyNameRequired": "Please enter your company name",
+      "signupFailed": "Failed to create account. Please try again.",
+      "accountExists": "An account with this email already exists. Please log in instead.",
+      "weakPassword": "Password is too weak. Please use a stronger password.",
+      "invalidEmail": "Invalid email address."
+    },
+    "signup": {
+      "titleAccount": "Create Your Account",
+      "titleOrganization": "Set Up Your Organization",
+      "subtitleAccount": "Start your free trial. No credit card required.",
+      "subtitleOrganization": "Tell us about your company",
+      "stepAccount": "Account",
+      "stepOrganization": "Organization",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Smith",
+      "workEmail": "Work Email",
+      "workEmailPlaceholder": "you@company.com",
+      "passwordHint": "At least 6 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "continue": "Continue",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "Company URL",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "This will be your unique organization identifier",
+      "alreadyHaveAccount": "Already have an account?",
+      "terms": "By creating an account, you agree to our Terms of Service and Privacy Policy.",
+      "creating": "Creating...",
+      "createAccount": "Create Account",
+      "trialLabel": "Free",
+      "trialValue": "14-day trial",
+      "employeesLabel": "Employees",
+      "featuresLabel": "Features",
+      "allValue": "All"
     }
   },
   "notFound": {
@@ -927,7 +986,8 @@ export const translations = {
     },
     "directory": {
       "title": "Employee Directory",
-      "countSummary": "{{shown}} of {{total}} employees"
+      "countSummary": "{{shown}} of {{total}} employees",
+      "searchLimitReached": "Search results may be incomplete. Try a more specific search term."
     },
     "table": {
       "employee": "Employee",
@@ -1049,6 +1109,9 @@ export const translations = {
     },
     "toast": {
       "errorTitle": "Error",
+      "requiredFieldsTitle": "Missing required fields",
+      "requiredFieldsDesc": "Please fill in all required fields before continuing.",
+      "fillRequiredFields": "Please fill in all required fields.",
       "employeeNotFound": "Employee not found",
       "loadFailed": "Failed to load employee",
       "loadDepartmentsFailed": "Failed to load departments",
@@ -1804,6 +1867,8 @@ export const translations = {
       "actions": {
         "newRequest": "New Request",
         "cancel": "Cancel",
+        "approve": "Approve",
+        "reject": "Reject",
         "submit": "Submit Request"
       },
       "dialog": {
@@ -1840,7 +1905,8 @@ export const translations = {
         "all": "All Requests",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "calendar": "Calendar"
       },
       "table": {
         "title": "Leave Requests",
@@ -1902,7 +1968,9 @@ export const translations = {
         "rejectedTitle": "Success",
         "rejectedDesc": "Leave request for {{name}} has been rejected.",
         "rejectFailed": "Failed to reject leave request.",
-        "rejectionReasonMissing": "Please provide a rejection reason."
+        "rejectionReasonMissing": "Please provide a rejection reason.",
+        "cancelledDesc": "Leave request cancelled.",
+        "cancelFailed": "Failed to cancel leave request."
       }
     },
     "attendance": {
@@ -1913,6 +1981,7 @@ export const translations = {
         "import": "Import",
         "mark": "Mark Attendance",
         "markToday": "Mark Today's Attendance",
+        "today": "Today",
         "cancel": "Cancel",
         "export": "Export CSV"
       },
@@ -2397,8 +2466,28 @@ export const translations = {
       "stats": {
         "activeEmployees": "Active Employees",
         "pendingLeave": "Pending Leave",
+        "complianceIssues": "Compliance Issues",
         "needsReview": "Needs Review",
         "onLeaveToday": "On Leave Today"
+      },
+      "badges": {
+        "needsReview": "Needs review",
+        "needsAttention": "Needs attention",
+        "allClear": "All clear"
+      },
+      "sections": {
+        "staff": {
+          "title": "Staff",
+          "description": "Employee directory, departments, org chart, announcements, and grievances."
+        },
+        "hiring": {
+          "title": "Hiring",
+          "description": "Job postings, candidates, interviews, onboarding, and offboarding."
+        },
+        "performance": {
+          "title": "Performance",
+          "description": "Goals, performance reviews, training, certifications, and disciplinary actions."
+        }
       }
     }
   },
@@ -2671,6 +2760,20 @@ export const translations = {
     "minimumWage": "Minimum wage:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Last reviewed by {{name}}",
+    "simpleFlowTitle": "Simple payroll flow",
+    "simpleFlowDesc": "Work through these steps in order on payday.",
+    "simpleFlow": {
+      "peopleTitle": "Check employee records",
+      "peoplePending": "{{count}} employee records still need contracts or INSS details.",
+      "peopleReady": "Employee records look ready for this payroll.",
+      "timeTitle": "Check time and leave",
+      "timePending": "{{count}} leave requests still need review before payroll.",
+      "timeReady": "Leave and attendance look up to date for this pay period.",
+      "runTitle": "Run payroll",
+      "runPending": "Finish the checklist items before you run payroll.",
+      "payTitle": "Pay salaries",
+      "payDesc": "Open bank transfers after payroll is approved."
+    },
     "checklist": {
       "attendanceLabel": "Attendance finalized",
       "attendanceIssue": "timesheet pending approval",
@@ -2723,6 +2826,11 @@ export const translations = {
     },
     "welcome": "Welcome! Let's set up your account",
     "welcomeDesc": "Complete these steps to get started with Meza",
+    "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
+    "progressTitle": "Setup progress",
+    "progressHint": "Complete each step once. You can adjust everything later in Settings.",
+    "savedAutomaticallyTitle": "Finished steps are saved automatically",
+    "savedAutomaticallyDesc": "You can leave and come back later. Meza will resume where you stopped.",
     "stepOf": "Step {{current}} of {{total}}",
     "requiredFields": "Required Fields",
     "companyNameTinRequired": "Company name and TIN are required.",
@@ -2741,6 +2849,9 @@ export const translations = {
     "tradingNamePlaceholder": "Your Company",
     "tinNumber": "TIN Number *",
     "tinPlaceholder": "Tax Identification Number",
+    "teamSize": "Approximate Team Size",
+    "selectTeamSize": "Select team size",
+    "teamSizeHint": "This helps Meza choose better defaults for small or larger teams.",
     "address": "Address",
     "addressPlaceholder": "Street address",
     "city": "City",
@@ -2782,7 +2893,8 @@ export const translations = {
     "allSet": "You're all set!",
     "allSetDesc": "Your account has been configured. You can now start adding employees, running payroll, and managing your team.",
     "back": "Back",
-    "doLater": "I'll do this later",
+    "doLater": "Go to dashboard for now",
+    "finishLaterHint": "You can return to setup any time from the dashboard before you run your first payroll.",
     "saving": "Saving...",
     "goToDashboard": "Go to Dashboard",
     "next": "Next"
@@ -4127,6 +4239,7 @@ export const translations = {
     "inssEmployeeLabel": "INSS Employee (4%)",
     "inssEmployerLabel": "INSS Employer (6%)",
     "grossPlusInss": "Gross + INSS Employer",
+    "payrollSummary": "Payroll Summary",
     "periodConfig": "Pay Period Configuration",
     "configureDesc": "Configure the payroll period and pay date",
     "payFrequency": "Pay Frequency",
@@ -4214,7 +4327,7 @@ export const translations = {
   },
   "deductions": {"title":"Deductions & Advances","subtitle":"Manage recurring deductions and payroll advances","addDeduction":"Add Deduction","activeDeductions":"Active Deductions","perPeriod":"{{amount}}/period","payrollAdvances":"Payroll Advances","outstanding":"{{amount}} outstanding","garnishments":"Garnishments","otherDeductions":"Other Deductions","deductionsTableTitle":"Deductions","deductionsTableDescription":"Manage employee deductions and advances","searchPlaceholder":"Search...","tabAll":"All","tabAdvances":"Advances","tabGarnishments":"Garnishments","tabOther":"Other","noDeductions":"No deductions found","employee":"Employee","type":"Type","description":"Description","amount":"Amount","frequency":"Frequency","status":"Status","actions":"Actions","remaining":"{{amount}} remaining","statusActive":"Active","statusPaused":"Paused","statusCompleted":"Completed","typeGarnishment":"Wage Garnishment","typeAdvance":"Payroll Advance","typeOther":"Other Deduction","typeLoanRepayment":"Loan Repayment","freqPerPaycheck":"Every Paycheck","freqWeekly":"Weekly","freqBiweekly":"Bi-Weekly","freqMonthly":"Monthly","addDialogTitle":"Add Deduction","addDialogDescription":"Create a recurring deduction or payroll advance","employeeLabel":"Employee *","selectEmployee":"Select employee","typeLabel":"Type *","descriptionLabel":"Description *","descriptionPlaceholder":"e.g., Court-ordered garnishment, Salary advance","percentageBased":"Percentage-based","percentageLabel":"Percentage *","amountPerPeriod":"Amount per Period *","totalAdvanceAmount":"Total Advance Amount","totalAdvancePlaceholder":"Total amount to be repaid","frequencyLabel":"Frequency","startDate":"Start Date","endDate":"End Date (Optional)","preTaxDeduction":"Pre-tax deduction","cancel":"Cancel","saving":"Saving...","validationError":"Validation Error","validationDescription":"Please fill in all required fields.","createSuccess":"Deduction created successfully.","createError":"Failed to create deduction. Please try again.","loadError":"Failed to load deductions. Please refresh the page.","pausedSuccess":"Deduction paused.","resumedSuccess":"Deduction resumed.","toggleError":"Failed to update deduction.","deleteSuccess":"Deduction deleted.","deleteError":"Failed to delete deduction."},
   "payrollHistory": {"title":"Payroll History","subtitle":"View and manage past payroll runs","runNewPayroll":"Run New Payroll","ytdTotalPaid":"YTD Total Paid","payrollRunsYtd":"Payroll Runs (YTD)","averagePerRun":"Average Per Run","trendVsLast":"Trend vs Last","filters":"Filters","statusLabel":"Status","allStatuses":"All statuses","draft":"Draft","pendingApproval":"Pending Approval","approved":"Approved","paid":"Paid","rejected":"Rejected","cancelled":"Cancelled","yearLabel":"Year","allYears":"All years","selectYear":"Select year","searchLabel":"Search","searchPlaceholder":"Search by period...","tabPending":"Pending Approval","tabAll":"All Runs","pendingApprovalTitle":"Pending Approval","pendingApprovalDescription":"Payroll runs awaiting second-person review and approval","noPendingRuns":"No payroll runs pending approval","period":"Period","payDate":"Pay Date","employees":"Employees","grossPay":"Gross Pay","netPay":"Net Pay","submittedBy":"Submitted By","actions":"Actions","you":"You","approve":"Approve","reject":"Reject","twoPersonRule":"Two-person rule: another admin must approve","payrollRunsTitle":"Payroll Runs","showingRuns":"Showing {{count}} payroll runs","noRunsFound":"No payroll runs found","runFirstPayroll":"Run Your First Payroll","viewDetails":"View Details","exportCsv":"Export CSV","exportQuickBooks":"Export to QuickBooks","sendPayslips":"Send Payslips","approveDialogTitle":"Approve Payroll Run","approveDialogDescription":"You are about to approve this payroll run. This will:","approveDialogPeriod":"Period","approveDialogEmployees":"Employees","approveDialogGrossPay":"Gross Pay","approveDialogNetPay":"Net Pay","approveMarkPaid":"Mark payroll as approved and paid","approveCreateJournalEntries":"Create accounting journal entries","approveGeneratePayslips":"Generate payslips for all employees","approveCheckingAllocation":"Checking project/funding allocation...","approveUnassignedWarningTitle":"Unassigned allocation detected","approveUnassignedWarningDesc":"{{count}} employee(s) in this run are missing project/funding tags ({{amount}} gross pay).","approveUnassignedConfirm":"I confirm these amounts should be posted as Unassigned.","approving":"Approving...","approveAndProcess":"Approve & Process","rejectDialogTitle":"Reject Payroll Run","rejectDialogDescription":"Provide a reason for rejecting this payroll run. The submitter will be able to revise and resubmit.","employeesNet":"{{count}} employees, {{amount}} net","rejectionReasonLabel":"Rejection Reason","rejectionReasonPlaceholder":"Explain why this payroll run is being rejected (minimum 10 characters)...","rejectionReasonMinChars":"Reason must be at least 10 characters ({{count}}/10)","cancel":"Cancel","rejecting":"Rejecting...","rejectPayroll":"Reject Payroll","detailsTitle":"Payroll Details","detailsDescription":"View individual employee payroll records","totalGross":"Total Gross","totalDeductions":"Total Deductions","totalNetPay":"Total Net Pay","employee":"Employee","department":"Department","hours":"Hours","gross":"Gross","deductions":"Deductions","payslip":"Payslip","noRecords":"No individual records found for this payroll run.","toastApproved":"Payroll Approved","toastApprovedDesc":"Payroll approved and journal entry posted.","toastApprovalFailed":"Approval Failed","toastApprovalFailedDesc":"Failed to approve payroll run.","toastApprovalBlocked":"Confirmation required","toastApprovalBlockedDesc":"Please confirm unassigned allocations before approving this payroll run.","toastRejected":"Payroll Rejected","toastRejectedDesc":"Payroll run has been rejected and sent back for revision.","toastRejectionFailed":"Rejection Failed","toastRejectionFailedDesc":"Failed to reject payroll run.","toastLoadError":"Failed to load payroll history. Please refresh the page.","toastDetailsError":"Failed to load payroll details.","toastRecordsError":"Failed to load payroll records.","toastExportStarted":"Export Started","toastExportDesc":"CSV file will be downloaded shortly.","toastGenerating":"Generating Payslip","toastGeneratingDesc":"Preparing payslip for {{name}}...","toastDownloaded":"Payslip Downloaded","toastDownloadedDesc":"Payslip for {{name}} has been downloaded.","toastPayslipError":"Failed to generate payslip. Please try again.","status":"Status"},
-  "bankTransfers": {"title":"Bank Transfers","subtitle":"Manage payroll bank transfers and transaction history","thisMonth":"This Month","pendingTransfers":"Pending Transfers","completed":"Completed","failed":"Failed","filters":"Filters","status":"Status","allStatuses":"All statuses","pending":"Pending","processing":"Processing","payrollPeriod":"Payroll Period","allPeriods":"All periods","transferHistory":"Transfer History","showingTransfers":"Showing {{count}} transfers","exportCsv":"Export CSV","bankFiles":"Bank Files","generateBankFiles":"Generate Bank Transfer Files","generateBankFilesDesc":"Generate bank-specific files for salary payments (BNU, Mandiri, ANZ, BNCTL)","selectPayrollRun":"Select Payroll Run","selectPayrollRunPlaceholder":"Select a payroll run","selectBanksToGenerate":"Select Banks to Generate","emp":"emp","filesGeneratedFor":"Files will be generated for","debitAccount":"Debit account","cancel":"Cancel","generating":"Generating...","generateFiles":"Generate {{count}} File(s)","newTransfer":"New Transfer","initiateBankTransfer":"Initiate Bank Transfer","initiateBankTransferDesc":"Set up a new payroll bank transfer","payrollRunLabel":"Payroll Run","selectPayrollRunFormPlaceholder":"Select payroll run","noApprovedRuns":"No approved payroll runs available","bankAccountLabel":"Bank Account","selectBankAccount":"Select bank account","transferDateLabel":"Transfer Date","notesLabel":"Notes","optionalNotes":"Optional notes","initiateTransfer":"Initiate Transfer","noTransfersFound":"No transfers found","createFirstTransfer":"Create your first transfer by running payroll and initiating a bank transfer.","adjustFilters":"Try adjusting your filters.","amount":"Amount","employees":"Employees","transferDate":"Transfer Date","bankAccount":"Bank Account","reference":"Reference","actions":"Actions","viewDetails":"View details","toastErrorTitle":"Error","toastLoadError":"Failed to load transfers. Please refresh the page.","toastSelectRunAndBank":"Please select a payroll run and at least one bank.","toastRunNotFound":"Selected payroll run not found.","toastBankFilesSuccess":"Generated {{count}} bank file(s) successfully.","toastBankFilesError":"Failed to generate bank files. Please try again.","toastValidationError":"Validation Error","toastValidationDesc":"Please fill in all required fields.","toastTransferSuccess":"Success","toastTransferSuccessDesc":"Bank transfer {{reference}} initiated successfully.","toastTransferError":"Failed to initiate transfer. Please try again.","toastNoData":"No Data","toastNoDataDesc":"No transfers to export.","toastExportComplete":"Export Complete","toastExportCompleteDesc":"Exported {{count}} transfers to CSV.","csvPayrollPeriod":"Payroll Period","csvAmount":"Amount","csvEmployeeCount":"Employee Count","csvTransferDate":"Transfer Date","csvBankAccount":"Bank Account","csvStatus":"Status","csvReference":"Reference","csvInitiatedBy":"Initiated By","csvNotes":"Notes","unknown":"Unknown","company":"Company"},
+  "bankTransfers": {"title":"Bank Transfers","subtitle":"Manage payroll bank transfers and transaction history","thisMonth":"This Month","pendingTransfers":"Pending Transfers","completed":"Completed","failed":"Failed","filters":"Filters","status":"Status","allStatuses":"All statuses","pending":"Pending","processing":"Processing","payrollPeriod":"Payroll Period","allPeriods":"All periods","transferHistory":"Transfer History","showingTransfers":"Showing {{count}} transfers","exportCsv":"Export CSV","bankFiles":"Bank Files","generateBankFiles":"Generate Bank Transfer Files","generateBankFilesDesc":"Generate bank-specific files for salary payments (BNU, Mandiri, ANZ, BNCTL)","selectPayrollRun":"Select Payroll Run","selectPayrollRunPlaceholder":"Select a payroll run","selectBanksToGenerate":"Select Banks to Generate","emp":"emp","filesGeneratedFor":"Files will be generated for","debitAccount":"Debit account","cancel":"Cancel","generating":"Generating...","generateFiles":"Generate {{count}} File(s)","newTransfer":"New Transfer","initiateBankTransfer":"Initiate Bank Transfer","initiateBankTransferDesc":"Set up a new payroll bank transfer","payrollRunLabel":"Payroll Run","selectPayrollRunFormPlaceholder":"Select payroll run","noApprovedRuns":"No approved payroll runs available","bankAccountLabel":"Bank Account","selectBankAccount":"Select bank account","transferDateLabel":"Transfer Date","notesLabel":"Notes","optionalNotes":"Optional notes","initiateTransfer":"Initiate Transfer","noTransfersFound":"No transfers found","createFirstTransfer":"Create your first transfer by running payroll and initiating a bank transfer.","adjustFilters":"Try adjusting your filters.","amount":"Amount","employees":"Employees","loadingEmployees":"Loading employees...","transferDate":"Transfer Date","bankAccount":"Bank Account","reference":"Reference","actions":"Actions","viewDetails":"View details","toastErrorTitle":"Error","toastLoadError":"Failed to load transfers. Please refresh the page.","toastEmployeesLoading":"Employees are still loading","toastSelectRunAndBank":"Please select a payroll run and at least one bank.","toastRunNotFound":"Selected payroll run not found.","toastBankFilesSuccess":"Generated {{count}} bank file(s) successfully.","toastBankFilesError":"Failed to generate bank files. Please try again.","toastValidationError":"Validation Error","toastValidationDesc":"Please fill in all required fields.","toastTransferSuccess":"Success","toastTransferSuccessDesc":"Bank transfer {{reference}} initiated successfully.","toastTransferError":"Failed to initiate transfer. Please try again.","toastNoData":"No Data","toastNoDataDesc":"No transfers to export.","toastExportComplete":"Export Complete","toastExportCompleteDesc":"Exported {{count}} transfers to CSV.","csvPayrollPeriod":"Payroll Period","csvAmount":"Amount","csvEmployeeCount":"Employee Count","csvTransferDate":"Transfer Date","csvBankAccount":"Bank Account","csvStatus":"Status","csvReference":"Reference","csvInitiatedBy":"Initiated By","csvNotes":"Notes","unknown":"Unknown","company":"Company"},
   "taxReports": {"title":"Payroll Taxes & INSS","subtitle":"Timor-Leste compliance center for WIT (ATTL) and INSS monthly filings.","actionRequired":"Action required","onTrack":"On track","upcomingDeadlines":"Upcoming Deadlines","upcomingDeadlinesDesc":"These deadlines are calculated from your filing periods; always verify against current ATTL/INSS guidance.","monthlyWit":"Monthly WIT (ATTL)","monthlyInss":"Monthly INSS","next":"Next","due":"due","inssStatementTask":"statement (10th)","inssPaymentTask":"payment (20th)","noPeriodsFound":"No periods found","attlTitle":"ATTL Monthly WIT Return","attlDesc":"Generate, export (CSV/PDF), and track monthly Wage Income Tax filings.","openWitFiling":"Open WIT Filing","inssTitle":"INSS Monthly Return","inssDesc":"Generate and export monthly INSS contribution submissions and track filing status.","openInssFiling":"Open INSS Filing"},
   "guidance": {
     "hideGuidance": "Hide guidance",
@@ -4268,9 +4381,22 @@ export const translations = {
     "unknown": "La hatene",
     "remove": "Hasai",
     "loaded": "karrega",
+    "loading": "Karreta hela...",
     "more": "Tan",
     "moreActions": "Asaun tan",
     "of": "hosi",
+    "basicMode": "Modu Básiku",
+    "adminConsole": "Konsola Admin",
+    "sitemap": "Mapa Pájina",
+    "guidance": "Orientasaun",
+    "hide": "Subar",
+    "moreDetails": "Detallu tan",
+    "review": "Reviza",
+    "retry": "Koko fali",
+    "connectionIssueTitle": "Problema ligasaun",
+    "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",
+    "offlineTitle": "Agora laiha ligasaun",
+    "offlineDesc": "Mudansa sira bele seidauk rai to'o internet fila fali.",
     "months": {
       "1": "Janeiru", "2": "Fevereiru", "3": "Marsu", "4": "Abríl",
       "5": "Maiu", "6": "Juñu", "7": "Jullu", "8": "Agostu",
@@ -4283,7 +4409,9 @@ export const translations = {
     "payroll": "Saláriu",
     "money": "Osan",
     "accounting": "Kontabilidade",
-    "reports": "Relatóriu"
+    "reports": "Relatóriu",
+    "setupBannerTitle": "Setup seidauk remata",
+    "setupBannerDesc": "Remata dadus empreza, banku, lisensa no saláriu. {{percent}}% kompletu."
   },
   "allowances": {
     "title": "Subsidiu",
@@ -4386,7 +4514,12 @@ export const translations = {
     "upload": "Upload",
     "preparePayroll": "Prepara saláriu",
     "fixBlockingIssues": "Rezolve problema {{count}}",
-    "reviewLeaveRequests": "Reviza pedidu lisensa {{count}}"
+    "reviewLeaveRequests": "Reviza pedidu lisensa {{count}}",
+    "simpleOverview": "Hahu iha ne'e",
+    "simpleOverviewDesc": "Uza kartaun tolu ne'e ba tarefa importante liu ohin loron.",
+    "finishSetup": "Kompleta setup",
+    "resumeSetup": "Kontinua setup",
+    "setupProgress": "{{percent}}% kompletu"
   },
   "documentAlerts": {
     "title": "Alerta Dokumentu",
@@ -4432,7 +4565,46 @@ export const translations = {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
     "errors": {
-      "signInFailed": "Labele tama"
+      "signInFailed": "Labele tama",
+      "passwordTooShort": "Password tenke iha karakter 6 pelumenus",
+      "passwordsDoNotMatch": "Password sira la hanesan",
+      "nameRequired": "Favor hatama ita-nia naran",
+      "companyNameRequired": "Favor hatama naran kompanhia",
+      "signupFailed": "La konsege kria konta. Favór koko fali.",
+      "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
+      "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
+      "invalidEmail": "Enderesu email invállidu."
+    },
+    "signup": {
+      "titleAccount": "Kria Ita-nia Konta",
+      "titleOrganization": "Konfigura Ita-nia Organizasaun",
+      "subtitleAccount": "Hahu trial grátis. La presiza kartaun kreditu.",
+      "subtitleOrganization": "Hatete mai kona-ba ita-nia kompanhia",
+      "stepAccount": "Konta",
+      "stepOrganization": "Organizasaun",
+      "fullName": "Naran Kompletu",
+      "fullNamePlaceholder": "João da Silva",
+      "workEmail": "Email Servisu",
+      "workEmailPlaceholder": "ita@kompanhia.com",
+      "passwordHint": "Pelo menus karakter 6",
+      "confirmPassword": "Konfirma Password",
+      "confirmPasswordPlaceholder": "Konfirma ita-nia password",
+      "continue": "Kontinua",
+      "companyName": "Naran Kompanhia",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "URL Kompanhia",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "Ida ne'e sei sai ita-nia identificador úniku ba organizasaun",
+      "alreadyHaveAccount": "Iha ona konta?",
+      "terms": "Hosi kria konta, ita konkorda ho Termu Servisu no Politika Privasidade.",
+      "creating": "Kria hela...",
+      "createAccount": "Kria Konta",
+      "trialLabel": "Grátis",
+      "trialValue": "Trial loron 14",
+      "employeesLabel": "Empregadu",
+      "featuresLabel": "Fitur",
+      "allValue": "Hotu"
     }
   },
   "notFound": {
@@ -5159,7 +5331,8 @@ export const translations = {
     },
     "directory": {
       "title": "Diretóriu Empregadu",
-      "countSummary": "{{shown}} hosi {{total}} empregadu"
+      "countSummary": "{{shown}} hosi {{total}} empregadu",
+      "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu."
     },
     "table": {
       "employee": "Empregadu",
@@ -5281,6 +5454,9 @@ export const translations = {
     },
     "toast": {
       "errorTitle": "Erru",
+      "requiredFieldsTitle": "Kampu obrigatóriu sira falta",
+      "requiredFieldsDesc": "Favor kompleta kampu obrigatóriu sira antes kontinua.",
+      "fillRequiredFields": "Favor kompleta kampu obrigatóriu sira.",
       "employeeNotFound": "Empregadu la hetan",
       "loadFailed": "La bele karrega empregadu",
       "loadDepartmentsFailed": "La bele karrega departamentu",
@@ -6036,6 +6212,8 @@ export const translations = {
       "actions": {
         "newRequest": "Pedido Foun",
         "cancel": "Kansela",
+        "approve": "Aprova",
+        "reject": "Rejeita",
         "submit": "Submete Pedido"
       },
       "dialog": {
@@ -6072,7 +6250,8 @@ export const translations = {
         "all": "Pedido hotu",
         "pending": "Pendente",
         "approved": "Aprova",
-        "rejected": "Rejeita"
+        "rejected": "Rejeita",
+        "calendar": "Kalendariu"
       },
       "table": {
         "title": "Pedidos Lisensa",
@@ -6134,7 +6313,9 @@ export const translations = {
         "rejectedTitle": "Susesu",
         "rejectedDesc": "Pedido {{name}} rejeita.",
         "rejectFailed": "Falha rejeita pedido.",
-        "rejectionReasonMissing": "Hatama razao rejeisaun."
+        "rejectionReasonMissing": "Hatama razao rejeisaun.",
+        "cancelledDesc": "Pedido lisensa kansela ona.",
+        "cancelFailed": "Falha kansela pedido lisensa."
       }
     },
     "attendance": {
@@ -6145,6 +6326,7 @@ export const translations = {
         "import": "Importa",
         "mark": "Marka presensa",
         "markToday": "Marka Presensa Ohin",
+        "today": "Ohin",
         "cancel": "Kansela",
         "export": "Exporta CSV"
       },
@@ -6537,6 +6719,20 @@ export const translations = {
     "minimumWage": "Saláriu mínimu:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Reviza ikus husi {{name}}",
+    "simpleFlowTitle": "Fluxu folha simples",
+    "simpleFlowDesc": "Halo pasu sira ne'e tuir orden iha loron selu.",
+    "simpleFlow": {
+      "peopleTitle": "Verifika rejistu trabalhador",
+      "peoplePending": "Rejistu trabalhador {{count}} seidauk kompletu ho kontratu ka detallu INSS.",
+      "peopleReady": "Rejistu trabalhador sira hanesan prontu ba folha ida-ne'e.",
+      "timeTitle": "Verifika tempu no lisensa",
+      "timePending": "Pedidu lisensa {{count}} seidauk reviza molok folha.",
+      "timeReady": "Lisensa no attendance hanesan atualiza ona ba períodu ida-ne'e.",
+      "runTitle": "Hala'o folha",
+      "runPending": "Kompleta uluk itens iha lista verifikasaun molok hala'o folha.",
+      "payTitle": "Selu saláriu",
+      "payDesc": "Loke transferénsia banku depois de folha aprova ona."
+    },
     "checklist": {
       "attendanceLabel": "Prezensa finaliza",
       "attendanceIssue": "folha tempu pendente aprovasaun",
@@ -6589,6 +6785,11 @@ export const translations = {
     },
     "welcome": "Bemvindu! Atu konfigura ita-nia konta",
     "welcomeDesc": "Kompleta pasu sira hodi hahú ho Meza",
+    "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
+    "progressTitle": "Progresu setup",
+    "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
+    "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
+    "savedAutomaticallyDesc": "Bele sai no fila depois. Meza sei kontinua iha fatin ne'ebé ita husik.",
     "stepOf": "Pasu {{current}} husi {{total}}",
     "requiredFields": "Kampu Obrigatóriu",
     "companyNameTinRequired": "Naran empreza no TIN presiza.",
@@ -6607,6 +6808,9 @@ export const translations = {
     "tradingNamePlaceholder": "Ita-nia Empreza",
     "tinNumber": "Numeru TIN *",
     "tinPlaceholder": "Numeru Identifikasaun Impostu",
+    "teamSize": "Medida Ekipa Aproximadu",
+    "selectTeamSize": "Hili medida ekipa",
+    "teamSizeHint": "Ida ne'e ajuda Meza hili padraun di'ak liu ba ekipa ki'ik ka boot.",
     "address": "Enderesu",
     "addressPlaceholder": "Enderesu dalan",
     "city": "Sidade",
@@ -6648,7 +6852,8 @@ export const translations = {
     "allSet": "Pronto ona!",
     "allSetDesc": "Ita-nia konta konfigurasaun ona. Agora bele hahú hatama trabalhador, prosesu saláriu, no jere ita-nia ekipa.",
     "back": "Fila",
-    "doLater": "Hau sei halo depois",
+    "doLater": "Ba painél agora daudaun",
+    "finishLaterHint": "Ita bele fila ba setup iha dashboard bainhira deit molok hala'o ita-nia folha primeiru.",
     "saving": "Rai hela...",
     "goToDashboard": "Ba Painél",
     "next": "Tuir"
@@ -7393,8 +7598,28 @@ export const translations = {
       "stats": {
         "activeEmployees": "Empregadu aktivu",
         "pendingLeave": "Lisensa pendente",
+        "complianceIssues": "Problema konformidade",
         "needsReview": "Presiza avaliacao",
         "onLeaveToday": "Iha lisensa ohin"
+      },
+      "badges": {
+        "needsReview": "Presiza reviza",
+        "needsAttention": "Presiza atensaun",
+        "allClear": "Diak hotu"
+      },
+      "sections": {
+        "staff": {
+          "title": "Staff",
+          "description": "Diretóriu funsionáriu, departamentu, organograma, avizu, no keixa."
+        },
+        "hiring": {
+          "title": "Rekrutamentu",
+          "description": "Anúnsiu servisu, kandidatu, entrevista, onboarding, no offboarding."
+        },
+        "performance": {
+          "title": "Dezempenu",
+          "description": "Objetivu, avaliasaun dezempenhu, formasaun, sertifikasaun, no asaun disiplinár."
+        }
       }
     }
   },
@@ -8359,6 +8584,7 @@ export const translations = {
     "inssEmployeeLabel": "INSS Trabalhador (4%)",
     "inssEmployerLabel": "INSS Empreza (6%)",
     "grossPlusInss": "Brutu + INSS Empreza",
+    "payrollSummary": "Sumáriu Folha",
     "periodConfig": "Konfigurasaun Períodu Pagamentu",
     "configureDesc": "Konfigura períodu saláriu no data pagamentu",
     "payFrequency": "Frekuensia Pagamentu",
@@ -8446,7 +8672,7 @@ export const translations = {
   },
   "deductions": {"title":"Dedusaun & Adianta","subtitle":"Jere dedusaun rekorrente no adianta saláriu","addDeduction":"Aumenta Dedusaun","activeDeductions":"Dedusaun Ativu","perPeriod":"{{amount}}/períodu","payrollAdvances":"Adianta Saláriu","outstanding":"{{amount}} seidauk selu","garnishments":"Penhora Saláriu","otherDeductions":"Dedusaun Seluk","deductionsTableTitle":"Dedusaun","deductionsTableDescription":"Jere dedusaun no adianta empregadu nian","searchPlaceholder":"Buka...","tabAll":"Hotu","tabAdvances":"Adianta","tabGarnishments":"Penhora","tabOther":"Seluk","noDeductions":"Laiha dedusaun","employee":"Empregadu","type":"Tipu","description":"Deskrisaun","amount":"Montante","frequency":"Frekuensia","status":"Estatutu","actions":"Asaun","remaining":"{{amount}} restu","statusActive":"Ativu","statusPaused":"Pausa","statusCompleted":"Kompletu","typeGarnishment":"Penhora Saláriu","typeAdvance":"Adianta Saláriu","typeOther":"Dedusaun Seluk","typeLoanRepayment":"Selu Empréstimu","freqPerPaycheck":"Kada Pagamentu","freqWeekly":"Semanal","freqBiweekly":"Kuinzenal","freqMonthly":"Mensal","addDialogTitle":"Aumenta Dedusaun","addDialogDescription":"Kria dedusaun rekorrente ka adianta saláriu","employeeLabel":"Empregadu *","selectEmployee":"Hili empregadu","typeLabel":"Tipu *","descriptionLabel":"Deskrisaun *","descriptionPlaceholder":"ex., Penhora tribunál, Adianta saláriu","percentageBased":"Bazeia ba persentajen","percentageLabel":"Persentajen *","amountPerPeriod":"Montante kada Períodu *","totalAdvanceAmount":"Montante Totál Adianta","totalAdvancePlaceholder":"Montante totál atu selu fali","frequencyLabel":"Frekuensia","startDate":"Data Hahú","endDate":"Data Remata (Opsionál)","preTaxDeduction":"Dedusaun molok impostu","cancel":"Kansela","saving":"Rai hela...","validationError":"Erru Validasaun","validationDescription":"Favór prenxe kampu obrigatóriu hotu.","createSuccess":"Dedusaun kria ho susesu.","createError":"La konsege kria dedusaun. Favór koko fali.","loadError":"La konsege karrega dedusaun. Favór atualiza pájina.","pausedSuccess":"Dedusaun pausa tiha.","resumedSuccess":"Dedusaun rekupera tiha.","toggleError":"La konsege atualiza dedusaun.","deleteSuccess":"Dedusaun hasai tiha.","deleteError":"La konsege hasai dedusaun."},
   "payrollHistory": {"title":"Istória Folha Pagamentu","subtitle":"Haree no jere folha pagamentu pasadu","runNewPayroll":"Hala'o Saláriu Foun","ytdTotalPaid":"Totál Selu Tinan","payrollRunsYtd":"Saláriu Hala'o (Tinan)","averagePerRun":"Média kada Hala'o","trendVsLast":"Tendénsia vs Ikus","filters":"Filtru","statusLabel":"Estatutu","allStatuses":"Estatutu hotu","draft":"Raskunhu","pendingApproval":"Hein Aprovasaun","approved":"Aprova tiha","paid":"Selu tiha","rejected":"Rejeita tiha","cancelled":"Kansela tiha","yearLabel":"Tinan","allYears":"Tinan hotu","selectYear":"Hili tinan","searchLabel":"Buka","searchPlaceholder":"Buka períodu...","tabPending":"Hein Aprovasaun","tabAll":"Hala'o Hotu","pendingApprovalTitle":"Hein Aprovasaun","pendingApprovalDescription":"Saláriu hein revizaun no aprovasaun ema rua","noPendingRuns":"Laiha saláriu hein aprovasaun","period":"Períodu","payDate":"Data Pagamentu","employees":"Empregadu","grossPay":"Saláriu Brutu","netPay":"Saláriu Líkidu","submittedBy":"Submete husi","actions":"Asaun","you":"Ita","approve":"Aprova","reject":"Rejeita","twoPersonRule":"Regra ema rua: admin seluk tenke aprova","payrollRunsTitle":"Saláriu Hala'o tiha","showingRuns":"Hatudu {{count}} saláriu hala'o","noRunsFound":"Laiha saláriu hala'o","runFirstPayroll":"Hala'o Saláriu Primeiru","viewDetails":"Haree Detalle","exportCsv":"Exporta CSV","exportQuickBooks":"Exporta ba QuickBooks","sendPayslips":"Haruka Payslip","approveDialogTitle":"Aprova Saláriu","approveDialogDescription":"Ita sei aprova saláriu ida-ne'e. Ida-ne'e sei:","approveDialogPeriod":"Períodu","approveDialogEmployees":"Empregadu","approveDialogGrossPay":"Saláriu Brutu","approveDialogNetPay":"Saláriu Líkidu","approveMarkPaid":"Marka saláriu aprova no selu tiha","approveCreateJournalEntries":"Kria entrada jornál kontabilidade","approveGeneratePayslips":"Kria payslip ba empregadu hotu","approveCheckingAllocation":"Verifika alokasaun projetu no fundu...","approveUnassignedWarningTitle":"Alokasaun la define detekta","approveUnassignedWarningDesc":"Empregadu {{count}} iha saláriu ida-ne'e seidauk iha tag projetu/fundu (saláriu brutu {{amount}}).","approveUnassignedConfirm":"Hau confirma montante hirak-ne'e tenke tama ba Unassigned.","approving":"Aprova hela...","approveAndProcess":"Aprova & Prosesa","rejectDialogTitle":"Rejeita Saláriu","rejectDialogDescription":"Fó razaun ba rejeita saláriu ida-ne'e. Ema ne'ebé submete bele reviza no submete fali.","employeesNet":"empregadu {{count}}, {{amount}} líkidu","rejectionReasonLabel":"Razaun Rejeisaun","rejectionReasonPlaceholder":"Esplika tanba saida saláriu ida-ne'e rejeita (mínimu karakter 10)...","rejectionReasonMinChars":"Razaun tenke mínimu karakter 10 ({{count}}/10)","cancel":"Kansela","rejecting":"Rejeita hela...","rejectPayroll":"Rejeita Saláriu","detailsTitle":"Detalle Saláriu","detailsDescription":"Haree rejistru saláriu empregadu ida-idak","totalGross":"Totál Brutu","totalDeductions":"Totál Dedusaun","totalNetPay":"Totál Saláriu Líkidu","employee":"Empregadu","department":"Departamentu","hours":"Oras","gross":"Brutu","deductions":"Dedusaun","payslip":"Payslip","noRecords":"Laiha rejistru individuál ba saláriu ida-ne'e.","toastApproved":"Saláriu Aprova tiha","toastApprovedDesc":"Saláriu aprova no entrada jornál publika tiha.","toastApprovalFailed":"Aprovasaun Falha","toastApprovalFailedDesc":"La konsege aprova saláriu.","toastApprovalBlocked":"Presiza konfirmasaun","toastApprovalBlockedDesc":"Favór confirma alokasaun Unassigned molok aprova saláriu ida-ne'e.","toastRejected":"Saláriu Rejeita tiha","toastRejectedDesc":"Saláriu rejeita no haruka fali ba revizaun.","toastRejectionFailed":"Rejeisaun Falha","toastRejectionFailedDesc":"La konsege rejeita saláriu.","toastLoadError":"La konsege karrega istória saláriu. Favór atualiza pájina.","toastDetailsError":"La konsege karrega detalle saláriu.","toastRecordsError":"La konsege karrega rejistru saláriu.","toastExportStarted":"Exporta Hahú","toastExportDesc":"Ficheiro CSV sei download lalais.","toastGenerating":"Kria Payslip","toastGeneratingDesc":"Prepara payslip ba {{name}}...","toastDownloaded":"Payslip Download tiha","toastDownloadedDesc":"Payslip ba {{name}} download tiha.","toastPayslipError":"La konsege kria payslip. Favór koko fali.","status":"Estatutu"},
-  "bankTransfers": {"title":"Transferensia Banku","subtitle":"Jere transferensia banku folha pagamentu no istória transasaun","thisMonth":"Fulan Ida-ne'e","pendingTransfers":"Transferensia Pendente","completed":"Kompletu","failed":"Falha","filters":"Filtru","status":"Estatutu","allStatuses":"Estatutu hotu","pending":"Pendente","processing":"Prosesa hela","payrollPeriod":"Períodu Folha Pagamentu","allPeriods":"Períodu hotu","transferHistory":"Istória Transferensia","showingTransfers":"Hatudu {{count}} transferensia","exportCsv":"Exporta CSV","bankFiles":"Ficheiro Banku","generateBankFiles":"Kria Ficheiro Transferensia Banku","generateBankFilesDesc":"Kria ficheiro espesífiku banku ba pagamentu saláriu (BNU, Mandiri, ANZ, BNCTL)","selectPayrollRun":"Hili Folha Pagamentu","selectPayrollRunPlaceholder":"Hili folha pagamentu ida","selectBanksToGenerate":"Hili Banku atu Kria","emp":"emp","filesGeneratedFor":"Ficheiro sei kria ba","debitAccount":"Konta débitu","cancel":"Kansela","generating":"Kria hela...","generateFiles":"Kria {{count}} Ficheiro","newTransfer":"Transferensia Foun","initiateBankTransfer":"Inisia Transferensia Banku","initiateBankTransferDesc":"Konfigura transferensia banku foun ba folha pagamentu","payrollRunLabel":"Folha Pagamentu","selectPayrollRunFormPlaceholder":"Hili folha pagamentu","noApprovedRuns":"Laiha folha pagamentu aprova","bankAccountLabel":"Konta Banku","selectBankAccount":"Hili konta banku","transferDateLabel":"Data Transferensia","notesLabel":"Nota","optionalNotes":"Nota opsionál","initiateTransfer":"Inisia Transferensia","noTransfersFound":"Laiha transferensia","createFirstTransfer":"Kria ita-nia transferensia primeiru liu husi hala'o saláriu no inisia transferensia banku.","adjustFilters":"Koko ajusta filtru.","amount":"Montante","employees":"Empregadu","transferDate":"Data Transferensia","bankAccount":"Konta Banku","reference":"Referensia","actions":"Asaun","viewDetails":"Haree detalle","toastErrorTitle":"Erru","toastLoadError":"La konsege karrega transferensia. Favór atualiza pájina.","toastSelectRunAndBank":"Favór hili folha pagamentu no banku ida pelumenus.","toastRunNotFound":"Folha pagamentu hili tiha la hetan.","toastBankFilesSuccess":"Kria {{count}} ficheiro banku ho susesu.","toastBankFilesError":"La konsege kria ficheiro banku. Favór koko fali.","toastValidationError":"Erru Validasaun","toastValidationDesc":"Favór prenxe kampu obrigatóriu hotu.","toastTransferSuccess":"Susesu","toastTransferSuccessDesc":"Transferensia banku {{reference}} inisia ho susesu.","toastTransferError":"La konsege inisia transferensia. Favór koko fali.","toastNoData":"Laiha Dadus","toastNoDataDesc":"Laiha transferensia atu exporta.","toastExportComplete":"Exporta Kompletu","toastExportCompleteDesc":"Exporta {{count}} transferensia ba CSV.","csvPayrollPeriod":"Períodu Folha Pagamentu","csvAmount":"Montante","csvEmployeeCount":"Numeru Empregadu","csvTransferDate":"Data Transferensia","csvBankAccount":"Konta Banku","csvStatus":"Estatutu","csvReference":"Referensia","csvInitiatedBy":"Inisia husi","csvNotes":"Nota","unknown":"Deskonhesidu","company":"Empresa"},
+  "bankTransfers": {"title":"Transferensia Banku","subtitle":"Jere transferensia banku folha pagamentu no istória transasaun","thisMonth":"Fulan Ida-ne'e","pendingTransfers":"Transferensia Pendente","completed":"Kompletu","failed":"Falha","filters":"Filtru","status":"Estatutu","allStatuses":"Estatutu hotu","pending":"Pendente","processing":"Prosesa hela","payrollPeriod":"Períodu Folha Pagamentu","allPeriods":"Períodu hotu","transferHistory":"Istória Transferensia","showingTransfers":"Hatudu {{count}} transferensia","exportCsv":"Exporta CSV","bankFiles":"Ficheiro Banku","generateBankFiles":"Kria Ficheiro Transferensia Banku","generateBankFilesDesc":"Kria ficheiro espesífiku banku ba pagamentu saláriu (BNU, Mandiri, ANZ, BNCTL)","selectPayrollRun":"Hili Folha Pagamentu","selectPayrollRunPlaceholder":"Hili folha pagamentu ida","selectBanksToGenerate":"Hili Banku atu Kria","emp":"emp","filesGeneratedFor":"Ficheiro sei kria ba","debitAccount":"Konta débitu","cancel":"Kansela","generating":"Kria hela...","generateFiles":"Kria {{count}} Ficheiro","newTransfer":"Transferensia Foun","initiateBankTransfer":"Inisia Transferensia Banku","initiateBankTransferDesc":"Konfigura transferensia banku foun ba folha pagamentu","payrollRunLabel":"Folha Pagamentu","selectPayrollRunFormPlaceholder":"Hili folha pagamentu","noApprovedRuns":"Laiha folha pagamentu aprova","bankAccountLabel":"Konta Banku","selectBankAccount":"Hili konta banku","transferDateLabel":"Data Transferensia","notesLabel":"Nota","optionalNotes":"Nota opsionál","initiateTransfer":"Inisia Transferensia","noTransfersFound":"Laiha transferensia","createFirstTransfer":"Kria ita-nia transferensia primeiru liu husi hala'o saláriu no inisia transferensia banku.","adjustFilters":"Koko ajusta filtru.","amount":"Montante","employees":"Empregadu","loadingEmployees":"Karreta empregadu sira...","transferDate":"Data Transferensia","bankAccount":"Konta Banku","reference":"Referensia","actions":"Asaun","viewDetails":"Haree detalle","toastErrorTitle":"Erru","toastLoadError":"La konsege karrega transferensia. Favór atualiza pájina.","toastEmployeesLoading":"Empregadu sira seidauk karrega hotu","toastSelectRunAndBank":"Favór hili folha pagamentu no banku ida pelumenus.","toastRunNotFound":"Folha pagamentu hili tiha la hetan.","toastBankFilesSuccess":"Kria {{count}} ficheiro banku ho susesu.","toastBankFilesError":"La konsege kria ficheiro banku. Favór koko fali.","toastValidationError":"Erru Validasaun","toastValidationDesc":"Favór prenxe kampu obrigatóriu hotu.","toastTransferSuccess":"Susesu","toastTransferSuccessDesc":"Transferensia banku {{reference}} inisia ho susesu.","toastTransferError":"La konsege inisia transferensia. Favór koko fali.","toastNoData":"Laiha Dadus","toastNoDataDesc":"Laiha transferensia atu exporta.","toastExportComplete":"Exporta Kompletu","toastExportCompleteDesc":"Exporta {{count}} transferensia ba CSV.","csvPayrollPeriod":"Períodu Folha Pagamentu","csvAmount":"Montante","csvEmployeeCount":"Numeru Empregadu","csvTransferDate":"Data Transferensia","csvBankAccount":"Konta Banku","csvStatus":"Estatutu","csvReference":"Referensia","csvInitiatedBy":"Inisia husi","csvNotes":"Nota","unknown":"Deskonhesidu","company":"Empresa"},
   "taxReports": {"title":"Impostu Folha Pagamentu & INSS","subtitle":"Sentru konformidade Timor-Leste ba WIT (ATTL) no INSS mensal.","actionRequired":"Presiza asaun","onTrack":"Lao di'ak","upcomingDeadlines":"Prazu sei mai","upcomingDeadlinesDesc":"Prazu sira ne'e kalkula husi períodu submisaun; verifica sempre ho orientasaun ATTL/INSS atuál.","monthlyWit":"WIT Mensal (ATTL)","monthlyInss":"INSS Mensal","next":"Tuir mai","due":"vensimentu","inssStatementTask":"deklarasaun (dia 10)","inssPaymentTask":"pagamentu (dia 20)","noPeriodsFound":"Laiha períodu","attlTitle":"Relatoriu WIT Mensal ATTL","attlDesc":"Kria, exporta (CSV/PDF), no akompanha submisaun Impostu Reseitu Saláriu mensal.","openWitFiling":"Loke Submisaun WIT","inssTitle":"Relatoriu INSS Mensal","inssDesc":"Kria no exporta submisaun kontribuisaun INSS mensal no akompanha estatutu submisaun.","openInssFiling":"Loke Submisaun INSS"},
   "guidance": {
     "hideGuidance": "Subar orientasaun",
@@ -8500,9 +8726,22 @@ pt: {
     "unknown": "Desconhecido",
     "remove": "Remover",
     "loaded": "carregado",
+    "loading": "A carregar...",
     "more": "Mais",
     "moreActions": "Mais ações",
     "of": "de",
+    "basicMode": "Modo Básico",
+    "adminConsole": "Consola Admin",
+    "sitemap": "Mapa do Site",
+    "guidance": "Orientação",
+    "hide": "Ocultar",
+    "moreDetails": "Mais detalhes",
+    "review": "Rever",
+    "retry": "Tentar novamente",
+    "connectionIssueTitle": "Problema de conexão",
+    "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
+    "offlineTitle": "Está offline",
+    "offlineDesc": "As alterações podem não guardar até a internet voltar.",
     "months": {
       "1": "Janeiro", "2": "Fevereiro", "3": "Março", "4": "Abril",
       "5": "Maio", "6": "Junho", "7": "Julho", "8": "Agosto",
@@ -8515,7 +8754,9 @@ pt: {
     "payroll": "Folha de Pagamento",
     "money": "Dinheiro",
     "accounting": "Contabilidade",
-    "reports": "Relatórios"
+    "reports": "Relatórios",
+    "setupBannerTitle": "A configuração ainda não terminou",
+    "setupBannerDesc": "Termine os dados da empresa, banco, licenças e salário. {{percent}}% concluído."
   },
   "allowances": {
     "title": "Subsídios",
@@ -8618,7 +8859,12 @@ pt: {
     "upload": "Carregar",
     "preparePayroll": "Preparar folha de pagamento",
     "fixBlockingIssues": "Corrigir {{count}} problemas bloqueantes",
-    "reviewLeaveRequests": "Rever {{count}} pedidos de licença"
+    "reviewLeaveRequests": "Rever {{count}} pedidos de licença",
+    "simpleOverview": "Comece aqui",
+    "simpleOverviewDesc": "Use estes três cartões para as tarefas mais importantes de hoje.",
+    "finishSetup": "Terminar configuração",
+    "resumeSetup": "Retomar configuração",
+    "setupProgress": "{{percent}}% completo"
   },
   "documentAlerts": {
     "title": "Alertas de Documentos",
@@ -8664,7 +8910,46 @@ pt: {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Palavra-passe: {{password}}",
     "errors": {
-      "signInFailed": "Falha ao iniciar sessão"
+      "signInFailed": "Falha ao iniciar sessão",
+      "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
+      "passwordsDoNotMatch": "As palavras-passe não coincidem",
+      "nameRequired": "Introduza o seu nome",
+      "companyNameRequired": "Introduza o nome da empresa",
+      "signupFailed": "Falha ao criar conta. Tente novamente.",
+      "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
+      "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
+      "invalidEmail": "Endereço de email inválido."
+    },
+    "signup": {
+      "titleAccount": "Criar a Sua Conta",
+      "titleOrganization": "Configurar a Sua Organização",
+      "subtitleAccount": "Comece o seu teste gratuito. Sem cartão de crédito.",
+      "subtitleOrganization": "Fale-nos sobre a sua empresa",
+      "stepAccount": "Conta",
+      "stepOrganization": "Organização",
+      "fullName": "Nome Completo",
+      "fullNamePlaceholder": "João Silva",
+      "workEmail": "Email de Trabalho",
+      "workEmailPlaceholder": "voce@empresa.com",
+      "passwordHint": "Pelo menos 6 caracteres",
+      "confirmPassword": "Confirmar Palavra-passe",
+      "confirmPasswordPlaceholder": "Confirme a sua palavra-passe",
+      "continue": "Continuar",
+      "companyName": "Nome da Empresa",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "URL da Empresa",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "Este será o identificador único da sua organização",
+      "alreadyHaveAccount": "Já tem conta?",
+      "terms": "Ao criar uma conta, concorda com os nossos Termos de Serviço e Política de Privacidade.",
+      "creating": "A criar...",
+      "createAccount": "Criar Conta",
+      "trialLabel": "Grátis",
+      "trialValue": "Teste de 14 dias",
+      "employeesLabel": "Funcionários",
+      "featuresLabel": "Funcionalidades",
+      "allValue": "Todas"
     }
   },
   "notFound": {
@@ -9496,7 +9781,8 @@ pt: {
     },
     "directory": {
       "title": "Diretório de Funcionários",
-      "countSummary": "{{shown}} de {{total}} funcionários"
+      "countSummary": "{{shown}} de {{total}} funcionários",
+      "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico."
     },
     "table": {
       "employee": "Funcionário",
@@ -9618,6 +9904,9 @@ pt: {
     },
     "toast": {
       "errorTitle": "Erro",
+      "requiredFieldsTitle": "Faltam campos obrigatórios",
+      "requiredFieldsDesc": "Preencha todos os campos obrigatórios antes de continuar.",
+      "fillRequiredFields": "Preencha todos os campos obrigatórios.",
       "employeeNotFound": "Funcionário não encontrado",
       "loadFailed": "Falha ao carregar funcionário",
       "loadDepartmentsFailed": "Falha ao carregar departamentos",
@@ -10373,6 +10662,8 @@ pt: {
       "actions": {
         "newRequest": "Novo Pedido",
         "cancel": "Cancelar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
         "submit": "Submeter Pedido"
       },
       "dialog": {
@@ -10409,7 +10700,8 @@ pt: {
         "all": "Todos os Pedidos",
         "pending": "Pendentes",
         "approved": "Aprovados",
-        "rejected": "Rejeitados"
+        "rejected": "Rejeitados",
+        "calendar": "Calendario"
       },
       "table": {
         "title": "Pedidos de Licença",
@@ -10471,7 +10763,9 @@ pt: {
         "rejectedTitle": "Sucesso",
         "rejectedDesc": "Pedido de licença de {{name}} foi rejeitado.",
         "rejectFailed": "Falha ao rejeitar pedido de licença.",
-        "rejectionReasonMissing": "Por favor forneça um motivo de rejeição."
+        "rejectionReasonMissing": "Por favor forneça um motivo de rejeição.",
+        "cancelledDesc": "Pedido de licença cancelado.",
+        "cancelFailed": "Falha ao cancelar pedido de licença."
       }
     },
     "attendance": {
@@ -10482,6 +10776,7 @@ pt: {
         "import": "Importar",
         "mark": "Marcar Assiduidade",
         "markToday": "Marcar Assiduidade de Hoje",
+        "today": "Hoje",
         "cancel": "Cancelar",
         "export": "Exportar CSV"
       },
@@ -10966,8 +11261,28 @@ pt: {
       "stats": {
         "activeEmployees": "Funcionários Ativos",
         "pendingLeave": "Licenças Pendentes",
+        "complianceIssues": "Problemas de Conformidade",
         "needsReview": "Requer Revisão",
         "onLeaveToday": "De Licença Hoje"
+      },
+      "badges": {
+        "needsReview": "Precisa de revisão",
+        "needsAttention": "Precisa de atenção",
+        "allClear": "Tudo certo"
+      },
+      "sections": {
+        "staff": {
+          "title": "Pessoal",
+          "description": "Diretório de funcionários, departamentos, organograma, anúncios e reclamações."
+        },
+        "hiring": {
+          "title": "Recrutamento",
+          "description": "Vagas, candidatos, entrevistas, onboarding e offboarding."
+        },
+        "performance": {
+          "title": "Desempenho",
+          "description": "Objetivos, avaliações de desempenho, formação, certificações e ações disciplinares."
+        }
       }
     }
   },
@@ -11240,6 +11555,20 @@ pt: {
     "minimumWage": "Salário mínimo:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Última revisão por {{name}}",
+    "simpleFlowTitle": "Fluxo simples da folha",
+    "simpleFlowDesc": "Siga estes passos por ordem no dia de pagamento.",
+    "simpleFlow": {
+      "peopleTitle": "Verificar registos dos funcionários",
+      "peoplePending": "{{count}} registos de funcionários ainda precisam de contrato ou dados INSS.",
+      "peopleReady": "Os registos dos funcionários parecem prontos para esta folha.",
+      "timeTitle": "Verificar tempo e licenças",
+      "timePending": "{{count}} pedidos de licença ainda precisam de revisão antes da folha.",
+      "timeReady": "Licenças e assiduidade parecem atualizadas para este período.",
+      "runTitle": "Processar folha",
+      "runPending": "Conclua os itens da lista de verificação antes de processar a folha.",
+      "payTitle": "Pagar salários",
+      "payDesc": "Abra as transferências bancárias depois de a folha ser aprovada."
+    },
     "checklist": {
       "attendanceLabel": "Assiduidade finalizada",
       "attendanceIssue": "folha de presença pendente de aprovação",
@@ -11292,6 +11621,11 @@ pt: {
     },
     "welcome": "Bem-vindo! Vamos configurar a sua conta",
     "welcomeDesc": "Complete estes passos para começar a usar o Meza",
+    "companyIntro": "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
+    "progressTitle": "Progresso da configuração",
+    "progressHint": "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
+    "savedAutomaticallyTitle": "Os passos concluídos ficam guardados automaticamente",
+    "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Meza retoma onde parou.",
     "stepOf": "Passo {{current}} de {{total}}",
     "requiredFields": "Campos Obrigatórios",
     "companyNameTinRequired": "Nome da empresa e NIF são obrigatórios.",
@@ -11310,6 +11644,9 @@ pt: {
     "tradingNamePlaceholder": "Sua Empresa",
     "tinNumber": "Número de NIF *",
     "tinPlaceholder": "Número de Identificação Fiscal",
+    "teamSize": "Dimensão Aproximada da Equipa",
+    "selectTeamSize": "Selecionar dimensão da equipa",
+    "teamSizeHint": "Isto ajuda o Meza a escolher melhores padrões para equipas pequenas ou maiores.",
     "address": "Morada",
     "addressPlaceholder": "Rua",
     "city": "Cidade",
@@ -11351,7 +11688,8 @@ pt: {
     "allSet": "Está tudo pronto!",
     "allSetDesc": "A sua conta foi configurada. Agora pode começar a adicionar funcionários, processar folha de pagamento e gerir a sua equipa.",
     "back": "Voltar",
-    "doLater": "Farei isto depois",
+    "doLater": "Ir para o painel por agora",
+    "finishLaterHint": "Pode voltar à configuração em qualquer altura a partir do painel antes de processar a sua primeira folha.",
     "saving": "A guardar...",
     "goToDashboard": "Ir para o Painel",
     "next": "Seguinte"
@@ -12696,6 +13034,7 @@ pt: {
     "inssEmployeeLabel": "INSS Funcionário (4%)",
     "inssEmployerLabel": "INSS Empregador (6%)",
     "grossPlusInss": "Bruto + INSS Empregador",
+    "payrollSummary": "Resumo da Folha",
     "periodConfig": "Configuração do Período",
     "configureDesc": "Configure o período da folha e data de pagamento",
     "payFrequency": "Frequência de Pagamento",
@@ -12997,6 +13336,7 @@ pt: {
     "adjustFilters": "Tente ajustar os filtros.",
     "amount": "Montante",
     "employees": "Funcionários",
+    "loadingEmployees": "A carregar funcionários...",
     "transferDate": "Data de Transferência",
     "bankAccount": "Conta Bancária",
     "reference": "Referência",
@@ -13004,6 +13344,7 @@ pt: {
     "viewDetails": "Ver detalhes",
     "toastErrorTitle": "Erro",
     "toastLoadError": "Falha ao carregar transferências. Por favor atualize a página.",
+    "toastEmployeesLoading": "Os funcionários ainda estão a carregar",
     "toastSelectRunAndBank": "Por favor selecione um processamento e pelo menos um banco.",
     "toastRunNotFound": "Processamento selecionado não encontrado.",
     "toastBankFilesSuccess": "Gerados {{count}} ficheiro(s) bancário(s) com sucesso.",

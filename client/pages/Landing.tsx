@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/i18n/I18nProvider";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { SEO, seoConfig } from "@/components/SEO";
 import {
   Users,
@@ -49,8 +50,7 @@ import {
 } from "lucide-react";
 
 export default function Landing() {
-  const { t, locale, setLocale, localeLabels } = useI18n();
-  const [langOpen, setLangOpen] = useState(false);
+  const { t } = useI18n();
   const tlFeatures = [
     {
       icon: Scale,
@@ -159,34 +159,7 @@ export default function Landing() {
 
             {/* Language & Auth */}
             <div className="flex items-center gap-3">
-              <div className="relative hidden sm:block">
-                <button
-                  onClick={() => setLangOpen(!langOpen)}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors"
-                >
-                  <Languages className="h-4 w-4 text-zinc-400" />
-                  <span className="text-xs text-zinc-300 font-medium uppercase">{locale}</span>
-                  <ChevronDown className={`h-3 w-3 text-zinc-400 transition-transform ${langOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {langOpen && (
-                  <div className="absolute top-full right-0 mt-2 py-1 rounded-lg bg-zinc-900 border border-white/10 shadow-xl z-50 min-w-[140px]">
-                    {(Object.keys(localeLabels) as Array<keyof typeof localeLabels>).map((lang) => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          setLocale(lang);
-                          setLangOpen(false);
-                        }}
-                        className={`w-full px-4 py-2 text-left text-sm hover:bg-white/10 transition-colors ${
-                          locale === lang ? 'text-amber-400' : 'text-zinc-300'
-                        }`}
-                      >
-                        {localeLabels[lang]}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <LocaleSwitcher className="border-white/10 bg-white/5 text-zinc-200 hover:bg-white/10 hover:text-white" />
               <Button variant="ghost" asChild className="text-zinc-300 hover:text-white hover:bg-white/5">
                 <Link to="/auth/login">{t("auth.signIn")}</Link>
               </Button>

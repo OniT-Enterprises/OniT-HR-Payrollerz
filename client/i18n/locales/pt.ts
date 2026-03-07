@@ -32,9 +32,22 @@ const messages = {
     "unknown": "Desconhecido",
     "remove": "Remover",
     "loaded": "carregado",
+    "loading": "A carregar...",
     "more": "Mais",
     "moreActions": "Mais ações",
     "of": "de",
+    "basicMode": "Modo Básico",
+    "adminConsole": "Consola Admin",
+    "sitemap": "Mapa do Site",
+    "guidance": "Orientação",
+    "hide": "Ocultar",
+    "moreDetails": "Mais detalhes",
+    "review": "Rever",
+    "retry": "Tentar novamente",
+    "connectionIssueTitle": "Problema de conexão",
+    "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
+    "offlineTitle": "Está offline",
+    "offlineDesc": "As alterações podem não guardar até a internet voltar.",
     "months": {
       "1": "Janeiro",
       "2": "Fevereiro",
@@ -56,7 +69,9 @@ const messages = {
     "payroll": "Folha de Pagamento",
     "money": "Dinheiro",
     "accounting": "Contabilidade",
-    "reports": "Relatórios"
+    "reports": "Relatórios",
+    "setupBannerTitle": "A configuração ainda não terminou",
+    "setupBannerDesc": "Termine os dados da empresa, banco, licenças e salário. {{percent}}% concluído."
   },
   "allowances": {
     "title": "Subsídios",
@@ -159,7 +174,12 @@ const messages = {
     "upload": "Carregar",
     "preparePayroll": "Preparar folha de pagamento",
     "fixBlockingIssues": "Corrigir {{count}} problemas bloqueantes",
-    "reviewLeaveRequests": "Rever {{count}} pedidos de licença"
+    "reviewLeaveRequests": "Rever {{count}} pedidos de licença",
+    "simpleOverview": "Comece aqui",
+    "simpleOverviewDesc": "Use estes três cartões para as tarefas mais importantes de hoje.",
+    "finishSetup": "Terminar configuração",
+    "resumeSetup": "Retomar configuração",
+    "setupProgress": "{{percent}}% completo"
   },
   "documentAlerts": {
     "title": "Alertas de Documentos",
@@ -205,7 +225,46 @@ const messages = {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Palavra-passe: {{password}}",
     "errors": {
-      "signInFailed": "Falha ao iniciar sessão"
+      "signInFailed": "Falha ao iniciar sessão",
+      "passwordTooShort": "A palavra-passe deve ter pelo menos 6 caracteres",
+      "passwordsDoNotMatch": "As palavras-passe não coincidem",
+      "nameRequired": "Introduza o seu nome",
+      "companyNameRequired": "Introduza o nome da empresa",
+      "signupFailed": "Falha ao criar conta. Tente novamente.",
+      "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
+      "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
+      "invalidEmail": "Endereço de email inválido."
+    },
+    "signup": {
+      "titleAccount": "Criar a Sua Conta",
+      "titleOrganization": "Configurar a Sua Organização",
+      "subtitleAccount": "Comece o seu teste gratuito. Sem cartão de crédito.",
+      "subtitleOrganization": "Fale-nos sobre a sua empresa",
+      "stepAccount": "Conta",
+      "stepOrganization": "Organização",
+      "fullName": "Nome Completo",
+      "fullNamePlaceholder": "João Silva",
+      "workEmail": "Email de Trabalho",
+      "workEmailPlaceholder": "voce@empresa.com",
+      "passwordHint": "Pelo menos 6 caracteres",
+      "confirmPassword": "Confirmar Palavra-passe",
+      "confirmPasswordPlaceholder": "Confirme a sua palavra-passe",
+      "continue": "Continuar",
+      "companyName": "Nome da Empresa",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "URL da Empresa",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "Este será o identificador único da sua organização",
+      "alreadyHaveAccount": "Já tem conta?",
+      "terms": "Ao criar uma conta, concorda com os nossos Termos de Serviço e Política de Privacidade.",
+      "creating": "A criar...",
+      "createAccount": "Criar Conta",
+      "trialLabel": "Grátis",
+      "trialValue": "Teste de 14 dias",
+      "employeesLabel": "Funcionários",
+      "featuresLabel": "Funcionalidades",
+      "allValue": "Todas"
     }
   },
   "notFound": {
@@ -1037,7 +1096,8 @@ const messages = {
     },
     "directory": {
       "title": "Diretório de Funcionários",
-      "countSummary": "{{shown}} de {{total}} funcionários"
+      "countSummary": "{{shown}} de {{total}} funcionários",
+      "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico."
     },
     "table": {
       "employee": "Funcionário",
@@ -1159,6 +1219,9 @@ const messages = {
     },
     "toast": {
       "errorTitle": "Erro",
+      "requiredFieldsTitle": "Faltam campos obrigatórios",
+      "requiredFieldsDesc": "Preencha todos os campos obrigatórios antes de continuar.",
+      "fillRequiredFields": "Preencha todos os campos obrigatórios.",
       "employeeNotFound": "Funcionário não encontrado",
       "loadFailed": "Falha ao carregar funcionário",
       "loadDepartmentsFailed": "Falha ao carregar departamentos",
@@ -1914,6 +1977,8 @@ const messages = {
       "actions": {
         "newRequest": "Novo Pedido",
         "cancel": "Cancelar",
+        "approve": "Aprovar",
+        "reject": "Rejeitar",
         "submit": "Submeter Pedido"
       },
       "dialog": {
@@ -1950,7 +2015,8 @@ const messages = {
         "all": "Todos os Pedidos",
         "pending": "Pendentes",
         "approved": "Aprovados",
-        "rejected": "Rejeitados"
+        "rejected": "Rejeitados",
+        "calendar": "Calendario"
       },
       "table": {
         "title": "Pedidos de Licença",
@@ -2012,7 +2078,9 @@ const messages = {
         "rejectedTitle": "Sucesso",
         "rejectedDesc": "Pedido de licença de {{name}} foi rejeitado.",
         "rejectFailed": "Falha ao rejeitar pedido de licença.",
-        "rejectionReasonMissing": "Por favor forneça um motivo de rejeição."
+        "rejectionReasonMissing": "Por favor forneça um motivo de rejeição.",
+        "cancelledDesc": "Pedido de licença cancelado.",
+        "cancelFailed": "Falha ao cancelar pedido de licença."
       }
     },
     "attendance": {
@@ -2023,6 +2091,7 @@ const messages = {
         "import": "Importar",
         "mark": "Marcar Assiduidade",
         "markToday": "Marcar Assiduidade de Hoje",
+        "today": "Hoje",
         "cancel": "Cancelar",
         "export": "Exportar CSV"
       },
@@ -2507,8 +2576,28 @@ const messages = {
       "stats": {
         "activeEmployees": "Funcionários Ativos",
         "pendingLeave": "Licenças Pendentes",
+        "complianceIssues": "Problemas de Conformidade",
         "needsReview": "Requer Revisão",
         "onLeaveToday": "De Licença Hoje"
+      },
+      "badges": {
+        "needsReview": "Precisa de revisão",
+        "needsAttention": "Precisa de atenção",
+        "allClear": "Tudo certo"
+      },
+      "sections": {
+        "staff": {
+          "title": "Pessoal",
+          "description": "Diretório de funcionários, departamentos, organograma, anúncios e reclamações."
+        },
+        "hiring": {
+          "title": "Recrutamento",
+          "description": "Vagas, candidatos, entrevistas, onboarding e offboarding."
+        },
+        "performance": {
+          "title": "Desempenho",
+          "description": "Objetivos, avaliações de desempenho, formação, certificações e ações disciplinares."
+        }
       }
     }
   },
@@ -2781,6 +2870,20 @@ const messages = {
     "minimumWage": "Salário mínimo:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Última revisão por {{name}}",
+    "simpleFlowTitle": "Fluxo simples da folha",
+    "simpleFlowDesc": "Siga estes passos por ordem no dia de pagamento.",
+    "simpleFlow": {
+      "peopleTitle": "Verificar registos dos funcionários",
+      "peoplePending": "{{count}} registos de funcionários ainda precisam de contrato ou dados INSS.",
+      "peopleReady": "Os registos dos funcionários parecem prontos para esta folha.",
+      "timeTitle": "Verificar tempo e licenças",
+      "timePending": "{{count}} pedidos de licença ainda precisam de revisão antes da folha.",
+      "timeReady": "Licenças e assiduidade parecem atualizadas para este período.",
+      "runTitle": "Processar folha",
+      "runPending": "Conclua os itens da lista de verificação antes de processar a folha.",
+      "payTitle": "Pagar salários",
+      "payDesc": "Abra as transferências bancárias depois de a folha ser aprovada."
+    },
     "checklist": {
       "attendanceLabel": "Assiduidade finalizada",
       "attendanceIssue": "folha de presença pendente de aprovação",
@@ -2833,6 +2936,11 @@ const messages = {
     },
     "welcome": "Bem-vindo! Vamos configurar a sua conta",
     "welcomeDesc": "Complete estes passos para começar a usar o Meza",
+    "companyIntro": "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
+    "progressTitle": "Progresso da configuração",
+    "progressHint": "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
+    "savedAutomaticallyTitle": "Os passos concluídos ficam guardados automaticamente",
+    "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Meza retoma onde parou.",
     "stepOf": "Passo {{current}} de {{total}}",
     "requiredFields": "Campos Obrigatórios",
     "companyNameTinRequired": "Nome da empresa e NIF são obrigatórios.",
@@ -2851,6 +2959,9 @@ const messages = {
     "tradingNamePlaceholder": "Sua Empresa",
     "tinNumber": "Número de NIF *",
     "tinPlaceholder": "Número de Identificação Fiscal",
+    "teamSize": "Dimensão Aproximada da Equipa",
+    "selectTeamSize": "Selecionar dimensão da equipa",
+    "teamSizeHint": "Isto ajuda o Meza a escolher melhores padrões para equipas pequenas ou maiores.",
     "address": "Morada",
     "addressPlaceholder": "Rua",
     "city": "Cidade",
@@ -2892,7 +3003,8 @@ const messages = {
     "allSet": "Está tudo pronto!",
     "allSetDesc": "A sua conta foi configurada. Agora pode começar a adicionar funcionários, processar folha de pagamento e gerir a sua equipa.",
     "back": "Voltar",
-    "doLater": "Farei isto depois",
+    "doLater": "Ir para o painel por agora",
+    "finishLaterHint": "Pode voltar à configuração em qualquer altura a partir do painel antes de processar a sua primeira folha.",
     "saving": "A guardar...",
     "goToDashboard": "Ir para o Painel",
     "next": "Seguinte"
@@ -4252,6 +4364,7 @@ const messages = {
     "inssEmployeeLabel": "INSS Funcionário (4%)",
     "inssEmployerLabel": "INSS Empregador (6%)",
     "grossPlusInss": "Bruto + INSS Empregador",
+    "payrollSummary": "Resumo da Folha",
     "periodConfig": "Configuração do Período",
     "configureDesc": "Configure o período da folha e data de pagamento",
     "payFrequency": "Frequência de Pagamento",
@@ -4553,6 +4666,7 @@ const messages = {
     "adjustFilters": "Tente ajustar os filtros.",
     "amount": "Montante",
     "employees": "Funcionários",
+    "loadingEmployees": "A carregar funcionários...",
     "transferDate": "Data de Transferência",
     "bankAccount": "Conta Bancária",
     "reference": "Referência",
@@ -4560,6 +4674,7 @@ const messages = {
     "viewDetails": "Ver detalhes",
     "toastErrorTitle": "Erro",
     "toastLoadError": "Falha ao carregar transferências. Por favor atualize a página.",
+    "toastEmployeesLoading": "Os funcionários ainda estão a carregar",
     "toastSelectRunAndBank": "Por favor selecione um processamento e pelo menos um banco.",
     "toastRunNotFound": "Processamento selecionado não encontrado.",
     "toastBankFilesSuccess": "Gerados {{count}} ficheiro(s) bancário(s) com sucesso.",

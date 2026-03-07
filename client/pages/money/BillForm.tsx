@@ -35,6 +35,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
@@ -316,8 +317,9 @@ export default function BillForm() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-3">
-              <Button variant="ghost" size="icon" onClick={() => navigate('/money/bills')}>
-                <ArrowLeft className="h-5 w-5" />
+              <Button variant="ghost" onClick={() => navigate('/money/bills')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('common.back') || 'Back'}
               </Button>
               <div>
                 <div className="flex items-center gap-2">
@@ -551,8 +553,9 @@ export default function BillForm() {
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/money/bills')}>
-              <ArrowLeft className="h-5 w-5" />
+            <Button variant="ghost" onClick={() => navigate('/money/bills')}>
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              {t('common.back') || 'Back'}
             </Button>
             <div>
               <h1 className="text-2xl font-bold">
@@ -612,37 +615,6 @@ export default function BillForm() {
                 )}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('money.bills.billNumber') || 'Bill Number'}</Label>
-                  <Input
-                    {...register('billNumber')}
-                    placeholder={t('money.bills.billNumberPlaceholder') || "Vendor's invoice number"}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('money.bills.category') || 'Category'}</Label>
-                  <Controller
-                    name="category"
-                    control={control}
-                    render={({ field }) => (
-                      <Select value={field.value} onValueChange={field.onChange}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {EXPENSE_CATEGORIES.map((cat) => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                              {t(`money.expenses.categories.${cat.value}`) || cat.label}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-              </div>
-
               <div className="space-y-2">
                 <Label>{t('common.description') || 'Description'} *</Label>
                 <Textarea
@@ -680,54 +652,89 @@ export default function BillForm() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>{t('common.amount') || 'Amount'} *</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    {...register('amount', { valueAsNumber: true })}
-                    placeholder="0.00"
-                    className={errors.amount ? 'border-red-500' : ''}
-                  />
-                  {errors.amount && (
-                    <p className="text-sm text-red-500">{errors.amount.message}</p>
-                  )}
-                </div>
-                <div className="space-y-2">
-                  <Label>{t('money.invoices.taxRate') || 'Tax Rate'} (%)</Label>
-                  <Controller
-                    name="taxRate"
-                    control={control}
-                    render={({ field }) => (
-                      <Select
-                        value={String(field.value)}
-                        onValueChange={(v) => field.onChange(parseFloat(v))}
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="0">0%</SelectItem>
-                          <SelectItem value="2.5">2.5%</SelectItem>
-                          <SelectItem value="5">5%</SelectItem>
-                          <SelectItem value="10">10%</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>{t('common.notes') || 'Notes'}</Label>
-                <Textarea
-                  {...register('notes')}
-                  placeholder={t('money.bills.notesPlaceholder') || 'Additional notes'}
-                  rows={2}
+              <div className="space-y-2 max-w-xs">
+                <Label>{t('common.amount') || 'Amount'} *</Label>
+                <Input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  {...register('amount', { valueAsNumber: true })}
+                  placeholder="0.00"
+                  className={errors.amount ? 'border-red-500' : ''}
                 />
+                {errors.amount && (
+                  <p className="text-sm text-red-500">{errors.amount.message}</p>
+                )}
               </div>
+              <MoreDetailsSection>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('money.bills.billNumber') || 'Bill Number'}</Label>
+                      <Input
+                        {...register('billNumber')}
+                        placeholder={t('money.bills.billNumberPlaceholder') || "Vendor's invoice number"}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>{t('money.bills.category') || 'Category'}</Label>
+                      <Controller
+                        name="category"
+                        control={control}
+                        render={({ field }) => (
+                          <Select value={field.value} onValueChange={field.onChange}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {EXPENSE_CATEGORIES.map((cat) => (
+                                <SelectItem key={cat.value} value={cat.value}>
+                                  {t(`money.expenses.categories.${cat.value}`) || cat.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('money.invoices.taxRate') || 'Tax Rate'} (%)</Label>
+                      <Controller
+                        name="taxRate"
+                        control={control}
+                        render={({ field }) => (
+                          <Select
+                            value={String(field.value)}
+                            onValueChange={(v) => field.onChange(parseFloat(v))}
+                          >
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="0">0%</SelectItem>
+                              <SelectItem value="2.5">2.5%</SelectItem>
+                              <SelectItem value="5">5%</SelectItem>
+                              <SelectItem value="10">10%</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{t('common.notes') || 'Notes'}</Label>
+                    <Textarea
+                      {...register('notes')}
+                      placeholder={t('money.bills.notesPlaceholder') || 'Additional notes'}
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </MoreDetailsSection>
             </CardContent>
           </Card>
 

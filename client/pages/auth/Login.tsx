@@ -3,6 +3,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 
@@ -47,6 +48,10 @@ export default function Login() {
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_at_center,black_30%,transparent_70%)]" />
 
       <div className="relative w-full max-w-md">
+        <div className="mb-6 flex justify-end">
+          <LocaleSwitcher variant="buttons" className="justify-end" />
+        </div>
+
         {/* Logo */}
         <div className="flex justify-center mb-10">
           <Link to="/landing">

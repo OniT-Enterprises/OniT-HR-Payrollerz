@@ -277,6 +277,7 @@ export default function AllEmployees() {
   const [maxSalary, setMaxSalary] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [showSalary, setShowSalary] = useState(true); // Toggle for salary visibility
+  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
   );
@@ -290,7 +291,6 @@ export default function AllEmployees() {
   const { t } = useI18n();
   const tenantId = useTenantId();
   const { session } = useTenant();
-
   // Derive connection error from React Query
   const connectionError = queryError
     ? (queryError instanceof Error ? queryError.message : t("employees.connectionErrorFallback"))
@@ -958,58 +958,17 @@ export default function AllEmployees() {
                 ))}
               </SelectContent>
             </Select>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className={hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
-            >
-              <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-              {t("employees.buttons.advanced")}
-              {activeFilterCount > 2 && ` (${activeFilterCount - 2})`}
-            </Button>
           </div>
 
-          {/* Salary toggle */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setShowSalary(!showSalary)}
-            className="text-muted-foreground"
-            title={showSalary ? t("employees.tooltips.hideSalaryColumn") : t("employees.tooltips.showSalaryColumn")}
-          >
-            {showSalary ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
-            {showSalary ? t("employees.buttons.hideSalary") : t("employees.buttons.showSalary")}
-          </Button>
-
-          <div className="flex-1" />
-
-          {/* Actions */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 lg:ml-auto">
             <Button
               variant="outline"
               size="sm"
-              onClick={handleDownloadTemplate}
-              title={t("employees.tooltips.downloadTemplate")}
+              onClick={() => setShowAdvancedTools((prev) => !prev)}
+              className={showAdvancedTools || hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
             >
-              <FileText className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => document.getElementById("csv-upload")?.click()}
-              title={t("employees.tooltips.importCsv")}
-            >
-              <Upload className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleExport}
-              title={t("employees.tooltips.exportCsv")}
-            >
-              <Download className="h-4 w-4" />
+              <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+              {t("common.moreActions")}
             </Button>
             <Button
               size="sm"
@@ -1030,6 +989,60 @@ export default function AllEmployees() {
             onChange={handleImportCSV}
           />
         </div>
+
+        {showAdvancedTools && (
+          <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowFilters(!showFilters)}
+                className={hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
+              >
+                <SlidersHorizontal className="h-4 w-4 mr-1.5" />
+                {t("employees.buttons.advanced")}
+                {activeFilterCount > 2 && ` (${activeFilterCount - 2})`}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSalary(!showSalary)}
+                className="text-muted-foreground"
+                title={showSalary ? t("employees.tooltips.hideSalaryColumn") : t("employees.tooltips.showSalaryColumn")}
+              >
+                {showSalary ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
+                {showSalary ? t("employees.buttons.hideSalary") : t("employees.buttons.showSalary")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleDownloadTemplate}
+                title={t("employees.tooltips.downloadTemplate")}
+              >
+                <FileText className="h-4 w-4 mr-1.5" />
+                {t("employees.tooltips.downloadTemplate")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => document.getElementById("csv-upload")?.click()}
+                title={t("employees.tooltips.importCsv")}
+              >
+                <Upload className="h-4 w-4 mr-1.5" />
+                {t("employees.tooltips.importCsv")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleExport}
+                title={t("employees.tooltips.exportCsv")}
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                {t("employees.tooltips.exportCsv")}
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Clear Filters */}
         {hasActiveFilters && (
@@ -1273,7 +1286,7 @@ export default function AllEmployees() {
                   {t("employees.directory.countSummary", { shown: filteredEmployees.length, total: employees.length })}
                   {searchLimitReached && (
                     <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">
-                      — Search results may be incomplete. Try a more specific search term.
+                      {t("employees.directory.searchLimitReached")}
                     </span>
                   )}
                 </CardDescription>

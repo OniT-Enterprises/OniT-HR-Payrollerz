@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
-import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -27,6 +26,7 @@ import { expenseService } from '@/services/expenseService';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   ArrowDownLeft,
   ArrowUpRight,
@@ -53,7 +53,6 @@ interface CashflowData {
 export default function Cashflow() {
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { isSimple } = useSimpleMode();
   const [period, setPeriod] = useState<string>('this_month');
 
   const getDateRange = (periodValue: string): { start: Date; end: Date } => {
@@ -199,8 +198,8 @@ export default function Cashflow() {
         </div>
 
         {/* Summary Cards */}
-        {!isSimple && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <MoreDetailsSection className="mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
@@ -259,7 +258,7 @@ export default function Cashflow() {
             </CardContent>
           </Card>
         </div>
-        )}
+        </MoreDetailsSection>
 
         {/* Detailed Statement */}
         <Card>

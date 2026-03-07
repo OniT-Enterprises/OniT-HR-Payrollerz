@@ -43,7 +43,7 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 // Account type display order and colors
 const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'revenue', 'expense'];
@@ -51,7 +51,6 @@ const ACCOUNT_TYPE_ORDER: AccountType[] = ['asset', 'liability', 'equity', 'reve
 
 export default function TrialBalance() {
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
@@ -311,8 +310,8 @@ export default function TrialBalance() {
         </CardContent>
       </Card>
 
-      {/* Balance Status */}
-      {!isSimple && trialBalanceRows.length > 0 && (
+      {trialBalanceRows.length > 0 && (
+        <MoreDetailsSection className="mb-6">
         <Card className={isBalanced ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-950/30' : 'border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/30'}>
           <CardContent className="py-4">
             <div className="flex items-center justify-between">
@@ -348,10 +347,7 @@ export default function TrialBalance() {
             </div>
           </CardContent>
         </Card>
-      )}
 
-      {/* Summary Cards */}
-      {!isSimple && trialBalanceRows.length > 0 && (
         <div className="grid gap-4 md:grid-cols-5">
           {ACCOUNT_TYPE_ORDER.map((type) => (
             <Card key={type}>
@@ -375,6 +371,7 @@ export default function TrialBalance() {
             </Card>
           ))}
         </div>
+        </MoreDetailsSection>
       )}
 
       {/* Trial Balance Table */}

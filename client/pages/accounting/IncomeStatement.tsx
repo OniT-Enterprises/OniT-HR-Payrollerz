@@ -42,11 +42,10 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function IncomeStatement() {
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
 
   // Local UI state
   const [periodStart, setPeriodStart] = useState<string>(() => {
@@ -223,8 +222,8 @@ export default function IncomeStatement() {
         </CardContent>
       </Card>
 
-      {/* Summary Cards */}
-      {!isSimple && report && (
+      {report && (
+        <MoreDetailsSection className="mb-6">
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="pb-2">
@@ -279,6 +278,7 @@ export default function IncomeStatement() {
             </CardContent>
           </Card>
         </div>
+        </MoreDetailsSection>
       )}
 
       {/* Income Statement Table */}

@@ -236,6 +236,7 @@ export default function AddEmployee() {
   const [importFile, setImportFile] = useState<File | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showColumnMapper, setShowColumnMapper] = useState(false);
+  const [showBulkTools, setShowBulkTools] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [managers, setManagers] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(true);
@@ -433,13 +434,43 @@ export default function AddEmployee() {
         .map(f => errors[f]?.message)
         .filter(Boolean);
       toast({
-        title: "Missing required fields",
-        description: stepErrors[0] || "Please fill in all required fields before continuing.",
+        title: t("addEmployee.toast.requiredFieldsTitle"),
+        description: stepErrors[0] || t("addEmployee.toast.requiredFieldsDesc"),
         variant: "destructive",
       });
     }
     return valid;
   };
+
+  const renderBulkTools = () => (
+    <>
+      <Button variant="outline" onClick={downloadTemplate}>
+        <FileDown className="h-4 w-4 mr-2" />
+        {t("addEmployee.buttons.template")}
+      </Button>
+      <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+        <DialogTrigger asChild>
+          <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
+            <FileUp className="h-4 w-4 mr-2" />
+            {t("addEmployee.buttons.import")}
+          </Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("addEmployee.import.title")}</DialogTitle>
+            <DialogDescription>{t("addEmployee.import.description")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input type="file" accept=".csv" onChange={handleFileImport} />
+            <Button variant="outline" onClick={downloadTemplate} className="w-full">
+              <FileDown className="h-4 w-4 mr-2" />
+              {t("addEmployee.buttons.downloadTemplateFirst")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
+  );
 
   // Form submission handler - called by react-hook-form's handleSubmit
   const onFormSubmit = async (data: AddEmployeeFormData) => {
@@ -671,34 +702,10 @@ export default function AddEmployee() {
 
             {/* Actions */}
             <div className="flex gap-2">
-              <Button
-                variant="outline"
-                onClick={downloadTemplate}
-              >
-                <FileDown className="h-4 w-4 mr-2" />
-                {t("addEmployee.buttons.template")}
+              <Button variant="outline" onClick={() => setShowBulkTools((prev) => !prev)}>
+                <FileText className="h-4 w-4 mr-2" />
+                {t("common.moreActions")}
               </Button>
-              <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
-                    <FileUp className="h-4 w-4 mr-2" />
-                    {t("addEmployee.buttons.import")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{t("addEmployee.import.title")}</DialogTitle>
-                    <DialogDescription>{t("addEmployee.import.description")}</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <Input type="file" accept=".csv" onChange={handleFileImport} />
-                    <Button variant="outline" onClick={downloadTemplate} className="w-full">
-                      <FileDown className="h-4 w-4 mr-2" />
-                      {t("addEmployee.buttons.downloadTemplateFirst")}
-                    </Button>
-                  </div>
-                </DialogContent>
-              </Dialog>
             </div>
           </div>
         </div>
@@ -707,6 +714,16 @@ export default function AddEmployee() {
       <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       <div className="max-w-5xl mx-auto px-6 py-8 -mt-6">
+        {showBulkTools && (
+          <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
+            <p className="mb-3 text-sm text-muted-foreground">
+              {t("addEmployee.import.description")}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {renderBulkTools()}
+            </div>
+          </div>
+        )}
 
         {/* Column Mapper Dialog */}
         <Dialog open={showColumnMapper} onOpenChange={setShowColumnMapper}>
@@ -740,7 +757,7 @@ export default function AddEmployee() {
             const firstError = Object.values(validationErrors)[0];
             toast({
               title: t("addEmployee.toast.errorTitle") || "Validation Error",
-              description: firstError?.message || "Please fill in all required fields.",
+              description: firstError?.message || t("addEmployee.toast.fillRequiredFields"),
               variant: "destructive",
             });
           })}
@@ -749,7 +766,7 @@ export default function AddEmployee() {
           isSubmitting={isSubmitting}
           submitLabel={isEditMode ? t("addEmployee.buttons.updateEmployee") : t("addEmployee.buttons.addEmployee")}
           canProceed={canProceed()}
-          cannotProceedMessage={!canProceed() ? "Please fill in all required fields" : undefined}
+          cannotProceedMessage={!canProceed() ? t("addEmployee.toast.fillRequiredFields") : undefined}
         >
           {/* Step 1: Basic Info */}
           <StepContent stepId="basic" currentStepId={WIZARD_STEPS[currentStep].id}>

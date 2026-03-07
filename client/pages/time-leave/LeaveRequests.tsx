@@ -840,11 +840,11 @@ export default function LeaveRequests() {
           {(isEmployee || isManager) && myBalance && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {[
-                { key: "annual" as const, label: "Annual", icon: <Umbrella className="h-4 w-4" />, barColor: "bg-cyan-500", bgTint: "bg-cyan-500/10", iconColor: "text-cyan-600 dark:text-cyan-400" },
-                { key: "sick" as const, label: "Sick", icon: <Heart className="h-4 w-4" />, barColor: "bg-red-500", bgTint: "bg-red-500/10", iconColor: "text-red-600 dark:text-red-400" },
-                { key: "maternity" as const, label: "Maternity", icon: <Baby className="h-4 w-4" />, barColor: "bg-pink-500", bgTint: "bg-pink-500/10", iconColor: "text-pink-600 dark:text-pink-400" },
-                { key: "paternity" as const, label: "Paternity", icon: <Baby className="h-4 w-4" />, barColor: "bg-blue-500", bgTint: "bg-blue-500/10", iconColor: "text-blue-600 dark:text-blue-400" },
-              ].map(({ key, label, icon, barColor, bgTint, iconColor }) => {
+                { key: "annual" as const, icon: <Umbrella className="h-4 w-4" />, barColor: "bg-cyan-500", bgTint: "bg-cyan-500/10", iconColor: "text-cyan-600 dark:text-cyan-400" },
+                { key: "sick" as const, icon: <Heart className="h-4 w-4" />, barColor: "bg-red-500", bgTint: "bg-red-500/10", iconColor: "text-red-600 dark:text-red-400" },
+                { key: "maternity" as const, icon: <Baby className="h-4 w-4" />, barColor: "bg-pink-500", bgTint: "bg-pink-500/10", iconColor: "text-pink-600 dark:text-pink-400" },
+                { key: "paternity" as const, icon: <Baby className="h-4 w-4" />, barColor: "bg-blue-500", bgTint: "bg-blue-500/10", iconColor: "text-blue-600 dark:text-blue-400" },
+              ].map(({ key, icon, barColor, bgTint, iconColor }) => {
                 const bal = myBalance[key];
                 if (typeof bal !== "object" || !("remaining" in bal)) return null;
                 const entitled = bal.remaining + bal.used + bal.pending;
@@ -857,7 +857,7 @@ export default function LeaveRequests() {
                           <div className={cn("p-1.5 rounded-lg", bgTint)}>
                             <span className={iconColor}>{icon}</span>
                           </div>
-                          <span className="text-sm font-semibold">{label}</span>
+                          <span className="text-sm font-semibold">{getLeaveTypeLabel(key)}</span>
                         </div>
                         <span className="text-2xl font-bold tabular-nums">{bal.remaining}</span>
                       </div>
@@ -892,11 +892,6 @@ export default function LeaveRequests() {
                 <span className="text-cyan-600/80 dark:text-cyan-400/80 text-xs">{t("timeLeave.leaveRequests.stats.onLeaveToday")}</span>
               </div>
             )}
-            <div className="flex items-center gap-3 text-xs text-muted-foreground ml-auto">
-              <span>{stats.approved} approved</span>
-              <span>&middot;</span>
-              <span>{leaveRequests.length} total</span>
-            </div>
           </div>
 
           {/* Requests */}
@@ -920,7 +915,7 @@ export default function LeaveRequests() {
               </TabsTrigger>
               <TabsTrigger value="calendar">
                 <Calendar className="h-3.5 w-3.5 mr-1.5" />
-                Calendar
+                {t("timeLeave.leaveRequests.tabs.calendar")}
               </TabsTrigger>
             </TabsList>
 
@@ -1014,17 +1009,18 @@ export default function LeaveRequests() {
                             <div className="flex gap-1">
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-500/10"
+                                variant="outline"
+                                className="h-8 gap-1.5 border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 hover:text-emerald-800"
                                 onClick={() => handleApprove(request)}
                                 disabled={saving}
                               >
                                 <Check className="h-4 w-4" />
+                                {t("timeLeave.leaveRequests.actions.approve")}
                               </Button>
                               <Button
                                 size="sm"
-                                variant="ghost"
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-500/10"
+                                variant="outline"
+                                className="h-8 gap-1.5 border-red-500/30 text-red-700 hover:bg-red-500/10 hover:text-red-800"
                                 onClick={() => {
                                   setSelectedRequest(request);
                                   setShowRejectDialog(true);
@@ -1032,6 +1028,7 @@ export default function LeaveRequests() {
                                 disabled={saving}
                               >
                                 <X className="h-4 w-4" />
+                                {t("timeLeave.leaveRequests.actions.reject")}
                               </Button>
                             </div>
                           )}
@@ -1044,14 +1041,21 @@ export default function LeaveRequests() {
                                 try {
                                   await leaveService.cancelLeaveRequest(tenantId, request.id!);
                                   queryClient.invalidateQueries({ queryKey: leaveKeys.requests(tenantId) });
-                                  toast({ title: "Leave request cancelled" });
+                                  toast({
+                                    title: t("timeLeave.leaveRequests.toast.successTitle"),
+                                    description: t("timeLeave.leaveRequests.toast.cancelledDesc"),
+                                  });
                                 } catch {
-                                  toast({ title: "Failed to cancel", variant: "destructive" });
+                                  toast({
+                                    title: t("timeLeave.leaveRequests.toast.errorTitle"),
+                                    description: t("timeLeave.leaveRequests.toast.cancelFailed"),
+                                    variant: "destructive",
+                                  });
                                 }
                               }}
                               disabled={saving}
                             >
-                              Cancel
+                              {t("timeLeave.leaveRequests.actions.cancel")}
                             </Button>
                           )}
                           {request.status === "rejected" && request.rejectionReason && (

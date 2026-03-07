@@ -72,8 +72,8 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 interface EntryLineForm {
   accountId: string;
@@ -87,7 +87,6 @@ interface EntryLineForm {
 export default function JournalEntries() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { user } = useAuth();
 
   // Filters (yearFilter must be declared before useJournalEntries)
@@ -708,9 +707,8 @@ export default function JournalEntries() {
       <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
 
       <div className="p-6 max-w-7xl mx-auto">
-        {/* Summary Cards */}
-          {!isSimple && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <MoreDetailsSection className="mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
                 <p className="text-sm text-muted-foreground">{t("accounting.journalEntries.totalEntries")}</p>
@@ -740,7 +738,7 @@ export default function JournalEntries() {
               </CardContent>
             </Card>
           </div>
-          )}
+        </MoreDetailsSection>
 
           {/* Filters */}
           <Card className="mb-6">

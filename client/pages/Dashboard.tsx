@@ -6,6 +6,7 @@
 
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
@@ -21,8 +22,7 @@ import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import { getTodayTL } from "@/lib/dateUtils";
@@ -34,6 +34,7 @@ import {
 } from "@/lib/tax/compliance";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import { settingsService } from "@/services/settingsService";
 import {
   Users,
   DollarSign,
@@ -57,6 +58,7 @@ import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import DocumentAlertsCard from "@/components/dashboard/DocumentAlertsCard";
 import GuidancePanel from "@/components/GuidancePanel";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 function DashboardSkeleton() {
   return (
@@ -173,12 +175,18 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
-  const { isSimple } = useSimpleMode();
+  const tenantId = useTenantId();
   const { t } = useI18n();
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: "active" });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2);
-  const loading = employeesLoading || leaveStatsLoading || dueDatesLoading;
+  const { data: setupProgress, isLoading: setupLoading } = useQuery({
+    queryKey: ["tenants", tenantId, "setupProgress"],
+    queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
+    enabled: Boolean(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const loading = employeesLoading || leaveStatsLoading || dueDatesLoading || setupLoading;
   const pendingLeave = leaveStats?.pendingRequests ?? 0;
   const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -249,6 +257,8 @@ export default function Dashboard() {
     hasModule("reports"),
     canManage()
   );
+  const setupIncomplete = setupProgress?.isComplete === false;
+  const setupPercent = setupProgress?.percentComplete ?? 0;
 
   // Payroll status
   const payrollPrepared = false; // In production, check actual payroll status
@@ -257,6 +267,13 @@ export default function Dashboard() {
 
   // Next recommended action logic
   const getNextAction = () => {
+    if (setupIncomplete) {
+      return {
+        label: t("dashboard.finishSetup"),
+        path: "/setup",
+        urgent: true,
+      };
+    }
     if (isPayrollUrgent && !payrollPrepared) {
       return { label: t("dashboard.preparePayroll"), path: "/payroll/run", urgent: true };
     }
@@ -270,6 +287,56 @@ export default function Dashboard() {
   };
 
   const nextAction = getNextAction();
+  const simpleCards = [
+    ...(setupIncomplete
+      ? [{
+          id: "setup",
+          title: t("dashboard.finishSetup"),
+          description: t("dashboard.setupProgress", { percent: setupPercent }),
+          path: "/setup",
+          icon: Building2,
+          stat: `${setupPercent}%`,
+          actionLabel: t("dashboard.resumeSetup"),
+          tone: "amber" as const,
+        }]
+      : []),
+    {
+      id: "payroll",
+      title: t("dashboard.payrollStatus"),
+      description: `${daysUntilPayday} ${t("dashboard.days")} ${t("dashboard.untilPayDate")}`,
+      path: "/payroll/run",
+      icon: Calculator,
+      stat: formatCurrencyTL(totalPayroll),
+      actionLabel: payrollPrepared ? t("dashboard.review") : t("dashboard.prepare"),
+      tone: isPayrollUrgent ? "amber" as const : "green" as const,
+    },
+    {
+      id: "people",
+      title: getBlockingIssues.length > 0 ? t("dashboard.attentionRequired") : t("dashboard.activeEmployees"),
+      description: getBlockingIssues.length > 0
+        ? getBlockingIssues[0].issue
+        : activeEmployees.length === 0
+          ? t("dashboard.addEmployee")
+          : `${activeEmployees.length} ${t("dashboard.activeEmployees")}`,
+      path: getBlockingIssues.length > 0 ? getBlockingIssues[0].path : activeEmployees.length === 0 ? "/people/add" : "/people/employees",
+      icon: getBlockingIssues.length > 0 ? AlertTriangle : UserPlus,
+      stat: String(getBlockingIssues.length > 0 ? getBlockingIssues.length : activeEmployees.length),
+      actionLabel: getBlockingIssues.length > 0 ? getBlockingIssues[0].action : activeEmployees.length === 0 ? t("dashboard.addEmployee") : t("common.review"),
+      tone: getBlockingIssues.length > 0 ? "amber" as const : "blue" as const,
+    },
+    {
+      id: "leave",
+      title: pendingLeave > 0 ? t("dashboard.pendingRequests") : t("dashboard.teamStatus"),
+      description: pendingLeave > 0
+        ? t("dashboard.reviewLeaveRequests", { count: pendingLeave })
+        : `${onLeaveToday} ${t("dashboard.onLeaveToday")}`,
+      path: pendingLeave > 0 ? "/time-leave/leave" : "/time-leave/attendance",
+      icon: pendingLeave > 0 ? CalendarDays : Users,
+      stat: String(pendingLeave > 0 ? pendingLeave : onLeaveToday),
+      actionLabel: pendingLeave > 0 ? t("common.review") : t("common.view"),
+      tone: pendingLeave > 0 ? "amber" as const : "green" as const,
+    },
+  ].slice(0, 3);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -299,11 +366,64 @@ export default function Dashboard() {
 
         <GuidancePanel section="dashboard" />
 
-        {/* ═══════════════════════════════════════════════════════════════
-            TODAY'S STATUS - 3 Cards: Payroll (PRIMARY), Compliance, Team
-        ═══════════════════════════════════════════════════════════════ */}
-        {!isSimple && (
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <section className="mb-6">
+          <div className="mb-3">
+            <h2 className="text-lg font-semibold">{t("dashboard.simpleOverview")}</h2>
+            <p className="text-sm text-muted-foreground">{t("dashboard.simpleOverviewDesc")}</p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-3">
+            {simpleCards.map((card) => {
+              const Icon = card.icon;
+              const toneClasses = card.tone === "amber"
+                ? {
+                    card: "border-amber-200 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20",
+                    icon: "bg-amber-500 text-white",
+                    stat: "text-amber-700 dark:text-amber-300",
+                  }
+                : card.tone === "blue"
+                  ? {
+                      card: "border-blue-200 bg-blue-50/60 dark:border-blue-900/50 dark:bg-blue-950/20",
+                      icon: "bg-blue-500 text-white",
+                      stat: "text-blue-700 dark:text-blue-300",
+                    }
+                  : {
+                      card: "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/20",
+                      icon: "bg-emerald-500 text-white",
+                      stat: "text-emerald-700 dark:text-emerald-300",
+                    };
+
+              return (
+                <Card
+                  key={card.id}
+                  className={`cursor-pointer transition-all hover:shadow-md ${toneClasses.card}`}
+                  onClick={() => navigate(card.path)}
+                >
+                  <CardContent className="pt-5">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
+                        <p className="text-lg font-semibold leading-tight">{card.stat}</p>
+                        <p className="text-sm text-muted-foreground">{card.description}</p>
+                      </div>
+                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${toneClasses.icon}`}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <div className="mt-4 border-t border-border/50 pt-3">
+                      <Button size="sm" variant="outline" className="w-full">
+                        {card.actionLabel}
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </section>
+
+        <MoreDetailsSection className="mb-6">
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
           {/* PAYROLL STATUS - PRIMARY CARD */}
           <Card
             className={`cursor-pointer transition-all hover:shadow-lg ${
@@ -433,47 +553,39 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
-        )}
+          </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            NEXT RECOMMENDED ACTION - Smart suggestion
-        ═══════════════════════════════════════════════════════════════ */}
-        {nextAction && (
-          <Card className={`mb-6 cursor-pointer transition-all hover:shadow-md ${
-            nextAction.urgent
-              ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20"
-              : "border-primary/30"
-          }`} onClick={() => navigate(nextAction.path)}>
-            <CardContent className="py-4">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                  nextAction.urgent
-                    ? "bg-amber-500 text-white"
-                    : "bg-primary/10"
-                }`}>
-                  <Zap className={`h-5 w-5 ${nextAction.urgent ? "" : "text-primary"}`} />
+          {nextAction && (
+            <Card className={`mb-6 cursor-pointer transition-all hover:shadow-md ${
+              nextAction.urgent
+                ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20"
+                : "border-primary/30"
+            }`} onClick={() => navigate(nextAction.path)}>
+              <CardContent className="py-4">
+                <div className="flex items-center gap-3">
+                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
+                    nextAction.urgent
+                      ? "bg-amber-500 text-white"
+                      : "bg-primary/10"
+                  }`}>
+                    <Zap className={`h-5 w-5 ${nextAction.urgent ? "" : "text-primary"}`} />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("dashboard.nextRecommendedAction")}</p>
+                    <p className="font-semibold">{nextAction.label}</p>
+                  </div>
+                  <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
+                    nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
+                  }>
+                    {t("dashboard.doItNow")}
+                    <ArrowRight className="h-4 w-4 ml-1" />
+                  </Button>
                 </div>
-                <div className="flex-1">
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("dashboard.nextRecommendedAction")}</p>
-                  <p className="font-semibold">{nextAction.label}</p>
-                </div>
-                <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
-                  nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
-                }>
-                  {t("dashboard.doItNow")}
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+              </CardContent>
+            </Card>
+          )}
 
-        {/* ═══════════════════════════════════════════════════════════════
-            KPIs - 3 Only: Active Employees, Monthly Payroll, Next Payroll
-        ═══════════════════════════════════════════════════════════════ */}
-        {!isSimple && (
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          <div className="grid gap-4 md:grid-cols-3">
           <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/people/employees")}>
             <CardContent className="pt-5 pb-4">
               <div className="flex items-center justify-between">
@@ -515,8 +627,8 @@ export default function Dashboard() {
               </div>
             </CardContent>
           </Card>
-        </div>
-        )}
+          </div>
+        </MoreDetailsSection>
 
         {/* ═══════════════════════════════════════════════════════════════
             QUICK ACTIONS - Payroll, HR, Reports, NGO exports

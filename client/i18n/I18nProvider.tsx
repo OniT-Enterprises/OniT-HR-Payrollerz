@@ -108,8 +108,8 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const t = useCallback(
     (key: string, params?: TranslationParams) => {
       const fallbackTree = translationBundle.en;
-      const currentTree = translationBundle[locale];
-      if (!fallbackTree || !currentTree) {
+      const currentTree = translationBundle[locale] ?? fallbackTree;
+      if (!fallbackTree) {
         return key;
       }
       const current = resolvePath(currentTree, key);
@@ -130,8 +130,12 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [locale, setLocale, t]
   );
 
-  if (!translationBundle.en || !translationBundle[locale]) {
-    return null;
+  if (!translationBundle.en) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-6 text-sm text-muted-foreground">
+        Loading Meza...
+      </div>
+    );
   }
 
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;

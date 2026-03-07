@@ -37,7 +37,14 @@ import {
 import { settingsService } from "@/services/settingsService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useI18n } from "@/i18n/I18nProvider";
-import type { CompanyDetails } from "@/types/settings";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import type {
+  BusinessSector,
+  BusinessType,
+  CompanyDetails,
+  CompanyStructure,
+  EmployeeGradeConfig,
+} from "@/types/settings";
 
 const STEPS = [
   { id: "company", labelKey: "setupWizard.steps.companyDetails", icon: Building2 },
@@ -46,6 +53,41 @@ const STEPS = [
   { id: "payroll", labelKey: "setupWizard.steps.payrollConfig", icon: Settings },
   { id: "complete", labelKey: "setupWizard.steps.complete", icon: CheckCircle },
 ] as const;
+
+const BUSINESS_TYPES: { value: BusinessType; labelKey: string }[] = [
+  { value: "Lda", labelKey: "settings.company.businessTypes.lda" },
+  { value: "SA", labelKey: "settings.company.businessTypes.sa" },
+  { value: "Unipessoal", labelKey: "settings.company.businessTypes.unipessoal" },
+  { value: "ENIN", labelKey: "settings.company.businessTypes.enin" },
+  { value: "NGO", labelKey: "settings.company.businessTypes.ngo" },
+  { value: "Government", labelKey: "settings.company.businessTypes.government" },
+  { value: "Other", labelKey: "settings.company.businessTypes.other" },
+];
+
+const BUSINESS_SECTORS: { value: BusinessSector; labelKey: string }[] = [
+  { value: "security", labelKey: "settings.structure.sectors.security" },
+  { value: "hotel", labelKey: "settings.structure.sectors.hotel" },
+  { value: "restaurant", labelKey: "settings.structure.sectors.restaurant" },
+  { value: "trading", labelKey: "settings.structure.sectors.trading" },
+  { value: "manufacturing", labelKey: "settings.structure.sectors.manufacturing" },
+  { value: "construction", labelKey: "settings.structure.sectors.construction" },
+  { value: "retail", labelKey: "settings.structure.sectors.retail" },
+  { value: "healthcare", labelKey: "settings.structure.sectors.healthcare" },
+  { value: "education", labelKey: "settings.structure.sectors.education" },
+  { value: "finance", labelKey: "settings.structure.sectors.finance" },
+  { value: "technology", labelKey: "settings.structure.sectors.technology" },
+  { value: "ngo", labelKey: "settings.structure.sectors.ngo" },
+  { value: "government", labelKey: "settings.structure.sectors.government" },
+  { value: "other", labelKey: "settings.structure.sectors.other" },
+];
+
+const DEFAULT_EMPLOYEE_GRADES: EmployeeGradeConfig[] = [
+  { grade: "director", label: "Director", isActive: true },
+  { grade: "senior_management", label: "Senior Management", isActive: true },
+  { grade: "management", label: "Management", isActive: true },
+  { grade: "supervisor", label: "Supervisor", isActive: true },
+  { grade: "general_staff", label: "General Staff", isActive: true },
+];
 
 export default function SetupWizard() {
   const navigate = useNavigate();
@@ -68,6 +110,13 @@ export default function SetupWizard() {
     phone: "",
     email: "",
   });
+  const [companyStructureForm, setCompanyStructureForm] = useState<{
+    businessSector: BusinessSector;
+    approximateEmployeeCount: string;
+  }>({
+    businessSector: "other",
+    approximateEmployeeCount: "",
+  });
 
   // Bank Account form
   const [bankForm, setBankForm] = useState({
@@ -88,16 +137,67 @@ export default function SetupWizard() {
   useEffect(() => {
     const loadProgress = async () => {
       try {
+        let settings = await settingsService.getSettings(tenantId);
+        if (!settings) {
+          settings = await settingsService.createSettings(tenantId);
+        }
+
         const progress = await settingsService.getSetupProgress(tenantId);
         if (progress.isComplete) {
           navigate("/dashboard");
           return;
         }
-        // Jump to first incomplete step
-        const steps = ["companyDetails", "paymentStructure", "timeOffPolicies", "payrollConfig"];
-        const firstIncomplete = steps.findIndex((s) => !progress.progress[s]);
-        if (firstIncomplete > 0) {
-          setCurrentStep(firstIncomplete);
+
+        setCompanyForm({
+          legalName: settings.companyDetails.legalName || "",
+          tradingName: settings.companyDetails.tradingName || "",
+          registeredAddress: settings.companyDetails.registeredAddress || "",
+          city: settings.companyDetails.city || "",
+          country: settings.companyDetails.country || "Timor-Leste",
+          tinNumber: settings.companyDetails.tinNumber || "",
+          businessType: settings.companyDetails.businessType || "Lda",
+          phone: settings.companyDetails.phone || "",
+          email: settings.companyDetails.email || "",
+        });
+
+        setCompanyStructureForm({
+          businessSector: settings.companyStructure.businessSector || "other",
+          approximateEmployeeCount: settings.companyStructure.approximateEmployeeCount
+            ? String(settings.companyStructure.approximateEmployeeCount)
+            : "",
+        });
+
+        const primaryBank = settings.paymentStructure.bankAccounts?.[0];
+        if (primaryBank) {
+          setBankForm({
+            bankName: primaryBank.bankName || "",
+            accountName: primaryBank.accountName || "",
+            accountNumber: primaryBank.accountNumber || "",
+            purpose: "payroll",
+          });
+        }
+
+        const primaryPayrollPeriod = settings.paymentStructure.payrollPeriods?.[0];
+        setPayrollForm({
+          payFrequency: primaryPayrollPeriod?.frequency === "weekly"
+            ? "weekly"
+            : primaryPayrollPeriod?.frequency === "bi_weekly"
+              ? "biweekly"
+              : "monthly",
+          payDay: String(primaryPayrollPeriod?.payDay || 25),
+          currency: settings.payrollConfig.currency || "USD",
+        });
+
+        if (!progress.progress.companyDetails || !progress.progress.companyStructure) {
+          setCurrentStep(0);
+        } else if (!progress.progress.paymentStructure) {
+          setCurrentStep(1);
+        } else if (!progress.progress.timeOffPolicies) {
+          setCurrentStep(2);
+        } else if (!progress.progress.payrollConfig) {
+          setCurrentStep(3);
+        } else {
+          setCurrentStep(4);
         }
       } catch {
         // Settings don't exist yet - start fresh
@@ -120,7 +220,28 @@ export default function SetupWizard() {
 
     setSaving(true);
     try {
-      await settingsService.updateCompanyDetails(tenantId, companyForm as CompanyDetails);
+      let settings = await settingsService.getSettings(tenantId);
+      if (!settings) {
+        settings = await settingsService.createSettings(tenantId);
+      }
+      const existingStructure = settings?.companyStructure;
+      const nextCompanyStructure: CompanyStructure = {
+        businessSector: companyStructureForm.businessSector,
+        businessSectorOther: existingStructure?.businessSectorOther,
+        approximateEmployeeCount: companyStructureForm.approximateEmployeeCount
+          ? parseInt(companyStructureForm.approximateEmployeeCount, 10)
+          : existingStructure?.approximateEmployeeCount,
+        workLocations: existingStructure?.workLocations ?? [],
+        departments: existingStructure?.departments ?? [],
+        employeeGrades: existingStructure?.employeeGrades?.length
+          ? existingStructure.employeeGrades
+          : DEFAULT_EMPLOYEE_GRADES,
+      };
+
+      await Promise.all([
+        settingsService.updateCompanyDetails(tenantId, companyForm as CompanyDetails),
+        settingsService.updateCompanyStructure(tenantId, nextCompanyStructure),
+      ]);
       return true;
     } catch {
       toast({
@@ -273,6 +394,7 @@ export default function SetupWizard() {
   const handleBack = () => {
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   };
+  const progressPercent = Math.round(((currentStep + 1) / STEPS.length) * 100);
 
   if (loading) {
     return (
@@ -285,6 +407,10 @@ export default function SetupWizard() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 dark:from-gray-950 dark:to-gray-900">
       <div className="max-w-3xl mx-auto px-6 py-12">
+        <div className="mb-6 flex justify-end">
+          <LocaleSwitcher variant="buttons" className="justify-end" />
+        </div>
+
         {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25 mb-4">
@@ -294,6 +420,47 @@ export default function SetupWizard() {
           <p className="text-muted-foreground mt-2">
             {t("setupWizard.welcomeDesc")}
           </p>
+        </div>
+
+        <div className="mb-6 grid gap-3 md:grid-cols-2">
+          <Card className="border-green-200 bg-white/80 dark:border-green-900/40 dark:bg-background/80">
+            <CardContent className="pt-5">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    {t("setupWizard.progressTitle")}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {t("setupWizard.stepOf", {
+                      current: String(currentStep + 1),
+                      total: String(STEPS.length),
+                    })}
+                  </p>
+                </div>
+                <p className="text-2xl font-bold text-green-600">{progressPercent}%</p>
+              </div>
+              <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-green-500 to-emerald-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {t("setupWizard.progressHint")}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border/60 bg-white/80 dark:bg-background/80">
+            <CardContent className="pt-5">
+              <p className="text-sm font-semibold text-foreground">
+                {t("setupWizard.savedAutomaticallyTitle")}
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {t("setupWizard.savedAutomaticallyDesc")}
+              </p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Step Indicator */}
@@ -307,19 +474,28 @@ export default function SetupWizard() {
                 {index > 0 && (
                   <div className={`h-0.5 w-8 ${isCompleted ? "bg-green-500" : "bg-border"}`} />
                 )}
-                <div
-                  className={`
-                    flex items-center justify-center w-10 h-10 rounded-full transition-all
-                    ${isActive ? "bg-green-500 text-white shadow-lg shadow-green-500/25" : ""}
-                    ${isCompleted ? "bg-green-500 text-white" : ""}
-                    ${!isActive && !isCompleted ? "bg-muted text-muted-foreground" : ""}
-                  `}
-                >
-                  {isCompleted ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <Icon className="h-5 w-5" />
-                  )}
+                <div className="flex min-w-16 flex-col items-center gap-2 text-center">
+                  <div
+                    className={`
+                      flex items-center justify-center w-10 h-10 rounded-full transition-all
+                      ${isActive ? "bg-green-500 text-white shadow-lg shadow-green-500/25" : ""}
+                      ${isCompleted ? "bg-green-500 text-white" : ""}
+                      ${!isActive && !isCompleted ? "bg-muted text-muted-foreground" : ""}
+                    `}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <Icon className="h-5 w-5" />
+                    )}
+                  </div>
+                  <span
+                    className={`text-[11px] leading-tight ${
+                      isActive ? "font-medium text-foreground" : "text-muted-foreground"
+                    }`}
+                  >
+                    {t(step.labelKey)}
+                  </span>
                 </div>
               </React.Fragment>
             );
@@ -341,6 +517,9 @@ export default function SetupWizard() {
             {/* Step 1: Company Details */}
             {currentStep === 0 && (
               <div className="space-y-4">
+                <p className="text-sm text-muted-foreground">
+                  {t("setupWizard.companyIntro")}
+                </p>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>{t("setupWizard.legalName")}</Label>
@@ -359,13 +538,77 @@ export default function SetupWizard() {
                     />
                   </div>
                 </div>
-                <div>
-                  <Label>{t("setupWizard.tinNumber")}</Label>
-                  <Input
-                    value={companyForm.tinNumber}
-                    onChange={(e) => setCompanyForm((p) => ({ ...p, tinNumber: e.target.value }))}
-                    placeholder={t("setupWizard.tinPlaceholder")}
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>{t("settings.company.businessType")}</Label>
+                    <Select
+                      value={companyForm.businessType}
+                      onValueChange={(value: BusinessType) =>
+                        setCompanyForm((prev) => ({ ...prev, businessType: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUSINESS_TYPES.map((type) => (
+                          <SelectItem key={type.value} value={type.value}>
+                            {t(type.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>{t("settings.structure.businessSector")}</Label>
+                    <Select
+                      value={companyStructureForm.businessSector}
+                      onValueChange={(value: BusinessSector) =>
+                        setCompanyStructureForm((prev) => ({ ...prev, businessSector: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {BUSINESS_SECTORS.map((sector) => (
+                          <SelectItem key={sector.value} value={sector.value}>
+                            {t(sector.labelKey)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>{t("setupWizard.tinNumber")}</Label>
+                    <Input
+                      value={companyForm.tinNumber}
+                      onChange={(e) => setCompanyForm((p) => ({ ...p, tinNumber: e.target.value }))}
+                      placeholder={t("setupWizard.tinPlaceholder")}
+                    />
+                  </div>
+                  <div>
+                    <Label>{t("setupWizard.teamSize")}</Label>
+                    <Select
+                      value={companyStructureForm.approximateEmployeeCount}
+                      onValueChange={(value) =>
+                        setCompanyStructureForm((prev) => ({ ...prev, approximateEmployeeCount: value }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("setupWizard.selectTeamSize")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="5">1-5</SelectItem>
+                        <SelectItem value="20">6-20</SelectItem>
+                        <SelectItem value="50">21-50</SelectItem>
+                        <SelectItem value="100">51+</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="mt-1 text-xs text-muted-foreground">{t("setupWizard.teamSizeHint")}</p>
+                  </div>
                 </div>
                 <div>
                   <Label>{t("setupWizard.address")}</Label>
@@ -559,7 +802,7 @@ export default function SetupWizard() {
               {t("setupWizard.back")}
             </Button>
             <Button
-              variant="ghost"
+              variant="outline"
               className="text-muted-foreground"
               onClick={() => {
                 sessionStorage.setItem("setup-dismissed", "1");
@@ -592,6 +835,12 @@ export default function SetupWizard() {
             )}
           </Button>
         </div>
+        <p className="mt-4 text-center text-xs text-muted-foreground">
+          {t("setupWizard.savedAutomaticallyDesc")}
+        </p>
+        <p className="mt-1 text-center text-xs text-muted-foreground">
+          {t("setupWizard.finishLaterHint")}
+        </p>
       </div>
     </div>
   );

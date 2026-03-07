@@ -32,9 +32,22 @@ const messages = {
     "unknown": "Unknown",
     "remove": "Remove",
     "loaded": "loaded",
+    "loading": "Loading...",
     "more": "More",
     "moreActions": "More actions",
     "of": "of",
+    "basicMode": "Basic mode",
+    "adminConsole": "Admin Console",
+    "sitemap": "Sitemap",
+    "guidance": "Guidance",
+    "hide": "Hide",
+    "moreDetails": "More details",
+    "review": "Review",
+    "retry": "Retry",
+    "connectionIssueTitle": "Connection problem",
+    "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",
+    "offlineTitle": "You are offline",
+    "offlineDesc": "Changes may not save until your internet returns.",
     "months": {
       "1": "January",
       "2": "February",
@@ -56,7 +69,9 @@ const messages = {
     "payroll": "Payroll",
     "money": "Money",
     "accounting": "Accounting",
-    "reports": "Reports"
+    "reports": "Reports",
+    "setupBannerTitle": "Setup is not finished yet",
+    "setupBannerDesc": "Finish your company, bank, leave, and payroll details. {{percent}}% complete."
   },
   "allowances": {
     "title": "Allowances",
@@ -159,7 +174,12 @@ const messages = {
     "upload": "Upload",
     "preparePayroll": "Prepare payroll",
     "fixBlockingIssues": "Fix {{count}} blocking issues",
-    "reviewLeaveRequests": "Review {{count}} leave requests"
+    "reviewLeaveRequests": "Review {{count}} leave requests",
+    "simpleOverview": "Start here",
+    "simpleOverviewDesc": "Use these three cards for the most important tasks today.",
+    "finishSetup": "Finish setup",
+    "resumeSetup": "Resume setup",
+    "setupProgress": "{{percent}}% complete"
   },
   "documentAlerts": {
     "title": "Document Alerts",
@@ -205,7 +225,46 @@ const messages = {
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
     "errors": {
-      "signInFailed": "Failed to sign in"
+      "signInFailed": "Failed to sign in",
+      "passwordTooShort": "Password must be at least 6 characters",
+      "passwordsDoNotMatch": "Passwords do not match",
+      "nameRequired": "Please enter your name",
+      "companyNameRequired": "Please enter your company name",
+      "signupFailed": "Failed to create account. Please try again.",
+      "accountExists": "An account with this email already exists. Please log in instead.",
+      "weakPassword": "Password is too weak. Please use a stronger password.",
+      "invalidEmail": "Invalid email address."
+    },
+    "signup": {
+      "titleAccount": "Create Your Account",
+      "titleOrganization": "Set Up Your Organization",
+      "subtitleAccount": "Start your free trial. No credit card required.",
+      "subtitleOrganization": "Tell us about your company",
+      "stepAccount": "Account",
+      "stepOrganization": "Organization",
+      "fullName": "Full Name",
+      "fullNamePlaceholder": "John Smith",
+      "workEmail": "Work Email",
+      "workEmailPlaceholder": "you@company.com",
+      "passwordHint": "At least 6 characters",
+      "confirmPassword": "Confirm Password",
+      "confirmPasswordPlaceholder": "Confirm your password",
+      "continue": "Continue",
+      "companyName": "Company Name",
+      "companyNamePlaceholder": "Acme Inc.",
+      "companyUrl": "Company URL",
+      "companyUrlPrefix": "app.onit.hr/",
+      "companySlugPlaceholder": "acme-inc",
+      "companyUrlHint": "This will be your unique organization identifier",
+      "alreadyHaveAccount": "Already have an account?",
+      "terms": "By creating an account, you agree to our Terms of Service and Privacy Policy.",
+      "creating": "Creating...",
+      "createAccount": "Create Account",
+      "trialLabel": "Free",
+      "trialValue": "14-day trial",
+      "employeesLabel": "Employees",
+      "featuresLabel": "Features",
+      "allValue": "All"
     }
   },
   "notFound": {
@@ -1037,7 +1096,8 @@ const messages = {
     },
     "directory": {
       "title": "Employee Directory",
-      "countSummary": "{{shown}} of {{total}} employees"
+      "countSummary": "{{shown}} of {{total}} employees",
+      "searchLimitReached": "Search results may be incomplete. Try a more specific search term."
     },
     "table": {
       "employee": "Employee",
@@ -1159,6 +1219,9 @@ const messages = {
     },
     "toast": {
       "errorTitle": "Error",
+      "requiredFieldsTitle": "Missing required fields",
+      "requiredFieldsDesc": "Please fill in all required fields before continuing.",
+      "fillRequiredFields": "Please fill in all required fields.",
       "employeeNotFound": "Employee not found",
       "loadFailed": "Failed to load employee",
       "loadDepartmentsFailed": "Failed to load departments",
@@ -1914,6 +1977,8 @@ const messages = {
       "actions": {
         "newRequest": "New Request",
         "cancel": "Cancel",
+        "approve": "Approve",
+        "reject": "Reject",
         "submit": "Submit Request"
       },
       "dialog": {
@@ -1950,7 +2015,8 @@ const messages = {
         "all": "All Requests",
         "pending": "Pending",
         "approved": "Approved",
-        "rejected": "Rejected"
+        "rejected": "Rejected",
+        "calendar": "Calendar"
       },
       "table": {
         "title": "Leave Requests",
@@ -2012,7 +2078,9 @@ const messages = {
         "rejectedTitle": "Success",
         "rejectedDesc": "Leave request for {{name}} has been rejected.",
         "rejectFailed": "Failed to reject leave request.",
-        "rejectionReasonMissing": "Please provide a rejection reason."
+        "rejectionReasonMissing": "Please provide a rejection reason.",
+        "cancelledDesc": "Leave request cancelled.",
+        "cancelFailed": "Failed to cancel leave request."
       }
     },
     "attendance": {
@@ -2023,6 +2091,7 @@ const messages = {
         "import": "Import",
         "mark": "Mark Attendance",
         "markToday": "Mark Today's Attendance",
+        "today": "Today",
         "cancel": "Cancel",
         "export": "Export CSV"
       },
@@ -2507,8 +2576,28 @@ const messages = {
       "stats": {
         "activeEmployees": "Active Employees",
         "pendingLeave": "Pending Leave",
+        "complianceIssues": "Compliance Issues",
         "needsReview": "Needs Review",
         "onLeaveToday": "On Leave Today"
+      },
+      "badges": {
+        "needsReview": "Needs review",
+        "needsAttention": "Needs attention",
+        "allClear": "All clear"
+      },
+      "sections": {
+        "staff": {
+          "title": "Staff",
+          "description": "Employee directory, departments, org chart, announcements, and grievances."
+        },
+        "hiring": {
+          "title": "Hiring",
+          "description": "Job postings, candidates, interviews, onboarding, and offboarding."
+        },
+        "performance": {
+          "title": "Performance",
+          "description": "Goals, performance reviews, training, certifications, and disciplinary actions."
+        }
       }
     }
   },
@@ -2781,6 +2870,20 @@ const messages = {
     "minimumWage": "Minimum wage:",
     "minimumWageAmount": "$115 USD",
     "lastReviewedBy": "Last reviewed by {{name}}",
+    "simpleFlowTitle": "Simple payroll flow",
+    "simpleFlowDesc": "Work through these steps in order on payday.",
+    "simpleFlow": {
+      "peopleTitle": "Check employee records",
+      "peoplePending": "{{count}} employee records still need contracts or INSS details.",
+      "peopleReady": "Employee records look ready for this payroll.",
+      "timeTitle": "Check time and leave",
+      "timePending": "{{count}} leave requests still need review before payroll.",
+      "timeReady": "Leave and attendance look up to date for this pay period.",
+      "runTitle": "Run payroll",
+      "runPending": "Finish the checklist items before you run payroll.",
+      "payTitle": "Pay salaries",
+      "payDesc": "Open bank transfers after payroll is approved."
+    },
     "checklist": {
       "attendanceLabel": "Attendance finalized",
       "attendanceIssue": "timesheet pending approval",
@@ -2833,6 +2936,11 @@ const messages = {
     },
     "welcome": "Welcome! Let's set up your account",
     "welcomeDesc": "Complete these steps to get started with Meza",
+    "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
+    "progressTitle": "Setup progress",
+    "progressHint": "Complete each step once. You can adjust everything later in Settings.",
+    "savedAutomaticallyTitle": "Finished steps are saved automatically",
+    "savedAutomaticallyDesc": "You can leave and come back later. Meza will resume where you stopped.",
     "stepOf": "Step {{current}} of {{total}}",
     "requiredFields": "Required Fields",
     "companyNameTinRequired": "Company name and TIN are required.",
@@ -2851,6 +2959,9 @@ const messages = {
     "tradingNamePlaceholder": "Your Company",
     "tinNumber": "TIN Number *",
     "tinPlaceholder": "Tax Identification Number",
+    "teamSize": "Approximate Team Size",
+    "selectTeamSize": "Select team size",
+    "teamSizeHint": "This helps Meza choose better defaults for small or larger teams.",
     "address": "Address",
     "addressPlaceholder": "Street address",
     "city": "City",
@@ -2892,7 +3003,8 @@ const messages = {
     "allSet": "You're all set!",
     "allSetDesc": "Your account has been configured. You can now start adding employees, running payroll, and managing your team.",
     "back": "Back",
-    "doLater": "I'll do this later",
+    "doLater": "Go to dashboard for now",
+    "finishLaterHint": "You can return to setup any time from the dashboard before you run your first payroll.",
     "saving": "Saving...",
     "goToDashboard": "Go to Dashboard",
     "next": "Next"
@@ -4252,6 +4364,7 @@ const messages = {
     "inssEmployeeLabel": "INSS Employee (4%)",
     "inssEmployerLabel": "INSS Employer (6%)",
     "grossPlusInss": "Gross + INSS Employer",
+    "payrollSummary": "Payroll Summary",
     "periodConfig": "Pay Period Configuration",
     "configureDesc": "Configure the payroll period and pay date",
     "payFrequency": "Pay Frequency",
@@ -4553,6 +4666,7 @@ const messages = {
     "adjustFilters": "Try adjusting your filters.",
     "amount": "Amount",
     "employees": "Employees",
+    "loadingEmployees": "Loading employees...",
     "transferDate": "Transfer Date",
     "bankAccount": "Bank Account",
     "reference": "Reference",
@@ -4560,6 +4674,7 @@ const messages = {
     "viewDetails": "View details",
     "toastErrorTitle": "Error",
     "toastLoadError": "Failed to load transfers. Please refresh the page.",
+    "toastEmployeesLoading": "Employees are still loading",
     "toastSelectRunAndBank": "Please select a payroll run and at least one bank.",
     "toastRunNotFound": "Selected payroll run not found.",
     "toastBankFilesSuccess": "Generated {{count}} bank file(s) successfully.",

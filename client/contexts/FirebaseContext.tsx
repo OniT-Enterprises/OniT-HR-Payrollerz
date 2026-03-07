@@ -3,6 +3,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useContext,
   ReactNode,
 } from "react";
 import { db } from "@/lib/firebase";
@@ -103,4 +104,13 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       {children}
     </FirebaseContext.Provider>
   );
+};
+
+// eslint-disable-next-line react-refresh/only-export-components
+export const useFirebase = () => {
+  const context = useContext(FirebaseContext);
+  if (!context) {
+    throw new Error("useFirebase must be used within FirebaseProvider");
+  }
+  return context;
 };

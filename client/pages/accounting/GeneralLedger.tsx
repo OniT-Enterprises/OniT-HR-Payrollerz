@@ -46,11 +46,10 @@ import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function GeneralLedger() {
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
 
   // Local UI state
   const [selectedAccountId, setSelectedAccountId] = useState<string>('');
@@ -295,8 +294,8 @@ export default function GeneralLedger() {
         </CardContent>
       </Card>
 
-      {/* Account Summary */}
-      {!isSimple && selectedAccount && (
+      {selectedAccount && (
+        <MoreDetailsSection className="mb-6">
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
@@ -316,6 +315,7 @@ export default function GeneralLedger() {
             </div>
           </CardHeader>
         </Card>
+        </MoreDetailsSection>
       )}
 
       {/* Ledger Entries Table */}

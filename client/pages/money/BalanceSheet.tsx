@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/select';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
-import { useSimpleMode } from '@/contexts/SimpleModeContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
@@ -50,7 +49,6 @@ interface BalanceSheetData {
 export default function BalanceSheet() {
   const { t } = useI18n();
   const tenantId = useTenantId();
-  const { isSimple } = useSimpleMode();
   const [asOfDate, setAsOfDate] = useState<string>('today');
 
   const asOf = useMemo(() => {

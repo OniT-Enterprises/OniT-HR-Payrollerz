@@ -4,14 +4,17 @@
  */
 
 import React from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
-import { useTenant } from "@/contexts/TenantContext";
+import { useFirebase } from "@/contexts/FirebaseContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useGuidance } from "@/contexts/GuidanceContext";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { settingsService } from "@/services/settingsService";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +32,6 @@ import {
   LogOut,
   Sun,
   Moon,
-  Languages,
   Shield,
   BarChart3,
   Menu,
@@ -41,7 +43,9 @@ import {
   FolderKanban,
   FileSpreadsheet,
   Clock,
-  Zap,
+  WifiOff,
+  RotateCcw,
+  AlertTriangle,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
@@ -110,19 +114,25 @@ export default function MainNavigation() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, isSuperAdmin } = useAuth();
+  const { isOnline, isConnected, retryConnection } = useFirebase();
   const { session, hasModule, canManage } = useTenant();
+  const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
   const { guidanceEnabled, toggleGuidance } = useGuidance();
-  const { isSimple, toggleSimpleMode } = useSimpleMode();
-  const { t, locale, setLocale, localeLabels } = useI18n();
+  const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const localeOptions = Object.entries(localeLabels) as Array<[typeof locale, string]>;
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
     session,
     hasModule("reports"),
     canManage()
   );
+  const { data: setupProgress } = useQuery({
+    queryKey: ["tenants", tenantId, "setupProgress", "nav"],
+    queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
+    enabled: Boolean(user && tenantId && !isSuperAdmin),
+    staleTime: 5 * 60 * 1000,
+  });
   const visibleNavItems = NAV_ITEMS.filter((item) => {
     if (item.id === "dashboard") {
       return true;
@@ -180,6 +190,9 @@ export default function MainNavigation() {
       .map((n) => n[0])
       .join("")
       .toUpperCase() || user?.email?.[0].toUpperCase() || "U";
+  const hasConnectionIssue = !isOnline || !isConnected;
+  const setupIncomplete = setupProgress?.isComplete === false;
+  const setupPercent = setupProgress?.percentComplete ?? 0;
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
@@ -236,48 +249,13 @@ export default function MainNavigation() {
               variant="ghost"
               size="icon"
               onClick={() => handleNavigate("/settings")}
-              className="hidden md:flex h-9 w-9 text-muted-foreground hover:text-foreground"
+              className="hidden lg:flex h-9 w-9 text-muted-foreground hover:text-foreground"
               title={t("common.settings")}
             >
               <Settings className="h-4 w-4" />
             </Button>
 
-            {/* Language */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 text-muted-foreground hover:text-foreground"
-                  title={t("common.language")}
-                >
-                  <Languages className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                {localeOptions.map(([key, label]) => (
-                  <DropdownMenuItem
-                    key={key}
-                    onClick={() => setLocale(key)}
-                    className={locale === key ? "bg-accent" : ""}
-                  >
-                    {label}
-                    {locale === key && <span className="ml-auto">✓</span>}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Simple Mode Toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleSimpleMode}
-              className={`h-9 w-9 ${isSimple ? "text-amber-500" : "text-muted-foreground hover:text-foreground"}`}
-              title={isSimple ? "Simple mode on" : "Simple mode off"}
-            >
-              <Zap className="h-4 w-4" />
-            </Button>
+            <LocaleSwitcher className="hidden md:flex" />
 
             {/* Theme Toggle */}
             <Button
@@ -321,7 +299,7 @@ export default function MainNavigation() {
                       className="text-amber-600"
                     >
                       <Shield className="h-4 w-4 mr-2" />
-                      Admin Console
+                      {t("common.adminConsole")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
@@ -332,7 +310,7 @@ export default function MainNavigation() {
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleNavigate("/sitemap")}>
                   <Map className="h-4 w-4 mr-2" />
-                  Sitemap
+                  {t("common.sitemap")}
                 </DropdownMenuItem>
                 {ngoReportingEnabled && (
                   <>
@@ -354,7 +332,7 @@ export default function MainNavigation() {
                 )}
                 <DropdownMenuItem onClick={toggleGuidance}>
                   <BookOpen className="h-4 w-4 mr-2" />
-                  Guidance
+                  {t("common.guidance")}
                   {guidanceEnabled && <Check className="h-4 w-4 ml-auto text-emerald-500" />}
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
@@ -380,6 +358,16 @@ export default function MainNavigation() {
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
           <div className="md:hidden py-4 border-t border-border/50">
+            <div className="mb-4 rounded-xl border border-border/50 bg-muted/30 p-3">
+              <div className="flex flex-col gap-3">
+                <div className="space-y-2">
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    {t("common.language")}
+                  </p>
+                  <LocaleSwitcher variant="buttons" />
+                </div>
+              </div>
+            </div>
             <div className="flex flex-col gap-1">
               {visibleNavItems.map((item) => {
                 const Icon = item.icon;
@@ -422,7 +410,7 @@ export default function MainNavigation() {
                 className="justify-start h-12 text-base text-muted-foreground"
               >
                 <Map className="h-5 w-5 mr-3" />
-                Sitemap
+                {t("common.sitemap")}
               </Button>
               {ngoReportingEnabled && (
                 <>
@@ -449,6 +437,67 @@ export default function MainNavigation() {
                     </Button>
                   )}
                 </>
+              )}
+            </div>
+          </div>
+        )}
+
+        {(hasConnectionIssue || setupIncomplete) && (
+          <div className="border-t border-border/50 py-3">
+            <div className="flex flex-col gap-2 lg:flex-row">
+              {hasConnectionIssue && (
+                <div className="flex flex-1 flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50/80 p-3 dark:border-amber-900/40 dark:bg-amber-950/20 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-amber-500 p-2 text-white">
+                      <WifiOff className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t(isOnline ? "common.connectionIssueTitle" : "common.offlineTitle")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {t(isOnline ? "common.connectionIssueDesc" : "common.offlineDesc")}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      void retryConnection();
+                    }}
+                    disabled={!isOnline}
+                    className="self-start sm:self-auto"
+                  >
+                    <RotateCcw className="mr-2 h-4 w-4" />
+                    {t("common.retry")}
+                  </Button>
+                </div>
+              )}
+
+              {setupIncomplete && (
+                <div className="flex flex-1 flex-col gap-3 rounded-xl border border-sky-200 bg-sky-50/80 p-3 dark:border-sky-900/40 dark:bg-sky-950/20 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex items-start gap-3">
+                    <div className="mt-0.5 rounded-lg bg-sky-500 p-2 text-white">
+                      <AlertTriangle className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        {t("nav.setupBannerTitle")}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        {t("nav.setupBannerDesc", { percent: setupPercent })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    onClick={() => handleNavigate("/setup")}
+                    className="self-start bg-sky-600 text-white hover:bg-sky-700 sm:self-auto"
+                  >
+                    {t("dashboard.resumeSetup")}
+                  </Button>
+                </div>
               )}
             </div>
           </div>

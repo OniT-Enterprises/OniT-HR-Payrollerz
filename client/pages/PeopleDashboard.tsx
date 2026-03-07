@@ -29,8 +29,8 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import GuidancePanel from "@/components/GuidancePanel";
-import { useSimpleMode } from "@/contexts/SimpleModeContext";
 import { useI18n } from "@/i18n/I18nProvider";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 function PeopleDashboardSkeleton() {
   return (
@@ -84,7 +84,6 @@ function PeopleDashboardSkeleton() {
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { isSimple } = useSimpleMode();
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const loading = employeesLoading || leaveStatsLoading;
@@ -146,9 +145,8 @@ export default function PeopleDashboard() {
       <div className="p-6 max-w-7xl mx-auto">
         <GuidancePanel section="people" />
 
-        {/* KPI row */}
-        {!isSimple && (
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        <MoreDetailsSection className="mb-6">
+        <div className="grid gap-4 md:grid-cols-3">
           <Card
             className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
             onClick={() => navigate("/people/employees")}
@@ -183,7 +181,7 @@ export default function PeopleDashboard() {
                   </p>
                   {stats.pendingLeave > 0 && (
                     <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      Needs review
+                      {t("people.dashboard.badges.needsReview")}
                     </Badge>
                   )}
                 </div>
@@ -207,15 +205,15 @@ export default function PeopleDashboard() {
                 <div>
                   <p className="text-2xl font-bold">{attentionCount}</p>
                   <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Compliance Issues
+                    {t("people.dashboard.stats.complianceIssues")}
                   </p>
                   {attentionCount > 0 ? (
                     <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      Needs attention
+                      {t("people.dashboard.badges.needsAttention")}
                     </Badge>
                   ) : (
                     <span className="flex items-center gap-1 mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                      <CheckCircle className="h-3 w-3" /> All clear
+                      <CheckCircle className="h-3 w-3" /> {t("people.dashboard.badges.allClear")}
                     </span>
                   )}
                 </div>
@@ -232,7 +230,7 @@ export default function PeopleDashboard() {
             </CardContent>
           </Card>
         </div>
-        )}
+        </MoreDetailsSection>
 
         {/* Section cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -246,11 +244,11 @@ export default function PeopleDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">Staff</p>
+                  <p className="font-semibold text-sm">{t("people.dashboard.sections.staff.title")}</p>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Employee directory, departments, org chart, announcements, and grievances.
+                  {t("people.dashboard.sections.staff.description")}
                 </p>
               </div>
             </CardContent>
@@ -266,11 +264,11 @@ export default function PeopleDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">Hiring</p>
+                  <p className="font-semibold text-sm">{t("people.dashboard.sections.hiring.title")}</p>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Job postings, candidates, interviews, onboarding, and offboarding.
+                  {t("people.dashboard.sections.hiring.description")}
                 </p>
               </div>
             </CardContent>
@@ -286,11 +284,11 @@ export default function PeopleDashboard() {
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">Performance</p>
+                  <p className="font-semibold text-sm">{t("people.dashboard.sections.performance.title")}</p>
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  Goals & KPIs, performance reviews, training & certifications, and disciplinary actions.
+                  {t("people.dashboard.sections.performance.description")}
                 </p>
               </div>
             </CardContent>
