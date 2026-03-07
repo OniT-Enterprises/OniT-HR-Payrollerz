@@ -3298,6 +3298,197 @@ const messages = {
         "credit": "Credit",
         "description": "Description"
       }
+    },
+    "payrollAllocation": {
+      "title": "Payroll Allocation Report",
+      "subtitle": "Project and funding source payroll breakdown for NGO and donor reporting.",
+      "unassigned": "Unassigned",
+      "actions": {
+        "export": "Export CSV"
+      },
+      "filters": {
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "hint": "This report groups approved and paid payroll runs for the selected month."
+      },
+      "stats": {
+        "payrollRuns": "Payroll Runs",
+        "employees": "Employees",
+        "grossPayroll": "Gross Payroll",
+        "employerCost": "Employer Cost"
+      },
+      "table": {
+        "title": "By Project and Funding Source",
+        "empty": "No approved or paid payroll runs found for this period.",
+        "employeesCount": "{{count}} employees",
+        "project": "Project",
+        "fundingSource": "Funding Source",
+        "employees": "Employees",
+        "gross": "Gross",
+        "incomeTax": "Income Tax",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "net": "Net",
+        "employerCost": "Employer Cost"
+      },
+      "toast": {
+        "title": "Export complete",
+        "description": "Payroll allocation CSV downloaded successfully."
+      },
+      "csv": {
+        "projectCode": "Project Code",
+        "fundingSource": "Funding Source",
+        "employeeCount": "Employee Count",
+        "grossPay": "Gross Pay",
+        "incomeTax": "Income Tax",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "netPay": "Net Pay",
+        "employerCost": "Employer Cost"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Monthly WIT Return",
+      "subtitle": "Wage Income Tax returns for Autoridade Tributaria Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "e-Tax Portal",
+        "officialForm": "Official Form",
+        "view": "View",
+        "markFiled": "Mark Filed"
+      },
+      "alerts": {
+        "overdueTitle": "Overdue filing",
+        "overdueDescription": "WIT return for {{period}} was due on {{dueDate}}. Please file immediately to avoid penalties.",
+        "upcomingTitle": "Upcoming due date",
+        "upcomingDescription": "WIT return for {{period}} is due on {{dueDate}} ({{days}} days remaining)."
+      },
+      "generate": {
+        "title": "Generate Return",
+        "description": "Create a new monthly WIT return.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "generating": "Generating...",
+        "button": "Generate Return"
+      },
+      "company": {
+        "title": "Employer Details",
+        "description": "Tax registration info",
+        "companyName": "Company Name:",
+        "tin": "TIN:",
+        "address": "Address:",
+        "notSet": "Not set",
+        "tinHint": "Please update company TIN in Settings before filing."
+      },
+      "summary": {
+        "title": "Filing Summary",
+        "description": "Status overview",
+        "totalFilings": "Total Filings",
+        "filed": "Filed",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "preview": {
+        "title": "WIT Return - {{period}}",
+        "periodDescription": "Period: {{start}} to {{end}}",
+        "totalEmployees": "Total Employees",
+        "employeeBreakdown": "{{residents}} residents, {{nonResidents}} non-residents",
+        "totalGrossWages": "Total Gross Wages",
+        "taxableWages": "Taxable Wages",
+        "totalWit": "Total WIT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "Employee ID",
+        "name": "Name",
+        "resident": "Resident",
+        "residentYes": "Yes",
+        "residentNo": "No",
+        "grossWages": "Gross Wages",
+        "taxable": "Taxable",
+        "witWithheld": "WIT Withheld"
+      },
+      "history": {
+        "title": "Filing History",
+        "description": "Track your monthly WIT return submissions.",
+        "period": "Period",
+        "dueDate": "Due Date",
+        "status": "Status",
+        "totalWages": "Total Wages",
+        "wit": "WIT",
+        "employees": "Employees",
+        "actions": "Actions",
+        "empty": "No filings yet. Generate your first WIT return above."
+      },
+      "instructions": {
+        "title": "Filing Instructions",
+        "step1": "1. Generate the return for the desired period.",
+        "step2": "2. Review the employee data and totals.",
+        "step3": "3. Export the Official Form (Excel), CSV, or PDF.",
+        "step4": "4. Submit via the e-Tax portal or deliver 3 copies to BNU bank.",
+        "step5": "5. Mark the return as filed and keep the receipt number for your records.",
+        "templateWarning": "The Official Form export uses the 2024/2025 ATTL template format. If the Ministry of Finance updates the form layout, this export may need updating.",
+        "dueDateLabel": "Due Date:",
+        "dueDateValue": "15th of the month following the pay period.",
+        "supportLabel": "e-Tax Support:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Mark Return as Filed",
+        "description": "Record the submission details for this WIT return.",
+        "submissionMethod": "Submission Method",
+        "selectMethod": "Select method",
+        "etax": "e-Tax Portal",
+        "bnu": "BNU Bank (Paper)",
+        "receiptLabel": "Receipt Number (Optional)",
+        "receiptPlaceholder": "Enter receipt or confirmation number",
+        "notesLabel": "Notes (Optional)",
+        "notesPlaceholder": "Any additional notes about this filing",
+        "cancel": "Cancel",
+        "confirm": "Confirm Filed"
+      },
+      "status": {
+        "pending": "Pending",
+        "overdue": "Overdue",
+        "filed": "Filed",
+        "draft": "Draft"
+      },
+      "toast": {
+        "generatedTitle": "Return Generated",
+        "generatedDescription": "Monthly WIT return for {{period}} has been generated.",
+        "errorTitle": "Error",
+        "generateErrorDescription": "Failed to generate WIT return. Make sure you have payroll data for this period.",
+        "csvExportedTitle": "CSV Exported",
+        "csvExportedDescription": "WIT return exported to CSV for e-Tax upload.",
+        "tinRequiredTitle": "Company TIN Required",
+        "tinRequiredDescription": "Please update your company TIN in Settings before generating tax documents.",
+        "pdfExportedTitle": "PDF Exported",
+        "pdfExportedDescription": "WIT return exported as PDF for filing records.",
+        "exportFailedTitle": "Export Failed",
+        "pdfExportFailedDescription": "Failed to generate PDF. Please try again.",
+        "officialTinRequiredDescription": "Please update your company TIN in Settings before generating official ATTL forms.",
+        "officialExportedTitle": "Official Form Exported",
+        "officialExportedDescription": "ATTL Consolidated Monthly Taxes Form exported to Excel.",
+        "officialExportFailedDescription": "Failed to generate Excel form. Please try again.",
+        "filedTitle": "Filing Recorded",
+        "filedDescription": "The return has been marked as filed.",
+        "updateErrorDescription": "Failed to update filing status."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "tin": "TIN",
+        "tinLabel": "TIN",
+        "resident": "Resident",
+        "grossWages": "Gross Wages",
+        "taxableWages": "Taxable Wages",
+        "witWithheld": "WIT Withheld",
+        "employer": "Employer",
+        "period": "Period"
+      }
     }
   },
   "people": {

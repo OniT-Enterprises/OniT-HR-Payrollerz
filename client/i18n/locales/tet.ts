@@ -4212,6 +4212,197 @@ const messages = {
         "credit": "Kréditu",
         "description": "Deskrisaun"
       }
+    },
+    "payrollAllocation": {
+      "title": "Relatoriu Alokasaun Folha",
+      "subtitle": "Fahe folha tuir projetu no fonte fundu ba relatoriu ONG no doador.",
+      "unassigned": "Laiha atribusaun",
+      "actions": {
+        "export": "Exporta CSV"
+      },
+      "filters": {
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "hint": "Relatoriu ida-ne'e hamutuk folha ne'ebé aprova no selu ona ba fulan ne'ebé hili."
+      },
+      "stats": {
+        "payrollRuns": "Prosesu Folha",
+        "employees": "Empregadu",
+        "grossPayroll": "Folha Brutu",
+        "employerCost": "Kustu Empregadór"
+      },
+      "table": {
+        "title": "Tuir Projetu no Fonte Fundu",
+        "empty": "Laiha folha aprova ka selu ona ba períodu ida-ne'e.",
+        "employeesCount": "{{count}} empregadu",
+        "project": "Projetu",
+        "fundingSource": "Fonte Fundu",
+        "employees": "Empregadu",
+        "gross": "Brutu",
+        "incomeTax": "Impostu Rendimentu",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "net": "Líquidu",
+        "employerCost": "Kustu Empregadór"
+      },
+      "toast": {
+        "title": "Exportasaun kompletu",
+        "description": "CSV alokasaun folha download ho susesu."
+      },
+      "csv": {
+        "projectCode": "Kódigu Projetu",
+        "fundingSource": "Fonte Fundu",
+        "employeeCount": "Numeru Empregadu",
+        "grossPay": "Selu Brutu",
+        "incomeTax": "Impostu Rendimentu",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "netPay": "Selu Líquidu",
+        "employerCost": "Kustu Empregadór"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Deklarasaun WIT Mensal",
+      "subtitle": "Deklarasaun Impostu Rendimentu Saláriu ba Autoridade Tributária Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "Portal e-Tax",
+        "officialForm": "Formuláriu Ofisiál",
+        "view": "Haree",
+        "markFiled": "Marka hatama"
+      },
+      "alerts": {
+        "overdueTitle": "Arkivu tarde ona",
+        "overdueDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}}. Favór submete lalais atu evita multa.",
+        "upcomingTitle": "Prazu besik mai",
+        "upcomingDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}} (resta loron {{days}})."
+      },
+      "generate": {
+        "title": "Kria Deklarasaun",
+        "description": "Kria deklarasaun WIT mensal foun.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "generating": "Kria hela...",
+        "button": "Kria deklarasaun"
+      },
+      "company": {
+        "title": "Detallu Empregadór",
+        "description": "Informasaun rejistu impostu",
+        "companyName": "Naran Empreza:",
+        "tin": "TIN:",
+        "address": "Enderesu:",
+        "notSet": "Seidauk define",
+        "tinHint": "Favór atualiza TIN empreza iha Settings antes arkiva."
+      },
+      "summary": {
+        "title": "Resumo Arkivu",
+        "description": "Visaun geral status",
+        "totalFilings": "Total Arkivu",
+        "filed": "Hatama ona",
+        "pending": "Pendente",
+        "overdue": "Tarde"
+      },
+      "preview": {
+        "title": "Deklarasaun WIT - {{period}}",
+        "periodDescription": "Períodu: {{start}} to'o {{end}}",
+        "totalEmployees": "Total Empregadu",
+        "employeeBreakdown": "{{residents}} residente, {{nonResidents}} la'ós residente",
+        "totalGrossWages": "Total Saláriu Brutu",
+        "taxableWages": "Saláriu tributável",
+        "totalWit": "Total WIT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "ID Empregadu",
+        "name": "Naran",
+        "resident": "Residente",
+        "residentYes": "Sin",
+        "residentNo": "Lae",
+        "grossWages": "Saláriu Brutu",
+        "taxable": "Tributável",
+        "witWithheld": "WIT Retidu"
+      },
+      "history": {
+        "title": "Istória Arkivu",
+        "description": "Akompaña ita-boot nia submisaun WIT mensal.",
+        "period": "Períodu",
+        "dueDate": "Data vensimentu",
+        "status": "Status",
+        "totalWages": "Total Saláriu",
+        "wit": "WIT",
+        "employees": "Empregadu",
+        "actions": "Asaun",
+        "empty": "Seidauk iha arkivu. Kria deklarasaun WIT primeiru iha leten."
+      },
+      "instructions": {
+        "title": "Instrusaun Arkivu",
+        "step1": "1. Kria deklarasaun ba períodu ne'ebé ita hakarak.",
+        "step2": "2. Reviza dadus empregadu no total sira.",
+        "step3": "3. Exporta Formuláriu Ofisiál (Excel), CSV, ka PDF.",
+        "step4": "4. Submete liuhusi portal e-Tax ka entrega kopia 3 ba banku BNU.",
+        "step5": "5. Marka deklarasaun hanesan hatama ona no rai numeru recibu ba ita-boot nia rejistu.",
+        "templateWarning": "Exportasaun Formuláriu Ofisiál uza formatu template ATTL 2024/2025. Se Ministério das Finanças muda layout formuláriu, exportasaun ida-ne'e bele presiza atualiza.",
+        "dueDateLabel": "Data Vensimentu:",
+        "dueDateValue": "Loron 15 iha fulan tuir mai depois períodu pagamentu.",
+        "supportLabel": "Suporte e-Tax:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Marka deklarasaun hanesan hatama ona",
+        "description": "Rai detallu submisaun ba deklarasaun WIT ida-ne'e.",
+        "submissionMethod": "Métodu submisaun",
+        "selectMethod": "Hili métodu",
+        "etax": "Portal e-Tax",
+        "bnu": "Banku BNU (papel)",
+        "receiptLabel": "Numeru Recibu (Opsionál)",
+        "receiptPlaceholder": "Hatama numeru recibu ka konfirmasaun",
+        "notesLabel": "Nota (Opsionál)",
+        "notesPlaceholder": "Kualkér nota adisionál kona-ba arkivu ida-ne'e",
+        "cancel": "Kansela",
+        "confirm": "Konfirma hatama"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Tarde",
+        "filed": "Hatama ona",
+        "draft": "Esbosu"
+      },
+      "toast": {
+        "generatedTitle": "Deklarasaun criada",
+        "generatedDescription": "Deklarasaun WIT mensal ba {{period}} cria ona.",
+        "errorTitle": "Erru",
+        "generateErrorDescription": "Labele kria deklarasaun WIT. Haree katak iha dadus folha ba períodu ida-ne'e.",
+        "csvExportedTitle": "CSV exporta ona",
+        "csvExportedDescription": "Deklarasaun WIT exporta ona ba CSV atu upload iha e-Tax.",
+        "tinRequiredTitle": "TIN empreza obrigatóriu",
+        "tinRequiredDescription": "Favór atualiza TIN empreza iha Settings antes gera dokumentu impostu.",
+        "pdfExportedTitle": "PDF exporta ona",
+        "pdfExportedDescription": "Deklarasaun WIT exporta ona hanesan PDF ba rejistu arkivu.",
+        "exportFailedTitle": "Exportasaun falla",
+        "pdfExportFailedDescription": "La konsege gera PDF. Favór koko fali.",
+        "officialTinRequiredDescription": "Favór atualiza TIN empreza iha Settings antes gera formuláriu ofisiál ATTL.",
+        "officialExportedTitle": "Formuláriu ofisiál exporta ona",
+        "officialExportedDescription": "Formuláriu Impostu Mensal Konsolidada ATTL exporta ona ba Excel.",
+        "officialExportFailedDescription": "La konsege gera formuláriu Excel. Favór koko fali.",
+        "filedTitle": "Arkivu rejista ona",
+        "filedDescription": "Deklarasaun marka ona hanesan hatama.",
+        "updateErrorDescription": "La konsege atualiza status arkivu."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "tin": "TIN",
+        "tinLabel": "TIN",
+        "resident": "Residente",
+        "grossWages": "Saláriu Brutu",
+        "taxableWages": "Saláriu Tributável",
+        "witWithheld": "WIT Retidu",
+        "employer": "Empregadór",
+        "period": "Períodu"
+      }
     }
   },
   "people": {

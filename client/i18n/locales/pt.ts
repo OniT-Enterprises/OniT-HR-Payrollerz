@@ -3298,6 +3298,197 @@ const messages = {
         "credit": "Crédito",
         "description": "Descrição"
       }
+    },
+    "payrollAllocation": {
+      "title": "Relatório de Alocação da Folha",
+      "subtitle": "Distribuição da folha por projeto e fonte de financiamento para relatórios de ONG e doadores.",
+      "unassigned": "Sem atribuição",
+      "actions": {
+        "export": "Exportar CSV"
+      },
+      "filters": {
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "hint": "Este relatório agrupa folhas aprovadas e pagas para o mês selecionado."
+      },
+      "stats": {
+        "payrollRuns": "Processamentos da Folha",
+        "employees": "Funcionários",
+        "grossPayroll": "Folha Bruta",
+        "employerCost": "Custo do Empregador"
+      },
+      "table": {
+        "title": "Por Projeto e Fonte de Financiamento",
+        "empty": "Não foram encontrados processamentos da folha aprovados ou pagos para este período.",
+        "employeesCount": "{{count}} funcionários",
+        "project": "Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "employees": "Funcionários",
+        "gross": "Bruto",
+        "incomeTax": "Imposto sobre o Rendimento",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "net": "Líquido",
+        "employerCost": "Custo do Empregador"
+      },
+      "toast": {
+        "title": "Exportação concluída",
+        "description": "O CSV de alocação da folha foi descarregado com sucesso."
+      },
+      "csv": {
+        "projectCode": "Código do Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "employeeCount": "Número de Funcionários",
+        "grossPay": "Salário Bruto",
+        "incomeTax": "Imposto sobre o Rendimento",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "netPay": "Salário Líquido",
+        "employerCost": "Custo do Empregador"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Declaração Mensal de IRT",
+      "subtitle": "Declarações de Imposto sobre o Rendimento do Trabalho para a Autoridade Tributária de Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "Portal e-Tax",
+        "officialForm": "Formulário Oficial",
+        "view": "Ver",
+        "markFiled": "Marcar Entregue"
+      },
+      "alerts": {
+        "overdueTitle": "Entrega em atraso",
+        "overdueDescription": "A declaração de IRT de {{period}} devia ter sido entregue em {{dueDate}}. Entregue-a imediatamente para evitar penalizações.",
+        "upcomingTitle": "Prazo próximo",
+        "upcomingDescription": "A declaração de IRT de {{period}} vence em {{dueDate}} (faltam {{days}} dias)."
+      },
+      "generate": {
+        "title": "Gerar Declaração",
+        "description": "Criar uma nova declaração mensal de IRT.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "generating": "A gerar...",
+        "button": "Gerar Declaração"
+      },
+      "company": {
+        "title": "Detalhes do Empregador",
+        "description": "Informação de registo fiscal",
+        "companyName": "Nome da Empresa:",
+        "tin": "NIF:",
+        "address": "Morada:",
+        "notSet": "Não definido",
+        "tinHint": "Atualize o NIF da empresa em Settings antes de entregar."
+      },
+      "summary": {
+        "title": "Resumo das Entregas",
+        "description": "Visão geral do estado",
+        "totalFilings": "Total de Entregas",
+        "filed": "Entregues",
+        "pending": "Pendentes",
+        "overdue": "Em atraso"
+      },
+      "preview": {
+        "title": "Declaração de IRT - {{period}}",
+        "periodDescription": "Período: {{start}} a {{end}}",
+        "totalEmployees": "Total de Funcionários",
+        "employeeBreakdown": "{{residents}} residentes, {{nonResidents}} não residentes",
+        "totalGrossWages": "Total de Salários Brutos",
+        "taxableWages": "Salários Tributáveis",
+        "totalWit": "Total de IRT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "ID Funcionário",
+        "name": "Nome",
+        "resident": "Residente",
+        "residentYes": "Sim",
+        "residentNo": "Não",
+        "grossWages": "Salários Brutos",
+        "taxable": "Tributável",
+        "witWithheld": "IRT Retido"
+      },
+      "history": {
+        "title": "Histórico de Entregas",
+        "description": "Acompanhe as suas submissões mensais de IRT.",
+        "period": "Período",
+        "dueDate": "Prazo",
+        "status": "Estado",
+        "totalWages": "Salários Totais",
+        "wit": "IRT",
+        "employees": "Funcionários",
+        "actions": "Ações",
+        "empty": "Ainda não existem entregas. Gere a sua primeira declaração de IRT acima."
+      },
+      "instructions": {
+        "title": "Instruções de Entrega",
+        "step1": "1. Gere a declaração para o período desejado.",
+        "step2": "2. Reveja os dados dos funcionários e os totais.",
+        "step3": "3. Exporte o Formulário Oficial (Excel), CSV ou PDF.",
+        "step4": "4. Submeta através do portal e-Tax ou entregue 3 cópias no banco BNU.",
+        "step5": "5. Marque a declaração como entregue e guarde o número do recibo para os seus registos.",
+        "templateWarning": "A exportação do Formulário Oficial usa o formato do modelo ATTL 2024/2025. Se o Ministério das Finanças atualizar o layout, esta exportação poderá precisar de atualização.",
+        "dueDateLabel": "Prazo:",
+        "dueDateValue": "Dia 15 do mês seguinte ao período de pagamento.",
+        "supportLabel": "Suporte e-Tax:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Marcar Declaração como Entregue",
+        "description": "Registar os detalhes da submissão desta declaração de IRT.",
+        "submissionMethod": "Método de Submissão",
+        "selectMethod": "Selecionar método",
+        "etax": "Portal e-Tax",
+        "bnu": "Banco BNU (papel)",
+        "receiptLabel": "Número do Recibo (Opcional)",
+        "receiptPlaceholder": "Introduza o número do recibo ou confirmação",
+        "notesLabel": "Notas (Opcional)",
+        "notesPlaceholder": "Quaisquer notas adicionais sobre esta entrega",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar Entregue"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Em atraso",
+        "filed": "Entregue",
+        "draft": "Rascunho"
+      },
+      "toast": {
+        "generatedTitle": "Declaração Gerada",
+        "generatedDescription": "A declaração mensal de IRT para {{period}} foi gerada.",
+        "errorTitle": "Erro",
+        "generateErrorDescription": "Falha ao gerar a declaração de IRT. Confirme que existe folha de pagamento para este período.",
+        "csvExportedTitle": "CSV Exportado",
+        "csvExportedDescription": "Declaração de IRT exportada para CSV para envio no e-Tax.",
+        "tinRequiredTitle": "NIF da Empresa Obrigatório",
+        "tinRequiredDescription": "Atualize o NIF da empresa em Settings antes de gerar documentos fiscais.",
+        "pdfExportedTitle": "PDF Exportado",
+        "pdfExportedDescription": "Declaração de IRT exportada em PDF para registo.",
+        "exportFailedTitle": "Falha na Exportação",
+        "pdfExportFailedDescription": "Falha ao gerar o PDF. Tente novamente.",
+        "officialTinRequiredDescription": "Atualize o NIF da empresa em Settings antes de gerar formulários oficiais ATTL.",
+        "officialExportedTitle": "Formulário Oficial Exportado",
+        "officialExportedDescription": "O Formulário Consolidado Mensal de Impostos ATTL foi exportado para Excel.",
+        "officialExportFailedDescription": "Falha ao gerar o formulário Excel. Tente novamente.",
+        "filedTitle": "Entrega Registada",
+        "filedDescription": "A declaração foi marcada como entregue.",
+        "updateErrorDescription": "Falha ao atualizar o estado da entrega."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "tin": "NIF",
+        "tinLabel": "NIF",
+        "resident": "Residente",
+        "grossWages": "Salários Brutos",
+        "taxableWages": "Salários Tributáveis",
+        "witWithheld": "IRT Retido",
+        "employer": "Empregador",
+        "period": "Período"
+      }
     }
   },
   "people": {

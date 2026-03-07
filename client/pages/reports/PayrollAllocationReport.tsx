@@ -110,6 +110,7 @@ export default function PayrollAllocationReport() {
       "payroll-allocation",
       selectedYear,
       selectedMonth,
+      locale,
       runIds.join(","),
     ],
     enabled: runIds.length > 0 && employees.length > 0,

@@ -3188,6 +3188,197 @@ export const translations = {
         "credit": "Credit",
         "description": "Description"
       }
+    },
+    "payrollAllocation": {
+      "title": "Payroll Allocation Report",
+      "subtitle": "Project and funding source payroll breakdown for NGO and donor reporting.",
+      "unassigned": "Unassigned",
+      "actions": {
+        "export": "Export CSV"
+      },
+      "filters": {
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "hint": "This report groups approved and paid payroll runs for the selected month."
+      },
+      "stats": {
+        "payrollRuns": "Payroll Runs",
+        "employees": "Employees",
+        "grossPayroll": "Gross Payroll",
+        "employerCost": "Employer Cost"
+      },
+      "table": {
+        "title": "By Project and Funding Source",
+        "empty": "No approved or paid payroll runs found for this period.",
+        "employeesCount": "{{count}} employees",
+        "project": "Project",
+        "fundingSource": "Funding Source",
+        "employees": "Employees",
+        "gross": "Gross",
+        "incomeTax": "Income Tax",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "net": "Net",
+        "employerCost": "Employer Cost"
+      },
+      "toast": {
+        "title": "Export complete",
+        "description": "Payroll allocation CSV downloaded successfully."
+      },
+      "csv": {
+        "projectCode": "Project Code",
+        "fundingSource": "Funding Source",
+        "employeeCount": "Employee Count",
+        "grossPay": "Gross Pay",
+        "incomeTax": "Income Tax",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "netPay": "Net Pay",
+        "employerCost": "Employer Cost"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Monthly WIT Return",
+      "subtitle": "Wage Income Tax returns for Autoridade Tributaria Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "e-Tax Portal",
+        "officialForm": "Official Form",
+        "view": "View",
+        "markFiled": "Mark Filed"
+      },
+      "alerts": {
+        "overdueTitle": "Overdue filing",
+        "overdueDescription": "WIT return for {{period}} was due on {{dueDate}}. Please file immediately to avoid penalties.",
+        "upcomingTitle": "Upcoming due date",
+        "upcomingDescription": "WIT return for {{period}} is due on {{dueDate}} ({{days}} days remaining)."
+      },
+      "generate": {
+        "title": "Generate Return",
+        "description": "Create a new monthly WIT return.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "generating": "Generating...",
+        "button": "Generate Return"
+      },
+      "company": {
+        "title": "Employer Details",
+        "description": "Tax registration info",
+        "companyName": "Company Name:",
+        "tin": "TIN:",
+        "address": "Address:",
+        "notSet": "Not set",
+        "tinHint": "Please update company TIN in Settings before filing."
+      },
+      "summary": {
+        "title": "Filing Summary",
+        "description": "Status overview",
+        "totalFilings": "Total Filings",
+        "filed": "Filed",
+        "pending": "Pending",
+        "overdue": "Overdue"
+      },
+      "preview": {
+        "title": "WIT Return - {{period}}",
+        "periodDescription": "Period: {{start}} to {{end}}",
+        "totalEmployees": "Total Employees",
+        "employeeBreakdown": "{{residents}} residents, {{nonResidents}} non-residents",
+        "totalGrossWages": "Total Gross Wages",
+        "taxableWages": "Taxable Wages",
+        "totalWit": "Total WIT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "Employee ID",
+        "name": "Name",
+        "resident": "Resident",
+        "residentYes": "Yes",
+        "residentNo": "No",
+        "grossWages": "Gross Wages",
+        "taxable": "Taxable",
+        "witWithheld": "WIT Withheld"
+      },
+      "history": {
+        "title": "Filing History",
+        "description": "Track your monthly WIT return submissions.",
+        "period": "Period",
+        "dueDate": "Due Date",
+        "status": "Status",
+        "totalWages": "Total Wages",
+        "wit": "WIT",
+        "employees": "Employees",
+        "actions": "Actions",
+        "empty": "No filings yet. Generate your first WIT return above."
+      },
+      "instructions": {
+        "title": "Filing Instructions",
+        "step1": "1. Generate the return for the desired period.",
+        "step2": "2. Review the employee data and totals.",
+        "step3": "3. Export the Official Form (Excel), CSV, or PDF.",
+        "step4": "4. Submit via the e-Tax portal or deliver 3 copies to BNU bank.",
+        "step5": "5. Mark the return as filed and keep the receipt number for your records.",
+        "templateWarning": "The Official Form export uses the 2024/2025 ATTL template format. If the Ministry of Finance updates the form layout, this export may need updating.",
+        "dueDateLabel": "Due Date:",
+        "dueDateValue": "15th of the month following the pay period.",
+        "supportLabel": "e-Tax Support:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Mark Return as Filed",
+        "description": "Record the submission details for this WIT return.",
+        "submissionMethod": "Submission Method",
+        "selectMethod": "Select method",
+        "etax": "e-Tax Portal",
+        "bnu": "BNU Bank (Paper)",
+        "receiptLabel": "Receipt Number (Optional)",
+        "receiptPlaceholder": "Enter receipt or confirmation number",
+        "notesLabel": "Notes (Optional)",
+        "notesPlaceholder": "Any additional notes about this filing",
+        "cancel": "Cancel",
+        "confirm": "Confirm Filed"
+      },
+      "status": {
+        "pending": "Pending",
+        "overdue": "Overdue",
+        "filed": "Filed",
+        "draft": "Draft"
+      },
+      "toast": {
+        "generatedTitle": "Return Generated",
+        "generatedDescription": "Monthly WIT return for {{period}} has been generated.",
+        "errorTitle": "Error",
+        "generateErrorDescription": "Failed to generate WIT return. Make sure you have payroll data for this period.",
+        "csvExportedTitle": "CSV Exported",
+        "csvExportedDescription": "WIT return exported to CSV for e-Tax upload.",
+        "tinRequiredTitle": "Company TIN Required",
+        "tinRequiredDescription": "Please update your company TIN in Settings before generating tax documents.",
+        "pdfExportedTitle": "PDF Exported",
+        "pdfExportedDescription": "WIT return exported as PDF for filing records.",
+        "exportFailedTitle": "Export Failed",
+        "pdfExportFailedDescription": "Failed to generate PDF. Please try again.",
+        "officialTinRequiredDescription": "Please update your company TIN in Settings before generating official ATTL forms.",
+        "officialExportedTitle": "Official Form Exported",
+        "officialExportedDescription": "ATTL Consolidated Monthly Taxes Form exported to Excel.",
+        "officialExportFailedDescription": "Failed to generate Excel form. Please try again.",
+        "filedTitle": "Filing Recorded",
+        "filedDescription": "The return has been marked as filed.",
+        "updateErrorDescription": "Failed to update filing status."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "tin": "TIN",
+        "tinLabel": "TIN",
+        "resident": "Resident",
+        "grossWages": "Gross Wages",
+        "taxableWages": "Taxable Wages",
+        "witWithheld": "WIT Withheld",
+        "employer": "Employer",
+        "period": "Period"
+      }
     }
   },
   "people": {
@@ -9278,6 +9469,197 @@ export const translations = {
         "credit": "Kréditu",
         "description": "Deskrisaun"
       }
+    },
+    "payrollAllocation": {
+      "title": "Relatoriu Alokasaun Folha",
+      "subtitle": "Fahe folha tuir projetu no fonte fundu ba relatoriu ONG no doador.",
+      "unassigned": "Laiha atribusaun",
+      "actions": {
+        "export": "Exporta CSV"
+      },
+      "filters": {
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "hint": "Relatoriu ida-ne'e hamutuk folha ne'ebé aprova no selu ona ba fulan ne'ebé hili."
+      },
+      "stats": {
+        "payrollRuns": "Prosesu Folha",
+        "employees": "Empregadu",
+        "grossPayroll": "Folha Brutu",
+        "employerCost": "Kustu Empregadór"
+      },
+      "table": {
+        "title": "Tuir Projetu no Fonte Fundu",
+        "empty": "Laiha folha aprova ka selu ona ba períodu ida-ne'e.",
+        "employeesCount": "{{count}} empregadu",
+        "project": "Projetu",
+        "fundingSource": "Fonte Fundu",
+        "employees": "Empregadu",
+        "gross": "Brutu",
+        "incomeTax": "Impostu Rendimentu",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "net": "Líquidu",
+        "employerCost": "Kustu Empregadór"
+      },
+      "toast": {
+        "title": "Exportasaun kompletu",
+        "description": "CSV alokasaun folha download ho susesu."
+      },
+      "csv": {
+        "projectCode": "Kódigu Projetu",
+        "fundingSource": "Fonte Fundu",
+        "employeeCount": "Numeru Empregadu",
+        "grossPay": "Selu Brutu",
+        "incomeTax": "Impostu Rendimentu",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "netPay": "Selu Líquidu",
+        "employerCost": "Kustu Empregadór"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Deklarasaun WIT Mensal",
+      "subtitle": "Deklarasaun Impostu Rendimentu Saláriu ba Autoridade Tributária Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "Portal e-Tax",
+        "officialForm": "Formuláriu Ofisiál",
+        "view": "Haree",
+        "markFiled": "Marka hatama"
+      },
+      "alerts": {
+        "overdueTitle": "Arkivu tarde ona",
+        "overdueDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}}. Favór submete lalais atu evita multa.",
+        "upcomingTitle": "Prazu besik mai",
+        "upcomingDescription": "Deklarasaun WIT ba {{period}} vense iha {{dueDate}} (resta loron {{days}})."
+      },
+      "generate": {
+        "title": "Kria Deklarasaun",
+        "description": "Kria deklarasaun WIT mensal foun.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "generating": "Kria hela...",
+        "button": "Kria deklarasaun"
+      },
+      "company": {
+        "title": "Detallu Empregadór",
+        "description": "Informasaun rejistu impostu",
+        "companyName": "Naran Empreza:",
+        "tin": "TIN:",
+        "address": "Enderesu:",
+        "notSet": "Seidauk define",
+        "tinHint": "Favór atualiza TIN empreza iha Settings antes arkiva."
+      },
+      "summary": {
+        "title": "Resumo Arkivu",
+        "description": "Visaun geral status",
+        "totalFilings": "Total Arkivu",
+        "filed": "Hatama ona",
+        "pending": "Pendente",
+        "overdue": "Tarde"
+      },
+      "preview": {
+        "title": "Deklarasaun WIT - {{period}}",
+        "periodDescription": "Períodu: {{start}} to'o {{end}}",
+        "totalEmployees": "Total Empregadu",
+        "employeeBreakdown": "{{residents}} residente, {{nonResidents}} la'ós residente",
+        "totalGrossWages": "Total Saláriu Brutu",
+        "taxableWages": "Saláriu tributável",
+        "totalWit": "Total WIT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "ID Empregadu",
+        "name": "Naran",
+        "resident": "Residente",
+        "residentYes": "Sin",
+        "residentNo": "Lae",
+        "grossWages": "Saláriu Brutu",
+        "taxable": "Tributável",
+        "witWithheld": "WIT Retidu"
+      },
+      "history": {
+        "title": "Istória Arkivu",
+        "description": "Akompaña ita-boot nia submisaun WIT mensal.",
+        "period": "Períodu",
+        "dueDate": "Data vensimentu",
+        "status": "Status",
+        "totalWages": "Total Saláriu",
+        "wit": "WIT",
+        "employees": "Empregadu",
+        "actions": "Asaun",
+        "empty": "Seidauk iha arkivu. Kria deklarasaun WIT primeiru iha leten."
+      },
+      "instructions": {
+        "title": "Instrusaun Arkivu",
+        "step1": "1. Kria deklarasaun ba períodu ne'ebé ita hakarak.",
+        "step2": "2. Reviza dadus empregadu no total sira.",
+        "step3": "3. Exporta Formuláriu Ofisiál (Excel), CSV, ka PDF.",
+        "step4": "4. Submete liuhusi portal e-Tax ka entrega kopia 3 ba banku BNU.",
+        "step5": "5. Marka deklarasaun hanesan hatama ona no rai numeru recibu ba ita-boot nia rejistu.",
+        "templateWarning": "Exportasaun Formuláriu Ofisiál uza formatu template ATTL 2024/2025. Se Ministério das Finanças muda layout formuláriu, exportasaun ida-ne'e bele presiza atualiza.",
+        "dueDateLabel": "Data Vensimentu:",
+        "dueDateValue": "Loron 15 iha fulan tuir mai depois períodu pagamentu.",
+        "supportLabel": "Suporte e-Tax:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Marka deklarasaun hanesan hatama ona",
+        "description": "Rai detallu submisaun ba deklarasaun WIT ida-ne'e.",
+        "submissionMethod": "Métodu submisaun",
+        "selectMethod": "Hili métodu",
+        "etax": "Portal e-Tax",
+        "bnu": "Banku BNU (papel)",
+        "receiptLabel": "Numeru Recibu (Opsionál)",
+        "receiptPlaceholder": "Hatama numeru recibu ka konfirmasaun",
+        "notesLabel": "Nota (Opsionál)",
+        "notesPlaceholder": "Kualkér nota adisionál kona-ba arkivu ida-ne'e",
+        "cancel": "Kansela",
+        "confirm": "Konfirma hatama"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Tarde",
+        "filed": "Hatama ona",
+        "draft": "Esbosu"
+      },
+      "toast": {
+        "generatedTitle": "Deklarasaun criada",
+        "generatedDescription": "Deklarasaun WIT mensal ba {{period}} cria ona.",
+        "errorTitle": "Erru",
+        "generateErrorDescription": "Labele kria deklarasaun WIT. Haree katak iha dadus folha ba períodu ida-ne'e.",
+        "csvExportedTitle": "CSV exporta ona",
+        "csvExportedDescription": "Deklarasaun WIT exporta ona ba CSV atu upload iha e-Tax.",
+        "tinRequiredTitle": "TIN empreza obrigatóriu",
+        "tinRequiredDescription": "Favór atualiza TIN empreza iha Settings antes gera dokumentu impostu.",
+        "pdfExportedTitle": "PDF exporta ona",
+        "pdfExportedDescription": "Deklarasaun WIT exporta ona hanesan PDF ba rejistu arkivu.",
+        "exportFailedTitle": "Exportasaun falla",
+        "pdfExportFailedDescription": "La konsege gera PDF. Favór koko fali.",
+        "officialTinRequiredDescription": "Favór atualiza TIN empreza iha Settings antes gera formuláriu ofisiál ATTL.",
+        "officialExportedTitle": "Formuláriu ofisiál exporta ona",
+        "officialExportedDescription": "Formuláriu Impostu Mensal Konsolidada ATTL exporta ona ba Excel.",
+        "officialExportFailedDescription": "La konsege gera formuláriu Excel. Favór koko fali.",
+        "filedTitle": "Arkivu rejista ona",
+        "filedDescription": "Deklarasaun marka ona hanesan hatama.",
+        "updateErrorDescription": "La konsege atualiza status arkivu."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "tin": "TIN",
+        "tinLabel": "TIN",
+        "resident": "Residente",
+        "grossWages": "Saláriu Brutu",
+        "taxableWages": "Saláriu Tributável",
+        "witWithheld": "WIT Retidu",
+        "employer": "Empregadór",
+        "period": "Períodu"
+      }
     }
   },
   "people": {
@@ -13674,6 +14056,197 @@ pt: {
         "debit": "Débito",
         "credit": "Crédito",
         "description": "Descrição"
+      }
+    },
+    "payrollAllocation": {
+      "title": "Relatório de Alocação da Folha",
+      "subtitle": "Distribuição da folha por projeto e fonte de financiamento para relatórios de ONG e doadores.",
+      "unassigned": "Sem atribuição",
+      "actions": {
+        "export": "Exportar CSV"
+      },
+      "filters": {
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "hint": "Este relatório agrupa folhas aprovadas e pagas para o mês selecionado."
+      },
+      "stats": {
+        "payrollRuns": "Processamentos da Folha",
+        "employees": "Funcionários",
+        "grossPayroll": "Folha Bruta",
+        "employerCost": "Custo do Empregador"
+      },
+      "table": {
+        "title": "Por Projeto e Fonte de Financiamento",
+        "empty": "Não foram encontrados processamentos da folha aprovados ou pagos para este período.",
+        "employeesCount": "{{count}} funcionários",
+        "project": "Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "employees": "Funcionários",
+        "gross": "Bruto",
+        "incomeTax": "Imposto sobre o Rendimento",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "net": "Líquido",
+        "employerCost": "Custo do Empregador"
+      },
+      "toast": {
+        "title": "Exportação concluída",
+        "description": "O CSV de alocação da folha foi descarregado com sucesso."
+      },
+      "csv": {
+        "projectCode": "Código do Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "employeeCount": "Número de Funcionários",
+        "grossPay": "Salário Bruto",
+        "incomeTax": "Imposto sobre o Rendimento",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "netPay": "Salário Líquido",
+        "employerCost": "Custo do Empregador"
+      }
+    },
+    "attlMonthlyWit": {
+      "title": "Declaração Mensal de IRT",
+      "subtitle": "Declarações de Imposto sobre o Rendimento do Trabalho para a Autoridade Tributária de Timor-Leste (ATTL).",
+      "actions": {
+        "etaxPortal": "Portal e-Tax",
+        "officialForm": "Formulário Oficial",
+        "view": "Ver",
+        "markFiled": "Marcar Entregue"
+      },
+      "alerts": {
+        "overdueTitle": "Entrega em atraso",
+        "overdueDescription": "A declaração de IRT de {{period}} devia ter sido entregue em {{dueDate}}. Entregue-a imediatamente para evitar penalizações.",
+        "upcomingTitle": "Prazo próximo",
+        "upcomingDescription": "A declaração de IRT de {{period}} vence em {{dueDate}} (faltam {{days}} dias)."
+      },
+      "generate": {
+        "title": "Gerar Declaração",
+        "description": "Criar uma nova declaração mensal de IRT.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "generating": "A gerar...",
+        "button": "Gerar Declaração"
+      },
+      "company": {
+        "title": "Detalhes do Empregador",
+        "description": "Informação de registo fiscal",
+        "companyName": "Nome da Empresa:",
+        "tin": "NIF:",
+        "address": "Morada:",
+        "notSet": "Não definido",
+        "tinHint": "Atualize o NIF da empresa em Settings antes de entregar."
+      },
+      "summary": {
+        "title": "Resumo das Entregas",
+        "description": "Visão geral do estado",
+        "totalFilings": "Total de Entregas",
+        "filed": "Entregues",
+        "pending": "Pendentes",
+        "overdue": "Em atraso"
+      },
+      "preview": {
+        "title": "Declaração de IRT - {{period}}",
+        "periodDescription": "Período: {{start}} a {{end}}",
+        "totalEmployees": "Total de Funcionários",
+        "employeeBreakdown": "{{residents}} residentes, {{nonResidents}} não residentes",
+        "totalGrossWages": "Total de Salários Brutos",
+        "taxableWages": "Salários Tributáveis",
+        "totalWit": "Total de IRT"
+      },
+      "table": {
+        "total": "TOTAL",
+        "employeeId": "ID Funcionário",
+        "name": "Nome",
+        "resident": "Residente",
+        "residentYes": "Sim",
+        "residentNo": "Não",
+        "grossWages": "Salários Brutos",
+        "taxable": "Tributável",
+        "witWithheld": "IRT Retido"
+      },
+      "history": {
+        "title": "Histórico de Entregas",
+        "description": "Acompanhe as suas submissões mensais de IRT.",
+        "period": "Período",
+        "dueDate": "Prazo",
+        "status": "Estado",
+        "totalWages": "Salários Totais",
+        "wit": "IRT",
+        "employees": "Funcionários",
+        "actions": "Ações",
+        "empty": "Ainda não existem entregas. Gere a sua primeira declaração de IRT acima."
+      },
+      "instructions": {
+        "title": "Instruções de Entrega",
+        "step1": "1. Gere a declaração para o período desejado.",
+        "step2": "2. Reveja os dados dos funcionários e os totais.",
+        "step3": "3. Exporte o Formulário Oficial (Excel), CSV ou PDF.",
+        "step4": "4. Submeta através do portal e-Tax ou entregue 3 cópias no banco BNU.",
+        "step5": "5. Marque a declaração como entregue e guarde o número do recibo para os seus registos.",
+        "templateWarning": "A exportação do Formulário Oficial usa o formato do modelo ATTL 2024/2025. Se o Ministério das Finanças atualizar o layout, esta exportação poderá precisar de atualização.",
+        "dueDateLabel": "Prazo:",
+        "dueDateValue": "Dia 15 do mês seguinte ao período de pagamento.",
+        "supportLabel": "Suporte e-Tax:",
+        "supportValue": "(+670) 74962772 | etax@mof.gov.tl"
+      },
+      "markFiled": {
+        "title": "Marcar Declaração como Entregue",
+        "description": "Registar os detalhes da submissão desta declaração de IRT.",
+        "submissionMethod": "Método de Submissão",
+        "selectMethod": "Selecionar método",
+        "etax": "Portal e-Tax",
+        "bnu": "Banco BNU (papel)",
+        "receiptLabel": "Número do Recibo (Opcional)",
+        "receiptPlaceholder": "Introduza o número do recibo ou confirmação",
+        "notesLabel": "Notas (Opcional)",
+        "notesPlaceholder": "Quaisquer notas adicionais sobre esta entrega",
+        "cancel": "Cancelar",
+        "confirm": "Confirmar Entregue"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Em atraso",
+        "filed": "Entregue",
+        "draft": "Rascunho"
+      },
+      "toast": {
+        "generatedTitle": "Declaração Gerada",
+        "generatedDescription": "A declaração mensal de IRT para {{period}} foi gerada.",
+        "errorTitle": "Erro",
+        "generateErrorDescription": "Falha ao gerar a declaração de IRT. Confirme que existe folha de pagamento para este período.",
+        "csvExportedTitle": "CSV Exportado",
+        "csvExportedDescription": "Declaração de IRT exportada para CSV para envio no e-Tax.",
+        "tinRequiredTitle": "NIF da Empresa Obrigatório",
+        "tinRequiredDescription": "Atualize o NIF da empresa em Settings antes de gerar documentos fiscais.",
+        "pdfExportedTitle": "PDF Exportado",
+        "pdfExportedDescription": "Declaração de IRT exportada em PDF para registo.",
+        "exportFailedTitle": "Falha na Exportação",
+        "pdfExportFailedDescription": "Falha ao gerar o PDF. Tente novamente.",
+        "officialTinRequiredDescription": "Atualize o NIF da empresa em Settings antes de gerar formulários oficiais ATTL.",
+        "officialExportedTitle": "Formulário Oficial Exportado",
+        "officialExportedDescription": "O Formulário Consolidado Mensal de Impostos ATTL foi exportado para Excel.",
+        "officialExportFailedDescription": "Falha ao gerar o formulário Excel. Tente novamente.",
+        "filedTitle": "Entrega Registada",
+        "filedDescription": "A declaração foi marcada como entregue.",
+        "updateErrorDescription": "Falha ao atualizar o estado da entrega."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "tin": "NIF",
+        "tinLabel": "NIF",
+        "resident": "Residente",
+        "grossWages": "Salários Brutos",
+        "taxableWages": "Salários Tributáveis",
+        "witWithheld": "IRT Retido",
+        "employer": "Empregador",
+        "period": "Período"
       }
     }
   },
