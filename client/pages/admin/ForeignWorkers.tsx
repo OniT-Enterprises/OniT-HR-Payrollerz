@@ -63,6 +63,7 @@ import type { Employee } from "@/services/employeeService";
 import type { WorkPermitStatus } from "@/types/tax-filing";
 import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 // ============================================
 // TYPES
@@ -147,7 +148,7 @@ function getAlertSeverity(days: number): "none" | "info" | "warning" | "critical
 }
 
 function getNationality(employee: Employee): string {
-  return employee.documents?.nationality || "Unknown";
+  return employee.documents?.nationality || "";
 }
 
 function getVisaExpiry(employee: Employee): string | undefined {
@@ -344,7 +345,7 @@ export default function ForeignWorkers() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Foreign Workers | Meza"
+        title={`${t("admin.foreignWorkers.title")} | Meza`}
         description={t("admin.foreignWorkers.pageDesc")}
       />
       <MainNavigation />
@@ -534,45 +535,47 @@ export default function ForeignWorkers() {
             </Tabs>
 
             {/* Filters */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-              <div className="md:col-span-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("admin.foreignWorkers.searchPlaceholder")}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+            <div className="mb-4 space-y-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder={t("admin.foreignWorkers.searchPlaceholder")}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10"
+                />
               </div>
 
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("admin.foreignWorkers.allStatuses")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("admin.foreignWorkers.allStatuses")}</SelectItem>
-                  <SelectItem value="approved">{t("admin.foreignWorkers.statusActive")}</SelectItem>
-                  <SelectItem value="pending">{t("admin.foreignWorkers.statusPending")}</SelectItem>
-                  <SelectItem value="renewal_pending">{t("admin.foreignWorkers.statusRenewalPending")}</SelectItem>
-                  <SelectItem value="expired">{t("admin.foreignWorkers.statusExpired")}</SelectItem>
-                </SelectContent>
-              </Select>
+              <MoreDetailsSection title={t("admin.foreignWorkers.filtersTitle")}>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("admin.foreignWorkers.allStatuses")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("admin.foreignWorkers.allStatuses")}</SelectItem>
+                      <SelectItem value="approved">{t("admin.foreignWorkers.statusActive")}</SelectItem>
+                      <SelectItem value="pending">{t("admin.foreignWorkers.statusPending")}</SelectItem>
+                      <SelectItem value="renewal_pending">{t("admin.foreignWorkers.statusRenewalPending")}</SelectItem>
+                      <SelectItem value="expired">{t("admin.foreignWorkers.statusExpired")}</SelectItem>
+                    </SelectContent>
+                  </Select>
 
-              <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
-                <SelectTrigger>
-                  <SelectValue placeholder={t("admin.foreignWorkers.allNationalities")} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">{t("admin.foreignWorkers.allNationalities")}</SelectItem>
-                  {nationalities.map((nat) => (
-                    <SelectItem key={nat} value={nat}>
-                      {nat}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+                  <Select value={nationalityFilter} onValueChange={setNationalityFilter}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("admin.foreignWorkers.allNationalities")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("admin.foreignWorkers.allNationalities")}</SelectItem>
+                      {nationalities.map((nat) => (
+                        <SelectItem key={nat} value={nat}>
+                          {nat}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </MoreDetailsSection>
             </div>
 
             {/* Table */}
@@ -587,19 +590,8 @@ export default function ForeignWorkers() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("admin.foreignWorkers.employee")}</TableHead>
-                    <TableHead>{t("admin.foreignWorkers.nationality")}</TableHead>
-                    <TableHead>{t("admin.foreignWorkers.department")}</TableHead>
-                    <TableHead>{t("admin.foreignWorkers.visaStatus")}</TableHead>
-                    <TableHead>{t("admin.foreignWorkers.visaExpiry")}</TableHead>
-                    <TableHead>{t("admin.foreignWorkers.permitStatus")}</TableHead>
-                    <TableHead className="text-right">{t("admin.foreignWorkers.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {filteredWorkers.map((worker) => {
                     const status = worker.foreignWorker?.status || "not_required";
                     const statusConfig = STATUS_CONFIG[status];
@@ -607,102 +599,193 @@ export default function ForeignWorkers() {
                     const alertConfig = ALERT_CONFIG[worker.alertSeverity];
 
                     return (
-                      <TableRow
+                      <Card
                         key={worker.id}
                         className={
                           worker.alertSeverity === "expired"
-                            ? "bg-red-50 dark:bg-red-950/10"
+                            ? "border-red-200 bg-red-50/60 dark:bg-red-950/10"
                             : worker.alertSeverity === "critical"
-                            ? "bg-orange-50 dark:bg-orange-950/10"
-                            : ""
+                            ? "border-orange-200 bg-orange-50/60 dark:bg-orange-950/10"
+                            : "border-border/50"
                         }
                       >
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                              <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
-                                {worker.personalInfo.firstName[0]}
-                                {worker.personalInfo.lastName[0]}
-                              </span>
+                        <CardContent className="p-4">
+                          <div className="space-y-4">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
+                                  <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                    {worker.personalInfo.firstName[0]}
+                                    {worker.personalInfo.lastName[0]}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p className="font-medium">
+                                    {worker.personalInfo.firstName} {worker.personalInfo.lastName}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    {worker.jobDetails.employeeId}
+                                  </p>
+                                </div>
+                              </div>
+                              <Badge className={statusConfig.className}>
+                                <StatusIcon className="mr-1 h-3 w-3" />
+                                {t(statusConfig.labelKey)}
+                              </Badge>
                             </div>
-                            <div>
-                              <p className="font-medium">
-                                {worker.personalInfo.firstName}{" "}
-                                {worker.personalInfo.lastName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {worker.jobDetails.employeeId}
-                              </p>
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline">{getNationality(worker)}</Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {worker.jobDetails.department}
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={statusConfig.className}>
-                            <StatusIcon className="h-3 w-3 mr-1" />
-                            {t(statusConfig.labelKey)}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <span className={alertConfig.className}>
-                                  {formatDaysRemaining(worker.daysUntilVisaExpiry)}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {getVisaExpiry(worker)
-                                  ? formatDateTL(getVisaExpiry(worker)!)
-                                  : t("admin.foreignWorkers.noVisaOnFile")}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell>
-                          <TooltipProvider>
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <span
-                                  className={
-                                    ALERT_CONFIG[getAlertSeverity(worker.daysUntilPermitExpiry)]
-                                      .className
-                                  }
-                                >
+                            <div className="grid grid-cols-2 gap-3 text-sm">
+                              <div>
+                                <p className="text-xs text-muted-foreground">{t("admin.foreignWorkers.nationality")}</p>
+                                <p>{getNationality(worker) || t("common.unknown")}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">{t("admin.foreignWorkers.department")}</p>
+                                <p>{worker.jobDetails.department || t("common.unknown")}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">{t("admin.foreignWorkers.visaExpiry")}</p>
+                                <p className={alertConfig.className}>{formatDaysRemaining(worker.daysUntilVisaExpiry)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-muted-foreground">{t("admin.foreignWorkers.permitStatus")}</p>
+                                <p className={ALERT_CONFIG[getAlertSeverity(worker.daysUntilPermitExpiry)].className}>
                                   {formatDaysRemaining(worker.daysUntilPermitExpiry)}
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                {getPermitExpiry(worker)
-                                  ? formatDateTL(getPermitExpiry(worker)!)
-                                  : t("admin.foreignWorkers.noPermitOnFile")}
-                              </TooltipContent>
-                            </Tooltip>
-                          </TooltipProvider>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex items-center justify-end gap-2">
+                                </p>
+                              </div>
+                            </div>
                             <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() =>
-                                navigate(`/people/employees?id=${worker.id}`)
-                              }
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => navigate(`/people/employees?id=${worker.id}`)}
                             >
-                              <Eye className="h-4 w-4" />
+                              <Eye className="mr-2 h-4 w-4" />
+                              {t("admin.foreignWorkers.openEmployee")}
                             </Button>
                           </div>
-                        </TableCell>
-                      </TableRow>
+                        </CardContent>
+                      </Card>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("admin.foreignWorkers.employee")}</TableHead>
+                      <TableHead>{t("admin.foreignWorkers.nationality")}</TableHead>
+                      <TableHead>{t("admin.foreignWorkers.department")}</TableHead>
+                      <TableHead>{t("admin.foreignWorkers.visaStatus")}</TableHead>
+                      <TableHead>{t("admin.foreignWorkers.visaExpiry")}</TableHead>
+                      <TableHead>{t("admin.foreignWorkers.permitStatus")}</TableHead>
+                      <TableHead className="text-right">{t("admin.foreignWorkers.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredWorkers.map((worker) => {
+                      const status = worker.foreignWorker?.status || "not_required";
+                      const statusConfig = STATUS_CONFIG[status];
+                      const StatusIcon = statusConfig.icon;
+                      const alertConfig = ALERT_CONFIG[worker.alertSeverity];
+
+                      return (
+                        <TableRow
+                          key={worker.id}
+                          className={
+                            worker.alertSeverity === "expired"
+                              ? "bg-red-50 dark:bg-red-950/10"
+                              : worker.alertSeverity === "critical"
+                              ? "bg-orange-50 dark:bg-orange-950/10"
+                              : ""
+                          }
+                        >
+                          <TableCell>
+                            <div className="flex items-center gap-3">
+                              <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                                <span className="text-xs font-medium text-blue-700 dark:text-blue-300">
+                                  {worker.personalInfo.firstName[0]}
+                                  {worker.personalInfo.lastName[0]}
+                                </span>
+                              </div>
+                              <div>
+                                <p className="font-medium">
+                                  {worker.personalInfo.firstName}{" "}
+                                  {worker.personalInfo.lastName}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {worker.jobDetails.employeeId}
+                                </p>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant="outline">{getNationality(worker) || t("common.unknown")}</Badge>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {worker.jobDetails.department || t("common.unknown")}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={statusConfig.className}>
+                              <StatusIcon className="h-3 w-3 mr-1" />
+                              {t(statusConfig.labelKey)}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <span className={alertConfig.className}>
+                                    {formatDaysRemaining(worker.daysUntilVisaExpiry)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {getVisaExpiry(worker)
+                                    ? formatDateTL(getVisaExpiry(worker)!)
+                                    : t("admin.foreignWorkers.noVisaOnFile")}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger>
+                                  <span
+                                    className={
+                                      ALERT_CONFIG[getAlertSeverity(worker.daysUntilPermitExpiry)]
+                                        .className
+                                    }
+                                  >
+                                    {formatDaysRemaining(worker.daysUntilPermitExpiry)}
+                                  </span>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {getPermitExpiry(worker)
+                                    ? formatDateTL(getPermitExpiry(worker)!)
+                                    : t("admin.foreignWorkers.noPermitOnFile")}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() =>
+                                  navigate(`/people/employees?id=${worker.id}`)
+                                }
+                              >
+                                <Eye className="mr-2 h-4 w-4" />
+                                {t("admin.foreignWorkers.openEmployee")}
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>
@@ -718,30 +801,30 @@ export default function ForeignWorkers() {
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6 text-sm">
               <div>
-                <h4 className="font-medium mb-2">Work Visa (Type C)</h4>
+                <h4 className="font-medium mb-2">{t("admin.foreignWorkers.guide.visaTitle")}</h4>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>Valid for 1 year</li>
-                  <li>Processing: ~15 business days</li>
-                  <li>Fee: $50 USD</li>
-                  <li>Requires employer sponsorship</li>
+                  <li>{t("admin.foreignWorkers.guide.visaValidity")}</li>
+                  <li>{t("admin.foreignWorkers.guide.visaProcessing")}</li>
+                  <li>{t("admin.foreignWorkers.guide.visaFee")}</li>
+                  <li>{t("admin.foreignWorkers.guide.visaSponsor")}</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Required Documents</h4>
+                <h4 className="font-medium mb-2">{t("admin.foreignWorkers.guide.documentsTitle")}</h4>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>Valid passport (6+ months)</li>
-                  <li>Employment contract</li>
-                  <li>Company tax certificate</li>
-                  <li>Medical clearance</li>
+                  <li>{t("admin.foreignWorkers.guide.documentsPassport")}</li>
+                  <li>{t("admin.foreignWorkers.guide.documentsContract")}</li>
+                  <li>{t("admin.foreignWorkers.guide.documentsTax")}</li>
+                  <li>{t("admin.foreignWorkers.guide.documentsMedical")}</li>
                 </ul>
               </div>
               <div>
-                <h4 className="font-medium mb-2">Renewal Process</h4>
+                <h4 className="font-medium mb-2">{t("admin.foreignWorkers.guide.renewalTitle")}</h4>
                 <ul className="space-y-1 text-muted-foreground">
-                  <li>Apply 30 days before expiry</li>
-                  <li>Submit via Immigration Dept</li>
-                  <li>Keep all original documents</li>
-                  <li>Allow 2-3 weeks processing</li>
+                  <li>{t("admin.foreignWorkers.guide.renewalApply")}</li>
+                  <li>{t("admin.foreignWorkers.guide.renewalSubmit")}</li>
+                  <li>{t("admin.foreignWorkers.guide.renewalOriginals")}</li>
+                  <li>{t("admin.foreignWorkers.guide.renewalTiming")}</li>
                 </ul>
               </div>
             </div>

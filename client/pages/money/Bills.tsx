@@ -35,6 +35,7 @@ import { billService } from '@/services/billService';
 import { useSmartBills, billKeys } from '@/hooks/useBills';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
@@ -50,7 +51,6 @@ import {
   Trash2,
   DollarSign,
   Calendar,
-  Filter,
   AlertTriangle,
 } from 'lucide-react';
 
@@ -240,31 +240,32 @@ export default function Bills() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('money.bills.searchPlaceholder') || 'Search bills...'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder={t('money.bills.status') || 'Status'} />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t('common.all') || 'All'}</SelectItem>
-              <SelectItem value="pending">{t('money.billStatus.pending') || 'Pending'}</SelectItem>
-              <SelectItem value="partial">{t('money.billStatus.partial') || 'Partial'}</SelectItem>
-              <SelectItem value="paid">{t('money.billStatus.paid') || 'Paid'}</SelectItem>
-              <SelectItem value="overdue">{t('money.billStatus.overdue') || 'Overdue'}</SelectItem>
-              <SelectItem value="cancelled">{t('money.billStatus.cancelled') || 'Cancelled'}</SelectItem>
-            </SelectContent>
-          </Select>
+        <div className="relative mb-4 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t('money.bills.searchPlaceholder') || 'Search bills...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
+        <MoreDetailsSection className="mb-6" title={t('money.bills.status') || 'Status'}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-[200px]">
+                <SelectValue placeholder={t('money.bills.status') || 'Status'} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">{t('common.all') || 'All'}</SelectItem>
+                <SelectItem value="pending">{t('money.billStatus.pending') || 'Pending'}</SelectItem>
+                <SelectItem value="partial">{t('money.billStatus.partial') || 'Partial'}</SelectItem>
+                <SelectItem value="paid">{t('money.billStatus.paid') || 'Paid'}</SelectItem>
+                <SelectItem value="overdue">{t('money.billStatus.overdue') || 'Overdue'}</SelectItem>
+                <SelectItem value="cancelled">{t('money.billStatus.cancelled') || 'Cancelled'}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </MoreDetailsSection>
 
         {/* Bill List */}
         {filteredBills.length === 0 ? (
@@ -329,8 +330,9 @@ export default function Bills() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="outline" size="sm" className="h-8" onClick={(e) => e.stopPropagation()}>
+                            <MoreHorizontal className="h-4 w-4 mr-1.5" />
+                            {t('common.moreActions') || 'More actions'}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>

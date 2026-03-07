@@ -34,13 +34,19 @@ import {
   Calendar,
   FileSpreadsheet,
 } from "lucide-react";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 
 export default function EmployeeReports() {
   const { data: employees = [], isLoading: loading } = useAllEmployees(500);
   const [dateRange, setDateRange] = useState("30");
   const { toast } = useToast();
   const { t } = useI18n();
+
+  const getDateRangeLabel = (value: string) => t(`reports.shared.ranges.${value}`);
+  const getEmploymentTypeLabel = (value: string) =>
+    value === "Unknown" ? t("common.unknown") : value.replace(/_/g, " ");
+  const getStatusLabel = (value: string) =>
+    value === "active" ? t("reports.employee.status.active") : t("reports.employee.status.inactive");
 
   // Calculate stats
   const activeEmployees = useMemo(() => employees.filter((e) => e.status === "active"), [employees]);
@@ -75,35 +81,35 @@ export default function EmployeeReports() {
   const handleExportCSV = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
     toast({
-      title: "Export Complete",
-      description: `${filename}.csv downloaded successfully`,
+      title: t("reports.shared.exportTitle"),
+      description: t("reports.shared.exportDescription", { filename: `${filename}.csv` }),
     });
   };
 
   const exportDirectory = () => {
     handleExportCSV(employees as unknown as Record<string, unknown>[], "employee_directory", [
-      { key: "jobDetails.employeeId", label: "Employee ID" },
-      { key: "personalInfo.firstName", label: "First Name" },
-      { key: "personalInfo.lastName", label: "Last Name" },
-      { key: "personalInfo.email", label: "Email" },
-      { key: "personalInfo.phone", label: "Phone" },
-      { key: "jobDetails.department", label: "Department" },
-      { key: "jobDetails.position", label: "Position" },
-      { key: "jobDetails.hireDate", label: "Hire Date" },
-      { key: "jobDetails.employmentType", label: "Employment Type" },
-      { key: "status", label: "Status" },
+      { key: "jobDetails.employeeId", label: t("reports.employee.csv.employeeId") },
+      { key: "personalInfo.firstName", label: t("reports.employee.csv.firstName") },
+      { key: "personalInfo.lastName", label: t("reports.employee.csv.lastName") },
+      { key: "personalInfo.email", label: t("reports.employee.csv.email") },
+      { key: "personalInfo.phone", label: t("reports.employee.csv.phone") },
+      { key: "jobDetails.department", label: t("reports.employee.csv.department") },
+      { key: "jobDetails.position", label: t("reports.employee.csv.position") },
+      { key: "jobDetails.hireDate", label: t("reports.employee.csv.hireDate") },
+      { key: "jobDetails.employmentType", label: t("reports.employee.csv.employmentType") },
+      { key: "status", label: t("reports.employee.csv.status") },
     ]);
   };
 
   const exportNewHires = () => {
     handleExportCSV(newHires as unknown as Record<string, unknown>[], "new_hires_report", [
-      { key: "jobDetails.employeeId", label: "Employee ID" },
-      { key: "personalInfo.firstName", label: "First Name" },
-      { key: "personalInfo.lastName", label: "Last Name" },
-      { key: "jobDetails.department", label: "Department" },
-      { key: "jobDetails.position", label: "Position" },
-      { key: "jobDetails.hireDate", label: "Hire Date" },
-      { key: "jobDetails.employmentType", label: "Employment Type" },
+      { key: "jobDetails.employeeId", label: t("reports.employee.csv.employeeId") },
+      { key: "personalInfo.firstName", label: t("reports.employee.csv.firstName") },
+      { key: "personalInfo.lastName", label: t("reports.employee.csv.lastName") },
+      { key: "jobDetails.department", label: t("reports.employee.csv.department") },
+      { key: "jobDetails.position", label: t("reports.employee.csv.position") },
+      { key: "jobDetails.hireDate", label: t("reports.employee.csv.hireDate") },
+      { key: "jobDetails.employmentType", label: t("reports.employee.csv.employmentType") },
     ]);
   };
 
@@ -114,9 +120,9 @@ export default function EmployeeReports() {
       percentage: (((count as number) / employees.length) * 100).toFixed(1),
     }));
     handleExportCSV(headcountData, "headcount_by_department", [
-      { key: "department", label: "Department" },
-      { key: "headcount", label: "Headcount" },
-      { key: "percentage", label: "Percentage %" },
+      { key: "department", label: t("reports.employee.csv.department") },
+      { key: "headcount", label: t("reports.employee.csv.headcount") },
+      { key: "percentage", label: t("reports.employee.csv.percentage") },
     ]);
   };
 
@@ -143,7 +149,7 @@ export default function EmployeeReports() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.employeeReports} />
+      <SEO title={`${t("reports.employee.title")} | Meza`} description={t("reports.employee.subtitle")} />
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
 
@@ -151,7 +157,7 @@ export default function EmployeeReports() {
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
         <div className="max-w-7xl mx-auto px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
                 <Users className="h-8 w-8 text-white" />
@@ -166,15 +172,16 @@ export default function EmployeeReports() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">{t("reports.shared.periodLabel")}</span>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="365">Last year</SelectItem>
+                  <SelectItem value="7">{getDateRangeLabel("7")}</SelectItem>
+                  <SelectItem value="30">{getDateRangeLabel("30")}</SelectItem>
+                  <SelectItem value="90">{getDateRangeLabel("90")}</SelectItem>
+                  <SelectItem value="365">{getDateRangeLabel("365")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -191,9 +198,11 @@ export default function EmployeeReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Employees</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.totalEmployees")}</p>
                   <p className="text-3xl font-bold">{employees.length}</p>
-                  <p className="text-xs text-blue-600">{activeEmployees.length} active</p>
+                  <p className="text-xs text-blue-600">
+                    {t("reports.employee.stats.activeEmployees", { count: String(activeEmployees.length) })}
+                  </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
                   <Users className="h-6 w-6 text-white" />
@@ -206,9 +215,11 @@ export default function EmployeeReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">New Hires</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.newHires")}</p>
                   <p className="text-3xl font-bold">{newHires.length}</p>
-                  <p className="text-xs text-green-600">Last {dateRange} days</p>
+                  <p className="text-xs text-green-600">
+                    {t("reports.employee.stats.hiresPeriod", { period: getDateRangeLabel(dateRange) })}
+                  </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
                   <UserPlus className="h-6 w-6 text-white" />
@@ -221,9 +232,9 @@ export default function EmployeeReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Departments</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.departments")}</p>
                   <p className="text-3xl font-bold">{Object.keys(departmentCounts).length}</p>
-                  <p className="text-xs text-purple-600">With employees</p>
+                  <p className="text-xs text-purple-600">{t("reports.employee.stats.withEmployees")}</p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
                   <Building className="h-6 w-6 text-white" />
@@ -236,12 +247,14 @@ export default function EmployeeReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Inactive</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.inactive")}</p>
                   <p className="text-3xl font-bold">{inactiveEmployees.length}</p>
                   <p className="text-xs text-orange-600">
-                    {employees.length > 0
-                      ? ((inactiveEmployees.length / employees.length) * 100).toFixed(1)
-                      : 0}% turnover
+                    {t("reports.employee.stats.turnover", {
+                      percent: employees.length > 0
+                        ? ((inactiveEmployees.length / employees.length) * 100).toFixed(1)
+                        : "0",
+                    })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
@@ -258,24 +271,24 @@ export default function EmployeeReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-blue-600" />
-                Employee Directory
+                {t("reports.employee.cards.directory.title")}
               </CardTitle>
-              <CardDescription>Complete list of all employees with contact info</CardDescription>
+              <CardDescription>{t("reports.employee.cards.directory.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Records</span>
+                  <span className="text-muted-foreground">{t("reports.employee.cards.directory.totalRecords")}</span>
                   <span className="font-medium">{employees.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Active</span>
+                  <span className="text-muted-foreground">{t("reports.employee.cards.directory.active")}</span>
                   <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
                     {activeEmployees.length}
                   </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Inactive</span>
+                  <span className="text-muted-foreground">{t("reports.employee.cards.directory.inactive")}</span>
                   <Badge variant="outline" className="bg-gray-50 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     {inactiveEmployees.length}
                   </Badge>
@@ -283,7 +296,7 @@ export default function EmployeeReports() {
               </div>
               <Button className="w-full" onClick={exportDirectory}>
                 <Download className="h-4 w-4 mr-2" />
-                Export Directory
+                {t("reports.employee.cards.directory.export")}
               </Button>
             </CardContent>
           </Card>
@@ -292,23 +305,25 @@ export default function EmployeeReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserPlus className="h-5 w-5 text-green-600" />
-                New Hires Report
+                {t("reports.employee.cards.newHires.title")}
               </CardTitle>
-              <CardDescription>Recently hired employees in selected period</CardDescription>
+              <CardDescription>{t("reports.employee.cards.newHires.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">New Hires</span>
+                  <span className="text-muted-foreground">{t("reports.employee.cards.newHires.count")}</span>
                   <span className="font-medium">{newHires.length}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Period</span>
-                  <span className="font-medium">Last {dateRange} days</span>
+                  <span className="text-muted-foreground">{t("reports.shared.periodLabel")}</span>
+                  <span className="font-medium">{getDateRangeLabel(dateRange)}</span>
                 </div>
                 {newHires.length > 0 && (
                   <div className="text-xs text-muted-foreground">
-                    Latest: {newHires[0]?.personalInfo?.firstName} {newHires[0]?.personalInfo?.lastName}
+                    {t("reports.employee.cards.newHires.latest", {
+                      name: `${newHires[0]?.personalInfo?.firstName || ""} ${newHires[0]?.personalInfo?.lastName || ""}`.trim(),
+                    })}
                   </div>
                 )}
               </div>
@@ -318,7 +333,7 @@ export default function EmployeeReports() {
                 disabled={newHires.length === 0}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export New Hires
+                {t("reports.employee.cards.newHires.export")}
               </Button>
             </CardContent>
           </Card>
@@ -327,9 +342,9 @@ export default function EmployeeReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Building className="h-5 w-5 text-purple-600" />
-                Headcount by Department
+                {t("reports.employee.cards.headcount.title")}
               </CardTitle>
-              <CardDescription>Employee distribution across departments</CardDescription>
+              <CardDescription>{t("reports.employee.cards.headcount.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2 mb-4 max-h-32 overflow-y-auto">
@@ -344,13 +359,15 @@ export default function EmployeeReports() {
                   ))}
                 {Object.keys(departmentCounts).length > 4 && (
                   <p className="text-xs text-muted-foreground">
-                    +{Object.keys(departmentCounts).length - 4} more departments
+                    {t("reports.employee.cards.headcount.moreDepartments", {
+                      count: String(Object.keys(departmentCounts).length - 4),
+                    })}
                   </p>
                 )}
               </div>
               <Button className="w-full" onClick={exportHeadcount}>
                 <Download className="h-4 w-4 mr-2" />
-                Export Headcount
+                {t("reports.employee.cards.headcount.export")}
               </Button>
             </CardContent>
           </Card>
@@ -361,9 +378,9 @@ export default function EmployeeReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-5 w-5 text-violet-600" />
-              Employment Type Breakdown
+              {t("reports.employee.types.title")}
             </CardTitle>
-            <CardDescription>Distribution by employment type</CardDescription>
+            <CardDescription>{t("reports.employee.types.description")}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -371,7 +388,7 @@ export default function EmployeeReports() {
                 <div key={type} className="text-center p-4 bg-muted/50 rounded-lg">
                   <p className="text-2xl font-bold">{count as number}</p>
                   <p className="text-sm text-muted-foreground capitalize">
-                    {type.replace(/_/g, " ")}
+                    {getEmploymentTypeLabel(type)}
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {(((count as number) / employees.length) * 100).toFixed(0)}%
@@ -387,23 +404,19 @@ export default function EmployeeReports() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5 text-violet-600" />
-              Recent Employees
+              {t("reports.employee.recent.title")}
             </CardTitle>
-            <CardDescription>Most recently added employees</CardDescription>
+            <CardDescription>{t("reports.employee.recent.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-3 font-medium">Employee</th>
-                    <th className="text-left p-3 font-medium">Department</th>
-                    <th className="text-left p-3 font-medium">Position</th>
-                    <th className="text-left p-3 font-medium">Hire Date</th>
-                    <th className="text-center p-3 font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody>
+            {employees.length === 0 ? (
+              <div className="py-8 text-center text-muted-foreground">
+                <Users className="mx-auto mb-4 h-12 w-12 opacity-50" />
+                <p>{t("reports.employee.recent.empty")}</p>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-3 md:hidden">
                   {employees
                     .sort((a, b) => {
                       const dateA = a.jobDetails?.hireDate ? new Date(a.jobDetails.hireDate) : new Date(0);
@@ -412,8 +425,8 @@ export default function EmployeeReports() {
                     })
                     .slice(0, 10)
                     .map((emp) => (
-                      <tr key={emp.id} className="border-b hover:bg-muted/50">
-                        <td className="p-3">
+                      <div key={emp.id} className="rounded-lg border border-border/50 p-4">
+                        <div className="flex items-start justify-between gap-3">
                           <div>
                             <div className="font-medium">
                               {emp.personalInfo?.firstName} {emp.personalInfo?.lastName}
@@ -422,15 +435,6 @@ export default function EmployeeReports() {
                               {emp.jobDetails?.employeeId}
                             </div>
                           </div>
-                        </td>
-                        <td className="p-3">{emp.jobDetails?.department || "-"}</td>
-                        <td className="p-3">{emp.jobDetails?.position || "-"}</td>
-                        <td className="p-3">
-                          {emp.jobDetails?.hireDate
-                            ? formatDateTL(emp.jobDetails.hireDate)
-                            : "-"}
-                        </td>
-                        <td className="p-3 text-center">
                           <Badge
                             className={
                               emp.status === "active"
@@ -438,14 +442,83 @@ export default function EmployeeReports() {
                                 : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                             }
                           >
-                            {emp.status}
+                            {getStatusLabel(emp.status)}
                           </Badge>
-                        </td>
-                      </tr>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("reports.employee.recent.table.department")}</p>
+                            <p>{emp.jobDetails?.department || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("reports.employee.recent.table.position")}</p>
+                            <p>{emp.jobDetails?.position || "-"}</p>
+                          </div>
+                          <div className="col-span-2">
+                            <p className="text-xs text-muted-foreground">{t("reports.employee.recent.table.hireDate")}</p>
+                            <p>{emp.jobDetails?.hireDate ? formatDateTL(emp.jobDetails.hireDate) : "-"}</p>
+                          </div>
+                        </div>
+                      </div>
                     ))}
-                </tbody>
-              </table>
-            </div>
+                </div>
+
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium">{t("reports.employee.recent.table.employee")}</th>
+                        <th className="text-left p-3 font-medium">{t("reports.employee.recent.table.department")}</th>
+                        <th className="text-left p-3 font-medium">{t("reports.employee.recent.table.position")}</th>
+                        <th className="text-left p-3 font-medium">{t("reports.employee.recent.table.hireDate")}</th>
+                        <th className="text-center p-3 font-medium">{t("reports.employee.recent.table.status")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {employees
+                        .sort((a, b) => {
+                          const dateA = a.jobDetails?.hireDate ? new Date(a.jobDetails.hireDate) : new Date(0);
+                          const dateB = b.jobDetails?.hireDate ? new Date(b.jobDetails.hireDate) : new Date(0);
+                          return dateB.getTime() - dateA.getTime();
+                        })
+                        .slice(0, 10)
+                        .map((emp) => (
+                          <tr key={emp.id} className="border-b hover:bg-muted/50">
+                            <td className="p-3">
+                              <div>
+                                <div className="font-medium">
+                                  {emp.personalInfo?.firstName} {emp.personalInfo?.lastName}
+                                </div>
+                                <div className="text-sm text-muted-foreground">
+                                  {emp.jobDetails?.employeeId}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="p-3">{emp.jobDetails?.department || "-"}</td>
+                            <td className="p-3">{emp.jobDetails?.position || "-"}</td>
+                            <td className="p-3">
+                              {emp.jobDetails?.hireDate
+                                ? formatDateTL(emp.jobDetails.hireDate)
+                                : "-"}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Badge
+                                className={
+                                  emp.status === "active"
+                                    ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                                    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                }
+                              >
+                                {getStatusLabel(emp.status)}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>

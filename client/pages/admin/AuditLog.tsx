@@ -45,6 +45,7 @@ import {
 import { useAuditLog } from "@/hooks/useAdmin";
 import type { AuditLogEntry } from "@/services/adminService";
 import { useI18n } from "@/i18n/I18nProvider";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 const ACTION_ICON_CONFIGS: Record<
   string,
@@ -93,7 +94,7 @@ const ACTION_ICON_CONFIGS: Record<
 };
 
 export default function AuditLog() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { data: entries = [], isLoading: loading, refetch } = useAuditLog();
   const [searchQuery, setSearchQuery] = useState("");
   const [actionFilter, setActionFilter] = useState<string>("all");
@@ -125,7 +126,7 @@ export default function AuditLog() {
       date = new Date(timestamp as Date | string);
     }
 
-    return new Intl.DateTimeFormat("en-US", {
+    return new Intl.DateTimeFormat(locale, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -152,10 +153,10 @@ export default function AuditLog() {
     const diffHours = Math.floor(diffMs / 3600000);
     const diffDays = Math.floor(diffMs / 86400000);
 
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
+    if (diffMins < 1) return t("admin.auditLog.justNow");
+    if (diffMins < 60) return t("admin.auditLog.minutesAgo", { count: String(diffMins) });
+    if (diffHours < 24) return t("admin.auditLog.hoursAgo", { count: String(diffHours) });
+    if (diffDays < 7) return t("admin.auditLog.daysAgo", { count: String(diffDays) });
     return "";
   };
 
@@ -193,7 +194,7 @@ export default function AuditLog() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-4 w-4 text-violet-500" />
-                  <span>Platform Management</span>
+                  <span>{t("admin.platformManagement")}</span>
                 </div>
                 <h1 className="text-4xl font-bold tracking-tight">{t("admin.auditLog.title")}</h1>
                 <p className="text-muted-foreground">
@@ -214,15 +215,15 @@ export default function AuditLog() {
       <div className="px-6 lg:px-8 py-6">
         <Card className="border-border/50">
           <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex flex-col gap-4">
               <div>
                 <CardTitle className="text-lg">{t("admin.auditLog.activityHistory")}</CardTitle>
                 <CardDescription>
                   {t("admin.auditLog.eventsFound", { count: String(filteredEntries.length) })}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="relative w-64">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t("admin.auditLog.searchPlaceholder")}
@@ -231,20 +232,22 @@ export default function AuditLog() {
                     className="pl-9"
                   />
                 </div>
-                <Select value={actionFilter} onValueChange={setActionFilter}>
-                  <SelectTrigger className="w-48">
-                    <Filter className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder={t("admin.auditLog.filterByAction")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">{t("admin.auditLog.allActions")}</SelectItem>
-                    {uniqueActions.map((action) => (
-                      <SelectItem key={action} value={action}>
-                        {getActionConfig(action).label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <MoreDetailsSection className="sm:min-w-48" title={t("admin.auditLog.filtersTitle")}>
+                  <Select value={actionFilter} onValueChange={setActionFilter}>
+                    <SelectTrigger className="w-full sm:w-48">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder={t("admin.auditLog.filterByAction")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">{t("admin.auditLog.allActions")}</SelectItem>
+                      {uniqueActions.map((action) => (
+                        <SelectItem key={action} value={action}>
+                          {getActionConfig(action).label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </MoreDetailsSection>
               </div>
             </div>
           </CardHeader>
@@ -262,81 +265,139 @@ export default function AuditLog() {
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-[180px]">{t("admin.auditLog.timestamp")}</TableHead>
-                    <TableHead>{t("admin.auditLog.action")}</TableHead>
-                    <TableHead>{t("admin.auditLog.performedBy")}</TableHead>
-                    <TableHead>{t("admin.auditLog.target")}</TableHead>
-                    <TableHead className="text-right">{t("admin.auditLog.details")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {filteredEntries.map((entry) => {
                     const config = getActionConfig(entry.action);
                     return (
-                      <TableRow key={entry.id} className="hover:bg-muted/50">
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <div className="flex items-center gap-1.5 text-sm">
-                              <Clock className="h-3 w-3 text-muted-foreground" />
-                              {formatTimestamp(entry.timestamp)}
+                      <Card key={entry.id} className="border-border/50">
+                        <CardContent className="p-4">
+                          <div className="space-y-3">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <Badge className={`${config.color} border gap-1.5`}>
+                                {config.icon}
+                                {config.label}
+                              </Badge>
+                              <div className="text-right text-sm text-muted-foreground">
+                                <div>{formatTimestamp(entry.timestamp)}</div>
+                                <div className="text-xs">{getRelativeTime(entry.timestamp)}</div>
+                              </div>
                             </div>
-                            <span className="text-xs text-muted-foreground">
-                              {getRelativeTime(entry.timestamp)}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${config.color} border gap-1.5`}>
-                            {config.icon}
-                            {config.label}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-3 w-3 text-muted-foreground" />
-                            <span className="text-sm">
-                              {entry.triggeredBy === "system"
-                                ? t("admin.auditLog.system")
-                                : entry.performedByEmail || "Unknown"}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="text-sm">
-                            {entry.tenantName && (
-                              <div className="flex items-center gap-1.5">
-                                <Building2 className="h-3 w-3 text-muted-foreground" />
-                                {entry.tenantName}
+                            <div className="space-y-2 text-sm">
+                              <div className="flex items-center gap-2">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                <span>
+                                  {entry.triggeredBy === "system"
+                                    ? t("admin.auditLog.system")
+                                    : entry.performedByEmail || t("common.unknown")}
+                                </span>
                               </div>
-                            )}
-                            {entry.targetEmail && (
-                              <div className="flex items-center gap-1.5 text-muted-foreground">
-                                <User className="h-3 w-3" />
-                                {entry.targetEmail}
-                              </div>
-                            )}
-                            {!entry.tenantName && !entry.targetEmail && (
-                              <span className="text-muted-foreground">-</span>
-                            )}
+                              {entry.tenantName && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <Building2 className="h-3 w-3" />
+                                  <span>{entry.tenantName}</span>
+                                </div>
+                              )}
+                              {entry.targetEmail && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                  <User className="h-3 w-3" />
+                                  <span>{entry.targetEmail}</span>
+                                </div>
+                              )}
+                            </div>
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => setSelectedEntry(entry)}
+                            >
+                              <Eye className="mr-2 h-4 w-4" />
+                              {t("admin.auditLog.viewDetailsAction")}
+                            </Button>
                           </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setSelectedEntry(entry)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
+                        </CardContent>
+                      </Card>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[180px]">{t("admin.auditLog.timestamp")}</TableHead>
+                      <TableHead>{t("admin.auditLog.action")}</TableHead>
+                      <TableHead>{t("admin.auditLog.performedBy")}</TableHead>
+                      <TableHead>{t("admin.auditLog.target")}</TableHead>
+                      <TableHead className="text-right">{t("admin.auditLog.details")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredEntries.map((entry) => {
+                      const config = getActionConfig(entry.action);
+                      return (
+                        <TableRow key={entry.id} className="hover:bg-muted/50">
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <div className="flex items-center gap-1.5 text-sm">
+                                <Clock className="h-3 w-3 text-muted-foreground" />
+                                {formatTimestamp(entry.timestamp)}
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                {getRelativeTime(entry.timestamp)}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${config.color} border gap-1.5`}>
+                              {config.icon}
+                              {config.label}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-3 w-3 text-muted-foreground" />
+                              <span className="text-sm">
+                                {entry.triggeredBy === "system"
+                                  ? t("admin.auditLog.system")
+                                  : entry.performedByEmail || t("common.unknown")}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="text-sm">
+                              {entry.tenantName && (
+                                <div className="flex items-center gap-1.5">
+                                  <Building2 className="h-3 w-3 text-muted-foreground" />
+                                  {entry.tenantName}
+                                </div>
+                              )}
+                              {entry.targetEmail && (
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                  <User className="h-3 w-3" />
+                                  {entry.targetEmail}
+                                </div>
+                              )}
+                              {!entry.tenantName && !entry.targetEmail && (
+                                <span className="text-muted-foreground">-</span>
+                              )}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="gap-2"
+                              onClick={() => setSelectedEntry(entry)}
+                            >
+                              <Eye className="h-4 w-4" />
+                              {t("admin.auditLog.viewDetailsAction")}
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>
@@ -363,7 +424,7 @@ export default function AuditLog() {
                   <p className="font-medium">
                     {selectedEntry.triggeredBy === "system"
                       ? t("admin.auditLog.systemAutomated")
-                      : selectedEntry.performedByEmail || "Unknown"}
+                      : selectedEntry.performedByEmail || t("common.unknown")}
                   </p>
                 </div>
                 {selectedEntry.tenantId && (

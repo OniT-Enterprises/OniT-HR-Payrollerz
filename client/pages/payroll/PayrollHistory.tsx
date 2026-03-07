@@ -57,6 +57,7 @@ import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayro
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
@@ -70,7 +71,6 @@ import {
   CheckCircle,
   Clock,
   XCircle,
-  Filter,
   Search,
   Loader2,
   TrendingUp,
@@ -746,64 +746,60 @@ export default function PayrollHistory() {
           </div>
 
           {/* Filters */}
-          <Card className="mb-6 border-border/50">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Filter className="h-5 w-5 text-green-600 dark:text-green-400" />
-                {t("payrollHistory.filters")}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div>
-                  <Label htmlFor="status-filter">{t("payrollHistory.statusLabel")}</Label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("payrollHistory.allStatuses")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("payrollHistory.allStatuses")}</SelectItem>
-                      <SelectItem value="draft">{t("payrollHistory.draft")}</SelectItem>
-                      <SelectItem value="processing">{t("payrollHistory.pendingApproval")}</SelectItem>
-                      <SelectItem value="approved">{t("payrollHistory.approved")}</SelectItem>
-                      <SelectItem value="paid">{t("payrollHistory.paid")}</SelectItem>
-                      <SelectItem value="rejected">{t("payrollHistory.rejected")}</SelectItem>
-                      <SelectItem value="cancelled">{t("payrollHistory.cancelled")}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="year-filter">{t("payrollHistory.yearLabel")}</Label>
-                  <Select value={yearFilter} onValueChange={setYearFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("payrollHistory.selectYear")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("payrollHistory.allYears")}</SelectItem>
-                      {availableYears.map((year) => (
-                        <SelectItem key={year} value={year}>
-                          {year}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="md:col-span-2">
-                  <Label htmlFor="search">{t("payrollHistory.searchLabel")}</Label>
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      id="search"
-                      placeholder={t("payrollHistory.searchPlaceholder")}
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9"
-                    />
+          <MoreDetailsSection className="mb-6" title={t("payrollHistory.filters")}>
+            <Card className="border-border/50">
+              <CardContent className="pt-6">
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
+                  <div>
+                    <Label htmlFor="status-filter">{t("payrollHistory.statusLabel")}</Label>
+                    <Select value={statusFilter} onValueChange={setStatusFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("payrollHistory.allStatuses")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t("payrollHistory.allStatuses")}</SelectItem>
+                        <SelectItem value="draft">{t("payrollHistory.draft")}</SelectItem>
+                        <SelectItem value="processing">{t("payrollHistory.pendingApproval")}</SelectItem>
+                        <SelectItem value="approved">{t("payrollHistory.approved")}</SelectItem>
+                        <SelectItem value="paid">{t("payrollHistory.paid")}</SelectItem>
+                        <SelectItem value="rejected">{t("payrollHistory.rejected")}</SelectItem>
+                        <SelectItem value="cancelled">{t("payrollHistory.cancelled")}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label htmlFor="year-filter">{t("payrollHistory.yearLabel")}</Label>
+                    <Select value={yearFilter} onValueChange={setYearFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder={t("payrollHistory.selectYear")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">{t("payrollHistory.allYears")}</SelectItem>
+                        {availableYears.map((year) => (
+                          <SelectItem key={year} value={year}>
+                            {year}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                    <Label htmlFor="search">{t("payrollHistory.searchLabel")}</Label>
+                    <div className="relative">
+                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="search"
+                        placeholder={t("payrollHistory.searchPlaceholder")}
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </MoreDetailsSection>
 
           {/* Stuck run banner */}
           {stuckRuns.length > 0 && (
@@ -979,11 +975,12 @@ export default function PayrollHistory() {
                                 <TableCell className="text-right">
                                   <div className="flex items-center justify-end gap-2">
                                     <Button
-                                      variant="ghost"
+                                      variant="outline"
                                       size="sm"
                                       onClick={() => handleViewDetails(run)}
                                     >
-                                      <Eye className="h-4 w-4" />
+                                      <Eye className="h-4 w-4 mr-1.5" />
+                                      {t("payrollHistory.viewDetails")}
                                     </Button>
                                     <Button
                                       size="sm"
@@ -1078,8 +1075,9 @@ export default function PayrollHistory() {
                             <span className="text-xs text-muted-foreground">{formatDateTL(run.payDate)}</span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" onClick={(e) => e.stopPropagation()}>
-                                  <MoreVertical className="h-4 w-4" />
+                                <Button variant="outline" size="sm" onClick={(e) => e.stopPropagation()}>
+                                  <MoreVertical className="h-4 w-4 mr-1.5" />
+                                  {t("common.moreActions")}
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
@@ -1146,8 +1144,9 @@ export default function PayrollHistory() {
                               <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                      <MoreVertical className="h-4 w-4" />
+                                    <Button variant="outline" size="sm">
+                                      <MoreVertical className="h-4 w-4 mr-1.5" />
+                                      {t("common.moreActions")}
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">

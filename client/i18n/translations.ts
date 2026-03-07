@@ -46,6 +46,8 @@ export const translations = {
     "guidance": "Guidance",
     "hide": "Hide",
     "moreDetails": "More details",
+    "previous": "Previous",
+    "next": "Next",
     "review": "Review",
     "retry": "Retry",
     "connectionIssueTitle": "Connection problem",
@@ -178,15 +180,56 @@ export const translations = {
   },
   "documentAlerts": {
     "title": "Document Alerts",
+    "subtitle": "Monitor and manage expiring employee documents",
     "noAlerts": "No document alerts",
     "noAlertsDesc": "All employee documents are up to date",
     "expiredDaysAgo": "Expired {{count}} days ago",
     "expiresToday": "Expires today",
+    "expiresTomorrow": "Expires tomorrow",
     "expiresInDays": "Expires in {{count}} days",
     "viewAllAlerts": "View all {{count}} alerts",
     "manageAlerts": "Manage alerts",
     "expired": "expired",
     "critical": "critical",
+    "stats": {
+      "total": "Total alerts",
+      "expired": "Expired",
+      "critical": "Critical",
+      "warning": "Warning",
+      "upcoming": "Upcoming"
+    },
+    "filters": {
+      "title": "Filters",
+      "searchPlaceholder": "Search by employee name or document...",
+      "severityLabel": "Severity",
+      "documentTypeLabel": "Document type",
+      "allSeverities": "All severities",
+      "allDocuments": "All documents",
+      "severityOptions": {
+        "expired": "Expired",
+        "critical": "Critical (< 14 days)",
+        "warning": "Warning (14-30 days)",
+        "upcoming": "Upcoming (30-60 days)"
+      }
+    },
+    "table": {
+      "showing": "Showing {{shown}} of {{total}} alerts",
+      "employee": "Employee",
+      "document": "Document",
+      "expiryDate": "Expiry date",
+      "timeRemaining": "Time remaining",
+      "status": "Status",
+      "adjustFilters": "Try adjusting your filters."
+    },
+    "actions": {
+      "export": "Export CSV"
+    },
+    "toast": {
+      "noDataTitle": "No data",
+      "noDataDesc": "No alerts to export.",
+      "exportTitle": "Export complete",
+      "exportDesc": "Exported {{count}} alerts to CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Passport",
@@ -202,6 +245,70 @@ export const translations = {
       "critical": "Critical",
       "warning": "Warning",
       "upcoming": "Upcoming"
+    }
+  },
+  "announcements": {
+    "title": "Announcements",
+    "subtitle": "Broadcast messages to all employees via Ekipa",
+    "new": "New announcement",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Pinned",
+      "totalReads": "Total reads"
+    },
+    "empty": {
+      "title": "No announcements yet",
+      "description": "Create your first announcement to broadcast to all employees via Ekipa."
+    },
+    "table": {
+      "title": "Title",
+      "body": "Body",
+      "pinned": "Pinned",
+      "created": "Created",
+      "readCount": "Read count",
+      "actions": "Actions",
+      "hasImage": "Has image",
+      "pinnedYes": "Pinned",
+      "pinnedNo": "No"
+    },
+    "actions": {
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "publish": "Publish",
+      "update": "Update"
+    },
+    "dialog": {
+      "newTitle": "New announcement",
+      "editTitle": "Edit announcement",
+      "newDescription": "This will be visible to all employees in the Ekipa app.",
+      "editDescription": "Update the announcement details below.",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "e.g. Holiday Schedule Update",
+      "bodyLabel": "Body *",
+      "bodyPlaceholder": "Write your announcement message...",
+      "imageLabel": "Image URL (optional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Pin to top of announcements feed"
+    },
+    "delete": {
+      "title": "Delete announcement",
+      "description": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone and the announcement will be removed from all employees' Ekipa feeds."
+    },
+    "toast": {
+      "loadFailed": "Failed to load announcements",
+      "validationTitle": "Validation error",
+      "titleRequired": "Title is required",
+      "bodyRequired": "Body is required",
+      "updated": "Announcement updated",
+      "published": "Announcement published",
+      "updateFailed": "Failed to update announcement",
+      "createFailed": "Failed to create announcement",
+      "deleted": "Announcement deleted",
+      "deleteFailed": "Failed to delete announcement",
+      "pinned": "Announcement pinned to top",
+      "unpinned": "Announcement unpinned",
+      "pinFailed": "Failed to update announcement"
     }
   },
   "auth": {
@@ -1723,6 +1830,7 @@ export const translations = {
         "endDate": "End Date",
         "guard": "Employee",
         "allGuards": "All employees",
+        "allDepartments": "All departments",
         "site": "Site",
         "allSites": "All sites",
         "client": "Client",
@@ -1733,7 +1841,9 @@ export const translations = {
         "title": "Time Entries",
         "showing": "Showing {{shown}} of {{total}} entries",
         "export": "Export CSV",
-        "logActivity": "Log Activity"
+        "logActivity": "Log Activity",
+        "emptyTitle": "No time entries",
+        "emptyDescription": "No attendance records found for {{date}}"
       },
       "dialog": {
         "title": "Log Time Entry",
@@ -1762,8 +1872,10 @@ export const translations = {
         "dateShift": "Date/Shift",
         "site": "Site",
         "hours": "Hours",
+        "totalHours": "Hours",
         "activities": "Activities",
         "incidents": "Incidents",
+        "source": "Source",
         "status": "Status",
         "incidentYes": "Yes",
         "incidentNone": "None"
@@ -1779,7 +1891,15 @@ export const translations = {
         "coverageDescription": "Current staffing across all locations",
         "coverageSites": "{{count}} sites",
         "coverageGuards": "{{count}} employees",
-        "coverageStatus": "Active"
+        "coverageStatus": "Active",
+        "noDepartmentData": "No department data for this date"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Fingerprint",
+        "mobileApp": "Mobile app",
+        "qrCode": "QR code",
+        "facial": "Facial"
       },
       "activities": {
         "perimeterPatrol": "Perimeter patrol",
@@ -1981,6 +2101,7 @@ export const translations = {
         "import": "Import",
         "mark": "Mark Attendance",
         "markToday": "Mark Today's Attendance",
+        "faceClockIn": "Face Clock-In",
         "today": "Today",
         "cancel": "Cancel",
         "export": "Export CSV"
@@ -2375,11 +2496,205 @@ export const translations = {
     },
     "attendance": {
       "title": "Attendance Reports",
-      "subtitle": "Track and analyze attendance patterns"
+      "subtitle": "Track and analyze attendance patterns",
+      "periodLabel": "Period",
+      "ranges": {
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "last90": "Last 90 days",
+        "lastYear": "Last year"
+      },
+      "exportCompleteTitle": "Export complete",
+      "exportCompleteDesc": "{{file}} downloaded successfully",
+      "columns": {
+        "lateMinutes": "Late minutes",
+        "annualEntitled": "Annual entitled",
+        "annualUsed": "Annual used",
+        "annualRemaining": "Annual remaining",
+        "sickEntitled": "Sick entitled",
+        "sickUsed": "Sick used",
+        "sickRemaining": "Sick remaining",
+        "carryOver": "Carry over"
+      },
+      "stats": {
+        "attendanceRate": "Attendance rate",
+        "attendanceRateSummary": "{{present}} of {{total}} records",
+        "lateArrivals": "Late arrivals",
+        "lateHoursSummary": "{{hours}} hours total",
+        "overtimeHours": "Overtime hours",
+        "overtimeEmployees": "{{count}} employees",
+        "onLeaveToday": "On leave today",
+        "onLeaveSummary": "{{percent}}% of staff"
+      },
+      "cards": {
+        "summary": {
+          "title": "Attendance summary",
+          "description": "Daily attendance records for the selected period",
+          "totalRecords": "Total records",
+          "export": "Export attendance"
+        },
+        "leave": {
+          "title": "Leave balances",
+          "description": "Current leave entitlements and usage",
+          "employees": "Employees",
+          "daysUsed": "{{days}} days used",
+          "none": "No leave taken this period",
+          "export": "Export leave balances"
+        },
+        "overtime": {
+          "title": "Overtime report",
+          "description": "Track overtime hours by employee",
+          "total": "Total overtime",
+          "records": "Records with overtime",
+          "average": "Avg OT / record",
+          "hoursValue": "{{hours}} hrs",
+          "export": "Export overtime"
+        }
+      },
+      "breakdown": {
+        "title": "Attendance status breakdown",
+        "description": "Distribution by attendance status"
+      },
+      "recent": {
+        "title": "Recent attendance records",
+        "description": "Most recent clock in and clock out records",
+        "emptyTitle": "No attendance records found for this period",
+        "emptyDescription": "Records will appear here once employees clock in or out"
+      }
+    },
+    "shared": {
+      "periodLabel": "Period",
+      "ranges": {
+        "7": "Last 7 days",
+        "30": "Last 30 days",
+        "90": "Last 90 days",
+        "365": "Last year"
+      },
+      "exportTitle": "Export Complete",
+      "exportDescription": "{{filename}} downloaded successfully",
+      "monthsShort": "mo"
     },
     "setup": {
       "title": "Setup Reports",
-      "subtitle": "System configuration and setup analytics"
+      "subtitle": "System configuration and setup analytics",
+      "stats": {
+        "setupProgress": "Setup Progress",
+        "stepsComplete": "{{completed}} of {{total}} steps",
+        "totalUsers": "Total Users",
+        "superAdmins": "{{count}} super admins",
+        "auditEntries": "Audit Entries",
+        "last24Hours": "{{count}} in last 24h",
+        "systemStatus": "System Status"
+      },
+      "progress": {
+        "title": "Setup Progress",
+        "description": "System configuration completion status",
+        "overall": "Overall Progress"
+      },
+      "steps": {
+        "companyDetails": "Company details",
+        "companyStructure": "Company structure",
+        "paymentStructure": "Payment structure",
+        "timeOffPolicies": "Time off policies",
+        "payrollConfig": "Payroll config"
+      },
+      "cards": {
+        "configuration": {
+          "title": "System Configuration",
+          "description": "Current system settings and configuration",
+          "company": "Company",
+          "country": "Country",
+          "status": "Status",
+          "export": "Export Configuration"
+        },
+        "permissions": {
+          "title": "User Permissions",
+          "description": "User roles and access levels",
+          "totalUsers": "Total Users",
+          "superAdmins": "Super Admins",
+          "regularUsers": "Regular Users",
+          "export": "Export Permissions"
+        },
+        "audit": {
+          "title": "Audit Log",
+          "description": "Recent system activity and changes",
+          "totalEntries": "Total Entries",
+          "last24Hours": "Last 24 Hours",
+          "latest": "Latest",
+          "export": "Export Audit Log"
+        }
+      },
+      "usersTable": {
+        "title": "User Directory",
+        "description": "All registered users and their roles",
+        "empty": "No users found",
+        "manageUsers": "Manage Users",
+        "showingLimited": "Showing {{shown}} of {{total}} users. Export to see all.",
+        "columns": {
+          "user": "User",
+          "email": "Email",
+          "role": "Role",
+          "tenants": "Tenants",
+          "created": "Created"
+        }
+      },
+      "auditTable": {
+        "title": "Recent Activity",
+        "description": "Admin audit log entries",
+        "empty": "No audit entries found",
+        "emptyDescription": "Activity will appear here as actions are performed",
+        "showingLimited": "Showing {{shown}} of {{total}} entries. Export to see all.",
+        "columns": {
+          "time": "Time",
+          "action": "Action",
+          "actor": "Actor",
+          "target": "Target"
+        }
+      },
+      "values": {
+        "yes": "Yes",
+        "no": "No",
+        "ready": "Ready",
+        "setup": "Setup",
+        "configured": "Configured",
+        "pending": "Pending",
+        "complete": "Complete",
+        "inProgress": "In Progress",
+        "notSet": "Not set",
+        "noName": "No name",
+        "superAdmin": "Super Admin",
+        "user": "User"
+      },
+      "configSections": {
+        "companyDetails": "Company Details",
+        "payroll": "Payroll",
+        "timeOff": "Time Off"
+      },
+      "configSettings": {
+        "legalName": "Legal Name",
+        "country": "Country",
+        "tinNumber": "TIN Number",
+        "witRate": "WIT Rate",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "annualLeaveDays": "Annual Leave Days",
+        "sickLeaveDays": "Sick Leave Days"
+      },
+      "csv": {
+        "timestamp": "Timestamp",
+        "action": "Action",
+        "actorEmail": "Actor Email",
+        "targetType": "Target Type",
+        "targetName": "Target Name",
+        "email": "Email",
+        "displayName": "Display Name",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Tenant Count",
+        "createdAt": "Created At",
+        "section": "Section",
+        "setting": "Setting",
+        "value": "Value"
+      }
     },
     "custom": {
       "title": "Custom Reports",
@@ -2387,11 +2702,149 @@ export const translations = {
     },
     "employee": {
       "title": "Employee Reports",
-      "subtitle": "Generate and analyze employee-related reports"
+      "subtitle": "Generate and analyze employee-related reports",
+      "stats": {
+        "totalEmployees": "Total Employees",
+        "activeEmployees": "{{count}} active",
+        "newHires": "New Hires",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departments",
+        "withEmployees": "With employees",
+        "inactive": "Inactive",
+        "turnover": "{{percent}}% turnover"
+      },
+      "cards": {
+        "directory": {
+          "title": "Employee Directory",
+          "description": "Complete list of all employees with contact info",
+          "totalRecords": "Total Records",
+          "active": "Active",
+          "inactive": "Inactive",
+          "export": "Export Directory"
+        },
+        "newHires": {
+          "title": "New Hires Report",
+          "description": "Recently hired employees in the selected period",
+          "count": "New Hires",
+          "latest": "Latest: {{name}}",
+          "export": "Export New Hires"
+        },
+        "headcount": {
+          "title": "Headcount by Department",
+          "description": "Employee distribution across departments",
+          "moreDepartments": "+{{count}} more departments",
+          "export": "Export Headcount"
+        }
+      },
+      "types": {
+        "title": "Employment Type Breakdown",
+        "description": "Distribution by employment type"
+      },
+      "recent": {
+        "title": "Recent Employees",
+        "description": "Most recently added employees",
+        "empty": "No employees found",
+        "table": {
+          "employee": "Employee",
+          "department": "Department",
+          "position": "Position",
+          "hireDate": "Hire Date",
+          "status": "Status"
+        }
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "department": "Department",
+        "position": "Position",
+        "hireDate": "Hire Date",
+        "employmentType": "Employment Type",
+        "status": "Status",
+        "headcount": "Headcount",
+        "percentage": "Percentage %"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
     },
     "department": {
       "title": "Department Reports",
-      "subtitle": "Generate department-level analytics and reports"
+      "subtitle": "Generate department-level analytics and reports",
+      "stats": {
+        "totalDepartments": "Total Departments",
+        "activeEmployees": "{{count}} active employees",
+        "largestDepartment": "Largest Department",
+        "employeeCount": "{{count}} employees",
+        "avgHeadcount": "Avg Headcount",
+        "perDepartment": "Per department",
+        "unassigned": "Unassigned",
+        "ofStaff": "{{percent}}% of staff"
+      },
+      "cards": {
+        "overview": {
+          "title": "Department Overview",
+          "description": "Complete department listing with headcount",
+          "departments": "Departments",
+          "totalStaff": "Total Staff",
+          "withDirector": "With Director",
+          "export": "Export Overview"
+        },
+        "staffing": {
+          "title": "Staffing Report",
+          "description": "Employment type breakdown by department",
+          "staffCount": "{{count}} staff",
+          "moreDepartments": "+{{count}} more departments",
+          "export": "Export Staffing"
+        },
+        "growth": {
+          "title": "Growth Report",
+          "description": "New hires and growth by department",
+          "totalNewHires": "Total New Hires",
+          "departmentsWithHires": "Depts with Hires",
+          "export": "Export Growth"
+        }
+      },
+      "distribution": {
+        "title": "Department Size Distribution",
+        "description": "Headcount breakdown across departments",
+        "others": "Others",
+        "moreDepartments": "+{{count}} depts"
+      },
+      "table": {
+        "title": "All Departments",
+        "description": "Complete department listing with details",
+        "empty": "No departments found",
+        "emptyDescription": "Create departments in Staff > Departments",
+        "goToDepartments": "Go to Departments",
+        "columns": {
+          "department": "Department",
+          "director": "Director",
+          "manager": "Manager",
+          "headcount": "Headcount",
+          "active": "Active",
+          "newHires": "New Hires",
+          "avgTenure": "Avg Tenure"
+        }
+      },
+      "csv": {
+        "department": "Department",
+        "director": "Director",
+        "manager": "Manager",
+        "headcount": "Headcount",
+        "active": "Active",
+        "avgTenureMonths": "Avg Tenure (Months)",
+        "employmentType": "Employment Type",
+        "count": "Count",
+        "percentage": "Percentage %",
+        "currentHeadcount": "Current Headcount",
+        "newHires": "New Hires",
+        "growthRate": "Growth Rate %"
+      },
+      "notAvailable": "N/A"
     },
     "payroll": {
       "title": "Payroll Reports",
@@ -2417,6 +2870,27 @@ export const translations = {
         "viewDetailed": "View Detailed Report",
         "viewDepartment": "View Department Breakdown",
         "viewBenefits": "View Benefits Report"
+      },
+      "toast": {
+        "exported": "Payroll report exported successfully"
+      },
+      "filters": {
+        "active": "Active",
+        "clear": "Clear",
+        "summary": "Showing {{filtered}} of {{total}} employees:",
+        "benefitsBadge": "{{benefits}} benefits",
+        "dialog": {
+          "title": "Filter Payroll Report",
+          "description": "Filter employees by department, benefits, or status",
+          "department": "Department",
+          "allDepartments": "All Departments",
+          "benefits": "Benefits Package",
+          "allBenefits": "All Benefits",
+          "status": "Status",
+          "allStatuses": "All Statuses",
+          "clearAll": "Clear All",
+          "apply": "Apply Filters"
+        }
       },
       "salarySummary": {
         "title": "Salary Summary",
@@ -2448,11 +2922,271 @@ export const translations = {
         "monthlySalary": "Monthly Salary",
         "benefits": "Benefits",
         "status": "Status",
-        "viewAll": "View All {{count}} Employees"
+        "viewAll": "View All {{count}} Employees",
+        "showLess": "Show Less",
+        "emptyFiltered": "No employees match these filters."
+      },
+      "salaryDetail": {
+        "title": "Detailed Salary Report",
+        "description": "Complete salary breakdown with Timor-Leste tax calculations",
+        "highest": "Highest",
+        "lowest": "Lowest",
+        "average": "Average",
+        "totalMonthly": "Total Monthly",
+        "columns": {
+          "employee": "Employee",
+          "gross": "Gross",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Net Pay"
+        },
+        "totals": "Totals",
+        "taxNoteTitle": "Timor-Leste tax rules:",
+        "taxNoteDescription": "IRPS = (Gross - $500) x 10% if gross is above $500 | INSS employee = 4% | INSS employer = 6% (not shown)"
+      },
+      "departmentDetail": {
+        "title": "Department Cost Breakdown",
+        "description": "Payroll costs by department",
+        "employees": "{{count}} employees",
+        "monthlyCost": "Monthly Cost",
+        "annualCost": "Annual Cost",
+        "avgSalary": "Avg Salary",
+        "employeesLabel": "Employees:",
+        "totalAll": "Total All Departments"
+      },
+      "benefitsDetail": {
+        "title": "Benefits Analysis",
+        "description": "Employee distribution by benefits package",
+        "employees": "{{count}} employees",
+        "totalMonthlyPayroll": "Total Monthly Payroll",
+        "avgSalary": "Avg Salary"
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "department": "Department",
+        "position": "Position",
+        "monthlySalary": "Monthly Salary",
+        "annualSalary": "Annual Salary",
+        "benefitsPackage": "Benefits Package",
+        "status": "Status",
+        "irpsTax": "IRPS Tax (10% > $500)",
+        "inssEmployee": "INSS Employee (4%)",
+        "inssEmployer": "INSS Employer (6%)",
+        "netPay": "Net Pay"
       },
       "status": {
         "active": "Active",
         "inactive": "Inactive"
+      }
+    },
+    "inssMonthly": {
+      "title": "INSS Monthly Return",
+      "subtitle": "Generate and track monthly INSS contribution submissions.",
+      "due": {
+        "overdueTitle": "Overdue {{task}}",
+        "overdueDescription": "{{task}} for {{period}} was due on {{dueDate}}.",
+        "upcomingTitle": "Upcoming {{task}} due",
+        "upcomingDescription": "{{task}} for {{period}} is due on {{dueDate}} ({{days}} days)."
+      },
+      "generate": {
+        "title": "Generate Monthly INSS Return",
+        "description": "Build a monthly contribution summary from paid payroll runs.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "button": "Generate Return",
+        "generating": "Generating..."
+      },
+      "selected": {
+        "title": "INSS Return - {{period}}",
+        "description": "Employer: {{employer}} | TIN: {{tin}}"
+      },
+      "stats": {
+        "employees": "Employees",
+        "contributionBase": "Contribution Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)"
+      },
+      "table": {
+        "employee": "Employee",
+        "inssNumber": "INSS #",
+        "base": "Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "total": "Total",
+        "missing": "Missing"
+      },
+      "tracker": {
+        "title": "Filing Tracker",
+        "description": "Track your monthly INSS submissions.",
+        "period": "Period",
+        "statementDue": "Statement Due",
+        "paymentDue": "Payment Due",
+        "statementStatus": "Statement Status",
+        "paymentStatus": "Payment Status",
+        "employees": "Employees",
+        "employeeContribution": "Employee",
+        "employerContribution": "Employer",
+        "actions": "Actions",
+        "empty": "No INSS filings yet. Generate your first return above."
+      },
+      "actions": {
+        "export": "Export CSV",
+        "view": "View",
+        "markStatement": "Mark Statement",
+        "markPayment": "Mark Payment"
+      },
+      "tasks": {
+        "payment": "Payment",
+        "statement": "Statement",
+        "paymentFull": "INSS payment",
+        "statementFull": "INSS statement"
+      },
+      "status": {
+        "pending": "Pending",
+        "overdue": "Overdue",
+        "filed": "Filed",
+        "draft": "Draft"
+      },
+      "markFiled": {
+        "title": "Mark {{task}} as filed",
+        "description": "Record {{task}} submission details for this INSS return.",
+        "submissionMethod": "Submission Method",
+        "selectMethod": "Select method",
+        "portal": "INSS Portal",
+        "notFiled": "Not filed",
+        "receiptLabel": "Receipt / Reference (optional)",
+        "receiptPlaceholder": "Reference number",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Notes about submission or payment",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "toast": {
+        "generatedTitle": "INSS return generated",
+        "generatedDescription": "Monthly INSS return for {{period}} has been generated.",
+        "generateErrorTitle": "Error",
+        "generateErrorDescription": "Failed to generate INSS return. Make sure you have paid payroll data for this period.",
+        "noDataTitle": "No data available",
+        "noDataDescription": "No payroll data found for {{period}}. Run payroll first, then generate the return.",
+        "exportedTitle": "Exported",
+        "exportedDescription": "INSS return exported to CSV.",
+        "savedTitle": "Saved",
+        "savedDescription": "INSS {{task}} marked as filed.",
+        "updateErrorTitle": "Error",
+        "updateErrorDescription": "Failed to update filing status."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "inssNumber": "INSS Number",
+        "contributionBase": "Contribution Base (USD)",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "INSS Annual Reconciliation",
+      "subtitle": "Aggregate monthly INSS contributions into an annual summary for year-end filing.",
+      "generate": {
+        "title": "Generate Annual Summary",
+        "description": "Aggregate all monthly INSS filings for the selected year into per-employee annual totals.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "button": "Generate Annual Summary"
+      },
+      "summary": {
+        "title": "INSS Annual Summary - {{year}}",
+        "description": "Employer: {{employer}} | TIN: {{tin}} | Months filed: {{monthsFiled}}/12",
+        "warning": "Only {{monthsFiled}} of 12 months have been filed. Generate missing monthly returns before submitting the annual reconciliation."
+      },
+      "stats": {
+        "employees": "Employees",
+        "monthsFiled": "Months Filed",
+        "totalBase": "Total Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)"
+      },
+      "table": {
+        "employee": "Employee",
+        "inssNumber": "INSS #",
+        "months": "Months",
+        "annualBase": "Annual Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Missing",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Export CSV"
+      },
+      "toast": {
+        "noDataTitle": "No Data",
+        "noDataDescription": "No INSS monthly filings found for {{year}}. Generate monthly returns first.",
+        "generatedTitle": "Annual Summary Generated",
+        "generatedDescription": "Aggregated {{count}} months of INSS data for {{year}}.",
+        "exportedTitle": "Exported",
+        "exportedDescription": "INSS annual reconciliation for {{year}} exported to CSV."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "inssNumber": "INSS Number",
+        "monthsContributed": "Months Contributed",
+        "annualContributionBase": "Annual Contribution Base (USD)",
+        "annualEmployeeContribution": "Annual Employee 4% (USD)",
+        "annualEmployerContribution": "Annual Employer 6% (USD)",
+        "annualTotalContribution": "Annual Total 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Donor Export Pack",
+      "subtitle": "Export donor-ready payroll accounting data directly from posted journal entries.",
+      "exportButton": "Export Pack (2 CSV)",
+      "exportHint": "This downloads two files: a project summary and detailed journal lines.",
+      "filters": {
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "stats": {
+        "salaryExpense": "Salary Expense",
+        "inssEmployerExpense": "INSS Employer Expense",
+        "totalExpense": "Total Expense"
+      },
+      "summary": {
+        "title": "Summary by Project and Funding Source",
+        "loading": "Loading journal entries...",
+        "empty": "No payroll journal lines found for this period.",
+        "project": "Project",
+        "fundingSource": "Funding Source",
+        "salary": "Salary",
+        "inssEmployer": "INSS Employer",
+        "totalExpense": "Total Expense"
+      },
+      "toast": {
+        "title": "Export complete",
+        "description": "Downloaded the two donor export files."
+      },
+      "csv": {
+        "projectCode": "Project Code",
+        "fundingSource": "Funding Source",
+        "salaryExpense": "Salary Expense",
+        "inssEmployerExpense": "INSS Employer Expense",
+        "totalExpense": "Total Expense",
+        "date": "Date",
+        "entryNumber": "Entry Number",
+        "payrollRunId": "Payroll Run ID",
+        "accountCode": "Account Code",
+        "accountName": "Account Name",
+        "debit": "Debit",
+        "credit": "Credit",
+        "description": "Description"
       }
     }
   },
@@ -3375,6 +4109,7 @@ export const translations = {
       "planEnterprise": "Enterprise",
       "planEnterpriseDesc": "Unlimited employees and users"
     },
+    "platformManagement": "Platform Management",
     "auditLog": {
       "title": "Audit Log",
       "subtitle": "Track all administrative actions on the platform",
@@ -3383,6 +4118,7 @@ export const translations = {
       "eventsFound": "{{count}} event(s) found",
       "searchPlaceholder": "Search logs...",
       "filterByAction": "Filter by action",
+      "filtersTitle": "More filters",
       "allActions": "All Actions",
       "noEntries": "No audit entries found",
       "noEntriesDesc": "Administrative actions will appear here",
@@ -3397,6 +4133,11 @@ export const translations = {
       "targetUser": "Target User",
       "targetUserId": "Target User ID",
       "entryId": "Entry ID: {{id}}",
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "viewDetailsAction": "View details",
       "errorLoad": "Failed to load audit log",
       "actionTenantCreated": "Tenant Created",
       "actionTenantSuspended": "Tenant Suspended",
@@ -3427,6 +4168,7 @@ export const translations = {
       "tabExpiring": "Expiring Soon ({{count}})",
       "tabExpired": "Expired ({{count}})",
       "searchPlaceholder": "Search by name or employee ID...",
+      "filtersTitle": "More filters",
       "allStatuses": "All Statuses",
       "allNationalities": "All Nationalities",
       "statusActive": "Active",
@@ -3444,6 +4186,7 @@ export const translations = {
       "visaExpiry": "Visa Expiry",
       "permitStatus": "Permit Status",
       "actions": "Actions",
+      "openEmployee": "Open employee",
       "noVisaOnFile": "No visa on file",
       "noPermitOnFile": "No permit on file",
       "noExpiry": "No expiry set",
@@ -3452,7 +4195,110 @@ export const translations = {
       "expiresTomorrow": "Expires tomorrow",
       "expiresInDays": "{{days}} days",
       "requirementsTitle": "Work Permit Requirements (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Work Visa (Type C)",
+        "visaValidity": "Valid for 1 year",
+        "visaProcessing": "Processing: about 15 business days",
+        "visaFee": "Fee: USD 50",
+        "visaSponsor": "Requires employer sponsorship",
+        "documentsTitle": "Required Documents",
+        "documentsPassport": "Valid passport (6+ months)",
+        "documentsContract": "Employment contract",
+        "documentsTax": "Company tax certificate",
+        "documentsMedical": "Medical clearance",
+        "renewalTitle": "Renewal Process",
+        "renewalApply": "Apply 30 days before expiry",
+        "renewalSubmit": "Submit through the Immigration Department",
+        "renewalOriginals": "Keep all original documents",
+        "renewalTiming": "Allow 2 to 3 weeks for processing"
+      },
       "errorLoad": "Failed to load employee data."
+    },
+    "userList": {
+      "title": "Users",
+      "subtitle": "Manage platform users and superadmin access",
+      "stats": {
+        "totalUsers": "Total Users",
+        "superadmins": "Superadmins",
+        "withTenants": "With tenants"
+      },
+      "allUsers": "All users",
+      "usersFound": "{{count}} users found",
+      "searchPlaceholder": "Search users...",
+      "noUsers": "No users found",
+      "clearSearch": "Clear search",
+      "noName": "No name",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "User",
+      "tenantsCount": "{{count}} tenants",
+      "processing": "Processing...",
+      "grantAction": "Grant superadmin",
+      "revokeAction": "Revoke superadmin",
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "tenants": "Tenants",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "dialog": {
+        "grantTitle": "Grant Superadmin Access",
+        "revokeTitle": "Revoke Superadmin Access",
+        "grantDescription": "You are about to grant superadmin access to {{email}}. This gives full access to all tenants and platform management features.",
+        "revokeDescription": "You are about to revoke superadmin access from {{email}}. They will no longer be able to access the admin console or manage other tenants."
+      },
+      "toastGrantSuccess": "{{email}} is now a superadmin",
+      "toastRevokeSuccess": "Superadmin removed from {{email}}",
+      "toastUpdateFailed": "Failed to update superadmin status"
+    },
+    "tenantList": {
+      "title": "Tenants",
+      "subtitle": "Manage all tenant organizations on the platform",
+      "seedAudit": "Seed & Audit",
+      "addTenant": "Add tenant",
+      "stats": {
+        "totalTenants": "Total Tenants",
+        "active": "Active",
+        "suspended": "Suspended",
+        "enterprise": "Enterprise"
+      },
+      "allTenants": "All tenants",
+      "tenantsFound": "{{count}} tenants found",
+      "searchPlaceholder": "Search tenants...",
+      "noTenants": "No tenants found",
+      "clearSearch": "Clear search",
+      "createFirstTenant": "Create your first tenant",
+      "table": {
+        "tenant": "Tenant",
+        "status": "Status",
+        "plan": "Plan",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "actions": {
+        "viewDetails": "View details",
+        "impersonate": "Impersonate",
+        "suspend": "Suspend",
+        "reactivate": "Reactivate"
+      },
+      "status": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "pending": "Pending",
+        "cancelled": "Cancelled"
+      },
+      "plan": {
+        "free": "Free",
+        "starter": "Starter",
+        "professional": "Professional",
+        "enterprise": "Enterprise"
+      },
+      "toastViewingAs": "Now viewing as {{name}}",
+      "toastImpersonateFailed": "Failed to impersonate tenant",
+      "toastSuspended": "{{name}} has been suspended",
+      "toastSuspendFailed": "Failed to suspend tenant",
+      "toastReactivated": "{{name}} has been reactivated",
+      "toastReactivateFailed": "Failed to reactivate tenant"
     }
   },
   "money": {
@@ -4391,6 +5237,8 @@ export const translations = {
     "guidance": "Orientasaun",
     "hide": "Subar",
     "moreDetails": "Detallu tan",
+    "previous": "Antes",
+    "next": "Tuirmai",
     "review": "Reviza",
     "retry": "Koko fali",
     "connectionIssueTitle": "Problema ligasaun",
@@ -4523,15 +5371,56 @@ export const translations = {
   },
   "documentAlerts": {
     "title": "Alerta Dokumentu",
+    "subtitle": "Monitoriza no jere dokumentu empregadu ne'ebe besik remata",
     "noAlerts": "Laiha alerta dokumentu",
     "noAlertsDesc": "Dokumentu funsionáriu hotu atualiza ona",
     "expiredDaysAgo": "Espira {{count}} loron liu ba",
     "expiresToday": "Espira ohin",
+    "expiresTomorrow": "Espira aban",
     "expiresInDays": "Espira iha {{count}} loron",
     "viewAllAlerts": "Haree alerta hotu {{count}}",
     "manageAlerts": "Jere alerta",
     "expired": "espira",
     "critical": "kritiku",
+    "stats": {
+      "total": "Total alerta",
+      "expired": "Espira",
+      "critical": "Kritiku",
+      "warning": "Avizu",
+      "upcoming": "Besik"
+    },
+    "filters": {
+      "title": "Filtru",
+      "searchPlaceholder": "Buka tuir naran empregadu ka dokumentu...",
+      "severityLabel": "Gravidade",
+      "documentTypeLabel": "Tipu dokumentu",
+      "allSeverities": "Gravidade hotu",
+      "allDocuments": "Dokumentu hotu",
+      "severityOptions": {
+        "expired": "Espira",
+        "critical": "Kritiku (< 14 loron)",
+        "warning": "Avizu (14-30 loron)",
+        "upcoming": "Besik (30-60 loron)"
+      }
+    },
+    "table": {
+      "showing": "Hatudu {{shown}} husi {{total}} alerta",
+      "employee": "Empregadu",
+      "document": "Dokumentu",
+      "expiryDate": "Data remata",
+      "timeRemaining": "Tempu restante",
+      "status": "Status",
+      "adjustFilters": "Koko muda filtru sira."
+    },
+    "actions": {
+      "export": "Exporta CSV"
+    },
+    "toast": {
+      "noDataTitle": "Laiha dadus",
+      "noDataDesc": "Laiha alerta atu exporta.",
+      "exportTitle": "Exporta remata",
+      "exportDesc": "Exporta alerta {{count}} ba CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Pasaporte",
@@ -4547,6 +5436,70 @@ export const translations = {
       "critical": "Kritiku",
       "warning": "Avizu",
       "upcoming": "Besik"
+    }
+  },
+  "announcements": {
+    "title": "Avisu",
+    "subtitle": "Fahe mensajen ba empregadu hotu liuhosi Ekipa",
+    "new": "Avisu foun",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Tau iha leten",
+      "totalReads": "Leitura total"
+    },
+    "empty": {
+      "title": "Seidauk iha avisu",
+      "description": "Kria avisu primeiru atu fahe ba empregadu hotu liuhosi Ekipa."
+    },
+    "table": {
+      "title": "Titulu",
+      "body": "Konteudu",
+      "pinned": "Tau iha leten",
+      "created": "Kria",
+      "readCount": "Leitura",
+      "actions": "Asaun",
+      "hasImage": "Iha imajen",
+      "pinnedYes": "Tau",
+      "pinnedNo": "Laiha"
+    },
+    "actions": {
+      "pin": "Tau",
+      "unpin": "Hasai",
+      "publish": "Publika",
+      "update": "Atualiza"
+    },
+    "dialog": {
+      "newTitle": "Avisu foun",
+      "editTitle": "Edita avisu",
+      "newDescription": "Ne'e sei hare hosi empregadu hotu iha app Ekipa.",
+      "editDescription": "Atualiza detalhu avisu iha kraik.",
+      "titleLabel": "Titulu *",
+      "titlePlaceholder": "Ezemplu: Mudansa orariu feriadu",
+      "bodyLabel": "Konteudu *",
+      "bodyPlaceholder": "Hakerek ita nia mensajen avisu...",
+      "imageLabel": "URL imajen (opsional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Tau iha leten iha lista avisu"
+    },
+    "delete": {
+      "title": "Apaga avisu",
+      "description": "Ita hakarak apaga \"{{title}}\"? Asaun ida ne'e labele fila fali no avisu sei lakon hosi feed Ekipa hotu."
+    },
+    "toast": {
+      "loadFailed": "Falha karrega avisu",
+      "validationTitle": "Erru validasaun",
+      "titleRequired": "Titulu presiza",
+      "bodyRequired": "Konteudu presiza",
+      "updated": "Avisu atualiza ona",
+      "published": "Avisu publika ona",
+      "updateFailed": "Falha atualiza avisu",
+      "createFailed": "Falha kria avisu",
+      "deleted": "Avisu apaga ona",
+      "deleteFailed": "Falha apaga avisu",
+      "pinned": "Avisu tau iha leten",
+      "unpinned": "Avisu hasai hosi leten",
+      "pinFailed": "Falha atualiza avisu"
     }
   },
   "auth": {
@@ -6068,6 +7021,7 @@ export const translations = {
         "endDate": "Data remata",
         "guard": "Empregadu",
         "allGuards": "Empregadu hotu",
+        "allDepartments": "Departamentu hotu",
         "site": "Lokal",
         "allSites": "Lokal hotu",
         "client": "Cliente",
@@ -6078,7 +7032,9 @@ export const translations = {
         "title": "Registu tempu",
         "showing": "Hatudu {{shown}} husi {{total}} registu",
         "export": "Exporta CSV",
-        "logActivity": "Rejista atividade"
+        "logActivity": "Rejista atividade",
+        "emptyTitle": "Laiha entrada tempu",
+        "emptyDescription": "Laiha registu presensa ba {{date}}"
       },
       "dialog": {
         "title": "Rejista tempu",
@@ -6107,8 +7063,10 @@ export const translations = {
         "dateShift": "Data/Turnu",
         "site": "Lokal",
         "hours": "Oras",
+        "totalHours": "Oras",
         "activities": "Atividade",
         "incidents": "Incidente",
+        "source": "Orijen",
         "status": "Status",
         "incidentYes": "Sin",
         "incidentNone": "Laiha"
@@ -6124,7 +7082,15 @@ export const translations = {
         "coverageDescription": "Pessoal iha lokal hotu",
         "coverageSites": "{{count}} lokal",
         "coverageGuards": "{{count}} empregadu",
-        "coverageStatus": "Ativu"
+        "coverageStatus": "Ativu",
+        "noDepartmentData": "Laiha dadus departamentu ba data ida ne'e"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Impressaun liman",
+        "mobileApp": "App telemovel",
+        "qrCode": "Kodigu QR",
+        "facial": "Oin"
       },
       "activities": {
         "perimeterPatrol": "Patrulha perimeter",
@@ -6326,6 +7292,7 @@ export const translations = {
         "import": "Importa",
         "mark": "Marka presensa",
         "markToday": "Marka Presensa Ohin",
+        "faceClockIn": "Tama ho oin",
         "today": "Ohin",
         "cancel": "Kansela",
         "export": "Exporta CSV"
@@ -7334,6 +8301,7 @@ export const translations = {
       "planEnterprise": "Empreza",
       "planEnterpriseDesc": "Trabalhador no utilizadór la limitadu"
     },
+    "platformManagement": "Jestaun Plataforma",
     "auditLog": {
       "title": "Log Auditoría",
       "subtitle": "Akompaña asaun administrativa hotu iha plataforma",
@@ -7342,6 +8310,7 @@ export const translations = {
       "eventsFound": "eventu {{count}} hetan",
       "searchPlaceholder": "Buka log...",
       "filterByAction": "Filtra tuir asaun",
+      "filtersTitle": "Filtru tan",
       "allActions": "Asaun Hotu",
       "noEntries": "Laiha entrada auditoría hetan",
       "noEntriesDesc": "Asaun administrativa sei hatudu iha ne'e",
@@ -7356,6 +8325,11 @@ export const translations = {
       "targetUser": "Utilizadór Alvu",
       "targetUserId": "ID Utilizadór Alvu",
       "entryId": "ID Entrada: {{id}}",
+      "justNow": "Foin lalais",
+      "minutesAgo": "{{count}}m liu",
+      "hoursAgo": "{{count}}h liu",
+      "daysAgo": "{{count}} loron liu",
+      "viewDetailsAction": "Haree detalle",
       "errorLoad": "La konsege karga log auditoría",
       "actionTenantCreated": "Tenante Kria",
       "actionTenantSuspended": "Tenante Suspende",
@@ -7386,6 +8360,7 @@ export const translations = {
       "tabExpiring": "Sei Espira ({{count}})",
       "tabExpired": "Espira ({{count}})",
       "searchPlaceholder": "Buka tuir naran ka ID trabalhador...",
+      "filtersTitle": "Filtru tan",
       "allStatuses": "Estadu Hotu",
       "allNationalities": "Nasionalidade Hotu",
       "statusActive": "Ativu",
@@ -7403,6 +8378,7 @@ export const translations = {
       "visaExpiry": "Espira Visa",
       "permitStatus": "Estadu Permisu",
       "actions": "Asaun",
+      "openEmployee": "Loke ficháriu trabalhador",
       "noVisaOnFile": "Laiha visa iha arkivu",
       "noPermitOnFile": "Laiha permisu iha arkivu",
       "noExpiry": "Laiha data espira",
@@ -7411,7 +8387,110 @@ export const translations = {
       "expiresTomorrow": "Espira aban",
       "expiresInDays": "Loron {{days}}",
       "requirementsTitle": "Rekizitu Permisu Servisu (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Visa Servisu (Tipu C)",
+        "visaValidity": "Válidu ba tinan 1",
+        "visaProcessing": "Prosesu: besik loron servisu 15",
+        "visaFee": "Taxa: USD 50",
+        "visaSponsor": "Presiza patrosíniu hosi empregadór",
+        "documentsTitle": "Dokumentu Presiza",
+        "documentsPassport": "Pasaporte válidu (fulan 6+)",
+        "documentsContract": "Kontratu servisu",
+        "documentsTax": "Sertifikadu impostu empresa",
+        "documentsMedical": "Atestadu médiku",
+        "renewalTitle": "Prosesu Renovasaun",
+        "renewalApply": "Halo pedidu 30 loron molok espira",
+        "renewalSubmit": "Submete liu hosi Departamentu Imigrasaun",
+        "renewalOriginals": "Rai dokumentu orijinál hotu",
+        "renewalTiming": "Fó tempu semana 2 to'o 3 ba prosesu"
+      },
       "errorLoad": "La konsege karga dadus trabalhador."
+    },
+    "userList": {
+      "title": "Utilizadór sira",
+      "subtitle": "Jere utilizadór plataforma no asesu superadmin",
+      "stats": {
+        "totalUsers": "Total Utilizadór",
+        "superadmins": "Superadmin sira",
+        "withTenants": "Iha tenante"
+      },
+      "allUsers": "Utilizadór hotu",
+      "usersFound": "Utilizadór {{count}} hetan",
+      "searchPlaceholder": "Buka utilizadór...",
+      "noUsers": "Laiha utilizadór hetan",
+      "clearSearch": "Hamós buka",
+      "noName": "Laiha naran",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "Utilizadór",
+      "tenantsCount": "Tenante {{count}}",
+      "processing": "Prosesa hela...",
+      "grantAction": "Fó superadmin",
+      "revokeAction": "Hasai superadmin",
+      "table": {
+        "user": "Utilizadór",
+        "role": "Kargu",
+        "tenants": "Tenante",
+        "created": "Kria",
+        "actions": "Asaun"
+      },
+      "dialog": {
+        "grantTitle": "Fó Asesu Superadmin",
+        "revokeTitle": "Hasai Asesu Superadmin",
+        "grantDescription": "Ita atu fó asesu superadmin ba {{email}}. Ida-ne'e sei fó asesu tomak ba tenante hotu no jestaun plataforma.",
+        "revokeDescription": "Ita atu hasai asesu superadmin hosi {{email}}. Nia sei labele asesu konsola admin ka jere tenante seluk."
+      },
+      "toastGrantSuccess": "{{email}} agora sai superadmin",
+      "toastRevokeSuccess": "Superadmin hasai ona hosi {{email}}",
+      "toastUpdateFailed": "La konsege atualiza estatutu superadmin"
+    },
+    "tenantList": {
+      "title": "Tenante sira",
+      "subtitle": "Jere organizasaun tenante hotu iha plataforma",
+      "seedAudit": "Seed no Audit",
+      "addTenant": "Aumenta tenante",
+      "stats": {
+        "totalTenants": "Total Tenante",
+        "active": "Ativu",
+        "suspended": "Suspende",
+        "enterprise": "Empreza"
+      },
+      "allTenants": "Tenante hotu",
+      "tenantsFound": "Tenante {{count}} hetan",
+      "searchPlaceholder": "Buka tenante...",
+      "noTenants": "Laiha tenante hetan",
+      "clearSearch": "Hamós buka",
+      "createFirstTenant": "Kria ita-nia tenante primeiru",
+      "table": {
+        "tenant": "Tenante",
+        "status": "Estatutu",
+        "plan": "Planu",
+        "created": "Kria",
+        "actions": "Asaun"
+      },
+      "actions": {
+        "viewDetails": "Haree detalle",
+        "impersonate": "Tama hanesan",
+        "suspend": "Suspende",
+        "reactivate": "Reativa"
+      },
+      "status": {
+        "active": "Ativu",
+        "suspended": "Suspende",
+        "pending": "Pendente",
+        "cancelled": "Kansela"
+      },
+      "plan": {
+        "free": "Grátis",
+        "starter": "Inísiu",
+        "professional": "Profisionál",
+        "enterprise": "Empreza"
+      },
+      "toastViewingAs": "Agora haree hanesan {{name}}",
+      "toastImpersonateFailed": "La konsege tama hanesan tenante",
+      "toastSuspended": "{{name}} suspende ona",
+      "toastSuspendFailed": "La konsege suspende tenante",
+      "toastReactivated": "{{name}} reativa ona",
+      "toastReactivateFailed": "La konsege reativa tenante"
     }
   },
   "reports": {
@@ -7507,11 +8586,205 @@ export const translations = {
     },
     "attendance": {
       "title": "Relatoriu Presensa",
-      "subtitle": "Hare no analiza padraun presensa"
+      "subtitle": "Hare no analiza padraun presensa",
+      "periodLabel": "Períodu",
+      "ranges": {
+        "last7": "Loron 7 ikus",
+        "last30": "Loron 30 ikus",
+        "last90": "Loron 90 ikus",
+        "lastYear": "Tinan kotuk"
+      },
+      "exportCompleteTitle": "Exporta remata",
+      "exportCompleteDesc": "{{file}} download ona ho susesu",
+      "columns": {
+        "lateMinutes": "Minutu atrasu",
+        "annualEntitled": "Direitu anual",
+        "annualUsed": "Annual uza",
+        "annualRemaining": "Annual restu",
+        "sickEntitled": "Direitu moras",
+        "sickUsed": "Moras uza",
+        "sickRemaining": "Moras restu",
+        "carryOver": "Transfere ba oin"
+      },
+      "stats": {
+        "attendanceRate": "Taxa presensa",
+        "attendanceRateSummary": "{{present}} husi {{total}} registu",
+        "lateArrivals": "Chegada atrasadu",
+        "lateHoursSummary": "{{hours}} oras total",
+        "overtimeHours": "Oras extra",
+        "overtimeEmployees": "{{count}} empregadu",
+        "onLeaveToday": "Iha lisensa ohin",
+        "onLeaveSummary": "{{percent}}% husi staf"
+      },
+      "cards": {
+        "summary": {
+          "title": "Resumo presensa",
+          "description": "Registu presensa loron-loron ba períodu ne'ebé hili",
+          "totalRecords": "Total registu",
+          "export": "Exporta presensa"
+        },
+        "leave": {
+          "title": "Saldo lisensa",
+          "description": "Direitu no uza lisensa agora",
+          "employees": "Empregadu",
+          "daysUsed": "{{days}} loron uza",
+          "none": "Laiha lisensa iha períodu ida ne'e",
+          "export": "Exporta saldo lisensa"
+        },
+        "overtime": {
+          "title": "Relatoriu oras extra",
+          "description": "Akompaña oras extra tuir empregadu",
+          "total": "Total oras extra",
+          "records": "Registu ho oras extra",
+          "average": "Media OT / registu",
+          "hoursValue": "{{hours}} oras",
+          "export": "Exporta oras extra"
+        }
+      },
+      "breakdown": {
+        "title": "Fahe status presensa",
+        "description": "Distribuisaun tuir status presensa"
+      },
+      "recent": {
+        "title": "Registu presensa foun",
+        "description": "Registu tama no sai ne'ebé foun liu",
+        "emptyTitle": "Laiha registu presensa ba períodu ida ne'e",
+        "emptyDescription": "Registu sei mosu iha ne'e bainhira empregadu tama ka sai"
+      }
+    },
+    "shared": {
+      "periodLabel": "Períodu",
+      "ranges": {
+        "7": "Loron 7 ikus",
+        "30": "Loron 30 ikus",
+        "90": "Loron 90 ikus",
+        "365": "Tinan ikus"
+      },
+      "exportTitle": "Exporta Kompletu",
+      "exportDescription": "{{filename}} download ho susesu",
+      "monthsShort": "ful"
     },
     "setup": {
       "title": "Relatoriu Konfigurasaun",
-      "subtitle": "Konfigurasaun sistema no analize setup"
+      "subtitle": "Konfigurasaun sistema no analize setup",
+      "stats": {
+        "setupProgress": "Progresu Setup",
+        "stepsComplete": "{{completed}} husi etapa {{total}}",
+        "totalUsers": "Total Utilizadór",
+        "superAdmins": "superadmin {{count}}",
+        "auditEntries": "Entrada Auditoría",
+        "last24Hours": "{{count}} iha oras 24 ikus",
+        "systemStatus": "Estadu Sistema"
+      },
+      "progress": {
+        "title": "Progresu Setup",
+        "description": "Estadu kompleta konfigurasaun sistema",
+        "overall": "Progresu Jerál"
+      },
+      "steps": {
+        "companyDetails": "Detállu empresa",
+        "companyStructure": "Estrutura empresa",
+        "paymentStructure": "Estrutura pagamentu",
+        "timeOffPolicies": "Polítika folga",
+        "payrollConfig": "Konfigurasaun folha"
+      },
+      "cards": {
+        "configuration": {
+          "title": "Konfigurasaun Sistema",
+          "description": "Definisaun no konfigurasaun sistema agora",
+          "company": "Empresa",
+          "country": "Pais",
+          "status": "Estatutu",
+          "export": "Exporta Konfigurasaun"
+        },
+        "permissions": {
+          "title": "Permisaun Utilizadór",
+          "description": "Kargu no nivel asesu utilizadór",
+          "totalUsers": "Total Utilizadór",
+          "superAdmins": "Super Admin sira",
+          "regularUsers": "Utilizadór regular",
+          "export": "Exporta Permisaun"
+        },
+        "audit": {
+          "title": "Log Auditoría",
+          "description": "Atividade no mudansa sistema ikus",
+          "totalEntries": "Total Entrada",
+          "last24Hours": "Oras 24 ikus",
+          "latest": "Ikus liu",
+          "export": "Exporta Log Auditoría"
+        }
+      },
+      "usersTable": {
+        "title": "Diretóriu Utilizadór",
+        "description": "Utilizadór rejistadu hotu no sira-nia kargu",
+        "empty": "Laiha utilizadór hetan",
+        "manageUsers": "Jere Utilizadór",
+        "showingLimited": "Hatudu {{shown}} husi {{total}} utilizadór. Exporta atu haree hotu.",
+        "columns": {
+          "user": "Utilizadór",
+          "email": "Email",
+          "role": "Kargu",
+          "tenants": "Tenante",
+          "created": "Kria"
+        }
+      },
+      "auditTable": {
+        "title": "Atividade Foun",
+        "description": "Entrada auditoría admin",
+        "empty": "Laiha entrada auditoría",
+        "emptyDescription": "Atividade sei mosu iha ne'e bainhira hala'o asaun",
+        "showingLimited": "Hatudu {{shown}} husi {{total}} entrada. Exporta atu haree hotu.",
+        "columns": {
+          "time": "Oras",
+          "action": "Asaun",
+          "actor": "Autor",
+          "target": "Alvu"
+        }
+      },
+      "values": {
+        "yes": "Sin",
+        "no": "Lae",
+        "ready": "Prontu",
+        "setup": "Setup",
+        "configured": "Konfigura ona",
+        "pending": "Pendente",
+        "complete": "Kompletu",
+        "inProgress": "Hela Prosesu",
+        "notSet": "Seidauk define",
+        "noName": "Laiha naran",
+        "superAdmin": "Super Admin",
+        "user": "Utilizadór"
+      },
+      "configSections": {
+        "companyDetails": "Detállu Empresa",
+        "payroll": "Folha Pagamentu",
+        "timeOff": "Folga"
+      },
+      "configSettings": {
+        "legalName": "Naran Legál",
+        "country": "Pais",
+        "tinNumber": "Numeru TIN",
+        "witRate": "Taxa WIT",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "annualLeaveDays": "Loron Lisensa Anuál",
+        "sickLeaveDays": "Loron Lisensa Moras"
+      },
+      "csv": {
+        "timestamp": "Tempu",
+        "action": "Asaun",
+        "actorEmail": "Email Autor",
+        "targetType": "Tipu Alvu",
+        "targetName": "Naran Alvu",
+        "email": "Email",
+        "displayName": "Naran Hatudu",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Numeru Tenante",
+        "createdAt": "Kria iha",
+        "section": "Seksaun",
+        "setting": "Definisaun",
+        "value": "Valor"
+      }
     },
     "custom": {
       "title": "Relatoriu personalizadu",
@@ -7519,11 +8792,149 @@ export const translations = {
     },
     "employee": {
       "title": "Relatoriu Empregadu",
-      "subtitle": "Kria no analiza relatoriu kona-ba empregadu"
+      "subtitle": "Kria no analiza relatoriu kona-ba empregadu",
+      "stats": {
+        "totalEmployees": "Total Empregadu",
+        "activeEmployees": "{{count}} ativu",
+        "newHires": "Kontratasaun Foun",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departamentu",
+        "withEmployees": "Iha empregadu",
+        "inactive": "Inativu",
+        "turnover": "{{percent}}% rotasaun"
+      },
+      "cards": {
+        "directory": {
+          "title": "Diretóriu Empregadu",
+          "description": "Lista kompletu empregadu hotu ho kontaktu",
+          "totalRecords": "Total Rejistu",
+          "active": "Ativu",
+          "inactive": "Inativu",
+          "export": "Exporta Diretóriu"
+        },
+        "newHires": {
+          "title": "Relatoriu Kontratasaun Foun",
+          "description": "Empregadu foun iha períodu ne'ebé hili",
+          "count": "Kontratasaun Foun",
+          "latest": "Ikus liu: {{name}}",
+          "export": "Exporta Kontratasaun Foun"
+        },
+        "headcount": {
+          "title": "Total Tuir Departamentu",
+          "description": "Distribuisaun empregadu iha departamentu",
+          "moreDepartments": "+departamentu tan {{count}}",
+          "export": "Exporta Total"
+        }
+      },
+      "types": {
+        "title": "Fahe Tipu Servisu",
+        "description": "Distribuisaun tuir tipu servisu"
+      },
+      "recent": {
+        "title": "Empregadu Foun",
+        "description": "Empregadu ne'ebé foin tama liu",
+        "empty": "Laiha empregadu hetan",
+        "table": {
+          "employee": "Empregadu",
+          "department": "Departamentu",
+          "position": "Pozisaun",
+          "hireDate": "Data Hahú",
+          "status": "Estatutu"
+        }
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "firstName": "Naran Primeiru",
+        "lastName": "Apelidu",
+        "email": "Email",
+        "phone": "Telemovel",
+        "department": "Departamentu",
+        "position": "Pozisaun",
+        "hireDate": "Data Hahú",
+        "employmentType": "Tipu Servisu",
+        "status": "Estatutu",
+        "headcount": "Total",
+        "percentage": "Persentajen %"
+      },
+      "status": {
+        "active": "Ativu",
+        "inactive": "Inativu"
+      }
     },
     "department": {
       "title": "Relatoriu Departamentu",
-      "subtitle": "Kria analize no relatoriu ba departamentu"
+      "subtitle": "Kria analize no relatoriu ba departamentu",
+      "stats": {
+        "totalDepartments": "Total Departamentu",
+        "activeEmployees": "empregadu ativu {{count}}",
+        "largestDepartment": "Departamentu Boot Liu",
+        "employeeCount": "empregadu {{count}}",
+        "avgHeadcount": "Média Total",
+        "perDepartment": "kada departamentu",
+        "unassigned": "La Atribui",
+        "ofStaff": "{{percent}}% husi ekipa"
+      },
+      "cards": {
+        "overview": {
+          "title": "Resumo Departamentu",
+          "description": "Lista kompletu departamentu ho total empregadu",
+          "departments": "Departamentu",
+          "totalStaff": "Total Staff",
+          "withDirector": "Iha Diretór",
+          "export": "Exporta Resumo"
+        },
+        "staffing": {
+          "title": "Relatoriu Staff",
+          "description": "Fahe tipu servisu tuir departamentu",
+          "staffCount": "staff {{count}}",
+          "moreDepartments": "+departamentu tan {{count}}",
+          "export": "Exporta Staff"
+        },
+        "growth": {
+          "title": "Relatoriu Kresimentu",
+          "description": "Kontratasaun foun no kresimentu tuir departamentu",
+          "totalNewHires": "Total Kontratasaun Foun",
+          "departmentsWithHires": "Departamentu ho Kontratasaun",
+          "export": "Exporta Kresimentu"
+        }
+      },
+      "distribution": {
+        "title": "Distribuisaun Tamanhu Departamentu",
+        "description": "Fahe total empregadu iha departamentu",
+        "others": "Seluk",
+        "moreDepartments": "+depto {{count}}"
+      },
+      "table": {
+        "title": "Departamentu Hotu",
+        "description": "Lista kompletu departamentu ho detállu",
+        "empty": "Laiha departamentu hetan",
+        "emptyDescription": "Kria departamentu iha Staff > Departments",
+        "goToDepartments": "Ba Departamentu",
+        "columns": {
+          "department": "Departamentu",
+          "director": "Diretór",
+          "manager": "Jerente",
+          "headcount": "Total",
+          "active": "Ativu",
+          "newHires": "Kontratasaun Foun",
+          "avgTenure": "Média Durasaun"
+        }
+      },
+      "csv": {
+        "department": "Departamentu",
+        "director": "Diretór",
+        "manager": "Jerente",
+        "headcount": "Total",
+        "active": "Ativu",
+        "avgTenureMonths": "Média Durasaun (fulan)",
+        "employmentType": "Tipu Servisu",
+        "count": "Numeru",
+        "percentage": "Persentajen %",
+        "currentHeadcount": "Total Agora",
+        "newHires": "Kontratasaun Foun",
+        "growthRate": "Taxa Kresimentu %"
+      },
+      "notAvailable": "N/A"
     },
     "payroll": {
       "title": "Relatoriu Folha",
@@ -7549,6 +8960,27 @@ export const translations = {
         "viewDetailed": "Hare relatoriu detalhadu",
         "viewDepartment": "Hare tuir departamentu",
         "viewBenefits": "Hare relatoriu benefisiu"
+      },
+      "toast": {
+        "exported": "Exporta relatoriu folha ho susesu"
+      },
+      "filters": {
+        "active": "Ativu",
+        "clear": "Hamós",
+        "summary": "Hatudu {{filtered}} husi {{total}} empregadu:",
+        "benefitsBadge": "{{benefits}} benefisiu",
+        "dialog": {
+          "title": "Filtra Relatoriu Folha",
+          "description": "Filtra empregadu tuir departamentu, benefisiu, ka status",
+          "department": "Departamentu",
+          "allDepartments": "Departamentu hotu",
+          "benefits": "Pakote benefisiu",
+          "allBenefits": "Benefisiu hotu",
+          "status": "Status",
+          "allStatuses": "Status hotu",
+          "clearAll": "Hamós hotu",
+          "apply": "Aplika filtru"
+        }
       },
       "salarySummary": {
         "title": "Resumo salariu",
@@ -7580,11 +9012,271 @@ export const translations = {
         "monthlySalary": "Salariu mensal",
         "benefits": "Benefisiu",
         "status": "Status",
-        "viewAll": "Hare hotu {{count}} empregadu"
+        "viewAll": "Hare hotu {{count}} empregadu",
+        "showLess": "Hatudu menus",
+        "emptyFiltered": "Laiha empregadu ne'ebé tuir filtru sira ne'e."
+      },
+      "salaryDetail": {
+        "title": "Relatoriu Salariu Detalladu",
+        "description": "Fahe salariu kompletu ho kalkulasaun impostu Timor-Leste",
+        "highest": "Aas liu",
+        "lowest": "Kraik liu",
+        "average": "Média",
+        "totalMonthly": "Total Mensal",
+        "columns": {
+          "employee": "Empregadu",
+          "gross": "Brutu",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Selu Líquidu"
+        },
+        "totals": "Total",
+        "taxNoteTitle": "Regra impostu Timor-Leste:",
+        "taxNoteDescription": "IRPS = (Brutu - $500) x 10% se brutu liu $500 | INSS empregadu = 4% | INSS empregadór = 6% (la hatudu)"
+      },
+      "departmentDetail": {
+        "title": "Fahe Kustu Departamentu",
+        "description": "Kustu folha tuir departamentu",
+        "employees": "{{count}} empregadu",
+        "monthlyCost": "Kustu Mensal",
+        "annualCost": "Kustu Anual",
+        "avgSalary": "Média Salariu",
+        "employeesLabel": "Empregadu:",
+        "totalAll": "Total Departamentu Hotu"
+      },
+      "benefitsDetail": {
+        "title": "Analize Benefisiu",
+        "description": "Distribuisaun empregadu tuir pakote benefisiu",
+        "employees": "{{count}} empregadu",
+        "totalMonthlyPayroll": "Total Folha Mensal",
+        "avgSalary": "Média Salariu"
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "firstName": "Naran Primeiru",
+        "lastName": "Apelidu",
+        "email": "Email",
+        "department": "Departamentu",
+        "position": "Pozisaun",
+        "monthlySalary": "Salariu Mensal",
+        "annualSalary": "Salariu Anual",
+        "benefitsPackage": "Pakote Benefisiu",
+        "status": "Status",
+        "irpsTax": "Impostu IRPS (10% > $500)",
+        "inssEmployee": "INSS Empregadu (4%)",
+        "inssEmployer": "INSS Empregadór (6%)",
+        "netPay": "Selu Líquidu"
       },
       "status": {
         "active": "Ativu",
         "inactive": "Inativu"
+      }
+    },
+    "inssMonthly": {
+      "title": "Deklarasaun INSS Mensal",
+      "subtitle": "Kria no akompaña submisaun kontribuisaun INSS mensal.",
+      "due": {
+        "overdueTitle": "Tarde ona ba {{task}}",
+        "overdueDescription": "{{task}} ba {{period}} tenke entrega iha {{dueDate}}.",
+        "upcomingTitle": "{{task}} sei to'o data",
+        "upcomingDescription": "{{task}} ba {{period}} sei to'o iha {{dueDate}} (loron {{days}})."
+      },
+      "generate": {
+        "title": "Kria Deklarasaun INSS Mensal",
+        "description": "Kria resumo kontribuisaun mensal husi folha ne'ebé selu ona.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "button": "Kria deklarasaun",
+        "generating": "Kria hela..."
+      },
+      "selected": {
+        "title": "Deklarasaun INSS - {{period}}",
+        "description": "Empregadór: {{employer}} | TIN: {{tin}}"
+      },
+      "stats": {
+        "employees": "Empregadu",
+        "contributionBase": "Base Kontribuisaun",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)"
+      },
+      "table": {
+        "employee": "Empregadu",
+        "inssNumber": "Numeru INSS",
+        "base": "Base",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "total": "Total",
+        "missing": "Seidauk iha"
+      },
+      "tracker": {
+        "title": "Akompañamentu Arkivu",
+        "description": "Akompaña ita-boot nia submisaun INSS mensal.",
+        "period": "Períodu",
+        "statementDue": "Deklarasaun to'o data",
+        "paymentDue": "Pagamentu to'o data",
+        "statementStatus": "Status deklarasaun",
+        "paymentStatus": "Status pagamentu",
+        "employees": "Empregadu",
+        "employeeContribution": "Empregadu",
+        "employerContribution": "Empregadór",
+        "actions": "Asaun",
+        "empty": "Seidauk iha arkivu INSS. Kria deklarasaun primeiru iha leten."
+      },
+      "actions": {
+        "export": "Exporta CSV",
+        "view": "Haree",
+        "markStatement": "Marka deklarasaun",
+        "markPayment": "Marka pagamentu"
+      },
+      "tasks": {
+        "payment": "Pagamentu",
+        "statement": "Deklarasaun",
+        "paymentFull": "Pagamentu INSS",
+        "statementFull": "Deklarasaun INSS"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Tarde",
+        "filed": "Hatama ona",
+        "draft": "Esbosu"
+      },
+      "markFiled": {
+        "title": "Marka {{task}} hanesan hatama ona",
+        "description": "Rai detallu submisaun {{task}} ba deklarasaun INSS ida-ne'e.",
+        "submissionMethod": "Métodu submisaun",
+        "selectMethod": "Hili métodu",
+        "portal": "Portal INSS",
+        "notFiled": "Seidauk hatama",
+        "receiptLabel": "Recibu / referénsia (opsionál)",
+        "receiptPlaceholder": "Numeru referénsia",
+        "notesLabel": "Nota (opsionál)",
+        "notesPlaceholder": "Nota kona-ba submisaun ka pagamentu",
+        "cancel": "Kansela",
+        "save": "Rai"
+      },
+      "toast": {
+        "generatedTitle": "Deklarasaun INSS criada",
+        "generatedDescription": "Deklarasaun INSS mensal ba {{period}} cria ona.",
+        "generateErrorTitle": "Erru",
+        "generateErrorDescription": "Labele kria deklarasaun INSS. Haree katak dadus folha selu ona ba períodu ida-ne'e.",
+        "noDataTitle": "Laiha dadus",
+        "noDataDescription": "Laiha dadus folha ba {{period}}. Hala'o folha uluk, depois kria deklarasaun.",
+        "exportedTitle": "Exporta ona",
+        "exportedDescription": "Deklarasaun INSS exporta ona ba CSV.",
+        "savedTitle": "Rai ona",
+        "savedDescription": "{{task}} INSS marka ona hanesan hatama ona.",
+        "updateErrorTitle": "Erru",
+        "updateErrorDescription": "Labele atualiza status arkivu."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "inssNumber": "Numeru INSS",
+        "contributionBase": "Base Kontribuisaun (USD)",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "Rekonsiliasaun INSS Anual",
+      "subtitle": "Hamutuk kontribuisaun INSS mensal ba resumo anual iha remata tinan.",
+      "generate": {
+        "title": "Kria Resumu Anual",
+        "description": "Hamutuk arkivu INSS mensal hotu iha tinan ne'ebé hili ba total anual kada empregadu.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "button": "Kria resumo anual"
+      },
+      "summary": {
+        "title": "Resumo Anual INSS - {{year}}",
+        "description": "Empregadór: {{employer}} | TIN: {{tin}} | Fulan arkiva: {{monthsFiled}}/12",
+        "warning": "Arkiva deit {{monthsFiled}} husi 12 fulan. Kria deklarasaun mensal ne'ebé falta antes submete rekonsiliasaun anual."
+      },
+      "stats": {
+        "employees": "Empregadu",
+        "monthsFiled": "Fulan Arkiva",
+        "totalBase": "Base Total",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)"
+      },
+      "table": {
+        "employee": "Empregadu",
+        "inssNumber": "Numeru INSS",
+        "months": "Fulan",
+        "annualBase": "Base Anual",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Seidauk iha",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Exporta CSV"
+      },
+      "toast": {
+        "noDataTitle": "Laiha dadus",
+        "noDataDescription": "Laiha arkivu INSS mensal ba {{year}}. Kria deklarasaun mensal uluk.",
+        "generatedTitle": "Resumo anual criada",
+        "generatedDescription": "Hamutuk fulan {{count}} husi dadus INSS ba {{year}}.",
+        "exportedTitle": "Exporta ona",
+        "exportedDescription": "Rekonsiliasaun INSS anual ba {{year}} exporta ona ba CSV."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "inssNumber": "Numeru INSS",
+        "monthsContributed": "Fulan Kontribui",
+        "annualContributionBase": "Base Kontribuisaun Anual (USD)",
+        "annualEmployeeContribution": "Empregadu Anual 4% (USD)",
+        "annualEmployerContribution": "Empregadór Anual 6% (USD)",
+        "annualTotalContribution": "Total Anual 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Pakote Exportasaun Doador",
+      "subtitle": "Exporta dadus kontabilidade folha prontu ba doador diretu husi journal ne'ebé post.",
+      "exportButton": "Exporta pakote (2 CSV)",
+      "exportHint": "Ne'e sei download ficheiru rua: resumo projetu no liña journal detalhadu.",
+      "filters": {
+        "startDate": "Data hahú",
+        "endDate": "Data remata"
+      },
+      "stats": {
+        "salaryExpense": "Despesa Salariu",
+        "inssEmployerExpense": "Despesa INSS Empregadór",
+        "totalExpense": "Despesa Total"
+      },
+      "summary": {
+        "title": "Resumo tuir Projetu no Fonte Fundu",
+        "loading": "Karrega entrada journal...",
+        "empty": "Laiha liña journal folha ba períodu ida-ne'e.",
+        "project": "Projetu",
+        "fundingSource": "Fonte Fundu",
+        "salary": "Salariu",
+        "inssEmployer": "INSS Empregadór",
+        "totalExpense": "Despesa Total"
+      },
+      "toast": {
+        "title": "Exportasaun kompletu",
+        "description": "Download ona ficheiru doador rua."
+      },
+      "csv": {
+        "projectCode": "Kódigu Projetu",
+        "fundingSource": "Fonte Fundu",
+        "salaryExpense": "Despesa Salariu",
+        "inssEmployerExpense": "Despesa INSS Empregadór",
+        "totalExpense": "Despesa Total",
+        "date": "Data",
+        "entryNumber": "Numeru Entrada",
+        "payrollRunId": "ID Folha",
+        "accountCode": "Kódigu Konta",
+        "accountName": "Naran Konta",
+        "debit": "Débitu",
+        "credit": "Kréditu",
+        "description": "Deskrisaun"
       }
     }
   },
@@ -8736,6 +10428,8 @@ pt: {
     "guidance": "Orientação",
     "hide": "Ocultar",
     "moreDetails": "Mais detalhes",
+    "previous": "Anterior",
+    "next": "Seguinte",
     "review": "Rever",
     "retry": "Tentar novamente",
     "connectionIssueTitle": "Problema de conexão",
@@ -8868,15 +10562,56 @@ pt: {
   },
   "documentAlerts": {
     "title": "Alertas de Documentos",
+    "subtitle": "Monitorizar e gerir documentos de funcionários prestes a expirar",
     "noAlerts": "Sem alertas de documentos",
     "noAlertsDesc": "Todos os documentos dos funcionários estão atualizados",
     "expiredDaysAgo": "Expirou há {{count}} dias",
     "expiresToday": "Expira hoje",
+    "expiresTomorrow": "Expira amanhã",
     "expiresInDays": "Expira em {{count}} dias",
     "viewAllAlerts": "Ver todos os {{count}} alertas",
     "manageAlerts": "Gerir alertas",
     "expired": "expirado",
     "critical": "crítico",
+    "stats": {
+      "total": "Total de alertas",
+      "expired": "Expirado",
+      "critical": "Crítico",
+      "warning": "Aviso",
+      "upcoming": "Próximo"
+    },
+    "filters": {
+      "title": "Filtros",
+      "searchPlaceholder": "Pesquisar por nome do funcionário ou documento...",
+      "severityLabel": "Gravidade",
+      "documentTypeLabel": "Tipo de documento",
+      "allSeverities": "Todas as gravidades",
+      "allDocuments": "Todos os documentos",
+      "severityOptions": {
+        "expired": "Expirado",
+        "critical": "Crítico (< 14 dias)",
+        "warning": "Aviso (14-30 dias)",
+        "upcoming": "Próximo (30-60 dias)"
+      }
+    },
+    "table": {
+      "showing": "A mostrar {{shown}} de {{total}} alertas",
+      "employee": "Funcionário",
+      "document": "Documento",
+      "expiryDate": "Data de expiração",
+      "timeRemaining": "Tempo restante",
+      "status": "Estado",
+      "adjustFilters": "Tente ajustar os filtros."
+    },
+    "actions": {
+      "export": "Exportar CSV"
+    },
+    "toast": {
+      "noDataTitle": "Sem dados",
+      "noDataDesc": "Não existem alertas para exportar.",
+      "exportTitle": "Exportação concluída",
+      "exportDesc": "Foram exportados {{count}} alertas para CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Passaporte",
@@ -8892,6 +10627,70 @@ pt: {
       "critical": "Crítico",
       "warning": "Aviso",
       "upcoming": "Próximo"
+    }
+  },
+  "announcements": {
+    "title": "Anúncios",
+    "subtitle": "Transmitir mensagens para todos os funcionários via Ekipa",
+    "new": "Novo anúncio",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Fixados",
+      "totalReads": "Total de leituras"
+    },
+    "empty": {
+      "title": "Ainda não há anúncios",
+      "description": "Crie o seu primeiro anúncio para o transmitir a todos os funcionários via Ekipa."
+    },
+    "table": {
+      "title": "Título",
+      "body": "Conteúdo",
+      "pinned": "Fixado",
+      "created": "Criado",
+      "readCount": "Leituras",
+      "actions": "Ações",
+      "hasImage": "Tem imagem",
+      "pinnedYes": "Fixado",
+      "pinnedNo": "Não"
+    },
+    "actions": {
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "publish": "Publicar",
+      "update": "Atualizar"
+    },
+    "dialog": {
+      "newTitle": "Novo anúncio",
+      "editTitle": "Editar anúncio",
+      "newDescription": "Isto ficará visível para todos os funcionários na aplicação Ekipa.",
+      "editDescription": "Atualize os detalhes do anúncio abaixo.",
+      "titleLabel": "Título *",
+      "titlePlaceholder": "ex. Atualização do horário de feriados",
+      "bodyLabel": "Conteúdo *",
+      "bodyPlaceholder": "Escreva a mensagem do anúncio...",
+      "imageLabel": "URL da imagem (opcional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Fixar no topo da lista de anúncios"
+    },
+    "delete": {
+      "title": "Eliminar anúncio",
+      "description": "Tem a certeza de que quer eliminar \"{{title}}\"? Esta ação não pode ser desfeita e o anúncio será removido dos feeds Ekipa de todos os funcionários."
+    },
+    "toast": {
+      "loadFailed": "Falha ao carregar anúncios",
+      "validationTitle": "Erro de validação",
+      "titleRequired": "O título é obrigatório",
+      "bodyRequired": "O conteúdo é obrigatório",
+      "updated": "Anúncio atualizado",
+      "published": "Anúncio publicado",
+      "updateFailed": "Falha ao atualizar anúncio",
+      "createFailed": "Falha ao criar anúncio",
+      "deleted": "Anúncio eliminado",
+      "deleteFailed": "Falha ao eliminar anúncio",
+      "pinned": "Anúncio fixado no topo",
+      "unpinned": "Anúncio desafixado",
+      "pinFailed": "Falha ao atualizar anúncio"
     }
   },
   "auth": {
@@ -10518,6 +12317,7 @@ pt: {
         "endDate": "Data de Fim",
         "guard": "Funcionário",
         "allGuards": "Todos os funcionários",
+        "allDepartments": "Todos os departamentos",
         "site": "Local",
         "allSites": "Todos os locais",
         "client": "Cliente",
@@ -10528,7 +12328,9 @@ pt: {
         "title": "Registos de Tempo",
         "showing": "A mostrar {{shown}} de {{total}} registos",
         "export": "Exportar CSV",
-        "logActivity": "Registar Atividade"
+        "logActivity": "Registar Atividade",
+        "emptyTitle": "Sem entradas de tempo",
+        "emptyDescription": "Não foram encontrados registos de assiduidade para {{date}}"
       },
       "dialog": {
         "title": "Registar Tempo",
@@ -10557,8 +12359,10 @@ pt: {
         "dateShift": "Data/Turno",
         "site": "Local",
         "hours": "Horas",
+        "totalHours": "Horas",
         "activities": "Atividades",
         "incidents": "Incidentes",
+        "source": "Origem",
         "status": "Estado",
         "incidentYes": "Sim",
         "incidentNone": "Nenhum"
@@ -10574,7 +12378,15 @@ pt: {
         "coverageDescription": "Pessoal atual em todos os locais",
         "coverageSites": "{{count}} locais",
         "coverageGuards": "{{count}} funcionários",
-        "coverageStatus": "Ativo"
+        "coverageStatus": "Ativo",
+        "noDepartmentData": "Não existem dados de departamento para esta data"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Impressão digital",
+        "mobileApp": "Aplicação móvel",
+        "qrCode": "Código QR",
+        "facial": "Facial"
       },
       "activities": {
         "perimeterPatrol": "Patrulha de perímetro",
@@ -10776,6 +12588,7 @@ pt: {
         "import": "Importar",
         "mark": "Marcar Assiduidade",
         "markToday": "Marcar Assiduidade de Hoje",
+        "faceClockIn": "Entrada facial",
         "today": "Hoje",
         "cancel": "Cancelar",
         "export": "Exportar CSV"
@@ -11170,11 +12983,205 @@ pt: {
     },
     "attendance": {
       "title": "Relatórios de Assiduidade",
-      "subtitle": "Acompanhar e analisar padrões de assiduidade"
+      "subtitle": "Acompanhar e analisar padrões de assiduidade",
+      "periodLabel": "Período",
+      "ranges": {
+        "last7": "Últimos 7 dias",
+        "last30": "Últimos 30 dias",
+        "last90": "Últimos 90 dias",
+        "lastYear": "Último ano"
+      },
+      "exportCompleteTitle": "Exportação concluída",
+      "exportCompleteDesc": "{{file}} descarregado com sucesso",
+      "columns": {
+        "lateMinutes": "Minutos de atraso",
+        "annualEntitled": "Férias anuais atribuídas",
+        "annualUsed": "Férias anuais usadas",
+        "annualRemaining": "Férias anuais restantes",
+        "sickEntitled": "Dias de doença atribuídos",
+        "sickUsed": "Dias de doença usados",
+        "sickRemaining": "Dias de doença restantes",
+        "carryOver": "Transporte"
+      },
+      "stats": {
+        "attendanceRate": "Taxa de assiduidade",
+        "attendanceRateSummary": "{{present}} de {{total}} registos",
+        "lateArrivals": "Chegadas atrasadas",
+        "lateHoursSummary": "{{hours}} horas no total",
+        "overtimeHours": "Horas extra",
+        "overtimeEmployees": "{{count}} funcionários",
+        "onLeaveToday": "De licença hoje",
+        "onLeaveSummary": "{{percent}}% da equipa"
+      },
+      "cards": {
+        "summary": {
+          "title": "Resumo de assiduidade",
+          "description": "Registos diários de assiduidade para o período selecionado",
+          "totalRecords": "Total de registos",
+          "export": "Exportar assiduidade"
+        },
+        "leave": {
+          "title": "Saldos de licença",
+          "description": "Direitos e utilização atuais de licença",
+          "employees": "Funcionários",
+          "daysUsed": "{{days}} dias usados",
+          "none": "Nenhuma licença tirada neste período",
+          "export": "Exportar saldos de licença"
+        },
+        "overtime": {
+          "title": "Relatório de horas extra",
+          "description": "Acompanhar horas extra por funcionário",
+          "total": "Total de horas extra",
+          "records": "Registos com horas extra",
+          "average": "Média de OT / registo",
+          "hoursValue": "{{hours}} h",
+          "export": "Exportar horas extra"
+        }
+      },
+      "breakdown": {
+        "title": "Distribuição por estado de assiduidade",
+        "description": "Distribuição por estado de assiduidade"
+      },
+      "recent": {
+        "title": "Registos recentes de assiduidade",
+        "description": "Registos mais recentes de entrada e saída",
+        "emptyTitle": "Não foram encontrados registos de assiduidade para este período",
+        "emptyDescription": "Os registos aparecerão aqui assim que os funcionários fizerem entrada ou saída"
+      }
+    },
+    "shared": {
+      "periodLabel": "Período",
+      "ranges": {
+        "7": "Últimos 7 dias",
+        "30": "Últimos 30 dias",
+        "90": "Últimos 90 dias",
+        "365": "Último ano"
+      },
+      "exportTitle": "Exportação Completa",
+      "exportDescription": "{{filename}} transferido com sucesso",
+      "monthsShort": "meses"
     },
     "setup": {
       "title": "Relatórios de Configuração",
-      "subtitle": "Configuração do sistema e análises de setup"
+      "subtitle": "Configuração do sistema e análises de setup",
+      "stats": {
+        "setupProgress": "Progresso da Configuração",
+        "stepsComplete": "{{completed}} de {{total}} passos",
+        "totalUsers": "Total de Utilizadores",
+        "superAdmins": "{{count}} super admins",
+        "auditEntries": "Entradas de Auditoria",
+        "last24Hours": "{{count}} nas últimas 24h",
+        "systemStatus": "Estado do Sistema"
+      },
+      "progress": {
+        "title": "Progresso da Configuração",
+        "description": "Estado de conclusão da configuração do sistema",
+        "overall": "Progresso Geral"
+      },
+      "steps": {
+        "companyDetails": "Detalhes da empresa",
+        "companyStructure": "Estrutura da empresa",
+        "paymentStructure": "Estrutura de pagamento",
+        "timeOffPolicies": "Políticas de licença",
+        "payrollConfig": "Configuração da folha"
+      },
+      "cards": {
+        "configuration": {
+          "title": "Configuração do Sistema",
+          "description": "Definições e configuração atuais do sistema",
+          "company": "Empresa",
+          "country": "País",
+          "status": "Estado",
+          "export": "Exportar Configuração"
+        },
+        "permissions": {
+          "title": "Permissões de Utilizador",
+          "description": "Funções de utilizador e níveis de acesso",
+          "totalUsers": "Total de Utilizadores",
+          "superAdmins": "Super Admins",
+          "regularUsers": "Utilizadores Regulares",
+          "export": "Exportar Permissões"
+        },
+        "audit": {
+          "title": "Registo de Auditoria",
+          "description": "Atividade e alterações recentes do sistema",
+          "totalEntries": "Total de Entradas",
+          "last24Hours": "Últimas 24 Horas",
+          "latest": "Mais recente",
+          "export": "Exportar Registo"
+        }
+      },
+      "usersTable": {
+        "title": "Diretório de Utilizadores",
+        "description": "Todos os utilizadores registados e as suas funções",
+        "empty": "Nenhum utilizador encontrado",
+        "manageUsers": "Gerir Utilizadores",
+        "showingLimited": "A mostrar {{shown}} de {{total}} utilizadores. Exporte para ver todos.",
+        "columns": {
+          "user": "Utilizador",
+          "email": "Email",
+          "role": "Função",
+          "tenants": "Inquilinos",
+          "created": "Criado"
+        }
+      },
+      "auditTable": {
+        "title": "Atividade Recente",
+        "description": "Entradas do registo de auditoria do admin",
+        "empty": "Nenhuma entrada de auditoria encontrada",
+        "emptyDescription": "A atividade aparecerá aqui à medida que ações forem realizadas",
+        "showingLimited": "A mostrar {{shown}} de {{total}} entradas. Exporte para ver todas.",
+        "columns": {
+          "time": "Hora",
+          "action": "Ação",
+          "actor": "Autor",
+          "target": "Alvo"
+        }
+      },
+      "values": {
+        "yes": "Sim",
+        "no": "Não",
+        "ready": "Pronto",
+        "setup": "Configuração",
+        "configured": "Configurado",
+        "pending": "Pendente",
+        "complete": "Completo",
+        "inProgress": "Em Progresso",
+        "notSet": "Não definido",
+        "noName": "Sem nome",
+        "superAdmin": "Super Admin",
+        "user": "Utilizador"
+      },
+      "configSections": {
+        "companyDetails": "Detalhes da Empresa",
+        "payroll": "Folha de Pagamento",
+        "timeOff": "Licenças"
+      },
+      "configSettings": {
+        "legalName": "Nome Legal",
+        "country": "País",
+        "tinNumber": "Número NIF",
+        "witRate": "Taxa WIT",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "annualLeaveDays": "Dias de Licença Anual",
+        "sickLeaveDays": "Dias de Baixa"
+      },
+      "csv": {
+        "timestamp": "Data/Hora",
+        "action": "Ação",
+        "actorEmail": "Email do Autor",
+        "targetType": "Tipo de Alvo",
+        "targetName": "Nome do Alvo",
+        "email": "Email",
+        "displayName": "Nome Visível",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Número de Inquilinos",
+        "createdAt": "Criado Em",
+        "section": "Secção",
+        "setting": "Definição",
+        "value": "Valor"
+      }
     },
     "custom": {
       "title": "Relatórios Personalizados",
@@ -11182,11 +13189,149 @@ pt: {
     },
     "employee": {
       "title": "Relatórios de Funcionários",
-      "subtitle": "Gerar e analisar relatórios relacionados com funcionários"
+      "subtitle": "Gerar e analisar relatórios relacionados com funcionários",
+      "stats": {
+        "totalEmployees": "Total de Funcionários",
+        "activeEmployees": "{{count}} ativos",
+        "newHires": "Novas Contratações",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departamentos",
+        "withEmployees": "Com funcionários",
+        "inactive": "Inativos",
+        "turnover": "{{percent}}% rotatividade"
+      },
+      "cards": {
+        "directory": {
+          "title": "Diretório de Funcionários",
+          "description": "Lista completa de todos os funcionários com contactos",
+          "totalRecords": "Total de Registos",
+          "active": "Ativos",
+          "inactive": "Inativos",
+          "export": "Exportar Diretório"
+        },
+        "newHires": {
+          "title": "Relatório de Novas Contratações",
+          "description": "Funcionários contratados recentemente no período selecionado",
+          "count": "Novas Contratações",
+          "latest": "Mais recente: {{name}}",
+          "export": "Exportar Novas Contratações"
+        },
+        "headcount": {
+          "title": "Total por Departamento",
+          "description": "Distribuição de funcionários pelos departamentos",
+          "moreDepartments": "+{{count}} departamentos",
+          "export": "Exportar Totais"
+        }
+      },
+      "types": {
+        "title": "Distribuição por Tipo de Emprego",
+        "description": "Distribuição por tipo de vínculo"
+      },
+      "recent": {
+        "title": "Funcionários Recentes",
+        "description": "Funcionários adicionados mais recentemente",
+        "empty": "Nenhum funcionário encontrado",
+        "table": {
+          "employee": "Funcionário",
+          "department": "Departamento",
+          "position": "Cargo",
+          "hireDate": "Data de Entrada",
+          "status": "Estado"
+        }
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "firstName": "Primeiro Nome",
+        "lastName": "Apelido",
+        "email": "Email",
+        "phone": "Telefone",
+        "department": "Departamento",
+        "position": "Cargo",
+        "hireDate": "Data de Entrada",
+        "employmentType": "Tipo de Emprego",
+        "status": "Estado",
+        "headcount": "Total",
+        "percentage": "Percentagem %"
+      },
+      "status": {
+        "active": "Ativo",
+        "inactive": "Inativo"
+      }
     },
     "department": {
       "title": "Relatórios de Departamento",
-      "subtitle": "Gerar análises e relatórios ao nível de departamento"
+      "subtitle": "Gerar análises e relatórios ao nível de departamento",
+      "stats": {
+        "totalDepartments": "Total de Departamentos",
+        "activeEmployees": "{{count}} funcionários ativos",
+        "largestDepartment": "Maior Departamento",
+        "employeeCount": "{{count}} funcionários",
+        "avgHeadcount": "Média por Departamento",
+        "perDepartment": "por departamento",
+        "unassigned": "Sem Departamento",
+        "ofStaff": "{{percent}}% da equipa"
+      },
+      "cards": {
+        "overview": {
+          "title": "Visão Geral dos Departamentos",
+          "description": "Lista completa de departamentos com total de funcionários",
+          "departments": "Departamentos",
+          "totalStaff": "Total de Equipa",
+          "withDirector": "Com Diretor",
+          "export": "Exportar Resumo"
+        },
+        "staffing": {
+          "title": "Relatório de Pessoal",
+          "description": "Distribuição do tipo de emprego por departamento",
+          "staffCount": "{{count}} pessoas",
+          "moreDepartments": "+{{count}} departamentos",
+          "export": "Exportar Pessoal"
+        },
+        "growth": {
+          "title": "Relatório de Crescimento",
+          "description": "Novas contratações e crescimento por departamento",
+          "totalNewHires": "Total de Novas Contratações",
+          "departmentsWithHires": "Departamentos com Contratações",
+          "export": "Exportar Crescimento"
+        }
+      },
+      "distribution": {
+        "title": "Distribuição do Tamanho dos Departamentos",
+        "description": "Distribuição do total de funcionários por departamento",
+        "others": "Outros",
+        "moreDepartments": "+{{count}} deps."
+      },
+      "table": {
+        "title": "Todos os Departamentos",
+        "description": "Lista completa de departamentos com detalhes",
+        "empty": "Nenhum departamento encontrado",
+        "emptyDescription": "Crie departamentos em Pessoal > Departamentos",
+        "goToDepartments": "Ir para Departamentos",
+        "columns": {
+          "department": "Departamento",
+          "director": "Diretor",
+          "manager": "Gestor",
+          "headcount": "Total",
+          "active": "Ativos",
+          "newHires": "Novas Contratações",
+          "avgTenure": "Antiguidade Média"
+        }
+      },
+      "csv": {
+        "department": "Departamento",
+        "director": "Diretor",
+        "manager": "Gestor",
+        "headcount": "Total",
+        "active": "Ativos",
+        "avgTenureMonths": "Antiguidade Média (Meses)",
+        "employmentType": "Tipo de Emprego",
+        "count": "Contagem",
+        "percentage": "Percentagem %",
+        "currentHeadcount": "Total Atual",
+        "newHires": "Novas Contratações",
+        "growthRate": "Taxa de Crescimento %"
+      },
+      "notAvailable": "N/D"
     },
     "payroll": {
       "title": "Relatórios da Folha",
@@ -11212,6 +13357,27 @@ pt: {
         "viewDetailed": "Ver Relatório Detalhado",
         "viewDepartment": "Ver Análise por Departamento",
         "viewBenefits": "Ver Relatório de Benefícios"
+      },
+      "toast": {
+        "exported": "Relatório da folha exportado com sucesso"
+      },
+      "filters": {
+        "active": "Ativo",
+        "clear": "Limpar",
+        "summary": "A mostrar {{filtered}} de {{total}} funcionários:",
+        "benefitsBadge": "{{benefits}} benefícios",
+        "dialog": {
+          "title": "Filtrar Relatório da Folha",
+          "description": "Filtrar funcionários por departamento, benefícios ou estado",
+          "department": "Departamento",
+          "allDepartments": "Todos os Departamentos",
+          "benefits": "Pacote de Benefícios",
+          "allBenefits": "Todos os Benefícios",
+          "status": "Estado",
+          "allStatuses": "Todos os Estados",
+          "clearAll": "Limpar Tudo",
+          "apply": "Aplicar Filtros"
+        }
       },
       "salarySummary": {
         "title": "Resumo Salarial",
@@ -11243,11 +13409,271 @@ pt: {
         "monthlySalary": "Salário Mensal",
         "benefits": "Benefícios",
         "status": "Estado",
-        "viewAll": "Ver Todos os {{count}} Funcionários"
+        "viewAll": "Ver Todos os {{count}} Funcionários",
+        "showLess": "Mostrar Menos",
+        "emptyFiltered": "Nenhum funcionário corresponde a estes filtros."
+      },
+      "salaryDetail": {
+        "title": "Relatório Salarial Detalhado",
+        "description": "Detalhe completo dos salários com cálculos fiscais de Timor-Leste",
+        "highest": "Mais Alto",
+        "lowest": "Mais Baixo",
+        "average": "Média",
+        "totalMonthly": "Total Mensal",
+        "columns": {
+          "employee": "Funcionário",
+          "gross": "Bruto",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Líquido"
+        },
+        "totals": "Totais",
+        "taxNoteTitle": "Regras fiscais de Timor-Leste:",
+        "taxNoteDescription": "IRPS = (Bruto - $500) x 10% se o bruto for superior a $500 | INSS funcionário = 4% | INSS empregador = 6% (não mostrado)"
+      },
+      "departmentDetail": {
+        "title": "Análise de Custos por Departamento",
+        "description": "Custos da folha por departamento",
+        "employees": "{{count}} funcionários",
+        "monthlyCost": "Custo Mensal",
+        "annualCost": "Custo Anual",
+        "avgSalary": "Salário Médio",
+        "employeesLabel": "Funcionários:",
+        "totalAll": "Total de Todos os Departamentos"
+      },
+      "benefitsDetail": {
+        "title": "Análise de Benefícios",
+        "description": "Distribuição dos funcionários por pacote de benefícios",
+        "employees": "{{count}} funcionários",
+        "totalMonthlyPayroll": "Folha Mensal Total",
+        "avgSalary": "Salário Médio"
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "firstName": "Primeiro Nome",
+        "lastName": "Apelido",
+        "email": "Email",
+        "department": "Departamento",
+        "position": "Cargo",
+        "monthlySalary": "Salário Mensal",
+        "annualSalary": "Salário Anual",
+        "benefitsPackage": "Pacote de Benefícios",
+        "status": "Estado",
+        "irpsTax": "Imposto IRPS (10% > $500)",
+        "inssEmployee": "INSS Funcionário (4%)",
+        "inssEmployer": "INSS Empregador (6%)",
+        "netPay": "Salário Líquido"
       },
       "status": {
         "active": "Ativo",
         "inactive": "Inativo"
+      }
+    },
+    "inssMonthly": {
+      "title": "Declaração Mensal do INSS",
+      "subtitle": "Gerar e acompanhar as submissões mensais de contribuições do INSS.",
+      "due": {
+        "overdueTitle": "{{task}} em atraso",
+        "overdueDescription": "{{task}} de {{period}} devia ser entregue em {{dueDate}}.",
+        "upcomingTitle": "{{task}} com prazo próximo",
+        "upcomingDescription": "{{task}} de {{period}} vence em {{dueDate}} ({{days}} dias)."
+      },
+      "generate": {
+        "title": "Gerar Declaração Mensal do INSS",
+        "description": "Criar um resumo mensal de contribuições a partir das folhas já pagas.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "button": "Gerar Declaração",
+        "generating": "A gerar..."
+      },
+      "selected": {
+        "title": "Declaração do INSS - {{period}}",
+        "description": "Empregador: {{employer}} | NIF: {{tin}}"
+      },
+      "stats": {
+        "employees": "Funcionários",
+        "contributionBase": "Base de Contribuição",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)"
+      },
+      "table": {
+        "employee": "Funcionário",
+        "inssNumber": "N.º INSS",
+        "base": "Base",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "total": "Total",
+        "missing": "Em falta"
+      },
+      "tracker": {
+        "title": "Acompanhamento de Entregas",
+        "description": "Acompanhe as suas submissões mensais do INSS.",
+        "period": "Período",
+        "statementDue": "Prazo da Declaração",
+        "paymentDue": "Prazo do Pagamento",
+        "statementStatus": "Estado da Declaração",
+        "paymentStatus": "Estado do Pagamento",
+        "employees": "Funcionários",
+        "employeeContribution": "Funcionário",
+        "employerContribution": "Empregador",
+        "actions": "Ações",
+        "empty": "Ainda não existem entregas do INSS. Gere a primeira declaração acima."
+      },
+      "actions": {
+        "export": "Exportar CSV",
+        "view": "Ver",
+        "markStatement": "Marcar Declaração",
+        "markPayment": "Marcar Pagamento"
+      },
+      "tasks": {
+        "payment": "Pagamento",
+        "statement": "Declaração",
+        "paymentFull": "pagamento do INSS",
+        "statementFull": "declaração do INSS"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Em atraso",
+        "filed": "Entregue",
+        "draft": "Rascunho"
+      },
+      "markFiled": {
+        "title": "Marcar {{task}} como entregue",
+        "description": "Registar os detalhes da submissão de {{task}} para esta declaração do INSS.",
+        "submissionMethod": "Método de Submissão",
+        "selectMethod": "Selecionar método",
+        "portal": "Portal do INSS",
+        "notFiled": "Não entregue",
+        "receiptLabel": "Recibo / Referência (opcional)",
+        "receiptPlaceholder": "Número de referência",
+        "notesLabel": "Notas (opcional)",
+        "notesPlaceholder": "Notas sobre a submissão ou pagamento",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      },
+      "toast": {
+        "generatedTitle": "Declaração do INSS gerada",
+        "generatedDescription": "A declaração mensal do INSS para {{period}} foi gerada.",
+        "generateErrorTitle": "Erro",
+        "generateErrorDescription": "Falha ao gerar a declaração do INSS. Confirme que existe folha paga para este período.",
+        "noDataTitle": "Sem dados disponíveis",
+        "noDataDescription": "Não foram encontrados dados de folha para {{period}}. Execute a folha primeiro e depois gere a declaração.",
+        "exportedTitle": "Exportado",
+        "exportedDescription": "Declaração do INSS exportada para CSV.",
+        "savedTitle": "Guardado",
+        "savedDescription": "{{task}} do INSS marcado como entregue.",
+        "updateErrorTitle": "Erro",
+        "updateErrorDescription": "Falha ao atualizar o estado da entrega."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "inssNumber": "Número INSS",
+        "contributionBase": "Base de Contribuição (USD)",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "Reconciliação Anual do INSS",
+      "subtitle": "Agregar contribuições mensais do INSS num resumo anual para o fecho do ano.",
+      "generate": {
+        "title": "Gerar Resumo Anual",
+        "description": "Agrega todas as declarações mensais do INSS do ano selecionado em totais anuais por funcionário.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "button": "Gerar Resumo Anual"
+      },
+      "summary": {
+        "title": "Resumo Anual do INSS - {{year}}",
+        "description": "Empregador: {{employer}} | NIF: {{tin}} | Meses entregues: {{monthsFiled}}/12",
+        "warning": "Apenas {{monthsFiled}} de 12 meses foram entregues. Gere as declarações mensais em falta antes de submeter a reconciliação anual."
+      },
+      "stats": {
+        "employees": "Funcionários",
+        "monthsFiled": "Meses Entregues",
+        "totalBase": "Base Total",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)"
+      },
+      "table": {
+        "employee": "Funcionário",
+        "inssNumber": "N.º INSS",
+        "months": "Meses",
+        "annualBase": "Base Anual",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Em falta",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Exportar CSV"
+      },
+      "toast": {
+        "noDataTitle": "Sem Dados",
+        "noDataDescription": "Não foram encontradas declarações mensais do INSS para {{year}}. Gere primeiro as declarações mensais.",
+        "generatedTitle": "Resumo Anual Gerado",
+        "generatedDescription": "Foram agregados {{count}} meses de dados do INSS para {{year}}.",
+        "exportedTitle": "Exportado",
+        "exportedDescription": "Reconciliação anual do INSS para {{year}} exportada para CSV."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "inssNumber": "Número INSS",
+        "monthsContributed": "Meses Contribuídos",
+        "annualContributionBase": "Base de Contribuição Anual (USD)",
+        "annualEmployeeContribution": "Funcionário Anual 4% (USD)",
+        "annualEmployerContribution": "Empregador Anual 6% (USD)",
+        "annualTotalContribution": "Total Anual 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Pacote de Exportação para Doadores",
+      "subtitle": "Exportar dados contabilísticos da folha prontos para doadores diretamente a partir dos lançamentos contabilísticos registados.",
+      "exportButton": "Exportar Pacote (2 CSV)",
+      "exportHint": "Isto descarrega dois ficheiros: um resumo por projeto e as linhas detalhadas do diário.",
+      "filters": {
+        "startDate": "Data Inicial",
+        "endDate": "Data Final"
+      },
+      "stats": {
+        "salaryExpense": "Despesa com Salários",
+        "inssEmployerExpense": "Despesa INSS Empregador",
+        "totalExpense": "Despesa Total"
+      },
+      "summary": {
+        "title": "Resumo por Projeto e Fonte de Financiamento",
+        "loading": "A carregar lançamentos contabilísticos...",
+        "empty": "Não foram encontradas linhas do diário da folha para este período.",
+        "project": "Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "salary": "Salário",
+        "inssEmployer": "INSS Empregador",
+        "totalExpense": "Despesa Total"
+      },
+      "toast": {
+        "title": "Exportação concluída",
+        "description": "Os dois ficheiros de exportação para doadores foram descarregados."
+      },
+      "csv": {
+        "projectCode": "Código do Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "salaryExpense": "Despesa com Salários",
+        "inssEmployerExpense": "Despesa INSS Empregador",
+        "totalExpense": "Despesa Total",
+        "date": "Data",
+        "entryNumber": "Número do Lançamento",
+        "payrollRunId": "ID da Folha",
+        "accountCode": "Código da Conta",
+        "accountName": "Nome da Conta",
+        "debit": "Débito",
+        "credit": "Crédito",
+        "description": "Descrição"
       }
     }
   },
@@ -12170,6 +14596,7 @@ pt: {
       "planEnterprise": "Empresa",
       "planEnterpriseDesc": "Funcionários e utilizadores ilimitados"
     },
+    "platformManagement": "Gestão da Plataforma",
     "auditLog": {
       "title": "Registo de Auditoria",
       "subtitle": "Acompanhar todas as ações administrativas na plataforma",
@@ -12178,6 +14605,7 @@ pt: {
       "eventsFound": "{{count}} evento(s) encontrado(s)",
       "searchPlaceholder": "Pesquisar registos...",
       "filterByAction": "Filtrar por ação",
+      "filtersTitle": "Mais filtros",
       "allActions": "Todas as Ações",
       "noEntries": "Nenhum registo de auditoria encontrado",
       "noEntriesDesc": "Ações administrativas aparecerão aqui",
@@ -12192,6 +14620,11 @@ pt: {
       "targetUser": "Utilizador Alvo",
       "targetUserId": "ID do Utilizador Alvo",
       "entryId": "ID do Registo: {{id}}",
+      "justNow": "Agora mesmo",
+      "minutesAgo": "{{count}}m atrás",
+      "hoursAgo": "{{count}}h atrás",
+      "daysAgo": "{{count}}d atrás",
+      "viewDetailsAction": "Ver detalhes",
       "errorLoad": "Falha ao carregar registo de auditoria",
       "actionTenantCreated": "Inquilino Criado",
       "actionTenantSuspended": "Inquilino Suspenso",
@@ -12222,6 +14655,7 @@ pt: {
       "tabExpiring": "A Expirar ({{count}})",
       "tabExpired": "Expirados ({{count}})",
       "searchPlaceholder": "Pesquisar por nome ou ID...",
+      "filtersTitle": "Mais filtros",
       "allStatuses": "Todos os Estados",
       "allNationalities": "Todas as Nacionalidades",
       "statusActive": "Ativo",
@@ -12239,6 +14673,7 @@ pt: {
       "visaExpiry": "Validade do Visto",
       "permitStatus": "Estado da Autorização",
       "actions": "Ações",
+      "openEmployee": "Abrir funcionário",
       "noVisaOnFile": "Sem visto em arquivo",
       "noPermitOnFile": "Sem autorização em arquivo",
       "noExpiry": "Sem validade definida",
@@ -12247,7 +14682,110 @@ pt: {
       "expiresTomorrow": "Expira amanhã",
       "expiresInDays": "{{days}} dias",
       "requirementsTitle": "Requisitos de Autorização de Trabalho (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Visto de Trabalho (Tipo C)",
+        "visaValidity": "Válido por 1 ano",
+        "visaProcessing": "Processamento: cerca de 15 dias úteis",
+        "visaFee": "Taxa: USD 50",
+        "visaSponsor": "Requer patrocínio do empregador",
+        "documentsTitle": "Documentos Necessários",
+        "documentsPassport": "Passaporte válido (6+ meses)",
+        "documentsContract": "Contrato de trabalho",
+        "documentsTax": "Certificado fiscal da empresa",
+        "documentsMedical": "Atestado médico",
+        "renewalTitle": "Processo de Renovação",
+        "renewalApply": "Solicitar 30 dias antes da expiração",
+        "renewalSubmit": "Submeter através do Departamento de Imigração",
+        "renewalOriginals": "Manter todos os documentos originais",
+        "renewalTiming": "Reservar 2 a 3 semanas para processamento"
+      },
       "errorLoad": "Falha ao carregar dados dos funcionários."
+    },
+    "userList": {
+      "title": "Utilizadores",
+      "subtitle": "Gerir utilizadores da plataforma e acesso de superadmin",
+      "stats": {
+        "totalUsers": "Total de Utilizadores",
+        "superadmins": "Superadmins",
+        "withTenants": "Com inquilinos"
+      },
+      "allUsers": "Todos os utilizadores",
+      "usersFound": "{{count}} utilizadores encontrados",
+      "searchPlaceholder": "Pesquisar utilizadores...",
+      "noUsers": "Nenhum utilizador encontrado",
+      "clearSearch": "Limpar pesquisa",
+      "noName": "Sem nome",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "Utilizador",
+      "tenantsCount": "{{count}} inquilinos",
+      "processing": "A processar...",
+      "grantAction": "Conceder superadmin",
+      "revokeAction": "Revogar superadmin",
+      "table": {
+        "user": "Utilizador",
+        "role": "Função",
+        "tenants": "Inquilinos",
+        "created": "Criado",
+        "actions": "Ações"
+      },
+      "dialog": {
+        "grantTitle": "Conceder Acesso de Superadmin",
+        "revokeTitle": "Revogar Acesso de Superadmin",
+        "grantDescription": "Está prestes a conceder acesso de superadmin a {{email}}. Isto dá acesso total a todos os inquilinos e à gestão da plataforma.",
+        "revokeDescription": "Está prestes a revogar o acesso de superadmin de {{email}}. Esta pessoa deixará de conseguir aceder à consola de administração ou gerir outros inquilinos."
+      },
+      "toastGrantSuccess": "{{email}} é agora superadmin",
+      "toastRevokeSuccess": "Superadmin removido de {{email}}",
+      "toastUpdateFailed": "Falha ao atualizar o estado de superadmin"
+    },
+    "tenantList": {
+      "title": "Inquilinos",
+      "subtitle": "Gerir todas as organizações inquilinas na plataforma",
+      "seedAudit": "Seed e Auditoria",
+      "addTenant": "Adicionar inquilino",
+      "stats": {
+        "totalTenants": "Total de Inquilinos",
+        "active": "Ativos",
+        "suspended": "Suspensos",
+        "enterprise": "Empresa"
+      },
+      "allTenants": "Todos os inquilinos",
+      "tenantsFound": "{{count}} inquilinos encontrados",
+      "searchPlaceholder": "Pesquisar inquilinos...",
+      "noTenants": "Nenhum inquilino encontrado",
+      "clearSearch": "Limpar pesquisa",
+      "createFirstTenant": "Criar o primeiro inquilino",
+      "table": {
+        "tenant": "Inquilino",
+        "status": "Estado",
+        "plan": "Plano",
+        "created": "Criado",
+        "actions": "Ações"
+      },
+      "actions": {
+        "viewDetails": "Ver detalhes",
+        "impersonate": "Personificar",
+        "suspend": "Suspender",
+        "reactivate": "Reativar"
+      },
+      "status": {
+        "active": "Ativo",
+        "suspended": "Suspenso",
+        "pending": "Pendente",
+        "cancelled": "Cancelado"
+      },
+      "plan": {
+        "free": "Grátis",
+        "starter": "Starter",
+        "professional": "Profissional",
+        "enterprise": "Empresa"
+      },
+      "toastViewingAs": "A ver como {{name}}",
+      "toastImpersonateFailed": "Falha ao personificar inquilino",
+      "toastSuspended": "{{name}} foi suspenso",
+      "toastSuspendFailed": "Falha ao suspender inquilino",
+      "toastReactivated": "{{name}} foi reativado",
+      "toastReactivateFailed": "Falha ao reativar inquilino"
     }
   },
   "money": {

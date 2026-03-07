@@ -284,6 +284,23 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
   const alerts = useMemo(() => extractAlerts(employees), [employees]);
   const displayAlerts = alerts.slice(0, maxItems);
 
+  const getDocumentLabel = (documentType: DocumentType) => {
+    const labels: Record<DocumentType, string> = {
+      bi: t("documentAlerts.types.bi"),
+      passport: t("documentAlerts.types.passport"),
+      work_permit: t("documentAlerts.types.workPermit"),
+      work_visa: t("documentAlerts.types.workVisa"),
+      residence_permit: t("documentAlerts.types.residencePermit"),
+      electoral: t("documentAlerts.types.electoral"),
+      inss: t("documentAlerts.types.inssCard"),
+      contract: t("documentAlerts.types.contract"),
+    };
+    return labels[documentType];
+  };
+
+  const getSeverityLabel = (severity: AlertSeverity) =>
+    t(`documentAlerts.severity.${severity}`);
+
   const counts = useMemo(() => ({
     expired: alerts.filter(a => a.severity === "expired").length,
     critical: alerts.filter(a => a.severity === "critical").length,
@@ -358,17 +375,19 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
                       <span className="font-medium text-sm truncate">{alert.employeeName}</span>
                     </div>
                     <p className="text-xs text-muted-foreground truncate">
-                      {alert.documentLabel}
+                      {getDocumentLabel(alert.documentType)}
                       {" - "}
                       {alert.daysUntilExpiry < 0
                         ? t("documentAlerts.expiredDaysAgo", { count: Math.abs(alert.daysUntilExpiry) })
                         : alert.daysUntilExpiry === 0
                         ? t("documentAlerts.expiresToday")
+                        : alert.daysUntilExpiry === 1
+                        ? t("documentAlerts.expiresTomorrow")
                         : t("documentAlerts.expiresInDays", { count: alert.daysUntilExpiry })}
                     </p>
                   </div>
                   <Badge variant="outline" className={config.className}>
-                    {config.label}
+                    {getSeverityLabel(alert.severity)}
                   </Badge>
                 </div>
               );

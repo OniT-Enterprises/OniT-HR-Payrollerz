@@ -44,9 +44,11 @@ import { useAllUsers, useSetSuperadmin } from "@/hooks/useAdmin";
 import { UserProfile } from "@/types/user";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function UserList() {
   const { user: currentUser } = useAuth();
+  const { t } = useI18n();
   const { data: users = [], isLoading: loading } = useAllUsers();
   const setSuperadminMutation = useSetSuperadmin();
   const [searchQuery, setSearchQuery] = useState("");
@@ -75,11 +77,12 @@ export default function UserList() {
       });
       toast.success(
         grantSuperadmin
-          ? `${targetUser.email} is now a superadmin`
-          : `Superadmin removed from ${targetUser.email}`
+          ? t("admin.userList.toastGrantSuccess", { email: targetUser.email || t("common.unknown") })
+          : t("admin.userList.toastRevokeSuccess", { email: targetUser.email || t("common.unknown") })
       );
     } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : "Failed to update superadmin status";
+      const message =
+        error instanceof Error ? error.message : t("admin.userList.toastUpdateFailed");
       toast.error(message);
     } finally {
       setConfirmDialog({ open: false, user: null, action: "grant" });
@@ -124,11 +127,11 @@ export default function UserList() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-4 w-4 text-blue-500" />
-                  <span>Platform Management</span>
+                  <span>{t("admin.platformManagement")}</span>
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight">Users</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t("admin.userList.title")}</h1>
                 <p className="text-muted-foreground">
-                  Manage all platform users and superadmin access
+                  {t("admin.userList.subtitle")}
                 </p>
               </div>
             </div>
@@ -143,7 +146,7 @@ export default function UserList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.userList.stats.totalUsers")}</p>
                   <p className="text-2xl font-bold">{users.length}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-blue-500/10">
@@ -156,7 +159,7 @@ export default function UserList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Superadmins</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.userList.stats.superadmins")}</p>
                   <p className="text-2xl font-bold text-amber-600">{superadminCount}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -169,7 +172,7 @@ export default function UserList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">With Tenants</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.userList.stats.withTenants")}</p>
                   <p className="text-2xl font-bold text-emerald-600">{activeCount}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-emerald-500/10">
@@ -183,17 +186,17 @@ export default function UserList() {
         {/* Table */}
         <Card className="border-border/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg">All Users</CardTitle>
+                <CardTitle className="text-lg">{t("admin.userList.allUsers")}</CardTitle>
                 <CardDescription>
-                  {filteredUsers.length} user{filteredUsers.length !== 1 ? "s" : ""} found
+                  {t("admin.userList.usersFound", { count: String(filteredUsers.length) })}
                 </CardDescription>
               </div>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search users..."
+                  placeholder={t("admin.userList.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -209,118 +212,225 @@ export default function UserList() {
             ) : filteredUsers.length === 0 ? (
               <div className="text-center py-12">
                 <Users className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground mb-4">No users found</p>
+                <p className="text-muted-foreground mb-4">{t("admin.userList.noUsers")}</p>
                 {searchQuery && (
                   <Button variant="outline" onClick={() => setSearchQuery("")}>
-                    Clear Search
+                    {t("admin.userList.clearSearch")}
                   </Button>
                 )}
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>User</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Tenants</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {filteredUsers.map((user) => (
-                    <TableRow key={user.uid} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white font-semibold">
-                            {user.displayName?.[0]?.toUpperCase() ||
-                              user.email?.[0]?.toUpperCase() ||
-                              "U"}
-                          </div>
-                          <div>
-                            <p className="font-medium">{user.displayName || "No name"}</p>
-                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                              <Mail className="h-3 w-3" />
-                              {user.email}
+                    <Card key={user.uid} className="border-border/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-primary to-violet-500 font-semibold text-white">
+                              {user.displayName?.[0]?.toUpperCase() ||
+                                user.email?.[0]?.toUpperCase() ||
+                                "U"}
+                            </div>
+                            <div className="space-y-1">
+                              <p className="font-medium">{user.displayName || t("admin.userList.noName")}</p>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </div>
                             </div>
                           </div>
+                          {user.isSuperAdmin ? (
+                            <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                              <Shield className="mr-1 h-3 w-3" />
+                              {t("admin.userList.roleSuperadmin")}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">{t("admin.userList.roleUser")}</Badge>
+                          )}
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {user.isSuperAdmin ? (
-                          <Badge className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 border">
-                            <Shield className="h-3 w-3 mr-1" />
-                            Superadmin
-                          </Badge>
-                        ) : (
-                          <Badge variant="secondary">User</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-muted-foreground" />
-                          <span>{user.tenantIds?.length || 0}</span>
+                        <div className="mt-4 flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3" />
+                            <span>{t("admin.userList.tenantsCount", { count: String(user.tenantIds?.length || 0) })}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(user.createdAt)}</span>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(user.createdAt)}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              disabled={setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid}
-                            >
-                              {setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid ? (
-                                <Loader2 className="h-4 w-4 animate-spin" />
+                        <div className="mt-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="w-full justify-between"
+                                disabled={setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid}
+                              >
+                                {setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    {t("admin.userList.processing")}
+                                  </>
+                                ) : (
+                                  <>
+                                    {t("common.moreActions")}
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </>
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[220px]">
+                              {user.isSuperAdmin ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      user,
+                                      action: "revoke",
+                                    })
+                                  }
+                                  className="text-red-600"
+                                  disabled={user.uid === currentUser?.uid}
+                                >
+                                  <ShieldOff className="mr-2 h-4 w-4" />
+                                  {t("admin.userList.revokeAction")}
+                                </DropdownMenuItem>
                               ) : (
-                                <MoreHorizontal className="h-4 w-4" />
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      user,
+                                      action: "grant",
+                                    })
+                                  }
+                                  className="text-amber-600"
+                                >
+                                  <Shield className="mr-2 h-4 w-4" />
+                                  {t("admin.userList.grantAction")}
+                                </DropdownMenuItem>
                               )}
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            {user.isSuperAdmin ? (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  setConfirmDialog({
-                                    open: true,
-                                    user,
-                                    action: "revoke",
-                                  })
-                                }
-                                className="text-red-600"
-                                disabled={user.uid === currentUser?.uid}
-                              >
-                                <ShieldOff className="h-4 w-4 mr-2" />
-                                Remove Superadmin
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  setConfirmDialog({
-                                    open: true,
-                                    user,
-                                    action: "grant",
-                                  })
-                                }
-                                className="text-amber-600"
-                              >
-                                <Shield className="h-4 w-4 mr-2" />
-                                Make Superadmin
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardContent>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("admin.userList.table.user")}</TableHead>
+                      <TableHead>{t("admin.userList.table.role")}</TableHead>
+                      <TableHead>{t("admin.userList.table.tenants")}</TableHead>
+                      <TableHead>{t("admin.userList.table.created")}</TableHead>
+                      <TableHead className="text-right">{t("admin.userList.table.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredUsers.map((user) => (
+                      <TableRow key={user.uid} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-violet-500 flex items-center justify-center text-white font-semibold">
+                              {user.displayName?.[0]?.toUpperCase() ||
+                                user.email?.[0]?.toUpperCase() ||
+                                "U"}
+                            </div>
+                            <div>
+                              <p className="font-medium">{user.displayName || t("admin.userList.noName")}</p>
+                              <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {user.isSuperAdmin ? (
+                            <Badge className="border border-amber-500/20 bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                              <Shield className="mr-1 h-3 w-3" />
+                              {t("admin.userList.roleSuperadmin")}
+                            </Badge>
+                          ) : (
+                            <Badge variant="secondary">{t("admin.userList.roleUser")}</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Building2 className="h-3 w-3 text-muted-foreground" />
+                            <span>{user.tenantIds?.length || 0}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(user.createdAt)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2"
+                                disabled={setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid}
+                              >
+                                {setSuperadminMutation.isPending && setSuperadminMutation.variables?.targetUid === user.uid ? (
+                                  <>
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    {t("admin.userList.processing")}
+                                  </>
+                                ) : (
+                                  <>
+                                    {t("common.moreActions")}
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </>
+                                )}
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {user.isSuperAdmin ? (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      user,
+                                      action: "revoke",
+                                    })
+                                  }
+                                  className="text-red-600"
+                                  disabled={user.uid === currentUser?.uid}
+                                >
+                                  <ShieldOff className="h-4 w-4 mr-2" />
+                                  {t("admin.userList.revokeAction")}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setConfirmDialog({
+                                      open: true,
+                                      user,
+                                      action: "grant",
+                                    })
+                                  }
+                                  className="text-amber-600"
+                                >
+                                  <Shield className="h-4 w-4 mr-2" />
+                                  {t("admin.userList.grantAction")}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>
@@ -338,22 +448,18 @@ export default function UserList() {
             <DialogTitle className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-amber-500" />
               {confirmDialog.action === "grant"
-                ? "Grant Superadmin Access"
-                : "Revoke Superadmin Access"}
+                ? t("admin.userList.dialog.grantTitle")
+                : t("admin.userList.dialog.revokeTitle")}
             </DialogTitle>
             <DialogDescription>
               {confirmDialog.action === "grant" ? (
-                <>
-                  You are about to grant superadmin access to{" "}
-                  <strong>{confirmDialog.user?.email}</strong>. This will give them full
-                  access to all tenants and platform management features.
-                </>
+                t("admin.userList.dialog.grantDescription", {
+                  email: confirmDialog.user?.email || t("common.unknown"),
+                })
               ) : (
-                <>
-                  You are about to revoke superadmin access from{" "}
-                  <strong>{confirmDialog.user?.email}</strong>. They will no longer be
-                  able to access the admin console or manage other tenants.
-                </>
+                t("admin.userList.dialog.revokeDescription", {
+                  email: confirmDialog.user?.email || t("common.unknown"),
+                })
               )}
             </DialogDescription>
           </DialogHeader>
@@ -362,7 +468,7 @@ export default function UserList() {
               variant="outline"
               onClick={() => setConfirmDialog({ open: false, user: null, action: "grant" })}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               variant={confirmDialog.action === "revoke" ? "destructive" : "default"}
@@ -372,12 +478,12 @@ export default function UserList() {
               {setSuperadminMutation.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Processing...
+                  {t("admin.userList.processing")}
                 </>
               ) : confirmDialog.action === "grant" ? (
-                "Grant Superadmin"
+                t("admin.userList.grantAction")
               ) : (
-                "Revoke Superadmin"
+                t("admin.userList.revokeAction")
               )}
             </Button>
           </DialogFooter>

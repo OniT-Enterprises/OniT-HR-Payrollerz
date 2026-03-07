@@ -2,6 +2,8 @@ import React, { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import {
   Select,
   SelectContent,
@@ -22,7 +24,7 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useAllEmployees } from "@/hooks/useEmployees";
@@ -54,35 +56,33 @@ interface AllocationTotals {
   employerCost: number;
 }
 
-const monthOptions = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-function formatUSD(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
-
 export default function PayrollAllocationReport() {
+  const { toast } = useToast();
+  const { t, locale } = useI18n();
   const tenantId = useTenantId();
   const today = getTodayTL();
   const [selectedYear, setSelectedYear] = useState(today.substring(0, 4));
   const [selectedMonth, setSelectedMonth] = useState(today.substring(5, 7));
+
+  const monthOptions = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const month = index + 1;
+        return {
+          value: String(month).padStart(2, "0"),
+          label: t(`common.months.${month}`),
+        };
+      }),
+    [t],
+  );
+
+  const formatUSD = (value: number) =>
+    new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-PT", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
 
   const { data: payrollRuns = [], isLoading: runsLoading } = usePayrollRuns({ limit: 300 });
   const { data: employees = [], isLoading: employeesLoading } = useAllEmployees(1000);
@@ -148,8 +148,8 @@ export default function PayrollAllocationReport() {
       for (const records of recordsByRun) {
         for (const record of records) {
           const meta = employeeMeta.get(record.employeeId) || {
-            projectCode: "Unassigned",
-            fundingSource: "Unassigned",
+            projectCode: t("reports.payrollAllocation.unassigned"),
+            fundingSource: t("reports.payrollAllocation.unassigned"),
           };
           const key = `${meta.projectCode}::${meta.fundingSource}`;
           const incomeTax =
@@ -236,15 +236,15 @@ export default function PayrollAllocationReport() {
   const exportCsv = () => {
     if (!rows.length) return;
     const header = [
-      "Project Code",
-      "Funding Source",
-      "Employee Count",
-      "Gross Pay",
-      "Income Tax",
-      "INSS Employee",
-      "INSS Employer",
-      "Net Pay",
-      "Employer Cost",
+      t("reports.payrollAllocation.csv.projectCode"),
+      t("reports.payrollAllocation.csv.fundingSource"),
+      t("reports.payrollAllocation.csv.employeeCount"),
+      t("reports.payrollAllocation.csv.grossPay"),
+      t("reports.payrollAllocation.csv.incomeTax"),
+      t("reports.payrollAllocation.csv.inssEmployee"),
+      t("reports.payrollAllocation.csv.inssEmployer"),
+      t("reports.payrollAllocation.csv.netPay"),
+      t("reports.payrollAllocation.csv.employerCost"),
     ];
     const body = rows.map((row) => [
       row.projectCode,
@@ -263,11 +263,18 @@ export default function PayrollAllocationReport() {
     link.href = URL.createObjectURL(blob);
     link.download = `payroll-allocation-${selectedYear}-${selectedMonth}.csv`;
     link.click();
+    toast({
+      title: t("reports.payrollAllocation.toast.title"),
+      description: t("reports.payrollAllocation.toast.description"),
+    });
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.payrollReports} />
+      <SEO
+        title={t("reports.payrollAllocation.title")}
+        description={t("reports.payrollAllocation.subtitle")}
+      />
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
@@ -275,24 +282,30 @@ export default function PayrollAllocationReport() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Payroll Allocation Report</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t("reports.payrollAllocation.title")}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Project and funding source payroll breakdown for NGO and donor reporting.
+              {t("reports.payrollAllocation.subtitle")}
             </p>
           </div>
           <Button variant="outline" onClick={exportCsv} disabled={!rows.length} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
-            Export CSV
+            {t("reports.payrollAllocation.actions.export")}
           </Button>
         </div>
 
         <Card className="mb-6">
           <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Year</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("reports.payrollAllocation.filters.year")}
+              </p>
               <Select value={selectedYear} onValueChange={setSelectedYear}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select year" />
+                  <SelectValue
+                    placeholder={t("reports.payrollAllocation.filters.selectYear")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {yearOptions.map((year) => (
@@ -304,10 +317,14 @@ export default function PayrollAllocationReport() {
               </Select>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Month</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("reports.payrollAllocation.filters.month")}
+              </p>
               <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select month" />
+                  <SelectValue
+                    placeholder={t("reports.payrollAllocation.filters.selectMonth")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {monthOptions.map((month) => (
@@ -318,13 +335,18 @@ export default function PayrollAllocationReport() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="sm:col-span-2 text-sm text-muted-foreground">
+              {t("reports.payrollAllocation.filters.hint")}
+            </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Payroll Runs</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.payrollAllocation.stats.payrollRuns")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xl sm:text-2xl font-semibold">
               {loading ? <Skeleton className="h-8 w-12" /> : totals?.runCount ?? 0}
@@ -332,7 +354,9 @@ export default function PayrollAllocationReport() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Employees</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.payrollAllocation.stats.employees")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-xl sm:text-2xl font-semibold">
               {loading ? <Skeleton className="h-8 w-12" /> : totals?.employeeCount ?? 0}
@@ -340,7 +364,9 @@ export default function PayrollAllocationReport() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Gross Payroll</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.payrollAllocation.stats.grossPayroll")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-lg sm:text-2xl font-semibold break-words">
               {loading ? <Skeleton className="h-8 w-28" /> : formatUSD(totals?.grossPay ?? 0)}
@@ -348,7 +374,9 @@ export default function PayrollAllocationReport() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Employer Cost</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.payrollAllocation.stats.employerCost")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-lg sm:text-2xl font-semibold break-words">
               {loading ? <Skeleton className="h-8 w-28" /> : formatUSD(totals?.employerCost ?? 0)}
@@ -360,7 +388,7 @@ export default function PayrollAllocationReport() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FolderKanban className="h-4 w-4" />
-              By Project and Funding Source
+              {t("reports.payrollAllocation.table.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -373,7 +401,7 @@ export default function PayrollAllocationReport() {
             ) : rows.length === 0 ? (
               <div className="flex items-center gap-2 text-sm text-muted-foreground p-3 border rounded-md">
                 <Building2 className="h-4 w-4" />
-                No approved or paid payroll runs found for this period.
+                {t("reports.payrollAllocation.table.empty")}
               </div>
             ) : (
               <>
@@ -386,23 +414,35 @@ export default function PayrollAllocationReport() {
                             <p className="text-sm font-semibold">{row.projectCode}</p>
                             <p className="text-xs text-muted-foreground">{row.fundingSource}</p>
                           </div>
-                          <p className="text-xs text-muted-foreground">{row.employeeCount} employees</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("reports.payrollAllocation.table.employeesCount", {
+                              count: row.employeeCount,
+                            })}
+                          </p>
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Gross</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.payrollAllocation.table.gross")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.grossPay)}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Net</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.payrollAllocation.table.net")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.netPay)}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">INSS Employer</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.payrollAllocation.table.inssEmployer")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.inssEmployer)}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Employer Cost</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.payrollAllocation.table.employerCost")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.employerCost)}</p>
                           </div>
                         </div>
@@ -415,15 +455,15 @@ export default function PayrollAllocationReport() {
                   <Table className="min-w-[960px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Project</TableHead>
-                        <TableHead>Funding Source</TableHead>
-                        <TableHead className="text-right">Employees</TableHead>
-                        <TableHead className="text-right">Gross</TableHead>
-                        <TableHead className="text-right">Income Tax</TableHead>
-                        <TableHead className="text-right">INSS Emp</TableHead>
-                        <TableHead className="text-right">INSS Employer</TableHead>
-                        <TableHead className="text-right">Net</TableHead>
-                        <TableHead className="text-right">Employer Cost</TableHead>
+                        <TableHead>{t("reports.payrollAllocation.table.project")}</TableHead>
+                        <TableHead>{t("reports.payrollAllocation.table.fundingSource")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.employees")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.gross")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.incomeTax")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.inssEmployee")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.inssEmployer")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.net")}</TableHead>
+                        <TableHead className="text-right">{t("reports.payrollAllocation.table.employerCost")}</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>

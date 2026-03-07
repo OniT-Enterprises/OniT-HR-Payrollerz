@@ -61,6 +61,7 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { timeLeaveNavConfig } from "@/lib/moduleNav";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function Attendance() {
   const { toast } = useToast();
@@ -98,7 +99,7 @@ export default function Attendance() {
   // Form data
   const [formData, setFormData] = useState({
     employeeId: "",
-    date: getTodayTL(),
+    date: selectedDate,
     clockIn: "",
     clockOut: "",
     notes: "",
@@ -245,6 +246,21 @@ export default function Attendance() {
     }));
   };
 
+  const resetMarkForm = (date = selectedDate) => {
+    setFormData({
+      employeeId: "",
+      date,
+      clockIn: "",
+      clockOut: "",
+      notes: "",
+    });
+  };
+
+  const openMarkDialog = (date = selectedDate) => {
+    resetMarkForm(date);
+    setShowMarkDialog(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -284,13 +300,7 @@ export default function Attendance() {
             title: t("timeLeave.attendance.toast.successTitle"),
             description: t("timeLeave.attendance.toast.successDesc"),
           });
-          setFormData({
-            employeeId: "",
-            date: getTodayTL(),
-            clockIn: "",
-            clockOut: "",
-            notes: "",
-          });
+          resetMarkForm(selectedDate);
           setShowMarkDialog(false);
         },
         onError: () => {
@@ -361,6 +371,8 @@ export default function Attendance() {
       const text = await importFile.text();
       const lines = text.split("\n").filter(line => line.trim());
       const headers = lines[0].split(",").map(h => h.trim().toLowerCase());
+      const getHeaderIndex = (...aliases: string[]) =>
+        headers.findIndex((header) => aliases.includes(header));
 
       const records: {
         employeeId: string;
@@ -375,11 +387,11 @@ export default function Attendance() {
         const values = lines[i].split(",").map(v => v.trim());
 
         // Try to find employee by ID or name
-        const employeeIdIdx = headers.indexOf("employee_id") || headers.indexOf("employeeid");
-        const nameIdx = headers.indexOf("name") || headers.indexOf("employee_name");
-        const dateIdx = headers.indexOf("date");
-        const clockInIdx = headers.indexOf("clock_in") || headers.indexOf("clockin") || headers.indexOf("check_in");
-        const clockOutIdx = headers.indexOf("clock_out") || headers.indexOf("clockout") || headers.indexOf("check_out");
+        const employeeIdIdx = getHeaderIndex("employee_id", "employeeid");
+        const nameIdx = getHeaderIndex("name", "employee_name");
+        const dateIdx = getHeaderIndex("date");
+        const clockInIdx = getHeaderIndex("clock_in", "clockin", "check_in");
+        const clockOutIdx = getHeaderIndex("clock_out", "clockout", "check_out");
 
         if (dateIdx === -1 || clockInIdx === -1) continue;
 
@@ -504,13 +516,15 @@ export default function Attendance() {
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowFaceClockIn(true)}
-              >
-                <ScanFace className="h-4 w-4 mr-2" />
-                Face Clock-In
-              </Button>
+              {isToday && (
+                <Button
+                  variant="outline"
+                  onClick={() => setShowFaceClockIn(true)}
+                >
+                  <ScanFace className="h-4 w-4 mr-2" />
+                  {t("timeLeave.attendance.actions.faceClockIn")}
+                </Button>
+              )}
               <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
@@ -561,13 +575,23 @@ export default function Attendance() {
                 </DialogContent>
               </Dialog>
 
-              <Dialog open={showMarkDialog} onOpenChange={setShowMarkDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600">
-                    <Plus className="h-4 w-4 mr-2" />
-                    {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
-                  </Button>
-                </DialogTrigger>
+              <Button
+                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+                onClick={() => openMarkDialog()}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
+              </Button>
+
+              <Dialog
+                open={showMarkDialog}
+                onOpenChange={(open) => {
+                  setShowMarkDialog(open);
+                  if (!open) {
+                    resetMarkForm(selectedDate);
+                  }
+                }}
+              >
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>
@@ -626,14 +650,16 @@ export default function Attendance() {
                         />
                       </div>
                     </div>
-                    <div>
-                      <Label>{t("timeLeave.attendance.mark.notes")}</Label>
-                      <Input
-                        value={formData.notes}
-                        onChange={(e) => handleInputChange("notes", e.target.value)}
-                        placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
-                      />
-                    </div>
+                    <MoreDetailsSection>
+                      <div>
+                        <Label>{t("timeLeave.attendance.mark.notes")}</Label>
+                        <Input
+                          value={formData.notes}
+                          onChange={(e) => handleInputChange("notes", e.target.value)}
+                          placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
+                        />
+                      </div>
+                    </MoreDetailsSection>
                     <DialogFooter>
                       <Button
                         type="button"
@@ -663,20 +689,22 @@ export default function Attendance() {
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Inline Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToPreviousDay}>
-              <ChevronLeft className="h-4 w-4" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4 mr-1.5" />
+              {t("common.previous")}
             </Button>
             <Input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-9 w-[160px] text-sm"
+              className="h-9 w-[180px] text-sm"
             />
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToNextDay}>
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={goToNextDay}>
+              {t("common.next")}
+              <ChevronRight className="h-4 w-4 ml-1.5" />
             </Button>
             {!isToday && (
               <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setSelectedDate(today)}>
@@ -685,12 +713,36 @@ export default function Attendance() {
             )}
           </div>
 
-          <div className="hidden lg:block h-6 w-px bg-border" />
+          {/* Inline Stats */}
+          {attendanceRecords.length > 0 && (
+            <div className="flex flex-wrap items-center gap-3 lg:ml-auto text-xs text-muted-foreground">
+              <span className="flex items-center gap-1.5">
+                <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                {stats.present} {t("timeLeave.attendance.status.present")}
+              </span>
+              {stats.late > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-amber-500" />
+                  {stats.late} {t("timeLeave.attendance.status.late")}
+                </span>
+              )}
+              {stats.absent > 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-red-500" />
+                  {stats.absent} {t("timeLeave.attendance.status.absent")}
+                </span>
+              )}
+              <span className="font-medium text-foreground">
+                {stats.attendanceRate.toFixed(0)}%
+              </span>
+            </div>
+          )}
+        </div>
 
-          {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
+        <MoreDetailsSection className="mb-6" title={t("timeLeave.attendance.filters.title")}>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-2">
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="h-9 w-[160px] text-sm">
+              <SelectTrigger className="h-9 w-full lg:w-[180px] text-sm">
                 <SelectValue placeholder={t("timeLeave.attendance.filters.allDepartments")} />
               </SelectTrigger>
               <SelectContent>
@@ -701,7 +753,7 @@ export default function Attendance() {
               </SelectContent>
             </Select>
             <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="h-9 w-[140px] text-sm">
+              <SelectTrigger className="h-9 w-full lg:w-[160px] text-sm">
                 <SelectValue placeholder={t("timeLeave.attendance.filters.allStatuses")} />
               </SelectTrigger>
               <SelectContent>
@@ -713,40 +765,12 @@ export default function Attendance() {
                 <SelectItem value="leave">{t("timeLeave.attendance.status.leave")}</SelectItem>
               </SelectContent>
             </Select>
-            <Button variant="outline" size="sm" className="h-9" onClick={handleExportCSV}>
+            <Button variant="outline" size="sm" className="h-9 lg:ml-auto" onClick={handleExportCSV}>
               <Download className="h-3.5 w-3.5 mr-1.5" />
               {t("timeLeave.attendance.actions.export")}
             </Button>
           </div>
-
-          {/* Inline Stats */}
-          {attendanceRecords.length > 0 && (
-            <>
-              <div className="hidden lg:block h-6 w-px bg-border" />
-              <div className="flex items-center gap-3 ml-auto text-xs text-muted-foreground">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  {stats.present} {t("timeLeave.attendance.status.present")}
-                </span>
-                {stats.late > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                    {stats.late} {t("timeLeave.attendance.status.late")}
-                  </span>
-                )}
-                {stats.absent > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-red-500" />
-                    {stats.absent} {t("timeLeave.attendance.status.absent")}
-                  </span>
-                )}
-                <span className="font-medium text-foreground">
-                  {stats.attendanceRate.toFixed(0)}%
-                </span>
-              </div>
-            </>
-          )}
-        </div>
+        </MoreDetailsSection>
 
         {/* Attendance Records */}
         {filteredRecords.length === 0 ? (
@@ -767,7 +791,7 @@ export default function Attendance() {
               </Button>
               <Button
                 className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
-                onClick={() => setShowMarkDialog(true)}
+                onClick={() => openMarkDialog()}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}

@@ -117,6 +117,17 @@ export default function AttendanceReports() {
     return acc;
   }, {} as Record<string, number>), [attendanceRecords]);
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      present: t("timeLeave.attendance.status.present"),
+      late: t("timeLeave.attendance.status.late"),
+      absent: t("timeLeave.attendance.status.absent"),
+      half_day: t("timeLeave.attendance.status.halfDay"),
+      leave: t("timeLeave.attendance.status.leave"),
+    };
+    return labels[status] || status;
+  };
+
   // Leave by type
   const leaveByType = useMemo(() => leaveRequests
     .filter((r) => r.status === "approved")
@@ -127,21 +138,24 @@ export default function AttendanceReports() {
 
   const doExport = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
-    toast({ title: "Export Complete", description: `${filename}.csv downloaded successfully` });
+    toast({
+      title: t("reports.attendance.exportCompleteTitle"),
+      description: t("reports.attendance.exportCompleteDesc", { file: `${filename}.csv` }),
+    });
   };
 
   const exportAttendance = () => {
     doExport(attendanceRecords as unknown as Record<string, unknown>[], "attendance_report", [
-      { key: "date", label: "Date" },
-      { key: "employeeName", label: "Employee Name" },
-      { key: "department", label: "Department" },
-      { key: "clockIn", label: "Clock In" },
-      { key: "clockOut", label: "Clock Out" },
-      { key: "regularHours", label: "Regular Hours" },
-      { key: "overtimeHours", label: "Overtime Hours" },
-      { key: "lateMinutes", label: "Late Minutes" },
-      { key: "status", label: "Status" },
-      { key: "source", label: "Source" },
+      { key: "date", label: t("timeLeave.attendance.csv.date") },
+      { key: "employeeName", label: t("timeLeave.attendance.csv.employeeName") },
+      { key: "department", label: t("timeLeave.attendance.csv.department") },
+      { key: "clockIn", label: t("timeLeave.attendance.csv.clockIn") },
+      { key: "clockOut", label: t("timeLeave.attendance.csv.clockOut") },
+      { key: "regularHours", label: t("timeLeave.attendance.csv.regularHours") },
+      { key: "overtimeHours", label: t("timeLeave.attendance.csv.overtimeHours") },
+      { key: "lateMinutes", label: t("reports.attendance.columns.lateMinutes") },
+      { key: "status", label: t("timeLeave.attendance.csv.status") },
+      { key: "source", label: t("timeLeave.timeTracking.table.source") },
     ]);
   };
 
@@ -157,26 +171,26 @@ export default function AttendanceReports() {
       carryOver: b.carryOver || 0,
     }));
     doExport(balanceData, "leave_balances", [
-      { key: "employeeName", label: "Employee Name" },
-      { key: "annualEntitled", label: "Annual Entitled" },
-      { key: "annualUsed", label: "Annual Used" },
-      { key: "annualRemaining", label: "Annual Remaining" },
-      { key: "sickEntitled", label: "Sick Entitled" },
-      { key: "sickUsed", label: "Sick Used" },
-      { key: "sickRemaining", label: "Sick Remaining" },
-      { key: "carryOver", label: "Carry Over" },
+      { key: "employeeName", label: t("timeLeave.attendance.csv.employeeName") },
+      { key: "annualEntitled", label: t("reports.attendance.columns.annualEntitled") },
+      { key: "annualUsed", label: t("reports.attendance.columns.annualUsed") },
+      { key: "annualRemaining", label: t("reports.attendance.columns.annualRemaining") },
+      { key: "sickEntitled", label: t("reports.attendance.columns.sickEntitled") },
+      { key: "sickUsed", label: t("reports.attendance.columns.sickUsed") },
+      { key: "sickRemaining", label: t("reports.attendance.columns.sickRemaining") },
+      { key: "carryOver", label: t("reports.attendance.columns.carryOver") },
     ]);
   };
 
   const exportOvertime = () => {
     const overtimeRecords = attendanceRecords.filter((r) => r.overtimeHours > 0);
     doExport(overtimeRecords as unknown as Record<string, unknown>[], "overtime_report", [
-      { key: "date", label: "Date" },
-      { key: "employeeName", label: "Employee Name" },
-      { key: "department", label: "Department" },
-      { key: "regularHours", label: "Regular Hours" },
-      { key: "overtimeHours", label: "Overtime Hours" },
-      { key: "totalHours", label: "Total Hours" },
+      { key: "date", label: t("timeLeave.attendance.csv.date") },
+      { key: "employeeName", label: t("timeLeave.attendance.csv.employeeName") },
+      { key: "department", label: t("timeLeave.attendance.csv.department") },
+      { key: "regularHours", label: t("timeLeave.attendance.csv.regularHours") },
+      { key: "overtimeHours", label: t("timeLeave.attendance.csv.overtimeHours") },
+      { key: "totalHours", label: t("timeLeave.timeTracking.table.totalHours") },
     ]);
   };
 
@@ -230,15 +244,18 @@ export default function AttendanceReports() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-muted-foreground">
+                {t("reports.attendance.periodLabel")}
+              </span>
               <Select value={dateRange} onValueChange={setDateRange}>
                 <SelectTrigger className="w-[140px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="7">Last 7 days</SelectItem>
-                  <SelectItem value="30">Last 30 days</SelectItem>
-                  <SelectItem value="90">Last 90 days</SelectItem>
-                  <SelectItem value="365">Last year</SelectItem>
+                  <SelectItem value="7">{t("reports.attendance.ranges.last7")}</SelectItem>
+                  <SelectItem value="30">{t("reports.attendance.ranges.last30")}</SelectItem>
+                  <SelectItem value="90">{t("reports.attendance.ranges.last90")}</SelectItem>
+                  <SelectItem value="365">{t("reports.attendance.ranges.lastYear")}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -255,10 +272,13 @@ export default function AttendanceReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Attendance Rate</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.attendanceRate")}</p>
                   <p className="text-3xl font-bold">{attendanceRate}%</p>
                   <p className="text-xs text-green-600">
-                    {presentRecords.length} of {totalRecords} records
+                    {t("reports.attendance.stats.attendanceRateSummary", {
+                      present: presentRecords.length,
+                      total: totalRecords,
+                    })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
@@ -272,10 +292,12 @@ export default function AttendanceReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Late Arrivals</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.lateArrivals")}</p>
                   <p className="text-3xl font-bold">{lateRecords.length}</p>
                   <p className="text-xs text-orange-600">
-                    {Math.round(totalLateMinutes / 60)} hours total
+                    {t("reports.attendance.stats.lateHoursSummary", {
+                      hours: Math.round(totalLateMinutes / 60),
+                    })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
@@ -289,10 +311,12 @@ export default function AttendanceReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Overtime Hours</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.overtimeHours")}</p>
                   <p className="text-3xl font-bold">{totalOvertimeHours.toFixed(1)}</p>
                   <p className="text-xs text-blue-600">
-                    {attendanceRecords.filter((r) => r.overtimeHours > 0).length} employees
+                    {t("reports.attendance.stats.overtimeEmployees", {
+                      count: attendanceRecords.filter((r) => r.overtimeHours > 0).length,
+                    })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
@@ -306,12 +330,14 @@ export default function AttendanceReports() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">On Leave Today</p>
+                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.onLeaveToday")}</p>
                   <p className="text-3xl font-bold">{todayOnLeave.length}</p>
                   <p className="text-xs text-purple-600">
-                    {employees.length > 0
-                      ? ((todayOnLeave.length / employees.length) * 100).toFixed(0)
-                      : 0}% of staff
+                    {t("reports.attendance.stats.onLeaveSummary", {
+                      percent: employees.length > 0
+                        ? ((todayOnLeave.length / employees.length) * 100).toFixed(0)
+                        : 0,
+                    })}
                   </p>
                 </div>
                 <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
@@ -328,30 +354,30 @@ export default function AttendanceReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-violet-600" />
-                Attendance Summary
+                {t("reports.attendance.cards.summary.title")}
               </CardTitle>
-              <CardDescription>Daily attendance records for selected period</CardDescription>
+              <CardDescription>{t("reports.attendance.cards.summary.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Records</span>
+                  <span className="text-muted-foreground">{t("reports.attendance.cards.summary.totalRecords")}</span>
                   <span className="font-medium">{totalRecords}</span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Present</span>
+                  <span className="text-muted-foreground">{t("timeLeave.attendance.status.present")}</span>
                   <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
                     {statusBreakdown.present || 0}
                   </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Late</span>
+                  <span className="text-muted-foreground">{t("timeLeave.attendance.status.late")}</span>
                   <Badge variant="outline" className="bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                     {statusBreakdown.late || 0}
                   </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Absent</span>
+                  <span className="text-muted-foreground">{t("timeLeave.attendance.status.absent")}</span>
                   <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300">
                     {statusBreakdown.absent || 0}
                   </Badge>
@@ -359,7 +385,7 @@ export default function AttendanceReports() {
               </div>
               <Button className="w-full" onClick={exportAttendance}>
                 <Download className="h-4 w-4 mr-2" />
-                Export Attendance
+                {t("reports.attendance.cards.summary.export")}
               </Button>
             </CardContent>
           </Card>
@@ -368,14 +394,14 @@ export default function AttendanceReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-purple-600" />
-                Leave Balances
+                {t("reports.attendance.cards.leave.title")}
               </CardTitle>
-              <CardDescription>Current leave entitlements and usage</CardDescription>
+              <CardDescription>{t("reports.attendance.cards.leave.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Employees</span>
+                  <span className="text-muted-foreground">{t("reports.attendance.cards.leave.employees")}</span>
                   <span className="font-medium">{leaveBalances.length}</span>
                 </div>
                 {Object.entries(leaveByType)
@@ -383,11 +409,13 @@ export default function AttendanceReports() {
                   .map(([type, days]) => (
                     <div key={type} className="flex justify-between text-sm">
                       <span className="text-muted-foreground capitalize">{type}</span>
-                      <Badge variant="outline">{days} days used</Badge>
+                      <Badge variant="outline">
+                        {t("reports.attendance.cards.leave.daysUsed", { days })}
+                      </Badge>
                     </div>
                   ))}
                 {Object.keys(leaveByType).length === 0 && (
-                  <p className="text-sm text-muted-foreground">No leave taken this period</p>
+                  <p className="text-sm text-muted-foreground">{t("reports.attendance.cards.leave.none")}</p>
                 )}
               </div>
               <Button
@@ -396,7 +424,7 @@ export default function AttendanceReports() {
                 disabled={leaveBalances.length === 0}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export Leave Balances
+                {t("reports.attendance.cards.leave.export")}
               </Button>
             </CardContent>
           </Card>
@@ -405,32 +433,37 @@ export default function AttendanceReports() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Timer className="h-5 w-5 text-blue-600" />
-                Overtime Report
+                {t("reports.attendance.cards.overtime.title")}
               </CardTitle>
-              <CardDescription>Track overtime hours by employee</CardDescription>
+              <CardDescription>{t("reports.attendance.cards.overtime.description")}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3 mb-4">
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Total Overtime</span>
-                  <span className="font-medium">{totalOvertimeHours.toFixed(1)} hrs</span>
+                  <span className="text-muted-foreground">{t("reports.attendance.cards.overtime.total")}</span>
+                  <span className="font-medium">
+                    {t("reports.attendance.cards.overtime.hoursValue", {
+                      hours: totalOvertimeHours.toFixed(1),
+                    })}
+                  </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Records with OT</span>
+                  <span className="text-muted-foreground">{t("reports.attendance.cards.overtime.records")}</span>
                   <Badge variant="outline">
                     {attendanceRecords.filter((r) => r.overtimeHours > 0).length}
                   </Badge>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span className="text-muted-foreground">Avg OT/Record</span>
+                  <span className="text-muted-foreground">{t("reports.attendance.cards.overtime.average")}</span>
                   <span className="font-medium">
-                    {attendanceRecords.filter((r) => r.overtimeHours > 0).length > 0
-                      ? (
-                          totalOvertimeHours /
-                          attendanceRecords.filter((r) => r.overtimeHours > 0).length
-                        ).toFixed(1)
-                      : 0}{" "}
-                    hrs
+                    {t("reports.attendance.cards.overtime.hoursValue", {
+                      hours: attendanceRecords.filter((r) => r.overtimeHours > 0).length > 0
+                        ? (
+                            totalOvertimeHours /
+                            attendanceRecords.filter((r) => r.overtimeHours > 0).length
+                          ).toFixed(1)
+                        : 0,
+                    })}
                   </span>
                 </div>
               </div>
@@ -440,7 +473,7 @@ export default function AttendanceReports() {
                 disabled={!attendanceRecords.some((r) => r.overtimeHours > 0)}
               >
                 <Download className="h-4 w-4 mr-2" />
-                Export Overtime
+                {t("reports.attendance.cards.overtime.export")}
               </Button>
             </CardContent>
           </Card>
@@ -448,25 +481,25 @@ export default function AttendanceReports() {
 
         {/* Attendance Status Breakdown */}
         <Card className="border-border/50 shadow-lg mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileSpreadsheet className="h-5 w-5 text-violet-600" />
-              Attendance Status Breakdown
-            </CardTitle>
-            <CardDescription>Distribution by attendance status</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileSpreadsheet className="h-5 w-5 text-violet-600" />
+                {t("reports.attendance.breakdown.title")}
+              </CardTitle>
+              <CardDescription>{t("reports.attendance.breakdown.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
-                { key: "present", label: "Present", color: "bg-green-100 dark:bg-green-900" },
-                { key: "late", label: "Late", color: "bg-orange-100 dark:bg-orange-900" },
-                { key: "absent", label: "Absent", color: "bg-red-100 dark:bg-red-900" },
-                { key: "half_day", label: "Half Day", color: "bg-yellow-100 dark:bg-yellow-900" },
-                { key: "leave", label: "On Leave", color: "bg-purple-100 dark:bg-purple-900" },
-              ].map(({ key, label, color }) => (
+                { key: "present", color: "bg-green-100 dark:bg-green-900" },
+                { key: "late", color: "bg-orange-100 dark:bg-orange-900" },
+                { key: "absent", color: "bg-red-100 dark:bg-red-900" },
+                { key: "half_day", color: "bg-yellow-100 dark:bg-yellow-900" },
+                { key: "leave", color: "bg-purple-100 dark:bg-purple-900" },
+              ].map(({ key, color }) => (
                 <div key={key} className={`text-center p-4 ${color} rounded-lg`}>
                   <p className="text-2xl font-bold">{statusBreakdown[key] || 0}</p>
-                  <p className="text-sm text-muted-foreground">{label}</p>
+                  <p className="text-sm text-muted-foreground">{getStatusLabel(key)}</p>
                   <p className="text-xs text-muted-foreground">
                     {totalRecords > 0
                       ? (((statusBreakdown[key] || 0) / totalRecords) * 100).toFixed(0)
@@ -480,32 +513,32 @@ export default function AttendanceReports() {
 
         {/* Recent Attendance Table */}
         <Card className="border-border/50 shadow-lg">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-violet-600" />
-              Recent Attendance Records
-            </CardTitle>
-            <CardDescription>Most recent clock in/out records</CardDescription>
-          </CardHeader>
-          <CardContent>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-violet-600" />
+                {t("reports.attendance.recent.title")}
+              </CardTitle>
+              <CardDescription>{t("reports.attendance.recent.description")}</CardDescription>
+            </CardHeader>
+            <CardContent>
             {attendanceRecords.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>No attendance records found for this period</p>
-                <p className="text-sm">Records will appear here once employees clock in/out</p>
+                <p>{t("reports.attendance.recent.emptyTitle")}</p>
+                <p className="text-sm">{t("reports.attendance.recent.emptyDescription")}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b">
-                      <th className="text-left p-3 font-medium">Date</th>
-                      <th className="text-left p-3 font-medium">Employee</th>
-                      <th className="text-left p-3 font-medium">Department</th>
-                      <th className="text-center p-3 font-medium">Clock In</th>
-                      <th className="text-center p-3 font-medium">Clock Out</th>
-                      <th className="text-center p-3 font-medium">Hours</th>
-                      <th className="text-center p-3 font-medium">Status</th>
+                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.csv.date")}</th>
+                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.employee")}</th>
+                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.department")}</th>
+                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockIn")}</th>
+                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockOut")}</th>
+                      <th className="text-center p-3 font-medium">{t("timeLeave.timeTracking.table.totalHours")}</th>
+                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.status")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -527,7 +560,7 @@ export default function AttendanceReports() {
                             <span>{record.totalHours?.toFixed(1) || 0}</span>
                             {record.overtimeHours > 0 && (
                               <span className="text-xs text-blue-600 ml-1">
-                                (+{record.overtimeHours.toFixed(1)} OT)
+                                (+{record.overtimeHours.toFixed(1)} {t("timeLeave.attendance.table.overtime")})
                               </span>
                             )}
                           </td>
@@ -543,7 +576,7 @@ export default function AttendanceReports() {
                                   : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                               }
                             >
-                              {record.status}
+                              {getStatusLabel(record.status)}
                             </Badge>
                           </td>
                         </tr>

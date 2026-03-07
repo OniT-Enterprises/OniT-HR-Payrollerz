@@ -41,6 +41,7 @@ import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
 import { toast } from "sonner";
+import { useI18n } from "@/i18n/I18nProvider";
 
 const statusColors: Record<TenantStatus, string> = {
   active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
@@ -60,6 +61,7 @@ export default function TenantList() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
+  const { t } = useI18n();
   const { data: tenants = [], isLoading: loading } = useAllTenants();
   const suspendMutation = useSuspendTenant();
   const reactivateMutation = useReactivateTenant();
@@ -68,10 +70,10 @@ export default function TenantList() {
   const handleImpersonate = async (tenant: TenantConfig) => {
     try {
       await startImpersonation(tenant.id, tenant.name);
-      toast.success(`Now viewing as ${tenant.name}`);
+      toast.success(t("admin.tenantList.toastViewingAs", { name: tenant.name }));
       navigate("/");
     } catch (_error) {
-      toast.error("Failed to impersonate tenant");
+      toast.error(t("admin.tenantList.toastImpersonateFailed"));
     }
   };
 
@@ -85,9 +87,9 @@ export default function TenantList() {
         actorUid: user.uid,
         actorEmail: userProfile.email,
       });
-      toast.success(`${tenant.name} has been suspended`);
+      toast.success(t("admin.tenantList.toastSuspended", { name: tenant.name }));
     } catch (_error) {
-      toast.error("Failed to suspend tenant");
+      toast.error(t("admin.tenantList.toastSuspendFailed"));
     }
   };
 
@@ -100,9 +102,9 @@ export default function TenantList() {
         actorUid: user.uid,
         actorEmail: userProfile.email,
       });
-      toast.success(`${tenant.name} has been reactivated`);
+      toast.success(t("admin.tenantList.toastReactivated", { name: tenant.name }));
     } catch (_error) {
-      toast.error("Failed to reactivate tenant");
+      toast.error(t("admin.tenantList.toastReactivateFailed"));
     }
   };
 
@@ -123,6 +125,9 @@ export default function TenantList() {
     return "-";
   };
 
+  const getStatusLabel = (status: TenantStatus) => t(`admin.tenantList.status.${status}`);
+  const getPlanLabel = (plan: TenantPlan) => t(`admin.tenantList.plan.${plan}`);
+
   return (
     <AdminLayout>
       {/* Hero Section */}
@@ -139,11 +144,11 @@ export default function TenantList() {
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                   <Sparkles className="h-4 w-4 text-amber-500" />
-                  <span>Platform Management</span>
+                  <span>{t("admin.platformManagement")}</span>
                 </div>
-                <h1 className="text-4xl font-bold tracking-tight">Tenants</h1>
+                <h1 className="text-4xl font-bold tracking-tight">{t("admin.tenantList.title")}</h1>
                 <p className="text-muted-foreground">
-                  Manage all tenant organizations on the platform
+                  {t("admin.tenantList.subtitle")}
                 </p>
               </div>
             </div>
@@ -157,7 +162,7 @@ export default function TenantList() {
                   className="gap-2"
                 >
                   <Database className="h-4 w-4" />
-                  Seed & Audit
+                  {t("admin.tenantList.seedAudit")}
                 </Button>
               )}
               <Button
@@ -165,7 +170,7 @@ export default function TenantList() {
                 className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg shadow-amber-500/25"
               >
                 <Plus className="h-4 w-4" />
-                Add Tenant
+                {t("admin.tenantList.addTenant")}
               </Button>
             </div>
           </div>
@@ -179,7 +184,7 @@ export default function TenantList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Tenants</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.totalTenants")}</p>
                   <p className="text-2xl font-bold">{tenants.length}</p>
                 </div>
                 <div className="p-2 rounded-lg bg-amber-500/10">
@@ -192,7 +197,7 @@ export default function TenantList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Active</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.active")}</p>
                   <p className="text-2xl font-bold text-emerald-600">
                     {tenants.filter((t) => t.status === "active").length}
                   </p>
@@ -207,7 +212,7 @@ export default function TenantList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Suspended</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.suspended")}</p>
                   <p className="text-2xl font-bold text-red-600">
                     {tenants.filter((t) => t.status === "suspended").length}
                   </p>
@@ -222,7 +227,7 @@ export default function TenantList() {
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Enterprise</p>
+                  <p className="text-sm text-muted-foreground">{t("admin.tenantList.stats.enterprise")}</p>
                   <p className="text-2xl font-bold text-amber-600">
                     {tenants.filter((t) => t.plan === "enterprise").length}
                   </p>
@@ -238,17 +243,17 @@ export default function TenantList() {
         {/* Table */}
         <Card className="border-border/50">
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <CardTitle className="text-lg">All Tenants</CardTitle>
+                <CardTitle className="text-lg">{t("admin.tenantList.allTenants")}</CardTitle>
                 <CardDescription>
-                  {filteredTenants.length} tenant{filteredTenants.length !== 1 ? "s" : ""} found
+                  {t("admin.tenantList.tenantsFound", { count: String(filteredTenants.length) })}
                 </CardDescription>
               </div>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Search tenants..."
+                  placeholder={t("admin.tenantList.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
@@ -264,102 +269,186 @@ export default function TenantList() {
             ) : filteredTenants.length === 0 ? (
               <div className="text-center py-12">
                 <Building2 className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-                <p className="text-muted-foreground">No tenants found</p>
-                <Button
-                  variant="link"
-                  onClick={() => navigate("/admin/tenants/new")}
-                  className="mt-2"
-                >
-                  Create your first tenant
-                </Button>
+                <p className="text-muted-foreground">{t("admin.tenantList.noTenants")}</p>
+                <div className="mt-4 flex flex-col items-center gap-2">
+                  {searchQuery && (
+                    <Button variant="outline" onClick={() => setSearchQuery("")}>
+                      {t("admin.tenantList.clearSearch")}
+                    </Button>
+                  )}
+                  <Button
+                    variant="link"
+                    onClick={() => navigate("/admin/tenants/new")}
+                  >
+                    {t("admin.tenantList.createFirstTenant")}
+                  </Button>
+                </div>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Tenant</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Plan</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {filteredTenants.map((tenant) => (
-                    <TableRow key={tenant.id} className="hover:bg-muted/50">
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 rounded-lg bg-amber-500/10">
-                            <Building2 className="h-4 w-4 text-amber-500" />
+                    <Card key={tenant.id} className="border-border/50">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex items-center gap-3">
+                            <div className="rounded-lg bg-amber-500/10 p-2">
+                              <Building2 className="h-4 w-4 text-amber-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{tenant.name}</p>
+                              <p className="text-sm text-muted-foreground">{tenant.slug}</p>
+                            </div>
                           </div>
-                          <div>
-                            <p className="font-medium">{tenant.name}</p>
-                            <p className="text-sm text-muted-foreground">{tenant.slug}</p>
+                          <Badge className={`border ${statusColors[tenant.status]}`}>
+                            {getStatusLabel(tenant.status)}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 flex flex-wrap items-center gap-2">
+                          <Badge className={`border ${planColors[tenant.plan]}`}>
+                            {getPlanLabel(tenant.plan)}
+                          </Badge>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            <span>{formatDate(tenant.createdAt)}</span>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`border ${statusColors[tenant.status]}`}>
-                          {tenant.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge className={`border ${planColors[tenant.plan]}`}>
-                          {tenant.plan}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Calendar className="h-3 w-3" />
-                          {formatDate(tenant.createdAt)}
+                        <div className="mt-4">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" className="w-full justify-between">
+                                {t("common.moreActions")}
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[220px]">
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                {t("admin.tenantList.actions.viewDetails")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleImpersonate(tenant)}
+                                disabled={tenant.status !== "active"}
+                              >
+                                <UserCog className="h-4 w-4 mr-2" />
+                                {t("admin.tenantList.actions.impersonate")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {tenant.status === "active" ? (
+                                <DropdownMenuItem
+                                  onClick={() => handleSuspend(tenant)}
+                                  className="text-red-600"
+                                >
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  {t("admin.tenantList.actions.suspend")}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => handleReactivate(tenant)}
+                                  className="text-emerald-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  {t("admin.tenantList.actions.reactivate")}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => handleImpersonate(tenant)}
-                              disabled={tenant.status !== "active"}
-                            >
-                              <UserCog className="h-4 w-4 mr-2" />
-                              Impersonate
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            {tenant.status === "active" ? (
-                              <DropdownMenuItem
-                                onClick={() => handleSuspend(tenant)}
-                                className="text-red-600"
-                              >
-                                <Ban className="h-4 w-4 mr-2" />
-                                Suspend
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => handleReactivate(tenant)}
-                                className="text-emerald-600"
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Reactivate
-                              </DropdownMenuItem>
-                            )}
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </TableCell>
-                    </TableRow>
+                      </CardContent>
+                    </Card>
                   ))}
-                </TableBody>
-              </Table>
+                </div>
+
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("admin.tenantList.table.tenant")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.status")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.plan")}</TableHead>
+                      <TableHead>{t("admin.tenantList.table.created")}</TableHead>
+                      <TableHead className="text-right">{t("admin.tenantList.table.actions")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTenants.map((tenant) => (
+                      <TableRow key={tenant.id} className="hover:bg-muted/50">
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="p-2 rounded-lg bg-amber-500/10">
+                              <Building2 className="h-4 w-4 text-amber-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{tenant.name}</p>
+                              <p className="text-sm text-muted-foreground">{tenant.slug}</p>
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`border ${statusColors[tenant.status]}`}>
+                            {getStatusLabel(tenant.status)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`border ${planColors[tenant.plan]}`}>
+                            {getPlanLabel(tenant.plan)}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-3 w-3" />
+                            {formatDate(tenant.createdAt)}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm" className="gap-2">
+                                {t("common.moreActions")}
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                onClick={() => navigate(`/admin/tenants/${tenant.id}`)}
+                              >
+                                <Eye className="h-4 w-4 mr-2" />
+                                {t("admin.tenantList.actions.viewDetails")}
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                onClick={() => handleImpersonate(tenant)}
+                                disabled={tenant.status !== "active"}
+                              >
+                                <UserCog className="h-4 w-4 mr-2" />
+                                {t("admin.tenantList.actions.impersonate")}
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {tenant.status === "active" ? (
+                                <DropdownMenuItem
+                                  onClick={() => handleSuspend(tenant)}
+                                  className="text-red-600"
+                                >
+                                  <Ban className="h-4 w-4 mr-2" />
+                                  {t("admin.tenantList.actions.suspend")}
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem
+                                  onClick={() => handleReactivate(tenant)}
+                                  className="text-emerald-600"
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-2" />
+                                  {t("admin.tenantList.actions.reactivate")}
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>

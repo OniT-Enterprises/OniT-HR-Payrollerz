@@ -47,6 +47,8 @@ import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
+import { useI18n } from "@/i18n/I18nProvider";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { db } from "@/lib/firebase";
 import {
   collection,
@@ -99,6 +101,7 @@ const EMPTY_FORM: AnnouncementFormData = {
 
 export default function Announcements() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const tenantId = useTenantId();
   const { user } = useAuth();
 
@@ -130,7 +133,7 @@ export default function Announcements() {
               ? data.createdAt.toDate()
               : data.createdAt || new Date(),
           createdBy: data.createdBy || "",
-          createdByName: data.createdByName || "Unknown",
+          createdByName: data.createdByName || t("common.unknown"),
           readBy: data.readBy || {},
         };
       });
@@ -138,14 +141,14 @@ export default function Announcements() {
     } catch (error) {
       console.error("Error fetching announcements:", error);
       toast({
-        title: "Error",
-        description: "Failed to load announcements",
+        title: t("common.error"),
+        description: t("announcements.toast.loadFailed"),
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
-  }, [tenantId, toast]);
+  }, [tenantId, t, toast]);
 
   useEffect(() => {
     if (tenantId) {
@@ -184,8 +187,8 @@ export default function Announcements() {
 
     if (!formData.title.trim()) {
       toast({
-        title: "Error",
-        description: "Title is required",
+        title: t("announcements.toast.validationTitle"),
+        description: t("announcements.toast.titleRequired"),
         variant: "destructive",
       });
       return;
@@ -193,8 +196,8 @@ export default function Announcements() {
 
     if (!formData.body.trim()) {
       toast({
-        title: "Error",
-        description: "Body is required",
+        title: t("announcements.toast.validationTitle"),
+        description: t("announcements.toast.bodyRequired"),
         variant: "destructive",
       });
       return;
@@ -216,20 +219,20 @@ export default function Announcements() {
           updatedAt: serverTimestamp(),
         });
         toast({
-          title: "Success",
-          description: "Announcement updated",
+          title: t("common.success"),
+          description: t("announcements.toast.updated"),
         });
       } else {
         await addDoc(collection(db, `tenants/${tenantId}/announcements`), {
           ...payload,
           createdAt: serverTimestamp(),
           createdBy: user?.uid || "",
-          createdByName: user?.displayName || user?.email || "Admin",
+          createdByName: user?.displayName || user?.email || t("announcements.createdByFallback"),
           readBy: {},
         });
         toast({
-          title: "Success",
-          description: "Announcement published",
+          title: t("common.success"),
+          description: t("announcements.toast.published"),
         });
       }
 
@@ -238,10 +241,10 @@ export default function Announcements() {
     } catch (error) {
       console.error("Error saving announcement:", error);
       toast({
-        title: "Error",
+        title: t("common.error"),
         description: editingAnnouncement
-          ? "Failed to update announcement"
-          : "Failed to create announcement",
+          ? t("announcements.toast.updateFailed")
+          : t("announcements.toast.createFailed"),
         variant: "destructive",
       });
     } finally {
@@ -256,16 +259,16 @@ export default function Announcements() {
       const docRef = doc(db, `tenants/${tenantId}/announcements`, deletingAnnouncement.id);
       await deleteDoc(docRef);
       toast({
-        title: "Success",
-        description: "Announcement deleted",
+        title: t("common.success"),
+        description: t("announcements.toast.deleted"),
       });
       setDeletingAnnouncement(null);
       await fetchAnnouncements();
     } catch (error) {
       console.error("Error deleting announcement:", error);
       toast({
-        title: "Error",
-        description: "Failed to delete announcement",
+        title: t("common.error"),
+        description: t("announcements.toast.deleteFailed"),
         variant: "destructive",
       });
     }
@@ -281,15 +284,17 @@ export default function Announcements() {
         updatedAt: serverTimestamp(),
       });
       toast({
-        title: "Success",
-        description: announcement.pinned ? "Announcement unpinned" : "Announcement pinned to top",
+        title: t("common.success"),
+        description: announcement.pinned
+          ? t("announcements.toast.unpinned")
+          : t("announcements.toast.pinned"),
       });
       await fetchAnnouncements();
     } catch (error) {
       console.error("Error toggling pin:", error);
       toast({
-        title: "Error",
-        description: "Failed to update announcement",
+        title: t("common.error"),
+        description: t("announcements.toast.pinFailed"),
         variant: "destructive",
       });
     }
@@ -324,7 +329,7 @@ export default function Announcements() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Announcements - Meza" description="Manage company announcements for Ekipa" />
+      <SEO title={`${t("announcements.title")} - Meza`} description={t("announcements.subtitle")} />
       <MainNavigation />
       <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
@@ -338,15 +343,15 @@ export default function Announcements() {
                 <Megaphone className="h-8 w-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Announcements</h1>
+                <h1 className="text-3xl font-bold text-foreground">{t("announcements.title")}</h1>
                 <p className="text-muted-foreground mt-1">
-                  Broadcast messages to all employees via Ekipa
+                  {t("announcements.subtitle")}
                 </p>
               </div>
             </div>
             <Button onClick={openCreateDialog} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600" size="lg">
               <Plus className="h-5 w-5 mr-2" />
-              New Announcement
+              {t("announcements.new")}
             </Button>
           </div>
         </div>
@@ -362,7 +367,7 @@ export default function Announcements() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
+                  <p className="text-sm text-muted-foreground">{t("announcements.summary.total")}</p>
                   <p className="text-2xl font-bold">{announcements.length}</p>
                 </div>
                 <Megaphone className="h-8 w-8 text-muted-foreground/30" />
@@ -373,7 +378,7 @@ export default function Announcements() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Pinned</p>
+                  <p className="text-sm text-muted-foreground">{t("announcements.summary.pinned")}</p>
                   <p className="text-2xl font-bold">
                     {announcements.filter((a) => a.pinned).length}
                   </p>
@@ -386,7 +391,7 @@ export default function Announcements() {
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Reads</p>
+                  <p className="text-sm text-muted-foreground">{t("announcements.summary.totalReads")}</p>
                   <p className="text-2xl font-bold">
                     {announcements.reduce((sum, a) => sum + getReadCount(a), 0)}
                   </p>
@@ -402,101 +407,152 @@ export default function Announcements() {
           <Card>
             <CardContent className="py-16 text-center">
               <Megaphone className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-1">No announcements yet</h3>
+              <h3 className="text-lg font-semibold mb-1">{t("announcements.empty.title")}</h3>
               <p className="text-muted-foreground mb-4">
-                Create your first announcement to broadcast to all employees via Ekipa.
+                {t("announcements.empty.description")}
               </p>
               <Button onClick={openCreateDialog} variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
-                New Announcement
+                {t("announcements.new")}
               </Button>
             </CardContent>
           </Card>
         ) : (
-          <Card>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[250px]">Title</TableHead>
-                  <TableHead>Body</TableHead>
-                  <TableHead className="w-[100px]">Pinned</TableHead>
-                  <TableHead className="w-[150px]">Created</TableHead>
-                  <TableHead className="w-[100px] text-center">Read Count</TableHead>
-                  <TableHead className="w-[180px] text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {announcements.map((announcement) => (
-                  <TableRow key={announcement.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex items-center gap-2">
-                        {announcement.imageUrl && (
-                          <span title="Has image">
-                            <Image className="h-4 w-4 text-muted-foreground" />
-                          </span>
-                        )}
-                        {truncateText(announcement.title, 40)}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground">
-                      {truncateText(announcement.body, 60)}
-                    </TableCell>
-                    <TableCell>
-                      {announcement.pinned ? (
-                        <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                          Pinned
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          No
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-sm text-muted-foreground">
-                      <div>{formatDateTL(announcement.createdAt, { month: "short", day: "numeric" })}</div>
-                      <div className="text-xs">{announcement.createdByName}</div>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="secondary">{getReadCount(announcement)}</Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleTogglePin(announcement)}
-                          title={announcement.pinned ? "Unpin" : "Pin to top"}
-                        >
-                          {announcement.pinned ? (
-                            <PinOff className="h-4 w-4" />
-                          ) : (
-                            <Pin className="h-4 w-4" />
+          <>
+            <div className="space-y-3 md:hidden">
+              {announcements.map((announcement) => (
+                <Card key={announcement.id}>
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <p className="font-medium">{truncateText(announcement.title, 60)}</p>
+                          {announcement.imageUrl && (
+                            <span title={t("announcements.table.hasImage")}>
+                              <Image className="h-4 w-4 text-muted-foreground" />
+                            </span>
                           )}
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => openEditDialog(announcement)}
-                          title="Edit"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setDeletingAnnouncement(announcement)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                          title="Delete"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          {truncateText(announcement.body, 120)}
+                        </p>
                       </div>
-                    </TableCell>
+                      {announcement.pinned ? (
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          {t("announcements.table.pinnedYes")}
+                        </Badge>
+                      ) : null}
+                    </div>
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>{formatDateTL(announcement.createdAt, { month: "short", day: "numeric" })}</span>
+                      <span>{announcement.createdByName}</span>
+                      <span>{t("announcements.table.readCount")}: {getReadCount(announcement)}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleTogglePin(announcement)}>
+                        {announcement.pinned ? (
+                          <PinOff className="h-4 w-4 mr-1.5" />
+                        ) : (
+                          <Pin className="h-4 w-4 mr-1.5" />
+                        )}
+                        {announcement.pinned ? t("announcements.actions.unpin") : t("announcements.actions.pin")}
+                      </Button>
+                      <Button variant="outline" size="sm" onClick={() => openEditDialog(announcement)}>
+                        <Edit className="h-4 w-4 mr-1.5" />
+                        {t("common.edit")}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setDeletingAnnouncement(announcement)}
+                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4 mr-1.5" />
+                        {t("common.delete")}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+
+            <Card className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-[250px]">{t("announcements.table.title")}</TableHead>
+                    <TableHead>{t("announcements.table.body")}</TableHead>
+                    <TableHead className="w-[100px]">{t("announcements.table.pinned")}</TableHead>
+                    <TableHead className="w-[150px]">{t("announcements.table.created")}</TableHead>
+                    <TableHead className="w-[120px] text-center">{t("announcements.table.readCount")}</TableHead>
+                    <TableHead className="w-[280px] text-right">{t("announcements.table.actions")}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </Card>
+                </TableHeader>
+                <TableBody>
+                  {announcements.map((announcement) => (
+                    <TableRow key={announcement.id}>
+                      <TableCell className="font-medium">
+                        <div className="flex items-center gap-2">
+                          {announcement.imageUrl && (
+                            <span title={t("announcements.table.hasImage")}>
+                              <Image className="h-4 w-4 text-muted-foreground" />
+                            </span>
+                          )}
+                          {truncateText(announcement.title, 40)}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {truncateText(announcement.body, 60)}
+                      </TableCell>
+                      <TableCell>
+                        {announcement.pinned ? (
+                          <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {t("announcements.table.pinnedYes")}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground">
+                            {t("announcements.table.pinnedNo")}
+                          </Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        <div>{formatDateTL(announcement.createdAt, { month: "short", day: "numeric" })}</div>
+                        <div className="text-xs">{announcement.createdByName}</div>
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge variant="secondary">{getReadCount(announcement)}</Badge>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleTogglePin(announcement)}>
+                            {announcement.pinned ? (
+                              <PinOff className="h-4 w-4 mr-1.5" />
+                            ) : (
+                              <Pin className="h-4 w-4 mr-1.5" />
+                            )}
+                            {announcement.pinned ? t("announcements.actions.unpin") : t("announcements.actions.pin")}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => openEditDialog(announcement)}>
+                            <Edit className="h-4 w-4 mr-1.5" />
+                            {t("common.edit")}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setDeletingAnnouncement(announcement)}
+                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4 mr-1.5" />
+                            {t("common.delete")}
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </>
         )}
       </div>
 
@@ -505,21 +561,21 @@ export default function Announcements() {
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>
-              {editingAnnouncement ? "Edit Announcement" : "New Announcement"}
+              {editingAnnouncement ? t("announcements.dialog.editTitle") : t("announcements.dialog.newTitle")}
             </DialogTitle>
             <DialogDescription>
               {editingAnnouncement
-                ? "Update the announcement details below."
-                : "This will be visible to all employees in the Ekipa app."}
+                ? t("announcements.dialog.editDescription")
+                : t("announcements.dialog.newDescription")}
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="ann-title">Title *</Label>
+              <Label htmlFor="ann-title">{t("announcements.dialog.titleLabel")}</Label>
               <Input
                 id="ann-title"
-                placeholder="e.g. Holiday Schedule Update"
+                placeholder={t("announcements.dialog.titlePlaceholder")}
                 value={formData.title}
                 onChange={(e) => setFormData((prev) => ({ ...prev, title: e.target.value }))}
                 maxLength={120}
@@ -527,10 +583,10 @@ export default function Announcements() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="ann-body">Body *</Label>
+              <Label htmlFor="ann-body">{t("announcements.dialog.bodyLabel")}</Label>
               <Textarea
                 id="ann-body"
-                placeholder="Write your announcement message..."
+                placeholder={t("announcements.dialog.bodyPlaceholder")}
                 value={formData.body}
                 onChange={(e) => setFormData((prev) => ({ ...prev, body: e.target.value }))}
                 rows={5}
@@ -541,33 +597,37 @@ export default function Announcements() {
               </p>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="ann-image">Image URL (optional)</Label>
-              <Input
-                id="ann-image"
-                placeholder="https://example.com/image.jpg"
-                value={formData.imageUrl}
-                onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
-              />
-            </div>
+            <MoreDetailsSection>
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="ann-image">{t("announcements.dialog.imageLabel")}</Label>
+                  <Input
+                    id="ann-image"
+                    placeholder={t("announcements.dialog.imagePlaceholder")}
+                    value={formData.imageUrl}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, imageUrl: e.target.value }))}
+                  />
+                </div>
 
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="ann-pinned"
-                checked={formData.pinned}
-                onCheckedChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, pinned: checked === true }))
-                }
-              />
-              <Label htmlFor="ann-pinned" className="text-sm font-normal cursor-pointer">
-                Pin to top of announcements feed
-              </Label>
-            </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="ann-pinned"
+                    checked={formData.pinned}
+                    onCheckedChange={(checked) =>
+                      setFormData((prev) => ({ ...prev, pinned: checked === true }))
+                    }
+                  />
+                  <Label htmlFor="ann-pinned" className="text-sm font-normal cursor-pointer">
+                    {t("announcements.dialog.pinLabel")}
+                  </Label>
+                </div>
+              </div>
+            </MoreDetailsSection>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={handleCloseDialog} disabled={saving}>
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               onClick={handleSave}
@@ -575,10 +635,10 @@ export default function Announcements() {
               className="bg-blue-600 hover:bg-blue-700"
             >
               {saving
-                ? "Saving..."
+                ? t("common.saving")
                 : editingAnnouncement
-                  ? "Update"
-                  : "Publish"}
+                  ? t("announcements.actions.update")
+                  : t("announcements.actions.publish")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -591,19 +651,18 @@ export default function Announcements() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Announcement</AlertDialogTitle>
+            <AlertDialogTitle>{t("announcements.delete.title")}</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete &quot;{deletingAnnouncement?.title}&quot;? This action
-              cannot be undone and the announcement will be removed from all employees&apos; Ekipa feeds.
+              {t("announcements.delete.description", { title: deletingAnnouncement?.title || "" })}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               className="bg-red-600 hover:bg-red-700"
             >
-              Delete
+              {t("common.delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

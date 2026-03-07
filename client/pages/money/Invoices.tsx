@@ -34,6 +34,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { useSmartInvoices, useInvoiceSettings } from '@/hooks/useInvoices';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
+import MoreDetailsSection from '@/components/MoreDetailsSection';
 
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -56,7 +57,6 @@ import {
   Trash2,
   DollarSign,
   Calendar,
-  Filter,
   Download,
   Share2,
   Loader2,
@@ -286,20 +286,19 @@ export default function Invoices() {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder={t('money.invoices.searchPlaceholder') || 'Search invoices...'}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <div className="flex items-center gap-2">
+        <div className="relative mb-4 max-w-md">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t('money.invoices.searchPlaceholder') || 'Search invoices...'}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <MoreDetailsSection className="mb-6" title={t('money.invoices.status') || 'Status'}>
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2">
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <Filter className="h-4 w-4 mr-2" />
+              <SelectTrigger className="w-full sm:w-[200px]">
                 <SelectValue placeholder={t('money.invoices.status') || 'Status'} />
               </SelectTrigger>
               <SelectContent>
@@ -329,7 +328,7 @@ export default function Invoices() {
               }
             />
           </div>
-        </div>
+        </MoreDetailsSection>
 
         {/* Invoice List */}
         {filteredInvoices.length === 0 ? (
@@ -394,8 +393,9 @@ export default function Invoices() {
                       </div>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
+                          <Button variant="outline" size="sm" className="h-8" onClick={(e) => e.stopPropagation()}>
+                            <MoreHorizontal className="h-4 w-4 mr-1.5" />
+                            {t('common.moreActions') || 'More actions'}
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>

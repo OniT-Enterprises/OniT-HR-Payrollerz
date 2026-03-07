@@ -18,7 +18,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
@@ -41,9 +40,10 @@ import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
-import { toDateStringTL } from "@/lib/dateUtils";
+import { formatDateTL, toDateStringTL } from "@/lib/dateUtils";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { timeLeaveNavConfig } from "@/lib/moduleNav";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function TimeTracking() {
   const { toast } = useToast();
@@ -51,8 +51,8 @@ export default function TimeTracking() {
   const tenantId = useTenantId();
   const [activeTab, setActiveTab] = useState("entries");
   const [selectedDate, setSelectedDate] = useState(() => toDateStringTL(new Date()));
-  const [selectedEmployee, setSelectedEmployee] = useState("");
-  const [selectedDepartment, setSelectedDepartment] = useState("");
+  const [selectedEmployee, setSelectedEmployee] = useState("all");
+  const [selectedDepartment, setSelectedDepartment] = useState("all");
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 20;
@@ -104,7 +104,7 @@ export default function TimeTracking() {
 
   const [formData, setFormData] = useState({
     employee: "",
-    date: "",
+    date: selectedDate,
     clockIn: "",
     clockOut: "",
     notes: "",
@@ -143,20 +143,24 @@ export default function TimeTracking() {
     },
   };
 
+  const getStatusLabel = (status: string) => {
+    const labels: Record<string, string> = {
+      present: t("timeLeave.attendance.status.present"),
+      late: t("timeLeave.attendance.status.late"),
+      absent: t("timeLeave.attendance.status.absent"),
+      half_day: t("timeLeave.attendance.status.halfDay"),
+      leave: t("timeLeave.attendance.status.leave"),
+      holiday: t("timeLeave.attendance.status.holiday"),
+    };
+    return labels[status] || status;
+  };
+
   const getStatusBadge = (status: string) => {
     const s = statusStyles[status] || { color: "bg-muted text-muted-foreground border border-border", dot: "bg-muted-foreground" };
-    const labels: Record<string, string> = {
-      present: t("timeLeave.timeTracking.status.approved"),
-      late: t("timeLeave.timeTracking.status.pending"),
-      absent: t("timeLeave.timeTracking.status.rejected"),
-      half_day: "Half Day",
-      leave: "On Leave",
-      holiday: "Holiday",
-    };
     return (
       <span className={cn("inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium", s.color)}>
         <span className={cn("h-1.5 w-1.5 rounded-full", s.dot)} />
-        {labels[status] || status}
+        {getStatusLabel(status)}
       </span>
     );
   };
@@ -169,9 +173,20 @@ export default function TimeTracking() {
     facial: "bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border border-cyan-500/20",
   };
 
+  const getSourceLabel = (source: string) => {
+    const labels: Record<string, string> = {
+      manual: t("timeLeave.timeTracking.sources.manual"),
+      fingerprint: t("timeLeave.timeTracking.sources.fingerprint"),
+      mobile_app: t("timeLeave.timeTracking.sources.mobileApp"),
+      qr_code: t("timeLeave.timeTracking.sources.qrCode"),
+      facial: t("timeLeave.timeTracking.sources.facial"),
+    };
+    return labels[source] || source.replace("_", " ");
+  };
+
   const getSourceBadge = (source: string) => (
     <span className={cn("inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium", sourceStyles[source] || sourceStyles.manual)}>
-      {source.replace('_', ' ')}
+      {getSourceLabel(source)}
     </span>
   );
 
@@ -189,12 +204,32 @@ export default function TimeTracking() {
 
   const todayStr = toDateStringTL(new Date());
   const isToday = selectedDate === todayStr;
+  const selectedDateLabel = formatDateTL(selectedDate, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 
   const handleInputChange = (
     field: string,
     value: string,
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const resetEntryForm = (date = selectedDate) => {
+    setFormData({
+      employee: "",
+      date,
+      clockIn: "",
+      clockOut: "",
+      notes: "",
+    });
+  };
+
+  const openAddDialog = (date = selectedDate) => {
+    resetEntryForm(date);
+    setShowAddDialog(true);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -226,13 +261,7 @@ export default function TimeTracking() {
         description: t("timeLeave.timeTracking.toast.successDesc"),
       });
 
-      setFormData({
-        employee: "",
-        date: "",
-        clockIn: "",
-        clockOut: "",
-        notes: "",
-      });
+      resetEntryForm(selectedDate);
       setShowAddDialog(false);
     } catch {
       toast({
@@ -250,9 +279,9 @@ export default function TimeTracking() {
       t("timeLeave.timeTracking.csv.date"),
       t("timeLeave.timeTracking.csv.clockIn"),
       t("timeLeave.timeTracking.csv.clockOut"),
-      t("timeLeave.timeTracking.csv.totalHours"),
-      "Status",
-      "Source",
+      t("timeLeave.timeTracking.table.totalHours"),
+      t("timeLeave.attendance.table.status"),
+      t("timeLeave.timeTracking.table.source"),
     ];
 
     const csvRows = timeEntries.map((entry) => [
@@ -261,8 +290,8 @@ export default function TimeTracking() {
       entry.clockIn,
       entry.clockOut,
       entry.totalHours.toString(),
-      entry.status,
-      entry.source,
+      getStatusLabel(entry.status),
+      getSourceLabel(entry.source),
     ]);
 
     const csvContent = [csvHeaders, ...csvRows]
@@ -286,10 +315,10 @@ export default function TimeTracking() {
   // Apply client-side filters
   const filteredEntries = useMemo(() => {
     let entries = timeEntries;
-    if (selectedEmployee && selectedEmployee !== "all") {
+    if (selectedEmployee !== "all") {
       entries = entries.filter(e => e.employeeId === selectedEmployee);
     }
-    if (selectedDepartment && selectedDepartment !== "all") {
+    if (selectedDepartment !== "all") {
       entries = entries.filter(e => e.department === selectedDepartment);
     }
     return entries;
@@ -372,34 +401,63 @@ export default function TimeTracking() {
 
       <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
         {/* Inline Toolbar */}
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToPreviousDay}>
-              <ChevronLeft className="h-4 w-4" />
+          <div className="flex flex-wrap items-center gap-2">
+            <Button variant="outline" size="sm" className="h-9" onClick={goToPreviousDay}>
+              <ChevronLeft className="h-4 w-4 mr-1.5" />
+              {t("common.previous")}
             </Button>
             <Input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="h-9 w-[160px] text-sm"
+              className="h-9 w-[180px] text-sm"
             />
-            <Button variant="ghost" size="icon" className="h-9 w-9" onClick={goToNextDay}>
-              <ChevronRight className="h-4 w-4" />
+            <Button variant="outline" size="sm" className="h-9" onClick={goToNextDay}>
+              {t("common.next")}
+              <ChevronRight className="h-4 w-4 ml-1.5" />
             </Button>
             {!isToday && (
               <Button variant="outline" size="sm" className="h-9 text-xs" onClick={() => setSelectedDate(todayStr)}>
-                Today
+                {t("timeLeave.attendance.actions.today")}
               </Button>
             )}
           </div>
+          {/* Inline stats + actions */}
+          <div className="flex flex-wrap items-center gap-3 lg:ml-auto">
+            {timeEntries.length > 0 && (
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mr-2">
+                <span className="flex items-center gap-1.5">
+                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                  {totalPresent} {t("timeLeave.attendance.status.present")}
+                </span>
+                {totalLate > 0 && (
+                  <span className="flex items-center gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                    {totalLate} {t("timeLeave.attendance.status.late")}
+                  </span>
+                )}
+                <span className="font-medium text-foreground">
+                  {t("timeLeave.timeTracking.stats.totalHours")}: {totalHoursToday.toFixed(0)}h
+                </span>
+              </div>
+            )}
+            <Button
+              size="sm"
+              className="h-9 bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+              onClick={() => openAddDialog()}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1.5" />
+              {t("timeLeave.timeTracking.entries.logActivity")}
+            </Button>
+          </div>
+        </div>
 
-          <div className="hidden lg:block h-6 w-px bg-border" />
-
-          {/* Filters */}
-          <div className="flex items-center gap-2 flex-wrap">
+        <MoreDetailsSection className="mb-6" title={t("timeLeave.timeTracking.filters.title")}>
+          <div className="flex flex-col lg:flex-row lg:items-center gap-2">
             <Select value={selectedEmployee} onValueChange={setSelectedEmployee}>
-              <SelectTrigger className="h-9 w-[160px] text-sm">
+              <SelectTrigger className="h-9 w-full lg:w-[200px] text-sm">
                 <SelectValue placeholder={t("timeLeave.timeTracking.filters.allGuards")} />
               </SelectTrigger>
               <SelectContent>
@@ -410,98 +468,100 @@ export default function TimeTracking() {
               </SelectContent>
             </Select>
             <Select value={selectedDepartment} onValueChange={setSelectedDepartment}>
-              <SelectTrigger className="h-9 w-[160px] text-sm">
-                <SelectValue placeholder="All Departments" />
+              <SelectTrigger className="h-9 w-full lg:w-[200px] text-sm">
+                <SelectValue placeholder={t("timeLeave.timeTracking.filters.allDepartments")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Departments</SelectItem>
+                <SelectItem value="all">{t("timeLeave.timeTracking.filters.allDepartments")}</SelectItem>
                 {departments.map((dept) => (
                   <SelectItem key={dept.id} value={dept.name}>{dept.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          {/* Inline stats + actions */}
-          <div className="flex items-center gap-3 ml-auto">
-            {timeEntries.length > 0 && (
-              <div className="hidden lg:flex items-center gap-3 text-xs text-muted-foreground mr-2">
-                <span className="flex items-center gap-1.5">
-                  <span className="h-2 w-2 rounded-full bg-emerald-500" />
-                  {totalPresent} present
-                </span>
-                {totalLate > 0 && (
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-2 w-2 rounded-full bg-amber-500" />
-                    {totalLate} late
-                  </span>
-                )}
-                <span className="font-medium text-foreground">{totalHoursToday.toFixed(0)}h total</span>
-              </div>
-            )}
-            <Button variant="outline" size="sm" className="h-9" onClick={handleExportCSV}>
+            <Button variant="outline" size="sm" className="h-9 lg:ml-auto" onClick={handleExportCSV}>
               <Download className="h-3.5 w-3.5 mr-1.5" />
-              Export
+              {t("timeLeave.timeTracking.entries.export")}
             </Button>
-            <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="h-9 bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600">
-                  <Plus className="h-3.5 w-3.5 mr-1.5" />
-                  {t("timeLeave.timeTracking.entries.logActivity")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>{t("timeLeave.timeTracking.dialog.title")}</DialogTitle>
-                  <DialogDescription>{t("timeLeave.timeTracking.dialog.description")}</DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="employee">{t("timeLeave.timeTracking.dialog.guard")}</Label>
-                      <Select value={formData.employee} onValueChange={(value) => handleInputChange("employee", value)}>
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("timeLeave.timeTracking.dialog.guardPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id}>{emp.name} — {emp.department}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="entry-date">{t("timeLeave.timeTracking.dialog.date")}</Label>
-                      <Input id="entry-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="clock-in">{t("timeLeave.timeTracking.dialog.clockIn")}</Label>
-                      <TimePicker id="clock-in" value={formData.clockIn} onChange={(v) => handleInputChange("clockIn", v)} placeholder="Clock in" />
-                    </div>
-                    <div>
-                      <Label htmlFor="clock-out">{t("timeLeave.timeTracking.dialog.clockOut")}</Label>
-                      <TimePicker id="clock-out" value={formData.clockOut} onChange={(v) => handleInputChange("clockOut", v)} placeholder="Clock out" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label htmlFor="notes">{t("timeLeave.timeTracking.dialog.notes")}</Label>
-                    <Textarea id="notes" value={formData.notes} onChange={(e) => handleInputChange("notes", e.target.value)} placeholder={t("timeLeave.timeTracking.dialog.notesPlaceholder")} rows={2} />
-                  </div>
-                  <div className="flex gap-2 pt-4">
-                    <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
-                      {t("timeLeave.timeTracking.dialog.cancel")}
-                    </Button>
-                    <Button type="submit" className="flex-1" disabled={markAttendanceMutation.isPending}>
-                      {markAttendanceMutation.isPending ? "Saving..." : t("timeLeave.timeTracking.dialog.submit")}
-                    </Button>
-                  </div>
-                </form>
-              </DialogContent>
-            </Dialog>
           </div>
-        </div>
+        </MoreDetailsSection>
+
+        <Dialog
+          open={showAddDialog}
+          onOpenChange={(open) => {
+            setShowAddDialog(open);
+            if (!open) {
+              resetEntryForm(selectedDate);
+            }
+          }}
+        >
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{t("timeLeave.timeTracking.dialog.title")}</DialogTitle>
+              <DialogDescription>{t("timeLeave.timeTracking.dialog.description")}</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="employee">{t("timeLeave.timeTracking.dialog.guard")}</Label>
+                  <Select value={formData.employee} onValueChange={(value) => handleInputChange("employee", value)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder={t("timeLeave.timeTracking.dialog.guardPlaceholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {employees.map((emp) => (
+                        <SelectItem key={emp.id} value={emp.id}>{emp.name} — {emp.department}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="entry-date">{t("timeLeave.timeTracking.dialog.date")}</Label>
+                  <Input id="entry-date" type="date" value={formData.date} onChange={(e) => handleInputChange("date", e.target.value)} required />
+                </div>
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <Label htmlFor="clock-in">{t("timeLeave.timeTracking.dialog.clockIn")}</Label>
+                  <TimePicker
+                    id="clock-in"
+                    value={formData.clockIn}
+                    onChange={(v) => handleInputChange("clockIn", v)}
+                    placeholder={t("timeLeave.attendance.table.clockIn")}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="clock-out">{t("timeLeave.timeTracking.dialog.clockOut")}</Label>
+                  <TimePicker
+                    id="clock-out"
+                    value={formData.clockOut}
+                    onChange={(v) => handleInputChange("clockOut", v)}
+                    placeholder={t("timeLeave.attendance.table.clockOut")}
+                  />
+                </div>
+              </div>
+              <MoreDetailsSection>
+                <div>
+                  <Label htmlFor="notes">{t("timeLeave.timeTracking.dialog.notes")}</Label>
+                  <Textarea
+                    id="notes"
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    placeholder={t("timeLeave.timeTracking.dialog.notesPlaceholder")}
+                    rows={2}
+                  />
+                </div>
+              </MoreDetailsSection>
+              <div className="flex gap-2 pt-4">
+                <Button type="button" variant="outline" onClick={() => setShowAddDialog(false)} className="flex-1">
+                  {t("timeLeave.timeTracking.dialog.cancel")}
+                </Button>
+                <Button type="submit" className="flex-1" disabled={markAttendanceMutation.isPending}>
+                  {markAttendanceMutation.isPending ? t("common.saving") : t("timeLeave.timeTracking.dialog.submit")}
+                </Button>
+              </div>
+            </form>
+          </DialogContent>
+        </Dialog>
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -518,13 +578,15 @@ export default function TimeTracking() {
                 <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
                   <Clock className="h-12 w-12 text-cyan-500" />
                 </div>
-                <h3 className="font-semibold text-lg text-foreground mb-1">No time entries</h3>
+                <h3 className="font-semibold text-lg text-foreground mb-1">
+                  {t("timeLeave.timeTracking.entries.emptyTitle")}
+                </h3>
                 <p className="text-sm text-muted-foreground max-w-md mx-auto mb-6">
-                  No attendance records found for {selectedDate}
+                  {t("timeLeave.timeTracking.entries.emptyDescription", { date: selectedDateLabel })}
                 </p>
                 <Button
                   className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
-                  onClick={() => setShowAddDialog(true)}
+                  onClick={() => openAddDialog()}
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   {t("timeLeave.timeTracking.entries.logActivity")}
@@ -534,13 +596,13 @@ export default function TimeTracking() {
               <div className="space-y-1.5">
                 {/* Column headers */}
                 <div className="hidden md:grid md:grid-cols-[1fr_120px_120px_80px_80px_80px_100px] gap-3 px-5 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                  <span>Employee</span>
-                  <span>Clock In</span>
-                  <span>Clock Out</span>
-                  <span className="text-right">Hours</span>
-                  <span className="text-right">OT</span>
-                  <span className="text-center">Source</span>
-                  <span className="text-right">Status</span>
+                  <span>{t("timeLeave.attendance.table.employee")}</span>
+                  <span>{t("timeLeave.attendance.table.clockIn")}</span>
+                  <span>{t("timeLeave.attendance.table.clockOut")}</span>
+                  <span className="text-right">{t("timeLeave.timeTracking.table.totalHours")}</span>
+                  <span className="text-right">{t("timeLeave.attendance.table.overtime")}</span>
+                  <span className="text-center">{t("timeLeave.timeTracking.table.source")}</span>
+                  <span className="text-right">{t("timeLeave.attendance.table.status")}</span>
                 </div>
 
                 {paginatedEntries.map((entry) => (
@@ -588,10 +650,14 @@ export default function TimeTracking() {
                         <span className="font-mono">{entry.clockIn} → {entry.clockOut}</span>
                         <span className="font-mono font-medium text-foreground">{entry.totalHours.toFixed(1)}h</span>
                         {entry.overtimeHours > 0 && (
-                          <span className="font-mono text-orange-600 dark:text-orange-400">+{entry.overtimeHours.toFixed(1)}h OT</span>
+                          <span className="font-mono text-orange-600 dark:text-orange-400">
+                            +{entry.overtimeHours.toFixed(1)}h {t("timeLeave.attendance.table.overtime")}
+                          </span>
                         )}
                         {entry.lateMinutes > 0 && (
-                          <span className="font-mono text-amber-600 dark:text-amber-400">{entry.lateMinutes}m late</span>
+                          <span className="font-mono text-amber-600 dark:text-amber-400">
+                            {entry.lateMinutes}m {t("timeLeave.attendance.table.late")}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -604,11 +670,12 @@ export default function TimeTracking() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8"
+                      className="h-8 px-2"
                       onClick={() => setCurrentPage(Math.max(1, effectivePage - 1))}
                       disabled={effectivePage === 1}
                     >
-                      <ChevronLeft className="h-4 w-4" />
+                      <ChevronLeft className="h-4 w-4 mr-1" />
+                      {t("common.previous")}
                     </Button>
                     {[...Array(totalPages)].map((_, i) => (
                       <Button
@@ -624,11 +691,12 @@ export default function TimeTracking() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8"
+                      className="h-8 px-2"
                       onClick={() => setCurrentPage(Math.min(totalPages, effectivePage + 1))}
                       disabled={effectivePage === totalPages}
                     >
-                      <ChevronRight className="h-4 w-4" />
+                      {t("common.next")}
+                      <ChevronRight className="h-4 w-4 ml-1" />
                     </Button>
                   </div>
                 )}
@@ -643,7 +711,9 @@ export default function TimeTracking() {
                 <div className="p-4 bg-cyan-500/10 rounded-full w-fit mx-auto mb-4">
                   <Clock className="h-12 w-12 text-cyan-500" />
                 </div>
-                <p className="text-sm">No attendance records for {selectedDate}</p>
+                <p className="text-sm">
+                  {t("timeLeave.timeTracking.entries.emptyDescription", { date: selectedDateLabel })}
+                </p>
               </div>
             ) : (
               <div className="space-y-2">
@@ -667,7 +737,9 @@ export default function TimeTracking() {
                           <span className="font-mono">{entry.clockIn} → {entry.clockOut}</span>
                           <span className="font-mono font-medium text-foreground">{entry.totalHours.toFixed(1)}h</span>
                           {entry.lateMinutes > 0 && (
-                            <span className="text-amber-600 dark:text-amber-400">{entry.lateMinutes}m late</span>
+                            <span className="text-amber-600 dark:text-amber-400">
+                              {entry.lateMinutes}m {t("timeLeave.attendance.table.late")}
+                            </span>
                           )}
                         </div>
                       </div>
@@ -715,7 +787,7 @@ export default function TimeTracking() {
                   <p className="text-sm font-medium text-foreground mb-3">{t("timeLeave.timeTracking.reports.coverageTitle")}</p>
                   {departmentSummary.length === 0 ? (
                     <div className="text-center py-6 text-muted-foreground">
-                      <p className="text-sm">No department data for this date</p>
+                      <p className="text-sm">{t("timeLeave.timeTracking.reports.noDepartmentData")}</p>
                     </div>
                   ) : (
                     <div className="space-y-2">
@@ -725,7 +797,9 @@ export default function TimeTracking() {
                           <div key={dept.name} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card">
                             <div>
                               <p className="font-medium text-sm text-foreground">{dept.name}</p>
-                              <p className="text-xs text-muted-foreground">{totalInDept} employee{totalInDept !== 1 ? 's' : ''} tracked</p>
+                              <p className="text-xs text-muted-foreground">
+                                {t("timeLeave.timeTracking.reports.coverageGuards", { count: totalInDept })}
+                              </p>
                             </div>
                             <div className="flex items-center gap-2">
                               <span className="font-mono text-sm font-medium text-foreground">{dept.totalHours.toFixed(1)}h</span>

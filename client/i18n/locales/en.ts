@@ -42,6 +42,8 @@ const messages = {
     "guidance": "Guidance",
     "hide": "Hide",
     "moreDetails": "More details",
+    "previous": "Previous",
+    "next": "Next",
     "review": "Review",
     "retry": "Retry",
     "connectionIssueTitle": "Connection problem",
@@ -183,15 +185,56 @@ const messages = {
   },
   "documentAlerts": {
     "title": "Document Alerts",
+    "subtitle": "Monitor and manage expiring employee documents",
     "noAlerts": "No document alerts",
     "noAlertsDesc": "All employee documents are up to date",
     "expiredDaysAgo": "Expired {{count}} days ago",
     "expiresToday": "Expires today",
+    "expiresTomorrow": "Expires tomorrow",
     "expiresInDays": "Expires in {{count}} days",
     "viewAllAlerts": "View all {{count}} alerts",
     "manageAlerts": "Manage alerts",
     "expired": "expired",
     "critical": "critical",
+    "stats": {
+      "total": "Total alerts",
+      "expired": "Expired",
+      "critical": "Critical",
+      "warning": "Warning",
+      "upcoming": "Upcoming"
+    },
+    "filters": {
+      "title": "Filters",
+      "searchPlaceholder": "Search by employee name or document...",
+      "severityLabel": "Severity",
+      "documentTypeLabel": "Document type",
+      "allSeverities": "All severities",
+      "allDocuments": "All documents",
+      "severityOptions": {
+        "expired": "Expired",
+        "critical": "Critical (< 14 days)",
+        "warning": "Warning (14-30 days)",
+        "upcoming": "Upcoming (30-60 days)"
+      }
+    },
+    "table": {
+      "showing": "Showing {{shown}} of {{total}} alerts",
+      "employee": "Employee",
+      "document": "Document",
+      "expiryDate": "Expiry date",
+      "timeRemaining": "Time remaining",
+      "status": "Status",
+      "adjustFilters": "Try adjusting your filters."
+    },
+    "actions": {
+      "export": "Export CSV"
+    },
+    "toast": {
+      "noDataTitle": "No data",
+      "noDataDesc": "No alerts to export.",
+      "exportTitle": "Export complete",
+      "exportDesc": "Exported {{count}} alerts to CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Passport",
@@ -207,6 +250,70 @@ const messages = {
       "critical": "Critical",
       "warning": "Warning",
       "upcoming": "Upcoming"
+    }
+  },
+  "announcements": {
+    "title": "Announcements",
+    "subtitle": "Broadcast messages to all employees via Ekipa",
+    "new": "New announcement",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Pinned",
+      "totalReads": "Total reads"
+    },
+    "empty": {
+      "title": "No announcements yet",
+      "description": "Create your first announcement to broadcast to all employees via Ekipa."
+    },
+    "table": {
+      "title": "Title",
+      "body": "Body",
+      "pinned": "Pinned",
+      "created": "Created",
+      "readCount": "Read count",
+      "actions": "Actions",
+      "hasImage": "Has image",
+      "pinnedYes": "Pinned",
+      "pinnedNo": "No"
+    },
+    "actions": {
+      "pin": "Pin",
+      "unpin": "Unpin",
+      "publish": "Publish",
+      "update": "Update"
+    },
+    "dialog": {
+      "newTitle": "New announcement",
+      "editTitle": "Edit announcement",
+      "newDescription": "This will be visible to all employees in the Ekipa app.",
+      "editDescription": "Update the announcement details below.",
+      "titleLabel": "Title *",
+      "titlePlaceholder": "e.g. Holiday Schedule Update",
+      "bodyLabel": "Body *",
+      "bodyPlaceholder": "Write your announcement message...",
+      "imageLabel": "Image URL (optional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Pin to top of announcements feed"
+    },
+    "delete": {
+      "title": "Delete announcement",
+      "description": "Are you sure you want to delete \"{{title}}\"? This action cannot be undone and the announcement will be removed from all employees' Ekipa feeds."
+    },
+    "toast": {
+      "loadFailed": "Failed to load announcements",
+      "validationTitle": "Validation error",
+      "titleRequired": "Title is required",
+      "bodyRequired": "Body is required",
+      "updated": "Announcement updated",
+      "published": "Announcement published",
+      "updateFailed": "Failed to update announcement",
+      "createFailed": "Failed to create announcement",
+      "deleted": "Announcement deleted",
+      "deleteFailed": "Failed to delete announcement",
+      "pinned": "Announcement pinned to top",
+      "unpinned": "Announcement unpinned",
+      "pinFailed": "Failed to update announcement"
     }
   },
   "auth": {
@@ -1833,6 +1940,7 @@ const messages = {
         "endDate": "End Date",
         "guard": "Employee",
         "allGuards": "All employees",
+        "allDepartments": "All departments",
         "site": "Site",
         "allSites": "All sites",
         "client": "Client",
@@ -1843,7 +1951,9 @@ const messages = {
         "title": "Time Entries",
         "showing": "Showing {{shown}} of {{total}} entries",
         "export": "Export CSV",
-        "logActivity": "Log Activity"
+        "logActivity": "Log Activity",
+        "emptyTitle": "No time entries",
+        "emptyDescription": "No attendance records found for {{date}}"
       },
       "dialog": {
         "title": "Log Time Entry",
@@ -1872,8 +1982,10 @@ const messages = {
         "dateShift": "Date/Shift",
         "site": "Site",
         "hours": "Hours",
+        "totalHours": "Hours",
         "activities": "Activities",
         "incidents": "Incidents",
+        "source": "Source",
         "status": "Status",
         "incidentYes": "Yes",
         "incidentNone": "None"
@@ -1889,7 +2001,15 @@ const messages = {
         "coverageDescription": "Current staffing across all locations",
         "coverageSites": "{{count}} sites",
         "coverageGuards": "{{count}} employees",
-        "coverageStatus": "Active"
+        "coverageStatus": "Active",
+        "noDepartmentData": "No department data for this date"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Fingerprint",
+        "mobileApp": "Mobile app",
+        "qrCode": "QR code",
+        "facial": "Facial"
       },
       "activities": {
         "perimeterPatrol": "Perimeter patrol",
@@ -2091,6 +2211,7 @@ const messages = {
         "import": "Import",
         "mark": "Mark Attendance",
         "markToday": "Mark Today's Attendance",
+        "faceClockIn": "Face Clock-In",
         "today": "Today",
         "cancel": "Cancel",
         "export": "Export CSV"
@@ -2485,11 +2606,205 @@ const messages = {
     },
     "attendance": {
       "title": "Attendance Reports",
-      "subtitle": "Track and analyze attendance patterns"
+      "subtitle": "Track and analyze attendance patterns",
+      "periodLabel": "Period",
+      "ranges": {
+        "last7": "Last 7 days",
+        "last30": "Last 30 days",
+        "last90": "Last 90 days",
+        "lastYear": "Last year"
+      },
+      "exportCompleteTitle": "Export complete",
+      "exportCompleteDesc": "{{file}} downloaded successfully",
+      "columns": {
+        "lateMinutes": "Late minutes",
+        "annualEntitled": "Annual entitled",
+        "annualUsed": "Annual used",
+        "annualRemaining": "Annual remaining",
+        "sickEntitled": "Sick entitled",
+        "sickUsed": "Sick used",
+        "sickRemaining": "Sick remaining",
+        "carryOver": "Carry over"
+      },
+      "stats": {
+        "attendanceRate": "Attendance rate",
+        "attendanceRateSummary": "{{present}} of {{total}} records",
+        "lateArrivals": "Late arrivals",
+        "lateHoursSummary": "{{hours}} hours total",
+        "overtimeHours": "Overtime hours",
+        "overtimeEmployees": "{{count}} employees",
+        "onLeaveToday": "On leave today",
+        "onLeaveSummary": "{{percent}}% of staff"
+      },
+      "cards": {
+        "summary": {
+          "title": "Attendance summary",
+          "description": "Daily attendance records for the selected period",
+          "totalRecords": "Total records",
+          "export": "Export attendance"
+        },
+        "leave": {
+          "title": "Leave balances",
+          "description": "Current leave entitlements and usage",
+          "employees": "Employees",
+          "daysUsed": "{{days}} days used",
+          "none": "No leave taken this period",
+          "export": "Export leave balances"
+        },
+        "overtime": {
+          "title": "Overtime report",
+          "description": "Track overtime hours by employee",
+          "total": "Total overtime",
+          "records": "Records with overtime",
+          "average": "Avg OT / record",
+          "hoursValue": "{{hours}} hrs",
+          "export": "Export overtime"
+        }
+      },
+      "breakdown": {
+        "title": "Attendance status breakdown",
+        "description": "Distribution by attendance status"
+      },
+      "recent": {
+        "title": "Recent attendance records",
+        "description": "Most recent clock in and clock out records",
+        "emptyTitle": "No attendance records found for this period",
+        "emptyDescription": "Records will appear here once employees clock in or out"
+      }
+    },
+    "shared": {
+      "periodLabel": "Period",
+      "ranges": {
+        "7": "Last 7 days",
+        "30": "Last 30 days",
+        "90": "Last 90 days",
+        "365": "Last year"
+      },
+      "exportTitle": "Export Complete",
+      "exportDescription": "{{filename}} downloaded successfully",
+      "monthsShort": "mo"
     },
     "setup": {
       "title": "Setup Reports",
-      "subtitle": "System configuration and setup analytics"
+      "subtitle": "System configuration and setup analytics",
+      "stats": {
+        "setupProgress": "Setup Progress",
+        "stepsComplete": "{{completed}} of {{total}} steps",
+        "totalUsers": "Total Users",
+        "superAdmins": "{{count}} super admins",
+        "auditEntries": "Audit Entries",
+        "last24Hours": "{{count}} in last 24h",
+        "systemStatus": "System Status"
+      },
+      "progress": {
+        "title": "Setup Progress",
+        "description": "System configuration completion status",
+        "overall": "Overall Progress"
+      },
+      "steps": {
+        "companyDetails": "Company details",
+        "companyStructure": "Company structure",
+        "paymentStructure": "Payment structure",
+        "timeOffPolicies": "Time off policies",
+        "payrollConfig": "Payroll config"
+      },
+      "cards": {
+        "configuration": {
+          "title": "System Configuration",
+          "description": "Current system settings and configuration",
+          "company": "Company",
+          "country": "Country",
+          "status": "Status",
+          "export": "Export Configuration"
+        },
+        "permissions": {
+          "title": "User Permissions",
+          "description": "User roles and access levels",
+          "totalUsers": "Total Users",
+          "superAdmins": "Super Admins",
+          "regularUsers": "Regular Users",
+          "export": "Export Permissions"
+        },
+        "audit": {
+          "title": "Audit Log",
+          "description": "Recent system activity and changes",
+          "totalEntries": "Total Entries",
+          "last24Hours": "Last 24 Hours",
+          "latest": "Latest",
+          "export": "Export Audit Log"
+        }
+      },
+      "usersTable": {
+        "title": "User Directory",
+        "description": "All registered users and their roles",
+        "empty": "No users found",
+        "manageUsers": "Manage Users",
+        "showingLimited": "Showing {{shown}} of {{total}} users. Export to see all.",
+        "columns": {
+          "user": "User",
+          "email": "Email",
+          "role": "Role",
+          "tenants": "Tenants",
+          "created": "Created"
+        }
+      },
+      "auditTable": {
+        "title": "Recent Activity",
+        "description": "Admin audit log entries",
+        "empty": "No audit entries found",
+        "emptyDescription": "Activity will appear here as actions are performed",
+        "showingLimited": "Showing {{shown}} of {{total}} entries. Export to see all.",
+        "columns": {
+          "time": "Time",
+          "action": "Action",
+          "actor": "Actor",
+          "target": "Target"
+        }
+      },
+      "values": {
+        "yes": "Yes",
+        "no": "No",
+        "ready": "Ready",
+        "setup": "Setup",
+        "configured": "Configured",
+        "pending": "Pending",
+        "complete": "Complete",
+        "inProgress": "In Progress",
+        "notSet": "Not set",
+        "noName": "No name",
+        "superAdmin": "Super Admin",
+        "user": "User"
+      },
+      "configSections": {
+        "companyDetails": "Company Details",
+        "payroll": "Payroll",
+        "timeOff": "Time Off"
+      },
+      "configSettings": {
+        "legalName": "Legal Name",
+        "country": "Country",
+        "tinNumber": "TIN Number",
+        "witRate": "WIT Rate",
+        "inssEmployee": "INSS Employee",
+        "inssEmployer": "INSS Employer",
+        "annualLeaveDays": "Annual Leave Days",
+        "sickLeaveDays": "Sick Leave Days"
+      },
+      "csv": {
+        "timestamp": "Timestamp",
+        "action": "Action",
+        "actorEmail": "Actor Email",
+        "targetType": "Target Type",
+        "targetName": "Target Name",
+        "email": "Email",
+        "displayName": "Display Name",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Tenant Count",
+        "createdAt": "Created At",
+        "section": "Section",
+        "setting": "Setting",
+        "value": "Value"
+      }
     },
     "custom": {
       "title": "Custom Reports",
@@ -2497,11 +2812,149 @@ const messages = {
     },
     "employee": {
       "title": "Employee Reports",
-      "subtitle": "Generate and analyze employee-related reports"
+      "subtitle": "Generate and analyze employee-related reports",
+      "stats": {
+        "totalEmployees": "Total Employees",
+        "activeEmployees": "{{count}} active",
+        "newHires": "New Hires",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departments",
+        "withEmployees": "With employees",
+        "inactive": "Inactive",
+        "turnover": "{{percent}}% turnover"
+      },
+      "cards": {
+        "directory": {
+          "title": "Employee Directory",
+          "description": "Complete list of all employees with contact info",
+          "totalRecords": "Total Records",
+          "active": "Active",
+          "inactive": "Inactive",
+          "export": "Export Directory"
+        },
+        "newHires": {
+          "title": "New Hires Report",
+          "description": "Recently hired employees in the selected period",
+          "count": "New Hires",
+          "latest": "Latest: {{name}}",
+          "export": "Export New Hires"
+        },
+        "headcount": {
+          "title": "Headcount by Department",
+          "description": "Employee distribution across departments",
+          "moreDepartments": "+{{count}} more departments",
+          "export": "Export Headcount"
+        }
+      },
+      "types": {
+        "title": "Employment Type Breakdown",
+        "description": "Distribution by employment type"
+      },
+      "recent": {
+        "title": "Recent Employees",
+        "description": "Most recently added employees",
+        "empty": "No employees found",
+        "table": {
+          "employee": "Employee",
+          "department": "Department",
+          "position": "Position",
+          "hireDate": "Hire Date",
+          "status": "Status"
+        }
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "phone": "Phone",
+        "department": "Department",
+        "position": "Position",
+        "hireDate": "Hire Date",
+        "employmentType": "Employment Type",
+        "status": "Status",
+        "headcount": "Headcount",
+        "percentage": "Percentage %"
+      },
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive"
+      }
     },
     "department": {
       "title": "Department Reports",
-      "subtitle": "Generate department-level analytics and reports"
+      "subtitle": "Generate department-level analytics and reports",
+      "stats": {
+        "totalDepartments": "Total Departments",
+        "activeEmployees": "{{count}} active employees",
+        "largestDepartment": "Largest Department",
+        "employeeCount": "{{count}} employees",
+        "avgHeadcount": "Avg Headcount",
+        "perDepartment": "Per department",
+        "unassigned": "Unassigned",
+        "ofStaff": "{{percent}}% of staff"
+      },
+      "cards": {
+        "overview": {
+          "title": "Department Overview",
+          "description": "Complete department listing with headcount",
+          "departments": "Departments",
+          "totalStaff": "Total Staff",
+          "withDirector": "With Director",
+          "export": "Export Overview"
+        },
+        "staffing": {
+          "title": "Staffing Report",
+          "description": "Employment type breakdown by department",
+          "staffCount": "{{count}} staff",
+          "moreDepartments": "+{{count}} more departments",
+          "export": "Export Staffing"
+        },
+        "growth": {
+          "title": "Growth Report",
+          "description": "New hires and growth by department",
+          "totalNewHires": "Total New Hires",
+          "departmentsWithHires": "Depts with Hires",
+          "export": "Export Growth"
+        }
+      },
+      "distribution": {
+        "title": "Department Size Distribution",
+        "description": "Headcount breakdown across departments",
+        "others": "Others",
+        "moreDepartments": "+{{count}} depts"
+      },
+      "table": {
+        "title": "All Departments",
+        "description": "Complete department listing with details",
+        "empty": "No departments found",
+        "emptyDescription": "Create departments in Staff > Departments",
+        "goToDepartments": "Go to Departments",
+        "columns": {
+          "department": "Department",
+          "director": "Director",
+          "manager": "Manager",
+          "headcount": "Headcount",
+          "active": "Active",
+          "newHires": "New Hires",
+          "avgTenure": "Avg Tenure"
+        }
+      },
+      "csv": {
+        "department": "Department",
+        "director": "Director",
+        "manager": "Manager",
+        "headcount": "Headcount",
+        "active": "Active",
+        "avgTenureMonths": "Avg Tenure (Months)",
+        "employmentType": "Employment Type",
+        "count": "Count",
+        "percentage": "Percentage %",
+        "currentHeadcount": "Current Headcount",
+        "newHires": "New Hires",
+        "growthRate": "Growth Rate %"
+      },
+      "notAvailable": "N/A"
     },
     "payroll": {
       "title": "Payroll Reports",
@@ -2527,6 +2980,27 @@ const messages = {
         "viewDetailed": "View Detailed Report",
         "viewDepartment": "View Department Breakdown",
         "viewBenefits": "View Benefits Report"
+      },
+      "toast": {
+        "exported": "Payroll report exported successfully"
+      },
+      "filters": {
+        "active": "Active",
+        "clear": "Clear",
+        "summary": "Showing {{filtered}} of {{total}} employees:",
+        "benefitsBadge": "{{benefits}} benefits",
+        "dialog": {
+          "title": "Filter Payroll Report",
+          "description": "Filter employees by department, benefits, or status",
+          "department": "Department",
+          "allDepartments": "All Departments",
+          "benefits": "Benefits Package",
+          "allBenefits": "All Benefits",
+          "status": "Status",
+          "allStatuses": "All Statuses",
+          "clearAll": "Clear All",
+          "apply": "Apply Filters"
+        }
       },
       "salarySummary": {
         "title": "Salary Summary",
@@ -2558,11 +3032,271 @@ const messages = {
         "monthlySalary": "Monthly Salary",
         "benefits": "Benefits",
         "status": "Status",
-        "viewAll": "View All {{count}} Employees"
+        "viewAll": "View All {{count}} Employees",
+        "showLess": "Show Less",
+        "emptyFiltered": "No employees match these filters."
+      },
+      "salaryDetail": {
+        "title": "Detailed Salary Report",
+        "description": "Complete salary breakdown with Timor-Leste tax calculations",
+        "highest": "Highest",
+        "lowest": "Lowest",
+        "average": "Average",
+        "totalMonthly": "Total Monthly",
+        "columns": {
+          "employee": "Employee",
+          "gross": "Gross",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Net Pay"
+        },
+        "totals": "Totals",
+        "taxNoteTitle": "Timor-Leste tax rules:",
+        "taxNoteDescription": "IRPS = (Gross - $500) x 10% if gross is above $500 | INSS employee = 4% | INSS employer = 6% (not shown)"
+      },
+      "departmentDetail": {
+        "title": "Department Cost Breakdown",
+        "description": "Payroll costs by department",
+        "employees": "{{count}} employees",
+        "monthlyCost": "Monthly Cost",
+        "annualCost": "Annual Cost",
+        "avgSalary": "Avg Salary",
+        "employeesLabel": "Employees:",
+        "totalAll": "Total All Departments"
+      },
+      "benefitsDetail": {
+        "title": "Benefits Analysis",
+        "description": "Employee distribution by benefits package",
+        "employees": "{{count}} employees",
+        "totalMonthlyPayroll": "Total Monthly Payroll",
+        "avgSalary": "Avg Salary"
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "firstName": "First Name",
+        "lastName": "Last Name",
+        "email": "Email",
+        "department": "Department",
+        "position": "Position",
+        "monthlySalary": "Monthly Salary",
+        "annualSalary": "Annual Salary",
+        "benefitsPackage": "Benefits Package",
+        "status": "Status",
+        "irpsTax": "IRPS Tax (10% > $500)",
+        "inssEmployee": "INSS Employee (4%)",
+        "inssEmployer": "INSS Employer (6%)",
+        "netPay": "Net Pay"
       },
       "status": {
         "active": "Active",
         "inactive": "Inactive"
+      }
+    },
+    "inssMonthly": {
+      "title": "INSS Monthly Return",
+      "subtitle": "Generate and track monthly INSS contribution submissions.",
+      "due": {
+        "overdueTitle": "Overdue {{task}}",
+        "overdueDescription": "{{task}} for {{period}} was due on {{dueDate}}.",
+        "upcomingTitle": "Upcoming {{task}} due",
+        "upcomingDescription": "{{task}} for {{period}} is due on {{dueDate}} ({{days}} days)."
+      },
+      "generate": {
+        "title": "Generate Monthly INSS Return",
+        "description": "Build a monthly contribution summary from paid payroll runs.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "month": "Month",
+        "selectMonth": "Select month",
+        "button": "Generate Return",
+        "generating": "Generating..."
+      },
+      "selected": {
+        "title": "INSS Return - {{period}}",
+        "description": "Employer: {{employer}} | TIN: {{tin}}"
+      },
+      "stats": {
+        "employees": "Employees",
+        "contributionBase": "Contribution Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)"
+      },
+      "table": {
+        "employee": "Employee",
+        "inssNumber": "INSS #",
+        "base": "Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "total": "Total",
+        "missing": "Missing"
+      },
+      "tracker": {
+        "title": "Filing Tracker",
+        "description": "Track your monthly INSS submissions.",
+        "period": "Period",
+        "statementDue": "Statement Due",
+        "paymentDue": "Payment Due",
+        "statementStatus": "Statement Status",
+        "paymentStatus": "Payment Status",
+        "employees": "Employees",
+        "employeeContribution": "Employee",
+        "employerContribution": "Employer",
+        "actions": "Actions",
+        "empty": "No INSS filings yet. Generate your first return above."
+      },
+      "actions": {
+        "export": "Export CSV",
+        "view": "View",
+        "markStatement": "Mark Statement",
+        "markPayment": "Mark Payment"
+      },
+      "tasks": {
+        "payment": "Payment",
+        "statement": "Statement",
+        "paymentFull": "INSS payment",
+        "statementFull": "INSS statement"
+      },
+      "status": {
+        "pending": "Pending",
+        "overdue": "Overdue",
+        "filed": "Filed",
+        "draft": "Draft"
+      },
+      "markFiled": {
+        "title": "Mark {{task}} as filed",
+        "description": "Record {{task}} submission details for this INSS return.",
+        "submissionMethod": "Submission Method",
+        "selectMethod": "Select method",
+        "portal": "INSS Portal",
+        "notFiled": "Not filed",
+        "receiptLabel": "Receipt / Reference (optional)",
+        "receiptPlaceholder": "Reference number",
+        "notesLabel": "Notes (optional)",
+        "notesPlaceholder": "Notes about submission or payment",
+        "cancel": "Cancel",
+        "save": "Save"
+      },
+      "toast": {
+        "generatedTitle": "INSS return generated",
+        "generatedDescription": "Monthly INSS return for {{period}} has been generated.",
+        "generateErrorTitle": "Error",
+        "generateErrorDescription": "Failed to generate INSS return. Make sure you have paid payroll data for this period.",
+        "noDataTitle": "No data available",
+        "noDataDescription": "No payroll data found for {{period}}. Run payroll first, then generate the return.",
+        "exportedTitle": "Exported",
+        "exportedDescription": "INSS return exported to CSV.",
+        "savedTitle": "Saved",
+        "savedDescription": "INSS {{task}} marked as filed.",
+        "updateErrorTitle": "Error",
+        "updateErrorDescription": "Failed to update filing status."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "inssNumber": "INSS Number",
+        "contributionBase": "Contribution Base (USD)",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "INSS Annual Reconciliation",
+      "subtitle": "Aggregate monthly INSS contributions into an annual summary for year-end filing.",
+      "generate": {
+        "title": "Generate Annual Summary",
+        "description": "Aggregate all monthly INSS filings for the selected year into per-employee annual totals.",
+        "year": "Year",
+        "selectYear": "Select year",
+        "button": "Generate Annual Summary"
+      },
+      "summary": {
+        "title": "INSS Annual Summary - {{year}}",
+        "description": "Employer: {{employer}} | TIN: {{tin}} | Months filed: {{monthsFiled}}/12",
+        "warning": "Only {{monthsFiled}} of 12 months have been filed. Generate missing monthly returns before submitting the annual reconciliation."
+      },
+      "stats": {
+        "employees": "Employees",
+        "monthsFiled": "Months Filed",
+        "totalBase": "Total Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)"
+      },
+      "table": {
+        "employee": "Employee",
+        "inssNumber": "INSS #",
+        "months": "Months",
+        "annualBase": "Annual Base",
+        "employeeContribution": "Employee (4%)",
+        "employerContribution": "Employer (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Missing",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Export CSV"
+      },
+      "toast": {
+        "noDataTitle": "No Data",
+        "noDataDescription": "No INSS monthly filings found for {{year}}. Generate monthly returns first.",
+        "generatedTitle": "Annual Summary Generated",
+        "generatedDescription": "Aggregated {{count}} months of INSS data for {{year}}.",
+        "exportedTitle": "Exported",
+        "exportedDescription": "INSS annual reconciliation for {{year}} exported to CSV."
+      },
+      "csv": {
+        "employeeId": "Employee ID",
+        "fullName": "Full Name",
+        "inssNumber": "INSS Number",
+        "monthsContributed": "Months Contributed",
+        "annualContributionBase": "Annual Contribution Base (USD)",
+        "annualEmployeeContribution": "Annual Employee 4% (USD)",
+        "annualEmployerContribution": "Annual Employer 6% (USD)",
+        "annualTotalContribution": "Annual Total 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Donor Export Pack",
+      "subtitle": "Export donor-ready payroll accounting data directly from posted journal entries.",
+      "exportButton": "Export Pack (2 CSV)",
+      "exportHint": "This downloads two files: a project summary and detailed journal lines.",
+      "filters": {
+        "startDate": "Start Date",
+        "endDate": "End Date"
+      },
+      "stats": {
+        "salaryExpense": "Salary Expense",
+        "inssEmployerExpense": "INSS Employer Expense",
+        "totalExpense": "Total Expense"
+      },
+      "summary": {
+        "title": "Summary by Project and Funding Source",
+        "loading": "Loading journal entries...",
+        "empty": "No payroll journal lines found for this period.",
+        "project": "Project",
+        "fundingSource": "Funding Source",
+        "salary": "Salary",
+        "inssEmployer": "INSS Employer",
+        "totalExpense": "Total Expense"
+      },
+      "toast": {
+        "title": "Export complete",
+        "description": "Downloaded the two donor export files."
+      },
+      "csv": {
+        "projectCode": "Project Code",
+        "fundingSource": "Funding Source",
+        "salaryExpense": "Salary Expense",
+        "inssEmployerExpense": "INSS Employer Expense",
+        "totalExpense": "Total Expense",
+        "date": "Date",
+        "entryNumber": "Entry Number",
+        "payrollRunId": "Payroll Run ID",
+        "accountCode": "Account Code",
+        "accountName": "Account Name",
+        "debit": "Debit",
+        "credit": "Credit",
+        "description": "Description"
       }
     }
   },
@@ -3500,6 +4234,7 @@ const messages = {
       "planEnterprise": "Enterprise",
       "planEnterpriseDesc": "Unlimited employees and users"
     },
+    "platformManagement": "Platform Management",
     "auditLog": {
       "title": "Audit Log",
       "subtitle": "Track all administrative actions on the platform",
@@ -3508,6 +4243,7 @@ const messages = {
       "eventsFound": "{{count}} event(s) found",
       "searchPlaceholder": "Search logs...",
       "filterByAction": "Filter by action",
+      "filtersTitle": "More filters",
       "allActions": "All Actions",
       "noEntries": "No audit entries found",
       "noEntriesDesc": "Administrative actions will appear here",
@@ -3522,6 +4258,11 @@ const messages = {
       "targetUser": "Target User",
       "targetUserId": "Target User ID",
       "entryId": "Entry ID: {{id}}",
+      "justNow": "Just now",
+      "minutesAgo": "{{count}}m ago",
+      "hoursAgo": "{{count}}h ago",
+      "daysAgo": "{{count}}d ago",
+      "viewDetailsAction": "View details",
       "errorLoad": "Failed to load audit log",
       "actionTenantCreated": "Tenant Created",
       "actionTenantSuspended": "Tenant Suspended",
@@ -3552,6 +4293,7 @@ const messages = {
       "tabExpiring": "Expiring Soon ({{count}})",
       "tabExpired": "Expired ({{count}})",
       "searchPlaceholder": "Search by name or employee ID...",
+      "filtersTitle": "More filters",
       "allStatuses": "All Statuses",
       "allNationalities": "All Nationalities",
       "statusActive": "Active",
@@ -3569,6 +4311,7 @@ const messages = {
       "visaExpiry": "Visa Expiry",
       "permitStatus": "Permit Status",
       "actions": "Actions",
+      "openEmployee": "Open employee",
       "noVisaOnFile": "No visa on file",
       "noPermitOnFile": "No permit on file",
       "noExpiry": "No expiry set",
@@ -3577,7 +4320,110 @@ const messages = {
       "expiresTomorrow": "Expires tomorrow",
       "expiresInDays": "{{days}} days",
       "requirementsTitle": "Work Permit Requirements (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Work Visa (Type C)",
+        "visaValidity": "Valid for 1 year",
+        "visaProcessing": "Processing: about 15 business days",
+        "visaFee": "Fee: USD 50",
+        "visaSponsor": "Requires employer sponsorship",
+        "documentsTitle": "Required Documents",
+        "documentsPassport": "Valid passport (6+ months)",
+        "documentsContract": "Employment contract",
+        "documentsTax": "Company tax certificate",
+        "documentsMedical": "Medical clearance",
+        "renewalTitle": "Renewal Process",
+        "renewalApply": "Apply 30 days before expiry",
+        "renewalSubmit": "Submit through the Immigration Department",
+        "renewalOriginals": "Keep all original documents",
+        "renewalTiming": "Allow 2 to 3 weeks for processing"
+      },
       "errorLoad": "Failed to load employee data."
+    },
+    "userList": {
+      "title": "Users",
+      "subtitle": "Manage platform users and superadmin access",
+      "stats": {
+        "totalUsers": "Total Users",
+        "superadmins": "Superadmins",
+        "withTenants": "With tenants"
+      },
+      "allUsers": "All users",
+      "usersFound": "{{count}} users found",
+      "searchPlaceholder": "Search users...",
+      "noUsers": "No users found",
+      "clearSearch": "Clear search",
+      "noName": "No name",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "User",
+      "tenantsCount": "{{count}} tenants",
+      "processing": "Processing...",
+      "grantAction": "Grant superadmin",
+      "revokeAction": "Revoke superadmin",
+      "table": {
+        "user": "User",
+        "role": "Role",
+        "tenants": "Tenants",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "dialog": {
+        "grantTitle": "Grant Superadmin Access",
+        "revokeTitle": "Revoke Superadmin Access",
+        "grantDescription": "You are about to grant superadmin access to {{email}}. This gives full access to all tenants and platform management features.",
+        "revokeDescription": "You are about to revoke superadmin access from {{email}}. They will no longer be able to access the admin console or manage other tenants."
+      },
+      "toastGrantSuccess": "{{email}} is now a superadmin",
+      "toastRevokeSuccess": "Superadmin removed from {{email}}",
+      "toastUpdateFailed": "Failed to update superadmin status"
+    },
+    "tenantList": {
+      "title": "Tenants",
+      "subtitle": "Manage all tenant organizations on the platform",
+      "seedAudit": "Seed & Audit",
+      "addTenant": "Add tenant",
+      "stats": {
+        "totalTenants": "Total Tenants",
+        "active": "Active",
+        "suspended": "Suspended",
+        "enterprise": "Enterprise"
+      },
+      "allTenants": "All tenants",
+      "tenantsFound": "{{count}} tenants found",
+      "searchPlaceholder": "Search tenants...",
+      "noTenants": "No tenants found",
+      "clearSearch": "Clear search",
+      "createFirstTenant": "Create your first tenant",
+      "table": {
+        "tenant": "Tenant",
+        "status": "Status",
+        "plan": "Plan",
+        "created": "Created",
+        "actions": "Actions"
+      },
+      "actions": {
+        "viewDetails": "View details",
+        "impersonate": "Impersonate",
+        "suspend": "Suspend",
+        "reactivate": "Reactivate"
+      },
+      "status": {
+        "active": "Active",
+        "suspended": "Suspended",
+        "pending": "Pending",
+        "cancelled": "Cancelled"
+      },
+      "plan": {
+        "free": "Free",
+        "starter": "Starter",
+        "professional": "Professional",
+        "enterprise": "Enterprise"
+      },
+      "toastViewingAs": "Now viewing as {{name}}",
+      "toastImpersonateFailed": "Failed to impersonate tenant",
+      "toastSuspended": "{{name}} has been suspended",
+      "toastSuspendFailed": "Failed to suspend tenant",
+      "toastReactivated": "{{name}} has been reactivated",
+      "toastReactivateFailed": "Failed to reactivate tenant"
     }
   },
   "money": {

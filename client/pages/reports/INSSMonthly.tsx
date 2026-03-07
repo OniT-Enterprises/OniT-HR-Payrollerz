@@ -43,6 +43,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { reportsNavConfig } from "@/lib/moduleNav";
@@ -80,47 +81,10 @@ import type { CompanyDetails } from "@/types/settings";
 import { SEO } from "@/components/SEO";
 import { useAuth } from "@/contexts/AuthContext";
 
-const MONTHS = [
-  { value: "01", label: "January" },
-  { value: "02", label: "February" },
-  { value: "03", label: "March" },
-  { value: "04", label: "April" },
-  { value: "05", label: "May" },
-  { value: "06", label: "June" },
-  { value: "07", label: "July" },
-  { value: "08", label: "August" },
-  { value: "09", label: "September" },
-  { value: "10", label: "October" },
-  { value: "11", label: "November" },
-  { value: "12", label: "December" },
-];
-
-const STATUS_CONFIG = {
-  pending: {
-    label: "Pending",
-    className: "bg-yellow-100 text-yellow-800",
-    icon: Clock,
-  },
-  overdue: {
-    label: "Overdue",
-    className: "bg-red-100 text-red-800",
-    icon: AlertTriangle,
-  },
-  filed: {
-    label: "Filed",
-    className: "bg-green-100 text-green-800",
-    icon: CheckCircle,
-  },
-  draft: {
-    label: "Draft",
-    className: "bg-gray-100 text-gray-800",
-    icon: FileSpreadsheet,
-  },
-};
-
 export default function INSSMonthly() {
   const { toast } = useToast();
   const { user } = useAuth();
+  const { t } = useI18n();
 
   // React Query hooks
   const { data: settings, isLoading: settingsLoading } = useSettings();
@@ -151,6 +115,68 @@ export default function INSSMonthly() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [filedNotes, setFiledNotes] = useState("");
 
+  const months = useMemo(
+    () =>
+      Array.from({ length: 12 }, (_, index) => {
+        const monthNumber = index + 1;
+        return {
+          value: String(monthNumber).padStart(2, "0"),
+          label: t(`common.months.${monthNumber}`),
+        };
+      }),
+    [t],
+  );
+
+  const getMonthLabel = (month: string) => t(`common.months.${Number(month)}`);
+  const formatPeriodLabel = (period: string) => {
+    const [year, month] = period.split("-");
+    if (!year || !month) return period;
+    return `${getMonthLabel(month)} ${year}`;
+  };
+
+  const getTaskLabel = (
+    task: TaxFilingTask,
+    variant: "short" | "full" = "short",
+  ) =>
+    t(
+      task === "payment"
+        ? variant === "full"
+          ? "reports.inssMonthly.tasks.paymentFull"
+          : "reports.inssMonthly.tasks.payment"
+        : variant === "full"
+          ? "reports.inssMonthly.tasks.statementFull"
+          : "reports.inssMonthly.tasks.statement",
+    );
+
+  const getStatusConfig = (status: string) => {
+    switch (status) {
+      case "pending":
+        return {
+          label: t("reports.inssMonthly.status.pending"),
+          className: "bg-yellow-100 text-yellow-800",
+          icon: Clock,
+        };
+      case "overdue":
+        return {
+          label: t("reports.inssMonthly.status.overdue"),
+          className: "bg-red-100 text-red-800",
+          icon: AlertTriangle,
+        };
+      case "filed":
+        return {
+          label: t("reports.inssMonthly.status.filed"),
+          className: "bg-green-100 text-green-800",
+          icon: CheckCircle,
+        };
+      default:
+        return {
+          label: t("reports.inssMonthly.status.draft"),
+          className: "bg-gray-100 text-gray-800",
+          icon: FileSpreadsheet,
+        };
+    }
+  };
+
   const handleGenerateReturn = async () => {
     const period = `${selectedYear}-${selectedMonth}`;
     try {
@@ -165,14 +191,16 @@ export default function INSSMonthly() {
       });
 
       toast({
-        title: "INSS return generated",
-        description: `Monthly INSS return for ${period} has been generated.`,
+        title: t("reports.inssMonthly.toast.generatedTitle"),
+        description: t("reports.inssMonthly.toast.generatedDescription", {
+          period: formatPeriodLabel(period),
+        }),
       });
     } catch (error) {
       console.error("Failed to generate INSS return:", error);
       toast({
-        title: "Error",
-        description: "Failed to generate INSS return. Make sure you have paid payroll data for this period.",
+        title: t("reports.inssMonthly.toast.generateErrorTitle"),
+        description: t("reports.inssMonthly.toast.generateErrorDescription"),
         variant: "destructive",
       });
     }
@@ -188,8 +216,10 @@ export default function INSSMonthly() {
         setSelectedFilingId(filing.id);
       } catch {
         toast({
-          title: "No data available",
-          description: `No payroll data found for ${filing.period}. Run payroll first, then generate the return.`,
+          title: t("reports.inssMonthly.toast.noDataTitle"),
+          description: t("reports.inssMonthly.toast.noDataDescription", {
+            period: formatPeriodLabel(filing.period),
+          }),
           variant: "destructive",
         });
       }
@@ -203,13 +233,13 @@ export default function INSSMonthly() {
     if (!selectedReturn) return;
 
     const header = [
-      "Employee ID",
-      "Full Name",
-      "INSS Number",
-      "Contribution Base (USD)",
-      "Employee (4%)",
-      "Employer (6%)",
-      "Total (10%)",
+      t("reports.inssMonthly.csv.employeeId"),
+      t("reports.inssMonthly.csv.fullName"),
+      t("reports.inssMonthly.csv.inssNumber"),
+      t("reports.inssMonthly.csv.contributionBase"),
+      t("reports.inssMonthly.csv.employeeContribution"),
+      t("reports.inssMonthly.csv.employerContribution"),
+      t("reports.inssMonthly.csv.totalContribution"),
     ];
 
     const rows = selectedReturn.employees.map((e) => [
@@ -235,8 +265,8 @@ export default function INSSMonthly() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Exported",
-      description: "INSS return exported to CSV.",
+      title: t("reports.inssMonthly.toast.exportedTitle"),
+      description: t("reports.inssMonthly.toast.exportedDescription"),
     });
   };
 
@@ -259,8 +289,10 @@ export default function INSSMonthly() {
       });
 
       toast({
-        title: "Saved",
-        description: `INSS ${selectedTask} marked as filed.`,
+        title: t("reports.inssMonthly.toast.savedTitle"),
+        description: t("reports.inssMonthly.toast.savedDescription", {
+          task: getTaskLabel(selectedTask),
+        }),
       });
 
       setShowMarkFiledDialog(false);
@@ -269,8 +301,8 @@ export default function INSSMonthly() {
     } catch (error) {
       console.error("Failed to mark INSS filing as filed:", error);
       toast({
-        title: "Error",
-        description: "Failed to update filing status.",
+        title: t("reports.inssMonthly.toast.updateErrorTitle"),
+        description: t("reports.inssMonthly.toast.updateErrorDescription"),
         variant: "destructive",
       });
     }
@@ -294,8 +326,8 @@ export default function INSSMonthly() {
   }, [dueDates]);
 
   const formatDueTask = (due: FilingDueDate | undefined | null) => {
-    if (!due) return "INSS";
-    return due.task === "payment" ? "INSS payment" : "INSS statement";
+    if (!due?.task) return t("reports.inssMonthly.title");
+    return getTaskLabel(due.task, "full");
   };
 
   const getTaskStatus = (filing: TaxFiling, task: TaxFilingTask) =>
@@ -308,8 +340,6 @@ export default function INSSMonthly() {
       ? (filing.statementDueDate || filing.dueDate)
       : (filing.paymentDueDate || filing.dueDate);
   };
-
-  const taskLabel = (task: TaxFilingTask) => (task === "payment" ? "Payment" : "Statement");
 
   const generating = generateINSS.isPending || saveFiling.isPending;
 
@@ -339,7 +369,10 @@ export default function INSSMonthly() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="INSS Monthly Return" description="Generate and track monthly INSS submissions for Timor-Leste" />
+      <SEO
+        title={t("reports.inssMonthly.title")}
+        description={t("reports.inssMonthly.subtitle")}
+      />
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
 
@@ -352,9 +385,11 @@ export default function INSSMonthly() {
               <Shield className="h-7 w-7 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold">INSS Monthly Return</h1>
+              <h1 className="text-3xl font-bold">
+                {t("reports.inssMonthly.title")}
+              </h1>
               <p className="text-muted-foreground">
-                Generate and track monthly INSS contribution submissions.
+                {t("reports.inssMonthly.subtitle")}
               </p>
             </div>
           </div>
@@ -368,10 +403,16 @@ export default function INSSMonthly() {
                   <AlertTriangle className="h-5 w-5 text-red-600 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-red-700 dark:text-red-300">
-                      Overdue {formatDueTask(overdueFiling)}
+                      {t("reports.inssMonthly.due.overdueTitle", {
+                        task: formatDueTask(overdueFiling),
+                      })}
                     </p>
                     <p className="text-muted-foreground">
-                      {formatDueTask(overdueFiling)} for {overdueFiling.period} was due on {overdueFiling.dueDate}.
+                      {t("reports.inssMonthly.due.overdueDescription", {
+                        task: formatDueTask(overdueFiling),
+                        period: formatPeriodLabel(overdueFiling.period),
+                        dueDate: overdueFiling.dueDate,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -380,10 +421,17 @@ export default function INSSMonthly() {
                   <Calendar className="h-5 w-5 text-amber-600 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-medium text-amber-800 dark:text-amber-200">
-                      Upcoming {formatDueTask(upcomingDue)} due
+                      {t("reports.inssMonthly.due.upcomingTitle", {
+                        task: formatDueTask(upcomingDue),
+                      })}
                     </p>
                     <p className="text-muted-foreground">
-                      {formatDueTask(upcomingDue)} for {upcomingDue?.period} is due on {upcomingDue?.dueDate} ({upcomingDue?.daysUntilDue} days)
+                      {t("reports.inssMonthly.due.upcomingDescription", {
+                        task: formatDueTask(upcomingDue),
+                        period: formatPeriodLabel(upcomingDue?.period || ""),
+                        dueDate: upcomingDue?.dueDate || "",
+                        days: upcomingDue?.daysUntilDue ?? 0,
+                      })}
                     </p>
                   </div>
                 </div>
@@ -396,19 +444,21 @@ export default function INSSMonthly() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Building className="h-5 w-5 text-muted-foreground" />
-              Generate Monthly INSS Return
+              {t("reports.inssMonthly.generate.title")}
             </CardTitle>
             <CardDescription>
-              Builds a monthly contribution summary from paid payroll runs.
+              {t("reports.inssMonthly.generate.description")}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
               <div className="space-y-2">
-                <Label>Year</Label>
+                <Label>{t("reports.inssMonthly.generate.year")}</Label>
                 <Select value={selectedYear} onValueChange={setSelectedYear}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select year" />
+                    <SelectValue
+                      placeholder={t("reports.inssMonthly.generate.selectYear")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
                     {availableYears.map((y) => (
@@ -419,13 +469,15 @@ export default function INSSMonthly() {
               </div>
 
               <div className="space-y-2">
-                <Label>Month</Label>
+                <Label>{t("reports.inssMonthly.generate.month")}</Label>
                 <Select value={selectedMonth} onValueChange={setSelectedMonth}>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select month" />
+                    <SelectValue
+                      placeholder={t("reports.inssMonthly.generate.selectMonth")}
+                    />
                   </SelectTrigger>
                   <SelectContent>
-                    {MONTHS.map((m) => (
+                    {months.map((m) => (
                       <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
                     ))}
                   </SelectContent>
@@ -437,12 +489,12 @@ export default function INSSMonthly() {
                   {generating ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Generating...
+                      {t("reports.inssMonthly.generate.generating")}
                     </>
                   ) : (
                     <>
                       <DollarSign className="h-4 w-4 mr-2" />
-                      Generate Return
+                      {t("reports.inssMonthly.generate.button")}
                     </>
                   )}
                 </Button>
@@ -455,48 +507,120 @@ export default function INSSMonthly() {
           <Card className="mb-6">
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
-                <span>INSS Return - {selectedReturn.reportingPeriod}</span>
+                <span>
+                  {t("reports.inssMonthly.selected.title", {
+                    period: formatPeriodLabel(selectedReturn.reportingPeriod),
+                  })}
+                </span>
                 <div className="flex gap-2">
                   <Button variant="outline" onClick={handleExportCSV}>
                     <Download className="h-4 w-4 mr-2" />
-                    Export CSV
+                    {t("reports.inssMonthly.actions.export")}
                   </Button>
                 </div>
               </CardTitle>
               <CardDescription>
-                Employer: {selectedReturn.employerName || company.legalName || "-"} | TIN: {selectedReturn.employerTIN || company.tinNumber || "-"}
+                {t("reports.inssMonthly.selected.description", {
+                  employer: selectedReturn.employerName || company.legalName || "-",
+                  tin: selectedReturn.employerTIN || company.tinNumber || "-",
+                })}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Employees</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("reports.inssMonthly.stats.employees")}
+                  </p>
                   <p className="text-2xl font-bold">{selectedReturn.totalEmployees}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Contribution Base</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("reports.inssMonthly.stats.contributionBase")}
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalContributionBase)}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Employee (4%)</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("reports.inssMonthly.stats.employeeContribution")}
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalEmployeeContributions)}</p>
                 </div>
                 <div className="p-4 rounded-lg bg-muted/40">
-                  <p className="text-xs text-muted-foreground">Employer (6%)</p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("reports.inssMonthly.stats.employerContribution")}
+                  </p>
                   <p className="text-2xl font-bold">{formatCurrencyTL(selectedReturn.totalEmployerContributions)}</p>
                 </div>
               </div>
 
-              <div className="rounded-lg border overflow-hidden">
+              <div className="space-y-3 md:hidden">
+                {selectedReturn.employees.map((emp) => (
+                  <Card key={emp.employeeId}>
+                    <CardContent className="p-4 space-y-3">
+                      <div>
+                        <p className="font-semibold">{emp.fullName}</p>
+                        <p className="text-xs text-muted-foreground">{emp.employeeId}</p>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {t("reports.inssMonthly.table.inssNumber")}
+                          </p>
+                          <p className={emp.inssNumber ? "" : "text-amber-700"}>
+                            {emp.inssNumber || t("reports.inssMonthly.table.missing")}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {t("reports.inssMonthly.table.base")}
+                          </p>
+                          <p>{formatCurrencyTL(emp.contributionBase)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {t("reports.inssMonthly.table.employeeContribution")}
+                          </p>
+                          <p>{formatCurrencyTL(emp.employeeContribution)}</p>
+                        </div>
+                        <div>
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {t("reports.inssMonthly.table.employerContribution")}
+                          </p>
+                          <p>{formatCurrencyTL(emp.employerContribution)}</p>
+                        </div>
+                        <div className="col-span-2">
+                          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                            {t("reports.inssMonthly.table.total")}
+                          </p>
+                          <p className="font-semibold">
+                            {formatCurrencyTL(emp.totalContribution)}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              <div className="hidden rounded-lg border overflow-hidden md:block">
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Employee</TableHead>
-                      <TableHead>INSS #</TableHead>
-                      <TableHead className="text-right">Base</TableHead>
-                      <TableHead className="text-right">Employee</TableHead>
-                      <TableHead className="text-right">Employer</TableHead>
-                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead>{t("reports.inssMonthly.table.employee")}</TableHead>
+                      <TableHead>{t("reports.inssMonthly.table.inssNumber")}</TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.table.base")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.table.employeeContribution")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.table.employerContribution")}
+                      </TableHead>
+                      <TableHead className="text-right">
+                        {t("reports.inssMonthly.table.total")}
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -507,7 +631,7 @@ export default function INSSMonthly() {
                           <div className="text-xs text-muted-foreground">{emp.employeeId}</div>
                         </TableCell>
                         <TableCell className={emp.inssNumber ? "" : "text-amber-700"}>
-                          {emp.inssNumber || "Missing"}
+                          {emp.inssNumber || t("reports.inssMonthly.table.missing")}
                         </TableCell>
                         <TableCell className="text-right">{formatCurrencyTL(emp.contributionBase)}</TableCell>
                         <TableCell className="text-right">{formatCurrencyTL(emp.employeeContribution)}</TableCell>
@@ -524,43 +648,160 @@ export default function INSSMonthly() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Filing Tracker</CardTitle>
-            <CardDescription>Track your monthly INSS submissions.</CardDescription>
+            <CardTitle>{t("reports.inssMonthly.tracker.title")}</CardTitle>
+            <CardDescription>
+              {t("reports.inssMonthly.tracker.description")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="rounded-lg border overflow-hidden">
+            <div className="space-y-3 md:hidden">
+              {filings.length === 0 ? (
+                <Card>
+                  <CardContent className="p-4 text-sm text-muted-foreground">
+                    {t("reports.inssMonthly.tracker.empty")}
+                  </CardContent>
+                </Card>
+              ) : (
+                filings.map((filing) => {
+                  const statementStatus = getTaskStatus(filing, "statement");
+                  const paymentStatus = getTaskStatus(filing, "payment");
+                  const statementConfig = getStatusConfig(statementStatus);
+                  const paymentConfig = getStatusConfig(paymentStatus);
+                  const StatementIcon = statementConfig.icon;
+                  const PaymentIcon = paymentConfig.icon;
+                  return (
+                    <Card key={filing.id}>
+                      <CardContent className="p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="font-semibold">
+                              {formatPeriodLabel(filing.period)}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.employees")}: {filing.employeeCount}
+                            </p>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleViewReturn(filing)}
+                          >
+                            {t("reports.inssMonthly.actions.view")}
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.statementDue")}
+                            </p>
+                            <p>{getTaskDueDate(filing, "statement")}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.paymentDue")}
+                            </p>
+                            <p>{getTaskDueDate(filing, "payment")}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.statementStatus")}
+                            </p>
+                            <Badge className={statementConfig.className}>
+                              <StatementIcon className="h-3 w-3 mr-1" />
+                              {statementConfig.label}
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.paymentStatus")}
+                            </p>
+                            <Badge className={paymentConfig.className}>
+                              <PaymentIcon className="h-3 w-3 mr-1" />
+                              {paymentConfig.label}
+                            </Badge>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.employeeContribution")}
+                            </p>
+                            <p>{formatCurrencyTL(filing.totalINSSEmployee || 0)}</p>
+                          </div>
+                          <div>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.inssMonthly.tracker.employerContribution")}
+                            </p>
+                            <p>{formatCurrencyTL(filing.totalINSSEmployer || 0)}</p>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {statementStatus !== "filed" && (
+                            <Button
+                              size="sm"
+                              onClick={() => handleOpenMarkFiled(filing.id, "statement")}
+                            >
+                              {t("reports.inssMonthly.actions.markStatement")}
+                            </Button>
+                          )}
+                          {paymentStatus !== "filed" && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleOpenMarkFiled(filing.id, "payment")}
+                            >
+                              {t("reports.inssMonthly.actions.markPayment")}
+                            </Button>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })
+              )}
+            </div>
+
+            <div className="hidden rounded-lg border overflow-hidden md:block">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Statement Due</TableHead>
-                    <TableHead>Payment Due</TableHead>
-                    <TableHead>Statement Status</TableHead>
-                    <TableHead>Payment Status</TableHead>
-                    <TableHead className="text-right">Employees</TableHead>
-                    <TableHead className="text-right">Employee</TableHead>
-                    <TableHead className="text-right">Employer</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                    <TableHead>{t("reports.inssMonthly.tracker.period")}</TableHead>
+                    <TableHead>{t("reports.inssMonthly.tracker.statementDue")}</TableHead>
+                    <TableHead>{t("reports.inssMonthly.tracker.paymentDue")}</TableHead>
+                    <TableHead>{t("reports.inssMonthly.tracker.statementStatus")}</TableHead>
+                    <TableHead>{t("reports.inssMonthly.tracker.paymentStatus")}</TableHead>
+                    <TableHead className="text-right">
+                      {t("reports.inssMonthly.tracker.employees")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("reports.inssMonthly.tracker.employeeContribution")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("reports.inssMonthly.tracker.employerContribution")}
+                    </TableHead>
+                    <TableHead className="text-right">
+                      {t("reports.inssMonthly.tracker.actions")}
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filings.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
-                        No INSS filings yet. Generate your first return above.
+                        {t("reports.inssMonthly.tracker.empty")}
                       </TableCell>
                     </TableRow>
                   ) : (
                     filings.map((f) => {
                       const statementStatus = getTaskStatus(f, "statement");
                       const paymentStatus = getTaskStatus(f, "payment");
-                      const statementConfig = STATUS_CONFIG[statementStatus];
-                      const paymentConfig = STATUS_CONFIG[paymentStatus];
+                      const statementConfig = getStatusConfig(statementStatus);
+                      const paymentConfig = getStatusConfig(paymentStatus);
                       const StatementIcon = statementConfig.icon;
                       const PaymentIcon = paymentConfig.icon;
                       return (
                         <TableRow key={f.id}>
-                          <TableCell className="font-medium">{f.period}</TableCell>
+                          <TableCell className="font-medium">
+                            {formatPeriodLabel(f.period)}
+                          </TableCell>
                           <TableCell>{getTaskDueDate(f, "statement")}</TableCell>
                           <TableCell>{getTaskDueDate(f, "payment")}</TableCell>
                           <TableCell>
@@ -581,16 +822,16 @@ export default function INSSMonthly() {
                           <TableCell className="text-right">
                             <div className="flex justify-end gap-2">
                               <Button size="sm" variant="outline" onClick={() => handleViewReturn(f)}>
-                                View
+                                {t("reports.inssMonthly.actions.view")}
                               </Button>
                               {statementStatus !== "filed" && (
                                 <Button size="sm" onClick={() => handleOpenMarkFiled(f.id, "statement")}>
-                                  Mark Statement
+                                  {t("reports.inssMonthly.actions.markStatement")}
                                 </Button>
                               )}
                               {paymentStatus !== "filed" && (
                                 <Button size="sm" variant="secondary" onClick={() => handleOpenMarkFiled(f.id, "payment")}>
-                                  Mark Payment
+                                  {t("reports.inssMonthly.actions.markPayment")}
                                 </Button>
                               )}
                             </div>
@@ -609,40 +850,60 @@ export default function INSSMonthly() {
       <Dialog open={showMarkFiledDialog} onOpenChange={setShowMarkFiledDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Mark {taskLabel(selectedTask)} as Filed</DialogTitle>
+            <DialogTitle>
+              {t("reports.inssMonthly.markFiled.title", {
+                task: getTaskLabel(selectedTask),
+              })}
+            </DialogTitle>
             <DialogDescription>
-              Record {selectedTask} submission details for this INSS return.
+              {t("reports.inssMonthly.markFiled.description", {
+                task: getTaskLabel(selectedTask),
+              })}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label>Submission Method</Label>
+              <Label>{t("reports.inssMonthly.markFiled.submissionMethod")}</Label>
               <Select value={filedMethod} onValueChange={(v) => setFiledMethod(v as SubmissionMethod)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Select method" />
+                  <SelectValue
+                    placeholder={t("reports.inssMonthly.markFiled.selectMethod")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="inss_portal">INSS Portal</SelectItem>
-                  <SelectItem value="not_filed">Not filed</SelectItem>
+                  <SelectItem value="inss_portal">
+                    {t("reports.inssMonthly.markFiled.portal")}
+                  </SelectItem>
+                  <SelectItem value="not_filed">
+                    {t("reports.inssMonthly.markFiled.notFiled")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Receipt / Reference (optional)</Label>
-              <Input value={receiptNumber} onChange={(e) => setReceiptNumber(e.target.value)} placeholder="Reference number" />
+              <Label>{t("reports.inssMonthly.markFiled.receiptLabel")}</Label>
+              <Input
+                value={receiptNumber}
+                onChange={(e) => setReceiptNumber(e.target.value)}
+                placeholder={t("reports.inssMonthly.markFiled.receiptPlaceholder")}
+              />
             </div>
             <div className="space-y-2">
-              <Label>Notes (optional)</Label>
-              <Textarea value={filedNotes} onChange={(e) => setFiledNotes(e.target.value)} placeholder="Notes about submission/payment" />
+              <Label>{t("reports.inssMonthly.markFiled.notesLabel")}</Label>
+              <Textarea
+                value={filedNotes}
+                onChange={(e) => setFiledNotes(e.target.value)}
+                placeholder={t("reports.inssMonthly.markFiled.notesPlaceholder")}
+              />
             </div>
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowMarkFiledDialog(false)}>
-              Cancel
+              {t("reports.inssMonthly.markFiled.cancel")}
             </Button>
             <Button onClick={handleMarkFiled}>
               <CheckCircle className="h-4 w-4 mr-2" />
-              Save
+              {t("reports.inssMonthly.markFiled.save")}
             </Button>
           </DialogFooter>
         </DialogContent>

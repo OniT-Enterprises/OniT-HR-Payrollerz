@@ -42,6 +42,8 @@ const messages = {
     "guidance": "Orientação",
     "hide": "Ocultar",
     "moreDetails": "Mais detalhes",
+    "previous": "Anterior",
+    "next": "Seguinte",
     "review": "Rever",
     "retry": "Tentar novamente",
     "connectionIssueTitle": "Problema de conexão",
@@ -183,15 +185,56 @@ const messages = {
   },
   "documentAlerts": {
     "title": "Alertas de Documentos",
+    "subtitle": "Monitorizar e gerir documentos de funcionários prestes a expirar",
     "noAlerts": "Sem alertas de documentos",
     "noAlertsDesc": "Todos os documentos dos funcionários estão atualizados",
     "expiredDaysAgo": "Expirou há {{count}} dias",
     "expiresToday": "Expira hoje",
+    "expiresTomorrow": "Expira amanhã",
     "expiresInDays": "Expira em {{count}} dias",
     "viewAllAlerts": "Ver todos os {{count}} alertas",
     "manageAlerts": "Gerir alertas",
     "expired": "expirado",
     "critical": "crítico",
+    "stats": {
+      "total": "Total de alertas",
+      "expired": "Expirado",
+      "critical": "Crítico",
+      "warning": "Aviso",
+      "upcoming": "Próximo"
+    },
+    "filters": {
+      "title": "Filtros",
+      "searchPlaceholder": "Pesquisar por nome do funcionário ou documento...",
+      "severityLabel": "Gravidade",
+      "documentTypeLabel": "Tipo de documento",
+      "allSeverities": "Todas as gravidades",
+      "allDocuments": "Todos os documentos",
+      "severityOptions": {
+        "expired": "Expirado",
+        "critical": "Crítico (< 14 dias)",
+        "warning": "Aviso (14-30 dias)",
+        "upcoming": "Próximo (30-60 dias)"
+      }
+    },
+    "table": {
+      "showing": "A mostrar {{shown}} de {{total}} alertas",
+      "employee": "Funcionário",
+      "document": "Documento",
+      "expiryDate": "Data de expiração",
+      "timeRemaining": "Tempo restante",
+      "status": "Estado",
+      "adjustFilters": "Tente ajustar os filtros."
+    },
+    "actions": {
+      "export": "Exportar CSV"
+    },
+    "toast": {
+      "noDataTitle": "Sem dados",
+      "noDataDesc": "Não existem alertas para exportar.",
+      "exportTitle": "Exportação concluída",
+      "exportDesc": "Foram exportados {{count}} alertas para CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Passaporte",
@@ -207,6 +250,70 @@ const messages = {
       "critical": "Crítico",
       "warning": "Aviso",
       "upcoming": "Próximo"
+    }
+  },
+  "announcements": {
+    "title": "Anúncios",
+    "subtitle": "Transmitir mensagens para todos os funcionários via Ekipa",
+    "new": "Novo anúncio",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Fixados",
+      "totalReads": "Total de leituras"
+    },
+    "empty": {
+      "title": "Ainda não há anúncios",
+      "description": "Crie o seu primeiro anúncio para o transmitir a todos os funcionários via Ekipa."
+    },
+    "table": {
+      "title": "Título",
+      "body": "Conteúdo",
+      "pinned": "Fixado",
+      "created": "Criado",
+      "readCount": "Leituras",
+      "actions": "Ações",
+      "hasImage": "Tem imagem",
+      "pinnedYes": "Fixado",
+      "pinnedNo": "Não"
+    },
+    "actions": {
+      "pin": "Fixar",
+      "unpin": "Desafixar",
+      "publish": "Publicar",
+      "update": "Atualizar"
+    },
+    "dialog": {
+      "newTitle": "Novo anúncio",
+      "editTitle": "Editar anúncio",
+      "newDescription": "Isto ficará visível para todos os funcionários na aplicação Ekipa.",
+      "editDescription": "Atualize os detalhes do anúncio abaixo.",
+      "titleLabel": "Título *",
+      "titlePlaceholder": "ex. Atualização do horário de feriados",
+      "bodyLabel": "Conteúdo *",
+      "bodyPlaceholder": "Escreva a mensagem do anúncio...",
+      "imageLabel": "URL da imagem (opcional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Fixar no topo da lista de anúncios"
+    },
+    "delete": {
+      "title": "Eliminar anúncio",
+      "description": "Tem a certeza de que quer eliminar \"{{title}}\"? Esta ação não pode ser desfeita e o anúncio será removido dos feeds Ekipa de todos os funcionários."
+    },
+    "toast": {
+      "loadFailed": "Falha ao carregar anúncios",
+      "validationTitle": "Erro de validação",
+      "titleRequired": "O título é obrigatório",
+      "bodyRequired": "O conteúdo é obrigatório",
+      "updated": "Anúncio atualizado",
+      "published": "Anúncio publicado",
+      "updateFailed": "Falha ao atualizar anúncio",
+      "createFailed": "Falha ao criar anúncio",
+      "deleted": "Anúncio eliminado",
+      "deleteFailed": "Falha ao eliminar anúncio",
+      "pinned": "Anúncio fixado no topo",
+      "unpinned": "Anúncio desafixado",
+      "pinFailed": "Falha ao atualizar anúncio"
     }
   },
   "auth": {
@@ -1833,6 +1940,7 @@ const messages = {
         "endDate": "Data de Fim",
         "guard": "Funcionário",
         "allGuards": "Todos os funcionários",
+        "allDepartments": "Todos os departamentos",
         "site": "Local",
         "allSites": "Todos os locais",
         "client": "Cliente",
@@ -1843,7 +1951,9 @@ const messages = {
         "title": "Registos de Tempo",
         "showing": "A mostrar {{shown}} de {{total}} registos",
         "export": "Exportar CSV",
-        "logActivity": "Registar Atividade"
+        "logActivity": "Registar Atividade",
+        "emptyTitle": "Sem entradas de tempo",
+        "emptyDescription": "Não foram encontrados registos de assiduidade para {{date}}"
       },
       "dialog": {
         "title": "Registar Tempo",
@@ -1872,8 +1982,10 @@ const messages = {
         "dateShift": "Data/Turno",
         "site": "Local",
         "hours": "Horas",
+        "totalHours": "Horas",
         "activities": "Atividades",
         "incidents": "Incidentes",
+        "source": "Origem",
         "status": "Estado",
         "incidentYes": "Sim",
         "incidentNone": "Nenhum"
@@ -1889,7 +2001,15 @@ const messages = {
         "coverageDescription": "Pessoal atual em todos os locais",
         "coverageSites": "{{count}} locais",
         "coverageGuards": "{{count}} funcionários",
-        "coverageStatus": "Ativo"
+        "coverageStatus": "Ativo",
+        "noDepartmentData": "Não existem dados de departamento para esta data"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Impressão digital",
+        "mobileApp": "Aplicação móvel",
+        "qrCode": "Código QR",
+        "facial": "Facial"
       },
       "activities": {
         "perimeterPatrol": "Patrulha de perímetro",
@@ -2091,6 +2211,7 @@ const messages = {
         "import": "Importar",
         "mark": "Marcar Assiduidade",
         "markToday": "Marcar Assiduidade de Hoje",
+        "faceClockIn": "Entrada facial",
         "today": "Hoje",
         "cancel": "Cancelar",
         "export": "Exportar CSV"
@@ -2485,11 +2606,205 @@ const messages = {
     },
     "attendance": {
       "title": "Relatórios de Assiduidade",
-      "subtitle": "Acompanhar e analisar padrões de assiduidade"
+      "subtitle": "Acompanhar e analisar padrões de assiduidade",
+      "periodLabel": "Período",
+      "ranges": {
+        "last7": "Últimos 7 dias",
+        "last30": "Últimos 30 dias",
+        "last90": "Últimos 90 dias",
+        "lastYear": "Último ano"
+      },
+      "exportCompleteTitle": "Exportação concluída",
+      "exportCompleteDesc": "{{file}} descarregado com sucesso",
+      "columns": {
+        "lateMinutes": "Minutos de atraso",
+        "annualEntitled": "Férias anuais atribuídas",
+        "annualUsed": "Férias anuais usadas",
+        "annualRemaining": "Férias anuais restantes",
+        "sickEntitled": "Dias de doença atribuídos",
+        "sickUsed": "Dias de doença usados",
+        "sickRemaining": "Dias de doença restantes",
+        "carryOver": "Transporte"
+      },
+      "stats": {
+        "attendanceRate": "Taxa de assiduidade",
+        "attendanceRateSummary": "{{present}} de {{total}} registos",
+        "lateArrivals": "Chegadas atrasadas",
+        "lateHoursSummary": "{{hours}} horas no total",
+        "overtimeHours": "Horas extra",
+        "overtimeEmployees": "{{count}} funcionários",
+        "onLeaveToday": "De licença hoje",
+        "onLeaveSummary": "{{percent}}% da equipa"
+      },
+      "cards": {
+        "summary": {
+          "title": "Resumo de assiduidade",
+          "description": "Registos diários de assiduidade para o período selecionado",
+          "totalRecords": "Total de registos",
+          "export": "Exportar assiduidade"
+        },
+        "leave": {
+          "title": "Saldos de licença",
+          "description": "Direitos e utilização atuais de licença",
+          "employees": "Funcionários",
+          "daysUsed": "{{days}} dias usados",
+          "none": "Nenhuma licença tirada neste período",
+          "export": "Exportar saldos de licença"
+        },
+        "overtime": {
+          "title": "Relatório de horas extra",
+          "description": "Acompanhar horas extra por funcionário",
+          "total": "Total de horas extra",
+          "records": "Registos com horas extra",
+          "average": "Média de OT / registo",
+          "hoursValue": "{{hours}} h",
+          "export": "Exportar horas extra"
+        }
+      },
+      "breakdown": {
+        "title": "Distribuição por estado de assiduidade",
+        "description": "Distribuição por estado de assiduidade"
+      },
+      "recent": {
+        "title": "Registos recentes de assiduidade",
+        "description": "Registos mais recentes de entrada e saída",
+        "emptyTitle": "Não foram encontrados registos de assiduidade para este período",
+        "emptyDescription": "Os registos aparecerão aqui assim que os funcionários fizerem entrada ou saída"
+      }
+    },
+    "shared": {
+      "periodLabel": "Período",
+      "ranges": {
+        "7": "Últimos 7 dias",
+        "30": "Últimos 30 dias",
+        "90": "Últimos 90 dias",
+        "365": "Último ano"
+      },
+      "exportTitle": "Exportação Completa",
+      "exportDescription": "{{filename}} transferido com sucesso",
+      "monthsShort": "meses"
     },
     "setup": {
       "title": "Relatórios de Configuração",
-      "subtitle": "Configuração do sistema e análises de setup"
+      "subtitle": "Configuração do sistema e análises de setup",
+      "stats": {
+        "setupProgress": "Progresso da Configuração",
+        "stepsComplete": "{{completed}} de {{total}} passos",
+        "totalUsers": "Total de Utilizadores",
+        "superAdmins": "{{count}} super admins",
+        "auditEntries": "Entradas de Auditoria",
+        "last24Hours": "{{count}} nas últimas 24h",
+        "systemStatus": "Estado do Sistema"
+      },
+      "progress": {
+        "title": "Progresso da Configuração",
+        "description": "Estado de conclusão da configuração do sistema",
+        "overall": "Progresso Geral"
+      },
+      "steps": {
+        "companyDetails": "Detalhes da empresa",
+        "companyStructure": "Estrutura da empresa",
+        "paymentStructure": "Estrutura de pagamento",
+        "timeOffPolicies": "Políticas de licença",
+        "payrollConfig": "Configuração da folha"
+      },
+      "cards": {
+        "configuration": {
+          "title": "Configuração do Sistema",
+          "description": "Definições e configuração atuais do sistema",
+          "company": "Empresa",
+          "country": "País",
+          "status": "Estado",
+          "export": "Exportar Configuração"
+        },
+        "permissions": {
+          "title": "Permissões de Utilizador",
+          "description": "Funções de utilizador e níveis de acesso",
+          "totalUsers": "Total de Utilizadores",
+          "superAdmins": "Super Admins",
+          "regularUsers": "Utilizadores Regulares",
+          "export": "Exportar Permissões"
+        },
+        "audit": {
+          "title": "Registo de Auditoria",
+          "description": "Atividade e alterações recentes do sistema",
+          "totalEntries": "Total de Entradas",
+          "last24Hours": "Últimas 24 Horas",
+          "latest": "Mais recente",
+          "export": "Exportar Registo"
+        }
+      },
+      "usersTable": {
+        "title": "Diretório de Utilizadores",
+        "description": "Todos os utilizadores registados e as suas funções",
+        "empty": "Nenhum utilizador encontrado",
+        "manageUsers": "Gerir Utilizadores",
+        "showingLimited": "A mostrar {{shown}} de {{total}} utilizadores. Exporte para ver todos.",
+        "columns": {
+          "user": "Utilizador",
+          "email": "Email",
+          "role": "Função",
+          "tenants": "Inquilinos",
+          "created": "Criado"
+        }
+      },
+      "auditTable": {
+        "title": "Atividade Recente",
+        "description": "Entradas do registo de auditoria do admin",
+        "empty": "Nenhuma entrada de auditoria encontrada",
+        "emptyDescription": "A atividade aparecerá aqui à medida que ações forem realizadas",
+        "showingLimited": "A mostrar {{shown}} de {{total}} entradas. Exporte para ver todas.",
+        "columns": {
+          "time": "Hora",
+          "action": "Ação",
+          "actor": "Autor",
+          "target": "Alvo"
+        }
+      },
+      "values": {
+        "yes": "Sim",
+        "no": "Não",
+        "ready": "Pronto",
+        "setup": "Configuração",
+        "configured": "Configurado",
+        "pending": "Pendente",
+        "complete": "Completo",
+        "inProgress": "Em Progresso",
+        "notSet": "Não definido",
+        "noName": "Sem nome",
+        "superAdmin": "Super Admin",
+        "user": "Utilizador"
+      },
+      "configSections": {
+        "companyDetails": "Detalhes da Empresa",
+        "payroll": "Folha de Pagamento",
+        "timeOff": "Licenças"
+      },
+      "configSettings": {
+        "legalName": "Nome Legal",
+        "country": "País",
+        "tinNumber": "Número NIF",
+        "witRate": "Taxa WIT",
+        "inssEmployee": "INSS Funcionário",
+        "inssEmployer": "INSS Empregador",
+        "annualLeaveDays": "Dias de Licença Anual",
+        "sickLeaveDays": "Dias de Baixa"
+      },
+      "csv": {
+        "timestamp": "Data/Hora",
+        "action": "Ação",
+        "actorEmail": "Email do Autor",
+        "targetType": "Tipo de Alvo",
+        "targetName": "Nome do Alvo",
+        "email": "Email",
+        "displayName": "Nome Visível",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Número de Inquilinos",
+        "createdAt": "Criado Em",
+        "section": "Secção",
+        "setting": "Definição",
+        "value": "Valor"
+      }
     },
     "custom": {
       "title": "Relatórios Personalizados",
@@ -2497,11 +2812,149 @@ const messages = {
     },
     "employee": {
       "title": "Relatórios de Funcionários",
-      "subtitle": "Gerar e analisar relatórios relacionados com funcionários"
+      "subtitle": "Gerar e analisar relatórios relacionados com funcionários",
+      "stats": {
+        "totalEmployees": "Total de Funcionários",
+        "activeEmployees": "{{count}} ativos",
+        "newHires": "Novas Contratações",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departamentos",
+        "withEmployees": "Com funcionários",
+        "inactive": "Inativos",
+        "turnover": "{{percent}}% rotatividade"
+      },
+      "cards": {
+        "directory": {
+          "title": "Diretório de Funcionários",
+          "description": "Lista completa de todos os funcionários com contactos",
+          "totalRecords": "Total de Registos",
+          "active": "Ativos",
+          "inactive": "Inativos",
+          "export": "Exportar Diretório"
+        },
+        "newHires": {
+          "title": "Relatório de Novas Contratações",
+          "description": "Funcionários contratados recentemente no período selecionado",
+          "count": "Novas Contratações",
+          "latest": "Mais recente: {{name}}",
+          "export": "Exportar Novas Contratações"
+        },
+        "headcount": {
+          "title": "Total por Departamento",
+          "description": "Distribuição de funcionários pelos departamentos",
+          "moreDepartments": "+{{count}} departamentos",
+          "export": "Exportar Totais"
+        }
+      },
+      "types": {
+        "title": "Distribuição por Tipo de Emprego",
+        "description": "Distribuição por tipo de vínculo"
+      },
+      "recent": {
+        "title": "Funcionários Recentes",
+        "description": "Funcionários adicionados mais recentemente",
+        "empty": "Nenhum funcionário encontrado",
+        "table": {
+          "employee": "Funcionário",
+          "department": "Departamento",
+          "position": "Cargo",
+          "hireDate": "Data de Entrada",
+          "status": "Estado"
+        }
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "firstName": "Primeiro Nome",
+        "lastName": "Apelido",
+        "email": "Email",
+        "phone": "Telefone",
+        "department": "Departamento",
+        "position": "Cargo",
+        "hireDate": "Data de Entrada",
+        "employmentType": "Tipo de Emprego",
+        "status": "Estado",
+        "headcount": "Total",
+        "percentage": "Percentagem %"
+      },
+      "status": {
+        "active": "Ativo",
+        "inactive": "Inativo"
+      }
     },
     "department": {
       "title": "Relatórios de Departamento",
-      "subtitle": "Gerar análises e relatórios ao nível de departamento"
+      "subtitle": "Gerar análises e relatórios ao nível de departamento",
+      "stats": {
+        "totalDepartments": "Total de Departamentos",
+        "activeEmployees": "{{count}} funcionários ativos",
+        "largestDepartment": "Maior Departamento",
+        "employeeCount": "{{count}} funcionários",
+        "avgHeadcount": "Média por Departamento",
+        "perDepartment": "por departamento",
+        "unassigned": "Sem Departamento",
+        "ofStaff": "{{percent}}% da equipa"
+      },
+      "cards": {
+        "overview": {
+          "title": "Visão Geral dos Departamentos",
+          "description": "Lista completa de departamentos com total de funcionários",
+          "departments": "Departamentos",
+          "totalStaff": "Total de Equipa",
+          "withDirector": "Com Diretor",
+          "export": "Exportar Resumo"
+        },
+        "staffing": {
+          "title": "Relatório de Pessoal",
+          "description": "Distribuição do tipo de emprego por departamento",
+          "staffCount": "{{count}} pessoas",
+          "moreDepartments": "+{{count}} departamentos",
+          "export": "Exportar Pessoal"
+        },
+        "growth": {
+          "title": "Relatório de Crescimento",
+          "description": "Novas contratações e crescimento por departamento",
+          "totalNewHires": "Total de Novas Contratações",
+          "departmentsWithHires": "Departamentos com Contratações",
+          "export": "Exportar Crescimento"
+        }
+      },
+      "distribution": {
+        "title": "Distribuição do Tamanho dos Departamentos",
+        "description": "Distribuição do total de funcionários por departamento",
+        "others": "Outros",
+        "moreDepartments": "+{{count}} deps."
+      },
+      "table": {
+        "title": "Todos os Departamentos",
+        "description": "Lista completa de departamentos com detalhes",
+        "empty": "Nenhum departamento encontrado",
+        "emptyDescription": "Crie departamentos em Pessoal > Departamentos",
+        "goToDepartments": "Ir para Departamentos",
+        "columns": {
+          "department": "Departamento",
+          "director": "Diretor",
+          "manager": "Gestor",
+          "headcount": "Total",
+          "active": "Ativos",
+          "newHires": "Novas Contratações",
+          "avgTenure": "Antiguidade Média"
+        }
+      },
+      "csv": {
+        "department": "Departamento",
+        "director": "Diretor",
+        "manager": "Gestor",
+        "headcount": "Total",
+        "active": "Ativos",
+        "avgTenureMonths": "Antiguidade Média (Meses)",
+        "employmentType": "Tipo de Emprego",
+        "count": "Contagem",
+        "percentage": "Percentagem %",
+        "currentHeadcount": "Total Atual",
+        "newHires": "Novas Contratações",
+        "growthRate": "Taxa de Crescimento %"
+      },
+      "notAvailable": "N/D"
     },
     "payroll": {
       "title": "Relatórios da Folha",
@@ -2527,6 +2980,27 @@ const messages = {
         "viewDetailed": "Ver Relatório Detalhado",
         "viewDepartment": "Ver Análise por Departamento",
         "viewBenefits": "Ver Relatório de Benefícios"
+      },
+      "toast": {
+        "exported": "Relatório da folha exportado com sucesso"
+      },
+      "filters": {
+        "active": "Ativo",
+        "clear": "Limpar",
+        "summary": "A mostrar {{filtered}} de {{total}} funcionários:",
+        "benefitsBadge": "{{benefits}} benefícios",
+        "dialog": {
+          "title": "Filtrar Relatório da Folha",
+          "description": "Filtrar funcionários por departamento, benefícios ou estado",
+          "department": "Departamento",
+          "allDepartments": "Todos os Departamentos",
+          "benefits": "Pacote de Benefícios",
+          "allBenefits": "Todos os Benefícios",
+          "status": "Estado",
+          "allStatuses": "Todos os Estados",
+          "clearAll": "Limpar Tudo",
+          "apply": "Aplicar Filtros"
+        }
       },
       "salarySummary": {
         "title": "Resumo Salarial",
@@ -2558,11 +3032,271 @@ const messages = {
         "monthlySalary": "Salário Mensal",
         "benefits": "Benefícios",
         "status": "Estado",
-        "viewAll": "Ver Todos os {{count}} Funcionários"
+        "viewAll": "Ver Todos os {{count}} Funcionários",
+        "showLess": "Mostrar Menos",
+        "emptyFiltered": "Nenhum funcionário corresponde a estes filtros."
+      },
+      "salaryDetail": {
+        "title": "Relatório Salarial Detalhado",
+        "description": "Detalhe completo dos salários com cálculos fiscais de Timor-Leste",
+        "highest": "Mais Alto",
+        "lowest": "Mais Baixo",
+        "average": "Média",
+        "totalMonthly": "Total Mensal",
+        "columns": {
+          "employee": "Funcionário",
+          "gross": "Bruto",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Líquido"
+        },
+        "totals": "Totais",
+        "taxNoteTitle": "Regras fiscais de Timor-Leste:",
+        "taxNoteDescription": "IRPS = (Bruto - $500) x 10% se o bruto for superior a $500 | INSS funcionário = 4% | INSS empregador = 6% (não mostrado)"
+      },
+      "departmentDetail": {
+        "title": "Análise de Custos por Departamento",
+        "description": "Custos da folha por departamento",
+        "employees": "{{count}} funcionários",
+        "monthlyCost": "Custo Mensal",
+        "annualCost": "Custo Anual",
+        "avgSalary": "Salário Médio",
+        "employeesLabel": "Funcionários:",
+        "totalAll": "Total de Todos os Departamentos"
+      },
+      "benefitsDetail": {
+        "title": "Análise de Benefícios",
+        "description": "Distribuição dos funcionários por pacote de benefícios",
+        "employees": "{{count}} funcionários",
+        "totalMonthlyPayroll": "Folha Mensal Total",
+        "avgSalary": "Salário Médio"
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "firstName": "Primeiro Nome",
+        "lastName": "Apelido",
+        "email": "Email",
+        "department": "Departamento",
+        "position": "Cargo",
+        "monthlySalary": "Salário Mensal",
+        "annualSalary": "Salário Anual",
+        "benefitsPackage": "Pacote de Benefícios",
+        "status": "Estado",
+        "irpsTax": "Imposto IRPS (10% > $500)",
+        "inssEmployee": "INSS Funcionário (4%)",
+        "inssEmployer": "INSS Empregador (6%)",
+        "netPay": "Salário Líquido"
       },
       "status": {
         "active": "Ativo",
         "inactive": "Inativo"
+      }
+    },
+    "inssMonthly": {
+      "title": "Declaração Mensal do INSS",
+      "subtitle": "Gerar e acompanhar as submissões mensais de contribuições do INSS.",
+      "due": {
+        "overdueTitle": "{{task}} em atraso",
+        "overdueDescription": "{{task}} de {{period}} devia ser entregue em {{dueDate}}.",
+        "upcomingTitle": "{{task}} com prazo próximo",
+        "upcomingDescription": "{{task}} de {{period}} vence em {{dueDate}} ({{days}} dias)."
+      },
+      "generate": {
+        "title": "Gerar Declaração Mensal do INSS",
+        "description": "Criar um resumo mensal de contribuições a partir das folhas já pagas.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "month": "Mês",
+        "selectMonth": "Selecionar mês",
+        "button": "Gerar Declaração",
+        "generating": "A gerar..."
+      },
+      "selected": {
+        "title": "Declaração do INSS - {{period}}",
+        "description": "Empregador: {{employer}} | NIF: {{tin}}"
+      },
+      "stats": {
+        "employees": "Funcionários",
+        "contributionBase": "Base de Contribuição",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)"
+      },
+      "table": {
+        "employee": "Funcionário",
+        "inssNumber": "N.º INSS",
+        "base": "Base",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "total": "Total",
+        "missing": "Em falta"
+      },
+      "tracker": {
+        "title": "Acompanhamento de Entregas",
+        "description": "Acompanhe as suas submissões mensais do INSS.",
+        "period": "Período",
+        "statementDue": "Prazo da Declaração",
+        "paymentDue": "Prazo do Pagamento",
+        "statementStatus": "Estado da Declaração",
+        "paymentStatus": "Estado do Pagamento",
+        "employees": "Funcionários",
+        "employeeContribution": "Funcionário",
+        "employerContribution": "Empregador",
+        "actions": "Ações",
+        "empty": "Ainda não existem entregas do INSS. Gere a primeira declaração acima."
+      },
+      "actions": {
+        "export": "Exportar CSV",
+        "view": "Ver",
+        "markStatement": "Marcar Declaração",
+        "markPayment": "Marcar Pagamento"
+      },
+      "tasks": {
+        "payment": "Pagamento",
+        "statement": "Declaração",
+        "paymentFull": "pagamento do INSS",
+        "statementFull": "declaração do INSS"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Em atraso",
+        "filed": "Entregue",
+        "draft": "Rascunho"
+      },
+      "markFiled": {
+        "title": "Marcar {{task}} como entregue",
+        "description": "Registar os detalhes da submissão de {{task}} para esta declaração do INSS.",
+        "submissionMethod": "Método de Submissão",
+        "selectMethod": "Selecionar método",
+        "portal": "Portal do INSS",
+        "notFiled": "Não entregue",
+        "receiptLabel": "Recibo / Referência (opcional)",
+        "receiptPlaceholder": "Número de referência",
+        "notesLabel": "Notas (opcional)",
+        "notesPlaceholder": "Notas sobre a submissão ou pagamento",
+        "cancel": "Cancelar",
+        "save": "Guardar"
+      },
+      "toast": {
+        "generatedTitle": "Declaração do INSS gerada",
+        "generatedDescription": "A declaração mensal do INSS para {{period}} foi gerada.",
+        "generateErrorTitle": "Erro",
+        "generateErrorDescription": "Falha ao gerar a declaração do INSS. Confirme que existe folha paga para este período.",
+        "noDataTitle": "Sem dados disponíveis",
+        "noDataDescription": "Não foram encontrados dados de folha para {{period}}. Execute a folha primeiro e depois gere a declaração.",
+        "exportedTitle": "Exportado",
+        "exportedDescription": "Declaração do INSS exportada para CSV.",
+        "savedTitle": "Guardado",
+        "savedDescription": "{{task}} do INSS marcado como entregue.",
+        "updateErrorTitle": "Erro",
+        "updateErrorDescription": "Falha ao atualizar o estado da entrega."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "inssNumber": "Número INSS",
+        "contributionBase": "Base de Contribuição (USD)",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "Reconciliação Anual do INSS",
+      "subtitle": "Agregar contribuições mensais do INSS num resumo anual para o fecho do ano.",
+      "generate": {
+        "title": "Gerar Resumo Anual",
+        "description": "Agrega todas as declarações mensais do INSS do ano selecionado em totais anuais por funcionário.",
+        "year": "Ano",
+        "selectYear": "Selecionar ano",
+        "button": "Gerar Resumo Anual"
+      },
+      "summary": {
+        "title": "Resumo Anual do INSS - {{year}}",
+        "description": "Empregador: {{employer}} | NIF: {{tin}} | Meses entregues: {{monthsFiled}}/12",
+        "warning": "Apenas {{monthsFiled}} de 12 meses foram entregues. Gere as declarações mensais em falta antes de submeter a reconciliação anual."
+      },
+      "stats": {
+        "employees": "Funcionários",
+        "monthsFiled": "Meses Entregues",
+        "totalBase": "Base Total",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)"
+      },
+      "table": {
+        "employee": "Funcionário",
+        "inssNumber": "N.º INSS",
+        "months": "Meses",
+        "annualBase": "Base Anual",
+        "employeeContribution": "Funcionário (4%)",
+        "employerContribution": "Empregador (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Em falta",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Exportar CSV"
+      },
+      "toast": {
+        "noDataTitle": "Sem Dados",
+        "noDataDescription": "Não foram encontradas declarações mensais do INSS para {{year}}. Gere primeiro as declarações mensais.",
+        "generatedTitle": "Resumo Anual Gerado",
+        "generatedDescription": "Foram agregados {{count}} meses de dados do INSS para {{year}}.",
+        "exportedTitle": "Exportado",
+        "exportedDescription": "Reconciliação anual do INSS para {{year}} exportada para CSV."
+      },
+      "csv": {
+        "employeeId": "ID Funcionário",
+        "fullName": "Nome Completo",
+        "inssNumber": "Número INSS",
+        "monthsContributed": "Meses Contribuídos",
+        "annualContributionBase": "Base de Contribuição Anual (USD)",
+        "annualEmployeeContribution": "Funcionário Anual 4% (USD)",
+        "annualEmployerContribution": "Empregador Anual 6% (USD)",
+        "annualTotalContribution": "Total Anual 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Pacote de Exportação para Doadores",
+      "subtitle": "Exportar dados contabilísticos da folha prontos para doadores diretamente a partir dos lançamentos contabilísticos registados.",
+      "exportButton": "Exportar Pacote (2 CSV)",
+      "exportHint": "Isto descarrega dois ficheiros: um resumo por projeto e as linhas detalhadas do diário.",
+      "filters": {
+        "startDate": "Data Inicial",
+        "endDate": "Data Final"
+      },
+      "stats": {
+        "salaryExpense": "Despesa com Salários",
+        "inssEmployerExpense": "Despesa INSS Empregador",
+        "totalExpense": "Despesa Total"
+      },
+      "summary": {
+        "title": "Resumo por Projeto e Fonte de Financiamento",
+        "loading": "A carregar lançamentos contabilísticos...",
+        "empty": "Não foram encontradas linhas do diário da folha para este período.",
+        "project": "Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "salary": "Salário",
+        "inssEmployer": "INSS Empregador",
+        "totalExpense": "Despesa Total"
+      },
+      "toast": {
+        "title": "Exportação concluída",
+        "description": "Os dois ficheiros de exportação para doadores foram descarregados."
+      },
+      "csv": {
+        "projectCode": "Código do Projeto",
+        "fundingSource": "Fonte de Financiamento",
+        "salaryExpense": "Despesa com Salários",
+        "inssEmployerExpense": "Despesa INSS Empregador",
+        "totalExpense": "Despesa Total",
+        "date": "Data",
+        "entryNumber": "Número do Lançamento",
+        "payrollRunId": "ID da Folha",
+        "accountCode": "Código da Conta",
+        "accountName": "Nome da Conta",
+        "debit": "Débito",
+        "credit": "Crédito",
+        "description": "Descrição"
       }
     }
   },
@@ -3500,6 +4234,7 @@ const messages = {
       "planEnterprise": "Empresa",
       "planEnterpriseDesc": "Funcionários e utilizadores ilimitados"
     },
+    "platformManagement": "Gestão da Plataforma",
     "auditLog": {
       "title": "Registo de Auditoria",
       "subtitle": "Acompanhar todas as ações administrativas na plataforma",
@@ -3508,6 +4243,7 @@ const messages = {
       "eventsFound": "{{count}} evento(s) encontrado(s)",
       "searchPlaceholder": "Pesquisar registos...",
       "filterByAction": "Filtrar por ação",
+      "filtersTitle": "Mais filtros",
       "allActions": "Todas as Ações",
       "noEntries": "Nenhum registo de auditoria encontrado",
       "noEntriesDesc": "Ações administrativas aparecerão aqui",
@@ -3522,6 +4258,11 @@ const messages = {
       "targetUser": "Utilizador Alvo",
       "targetUserId": "ID do Utilizador Alvo",
       "entryId": "ID do Registo: {{id}}",
+      "justNow": "Agora mesmo",
+      "minutesAgo": "{{count}}m atrás",
+      "hoursAgo": "{{count}}h atrás",
+      "daysAgo": "{{count}}d atrás",
+      "viewDetailsAction": "Ver detalhes",
       "errorLoad": "Falha ao carregar registo de auditoria",
       "actionTenantCreated": "Inquilino Criado",
       "actionTenantSuspended": "Inquilino Suspenso",
@@ -3552,6 +4293,7 @@ const messages = {
       "tabExpiring": "A Expirar ({{count}})",
       "tabExpired": "Expirados ({{count}})",
       "searchPlaceholder": "Pesquisar por nome ou ID...",
+      "filtersTitle": "Mais filtros",
       "allStatuses": "Todos os Estados",
       "allNationalities": "Todas as Nacionalidades",
       "statusActive": "Ativo",
@@ -3569,6 +4311,7 @@ const messages = {
       "visaExpiry": "Validade do Visto",
       "permitStatus": "Estado da Autorização",
       "actions": "Ações",
+      "openEmployee": "Abrir funcionário",
       "noVisaOnFile": "Sem visto em arquivo",
       "noPermitOnFile": "Sem autorização em arquivo",
       "noExpiry": "Sem validade definida",
@@ -3577,7 +4320,110 @@ const messages = {
       "expiresTomorrow": "Expira amanhã",
       "expiresInDays": "{{days}} dias",
       "requirementsTitle": "Requisitos de Autorização de Trabalho (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Visto de Trabalho (Tipo C)",
+        "visaValidity": "Válido por 1 ano",
+        "visaProcessing": "Processamento: cerca de 15 dias úteis",
+        "visaFee": "Taxa: USD 50",
+        "visaSponsor": "Requer patrocínio do empregador",
+        "documentsTitle": "Documentos Necessários",
+        "documentsPassport": "Passaporte válido (6+ meses)",
+        "documentsContract": "Contrato de trabalho",
+        "documentsTax": "Certificado fiscal da empresa",
+        "documentsMedical": "Atestado médico",
+        "renewalTitle": "Processo de Renovação",
+        "renewalApply": "Solicitar 30 dias antes da expiração",
+        "renewalSubmit": "Submeter através do Departamento de Imigração",
+        "renewalOriginals": "Manter todos os documentos originais",
+        "renewalTiming": "Reservar 2 a 3 semanas para processamento"
+      },
       "errorLoad": "Falha ao carregar dados dos funcionários."
+    },
+    "userList": {
+      "title": "Utilizadores",
+      "subtitle": "Gerir utilizadores da plataforma e acesso de superadmin",
+      "stats": {
+        "totalUsers": "Total de Utilizadores",
+        "superadmins": "Superadmins",
+        "withTenants": "Com inquilinos"
+      },
+      "allUsers": "Todos os utilizadores",
+      "usersFound": "{{count}} utilizadores encontrados",
+      "searchPlaceholder": "Pesquisar utilizadores...",
+      "noUsers": "Nenhum utilizador encontrado",
+      "clearSearch": "Limpar pesquisa",
+      "noName": "Sem nome",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "Utilizador",
+      "tenantsCount": "{{count}} inquilinos",
+      "processing": "A processar...",
+      "grantAction": "Conceder superadmin",
+      "revokeAction": "Revogar superadmin",
+      "table": {
+        "user": "Utilizador",
+        "role": "Função",
+        "tenants": "Inquilinos",
+        "created": "Criado",
+        "actions": "Ações"
+      },
+      "dialog": {
+        "grantTitle": "Conceder Acesso de Superadmin",
+        "revokeTitle": "Revogar Acesso de Superadmin",
+        "grantDescription": "Está prestes a conceder acesso de superadmin a {{email}}. Isto dá acesso total a todos os inquilinos e à gestão da plataforma.",
+        "revokeDescription": "Está prestes a revogar o acesso de superadmin de {{email}}. Esta pessoa deixará de conseguir aceder à consola de administração ou gerir outros inquilinos."
+      },
+      "toastGrantSuccess": "{{email}} é agora superadmin",
+      "toastRevokeSuccess": "Superadmin removido de {{email}}",
+      "toastUpdateFailed": "Falha ao atualizar o estado de superadmin"
+    },
+    "tenantList": {
+      "title": "Inquilinos",
+      "subtitle": "Gerir todas as organizações inquilinas na plataforma",
+      "seedAudit": "Seed e Auditoria",
+      "addTenant": "Adicionar inquilino",
+      "stats": {
+        "totalTenants": "Total de Inquilinos",
+        "active": "Ativos",
+        "suspended": "Suspensos",
+        "enterprise": "Empresa"
+      },
+      "allTenants": "Todos os inquilinos",
+      "tenantsFound": "{{count}} inquilinos encontrados",
+      "searchPlaceholder": "Pesquisar inquilinos...",
+      "noTenants": "Nenhum inquilino encontrado",
+      "clearSearch": "Limpar pesquisa",
+      "createFirstTenant": "Criar o primeiro inquilino",
+      "table": {
+        "tenant": "Inquilino",
+        "status": "Estado",
+        "plan": "Plano",
+        "created": "Criado",
+        "actions": "Ações"
+      },
+      "actions": {
+        "viewDetails": "Ver detalhes",
+        "impersonate": "Personificar",
+        "suspend": "Suspender",
+        "reactivate": "Reativar"
+      },
+      "status": {
+        "active": "Ativo",
+        "suspended": "Suspenso",
+        "pending": "Pendente",
+        "cancelled": "Cancelado"
+      },
+      "plan": {
+        "free": "Grátis",
+        "starter": "Starter",
+        "professional": "Profissional",
+        "enterprise": "Empresa"
+      },
+      "toastViewingAs": "A ver como {{name}}",
+      "toastImpersonateFailed": "Falha ao personificar inquilino",
+      "toastSuspended": "{{name}} foi suspenso",
+      "toastSuspendFailed": "Falha ao suspender inquilino",
+      "toastReactivated": "{{name}} foi reativado",
+      "toastReactivateFailed": "Falha ao reativar inquilino"
     }
   },
   "money": {

@@ -33,13 +33,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import MoreDetailsSection from "@/components/MoreDetailsSection";
 import {
   FileWarning,
   AlertTriangle,
   Clock,
   ShieldAlert,
   Search,
-  Filter,
   Download,
   User,
   Calendar,
@@ -53,9 +53,11 @@ import {
 } from "@/components/dashboard/DocumentAlertsCard";
 import { SEO } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
+import { useI18n } from "@/i18n/I18nProvider";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
+  const { t } = useI18n();
   const { data: employees = [], isLoading: loading } = useAllEmployees();
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
@@ -98,30 +100,44 @@ export default function DocumentAlerts() {
     upcoming: allAlerts.filter(a => a.severity === "upcoming").length,
   }), [allAlerts]);
 
+  const getDocumentLabel = (documentType: string) => {
+    const labels: Record<string, string> = {
+      bi: t("documentAlerts.types.bi"),
+      passport: t("documentAlerts.types.passport"),
+      work_permit: t("documentAlerts.types.workPermit"),
+      work_visa: t("documentAlerts.types.workVisa"),
+      residence_permit: t("documentAlerts.types.residencePermit"),
+      electoral: t("documentAlerts.types.electoral"),
+      inss: t("documentAlerts.types.inssCard"),
+      contract: t("documentAlerts.types.contract"),
+    };
+    return labels[documentType] || documentType;
+  };
+
   const handleExportCSV = () => {
     if (filteredAlerts.length === 0) {
       toast({
-        title: "No Data",
-        description: "No alerts to export.",
+        title: t("documentAlerts.toast.noDataTitle"),
+        description: t("documentAlerts.toast.noDataDesc"),
         variant: "destructive",
       });
       return;
     }
 
     const headers = [
-      "Employee Name",
-      "Document Type",
-      "Expiry Date",
-      "Days Until Expiry",
-      "Status",
+      t("timeLeave.attendance.csv.employeeName"),
+      t("documentAlerts.table.document"),
+      t("documentAlerts.table.expiryDate"),
+      t("documentAlerts.table.timeRemaining"),
+      t("documentAlerts.table.status"),
     ];
 
     const rows = filteredAlerts.map(alert => [
       alert.employeeName,
-      alert.documentLabel,
+      getDocumentLabel(alert.documentType),
       alert.expiryDate,
-      String(alert.daysUntilExpiry),
-      alert.severity.toUpperCase(),
+      formatExpiryText(alert.daysUntilExpiry),
+      t(`documentAlerts.severity.${alert.severity}`),
     ]);
 
     const csvContent = [
@@ -140,20 +156,20 @@ export default function DocumentAlerts() {
     URL.revokeObjectURL(url);
 
     toast({
-      title: "Export Complete",
-      description: `Exported ${filteredAlerts.length} alerts to CSV.`,
+      title: t("documentAlerts.toast.exportTitle"),
+      description: t("documentAlerts.toast.exportDesc", { count: filteredAlerts.length }),
     });
   };
 
   const formatExpiryText = (days: number) => {
     if (days < 0) {
-      return `Expired ${Math.abs(days)} days ago`;
+      return t("documentAlerts.expiredDaysAgo", { count: Math.abs(days) });
     } else if (days === 0) {
-      return "Expires today";
+      return t("documentAlerts.expiresToday");
     } else if (days === 1) {
-      return "Expires tomorrow";
+      return t("documentAlerts.expiresTomorrow");
     } else {
-      return `Expires in ${days} days`;
+      return t("documentAlerts.expiresInDays", { count: days });
     }
   };
 
@@ -192,8 +208,8 @@ export default function DocumentAlerts() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Document Alerts"
-        description="Monitor and manage expiring employee documents"
+        title={t("documentAlerts.title")}
+        description={t("documentAlerts.subtitle")}
       />
       <MainNavigation />
 
@@ -206,9 +222,9 @@ export default function DocumentAlerts() {
               <FileWarning className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-foreground">Document Alerts</h1>
+              <h1 className="text-3xl font-bold text-foreground">{t("documentAlerts.title")}</h1>
               <p className="text-muted-foreground mt-1">
-                Monitor and manage expiring employee documents
+                {t("documentAlerts.subtitle")}
               </p>
             </div>
           </div>
@@ -222,7 +238,7 @@ export default function DocumentAlerts() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Total Alerts</p>
+                  <p className="text-sm text-muted-foreground">{t("documentAlerts.stats.total")}</p>
                   <p className="text-2xl font-bold">{stats.total}</p>
                 </div>
                 <FileWarning className="h-8 w-8 text-muted-foreground/30" />
@@ -233,7 +249,7 @@ export default function DocumentAlerts() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Expired</p>
+                  <p className="text-sm text-muted-foreground">{t("documentAlerts.stats.expired")}</p>
                   <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
                 </div>
                 <ShieldAlert className="h-8 w-8 text-red-500/30" />
@@ -244,7 +260,7 @@ export default function DocumentAlerts() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Critical</p>
+                  <p className="text-sm text-muted-foreground">{t("documentAlerts.stats.critical")}</p>
                   <p className="text-2xl font-bold text-orange-600">{stats.critical}</p>
                 </div>
                 <AlertTriangle className="h-8 w-8 text-orange-500/30" />
@@ -255,7 +271,7 @@ export default function DocumentAlerts() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Warning</p>
+                  <p className="text-sm text-muted-foreground">{t("documentAlerts.stats.warning")}</p>
                   <p className="text-2xl font-bold text-amber-600">{stats.warning}</p>
                 </div>
                 <Clock className="h-8 w-8 text-amber-500/30" />
@@ -266,7 +282,7 @@ export default function DocumentAlerts() {
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Upcoming</p>
+                  <p className="text-sm text-muted-foreground">{t("documentAlerts.stats.upcoming")}</p>
                   <p className="text-2xl font-bold text-blue-600">{stats.upcoming}</p>
                 </div>
                 <Clock className="h-8 w-8 text-blue-500/30" />
@@ -276,60 +292,53 @@ export default function DocumentAlerts() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6 border-border/50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Filter className="h-5 w-5 text-amber-600" />
-              Filters
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div className="md:col-span-2">
-                <Label>Search</Label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder="Search by employee name or document..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Severity</Label>
-                <Select value={severityFilter} onValueChange={setSeverityFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All severities" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Severities</SelectItem>
-                    <SelectItem value="expired">Expired</SelectItem>
-                    <SelectItem value="critical">Critical ({"<"} 14 days)</SelectItem>
-                    <SelectItem value="warning">Warning (14-30 days)</SelectItem>
-                    <SelectItem value="upcoming">Upcoming (30-60 days)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label>Document Type</Label>
-                <Select value={documentFilter} onValueChange={setDocumentFilter}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All documents" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Documents</SelectItem>
-                    <SelectItem value="bi">Bilhete de Identidade</SelectItem>
-                    <SelectItem value="passport">Passport</SelectItem>
-                    <SelectItem value="work_permit">Work Permit/Visa</SelectItem>
-                    <SelectItem value="electoral">Electoral Card</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+        <div className="relative mb-4 max-w-xl">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={t("documentAlerts.filters.searchPlaceholder")}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <MoreDetailsSection className="mb-6" title={t("documentAlerts.filters.title")}>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div>
+              <Label>{t("documentAlerts.filters.severityLabel")}</Label>
+              <Select value={severityFilter} onValueChange={setSeverityFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("documentAlerts.filters.allSeverities")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("documentAlerts.filters.allSeverities")}</SelectItem>
+                  <SelectItem value="expired">{t("documentAlerts.filters.severityOptions.expired")}</SelectItem>
+                  <SelectItem value="critical">{t("documentAlerts.filters.severityOptions.critical")}</SelectItem>
+                  <SelectItem value="warning">{t("documentAlerts.filters.severityOptions.warning")}</SelectItem>
+                  <SelectItem value="upcoming">{t("documentAlerts.filters.severityOptions.upcoming")}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-          </CardContent>
-        </Card>
+            <div>
+              <Label>{t("documentAlerts.filters.documentTypeLabel")}</Label>
+              <Select value={documentFilter} onValueChange={setDocumentFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder={t("documentAlerts.filters.allDocuments")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">{t("documentAlerts.filters.allDocuments")}</SelectItem>
+                  <SelectItem value="bi">{t("documentAlerts.types.bi")}</SelectItem>
+                  <SelectItem value="passport">{t("documentAlerts.types.passport")}</SelectItem>
+                  <SelectItem value="work_permit">{t("documentAlerts.types.workPermit")}</SelectItem>
+                  <SelectItem value="work_visa">{t("documentAlerts.types.workVisa")}</SelectItem>
+                  <SelectItem value="residence_permit">{t("documentAlerts.types.residencePermit")}</SelectItem>
+                  <SelectItem value="electoral">{t("documentAlerts.types.electoral")}</SelectItem>
+                  <SelectItem value="inss">{t("documentAlerts.types.inssCard")}</SelectItem>
+                  <SelectItem value="contract">{t("documentAlerts.types.contract")}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </MoreDetailsSection>
 
         {/* Alerts Table */}
         <Card className="border-border/50">
@@ -338,15 +347,15 @@ export default function DocumentAlerts() {
               <div>
                 <CardTitle className="flex items-center gap-2">
                   <FileText className="h-5 w-5 text-amber-600" />
-                  Document Alerts
+                  {t("documentAlerts.title")}
                 </CardTitle>
                 <CardDescription>
-                  Showing {filteredAlerts.length} of {allAlerts.length} alerts
+                  {t("documentAlerts.table.showing", { shown: filteredAlerts.length, total: allAlerts.length })}
                 </CardDescription>
               </div>
               <Button variant="outline" onClick={handleExportCSV}>
                 <Download className="h-4 w-4 mr-2" />
-                Export CSV
+                {t("documentAlerts.actions.export")}
               </Button>
             </div>
           </CardHeader>
@@ -354,58 +363,90 @@ export default function DocumentAlerts() {
             {filteredAlerts.length === 0 ? (
               <div className="text-center py-12">
                 <FileWarning className="h-12 w-12 text-muted-foreground/30 mx-auto mb-4" />
-                <p className="text-muted-foreground mb-2">No alerts found</p>
+                <p className="text-muted-foreground mb-2">{t("documentAlerts.noAlerts")}</p>
                 <p className="text-sm text-muted-foreground/70">
                   {allAlerts.length === 0
-                    ? "All employee documents are up to date."
-                    : "Try adjusting your filters."}
+                    ? t("documentAlerts.noAlertsDesc")
+                    : t("documentAlerts.table.adjustFilters")}
                 </p>
               </div>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Employee</TableHead>
-                    <TableHead>Document</TableHead>
-                    <TableHead>Expiry Date</TableHead>
-                    <TableHead>Time Remaining</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
+              <>
+                <div className="space-y-3 md:hidden">
                   {filteredAlerts.map((alert) => {
                     const config = SEVERITY_CONFIG[alert.severity];
                     return (
-                      <TableRow key={alert.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">{alert.employeeName}</span>
+                      <div key={alert.id} className="rounded-lg border border-border/50 p-4 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="space-y-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{alert.employeeName}</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">{getDocumentLabel(alert.documentType)}</p>
                           </div>
-                        </TableCell>
-                        <TableCell>{alert.documentLabel}</TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-muted-foreground" />
-                            {formatDateTL(new Date(alert.expiryDate))}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <span className={alert.daysUntilExpiry < 0 ? "text-red-600 font-medium" : ""}>
-                            {formatExpiryText(alert.daysUntilExpiry)}
-                          </span>
-                        </TableCell>
-                        <TableCell>
                           <Badge className={config.className}>
                             {config.icon}
-                            <span className="ml-1">{config.label}</span>
+                            <span className="ml-1">{t(`documentAlerts.severity.${alert.severity}`)}</span>
                           </Badge>
-                        </TableCell>
-                      </TableRow>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          {formatDateTL(new Date(alert.expiryDate))}
+                        </div>
+                        <p className={alert.daysUntilExpiry < 0 ? "text-sm font-medium text-red-600" : "text-sm text-muted-foreground"}>
+                          {formatExpiryText(alert.daysUntilExpiry)}
+                        </p>
+                      </div>
                     );
                   })}
-                </TableBody>
-              </Table>
+                </div>
+
+                <Table className="hidden md:table">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>{t("documentAlerts.table.employee")}</TableHead>
+                      <TableHead>{t("documentAlerts.table.document")}</TableHead>
+                      <TableHead>{t("documentAlerts.table.expiryDate")}</TableHead>
+                      <TableHead>{t("documentAlerts.table.timeRemaining")}</TableHead>
+                      <TableHead>{t("documentAlerts.table.status")}</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAlerts.map((alert) => {
+                      const config = SEVERITY_CONFIG[alert.severity];
+                      return (
+                        <TableRow key={alert.id}>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">{alert.employeeName}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>{getDocumentLabel(alert.documentType)}</TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-2">
+                              <Calendar className="h-4 w-4 text-muted-foreground" />
+                              {formatDateTL(new Date(alert.expiryDate))}
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className={alert.daysUntilExpiry < 0 ? "text-red-600 font-medium" : ""}>
+                              {formatExpiryText(alert.daysUntilExpiry)}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={config.className}>
+                              {config.icon}
+                              <span className="ml-1">{t(`documentAlerts.severity.${alert.severity}`)}</span>
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </>
             )}
           </CardContent>
         </Card>

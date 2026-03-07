@@ -42,6 +42,8 @@ const messages = {
     "guidance": "Orientasaun",
     "hide": "Subar",
     "moreDetails": "Detallu tan",
+    "previous": "Antes",
+    "next": "Tuirmai",
     "review": "Reviza",
     "retry": "Koko fali",
     "connectionIssueTitle": "Problema ligasaun",
@@ -183,15 +185,56 @@ const messages = {
   },
   "documentAlerts": {
     "title": "Alerta Dokumentu",
+    "subtitle": "Monitoriza no jere dokumentu empregadu ne'ebe besik remata",
     "noAlerts": "Laiha alerta dokumentu",
     "noAlertsDesc": "Dokumentu funsionáriu hotu atualiza ona",
     "expiredDaysAgo": "Espira {{count}} loron liu ba",
     "expiresToday": "Espira ohin",
+    "expiresTomorrow": "Espira aban",
     "expiresInDays": "Espira iha {{count}} loron",
     "viewAllAlerts": "Haree alerta hotu {{count}}",
     "manageAlerts": "Jere alerta",
     "expired": "espira",
     "critical": "kritiku",
+    "stats": {
+      "total": "Total alerta",
+      "expired": "Espira",
+      "critical": "Kritiku",
+      "warning": "Avizu",
+      "upcoming": "Besik"
+    },
+    "filters": {
+      "title": "Filtru",
+      "searchPlaceholder": "Buka tuir naran empregadu ka dokumentu...",
+      "severityLabel": "Gravidade",
+      "documentTypeLabel": "Tipu dokumentu",
+      "allSeverities": "Gravidade hotu",
+      "allDocuments": "Dokumentu hotu",
+      "severityOptions": {
+        "expired": "Espira",
+        "critical": "Kritiku (< 14 loron)",
+        "warning": "Avizu (14-30 loron)",
+        "upcoming": "Besik (30-60 loron)"
+      }
+    },
+    "table": {
+      "showing": "Hatudu {{shown}} husi {{total}} alerta",
+      "employee": "Empregadu",
+      "document": "Dokumentu",
+      "expiryDate": "Data remata",
+      "timeRemaining": "Tempu restante",
+      "status": "Status",
+      "adjustFilters": "Koko muda filtru sira."
+    },
+    "actions": {
+      "export": "Exporta CSV"
+    },
+    "toast": {
+      "noDataTitle": "Laiha dadus",
+      "noDataDesc": "Laiha alerta atu exporta.",
+      "exportTitle": "Exporta remata",
+      "exportDesc": "Exporta alerta {{count}} ba CSV."
+    },
     "types": {
       "bi": "Bilhete de Identidade",
       "passport": "Pasaporte",
@@ -207,6 +250,70 @@ const messages = {
       "critical": "Kritiku",
       "warning": "Avizu",
       "upcoming": "Besik"
+    }
+  },
+  "announcements": {
+    "title": "Avisu",
+    "subtitle": "Fahe mensajen ba empregadu hotu liuhosi Ekipa",
+    "new": "Avisu foun",
+    "createdByFallback": "Admin",
+    "summary": {
+      "total": "Total",
+      "pinned": "Tau iha leten",
+      "totalReads": "Leitura total"
+    },
+    "empty": {
+      "title": "Seidauk iha avisu",
+      "description": "Kria avisu primeiru atu fahe ba empregadu hotu liuhosi Ekipa."
+    },
+    "table": {
+      "title": "Titulu",
+      "body": "Konteudu",
+      "pinned": "Tau iha leten",
+      "created": "Kria",
+      "readCount": "Leitura",
+      "actions": "Asaun",
+      "hasImage": "Iha imajen",
+      "pinnedYes": "Tau",
+      "pinnedNo": "Laiha"
+    },
+    "actions": {
+      "pin": "Tau",
+      "unpin": "Hasai",
+      "publish": "Publika",
+      "update": "Atualiza"
+    },
+    "dialog": {
+      "newTitle": "Avisu foun",
+      "editTitle": "Edita avisu",
+      "newDescription": "Ne'e sei hare hosi empregadu hotu iha app Ekipa.",
+      "editDescription": "Atualiza detalhu avisu iha kraik.",
+      "titleLabel": "Titulu *",
+      "titlePlaceholder": "Ezemplu: Mudansa orariu feriadu",
+      "bodyLabel": "Konteudu *",
+      "bodyPlaceholder": "Hakerek ita nia mensajen avisu...",
+      "imageLabel": "URL imajen (opsional)",
+      "imagePlaceholder": "https://example.com/image.jpg",
+      "pinLabel": "Tau iha leten iha lista avisu"
+    },
+    "delete": {
+      "title": "Apaga avisu",
+      "description": "Ita hakarak apaga \"{{title}}\"? Asaun ida ne'e labele fila fali no avisu sei lakon hosi feed Ekipa hotu."
+    },
+    "toast": {
+      "loadFailed": "Falha karrega avisu",
+      "validationTitle": "Erru validasaun",
+      "titleRequired": "Titulu presiza",
+      "bodyRequired": "Konteudu presiza",
+      "updated": "Avisu atualiza ona",
+      "published": "Avisu publika ona",
+      "updateFailed": "Falha atualiza avisu",
+      "createFailed": "Falha kria avisu",
+      "deleted": "Avisu apaga ona",
+      "deleteFailed": "Falha apaga avisu",
+      "pinned": "Avisu tau iha leten",
+      "unpinned": "Avisu hasai hosi leten",
+      "pinFailed": "Falha atualiza avisu"
     }
   },
   "auth": {
@@ -1833,6 +1940,7 @@ const messages = {
         "endDate": "Data remata",
         "guard": "Empregadu",
         "allGuards": "Empregadu hotu",
+        "allDepartments": "Departamentu hotu",
         "site": "Lokal",
         "allSites": "Lokal hotu",
         "client": "Cliente",
@@ -1843,7 +1951,9 @@ const messages = {
         "title": "Registu tempu",
         "showing": "Hatudu {{shown}} husi {{total}} registu",
         "export": "Exporta CSV",
-        "logActivity": "Rejista atividade"
+        "logActivity": "Rejista atividade",
+        "emptyTitle": "Laiha entrada tempu",
+        "emptyDescription": "Laiha registu presensa ba {{date}}"
       },
       "dialog": {
         "title": "Rejista tempu",
@@ -1872,8 +1982,10 @@ const messages = {
         "dateShift": "Data/Turnu",
         "site": "Lokal",
         "hours": "Oras",
+        "totalHours": "Oras",
         "activities": "Atividade",
         "incidents": "Incidente",
+        "source": "Orijen",
         "status": "Status",
         "incidentYes": "Sin",
         "incidentNone": "Laiha"
@@ -1889,7 +2001,15 @@ const messages = {
         "coverageDescription": "Pessoal iha lokal hotu",
         "coverageSites": "{{count}} lokal",
         "coverageGuards": "{{count}} empregadu",
-        "coverageStatus": "Ativu"
+        "coverageStatus": "Ativu",
+        "noDepartmentData": "Laiha dadus departamentu ba data ida ne'e"
+      },
+      "sources": {
+        "manual": "Manual",
+        "fingerprint": "Impressaun liman",
+        "mobileApp": "App telemovel",
+        "qrCode": "Kodigu QR",
+        "facial": "Oin"
       },
       "activities": {
         "perimeterPatrol": "Patrulha perimeter",
@@ -2091,6 +2211,7 @@ const messages = {
         "import": "Importa",
         "mark": "Marka presensa",
         "markToday": "Marka Presensa Ohin",
+        "faceClockIn": "Tama ho oin",
         "today": "Ohin",
         "cancel": "Kansela",
         "export": "Exporta CSV"
@@ -3114,6 +3235,7 @@ const messages = {
       "planEnterprise": "Empreza",
       "planEnterpriseDesc": "Trabalhador no utilizadór la limitadu"
     },
+    "platformManagement": "Jestaun Plataforma",
     "auditLog": {
       "title": "Log Auditoría",
       "subtitle": "Akompaña asaun administrativa hotu iha plataforma",
@@ -3122,6 +3244,7 @@ const messages = {
       "eventsFound": "eventu {{count}} hetan",
       "searchPlaceholder": "Buka log...",
       "filterByAction": "Filtra tuir asaun",
+      "filtersTitle": "Filtru tan",
       "allActions": "Asaun Hotu",
       "noEntries": "Laiha entrada auditoría hetan",
       "noEntriesDesc": "Asaun administrativa sei hatudu iha ne'e",
@@ -3136,6 +3259,11 @@ const messages = {
       "targetUser": "Utilizadór Alvu",
       "targetUserId": "ID Utilizadór Alvu",
       "entryId": "ID Entrada: {{id}}",
+      "justNow": "Foin lalais",
+      "minutesAgo": "{{count}}m liu",
+      "hoursAgo": "{{count}}h liu",
+      "daysAgo": "{{count}} loron liu",
+      "viewDetailsAction": "Haree detalle",
       "errorLoad": "La konsege karga log auditoría",
       "actionTenantCreated": "Tenante Kria",
       "actionTenantSuspended": "Tenante Suspende",
@@ -3166,6 +3294,7 @@ const messages = {
       "tabExpiring": "Sei Espira ({{count}})",
       "tabExpired": "Espira ({{count}})",
       "searchPlaceholder": "Buka tuir naran ka ID trabalhador...",
+      "filtersTitle": "Filtru tan",
       "allStatuses": "Estadu Hotu",
       "allNationalities": "Nasionalidade Hotu",
       "statusActive": "Ativu",
@@ -3183,6 +3312,7 @@ const messages = {
       "visaExpiry": "Espira Visa",
       "permitStatus": "Estadu Permisu",
       "actions": "Asaun",
+      "openEmployee": "Loke ficháriu trabalhador",
       "noVisaOnFile": "Laiha visa iha arkivu",
       "noPermitOnFile": "Laiha permisu iha arkivu",
       "noExpiry": "Laiha data espira",
@@ -3191,7 +3321,110 @@ const messages = {
       "expiresTomorrow": "Espira aban",
       "expiresInDays": "Loron {{days}}",
       "requirementsTitle": "Rekizitu Permisu Servisu (Timor-Leste)",
+      "guide": {
+        "visaTitle": "Visa Servisu (Tipu C)",
+        "visaValidity": "Válidu ba tinan 1",
+        "visaProcessing": "Prosesu: besik loron servisu 15",
+        "visaFee": "Taxa: USD 50",
+        "visaSponsor": "Presiza patrosíniu hosi empregadór",
+        "documentsTitle": "Dokumentu Presiza",
+        "documentsPassport": "Pasaporte válidu (fulan 6+)",
+        "documentsContract": "Kontratu servisu",
+        "documentsTax": "Sertifikadu impostu empresa",
+        "documentsMedical": "Atestadu médiku",
+        "renewalTitle": "Prosesu Renovasaun",
+        "renewalApply": "Halo pedidu 30 loron molok espira",
+        "renewalSubmit": "Submete liu hosi Departamentu Imigrasaun",
+        "renewalOriginals": "Rai dokumentu orijinál hotu",
+        "renewalTiming": "Fó tempu semana 2 to'o 3 ba prosesu"
+      },
       "errorLoad": "La konsege karga dadus trabalhador."
+    },
+    "userList": {
+      "title": "Utilizadór sira",
+      "subtitle": "Jere utilizadór plataforma no asesu superadmin",
+      "stats": {
+        "totalUsers": "Total Utilizadór",
+        "superadmins": "Superadmin sira",
+        "withTenants": "Iha tenante"
+      },
+      "allUsers": "Utilizadór hotu",
+      "usersFound": "Utilizadór {{count}} hetan",
+      "searchPlaceholder": "Buka utilizadór...",
+      "noUsers": "Laiha utilizadór hetan",
+      "clearSearch": "Hamós buka",
+      "noName": "Laiha naran",
+      "roleSuperadmin": "Superadmin",
+      "roleUser": "Utilizadór",
+      "tenantsCount": "Tenante {{count}}",
+      "processing": "Prosesa hela...",
+      "grantAction": "Fó superadmin",
+      "revokeAction": "Hasai superadmin",
+      "table": {
+        "user": "Utilizadór",
+        "role": "Kargu",
+        "tenants": "Tenante",
+        "created": "Kria",
+        "actions": "Asaun"
+      },
+      "dialog": {
+        "grantTitle": "Fó Asesu Superadmin",
+        "revokeTitle": "Hasai Asesu Superadmin",
+        "grantDescription": "Ita atu fó asesu superadmin ba {{email}}. Ida-ne'e sei fó asesu tomak ba tenante hotu no jestaun plataforma.",
+        "revokeDescription": "Ita atu hasai asesu superadmin hosi {{email}}. Nia sei labele asesu konsola admin ka jere tenante seluk."
+      },
+      "toastGrantSuccess": "{{email}} agora sai superadmin",
+      "toastRevokeSuccess": "Superadmin hasai ona hosi {{email}}",
+      "toastUpdateFailed": "La konsege atualiza estatutu superadmin"
+    },
+    "tenantList": {
+      "title": "Tenante sira",
+      "subtitle": "Jere organizasaun tenante hotu iha plataforma",
+      "seedAudit": "Seed no Audit",
+      "addTenant": "Aumenta tenante",
+      "stats": {
+        "totalTenants": "Total Tenante",
+        "active": "Ativu",
+        "suspended": "Suspende",
+        "enterprise": "Empreza"
+      },
+      "allTenants": "Tenante hotu",
+      "tenantsFound": "Tenante {{count}} hetan",
+      "searchPlaceholder": "Buka tenante...",
+      "noTenants": "Laiha tenante hetan",
+      "clearSearch": "Hamós buka",
+      "createFirstTenant": "Kria ita-nia tenante primeiru",
+      "table": {
+        "tenant": "Tenante",
+        "status": "Estatutu",
+        "plan": "Planu",
+        "created": "Kria",
+        "actions": "Asaun"
+      },
+      "actions": {
+        "viewDetails": "Haree detalle",
+        "impersonate": "Tama hanesan",
+        "suspend": "Suspende",
+        "reactivate": "Reativa"
+      },
+      "status": {
+        "active": "Ativu",
+        "suspended": "Suspende",
+        "pending": "Pendente",
+        "cancelled": "Kansela"
+      },
+      "plan": {
+        "free": "Grátis",
+        "starter": "Inísiu",
+        "professional": "Profisionál",
+        "enterprise": "Empreza"
+      },
+      "toastViewingAs": "Agora haree hanesan {{name}}",
+      "toastImpersonateFailed": "La konsege tama hanesan tenante",
+      "toastSuspended": "{{name}} suspende ona",
+      "toastSuspendFailed": "La konsege suspende tenante",
+      "toastReactivated": "{{name}} reativa ona",
+      "toastReactivateFailed": "La konsege reativa tenante"
     }
   },
   "reports": {
@@ -3287,11 +3520,205 @@ const messages = {
     },
     "attendance": {
       "title": "Relatoriu Presensa",
-      "subtitle": "Hare no analiza padraun presensa"
+      "subtitle": "Hare no analiza padraun presensa",
+      "periodLabel": "Períodu",
+      "ranges": {
+        "last7": "Loron 7 ikus",
+        "last30": "Loron 30 ikus",
+        "last90": "Loron 90 ikus",
+        "lastYear": "Tinan kotuk"
+      },
+      "exportCompleteTitle": "Exporta remata",
+      "exportCompleteDesc": "{{file}} download ona ho susesu",
+      "columns": {
+        "lateMinutes": "Minutu atrasu",
+        "annualEntitled": "Direitu anual",
+        "annualUsed": "Annual uza",
+        "annualRemaining": "Annual restu",
+        "sickEntitled": "Direitu moras",
+        "sickUsed": "Moras uza",
+        "sickRemaining": "Moras restu",
+        "carryOver": "Transfere ba oin"
+      },
+      "stats": {
+        "attendanceRate": "Taxa presensa",
+        "attendanceRateSummary": "{{present}} husi {{total}} registu",
+        "lateArrivals": "Chegada atrasadu",
+        "lateHoursSummary": "{{hours}} oras total",
+        "overtimeHours": "Oras extra",
+        "overtimeEmployees": "{{count}} empregadu",
+        "onLeaveToday": "Iha lisensa ohin",
+        "onLeaveSummary": "{{percent}}% husi staf"
+      },
+      "cards": {
+        "summary": {
+          "title": "Resumo presensa",
+          "description": "Registu presensa loron-loron ba períodu ne'ebé hili",
+          "totalRecords": "Total registu",
+          "export": "Exporta presensa"
+        },
+        "leave": {
+          "title": "Saldo lisensa",
+          "description": "Direitu no uza lisensa agora",
+          "employees": "Empregadu",
+          "daysUsed": "{{days}} loron uza",
+          "none": "Laiha lisensa iha períodu ida ne'e",
+          "export": "Exporta saldo lisensa"
+        },
+        "overtime": {
+          "title": "Relatoriu oras extra",
+          "description": "Akompaña oras extra tuir empregadu",
+          "total": "Total oras extra",
+          "records": "Registu ho oras extra",
+          "average": "Media OT / registu",
+          "hoursValue": "{{hours}} oras",
+          "export": "Exporta oras extra"
+        }
+      },
+      "breakdown": {
+        "title": "Fahe status presensa",
+        "description": "Distribuisaun tuir status presensa"
+      },
+      "recent": {
+        "title": "Registu presensa foun",
+        "description": "Registu tama no sai ne'ebé foun liu",
+        "emptyTitle": "Laiha registu presensa ba períodu ida ne'e",
+        "emptyDescription": "Registu sei mosu iha ne'e bainhira empregadu tama ka sai"
+      }
+    },
+    "shared": {
+      "periodLabel": "Períodu",
+      "ranges": {
+        "7": "Loron 7 ikus",
+        "30": "Loron 30 ikus",
+        "90": "Loron 90 ikus",
+        "365": "Tinan ikus"
+      },
+      "exportTitle": "Exporta Kompletu",
+      "exportDescription": "{{filename}} download ho susesu",
+      "monthsShort": "ful"
     },
     "setup": {
       "title": "Relatoriu Konfigurasaun",
-      "subtitle": "Konfigurasaun sistema no analize setup"
+      "subtitle": "Konfigurasaun sistema no analize setup",
+      "stats": {
+        "setupProgress": "Progresu Setup",
+        "stepsComplete": "{{completed}} husi etapa {{total}}",
+        "totalUsers": "Total Utilizadór",
+        "superAdmins": "superadmin {{count}}",
+        "auditEntries": "Entrada Auditoría",
+        "last24Hours": "{{count}} iha oras 24 ikus",
+        "systemStatus": "Estadu Sistema"
+      },
+      "progress": {
+        "title": "Progresu Setup",
+        "description": "Estadu kompleta konfigurasaun sistema",
+        "overall": "Progresu Jerál"
+      },
+      "steps": {
+        "companyDetails": "Detállu empresa",
+        "companyStructure": "Estrutura empresa",
+        "paymentStructure": "Estrutura pagamentu",
+        "timeOffPolicies": "Polítika folga",
+        "payrollConfig": "Konfigurasaun folha"
+      },
+      "cards": {
+        "configuration": {
+          "title": "Konfigurasaun Sistema",
+          "description": "Definisaun no konfigurasaun sistema agora",
+          "company": "Empresa",
+          "country": "Pais",
+          "status": "Estatutu",
+          "export": "Exporta Konfigurasaun"
+        },
+        "permissions": {
+          "title": "Permisaun Utilizadór",
+          "description": "Kargu no nivel asesu utilizadór",
+          "totalUsers": "Total Utilizadór",
+          "superAdmins": "Super Admin sira",
+          "regularUsers": "Utilizadór regular",
+          "export": "Exporta Permisaun"
+        },
+        "audit": {
+          "title": "Log Auditoría",
+          "description": "Atividade no mudansa sistema ikus",
+          "totalEntries": "Total Entrada",
+          "last24Hours": "Oras 24 ikus",
+          "latest": "Ikus liu",
+          "export": "Exporta Log Auditoría"
+        }
+      },
+      "usersTable": {
+        "title": "Diretóriu Utilizadór",
+        "description": "Utilizadór rejistadu hotu no sira-nia kargu",
+        "empty": "Laiha utilizadór hetan",
+        "manageUsers": "Jere Utilizadór",
+        "showingLimited": "Hatudu {{shown}} husi {{total}} utilizadór. Exporta atu haree hotu.",
+        "columns": {
+          "user": "Utilizadór",
+          "email": "Email",
+          "role": "Kargu",
+          "tenants": "Tenante",
+          "created": "Kria"
+        }
+      },
+      "auditTable": {
+        "title": "Atividade Foun",
+        "description": "Entrada auditoría admin",
+        "empty": "Laiha entrada auditoría",
+        "emptyDescription": "Atividade sei mosu iha ne'e bainhira hala'o asaun",
+        "showingLimited": "Hatudu {{shown}} husi {{total}} entrada. Exporta atu haree hotu.",
+        "columns": {
+          "time": "Oras",
+          "action": "Asaun",
+          "actor": "Autor",
+          "target": "Alvu"
+        }
+      },
+      "values": {
+        "yes": "Sin",
+        "no": "Lae",
+        "ready": "Prontu",
+        "setup": "Setup",
+        "configured": "Konfigura ona",
+        "pending": "Pendente",
+        "complete": "Kompletu",
+        "inProgress": "Hela Prosesu",
+        "notSet": "Seidauk define",
+        "noName": "Laiha naran",
+        "superAdmin": "Super Admin",
+        "user": "Utilizadór"
+      },
+      "configSections": {
+        "companyDetails": "Detállu Empresa",
+        "payroll": "Folha Pagamentu",
+        "timeOff": "Folga"
+      },
+      "configSettings": {
+        "legalName": "Naran Legál",
+        "country": "Pais",
+        "tinNumber": "Numeru TIN",
+        "witRate": "Taxa WIT",
+        "inssEmployee": "INSS Empregadu",
+        "inssEmployer": "INSS Empregadór",
+        "annualLeaveDays": "Loron Lisensa Anuál",
+        "sickLeaveDays": "Loron Lisensa Moras"
+      },
+      "csv": {
+        "timestamp": "Tempu",
+        "action": "Asaun",
+        "actorEmail": "Email Autor",
+        "targetType": "Tipu Alvu",
+        "targetName": "Naran Alvu",
+        "email": "Email",
+        "displayName": "Naran Hatudu",
+        "superAdmin": "Super Admin",
+        "tenantCount": "Numeru Tenante",
+        "createdAt": "Kria iha",
+        "section": "Seksaun",
+        "setting": "Definisaun",
+        "value": "Valor"
+      }
     },
     "custom": {
       "title": "Relatoriu personalizadu",
@@ -3299,11 +3726,149 @@ const messages = {
     },
     "employee": {
       "title": "Relatoriu Empregadu",
-      "subtitle": "Kria no analiza relatoriu kona-ba empregadu"
+      "subtitle": "Kria no analiza relatoriu kona-ba empregadu",
+      "stats": {
+        "totalEmployees": "Total Empregadu",
+        "activeEmployees": "{{count}} ativu",
+        "newHires": "Kontratasaun Foun",
+        "hiresPeriod": "{{period}}",
+        "departments": "Departamentu",
+        "withEmployees": "Iha empregadu",
+        "inactive": "Inativu",
+        "turnover": "{{percent}}% rotasaun"
+      },
+      "cards": {
+        "directory": {
+          "title": "Diretóriu Empregadu",
+          "description": "Lista kompletu empregadu hotu ho kontaktu",
+          "totalRecords": "Total Rejistu",
+          "active": "Ativu",
+          "inactive": "Inativu",
+          "export": "Exporta Diretóriu"
+        },
+        "newHires": {
+          "title": "Relatoriu Kontratasaun Foun",
+          "description": "Empregadu foun iha períodu ne'ebé hili",
+          "count": "Kontratasaun Foun",
+          "latest": "Ikus liu: {{name}}",
+          "export": "Exporta Kontratasaun Foun"
+        },
+        "headcount": {
+          "title": "Total Tuir Departamentu",
+          "description": "Distribuisaun empregadu iha departamentu",
+          "moreDepartments": "+departamentu tan {{count}}",
+          "export": "Exporta Total"
+        }
+      },
+      "types": {
+        "title": "Fahe Tipu Servisu",
+        "description": "Distribuisaun tuir tipu servisu"
+      },
+      "recent": {
+        "title": "Empregadu Foun",
+        "description": "Empregadu ne'ebé foin tama liu",
+        "empty": "Laiha empregadu hetan",
+        "table": {
+          "employee": "Empregadu",
+          "department": "Departamentu",
+          "position": "Pozisaun",
+          "hireDate": "Data Hahú",
+          "status": "Estatutu"
+        }
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "firstName": "Naran Primeiru",
+        "lastName": "Apelidu",
+        "email": "Email",
+        "phone": "Telemovel",
+        "department": "Departamentu",
+        "position": "Pozisaun",
+        "hireDate": "Data Hahú",
+        "employmentType": "Tipu Servisu",
+        "status": "Estatutu",
+        "headcount": "Total",
+        "percentage": "Persentajen %"
+      },
+      "status": {
+        "active": "Ativu",
+        "inactive": "Inativu"
+      }
     },
     "department": {
       "title": "Relatoriu Departamentu",
-      "subtitle": "Kria analize no relatoriu ba departamentu"
+      "subtitle": "Kria analize no relatoriu ba departamentu",
+      "stats": {
+        "totalDepartments": "Total Departamentu",
+        "activeEmployees": "empregadu ativu {{count}}",
+        "largestDepartment": "Departamentu Boot Liu",
+        "employeeCount": "empregadu {{count}}",
+        "avgHeadcount": "Média Total",
+        "perDepartment": "kada departamentu",
+        "unassigned": "La Atribui",
+        "ofStaff": "{{percent}}% husi ekipa"
+      },
+      "cards": {
+        "overview": {
+          "title": "Resumo Departamentu",
+          "description": "Lista kompletu departamentu ho total empregadu",
+          "departments": "Departamentu",
+          "totalStaff": "Total Staff",
+          "withDirector": "Iha Diretór",
+          "export": "Exporta Resumo"
+        },
+        "staffing": {
+          "title": "Relatoriu Staff",
+          "description": "Fahe tipu servisu tuir departamentu",
+          "staffCount": "staff {{count}}",
+          "moreDepartments": "+departamentu tan {{count}}",
+          "export": "Exporta Staff"
+        },
+        "growth": {
+          "title": "Relatoriu Kresimentu",
+          "description": "Kontratasaun foun no kresimentu tuir departamentu",
+          "totalNewHires": "Total Kontratasaun Foun",
+          "departmentsWithHires": "Departamentu ho Kontratasaun",
+          "export": "Exporta Kresimentu"
+        }
+      },
+      "distribution": {
+        "title": "Distribuisaun Tamanhu Departamentu",
+        "description": "Fahe total empregadu iha departamentu",
+        "others": "Seluk",
+        "moreDepartments": "+depto {{count}}"
+      },
+      "table": {
+        "title": "Departamentu Hotu",
+        "description": "Lista kompletu departamentu ho detállu",
+        "empty": "Laiha departamentu hetan",
+        "emptyDescription": "Kria departamentu iha Staff > Departments",
+        "goToDepartments": "Ba Departamentu",
+        "columns": {
+          "department": "Departamentu",
+          "director": "Diretór",
+          "manager": "Jerente",
+          "headcount": "Total",
+          "active": "Ativu",
+          "newHires": "Kontratasaun Foun",
+          "avgTenure": "Média Durasaun"
+        }
+      },
+      "csv": {
+        "department": "Departamentu",
+        "director": "Diretór",
+        "manager": "Jerente",
+        "headcount": "Total",
+        "active": "Ativu",
+        "avgTenureMonths": "Média Durasaun (fulan)",
+        "employmentType": "Tipu Servisu",
+        "count": "Numeru",
+        "percentage": "Persentajen %",
+        "currentHeadcount": "Total Agora",
+        "newHires": "Kontratasaun Foun",
+        "growthRate": "Taxa Kresimentu %"
+      },
+      "notAvailable": "N/A"
     },
     "payroll": {
       "title": "Relatoriu Folha",
@@ -3329,6 +3894,27 @@ const messages = {
         "viewDetailed": "Hare relatoriu detalhadu",
         "viewDepartment": "Hare tuir departamentu",
         "viewBenefits": "Hare relatoriu benefisiu"
+      },
+      "toast": {
+        "exported": "Exporta relatoriu folha ho susesu"
+      },
+      "filters": {
+        "active": "Ativu",
+        "clear": "Hamós",
+        "summary": "Hatudu {{filtered}} husi {{total}} empregadu:",
+        "benefitsBadge": "{{benefits}} benefisiu",
+        "dialog": {
+          "title": "Filtra Relatoriu Folha",
+          "description": "Filtra empregadu tuir departamentu, benefisiu, ka status",
+          "department": "Departamentu",
+          "allDepartments": "Departamentu hotu",
+          "benefits": "Pakote benefisiu",
+          "allBenefits": "Benefisiu hotu",
+          "status": "Status",
+          "allStatuses": "Status hotu",
+          "clearAll": "Hamós hotu",
+          "apply": "Aplika filtru"
+        }
       },
       "salarySummary": {
         "title": "Resumo salariu",
@@ -3360,11 +3946,271 @@ const messages = {
         "monthlySalary": "Salariu mensal",
         "benefits": "Benefisiu",
         "status": "Status",
-        "viewAll": "Hare hotu {{count}} empregadu"
+        "viewAll": "Hare hotu {{count}} empregadu",
+        "showLess": "Hatudu menus",
+        "emptyFiltered": "Laiha empregadu ne'ebé tuir filtru sira ne'e."
+      },
+      "salaryDetail": {
+        "title": "Relatoriu Salariu Detalladu",
+        "description": "Fahe salariu kompletu ho kalkulasaun impostu Timor-Leste",
+        "highest": "Aas liu",
+        "lowest": "Kraik liu",
+        "average": "Média",
+        "totalMonthly": "Total Mensal",
+        "columns": {
+          "employee": "Empregadu",
+          "gross": "Brutu",
+          "irps": "IRPS (10%)",
+          "inss": "INSS (4%)",
+          "netPay": "Selu Líquidu"
+        },
+        "totals": "Total",
+        "taxNoteTitle": "Regra impostu Timor-Leste:",
+        "taxNoteDescription": "IRPS = (Brutu - $500) x 10% se brutu liu $500 | INSS empregadu = 4% | INSS empregadór = 6% (la hatudu)"
+      },
+      "departmentDetail": {
+        "title": "Fahe Kustu Departamentu",
+        "description": "Kustu folha tuir departamentu",
+        "employees": "{{count}} empregadu",
+        "monthlyCost": "Kustu Mensal",
+        "annualCost": "Kustu Anual",
+        "avgSalary": "Média Salariu",
+        "employeesLabel": "Empregadu:",
+        "totalAll": "Total Departamentu Hotu"
+      },
+      "benefitsDetail": {
+        "title": "Analize Benefisiu",
+        "description": "Distribuisaun empregadu tuir pakote benefisiu",
+        "employees": "{{count}} empregadu",
+        "totalMonthlyPayroll": "Total Folha Mensal",
+        "avgSalary": "Média Salariu"
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "firstName": "Naran Primeiru",
+        "lastName": "Apelidu",
+        "email": "Email",
+        "department": "Departamentu",
+        "position": "Pozisaun",
+        "monthlySalary": "Salariu Mensal",
+        "annualSalary": "Salariu Anual",
+        "benefitsPackage": "Pakote Benefisiu",
+        "status": "Status",
+        "irpsTax": "Impostu IRPS (10% > $500)",
+        "inssEmployee": "INSS Empregadu (4%)",
+        "inssEmployer": "INSS Empregadór (6%)",
+        "netPay": "Selu Líquidu"
       },
       "status": {
         "active": "Ativu",
         "inactive": "Inativu"
+      }
+    },
+    "inssMonthly": {
+      "title": "Deklarasaun INSS Mensal",
+      "subtitle": "Kria no akompaña submisaun kontribuisaun INSS mensal.",
+      "due": {
+        "overdueTitle": "Tarde ona ba {{task}}",
+        "overdueDescription": "{{task}} ba {{period}} tenke entrega iha {{dueDate}}.",
+        "upcomingTitle": "{{task}} sei to'o data",
+        "upcomingDescription": "{{task}} ba {{period}} sei to'o iha {{dueDate}} (loron {{days}})."
+      },
+      "generate": {
+        "title": "Kria Deklarasaun INSS Mensal",
+        "description": "Kria resumo kontribuisaun mensal husi folha ne'ebé selu ona.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "month": "Fulan",
+        "selectMonth": "Hili fulan",
+        "button": "Kria deklarasaun",
+        "generating": "Kria hela..."
+      },
+      "selected": {
+        "title": "Deklarasaun INSS - {{period}}",
+        "description": "Empregadór: {{employer}} | TIN: {{tin}}"
+      },
+      "stats": {
+        "employees": "Empregadu",
+        "contributionBase": "Base Kontribuisaun",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)"
+      },
+      "table": {
+        "employee": "Empregadu",
+        "inssNumber": "Numeru INSS",
+        "base": "Base",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "total": "Total",
+        "missing": "Seidauk iha"
+      },
+      "tracker": {
+        "title": "Akompañamentu Arkivu",
+        "description": "Akompaña ita-boot nia submisaun INSS mensal.",
+        "period": "Períodu",
+        "statementDue": "Deklarasaun to'o data",
+        "paymentDue": "Pagamentu to'o data",
+        "statementStatus": "Status deklarasaun",
+        "paymentStatus": "Status pagamentu",
+        "employees": "Empregadu",
+        "employeeContribution": "Empregadu",
+        "employerContribution": "Empregadór",
+        "actions": "Asaun",
+        "empty": "Seidauk iha arkivu INSS. Kria deklarasaun primeiru iha leten."
+      },
+      "actions": {
+        "export": "Exporta CSV",
+        "view": "Haree",
+        "markStatement": "Marka deklarasaun",
+        "markPayment": "Marka pagamentu"
+      },
+      "tasks": {
+        "payment": "Pagamentu",
+        "statement": "Deklarasaun",
+        "paymentFull": "Pagamentu INSS",
+        "statementFull": "Deklarasaun INSS"
+      },
+      "status": {
+        "pending": "Pendente",
+        "overdue": "Tarde",
+        "filed": "Hatama ona",
+        "draft": "Esbosu"
+      },
+      "markFiled": {
+        "title": "Marka {{task}} hanesan hatama ona",
+        "description": "Rai detallu submisaun {{task}} ba deklarasaun INSS ida-ne'e.",
+        "submissionMethod": "Métodu submisaun",
+        "selectMethod": "Hili métodu",
+        "portal": "Portal INSS",
+        "notFiled": "Seidauk hatama",
+        "receiptLabel": "Recibu / referénsia (opsionál)",
+        "receiptPlaceholder": "Numeru referénsia",
+        "notesLabel": "Nota (opsionál)",
+        "notesPlaceholder": "Nota kona-ba submisaun ka pagamentu",
+        "cancel": "Kansela",
+        "save": "Rai"
+      },
+      "toast": {
+        "generatedTitle": "Deklarasaun INSS criada",
+        "generatedDescription": "Deklarasaun INSS mensal ba {{period}} cria ona.",
+        "generateErrorTitle": "Erru",
+        "generateErrorDescription": "Labele kria deklarasaun INSS. Haree katak dadus folha selu ona ba períodu ida-ne'e.",
+        "noDataTitle": "Laiha dadus",
+        "noDataDescription": "Laiha dadus folha ba {{period}}. Hala'o folha uluk, depois kria deklarasaun.",
+        "exportedTitle": "Exporta ona",
+        "exportedDescription": "Deklarasaun INSS exporta ona ba CSV.",
+        "savedTitle": "Rai ona",
+        "savedDescription": "{{task}} INSS marka ona hanesan hatama ona.",
+        "updateErrorTitle": "Erru",
+        "updateErrorDescription": "Labele atualiza status arkivu."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "inssNumber": "Numeru INSS",
+        "contributionBase": "Base Kontribuisaun (USD)",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "totalContribution": "Total (10%)"
+      }
+    },
+    "inssAnnual": {
+      "title": "Rekonsiliasaun INSS Anual",
+      "subtitle": "Hamutuk kontribuisaun INSS mensal ba resumo anual iha remata tinan.",
+      "generate": {
+        "title": "Kria Resumu Anual",
+        "description": "Hamutuk arkivu INSS mensal hotu iha tinan ne'ebé hili ba total anual kada empregadu.",
+        "year": "Tinan",
+        "selectYear": "Hili tinan",
+        "button": "Kria resumo anual"
+      },
+      "summary": {
+        "title": "Resumo Anual INSS - {{year}}",
+        "description": "Empregadór: {{employer}} | TIN: {{tin}} | Fulan arkiva: {{monthsFiled}}/12",
+        "warning": "Arkiva deit {{monthsFiled}} husi 12 fulan. Kria deklarasaun mensal ne'ebé falta antes submete rekonsiliasaun anual."
+      },
+      "stats": {
+        "employees": "Empregadu",
+        "monthsFiled": "Fulan Arkiva",
+        "totalBase": "Base Total",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)"
+      },
+      "table": {
+        "employee": "Empregadu",
+        "inssNumber": "Numeru INSS",
+        "months": "Fulan",
+        "annualBase": "Base Anual",
+        "employeeContribution": "Empregadu (4%)",
+        "employerContribution": "Empregadór (6%)",
+        "totalContribution": "Total (10%)",
+        "missing": "Seidauk iha",
+        "total": "TOTAL"
+      },
+      "actions": {
+        "export": "Exporta CSV"
+      },
+      "toast": {
+        "noDataTitle": "Laiha dadus",
+        "noDataDescription": "Laiha arkivu INSS mensal ba {{year}}. Kria deklarasaun mensal uluk.",
+        "generatedTitle": "Resumo anual criada",
+        "generatedDescription": "Hamutuk fulan {{count}} husi dadus INSS ba {{year}}.",
+        "exportedTitle": "Exporta ona",
+        "exportedDescription": "Rekonsiliasaun INSS anual ba {{year}} exporta ona ba CSV."
+      },
+      "csv": {
+        "employeeId": "ID Empregadu",
+        "fullName": "Naran Kompletu",
+        "inssNumber": "Numeru INSS",
+        "monthsContributed": "Fulan Kontribui",
+        "annualContributionBase": "Base Kontribuisaun Anual (USD)",
+        "annualEmployeeContribution": "Empregadu Anual 4% (USD)",
+        "annualEmployerContribution": "Empregadór Anual 6% (USD)",
+        "annualTotalContribution": "Total Anual 10% (USD)"
+      }
+    },
+    "donorExportPack": {
+      "title": "Pakote Exportasaun Doador",
+      "subtitle": "Exporta dadus kontabilidade folha prontu ba doador diretu husi journal ne'ebé post.",
+      "exportButton": "Exporta pakote (2 CSV)",
+      "exportHint": "Ne'e sei download ficheiru rua: resumo projetu no liña journal detalhadu.",
+      "filters": {
+        "startDate": "Data hahú",
+        "endDate": "Data remata"
+      },
+      "stats": {
+        "salaryExpense": "Despesa Salariu",
+        "inssEmployerExpense": "Despesa INSS Empregadór",
+        "totalExpense": "Despesa Total"
+      },
+      "summary": {
+        "title": "Resumo tuir Projetu no Fonte Fundu",
+        "loading": "Karrega entrada journal...",
+        "empty": "Laiha liña journal folha ba períodu ida-ne'e.",
+        "project": "Projetu",
+        "fundingSource": "Fonte Fundu",
+        "salary": "Salariu",
+        "inssEmployer": "INSS Empregadór",
+        "totalExpense": "Despesa Total"
+      },
+      "toast": {
+        "title": "Exportasaun kompletu",
+        "description": "Download ona ficheiru doador rua."
+      },
+      "csv": {
+        "projectCode": "Kódigu Projetu",
+        "fundingSource": "Fonte Fundu",
+        "salaryExpense": "Despesa Salariu",
+        "inssEmployerExpense": "Despesa INSS Empregadór",
+        "totalExpense": "Despesa Total",
+        "date": "Data",
+        "entryNumber": "Numeru Entrada",
+        "payrollRunId": "ID Folha",
+        "accountCode": "Kódigu Konta",
+        "accountName": "Naran Konta",
+        "debit": "Débitu",
+        "credit": "Kréditu",
+        "description": "Deskrisaun"
       }
     }
   },

@@ -14,8 +14,10 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { reportsNavConfig } from "@/lib/moduleNav";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import { SEO, seoConfig } from "@/components/SEO";
+import { SEO } from "@/components/SEO";
 import { useJournalEntries } from "@/hooks/useAccounting";
+import { useToast } from "@/hooks/use-toast";
+import { useI18n } from "@/i18n/I18nProvider";
 import { Download, FileSpreadsheet } from "lucide-react";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import {
@@ -24,15 +26,6 @@ import {
   type DonorLine,
   type DonorSummary,
 } from "@/lib/reports/ngoReporting";
-
-function formatUSD(value: number): string {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(value);
-}
 
 function downloadCsv(filename: string, headers: string[], rows: string[][]): void {
   const csv = [headers.join(","), ...rows.map((row) => row.map((cell) => `"${cell}"`).join(","))].join("\n");
@@ -44,6 +37,8 @@ function downloadCsv(filename: string, headers: string[], rows: string[][]): voi
 }
 
 export default function DonorExportPack() {
+  const { toast } = useToast();
+  const { t, locale } = useI18n();
   const today = new Date();
   const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
 
@@ -74,17 +69,25 @@ export default function DonorExportPack() {
     );
   }, [summaryRows]);
 
+  const formatUSD = (value: number): string =>
+    new Intl.NumberFormat(locale === "en" ? "en-US" : "pt-PT", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(value);
+
   const exportPack = () => {
     if (!donorLines.length) return;
 
     downloadCsv(
       `donor-payroll-summary-${startDate}-to-${endDate}.csv`,
       [
-        "Project Code",
-        "Funding Source",
-        "Salary Expense",
-        "INSS Employer Expense",
-        "Total Expense",
+        t("reports.donorExportPack.csv.projectCode"),
+        t("reports.donorExportPack.csv.fundingSource"),
+        t("reports.donorExportPack.csv.salaryExpense"),
+        t("reports.donorExportPack.csv.inssEmployerExpense"),
+        t("reports.donorExportPack.csv.totalExpense"),
       ],
       summaryRows.map((row) => [
         row.projectCode,
@@ -98,16 +101,16 @@ export default function DonorExportPack() {
     downloadCsv(
       `donor-payroll-journal-lines-${startDate}-to-${endDate}.csv`,
       [
-        "Date",
-        "Entry Number",
-        "Payroll Run ID",
-        "Project Code",
-        "Funding Source",
-        "Account Code",
-        "Account Name",
-        "Debit",
-        "Credit",
-        "Description",
+        t("reports.donorExportPack.csv.date"),
+        t("reports.donorExportPack.csv.entryNumber"),
+        t("reports.donorExportPack.csv.payrollRunId"),
+        t("reports.donorExportPack.csv.projectCode"),
+        t("reports.donorExportPack.csv.fundingSource"),
+        t("reports.donorExportPack.csv.accountCode"),
+        t("reports.donorExportPack.csv.accountName"),
+        t("reports.donorExportPack.csv.debit"),
+        t("reports.donorExportPack.csv.credit"),
+        t("reports.donorExportPack.csv.description"),
       ],
       donorLines.map((line) => [
         line.date,
@@ -122,11 +125,19 @@ export default function DonorExportPack() {
         line.description,
       ])
     );
+
+    toast({
+      title: t("reports.donorExportPack.toast.title"),
+      description: t("reports.donorExportPack.toast.description"),
+    });
   };
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.payrollReports} />
+      <SEO
+        title={t("reports.donorExportPack.title")}
+        description={t("reports.donorExportPack.subtitle")}
+      />
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
@@ -134,26 +145,35 @@ export default function DonorExportPack() {
 
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Donor Export Pack</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">
+              {t("reports.donorExportPack.title")}
+            </h1>
             <p className="text-sm text-muted-foreground mt-1">
-              Export donor-ready payroll accounting data directly from posted journal entries.
+              {t("reports.donorExportPack.subtitle")}
             </p>
           </div>
           <Button onClick={exportPack} disabled={!donorLines.length} className="w-full sm:w-auto">
             <Download className="h-4 w-4 mr-2" />
-            Export Pack (2 CSV)
+            {t("reports.donorExportPack.exportButton")}
           </Button>
         </div>
 
         <Card>
           <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Start Date</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("reports.donorExportPack.filters.startDate")}
+              </p>
               <Input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground mb-1">End Date</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                {t("reports.donorExportPack.filters.endDate")}
+              </p>
               <Input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} />
+            </div>
+            <div className="sm:col-span-2 text-sm text-muted-foreground">
+              {t("reports.donorExportPack.exportHint")}
             </div>
           </CardContent>
         </Card>
@@ -161,7 +181,9 @@ export default function DonorExportPack() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Salary Expense</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.donorExportPack.stats.salaryExpense")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-lg sm:text-2xl font-semibold break-words">
               {formatUSD(totals.salaryExpense)}
@@ -169,7 +191,9 @@ export default function DonorExportPack() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">INSS Employer Expense</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.donorExportPack.stats.inssEmployerExpense")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-lg sm:text-2xl font-semibold break-words">
               {formatUSD(totals.inssEmployerExpense)}
@@ -177,7 +201,9 @@ export default function DonorExportPack() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Total Expense</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("reports.donorExportPack.stats.totalExpense")}
+              </CardTitle>
             </CardHeader>
             <CardContent className="text-lg sm:text-2xl font-semibold break-words">
               {formatUSD(totals.totalExpense)}
@@ -189,14 +215,18 @@ export default function DonorExportPack() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileSpreadsheet className="h-4 w-4" />
-              Summary by Project and Funding Source
+              {t("reports.donorExportPack.summary.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-sm text-muted-foreground">Loading journal entries...</p>
+              <p className="text-sm text-muted-foreground">
+                {t("reports.donorExportPack.summary.loading")}
+              </p>
             ) : summaryRows.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No payroll journal lines found for this period.</p>
+              <p className="text-sm text-muted-foreground">
+                {t("reports.donorExportPack.summary.empty")}
+              </p>
             ) : (
               <>
                 <div className="space-y-3 md:hidden">
@@ -209,15 +239,21 @@ export default function DonorExportPack() {
                         </div>
                         <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Salary</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.donorExportPack.summary.salary")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.salaryExpense)}</p>
                           </div>
                           <div>
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">INSS Employer</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.donorExportPack.summary.inssEmployer")}
+                            </p>
                             <p className="text-sm font-medium">{formatUSD(row.inssEmployerExpense)}</p>
                           </div>
                           <div className="col-span-2">
-                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Total Expense</p>
+                            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                              {t("reports.donorExportPack.summary.totalExpense")}
+                            </p>
                             <p className="text-sm font-semibold">{formatUSD(row.totalExpense)}</p>
                           </div>
                         </div>
@@ -230,11 +266,17 @@ export default function DonorExportPack() {
                   <Table className="min-w-[720px]">
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Project</TableHead>
-                        <TableHead>Funding Source</TableHead>
-                        <TableHead className="text-right">Salary Expense</TableHead>
-                        <TableHead className="text-right">INSS Employer</TableHead>
-                        <TableHead className="text-right">Total Expense</TableHead>
+                        <TableHead>{t("reports.donorExportPack.summary.project")}</TableHead>
+                        <TableHead>{t("reports.donorExportPack.summary.fundingSource")}</TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.donorExportPack.summary.salary")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.donorExportPack.summary.inssEmployer")}
+                        </TableHead>
+                        <TableHead className="text-right">
+                          {t("reports.donorExportPack.summary.totalExpense")}
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
