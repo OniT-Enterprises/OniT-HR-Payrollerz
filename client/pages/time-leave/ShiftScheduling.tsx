@@ -908,101 +908,66 @@ export default function ShiftScheduling() {
                 );
 
                 return (
-                  <Card key={employee.id}>
-                    <CardContent className="pt-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-2">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <h4 className="font-medium">{employee.name}</h4>
-                              <p className="text-sm text-gray-600">
-                                {getPositionLabel(employee.position)}
-                              </p>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              style={{
-                                backgroundColor: `${getDepartmentColor(employee.department)}15`,
-                                borderColor: getDepartmentColor(
-                                  employee.department,
-                                ),
-                              }}
-                            >
-                              {getDepartmentLabel(employee.department)}
-                            </Badge>
-                          </div>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                            <div>
-                              <span className="text-gray-500">
-                                {t("timeLeave.shiftScheduling.employees.email")}
-                              </span>
-                              <p className="font-medium">{employee.email}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">
-                                {t("timeLeave.shiftScheduling.employees.phone")}
-                              </span>
-                              <p className="font-medium">{employee.phone}</p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">
-                                {t("timeLeave.shiftScheduling.employees.hourlyRate")}
-                              </span>
-                              <p className="font-medium">
-                                {t("timeLeave.shiftScheduling.employees.hourlyRateValue", {
-                                  rate: employee.hourlyRate,
-                                })}
-                              </p>
-                            </div>
-                            <div>
-                              <span className="text-gray-500">
-                                {t("timeLeave.shiftScheduling.employees.department")}
-                              </span>
-                              <p className="font-medium">
-                                {getDepartmentLabel(employee.department)}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="text-right space-y-2">
-                          <div>
-                            <p className="text-sm text-gray-500">
-                              {t("timeLeave.shiftScheduling.employees.thisWeek")}
-                            </p>
-                            <p className="text-2xl font-bold">
-                              {t("timeLeave.shiftScheduling.employees.hoursValue", {
-                                hours: weeklyHours,
-                              })}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {t("timeLeave.shiftScheduling.employees.maxHours", {
-                                max: employee.maxHoursPerWeek,
-                              })}
-                            </p>
-                          </div>
-                          <div className="w-24">
-                            <div className="bg-gray-200 rounded-full h-2">
-                              <div
-                                className={`h-2 rounded-full ${
-                                  utilizationRate > 90
-                                    ? "bg-red-500"
-                                    : utilizationRate > 70
-                                      ? "bg-yellow-500"
-                                      : "bg-green-500"
-                                }`}
-                                style={{
-                                  width: `${Math.min(utilizationRate, 100)}%`,
-                                }}
-                              />
-                            </div>
-                            <p className="text-xs text-center mt-1">
-                              {utilizationRate}%
-                            </p>
-                          </div>
-                        </div>
+                  <div
+                    key={employee.id}
+                    className="flex items-center gap-4 p-3 rounded-xl border border-border/50 hover:bg-accent/30 transition-colors"
+                  >
+                    {/* Avatar */}
+                    <div className="h-10 w-10 rounded-xl bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center shrink-0">
+                      <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-300">
+                        {employee.name.split(" ").map((n: string) => n[0]).join("")}
+                      </span>
+                    </div>
+
+                    {/* Name + position */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <h4 className="text-sm font-medium truncate">{employee.name}</h4>
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] shrink-0"
+                          style={{
+                            backgroundColor: `${getDepartmentColor(employee.department)}15`,
+                            borderColor: getDepartmentColor(employee.department),
+                          }}
+                        >
+                          {getDepartmentLabel(employee.department)}
+                        </Badge>
                       </div>
-                    </CardContent>
-                  </Card>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {getPositionLabel(employee.position)}
+                      </p>
+                    </div>
+
+                    {/* Hours + utilization */}
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <p className="text-lg font-bold tabular-nums">
+                          {weeklyHours}<span className="text-xs font-normal text-muted-foreground">h</span>
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">
+                          / {employee.maxHoursPerWeek}h
+                        </p>
+                      </div>
+                      <div className="w-16">
+                        <div className="bg-muted rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all ${
+                              utilizationRate > 90
+                                ? "bg-red-500"
+                                : utilizationRate > 70
+                                  ? "bg-amber-500"
+                                  : "bg-emerald-500"
+                            }`}
+                            style={{ width: `${Math.min(utilizationRate, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-center text-muted-foreground mt-0.5">
+                          {utilizationRate}%
+                        </p>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
           </div>
