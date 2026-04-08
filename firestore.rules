@@ -73,6 +73,21 @@ service cloud.firestore {
         getTenantRole(tenantId) in ['owner', 'hr-admin', 'manager'];
     }
 
+    function canCreateOwnTenant(tenantId) {
+      return isAuthenticated() &&
+        request.resource.data.createdBy == request.auth.uid &&
+        request.resource.data.id == tenantId;
+    }
+
+    function canCreateInitialOwnerMembership(tenantId, memberId) {
+      return isAuthenticated() &&
+        memberId == request.auth.uid &&
+        exists(/databases/$(database)/documents/tenants/$(tenantId)) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId)).data.createdBy == request.auth.uid &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.role == 'owner';
+    }
+
     function hasTenantModule(tenantId, module) {
       return isAuthenticated() &&
         isTenantMember(tenantId) && (
@@ -210,8 +225,8 @@ service cloud.firestore {
       allow update: if isTenantOwner(tenantId) &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['status', 'plan', 'limits', 'stripeCustomerId']);
 
-      // Creating new tenants requires authentication (self-service signup)
-      allow create: if isAuthenticated();
+      // Creating new tenants requires authentication and self-ownership
+      allow create: if canCreateOwnTenant(tenantId);
 
       // ============================================
       // TENANT MEMBERS SUBCOLLECTION
@@ -223,8 +238,12 @@ service cloud.firestore {
         // Tenant members can read member list
         allow read: if isTenantMember(tenantId);
 
-        // Only tenant admins can manage members (but not their own membership)
-        allow create, update: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
+        // Allow self-service signup to create the initial owner membership
+        allow create: if (isTenantAdmin(tenantId) && memberId != request.auth.uid) ||
+          canCreateInitialOwnerMembership(tenantId, memberId);
+
+        // Only tenant admins can manage other members
+        allow update: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
         allow delete: if isTenantAdmin(tenantId) && memberId != request.auth.uid;
 
         // Users can update their own member record (limited fields)

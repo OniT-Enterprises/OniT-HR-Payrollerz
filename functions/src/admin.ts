@@ -461,7 +461,7 @@ export const bootstrapFirstAdmin = onCall(async (request) => {
         slug: companySlug,
         status: "active",
         plan: "professional",
-        limits: { employees: 100, members: 20, storage: 10 },
+        limits: { maxEmployees: 100, maxUsers: 20, storageGB: 10 },
         createdBy: callerUid,
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),

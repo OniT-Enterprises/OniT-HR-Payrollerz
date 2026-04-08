@@ -26,6 +26,12 @@ export type { AuditLogEntry };
 export type { TenantConfig };
 export type { UserProfile, AdminAuditEntry };
 
+type LegacyTenantLimits = {
+  employees?: number;
+  members?: number;
+  storage?: number;
+};
+
 // Generate a URL-safe tenant ID from name
 function generateTenantSlug(name: string): string {
   return name
@@ -42,6 +48,28 @@ function generateTenantId(name: string): string {
   return `${slug}-${timestamp}`;
 }
 
+function normalizeTenantConfig(tenantId: string, data: Record<string, unknown>): TenantConfig {
+  const rawLimits = data.limits as TenantConfig['limits'] | LegacyTenantLimits | undefined;
+  let limits = rawLimits;
+
+  if (rawLimits && typeof rawLimits === 'object' && (
+    'employees' in rawLimits || 'members' in rawLimits || 'storage' in rawLimits
+  )) {
+    const legacy = rawLimits as LegacyTenantLimits;
+    limits = {
+      maxEmployees: (rawLimits as TenantConfig['limits'])?.maxEmployees ?? legacy.employees ?? 0,
+      maxUsers: (rawLimits as TenantConfig['limits'])?.maxUsers ?? legacy.members ?? 0,
+      storageGB: (rawLimits as TenantConfig['limits'])?.storageGB ?? legacy.storage ?? 0,
+    };
+  }
+
+  return {
+    ...data,
+    id: tenantId,
+    ...(limits ? { limits } : {}),
+  } as TenantConfig;
+}
+
 class AdminService {
   // ============================================
   // TENANT MANAGEMENT
@@ -55,10 +83,7 @@ class AdminService {
       const q = query(tenantsRef, orderBy('createdAt', 'desc'));
       const snapshot = await getDocs(q);
 
-      return snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      })) as TenantConfig[];
+      return snapshot.docs.map((doc) => normalizeTenantConfig(doc.id, doc.data()));
     } catch (error) {
       console.error('Error fetching tenants:', error);
       throw error;
@@ -74,10 +99,7 @@ class AdminService {
 
       if (!snapshot.exists()) return null;
 
-      return {
-        id: snapshot.id,
-        ...snapshot.data(),
-      } as TenantConfig;
+      return normalizeTenantConfig(snapshot.id, snapshot.data());
     } catch (error) {
       console.error('Error fetching tenant:', error);
       throw error;

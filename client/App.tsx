@@ -9,7 +9,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { FirebaseProvider } from "@/contexts/FirebaseContext";
-import { TenantProvider } from "@/contexts/TenantContext";
+import { TenantProvider, useTenant } from "@/contexts/TenantContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { GuidanceProvider } from "@/contexts/GuidanceContext";
 import { I18nProvider } from "@/i18n/I18nProvider";
@@ -38,8 +38,9 @@ import {
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
   const { user, userProfile, loading, isSuperAdmin } = useAuth();
+  const { session, loading: tenantLoading } = useTenant();
 
-  if (loading) {
+  if (loading || tenantLoading) {
     return <PageLoader />;
   }
 
@@ -63,6 +64,13 @@ function HomeRoute() {
     }
     // Regular user without tenants needs setup
     return <Navigate to="/admin/setup" replace />;
+  }
+
+  if (!session) {
+    if (isSuperAdmin) {
+      return <Navigate to="/admin/tenants" replace />;
+    }
+    return <Navigate to="/landing" replace />;
   }
 
   // User with tenants - show regular dashboard

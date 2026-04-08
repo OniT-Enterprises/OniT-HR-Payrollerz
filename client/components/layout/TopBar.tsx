@@ -57,14 +57,15 @@ export default function TopBar() {
   const isMobile = useIsMobile();
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
+  const canManageTenant = canManage();
 
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
-  const donorExportEnabled = canUseDonorExport(session, hasModule("reports"), canManage());
+  const donorExportEnabled = canUseDonorExport(session, hasModule("reports"), canManageTenant);
 
   const { data: setupProgress } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress", "nav"],
     queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
-    enabled: Boolean(user && tenantId && !isSuperAdmin),
+    enabled: Boolean(user && tenantId && !isSuperAdmin && canManageTenant),
     staleTime: 5 * 60 * 1000,
   });
 
@@ -83,7 +84,7 @@ export default function TopBar() {
       .toUpperCase() || user?.email?.[0].toUpperCase() || "U";
 
   const hasConnectionIssue = !isOnline || !isConnected;
-  const setupIncomplete = setupProgress?.isComplete === false;
+  const setupIncomplete = canManageTenant && setupProgress?.isComplete === false;
   const setupPercent = setupProgress?.percentComplete ?? 0;
 
   return (

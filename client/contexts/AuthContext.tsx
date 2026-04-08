@@ -90,12 +90,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Refresh user profile manually
   const refreshUserProfile = useCallback(async () => {
-    if (!user) return;
+    const activeUser = user ?? auth?.currentUser;
+    if (!activeUser) return;
 
-    const profile = await fetchUserProfile(user);
+    if (!user) {
+      setUser(activeUser);
+    }
+
+    const profile = await fetchUserProfile(activeUser);
     setUserProfile(profile);
 
-    const isAdmin = await checkSuperAdmin(user, profile);
+    const isAdmin = await checkSuperAdmin(activeUser, profile);
     setIsSuperAdmin(isAdmin);
   }, [user, fetchUserProfile, checkSuperAdmin]);
 

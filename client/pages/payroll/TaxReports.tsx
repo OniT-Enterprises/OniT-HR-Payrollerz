@@ -167,7 +167,7 @@ export default function TaxReports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-between">
-              <Button onClick={() => navigate("/reports/attl-monthly-wit")}>
+              <Button onClick={() => navigate("/payroll/tax/monthly-wit")}>
                 {t("taxReports.openWitFiling")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
@@ -182,7 +182,7 @@ export default function TaxReports() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex items-center justify-between">
-              <Button onClick={() => navigate("/reports/inss-monthly")}>
+              <Button onClick={() => navigate("/payroll/tax/inss-monthly")}>
                 {t("taxReports.openInssFiling")}
                 <ArrowRight className="h-4 w-4 ml-2" />
               </Button>

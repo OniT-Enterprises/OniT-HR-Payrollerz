@@ -14,10 +14,12 @@ import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
+import { useAuth } from "@/contexts/AuthContext";
 
 export default function Signup() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { refreshUserProfile } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"account" | "organization">("account");
@@ -96,6 +98,12 @@ export default function Signup() {
         displayName: displayName.trim(),
         isSuperAdmin: false,
         tenantIds: [tenantId],
+        tenantAccess: {
+          [tenantId]: {
+            name: companyName.trim(),
+            role: "owner",
+          },
+        },
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -144,6 +152,8 @@ export default function Signup() {
           read: true,
         },
       });
+
+      await refreshUserProfile();
 
       // 7. Navigate to dashboard
       navigate("/");

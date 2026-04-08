@@ -22,14 +22,14 @@ interface AppLayoutProps {
 
 export default function AppLayout({ children }: AppLayoutProps) {
   const { user, loading: authLoading } = useAuth();
-  const { loading: tenantLoading } = useTenant();
+  const { session, loading: tenantLoading } = useTenant();
   const location = useLocation();
 
   const isPublicRoute = PUBLIC_PATHS.some((p) => location.pathname.startsWith(p));
   const isAdminRoute = ADMIN_PATHS.some((p) => location.pathname.startsWith(p));
 
   // No sidebar while loading, for public/admin pages, or unauthenticated users
-  if (authLoading || tenantLoading || !user || isPublicRoute || isAdminRoute) {
+  if (authLoading || tenantLoading || !user || !session || isPublicRoute || isAdminRoute) {
     return <>{children}</>;
   }
 

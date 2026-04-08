@@ -473,7 +473,7 @@ export default function ReportsDashboard() {
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 <div
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => navigate("/reports/attl-monthly-wit")}
+                  onClick={() => navigate("/payroll/tax/monthly-wit")}
                 >
                   <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                     <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
@@ -498,7 +498,7 @@ export default function ReportsDashboard() {
                 </div>
                 <div
                   className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => navigate("/reports/inss-monthly")}
+                  onClick={() => navigate("/payroll/tax/inss-monthly")}
                 >
                   <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
                     <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />

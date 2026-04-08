@@ -129,16 +129,17 @@ function MainNavigationInner() {
   const { guidanceEnabled, toggleGuidance } = useGuidance();
   const { t } = useI18n();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const canManageTenant = canManage();
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
     session,
     hasModule("reports"),
-    canManage()
+    canManageTenant
   );
   const { data: setupProgress } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress", "nav"],
     queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
-    enabled: Boolean(user && tenantId && !isSuperAdmin),
+    enabled: Boolean(user && tenantId && !isSuperAdmin && canManageTenant),
     staleTime: 5 * 60 * 1000,
   });
   const visibleNavItems = NAV_ITEMS.filter((item) => {
@@ -199,7 +200,7 @@ function MainNavigationInner() {
       .join("")
       .toUpperCase() || user?.email?.[0].toUpperCase() || "U";
   const hasConnectionIssue = !isOnline || !isConnected;
-  const setupIncomplete = setupProgress?.isComplete === false;
+  const setupIncomplete = canManageTenant && setupProgress?.isComplete === false;
   const setupPercent = setupProgress?.percentComplete ?? 0;
 
   return (

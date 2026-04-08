@@ -131,10 +131,11 @@ export default function Dashboard() {
   const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: "active" });
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
   const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2);
+  const canManageTenant = canManage();
   const { data: setupProgress, isLoading: setupLoading } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress"],
     queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
-    enabled: Boolean(tenantId),
+    enabled: Boolean(tenantId && canManageTenant),
     staleTime: 5 * 60 * 1000,
   });
   const loading = employeesLoading || leaveStatsLoading || dueDatesLoading || setupLoading;
@@ -206,9 +207,9 @@ export default function Dashboard() {
   const donorExportEnabled = canUseDonorExport(
     session,
     hasModule("reports"),
-    canManage()
+    canManageTenant
   );
-  const setupIncomplete = setupProgress?.isComplete === false;
+  const setupIncomplete = canManageTenant && setupProgress?.isComplete === false;
 
   // Payroll status
   const payrollPrepared = false; // In production, check actual payroll status

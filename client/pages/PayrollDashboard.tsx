@@ -360,13 +360,13 @@ export default function PayrollDashboard() {
     {
       label: t("payrollDashboard.links.allowances"),
       description: t("payrollDashboard.links.allowancesDesc"),
-      path: "/payroll/setup/benefits",
+      path: "/payroll/settings/benefits",
       icon: Wallet,
     },
     {
       label: t("payrollDashboard.links.deductions"),
       description: t("payrollDashboard.links.deductionsDesc"),
-      path: "/payroll/setup/deductions",
+      path: "/payroll/settings/deductions",
       icon: DollarSign,
     },
   ];
@@ -387,7 +387,7 @@ export default function PayrollDashboard() {
     {
       label: t("payrollDashboard.links.taxReports"),
       description: t("payrollDashboard.links.taxReportsDesc"),
-      path: "/payroll/reports",
+      path: "/payroll/tax",
       icon: FileSpreadsheet,
     },
   ];

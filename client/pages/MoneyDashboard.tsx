@@ -387,9 +387,9 @@ export default function MoneyDashboard() {
             { label: t('money.dashboard.customers'), path: '/money/customers', icon: Users },
             { label: t('money.dashboard.vendors'), path: '/money/vendors', icon: Users },
             { label: t('money.dashboard.expenses'), path: '/money/expenses', icon: Receipt },
-            { label: t('money.dashboard.reports'), path: '/money/reports/profit-loss', icon: Activity },
-            { label: t('money.dashboard.vatSettings'), path: '/money/reports/vat-settings', icon: Receipt },
-            { label: t('money.dashboard.vatReturns'), path: '/money/reports/vat-returns', icon: FileText },
+            { label: t('money.dashboard.reports'), path: '/money/financials/profit-loss', icon: Activity },
+            { label: t('money.dashboard.vatSettings'), path: '/money/financials/vat-settings', icon: Receipt },
+            { label: t('money.dashboard.vatReturns'), path: '/money/financials/vat-returns', icon: FileText },
           ].map((link) => (
             <Button key={link.path} variant="ghost" size="sm" className="text-xs h-7" onClick={() => navigate(link.path)}>
               <link.icon className="h-3 w-3 mr-1.5" />
