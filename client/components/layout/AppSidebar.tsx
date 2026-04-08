@@ -41,6 +41,7 @@ import {
   Settings,
   ChevronRight,
   X,
+  PanelLeftClose,
 } from "lucide-react";
 import type { ComponentType } from "react";
 import type { ModulePermission } from "@/types/tenant";
@@ -124,7 +125,7 @@ function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
 // --- Component ---
 
 export default function AppSidebar() {
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed } = useLayout();
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
   const isMobile = useIsMobile();
   const { isDark } = useTheme();
   const { hasModule } = useTenant();
@@ -423,8 +424,27 @@ export default function AppSidebar() {
       </ScrollArea>
 
       {/* Bottom section */}
-      <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"} space-y-1`}>
-        {renderNavLink(t("common.settings"), "/settings", Settings, undefined, 0)}
+      <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
+        <div className="flex items-center gap-1">
+          <div className="flex-1">
+            {renderNavLink(t("common.settings"), "/settings", Settings, undefined, 0)}
+          </div>
+          {!isMobile && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={toggleCollapsed}
+                  className="h-9 w-9 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors shrink-0"
+                >
+                  <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                {collapsed ? "Expand" : "Collapse"}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
       </div>
     </div>
   );

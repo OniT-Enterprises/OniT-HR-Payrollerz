@@ -13,7 +13,6 @@ import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useGuidance } from "@/contexts/GuidanceContext";
 import { useLayout } from "@/contexts/LayoutContext";
-import { useIsMobile } from "@/hooks/useIsMobile";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { settingsService } from "@/services/settingsService";
@@ -53,8 +52,7 @@ export default function TopBar() {
   const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
   const { guidanceEnabled, toggleGuidance } = useGuidance();
-  const { toggleSidebar, toggleCollapsed } = useLayout();
-  const isMobile = useIsMobile();
+  const { toggleSidebar } = useLayout();
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
   const canManageTenant = canManage();
@@ -91,12 +89,12 @@ export default function TopBar() {
     <header className="sticky top-0 z-30 w-full border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <div className="px-4 sm:px-6">
         <div className="flex h-14 items-center gap-4">
-          {/* Sidebar toggle — drawer on mobile, collapse on desktop */}
+          {/* Mobile only: hamburger to open sidebar drawer */}
           <Button
             variant="ghost"
             size="icon"
-            onClick={isMobile ? toggleSidebar : toggleCollapsed}
-            className="h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
+            onClick={toggleSidebar}
+            className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
           >
             <Menu className="h-5 w-5" />
           </Button>
