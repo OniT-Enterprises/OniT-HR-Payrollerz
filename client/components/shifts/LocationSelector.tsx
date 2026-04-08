@@ -27,7 +27,7 @@ export default function LocationSelector({
   onSelect,
 }: LocationSelectorProps) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
       {locations.map((loc) => {
         const Icon = iconMap[loc.type] || MapPin;
         const isSelected = selected === loc.name;
@@ -37,7 +37,7 @@ export default function LocationSelector({
             key={loc.name}
             onClick={() => onSelect(loc.name)}
             className={cn(
-              "flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200 text-left flex-shrink-0",
+              "flex items-center gap-2.5 px-4 py-2.5 rounded-xl border transition-all duration-200 text-left shrink-0 whitespace-nowrap",
               "hover:shadow-md hover:-translate-y-px",
               isSelected
                 ? "border-cyan-500 bg-cyan-50 dark:bg-cyan-950/40 shadow-sm shadow-cyan-500/10"
