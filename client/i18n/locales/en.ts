@@ -439,6 +439,14 @@ const messages = {
     "message": "The page you're looking for doesn't exist or has been moved.",
     "returnHome": "Back to Home"
   },
+  "unauthorized": {
+    "eyebrow": "Access Denied",
+    "title": "You do not have permission to view this page.",
+    "message": "This area is restricted to platform administrators. If you believe this is incorrect, contact a superadmin or return to the main app.",
+    "backHome": "Back to Home",
+    "goToLogin": "Go to Login",
+    "browsePages": "Browse Available Pages"
+  },
   "landing": {
     "nav": {
       "features": "Features",

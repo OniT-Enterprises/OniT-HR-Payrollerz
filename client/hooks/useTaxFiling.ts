@@ -40,12 +40,13 @@ export function useTaxFilingByPeriod(type: TaxFilingType, period: string, enable
 }
 
 /** Fetch filings due soon */
-export function useTaxFilingsDueSoon(months: number = 6) {
+export function useTaxFilingsDueSoon(months: number = 6, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: taxFilingKeys.dueSoon(tenantId, months),
     queryFn: () => taxFilingService.getFilingsDueSoon(tenantId, months),
     staleTime: 5 * 60 * 1000,
+    enabled,
   });
 }
 

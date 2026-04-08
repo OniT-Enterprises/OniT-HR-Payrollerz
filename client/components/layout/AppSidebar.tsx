@@ -5,7 +5,7 @@
  * Mobile: slide-over drawer with backdrop.
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useIsMobile } from "@/hooks/useIsMobile";
@@ -19,6 +19,7 @@ import {
   moneyNavConfig,
   accountingNavConfig,
   reportsNavConfig,
+  filterModuleNavConfigByPermissions,
 } from "@/lib/moduleNav";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
 import { type SectionId, navColors } from "@/lib/sectionTheme";
@@ -111,6 +112,14 @@ function isModuleActive(pathname: string, config: ModuleNavConfig): boolean {
   );
 }
 
+function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
+  if (left.size !== right.size) return false;
+  for (const value of left) {
+    if (!right.has(value)) return false;
+  }
+  return true;
+}
+
 // --- Component ---
 
 export default function AppSidebar() {
@@ -123,7 +132,19 @@ export default function AppSidebar() {
   const location = useLocation();
 
   const visibleModules = useMemo(
-    () => MODULES.filter((m) => m.visibilityCheck(hasModule)),
+    () =>
+      MODULES.flatMap((module) => {
+        if (!module.visibilityCheck(hasModule)) {
+          return [];
+        }
+
+        const filteredConfig = filterModuleNavConfigByPermissions(module.config, hasModule);
+        if (filteredConfig.sections.length === 0) {
+          return [];
+        }
+
+        return [{ ...module, config: filteredConfig }];
+      }),
     [hasModule]
   );
 
@@ -145,25 +166,39 @@ export default function AppSidebar() {
 
   // When navigation changes, collapse everything except the active module
   // and auto-expand the active sub-section
-  const prevPathRef = React.useRef(location.pathname);
-  if (prevPathRef.current !== location.pathname) {
-    prevPathRef.current = location.pathname;
+  useEffect(() => {
     if (activeExpansion.modules.size > 0) {
-      setExpandedModules(activeExpansion.modules);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing sidebar expansion with route changes
+      setExpandedModules((prev) =>
+        areSetsEqual(prev, activeExpansion.modules) ? prev : new Set(activeExpansion.modules)
+      );
     }
-    // Auto-expand the sub-section that matches the current path
+
+    const activeSectionKeys = new Set<string>();
     for (const mod of visibleModules) {
       for (const section of mod.config.sections) {
         if (section.subPages.length > 0 && section.matchPaths.some((mp) => isPathActive(location.pathname, mp))) {
-          setExpandedSections((prev) => {
-            const key = `${mod.id}:${section.id}`;
-            if (prev.has(key)) return prev;
-            return new Set(prev).add(key);
-          });
+          activeSectionKeys.add(`${mod.id}:${section.id}`);
         }
       }
     }
-  }
+
+    if (activeSectionKeys.size > 0) {
+      setExpandedSections((prev) => {
+        const next = new Set(prev);
+        let changed = false;
+
+        for (const key of activeSectionKeys) {
+          if (!next.has(key)) {
+            next.add(key);
+            changed = true;
+          }
+        }
+
+        return changed ? next : prev;
+      });
+    }
+  }, [activeExpansion.modules, location.pathname, visibleModules]);
 
   const handleNavigate = (path: string) => {
     navigate(path);

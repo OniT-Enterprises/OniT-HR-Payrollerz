@@ -59,13 +59,14 @@ export const bankTransferKeys = {
 // ─── Payroll Run hooks ───────────────────────────────────────────
 
 /** Fetch all payroll runs with optional filters */
-export function usePayrollRuns(options?: ListPayrollRunsOptions) {
+export function usePayrollRuns(options?: ListPayrollRunsOptions, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: payrollRunKeys.list(tenantId, options),
     queryFn: () => payrollService.runs.getAllPayrollRuns({ ...options, tenantId }),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 
@@ -105,9 +106,11 @@ export function useCreatePayrollRunWithRecords() {
       records: Omit<PayrollRecord, 'id' | 'payrollRunId'>[];
       audit?: AuditContext;
     }) => payrollService.runs.createPayrollRunWithRecords(payrollRun, records, audit),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: payrollRunKeys.all(tenantId) });
-      queryClient.invalidateQueries({ queryKey: payrollRecordKeys.all(tenantId) });
+    onSuccess: async () => {
+      // Wait briefly for Firestore consistency, then invalidate + force refetch
+      await new Promise((r) => setTimeout(r, 500));
+      await queryClient.invalidateQueries({ queryKey: payrollRunKeys.all(tenantId), refetchType: 'all' });
+      await queryClient.invalidateQueries({ queryKey: payrollRecordKeys.all(tenantId), refetchType: 'all' });
     },
   });
 }

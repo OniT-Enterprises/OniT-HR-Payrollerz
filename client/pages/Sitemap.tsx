@@ -9,6 +9,7 @@ import MainNavigation from '@/components/layout/MainNavigation';
 import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/contexts/AuthContext';
 import { useTenant } from '@/contexts/TenantContext';
 import { canUseDonorExport, canUseNgoReporting } from '@/lib/ngo/access';
 import {
@@ -505,25 +506,102 @@ const sitemapData: SitemapSection[] = [
 
 export default function Sitemap() {
   const { session, hasModule, canManage } = useTenant();
+  const { isSuperAdmin } = useAuth();
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule('reports'));
   const donorExportEnabled = canUseDonorExport(
     session,
     hasModule('reports'),
     canManage()
   );
+  const canAccessPath = (path: string) => {
+    if (path === '/dashboard' || path === '/settings') {
+      return true;
+    }
+
+    if (
+      path === '/settings/departments' ||
+      path === '/settings/org-chart' ||
+      path === '/settings/foreign-workers'
+    ) {
+      return hasModule('staff');
+    }
+
+    if (path === '/people') {
+      return (['staff', 'hiring', 'performance'] as const).some((module) => hasModule(module));
+    }
+
+    if (
+      path === '/people/staff' ||
+      path === '/people/employees' ||
+      path === '/people/add' ||
+      path === '/people/announcements' ||
+      path === '/people/grievances' ||
+      path === '/admin/document-alerts'
+    ) {
+      return hasModule('staff');
+    }
+
+    if (
+      path === '/people/hiring' ||
+      path === '/people/jobs' ||
+      path === '/people/candidates' ||
+      path === '/people/interviews' ||
+      path === '/people/onboarding' ||
+      path === '/people/offboarding'
+    ) {
+      return hasModule('hiring');
+    }
+
+    if (
+      path === '/people/performance' ||
+      path === '/people/goals' ||
+      path === '/people/reviews' ||
+      path === '/people/training' ||
+      path === '/people/disciplinary'
+    ) {
+      return hasModule('performance');
+    }
+
+    if (path.startsWith('/time-leave')) {
+      return hasModule('timeleave');
+    }
+
+    if (path.startsWith('/payroll')) {
+      return hasModule('payroll');
+    }
+
+    if (path === '/reports/payroll-allocation') {
+      return ngoReportingEnabled;
+    }
+
+    if (path === '/reports/donor-export') {
+      return donorExportEnabled;
+    }
+
+    if (path.startsWith('/reports')) {
+      return hasModule('reports');
+    }
+
+    if (path.startsWith('/money')) {
+      return hasModule('money');
+    }
+
+    if (path.startsWith('/accounting')) {
+      return hasModule('accounting');
+    }
+
+    if (path.startsWith('/admin')) {
+      return isSuperAdmin;
+    }
+
+    return true;
+  };
 
   const visibleSitemapData = sitemapData
-    .map((section) => {
-      if (section.title !== 'Reports') return section;
-      return {
-        ...section,
-        pages: section.pages.filter((page) => {
-          if (page.path === '/reports/payroll-allocation') return ngoReportingEnabled;
-          if (page.path === '/reports/donor-export') return donorExportEnabled;
-          return true;
-        }),
-      };
-    })
+    .map((section) => ({
+      ...section,
+      pages: section.pages.filter((page) => canAccessPath(page.path)),
+    }))
     .filter((section) => section.pages.length > 0);
   const visiblePageCount = visibleSitemapData.reduce(
     (acc, section) => acc + section.pages.length,

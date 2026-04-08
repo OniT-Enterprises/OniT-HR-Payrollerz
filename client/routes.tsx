@@ -74,6 +74,7 @@ const Sitemap = lazy(() => import("@/pages/Sitemap"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
 const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
+const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
 
 // Section Dashboards (kept for /*/overview routes but not default landing)
 const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
@@ -198,6 +199,7 @@ export const authRoutes = (
     />
     <Route path="/landing" element={<Landing />} />
     <Route path="/features" element={<ProductDetails />} />
+    <Route path="/unauthorized" element={<Unauthorized />} />
     <Route
       path="/settings"
       element={
@@ -238,7 +240,14 @@ export const authRoutes = (
         </FeatureRoute>
       }
     />
-    <Route path="/sitemap" element={<Sitemap />} />
+    <Route
+      path="/sitemap"
+      element={
+        <FeatureRoute fallbackPath="/">
+          <Sitemap />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -251,7 +260,7 @@ export const peopleRoutes = (
     <Route
       path="/people"
       element={
-        <FeatureRoute requiredAnyModules={["staff", "hiring", "timeleave", "performance"]}>
+        <FeatureRoute requiredAnyModules={["staff", "hiring", "performance"]}>
           <PeopleDashboard />
         </FeatureRoute>
       }

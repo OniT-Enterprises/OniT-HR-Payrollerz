@@ -379,6 +379,14 @@ const messages = {
     "message": "A página que procura não existe ou foi movida.",
     "returnHome": "Voltar ao Início"
   },
+  "unauthorized": {
+    "eyebrow": "Acesso Negado",
+    "title": "Não tem permissão para ver esta página.",
+    "message": "Esta área está reservada a administradores da plataforma. Se acha que isto está incorreto, contacte um superadmin ou volte para a aplicação principal.",
+    "backHome": "Voltar ao Início",
+    "goToLogin": "Ir para o Login",
+    "browsePages": "Ver Páginas Disponíveis"
+  },
   "landing": {
     "nav": {
       "features": "Funcionalidades",

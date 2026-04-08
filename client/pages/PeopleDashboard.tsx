@@ -17,6 +17,7 @@ import { peopleNavConfig } from "@/lib/moduleNav";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { getComplianceIssues } from "@/lib/employeeUtils";
+import { useTenant } from "@/contexts/TenantContext";
 import {
   Users,
   UserPlus,
@@ -84,22 +85,30 @@ function PeopleDashboardSkeleton() {
 export default function PeopleDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
-  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
+  const { hasModule } = useTenant();
+  const hasStaff = hasModule("staff");
+  const hasHiring = hasModule("hiring");
+  const hasPerformance = hasModule("performance");
+  const hasTimeleave = hasModule("timeleave");
+  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory(
+    { status: 'active' },
+    hasStaff
+  );
+  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats(hasTimeleave);
   const loading = employeesLoading || leaveStatsLoading;
 
   const stats = useMemo(
     () => ({
       activeEmployees: activeEmployees.length,
-      pendingLeave: leaveStats?.pendingRequests ?? 0,
-      onLeaveToday: leaveStats?.employeesOnLeaveToday ?? 0,
+      pendingLeave: hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0,
+      onLeaveToday: hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0,
     }),
-    [activeEmployees, leaveStats]
+    [activeEmployees, hasTimeleave, leaveStats]
   );
 
   const attentionCount = useMemo(
-    () => getComplianceIssues(activeEmployees).length,
-    [activeEmployees],
+    () => (hasStaff ? getComplianceIssues(activeEmployees).length : 0),
+    [activeEmployees, hasStaff],
   );
 
   if (loading) {
@@ -130,14 +139,16 @@ export default function PeopleDashboard() {
                 </p>
               </div>
             </div>
-            <Button
-              onClick={() => navigate("/people/add")}
-              size="lg"
-              className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
-            >
-              <UserPlus className="h-5 w-5 mr-2" />
-              {t("people.dashboard.actions.addEmployee")}
-            </Button>
+            {hasStaff && (
+              <Button
+                onClick={() => navigate("/people/add")}
+                size="lg"
+                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+              >
+                <UserPlus className="h-5 w-5 mr-2" />
+                {t("people.dashboard.actions.addEmployee")}
+              </Button>
+            )}
           </div>
         </div>
       </div>
@@ -145,154 +156,168 @@ export default function PeopleDashboard() {
       <div className="p-6 mx-auto max-w-screen-2xl">
         <GuidancePanel section="people" />
 
-        <MoreDetailsSection className="mb-6">
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
-            onClick={() => navigate("/people/employees")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.activeEmployees}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.activeEmployees")}
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+        {(hasStaff || hasTimeleave) && (
+          <MoreDetailsSection className="mb-6">
+            <div className="grid gap-4 md:grid-cols-3">
+              {hasStaff && (
+                <Card
+                  className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
+                  onClick={() => navigate("/people/employees")}
+                >
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{stats.activeEmployees}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                          {t("people.dashboard.stats.activeEmployees")}
+                        </p>
+                      </div>
+                      <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <Users className="h-5 w-5 text-blue-600" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-          <Card
-            className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-              stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
-            }`}
-            onClick={() => navigate("/time-leave/leave")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.pendingLeave}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.pendingLeave")}
-                  </p>
-                  {stats.pendingLeave > 0 && (
-                    <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      {t("people.dashboard.badges.needsReview")}
-                    </Badge>
-                  )}
-                </div>
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                }`}>
-                  <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+              {hasTimeleave && (
+                <Card
+                  className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
+                    stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
+                  }`}
+                  onClick={() => navigate("/time-leave/leave")}
+                >
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{stats.pendingLeave}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                          {t("people.dashboard.stats.pendingLeave")}
+                        </p>
+                        {stats.pendingLeave > 0 && (
+                          <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
+                            {t("people.dashboard.badges.needsReview")}
+                          </Badge>
+                        )}
+                      </div>
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
+                      }`}>
+                        <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-          <Card
-            className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-              attentionCount > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
-            }`}
-            onClick={() => navigate("/people/employees")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{attentionCount}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    {t("people.dashboard.stats.complianceIssues")}
-                  </p>
-                  {attentionCount > 0 ? (
-                    <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      {t("people.dashboard.badges.needsAttention")}
-                    </Badge>
-                  ) : (
-                    <span className="flex items-center gap-1 mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                      <CheckCircle className="h-3 w-3" /> {t("people.dashboard.badges.allClear")}
-                    </span>
-                  )}
-                </div>
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  attentionCount > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-emerald-100 dark:bg-emerald-900/30"
-                }`}>
-                  {attentionCount > 0 ? (
-                    <AlertTriangle className="h-5 w-5 text-amber-600" />
-                  ) : (
-                    <CheckCircle className="h-5 w-5 text-emerald-600" />
-                  )}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-        </MoreDetailsSection>
+              {hasStaff && (
+                <Card
+                  className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
+                    attentionCount > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
+                  }`}
+                  onClick={() => navigate("/people/employees")}
+                >
+                  <CardContent className="pt-5 pb-5">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-2xl font-bold">{attentionCount}</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
+                          {t("people.dashboard.stats.complianceIssues")}
+                        </p>
+                        {attentionCount > 0 ? (
+                          <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
+                            {t("people.dashboard.badges.needsAttention")}
+                          </Badge>
+                        ) : (
+                          <span className="flex items-center gap-1 mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
+                            <CheckCircle className="h-3 w-3" /> {t("people.dashboard.badges.allClear")}
+                          </span>
+                        )}
+                      </div>
+                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
+                        attentionCount > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-emerald-100 dark:bg-emerald-900/30"
+                      }`}>
+                        {attentionCount > 0 ? (
+                          <AlertTriangle className="h-5 w-5 text-amber-600" />
+                        ) : (
+                          <CheckCircle className="h-5 w-5 text-emerald-600" />
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </MoreDetailsSection>
+        )}
 
         {/* Section cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <Card
-            className="cursor-pointer transition-all hover:border-blue-500/40 hover:shadow-md group"
-            onClick={() => navigate("/people/staff")}
-          >
-            <CardContent className="flex items-start gap-4 pt-5 pb-5">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shrink-0">
-                <Users className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">{t("people.dashboard.sections.staff.title")}</p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          {hasStaff && (
+            <Card
+              className="cursor-pointer transition-all hover:border-blue-500/40 hover:shadow-md group"
+              onClick={() => navigate("/people/staff")}
+            >
+              <CardContent className="flex items-start gap-4 pt-5 pb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shrink-0">
+                  <Users className="h-5 w-5 text-white" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("people.dashboard.sections.staff.description")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">{t("people.dashboard.sections.staff.title")}</p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {t("people.dashboard.sections.staff.description")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card
-            className="cursor-pointer transition-all hover:border-emerald-500/40 hover:shadow-md group"
-            onClick={() => navigate("/people/hiring")}
-          >
-            <CardContent className="flex items-start gap-4 pt-5 pb-5">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shrink-0">
-                <Briefcase className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">{t("people.dashboard.sections.hiring.title")}</p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          {hasHiring && (
+            <Card
+              className="cursor-pointer transition-all hover:border-emerald-500/40 hover:shadow-md group"
+              onClick={() => navigate("/people/hiring")}
+            >
+              <CardContent className="flex items-start gap-4 pt-5 pb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shrink-0">
+                  <Briefcase className="h-5 w-5 text-white" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("people.dashboard.sections.hiring.description")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">{t("people.dashboard.sections.hiring.title")}</p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {t("people.dashboard.sections.hiring.description")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
-          <Card
-            className="cursor-pointer transition-all hover:border-violet-500/40 hover:shadow-md group"
-            onClick={() => navigate("/people/performance")}
-          >
-            <CardContent className="flex items-start gap-4 pt-5 pb-5">
-              <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shrink-0">
-                <Target className="h-5 w-5 text-white" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold text-sm">{t("people.dashboard.sections.performance.title")}</p>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+          {hasPerformance && (
+            <Card
+              className="cursor-pointer transition-all hover:border-violet-500/40 hover:shadow-md group"
+              onClick={() => navigate("/people/performance")}
+            >
+              <CardContent className="flex items-start gap-4 pt-5 pb-5">
+                <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shrink-0">
+                  <Target className="h-5 w-5 text-white" />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                  {t("people.dashboard.sections.performance.description")}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <p className="font-semibold text-sm">{t("people.dashboard.sections.performance.title")}</p>
+                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    {t("people.dashboard.sections.performance.description")}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>

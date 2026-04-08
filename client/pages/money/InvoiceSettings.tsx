@@ -3,7 +3,7 @@
  * Configure company info, bank details, and invoice defaults
  */
 
-import { useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -57,20 +57,24 @@ export default function InvoiceSettingsPage() {
 
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<Partial<InvoiceSettings>>(DEFAULT_SETTINGS);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   const { data: loadedSettings, isLoading: loading } = useInvoiceSettings();
 
-  // Sync loaded settings into local state for editing (render-time sync)
-  const prevLoadedRef = useRef(loadedSettings);
-  if (loadedSettings && loadedSettings !== prevLoadedRef.current) {
-    prevLoadedRef.current = loadedSettings;
+  useEffect(() => {
+    if (!loadedSettings || hasLocalChanges) {
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing server state into local form state
     setSettings({ ...DEFAULT_SETTINGS, ...loadedSettings });
-  }
+  }, [hasLocalChanges, loadedSettings]);
 
   const saveMutation = useMutation({
     mutationFn: (data: Partial<InvoiceSettings>) =>
       invoiceService.updateSettings(tenantId, data),
     onSuccess: () => {
+      setHasLocalChanges(false);
       queryClient.invalidateQueries({ queryKey: ['invoiceSettings', tenantId] });
       toast({
         title: t('common.success') || 'Success',
@@ -110,6 +114,7 @@ export default function InvoiceSettingsPage() {
   };
 
   const updateField = (field: keyof InvoiceSettings, value: string | number) => {
+    setHasLocalChanges(true);
     setSettings((prev) => ({ ...prev, [field]: value }));
   };
 

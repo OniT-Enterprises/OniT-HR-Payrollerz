@@ -9,7 +9,7 @@ interface SuperadminRouteProps {
 
 /**
  * Route guard for superadmin-only pages.
- * Redirects non-superadmins to the app home route.
+ * Redirects non-superadmins to the unauthorized page.
  *
  * Usage:
  * ```tsx
@@ -26,7 +26,7 @@ export function SuperadminRoute({ children }: SuperadminRouteProps) {
 
   // Show loading skeleton while checking auth
   if (loading) {
-    return <PageSkeleton type="table" showHeader={false} statCards={0} />;
+    return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
   // Not authenticated - redirect to login
@@ -34,10 +34,10 @@ export function SuperadminRoute({ children }: SuperadminRouteProps) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
   }
 
-  // Not a superadmin - redirect to app home
+  // Not a superadmin - redirect to unauthorized
   if (!isSuperAdmin) {
     console.warn(`Unauthorized superadmin access attempt by user ${user.uid}`);
-    return <Navigate to="/" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   return <>{children}</>;

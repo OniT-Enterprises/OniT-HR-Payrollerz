@@ -161,34 +161,29 @@ export default function RunPayrollWizard() {
   }, [currentStep, calc, complianceAcknowledged, complianceOverrideReason, toast, t]);
 
   // ─── Save draft ────────────────────────────────────────────
-  const handleSaveDraft = useCallback(() => {
+  const handleSaveDraft = useCallback(async () => {
     const includedData = calc.getIncludedData();
     const payrollRun = calc.buildPayrollRun(includedData);
     const records = calc.buildPayrollRecords(includedData);
 
-    createPayrollMutation.mutate(
-      { payrollRun, records },
-      {
-        onSuccess: () => {
-          toast({
-            title: t("common.success"),
-            description: t("runPayroll.toastDraftSaved"),
-          });
-          navigate("/payroll/history");
-        },
-        onError: () => {
-          toast({
-            title: t("common.error"),
-            description: t("runPayroll.toastSaveFailed"),
-            variant: "destructive",
-          });
-        },
-      }
-    );
+    try {
+      await createPayrollMutation.mutateAsync({ payrollRun, records });
+      toast({
+        title: t("common.success"),
+        description: t("runPayroll.toastDraftSaved"),
+      });
+      navigate("/payroll/history");
+    } catch {
+      toast({
+        title: t("common.error"),
+        description: t("runPayroll.toastSaveFailed"),
+        variant: "destructive",
+      });
+    }
   }, [calc, createPayrollMutation, toast, t, navigate]);
 
   // ─── Submit for approval ───────────────────────────────────
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
     const includedData = calc.getIncludedData();
     const payrollRun = {
       ...calc.buildPayrollRun(includedData),
@@ -201,27 +196,22 @@ export default function RunPayrollWizard() {
       userEmail: user?.email || "",
     };
 
-    createPayrollMutation.mutate(
-      { payrollRun, records, audit },
-      {
-        onSuccess: () => {
-          toast({
-            title: t("runPayroll.toastSubmittedTitle"),
-            description: t("runPayroll.toastSubmittedDesc", {
-              count: String(includedData.length),
-            }),
-          });
-          navigate("/payroll/history");
-        },
-        onError: () => {
-          toast({
-            title: t("runPayroll.toastErrorTitle"),
-            description: t("runPayroll.toastErrorDesc"),
-            variant: "destructive",
-          });
-        },
-      }
-    );
+    try {
+      await createPayrollMutation.mutateAsync({ payrollRun, records, audit });
+      toast({
+        title: t("runPayroll.toastSubmittedTitle"),
+        description: t("runPayroll.toastSubmittedDesc", {
+          count: String(includedData.length),
+        }),
+      });
+      navigate("/payroll/history");
+    } catch {
+      toast({
+        title: t("runPayroll.toastErrorTitle"),
+        description: t("runPayroll.toastErrorDesc"),
+        variant: "destructive",
+      });
+    }
   }, [calc, createPayrollMutation, tenantId, user, toast, t, navigate]);
 
   if (loadingEmployees) {

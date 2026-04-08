@@ -30,7 +30,7 @@ export function FeatureRoute({
   const { session, loading: tenantLoading, hasModule, canManage } = useTenant();
 
   if (authLoading || tenantLoading) {
-    return <PageSkeleton type="table" showHeader={false} statCards={0} />;
+    return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
   if (!user) {

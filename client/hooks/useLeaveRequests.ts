@@ -112,14 +112,14 @@ export function useApproveLeaveRequest() {
 /**
  * Fetch leave stats (pending, on leave today, etc.)
  */
-export function useLeaveStats() {
+export function useLeaveStats(enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: [...leaveKeys.all(tenantId), 'stats'] as const,
     queryFn: () => leaveService.getLeaveStats(tenantId),
     staleTime: 2 * 60 * 1000,
     gcTime: 10 * 60 * 1000,
-    enabled: !!tenantId,
+    enabled: !!tenantId && enabled,
   });
 }
 

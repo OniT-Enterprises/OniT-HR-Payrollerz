@@ -19,8 +19,9 @@
 import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { SectionId } from "@/lib/sectionTheme";
-import type { ModuleNavConfig } from "@/lib/moduleNav";
+import { filterModuleNavConfigByPermissions, type ModuleNavConfig } from "@/lib/moduleNav";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
+import { useTenant } from "@/contexts/TenantContext";
 
 /**
  * Static map of active tab styles per module.
@@ -55,11 +56,16 @@ export default function ModuleSectionNav(props: ModuleSectionNavProps) {
 function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
+  const { hasModule } = useTenant();
+  const visibleConfig = React.useMemo(
+    () => filterModuleNavConfigByPermissions(config, hasModule),
+    [config, hasModule]
+  );
 
-  const activeClass = activeStyles[config.moduleId];
+  const activeClass = activeStyles[visibleConfig.moduleId];
 
   // Find which section is active
-  const activeSection = config.sections.find((s) =>
+  const activeSection = visibleConfig.sections.find((s) =>
     s.matchPaths.some((mp) => isPathActive(pathname, mp))
   );
 
@@ -73,7 +79,7 @@ function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
     isAnchor: boolean;
   }[] = [];
 
-  for (const section of config.sections) {
+  for (const section of visibleConfig.sections) {
     const isSectionActive = section.id === activeSection?.id;
     const isOnOverviewPage = pathname === section.path;
 
@@ -111,12 +117,13 @@ function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   }
 
   // In expanded mode with no tabs (active section has no sub-pages), render nothing
+  if (visibleConfig.sections.length === 0) return null;
   if (mode === "expanded" && tabs.length === 0) return null;
 
   return (
     <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-6">
-        <nav className="flex gap-1 -mb-px overflow-x-auto" aria-label={`${config.moduleId} sections`}>
+        <nav className="flex gap-1 -mb-px overflow-x-auto" aria-label={`${visibleConfig.moduleId} sections`}>
           {tabs.map((tab) => (
             <button
               key={tab.key}

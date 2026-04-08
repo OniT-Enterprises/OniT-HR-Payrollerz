@@ -14,6 +14,7 @@
 
 import type { ComponentType } from "react";
 import type { SectionId } from "./sectionTheme";
+import type { ModulePermission } from "@/types/tenant";
 import {
   // People
   Users,
@@ -71,6 +72,8 @@ export interface NavItem {
   labelKey?: string;     // i18n key — sidebar uses t(labelKey) when available
   path: string;
   icon: ComponentType<{ className?: string }>;
+  requiredModule?: ModulePermission;
+  requiredAnyModules?: ModulePermission[];
 }
 
 export interface ModuleSection {
@@ -81,6 +84,8 @@ export interface ModuleSection {
   path: string;          // default page for this section
   matchPaths: string[];  // all URLs that belong to this section
   subPages: NavItem[];   // Level 2 sibling pages (empty = direct link, no expand)
+  requiredModule?: ModulePermission;
+  requiredAnyModules?: ModulePermission[];
 }
 
 export interface ModuleNavConfig {
@@ -104,6 +109,7 @@ export const peopleNavConfig: ModuleNavConfig = {
       path: "/people/employees",
       matchPaths: ["/people/employees", "/people/add", "/people/staff"],
       subPages: [],
+      requiredModule: "staff",
     },
     {
       id: "announcements",
@@ -113,6 +119,7 @@ export const peopleNavConfig: ModuleNavConfig = {
       path: "/people/announcements",
       matchPaths: ["/people/announcements"],
       subPages: [],
+      requiredModule: "staff",
     },
     {
       id: "grievances",
@@ -122,6 +129,7 @@ export const peopleNavConfig: ModuleNavConfig = {
       path: "/people/grievances",
       matchPaths: ["/people/grievances"],
       subPages: [],
+      requiredModule: "staff",
     },
     {
       id: "hiring",
@@ -137,6 +145,7 @@ export const peopleNavConfig: ModuleNavConfig = {
         { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus },
         { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus },
       ],
+      requiredModule: "hiring",
     },
     {
       id: "performance",
@@ -151,6 +160,7 @@ export const peopleNavConfig: ModuleNavConfig = {
         { label: "Training", labelKey: "training", path: "/people/training", icon: GraduationCap },
         { label: "Disciplinary", labelKey: "disciplinary", path: "/people/disciplinary", icon: Shield },
       ],
+      requiredModule: "performance",
     },
   ],
 };
@@ -489,4 +499,34 @@ const allConfigs: Record<string, ModuleNavConfig> = {
 
 export function getModuleNavConfig(moduleId: SectionId): ModuleNavConfig | undefined {
   return allConfigs[moduleId];
+}
+
+function canViewNavEntry(
+  entry: { requiredModule?: ModulePermission; requiredAnyModules?: ModulePermission[] },
+  hasModule: (module: ModulePermission) => boolean,
+) {
+  if (entry.requiredModule && !hasModule(entry.requiredModule)) {
+    return false;
+  }
+
+  if (entry.requiredAnyModules?.length) {
+    return entry.requiredAnyModules.some((module) => hasModule(module));
+  }
+
+  return true;
+}
+
+export function filterModuleNavConfigByPermissions(
+  config: ModuleNavConfig,
+  hasModule: (module: ModulePermission) => boolean,
+): ModuleNavConfig {
+  return {
+    ...config,
+    sections: config.sections
+      .filter((section) => canViewNavEntry(section, hasModule))
+      .map((section) => ({
+        ...section,
+        subPages: section.subPages.filter((page) => canViewNavEntry(page, hasModule)),
+      })),
+  };
 }

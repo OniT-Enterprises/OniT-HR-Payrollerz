@@ -439,6 +439,14 @@ const messages = {
     "message": "Pájina ne'ebé ita buka la eziste ka muda ona.",
     "returnHome": "Fila ba Uma"
   },
+  "unauthorized": {
+    "eyebrow": "Asesu Taka",
+    "title": "Ita la iha autorizasaun atu hare pajina ida-ne'e.",
+    "message": "Area ida-ne'e rezervadu ba administradór plataforma deit. Se ita hanoin ida-ne'e sala, kontaktu superadmin ida ka fila ba aplikasaun prinsipal.",
+    "backHome": "Fila ba Uma",
+    "goToLogin": "Ba Login",
+    "browsePages": "Hare Pajina Disponivel"
+  },
   "landing": {
     "nav": {
       "features": "Fitur",

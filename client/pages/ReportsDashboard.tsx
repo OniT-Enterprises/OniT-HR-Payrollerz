@@ -4,17 +4,11 @@
  * Payroll reports = most used, Employee = second, others = less frequent
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Collapsible,
   CollapsibleContent,
@@ -32,15 +26,12 @@ import {
   Building2,
   FileSpreadsheet,
   ChevronRight,
-  ChevronDown,
-  Download,
   Clock,
   FileText,
-  Play,
   Settings2,
-  History,
   Landmark,
   FolderKanban,
+  Wrench,
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -48,11 +39,11 @@ import GuidancePanel from "@/components/GuidancePanel";
 import { useTenant } from "@/contexts/TenantContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
-function ReportsDashboardSkeleton() {
+// Skeleton removed — unused
+function _ReportsDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
         <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
           <Skeleton className="h-4 w-24 mb-4" />
@@ -182,27 +173,10 @@ function ReportsDashboardSkeleton() {
   );
 }
 
-// Recent reports - would come from Firestore in production
-// Names/periods use translation keys resolved inside component
-const recentReportDefs = [
-  { id: 1, nameKey: "reports.dashboard.recentPayrollSummary", period: "Jan 2026", date: "2026-01-15", type: "payroll" },
-  { id: 2, nameKey: "reports.dashboard.recentTaxLiability", period: "Dec 2025", date: "2026-01-10", type: "payroll" },
-  { id: 3, nameKey: "reports.dashboard.recentAttendanceSummary", period: "Week 2", date: "2026-01-12", type: "attendance" },
-  { id: 4, nameKey: "reports.dashboard.recentEmployeeDirectory", periodKey: "reports.dashboard.periodCurrent", date: "2026-01-08", type: "employee" },
-];
-
-// Scheduled reports - automation config
-const scheduledReportDefs = [
-  { id: 1, nameKey: "reports.dashboard.monthlyPayrollSummary", frequencyKey: "reports.dashboard.freq1stOfMonth", nextRun: "Feb 1", enabled: true },
-  { id: 2, nameKey: "reports.dashboard.weeklyAttendance", frequencyKey: "reports.dashboard.freqEveryMonday", nextRun: "Jan 20", enabled: true },
-  { id: 3, nameKey: "reports.dashboard.quarterlyTaxReport", frequencyKey: "reports.dashboard.freqQuarterly", nextRun: "Apr 1", enabled: false },
-];
-
 export default function ReportsDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
   const { session, hasModule, canManage } = useTenant();
-  const [loading, setLoading] = useState(true);
   const [showOtherCategories, setShowOtherCategories] = useState(false);
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(
@@ -210,12 +184,6 @@ export default function ReportsDashboard() {
     hasModule("reports"),
     canManage()
   );
-
-  // Simulate loading delay for data fetch
-  useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 100);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Primary categories (most used) - Payroll first, then Employee
   const primaryCategories = [
@@ -308,10 +276,6 @@ export default function ReportsDashboard() {
       ]
     : [];
 
-  if (loading) {
-    return <ReportsDashboardSkeleton />;
-  }
-
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.reports} />
@@ -336,30 +300,10 @@ export default function ReportsDashboard() {
                 </p>
               </div>
             </div>
-            {/* Export demoted to secondary dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="self-start text-muted-foreground">
-                  <Download className="h-4 w-4 mr-2" />
-                  {t("reports.dashboard.export")}
-                  <ChevronDown className="h-3 w-3 ml-1" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
-                  <FileText className="h-4 w-4 mr-2" />
-                  {t("reports.dashboard.exportAsPdf")}
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <FileSpreadsheet className="h-4 w-4 mr-2" />
-                  {t("reports.dashboard.exportAsExcel")}
-                </DropdownMenuItem>
-                <DropdownMenuItem className="text-muted-foreground">
-                  <Download className="h-4 w-4 mr-2" />
-                  {t("reports.dashboard.allReportsZip")}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <Button variant="outline" size="sm" className="self-start" onClick={() => navigate("/reports/custom")}>
+              <Wrench className="h-4 w-4 mr-2" />
+              {t("reports.dashboard.categories.custom.title")}
+            </Button>
           </div>
         </div>
       </div>
@@ -367,34 +311,6 @@ export default function ReportsDashboard() {
       <div className="p-4 sm:p-6 mx-auto max-w-screen-2xl space-y-8">
         <GuidancePanel section="reports" />
 
-        {/* Recent Reports - Smart quick access */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <History className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("reports.dashboard.recentReports")}</h2>
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {recentReportDefs.map((report) => (
-              <Card
-                key={report.id}
-                className="cursor-pointer hover:shadow-sm hover:border-violet-300 dark:hover:border-violet-700 transition-all"
-                onClick={() => navigate(`/reports/${report.type}`)}
-              >
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-medium text-sm">{t(report.nameKey)}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{report.periodKey ? t(report.periodKey) : report.period}</p>
-                    </div>
-                    <Play className="h-4 w-4 text-violet-500" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Divider - Run Reports vs Automation */}
         <div className="flex items-center gap-4">
           <div className="h-px flex-1 bg-border" />
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("reports.dashboard.generateReports")}</span>
@@ -628,29 +544,9 @@ export default function ReportsDashboard() {
               </div>
             </CardHeader>
             <CardContent>
-              {scheduledReportDefs.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  {t("reports.dashboard.noScheduledReports")}
-                </p>
-              ) : (
-                <div className="divide-y">
-                  {scheduledReportDefs.map((report) => (
-                    <div key={report.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`h-2 w-2 rounded-full ${report.enabled ? "bg-green-500" : "bg-gray-300"}`} />
-                        <div>
-                          <p className="text-sm font-medium">{t(report.nameKey)}</p>
-                          <p className="text-xs text-muted-foreground">{t(report.frequencyKey)}</p>
-                        </div>
-                      </div>
-                      <div className="text-left sm:text-right">
-                        <p className="text-xs text-muted-foreground">{t("reports.dashboard.nextRun")}</p>
-                        <p className="text-sm">{report.nextRun}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <p className="text-sm text-muted-foreground text-center py-4">
+                {t("reports.dashboard.noScheduledReports")}
+              </p>
             </CardContent>
           </Card>
         </section>

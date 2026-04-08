@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 
-import { useTenantId } from "@/contexts/TenantContext";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
 
 import { useSettings, settingsKeys } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -35,6 +35,7 @@ import {
 export default function Settings() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
+  const { hasModule } = useTenant();
   const { t } = useI18n();
 
   const queryClient = useQueryClient();
@@ -44,6 +45,13 @@ export default function Settings() {
 
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
+  const organizationLinks = hasModule("staff")
+    ? [
+        { label: "Departments", path: "/settings/departments", icon: Building, description: "Manage departments and teams" },
+        { label: "Org Chart", path: "/settings/org-chart", icon: Building2, description: "View reporting structure" },
+        { label: "Foreign Workers", path: "/settings/foreign-workers", icon: Globe, description: "Work permits and compliance" },
+      ]
+    : [];
 
   // onReload for child tabs — invalidate queries so React Query refetches
   const handleReload = () => {
@@ -68,33 +76,31 @@ export default function Settings() {
         />
 
         {/* Organization Quick Links */}
-        <div className="mb-6">
-          <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
-            Organization
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-            {[
-              { label: "Departments", path: "/settings/departments", icon: Building, description: "Manage departments and teams" },
-              { label: "Org Chart", path: "/settings/org-chart", icon: Building2, description: "View reporting structure" },
-              { label: "Foreign Workers", path: "/settings/foreign-workers", icon: Globe, description: "Work permits and compliance" },
-            ].map((link) => (
-              <button
-                key={link.path}
-                onClick={() => navigate(link.path)}
-                className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
-              >
-                <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
-                  <link.icon className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium">{link.label}</p>
-                  <p className="text-xs text-muted-foreground">{link.description}</p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-              </button>
-            ))}
+        {organizationLinks.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-2 px-1">
+              Organization
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {organizationLinks.map((link) => (
+                <button
+                  key={link.path}
+                  onClick={() => navigate(link.path)}
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg border border-border/50 hover:border-primary/30 hover:shadow-sm transition-all text-left"
+                >
+                  <div className="h-9 w-9 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <link.icon className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{link.label}</p>
+                    <p className="text-xs text-muted-foreground">{link.description}</p>
+                  </div>
+                  <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Setup Progress */}
         {settings && !settings.setupComplete && (
@@ -103,7 +109,7 @@ export default function Settings() {
 
         {/* Settings Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-6 mb-6">
+          <TabsList className="grid w-full grid-cols-4 mb-6">
             <TabsTrigger value="company" className="gap-2">
               <Building className="h-4 w-4" />
               <span className="hidden sm:inline">{t("settings.tabs.company")}</span>

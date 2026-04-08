@@ -86,6 +86,12 @@ export const seoConfig = {
     description: 'Create your Meza account and start managing your workforce today.',
     url: '/auth/signup',
   },
+  unauthorized: {
+    title: 'Access Denied',
+    description: 'You do not have permission to access this page.',
+    url: '/unauthorized',
+    noIndex: true,
+  },
   dashboard: {
     title: 'Dashboard',
     description: 'Your HR command center. View key metrics, pending tasks, and quick actions all in one place.',
@@ -360,4 +366,3 @@ export const seoConfig = {
     noIndex: true,
   },
 } as const;
-

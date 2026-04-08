@@ -4,7 +4,7 @@
  * Only visible when platform VAT is active or when accessed directly.
  */
 
-import { useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
@@ -70,6 +70,7 @@ export default function VATSettingsPage() {
 
   const queryClient = useQueryClient();
   const [settings, setSettings] = useState<VATSettingsData>(DEFAULT_VAT_SETTINGS);
+  const [hasLocalChanges, setHasLocalChanges] = useState(false);
 
   // Load VAT settings via React Query
   const { data: loadedData, isLoading: loading } = useQuery({
@@ -103,12 +104,14 @@ export default function VATSettingsPage() {
 
   const platformActive = loadedData?.platformActive ?? false;
 
-  // Sync loaded settings into local state for editing (render-time sync)
-  const prevLoadedRef = useRef(loadedData);
-  if (loadedData?.settings && loadedData !== prevLoadedRef.current) {
-    prevLoadedRef.current = loadedData;
+  useEffect(() => {
+    if (!loadedData?.settings || hasLocalChanges) {
+      return;
+    }
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing server state into local form state
     setSettings(loadedData.settings);
-  }
+  }, [hasLocalChanges, loadedData]);
 
   // Save mutation
   const saveMutation = useMutation({
@@ -117,6 +120,7 @@ export default function VATSettingsPage() {
       await setDoc(ref, { ...data, updatedAt: new Date() }, { merge: true });
     },
     onSuccess: () => {
+      setHasLocalChanges(false);
       queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'vatSettings'] });
       toast({
         title: 'Saved',
@@ -142,6 +146,7 @@ export default function VATSettingsPage() {
     key: K,
     value: VATSettingsData[K]
   ) => {
+    setHasLocalChanges(true);
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
 

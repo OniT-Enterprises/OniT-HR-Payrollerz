@@ -8,6 +8,7 @@ interface PageSkeletonProps {
   statCards?: number;
   tableRows?: number;
   showHeader?: boolean;
+  showNavigation?: boolean;
 }
 
 export function PageSkeleton({
@@ -15,10 +16,20 @@ export function PageSkeleton({
   statCards = 4,
   tableRows = 8,
   showHeader = true,
+  showNavigation = true,
 }: PageSkeletonProps) {
+  const largeGridCols =
+    statCards <= 1
+      ? "lg:grid-cols-1"
+      : statCards === 2
+        ? "lg:grid-cols-2"
+        : statCards === 3
+          ? "lg:grid-cols-3"
+          : "lg:grid-cols-4";
+
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
+      {showNavigation && <MainNavigation />}
       <div className="p-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
@@ -37,7 +48,7 @@ export function PageSkeleton({
 
           {/* Stat Cards */}
           {statCards > 0 && (
-            <div className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-${Math.min(statCards, 4)} gap-4 mb-6`}>
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${largeGridCols} gap-4 mb-6`}>
               {Array.from({ length: statCards }).map((_, i) => (
                 <Card key={i}>
                   <CardContent className="p-5">
