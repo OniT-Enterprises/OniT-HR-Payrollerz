@@ -380,17 +380,29 @@ export function TenantProvider({ children }: TenantProviderProps) {
   }, [user, loadAvailableTenants, loadTenantSession]);
 
   // Switch to a different tenant
+  // Guard against re-entrancy: stopImpersonation loads tenants which could
+  // theoretically trigger another switchTenant call.
+  const switchingRef = React.useRef(false);
+
   const switchTenant = useCallback(async (tid: string) => {
     if (!user) {
       throw new Error("No authenticated user");
     }
 
-    // If impersonating, stop first
-    if (isImpersonating) {
-      await stopImpersonation();
-    }
+    if (switchingRef.current) return;
+    switchingRef.current = true;
 
     try {
+      // If impersonating, clear impersonation state directly instead of
+      // calling stopImpersonation() to avoid re-entrancy.
+      if (isImpersonating) {
+        setIsImpersonating(false);
+        setImpersonatedTenantId(null);
+        setImpersonatedTenantName(null);
+        sessionStorage.removeItem("impersonatingTenantId");
+        sessionStorage.removeItem("impersonatingTenantName");
+      }
+
       setLoading(true);
       setError(null);
 
@@ -406,9 +418,10 @@ export function TenantProvider({ children }: TenantProviderProps) {
       setError(message);
       throw error;
     } finally {
+      switchingRef.current = false;
       setLoading(false);
     }
-  }, [user, isImpersonating, stopImpersonation, loadTenantSession]);
+  }, [user, isImpersonating, loadTenantSession]);
 
   // Refresh current session
   const refreshSession = useCallback(async () => {

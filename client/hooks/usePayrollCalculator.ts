@@ -50,13 +50,17 @@ interface UsePayrollCalculatorOptions {
 }
 
 function getInitialPayrollDates() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  // Use toDateStringTL(new Date()) to get the current date in TL timezone,
+  // then derive year/month from that string to avoid browser timezone drift.
+  const todayTL = getTodayTL(); // "YYYY-MM-DD" in TL timezone
+  const [yearStr, monthStr] = todayTL.split("-");
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10) - 1; // 0-indexed
 
-  const firstDay = new Date(year, month, 1);
-  const lastDay = new Date(year, month + 1, 0);
-  const payDay = new Date(year, month + 1, 5);
+  // Construct dates in UTC to avoid local timezone boundary issues
+  const firstDay = new Date(Date.UTC(year, month, 1));
+  const lastDay = new Date(Date.UTC(year, month + 1, 0));
+  const payDay = new Date(Date.UTC(year, month + 1, 5));
 
   return {
     periodStart: toDateStringTL(firstDay),
@@ -477,7 +481,8 @@ export function usePayrollCalculator({
       const subsidioAnual = includeSubsidioAnual
         ? calculateSubsidioAnual(monthlySalary, monthsWorkedThisYear, hireDate, asOfDate)
         : 0;
-      const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, payFrequency);
+      const effectiveFrequency = data.employee.compensation.payFrequency ?? payFrequency;
+      const totalPeriodsInMonth = getPayPeriodsInPayMonth(payDate, effectiveFrequency);
       const isResident =
         data.employee.compensation?.isResident ??
         (data.employee.documents?.residencyStatus
@@ -487,7 +492,7 @@ export function usePayrollCalculator({
       const input: TLPayrollInput = {
         employeeId: data.employee.id || "",
         monthlySalary,
-        payFrequency,
+        payFrequency: effectiveFrequency,
         totalPeriodsInMonth,
         isHourly: false,
         hourlyRate,

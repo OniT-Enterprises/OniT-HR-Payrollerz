@@ -38,9 +38,9 @@ export const useI18nStore = create<I18nState>((set) => ({
 const translations: Record<string, Record<Language, string>> = {
   // ── Navigation ───────────────────────────────────
   'nav.home': { tet: 'Uma', en: 'Home', pt: 'Início', id: 'Beranda' },
-  'nav.actions': { tet: 'Aksaun', en: 'Actions', pt: 'Ações', id: 'Aksi' },
+  'nav.actions': { tet: 'Asaun', en: 'Actions', pt: 'Ações', id: 'Aksi' },
   'nav.services': { tet: 'Servisu', en: 'Services', pt: 'Serviços', id: 'Layanan' },
-  'nav.payslips': { tet: 'Recibo Salariu', en: 'Payslips', pt: 'Recibos de Salário', id: 'Slip Gaji' },
+  'nav.payslips': { tet: 'Recibo Saláriu', en: 'Payslips', pt: 'Recibos de Salário', id: 'Slip Gaji' },
   'nav.leave': { tet: 'Lisensa', en: 'Leave', pt: 'Licença', id: 'Cuti' },
   'nav.profile': { tet: 'Perfil', en: 'Profile', pt: 'Perfil', id: 'Profil' },
 
@@ -60,7 +60,7 @@ const translations: Record<string, Record<Language, string>> = {
   'login.helpStep3': { tet: 'Klik "Tama".', en: 'Tap "Sign In".', pt: 'Toque em "Entrar".', id: 'Ketuk "Masuk".' },
   'login.helpNote': { tet: 'Se la hatene senha, klik "Haluha Senha" iha kraik.', en: 'If you forgot your password, tap "Forgot Password" below.', pt: 'Se esqueceu a palavra-passe, toque em "Esqueci a Palavra-passe" abaixo.', id: 'Jika lupa kata sandi, ketuk "Lupa Kata Sandi" di bawah.' },
   'login.guideTitle': { tet: 'Mai ita hahu hamutuk', en: 'Let us get you in', pt: 'Vamos ajudá-lo a entrar', id: 'Mari kami bantu Anda masuk' },
-  'login.guideMessage': { tet: 'Tama ba konta ida ne\'e simples. Depois de tama, ita bele haree salario, prezensia, no husu lisensa.', en: 'Signing in is quick. Once inside, you can check payslips, attendance, and leave.', pt: 'Entrar é rápido. Depois de entrar, pode ver recibos, presença e licenças.', id: 'Masuk itu cepat. Setelah masuk, Anda bisa cek slip gaji, kehadiran, dan cuti.' },
+  'login.guideMessage': { tet: 'Tama ba konta ida ne\'e simples. Depois de tama, ita bele haree saláriu, prezensa, no husu lisensa.', en: 'Signing in is quick. Once inside, you can check payslips, attendance, and leave.', pt: 'Entrar é rápido. Depois de entrar, pode ver recibos, presença e licenças.', id: 'Masuk itu cepat. Setelah masuk, Anda bisa cek slip gaji, kehadiran, dan cuti.' },
   'login.guidePrompt': { tet: 'Hahu ho email servisu iha kraik', en: 'Start with your work email below', pt: 'Comece com o email de trabalho abaixo', id: 'Mulai dengan email kerja di bawah' },
   'login.guideNote': { tet: 'Se senha haluha, klik "Haluha Senha".', en: 'If your password is forgotten, tap "Forgot Password".', pt: 'Se esqueceu a palavra-passe, toque em "Esqueci a Palavra-passe".', id: 'Jika kata sandi lupa, ketuk "Lupa Kata Sandi".' },
 
@@ -85,7 +85,7 @@ const translations: Record<string, Record<Language, string>> = {
   'home.statusTitle': { tet: 'Sumáriu', en: 'At a glance', pt: 'Resumo', id: 'Sekilas' },
   'home.noPayslip': { tet: 'Seidauk iha recibo', en: 'No payslips yet', pt: 'Sem recibos ainda', id: 'Belum ada slip gaji' },
   'home.daysLeft': { tet: 'loron restu', en: 'days left', pt: 'dias restantes', id: 'hari tersisa' },
-  'home.attendance': { tet: 'Prezensia', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
+  'home.attendance': { tet: 'Prezensa', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
   'home.nextShift': { tet: 'Turnu tuir mai', en: 'Next shift', pt: 'Próximo turno', id: 'Shift berikutnya' },
   'home.services': { tet: 'Servisu', en: 'Services', pt: 'Serviços', id: 'Layanan' },
 
@@ -98,7 +98,7 @@ const translations: Record<string, Record<Language, string>> = {
   'actions.paySection': { tet: 'Ita-nia osan', en: 'Your money', pt: 'O seu dinheiro', id: 'Uang Anda' },
   'actions.paySectionSub': { tet: 'Haree rendimentu no submete resibo.', en: 'Check earnings and submit receipts.', pt: 'Verifique rendimentos e envie recibos.', id: 'Cek penghasilan dan kirim kwitansi.' },
   'actions.timeSection': { tet: 'Ita-nia tempu', en: 'Your time', pt: 'O seu tempo', id: 'Waktu Anda' },
-  'actions.timeSectionSub': { tet: 'Kontrola balansu lisensa no prezensia.', en: 'Track leave balance and attendance.', pt: 'Acompanhe saldo de licença e presença.', id: 'Pantau saldo cuti dan kehadiran.' },
+  'actions.timeSectionSub': { tet: 'Kontrola balansu lisensa no prezensa.', en: 'Track leave balance and attendance.', pt: 'Acompanhe saldo de licença e presença.', id: 'Pantau saldo cuti dan kehadiran.' },
   'actions.quickSection': { tet: 'Asesu lais', en: 'Quick access', pt: 'Acesso rápido', id: 'Akses cepat' },
 
   // ── Services Tab ──────────────────────────────────
@@ -119,7 +119,7 @@ const translations: Record<string, Record<Language, string>> = {
   'services.approvalsSub': { tet: 'Reviza pedidu pendente', en: 'Review pending requests', pt: 'Reveja pedidos pendentes', id: 'Tinjau permintaan yang menunggu' },
 
   // ── Payslips ─────────────────────────────────────
-  'payslips.title': { tet: 'Recibo Salariu', en: 'Payslips', pt: 'Recibos de Salário', id: 'Slip Gaji' },
+  'payslips.title': { tet: 'Recibo Saláriu', en: 'Payslips', pt: 'Recibos de Salário', id: 'Slip Gaji' },
   'payslips.gross': { tet: 'Brútu', en: 'Gross', pt: 'Bruto', id: 'Bruto' },
   'payslips.net': { tet: 'Líkidu', en: 'Net', pt: 'Líquido', id: 'Bersih' },
   'payslips.earnings': { tet: 'Rendimentu', en: 'Earnings', pt: 'Rendimentos', id: 'Pendapatan' },
@@ -181,7 +181,7 @@ const translations: Record<string, Record<Language, string>> = {
   'profile.personalInfo': { tet: 'Informasaun pesoál', en: 'Personal information', pt: 'Informação pessoal', id: 'Informasi pribadi' },
   'profile.jobDetails': { tet: 'Detallu servisu', en: 'Job details', pt: 'Detalhes do cargo', id: 'Detail pekerjaan' },
   'profile.documents': { tet: 'Dokumentu', en: 'Documents', pt: 'Documentos', id: 'Dokumen' },
-  'profile.attendance': { tet: 'Prezensia', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
+  'profile.attendance': { tet: 'Prezensa', en: 'Attendance', pt: 'Presença', id: 'Kehadiran' },
   'profile.settings': { tet: 'Konfigurasaun', en: 'Settings', pt: 'Definições', id: 'Pengaturan' },
   'profile.language': { tet: 'Lian', en: 'Language', pt: 'Idioma', id: 'Bahasa' },
   'profile.signOut': { tet: 'Sai', en: 'Sign out', pt: 'Sair', id: 'Keluar' },
@@ -204,7 +204,7 @@ const translations: Record<string, Record<Language, string>> = {
   // ── Home (subtexts) ─────────────────────────────
   'home.viewPayslipsSub': { tet: 'Haree rendimentu no dedusaun', en: 'View earnings & deductions', pt: 'Ver rendimentos e deduções', id: 'Lihat pendapatan & potongan' },
   'home.requestLeaveSub': { tet: 'Submete pedidu lisensa', en: 'Submit a leave request', pt: 'Enviar pedido de licença', id: 'Kirim permintaan cuti' },
-  'home.attendanceSub': { tet: 'Haree rejistru prezensia', en: 'Check your attendance record', pt: 'Consultar registo de presença', id: 'Periksa catatan kehadiran Anda' },
+  'home.attendanceSub': { tet: 'Haree rejistru prezensa', en: 'Check your attendance record', pt: 'Consultar registo de presença', id: 'Periksa catatan kehadiran Anda' },
   'home.announcements': { tet: 'Anúnsiu', en: 'Announcements', pt: 'Anúncios', id: 'Pengumuman' },
   'home.announcementsSub': { tet: 'Notísia husi empreza', en: 'Company news & updates', pt: 'Notícias e atualizações da empresa', id: 'Berita & pembaruan perusahaan' },
   'home.digitalId': { tet: 'Kartaun ID', en: 'Digital ID', pt: 'ID Digital', id: 'ID Digital' },
@@ -292,13 +292,13 @@ const translations: Record<string, Record<Language, string>> = {
   'time.out': { tet: 'Sai', en: 'Out', pt: 'Saída', id: 'Keluar' },
   'time.hours': { tet: 'Oras', en: 'Hours', pt: 'Horas', id: 'Jam' },
   'time.monthTitle': { tet: 'Fulan ida ne\'e', en: 'This month', pt: 'Este mês', id: 'Bulan ini' },
-  'time.monthSub': { tet: 'Sumáriu prezensia ba fulan ida ne\'e', en: 'Your attendance summary so far', pt: 'Resumo da sua presença até agora', id: 'Ringkasan kehadiran Anda sejauh ini' },
+  'time.monthSub': { tet: 'Sumáriu prezensa ba fulan ida ne\'e', en: 'Your attendance summary so far', pt: 'Resumo da sua presença até agora', id: 'Ringkasan kehadiran Anda sejauh ini' },
   'time.daysPresent': { tet: 'Loron prezente', en: 'Days present', pt: 'Dias presente', id: 'Hari hadir' },
   'time.totalHours': { tet: 'Total oras', en: 'Total hours', pt: 'Total horas', id: 'Total jam' },
   'time.late': { tet: 'Tardi', en: 'Late', pt: 'Atraso', id: 'Terlambat' },
   'time.absent': { tet: 'Auzente', en: 'Absent', pt: 'Ausente', id: 'Absen' },
   'time.overtime': { tet: 'Extra', en: 'OT', pt: 'Extra', id: 'Lembur' },
-  'time.viewAttendance': { tet: 'Haree istória prezensia', en: 'View full attendance', pt: 'Ver presença completa', id: 'Lihat kehadiran lengkap' },
+  'time.viewAttendance': { tet: 'Haree istória prezensa', en: 'View full attendance', pt: 'Ver presença completa', id: 'Lihat kehadiran lengkap' },
   'time.shiftTitle': { tet: 'Turnu tuir mai', en: 'Upcoming shift', pt: 'Próximo turno', id: 'Shift berikutnya' },
   'time.shiftSub': { tet: 'Ita-nia oráriu ba loron tuir mai', en: 'Your schedule for the days ahead', pt: 'O seu horário para os próximos dias', id: 'Jadwal Anda untuk hari-hari mendatang' },
   'time.noShift': { tet: 'Laiha turnu agendadu', en: 'No upcoming shifts', pt: 'Sem turnos agendados', id: 'Tidak ada shift mendatang' },
@@ -308,7 +308,7 @@ const translations: Record<string, Record<Language, string>> = {
 
   // ── Crew (Supervisor Time Tracking) ──────────────
   'nav.crew': { tet: 'Ekipa', en: 'Crew', pt: 'Equipa', id: 'Kru' },
-  'crew.title': { tet: 'Prezensia Ekipa', en: 'Crew Attendance', pt: 'Presença da Equipa', id: 'Kehadiran Kru' },
+  'crew.title': { tet: 'Prezensa Ekipa', en: 'Crew Attendance', pt: 'Presença da Equipa', id: 'Kehadiran Kru' },
   'crew.clockIn': { tet: 'Tama Servisu', en: 'Clock In Crew', pt: 'Registar Entrada da Equipa', id: 'Clock In Kru' },
   'crew.clockOut': { tet: 'Sai Servisu', en: 'Clock Out Crew', pt: 'Registar Saída da Equipa', id: 'Clock Out Kru' },
   'crew.clockInLabel': { tet: 'Tama Servisu', en: 'Clock In', pt: 'Entrada', id: 'Clock In' },
@@ -351,7 +351,7 @@ const translations: Record<string, Record<Language, string>> = {
   'crew.selectAllAction': { tet: 'Hili hotu', en: 'Select All', pt: 'Selecionar Todos', id: 'Pilih Semua' },
   'crew.deselectAll': { tet: 'Hasai hotu', en: 'Deselect All', pt: 'Desmarcar Todos', id: 'Hapus Semua' },
   'crew.takePhoto': { tet: 'Foti Foto', en: 'Take Photo', pt: 'Tirar Foto', id: 'Ambil Foto' },
-  'crew.photoRequired': { tet: 'Foto obrigatóriu ba verifikasaun prezensia', en: 'Photo is required to verify crew attendance', pt: 'A foto é obrigatória para verificar a presença', id: 'Foto wajib untuk verifikasi kehadiran kru' },
+  'crew.photoRequired': { tet: 'Foto obrigatóriu ba verifikasaun prezensa', en: 'Photo is required to verify crew attendance', pt: 'A foto é obrigatória para verificar a presença', id: 'Foto wajib untuk verifikasi kehadiran kru' },
   'crew.enableCamera': { tet: 'Ativa Kámera', en: 'Enable Camera', pt: 'Ativar Câmara', id: 'Aktifkan Kamera' },
   'crew.photoHint': { tet: 'Foti foto grupu traballadór sira', en: 'Take a group photo of the crew', pt: 'Tire uma foto de grupo da equipa', id: 'Ambil foto grup kru' },
   'crew.photoCaptureError': { tet: 'La konsege foti foto. Favór koko fali.', en: 'Could not capture photo. Please try again.', pt: 'Não foi possível capturar a foto. Tente novamente.', id: 'Gagal mengambil foto. Silakan coba lagi.' },
@@ -360,7 +360,7 @@ const translations: Record<string, Record<Language, string>> = {
   'crew.reviewSubmit': { tet: 'Revizaun no Submete', en: 'Review & Submit', pt: 'Rever e Enviar', id: 'Tinjau & Kirim' },
   'crew.workers': { tet: 'Traballadór', en: 'Workers', pt: 'Trabalhadores', id: 'Pekerja' },
   'crew.selectAtLeastOne': { tet: 'Favór hili pelumenus traballadór ida.', en: 'Please select at least one worker.', pt: 'Por favor selecione pelo menos um trabalhador.', id: 'Silakan pilih setidaknya satu pekerja.' },
-  'crew.submitError': { tet: 'La konsege rai prezensia. Favór koko fali.', en: 'Could not save attendance. Please try again.', pt: 'Não foi possível guardar a presença. Tente novamente.', id: 'Gagal menyimpan kehadiran. Silakan coba lagi.' },
+  'crew.submitError': { tet: 'La konsege rai prezensa. Favór koko fali.', en: 'Could not save attendance. Please try again.', pt: 'Não foi possível guardar a presença. Tente novamente.', id: 'Gagal menyimpan kehadiran. Silakan coba lagi.' },
   'crew.selectedWorkers': { tet: 'Traballadór ne\'ebé hili', en: 'Selected Workers', pt: 'Trabalhadores Selecionados', id: 'Pekerja Terpilih' },
   'crew.submitClockIn': { tet: 'Submete Tama Servisu', en: 'Submit Clock-In', pt: 'Enviar Entrada', id: 'Kirim Clock-In' },
   'crew.submitClockOut': { tet: 'Submete Sai Servisu', en: 'Submit Clock-Out', pt: 'Enviar Saída', id: 'Kirim Clock-Out' },
@@ -399,9 +399,9 @@ const translations: Record<string, Record<Language, string>> = {
   'crew.batches': { tet: 'lote sira', en: 'batches', pt: 'lotes', id: 'batch' },
   'crew.queueEmpty': { tet: 'Fila mamuk', en: 'Queue is empty', pt: 'Fila vazia', id: 'Antrean kosong' },
   'crew.queueEmptySub': { tet: 'Rejistru hotu sync ona', en: 'All records have been synced', pt: 'Todos os registos foram sincronizados', id: 'Semua catatan telah disinkronkan' },
-  'crew.history': { tet: 'Istória Prezensia', en: 'Attendance History', pt: 'Histórico de Presença', id: 'Riwayat Kehadiran' },
+  'crew.history': { tet: 'Istória Prezensa', en: 'Attendance History', pt: 'Histórico de Presença', id: 'Riwayat Kehadiran' },
   'crew.noHistory': { tet: 'Seidauk iha istória', en: 'No history yet', pt: 'Sem histórico ainda', id: 'Belum ada riwayat' },
-  'crew.noHistorySub': { tet: 'Istória prezensia ekipa sei mosu iha ne\'e', en: 'Crew attendance history will appear here', pt: 'O histórico de presença da equipa aparecerá aqui', id: 'Riwayat kehadiran kru akan muncul di sini' },
+  'crew.noHistorySub': { tet: 'Istória prezensa ekipa sei mosu iha ne\'e', en: 'Crew attendance history will appear here', pt: 'O histórico de presença da equipa aparecerá aqui', id: 'Riwayat kehadiran kru akan muncul di sini' },
 
   // ── Holiday Calendar ─────────────────────────────
   'holidays.title': { tet: 'Kalendáriu Feriadu', en: 'Holiday Calendar', pt: 'Calendário de Feriados', id: 'Kalender Hari Libur' },
@@ -414,7 +414,7 @@ const translations: Record<string, Record<Language, string>> = {
   'approvals.title': { tet: 'Aprovasaun', en: 'Approvals', pt: 'Aprovações', id: 'Persetujuan' },
   'approvals.pending': { tet: 'pedidu pendente', en: 'pending requests', pt: 'pedidos pendentes', id: 'permintaan menunggu' },
   'approvals.tabLeave': { tet: 'Lisensa', en: 'Leave', pt: 'Licença', id: 'Cuti' },
-  'approvals.tabTimesheets': { tet: 'Prezensia', en: 'Timesheets', pt: 'Folhas de Ponto', id: 'Lembar Waktu' },
+  'approvals.tabTimesheets': { tet: 'Prezensa', en: 'Timesheets', pt: 'Folhas de Ponto', id: 'Lembar Waktu' },
   'approvals.tabExpenses': { tet: 'Despeza', en: 'Expenses', pt: 'Despesas', id: 'Pengeluaran' },
   'approvals.emptyLeave': { tet: 'Seidauk iha pedidu lisensa pendente', en: 'No pending leave requests', pt: 'Sem pedidos de licença pendentes', id: 'Tidak ada permintaan cuti menunggu' },
   'approvals.emptyLeaveSub': { tet: 'Pedidu foun sei mosu iha ne\'e', en: 'New requests will appear here', pt: 'Novos pedidos aparecerão aqui', id: 'Permintaan baru akan muncul di sini' },
@@ -499,19 +499,19 @@ const translations: Record<string, Record<Language, string>> = {
   'wageAlerts.subtitle': { tet: 'Kompara oras no pagamentu', en: 'Compare hours and pay', pt: 'Comparar horas e pagamento', id: 'Bandingkan jam dan gaji' },
   'wageAlerts.checking': { tet: 'Verifika hela...', en: 'Checking...', pt: 'A verificar...', id: 'Memeriksa...' },
   'wageAlerts.noData': { tet: 'Seidauk iha dadus', en: 'No data available', pt: 'Sem dados disponíveis', id: 'Belum ada data' },
-  'wageAlerts.noDataSub': { tet: 'Presiza prezensia no recibo atu kompara', en: 'Needs attendance and payslip data to compare', pt: 'Necessita dados de presença e recibos para comparar', id: 'Membutuhkan data kehadiran dan slip gaji untuk dibandingkan' },
+  'wageAlerts.noDataSub': { tet: 'Presiza prezensa no recibo atu kompara', en: 'Needs attendance and payslip data to compare', pt: 'Necessita dados de presença e recibos para comparar', id: 'Membutuhkan data kehadiran dan slip gaji untuk dibandingkan' },
   'wageAlerts.allGood': { tet: 'Hotu diak!', en: 'Everything looks good!', pt: 'Tudo em ordem!', id: 'Semuanya terlihat baik!' },
   'wageAlerts.allGoodMessage': { tet: 'Ita-nia oras no pagamentu tuir malu. Iha nee la iha diskrepansia.', en: 'Your hours and pay match. Everything looks good!', pt: 'As suas horas e pagamento correspondem. Tudo em ordem!', id: 'Jam dan gaji Anda cocok. Semuanya terlihat baik!' },
   'wageAlerts.alert': { tet: 'alerta', en: 'alert', pt: 'alerta', id: 'peringatan' },
   'wageAlerts.alerts': { tet: 'alerta', en: 'alerts', pt: 'alertas', id: 'peringatan' },
   'wageAlerts.period': { tet: 'Períodu', en: 'Period', pt: 'Período', id: 'Periode' },
   'wageAlerts.hoursComparison': { tet: 'Komparasaun oras', en: 'Hours Comparison', pt: 'Comparação de Horas', id: 'Perbandingan Jam' },
-  'wageAlerts.attendanceHours': { tet: 'Oras prezensia', en: 'Attendance hours', pt: 'Horas de presença', id: 'Jam kehadiran' },
+  'wageAlerts.attendanceHours': { tet: 'Oras prezensa', en: 'Attendance hours', pt: 'Horas de presença', id: 'Jam kehadiran' },
   'wageAlerts.payslipHours': { tet: 'Oras recibo', en: 'Payslip hours', pt: 'Horas do recibo', id: 'Jam slip gaji' },
   'wageAlerts.difference': { tet: 'Diferensa', en: 'Difference', pt: 'Diferença', id: 'Selisih' },
-  'wageAlerts.hourDiscrepancyMessage': { tet: 'Ita-nia oras prezensia ({attended}h) la tuir ho oras recibo ({payslip}h)', en: 'Your recorded hours ({attended}h) don\'t match your payslip hours ({payslip}h)', pt: 'As suas horas registadas ({attended}h) não correspondem às horas do recibo ({payslip}h)', id: 'Jam tercatat Anda ({attended}h) tidak cocok dengan jam slip gaji ({payslip}h)' },
+  'wageAlerts.hourDiscrepancyMessage': { tet: 'Ita-nia oras prezensa ({attended}h) la tuir ho oras recibo ({payslip}h)', en: 'Your recorded hours ({attended}h) don\'t match your payslip hours ({payslip}h)', pt: 'As suas horas registadas ({attended}h) não correspondem às horas do recibo ({payslip}h)', id: 'Jam tercatat Anda ({attended}h) tidak cocok dengan jam slip gaji ({payslip}h)' },
   'wageAlerts.hourDiscrepancyAdvice': { tet: 'Ida ne\'e bele tanba diferensa rejistru. Koalia ho ita-nia supervizór se iha dúvida.', en: 'This may be due to a recording difference. Talk to your supervisor if you have questions.', pt: 'Isto pode dever-se a uma diferença de registo. Fale com o seu supervisor se tiver dúvidas.', id: 'Ini mungkin karena perbedaan pencatatan. Bicarakan dengan supervisor jika ada pertanyaan.' },
-  'wageAlerts.hoursMatch': { tet: 'Oras prezensia no recibo tuir malu', en: 'Attendance and payslip hours match', pt: 'Horas de presença e do recibo correspondem', id: 'Jam kehadiran dan slip gaji cocok' },
+  'wageAlerts.hoursMatch': { tet: 'Oras prezensa no recibo tuir malu', en: 'Attendance and payslip hours match', pt: 'Horas de presença e do recibo correspondem', id: 'Jam kehadiran dan slip gaji cocok' },
   'wageAlerts.minWageCheck': { tet: 'Salário mínimu', en: 'Minimum Wage', pt: 'Salário Mínimo', id: 'Upah Minimum' },
   'wageAlerts.yourNetPay': { tet: 'Ita-nia salário líkidu', en: 'Your net pay', pt: 'O seu salário líquido', id: 'Gaji bersih Anda' },
   'wageAlerts.minWage': { tet: 'Salário mínimu TL', en: 'TL minimum wage', pt: 'Salário mínimo TL', id: 'Upah minimum TL' },
@@ -531,7 +531,7 @@ const translations: Record<string, Record<Language, string>> = {
   'common.poweredBy': { tet: 'husi Meza', en: 'powered by Meza', pt: 'fornecido por Meza', id: 'didukung oleh Meza' },
 
   // ── Attendance History ─────────────────────────────
-  'attendance.title': { tet: 'Prezensia', en: 'Attendance History', pt: 'Histórico de Presença', id: 'Riwayat Kehadiran' },
+  'attendance.title': { tet: 'Prezensa', en: 'Attendance History', pt: 'Histórico de Presença', id: 'Riwayat Kehadiran' },
   'attendance.totalHours': { tet: 'Oras totál', en: 'Total Hours', pt: 'Horas Totais', id: 'Total Jam' },
   'attendance.totalDays': { tet: 'Loron totál', en: 'Total Days', pt: 'Dias Totais', id: 'Total Hari' },
   'attendance.present': { tet: 'Prezente', en: 'Present', pt: 'Presente', id: 'Hadir' },
@@ -540,8 +540,8 @@ const translations: Record<string, Record<Language, string>> = {
   'attendance.regularHours': { tet: 'Oras regulár', en: 'Regular Hours', pt: 'Horas Normais', id: 'Jam Reguler' },
   'attendance.overtimeHours': { tet: 'Oras extra', en: 'Overtime Hours', pt: 'Horas Extras', id: 'Jam Lembur' },
   'attendance.week': { tet: 'Semana', en: 'Week', pt: 'Semana', id: 'Minggu' },
-  'attendance.empty': { tet: 'Seidauk iha rejistru prezensia', en: 'No attendance records yet', pt: 'Sem registos de presença', id: 'Belum ada catatan kehadiran' },
-  'attendance.emptySub': { tet: 'Dadus prezensia sei mosu iha ne\'e', en: 'Attendance data will appear here', pt: 'Os dados de presença aparecerão aqui', id: 'Data kehadiran akan muncul di sini' },
+  'attendance.empty': { tet: 'Seidauk iha rejistru prezensa', en: 'No attendance records yet', pt: 'Sem registos de presença', id: 'Belum ada catatan kehadiran' },
+  'attendance.emptySub': { tet: 'Dadus prezensa sei mosu iha ne\'e', en: 'Attendance data will appear here', pt: 'Os dados de presença aparecerão aqui', id: 'Data kehadiran akan muncul di sini' },
 
   // ── Digital ID Card ────────────────────────────────
   'idCard.title': { tet: 'Kartaun ID Dijitál', en: 'Digital ID Card', pt: 'Cartão de Identificação Digital', id: 'Kartu ID Digital' },

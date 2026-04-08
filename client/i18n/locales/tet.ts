@@ -1,7 +1,7 @@
 const messages = {
   "common": {
     "greetingMorning": "Bondia",
-    "greetingAfternoon": "Botarde",
+    "greetingAfternoon": "Botardi",
     "greetingEvening": "Bonite",
     "dashboard": "Painél",
     "settings": "Konfigurasaun",
@@ -470,7 +470,7 @@ const messages = {
       },
       "thirteenth": {
         "title": "Subsidiu Anual",
-        "subtitle": "Salariu 13o Mes",
+        "subtitle": "Saláriu 13o Mes",
         "description": "Kalkula 13o mes automatik. Pro-rata ba empregadu foun, prazo 20 Dez."
       },
       "sefope": {
@@ -564,13 +564,13 @@ const messages = {
       },
       "example": {
         "title": "Ezemplu kalkulasaun salario",
-        "basicSalary": "Salariu Baziku",
+        "basicSalary": "Saláriu Baziku",
         "overtime": "Oras Extra (150%)",
         "foodAllowance": "Subsidiu Ai-han",
         "gross": "Total Brutu",
         "wit": "WIT (10% liu $500)",
         "inss": "INSS (4%)",
-        "net": "Salariu Liquidu",
+        "net": "Saláriu Liquidu",
         "badge": "Auto-kalkuladu"
       }
     },
@@ -790,7 +790,7 @@ const messages = {
         },
         "selfService": {
           "title": "Perfil Self-Service",
-          "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensia. Pergunta menus ba RH."
+          "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensa. Pergunta menus ba RH."
         }
       },
       "cta": "Inklui ho Meza",
@@ -804,7 +804,7 @@ const messages = {
           "payslips": "Istória payslip fulan 12 ho PDF export",
           "leave": "Balansu lisensa, istória & formuláriu pedidu",
           "crewClock": "Clock-in/out ekipa ho GPS & kamera",
-          "profile": "Perfil empregadu kompletu & sumáriu prezensia"
+          "profile": "Perfil empregadu kompletu & sumáriu prezensa"
         }
       },
       "coming": {
@@ -812,7 +812,7 @@ const messages = {
         "title": "Iha Roadmap",
         "features": {
           "push": "Notifikasaun push ba payslip & aprovasaun",
-          "attendance": "Istória prezensia pesoál & verifikasaun oras",
+          "attendance": "Istória prezensa pesoál & verifikasaun oras",
           "documents": "Haree dokumentu ba kontratu & sertifikadu",
           "shifts": "Haree orário turnu"
         }
@@ -856,7 +856,7 @@ const messages = {
         },
         "autoPost": {
           "title": "Folha Auto-Post",
-          "desc": "Halo folha no lansu kontabil hakerek rasik. WIT, INSS, despeza salariu — hotu postadu."
+          "desc": "Halo folha no lansu kontabil hakerek rasik. WIT, INSS, despeza saláriu — hotu postadu."
         },
         "qbExport": {
           "title": "Esporta QuickBooks",
@@ -1064,7 +1064,7 @@ const messages = {
   },
   "employees": {
     "title": "Empregadu Hotu",
-    "subtitle": "Hare no jere empregadu hotu",
+    "subtitle": "Haree no jere empregadu hotu",
     "addEmployee": "Tau Empregadu",
     "connectionIssueTitle": "Problema Ligasaun",
     "offlineMessage": "Laiha ligasaun",
@@ -1085,8 +1085,8 @@ const messages = {
       "retryLoading": "Tenta karrega",
       "addFirstEmployee": "Tau Empregadu Primeiro",
       "advanced": "Avansadu",
-      "hideSalary": "Subar salariu",
-      "showSalary": "Hatudu salariu",
+      "hideSalary": "Subar saláriu",
+      "showSalary": "Hatudu saláriu",
       "add": "Tau"
     },
     "filterPanelTitle": "Filtra Empregadu",
@@ -1097,8 +1097,8 @@ const messages = {
       "employmentType": "Tipu Kontratu",
       "workLocation": "Lokal Servisu",
       "status": "Status",
-      "minSalary": "Salariu Minimu",
-      "maxSalary": "Salariu Maximu"
+      "minSalary": "Saláriu Minimu",
+      "maxSalary": "Saláriu Maximu"
     },
     "filterPlaceholders": {
       "allDepartments": "Departamentu hotu",
@@ -1106,8 +1106,8 @@ const messages = {
       "allTypes": "Tipu hotu",
       "allLocations": "Lokal hotu",
       "allStatuses": "Status hotu",
-      "minSalary": "Salariu mensal minimu",
-      "maxSalary": "Salariu mensal maximu"
+      "minSalary": "Saláriu mensal minimu",
+      "maxSalary": "Saláriu mensal maximu"
     },
     "activeFiltersTitle": "Filtru Ativu:",
     "activeFiltersSummary": "{{shown}} hosi {{total}} empregadu hatudu",
@@ -1117,7 +1117,7 @@ const messages = {
       "employmentType": "Tipu: {{value}}",
       "workLocation": "Lokal: {{value}}",
       "status": "Status: {{value}}",
-      "salary": "Salariu: {{range}}"
+      "salary": "Saláriu: {{range}}"
     },
     "idLabel": "ID: {{id}}",
     "empty": {
@@ -1145,7 +1145,7 @@ const messages = {
       "hireDateTemplate": "Data Entrada (YYYY-MM-DD)",
       "employmentType": "Tipu Kontratu",
       "workLocation": "Lokal Servisu",
-      "monthlySalary": "Salariu Mensal",
+      "monthlySalary": "Saláriu Mensal",
       "benefitsPackage": "Pakote Benefisiu",
       "streetAddress": "Endereco",
       "city": "Sidade",
@@ -1182,12 +1182,12 @@ const messages = {
       "allStatus": "Status Hotu"
     },
     "tooltips": {
-      "hideSalaryColumn": "Subar koluna salariu",
-      "showSalaryColumn": "Hatudu koluna salariu",
+      "hideSalaryColumn": "Subar koluna saláriu",
+      "showSalaryColumn": "Hatudu koluna saláriu",
       "downloadTemplate": "Download modelo CSV",
       "importCsv": "Importa husi CSV",
       "exportCsv": "Exporta ba CSV",
-      "viewProfile": "Hare perfil",
+      "viewProfile": "Haree perfil",
       "editEmployee": "Edita empregadu",
       "offboardEmployee": "Offboard empregadu",
       "createEkipaAccount": "Kria konta Ekipa"
@@ -1211,7 +1211,7 @@ const messages = {
       "department": "Departamentu",
       "position": "Kargu",
       "status": "Status",
-      "salary": "Salariu",
+      "salary": "Saláriu",
       "actions": "Asaun"
     }
   },
@@ -1298,7 +1298,7 @@ const messages = {
       "jobTitle": "Detallu Servisu",
       "jobDesc": "Departamentu, kargu no termos",
       "compensationTitle": "Kompensasaun",
-      "compensationDesc": "Salariu, lisensa no benefisiu",
+      "compensationDesc": "Saláriu, lisensa no benefisiu",
       "documentsTitle": "Dokumentu",
       "documentsDesc": "Dokumentu no autorizasaun"
     },
@@ -1375,9 +1375,9 @@ const messages = {
       "workContractHelp": "Upload kontratu (PDF/DOC)"
     },
     "compensation": {
-      "salaryLabel": "Salariu Mensal (USD)",
+      "salaryLabel": "Saláriu Mensal (USD)",
       "salaryPlaceholder": "ez.: 1500",
-      "minWageHint": "Salariu minimu TL: $115/fulan",
+      "minWageHint": "Saláriu minimu TL: $115/fulan",
       "leaveDays": "Loron Lisensa Anual",
       "leaveDaysPlaceholder": "25",
       "benefits": "Pakote Benefisiu",
@@ -1466,8 +1466,8 @@ const messages = {
         "department": "Departamentu *",
         "location": "Lokal Servisu",
         "employmentType": "Tipu Kontratu",
-        "salaryMin": "Salariu Min (USD)",
-        "salaryMax": "Salariu Max (USD)",
+        "salaryMin": "Saláriu Min (USD)",
+        "salaryMax": "Saláriu Max (USD)",
         "contractType": "Tipu Kontratu",
         "contractDuration": "Durasaun Kontratu",
         "probationPeriod": "Periodu Prova (Artigu 14 Kodigo Laboral)",
@@ -1575,7 +1575,7 @@ const messages = {
         "handbook": {
           "title": "Manual Empresa",
           "description": "Manual ho politika, prosedimentu no orientasaun",
-          "button": "Hare Manual Komplet (PDF)"
+          "button": "Haree Manual Komplet (PDF)"
         },
         "ackTitle": "Rekonhese Politika",
         "items": {
@@ -1913,7 +1913,7 @@ const messages = {
   "timeLeave": {
     "timeTracking": {
       "title": "Kontrola Tempu",
-      "subtitle": "Monitoriza presensa, turnu no oras",
+      "subtitle": "Monitoriza prezensa, turnu no oras",
       "stats": {
         "guardsOnDuty": "Iha servisu",
         "currentlyActive": "Ativu agora",
@@ -1953,7 +1953,7 @@ const messages = {
         "export": "Exporta CSV",
         "logActivity": "Rejista atividade",
         "emptyTitle": "Laiha entrada tempu",
-        "emptyDescription": "Laiha registu presensa ba {{date}}"
+        "emptyDescription": "Laiha registu prezensa ba {{date}}"
       },
       "dialog": {
         "title": "Rejista tempu",
@@ -2151,7 +2151,7 @@ const messages = {
         "halfDay": "{{type}}",
         "status": "Status",
         "actions": "Asaun",
-        "viewReason": "Hare razao"
+        "viewReason": "Haree razao"
       },
       "reject": {
         "title": "Rejeita Pedido Lisensa",
@@ -2204,27 +2204,27 @@ const messages = {
       }
     },
     "attendance": {
-      "title": "Presensa",
-      "titleToday": "Presensa Ohin",
+      "title": "Prezensa",
+      "titleToday": "Prezensa Ohin",
       "payrollHint": "Ba folha pagamentu",
       "actions": {
         "import": "Importa",
-        "mark": "Marka presensa",
-        "markToday": "Marka Presensa Ohin",
+        "mark": "Marka prezensa",
+        "markToday": "Marka Prezensa Ohin",
         "faceClockIn": "Tama ho oin",
         "today": "Ohin",
         "cancel": "Kansela",
         "export": "Exporta CSV"
       },
       "import": {
-        "title": "Importa dadus presensa",
+        "title": "Importa dadus prezensa",
         "description": "Importa registu husi dispozitivu biometriku ka CSV",
         "selectFile": "Hili ficheiru",
         "format": "Formatu CSV: employee_id, date, clock_in, clock_out",
         "importing": "Importa hela..."
       },
       "mark": {
-        "title": "Marka presensa",
+        "title": "Marka prezensa",
         "description": "Rekorda tempu tama no sai",
         "employee": "Empregadu *",
         "employeePlaceholder": "Hili empregadu",
@@ -2252,13 +2252,13 @@ const messages = {
         "allStatuses": "Status hotu"
       },
       "empty": {
-        "title": "Laiha registu presensa",
-        "titleToday": "Laiha presensa regista ohin",
-        "instructions": "Uza butaun iha leten atu marka presensa manual, ka importa registu husi dispozitivu biometriku.",
+        "title": "Laiha registu prezensa",
+        "titleToday": "Laiha prezensa regista ohin",
+        "instructions": "Uza butaun iha leten atu marka prezensa manual, ka importa registu husi dispozitivu biometriku.",
         "importButton": "Importa husi Dispozitivu"
       },
       "table": {
-        "title": "Registu presensa",
+        "title": "Registu prezensa",
         "summary": "{{count}} registu ba {{date}}",
         "employee": "Empregadu",
         "department": "Departamentu",
@@ -2291,13 +2291,13 @@ const messages = {
       },
       "toast": {
         "errorTitle": "Erru",
-        "loadFailed": "Falha karrega dadus presensa.",
+        "loadFailed": "Falha karrega dadus prezensa.",
         "validationTitle": "Erru validasaun",
         "validationDesc": "Favor preenche kampu obrigatoriu.",
         "employeeNotFound": "Empregadu la hetan.",
         "successTitle": "Susesu",
-        "successDesc": "Presensa marka ho susesu.",
-        "saveFailed": "Falha marka presensa. Koko fali.",
+        "successDesc": "Prezensa marka ho susesu.",
+        "saveFailed": "Falha marka prezensa. Koko fali.",
         "exportTitle": "Exporta remata",
         "exportDesc": "Ficheiru CSV download ona.",
         "importSelect": "Favor hili ficheiru atu importa.",
@@ -2305,7 +2305,7 @@ const messages = {
         "importEmpty": "Laiha registu validu.",
         "importCompleteTitle": "Importa remata",
         "importCompleteDesc": "{{success}} registu importa, {{duplicates}} duplicadu toba, {{errors}} erru.",
-        "importFailed": "Falha importa dadus presensa."
+        "importFailed": "Falha importa dadus prezensa."
       }
     },
     "shiftScheduling": {
@@ -2392,7 +2392,7 @@ const messages = {
       },
       "delete": {
         "title": "Apaga Turnu",
-        "description": "Ita boot hakarak apaga turnu ida ne'e? Aksaun ida ne'e la bele halo fali.",
+        "description": "Ita boot hakarak apaga turnu ida ne'e? Asaun ida ne'e la bele halo fali.",
         "confirm": "Apaga"
       },
       "status": {
@@ -2403,7 +2403,7 @@ const messages = {
       },
       "employees": {
         "title": "Disponibilidade no Oras",
-        "description": "Hare horario empregadu no seguimentu oras semana",
+        "description": "Haree horario empregadu no seguimentu oras semana",
         "department": "Departamentu:",
         "email": "Email:",
         "phone": "Telefone:",
@@ -3090,10 +3090,10 @@ const messages = {
       "subtitle": "Haree mudansa kontabilidade no aprovasaun",
       "refresh": "Atualiza",
       "filtersTitle": "Filtru",
-      "filtersDesc": "Filtra tuir aksaun, severidade, intervalu data, ka teksu buka",
+      "filtersDesc": "Filtra tuir asaun, severidade, intervalu data, ka teksu buka",
       "search": "Buka",
       "searchPlaceholder": "Buka deskrisaun, uza-na'in, ID...",
-      "action": "Aksaun",
+      "action": "Asaun",
       "severity": "Severidade",
       "severityOptions": {
         "all": "Severidade hotu",
@@ -3112,7 +3112,7 @@ const messages = {
       "detailsTitle": "Detállu Entrada Auditoría",
       "data": "Dadus",
       "actions": {
-        "all": "Aksaun hotu",
+        "all": "Asaun hotu",
         "accountCreate": "Konta kriadu",
         "accountUpdate": "Konta atualizadu",
         "coaInitialize": "Planu konta inicializa",
@@ -3443,7 +3443,7 @@ const messages = {
         },
         "payroll": {
           "title": "Relatoriu Folha",
-          "description": "Salariu, impostu, dedusaun",
+          "description": "Saláriu, impostu, dedusaun",
           "examples": {
             "summary": "Resumo folha",
             "tax": "Obrigasaun impostu",
@@ -3451,10 +3451,10 @@ const messages = {
           }
         },
         "attendance": {
-          "title": "Relatoriu Presensa",
+          "title": "Relatoriu Prezensa",
           "description": "Kontrola tempu, ausensia, oras extra",
           "examples": {
-            "summary": "Resumo presensa",
+            "summary": "Resumo prezensa",
             "overtime": "Relatoriu oras extra",
             "late": "Chegada atrasadu"
           }
@@ -3508,19 +3508,19 @@ const messages = {
       "nextRun": "Prosesu tuir mai",
       "recentPayrollSummary": "Resumo Folha",
       "recentTaxLiability": "Obrigasaun Impostu (WIT/INSS)",
-      "recentAttendanceSummary": "Resumo Presensa",
+      "recentAttendanceSummary": "Resumo Prezensa",
       "recentEmployeeDirectory": "Diretoria Empregadu",
       "periodCurrent": "Agora",
       "monthlyPayrollSummary": "Resumo Folha Mensal",
-      "weeklyAttendance": "Presensa Semanal",
+      "weeklyAttendance": "Prezensa Semanal",
       "quarterlyTaxReport": "Relatoriu Impostu Trimestral",
       "freq1stOfMonth": "Loron 1 fulan",
       "freqEveryMonday": "Segunda-feira hotu",
       "freqQuarterly": "Trimestral"
     },
     "attendance": {
-      "title": "Relatoriu Presensa",
-      "subtitle": "Hare no analiza padraun presensa",
+      "title": "Relatoriu Prezensa",
+      "subtitle": "Haree no analiza padraun prezensa",
       "periodLabel": "Períodu",
       "ranges": {
         "last7": "Loron 7 ikus",
@@ -3541,7 +3541,7 @@ const messages = {
         "carryOver": "Transfere ba oin"
       },
       "stats": {
-        "attendanceRate": "Taxa presensa",
+        "attendanceRate": "Taxa prezensa",
         "attendanceRateSummary": "{{present}} husi {{total}} registu",
         "lateArrivals": "Chegada atrasadu",
         "lateHoursSummary": "{{hours}} oras total",
@@ -3552,10 +3552,10 @@ const messages = {
       },
       "cards": {
         "summary": {
-          "title": "Resumo presensa",
-          "description": "Registu presensa loron-loron ba períodu ne'ebé hili",
+          "title": "Resumo prezensa",
+          "description": "Registu prezensa loron-loron ba períodu ne'ebé hili",
           "totalRecords": "Total registu",
-          "export": "Exporta presensa"
+          "export": "Exporta prezensa"
         },
         "leave": {
           "title": "Saldo lisensa",
@@ -3576,13 +3576,13 @@ const messages = {
         }
       },
       "breakdown": {
-        "title": "Fahe status presensa",
-        "description": "Distribuisaun tuir status presensa"
+        "title": "Fahe status prezensa",
+        "description": "Distribuisaun tuir status prezensa"
       },
       "recent": {
-        "title": "Registu presensa foun",
+        "title": "Registu prezensa foun",
         "description": "Registu tama no sai ne'ebé foun liu",
-        "emptyTitle": "Laiha registu presensa ba períodu ida ne'e",
+        "emptyTitle": "Laiha registu prezensa ba períodu ida ne'e",
         "emptyDescription": "Registu sei mosu iha ne'e bainhira empregadu tama ka sai"
       }
     },
@@ -3875,15 +3875,15 @@ const messages = {
       "subtitle": "Analize no relatoriu kompletu ba folha",
       "empty": {
         "title": "Laiha dadus folha",
-        "description": "Aumenta empregadu ho informasaun salariu atu gera relatoriu",
+        "description": "Aumenta empregadu ho informasaun saláriu atu gera relatoriu",
         "action": "Aumenta empregadu"
       },
       "stats": {
         "totalEmployees": "Total empregadu",
         "inPayroll": "Iha sistema folha",
         "totalMonthly": "Total mensal folha",
-        "basedOnSalaries": "Baseia ba salariu agora",
-        "averageMonthly": "Media salariu mensal",
+        "basedOnSalaries": "Baseia ba saláriu agora",
+        "averageMonthly": "Media saláriu mensal",
         "perEmployee": "Tuir empregadu",
         "monthlyPayroll": "Folha mensal",
         "estimated": "Estimadu"
@@ -3891,9 +3891,9 @@ const messages = {
       "actions": {
         "filter": "Filtra relatoriu",
         "export": "Exporta relatoriu",
-        "viewDetailed": "Hare relatoriu detalhadu",
-        "viewDepartment": "Hare tuir departamentu",
-        "viewBenefits": "Hare relatoriu benefisiu"
+        "viewDetailed": "Haree relatoriu detalhadu",
+        "viewDepartment": "Haree tuir departamentu",
+        "viewBenefits": "Haree relatoriu benefisiu"
       },
       "toast": {
         "exported": "Exporta relatoriu folha ho susesu"
@@ -3917,11 +3917,11 @@ const messages = {
         }
       },
       "salarySummary": {
-        "title": "Resumo salariu",
+        "title": "Resumo saláriu",
         "description": "Resumo kompensasaun",
-        "highest": "Salariu aas:",
-        "lowest": "Salariu kraik:",
-        "median": "Salariu median:"
+        "highest": "Saláriu aas:",
+        "lowest": "Saláriu kraik:",
+        "median": "Saláriu median:"
       },
       "departmentCosts": {
         "title": "Kustu departamentu",
@@ -3939,20 +3939,20 @@ const messages = {
       },
       "table": {
         "title": "Dadus folha empregadu",
-        "description": "Informasaun salariu agora ba empregadu hotu",
+        "description": "Informasaun saláriu agora ba empregadu hotu",
         "employee": "Empregadu",
         "department": "Departamentu",
         "position": "Funsaun",
-        "monthlySalary": "Salariu mensal",
+        "monthlySalary": "Saláriu mensal",
         "benefits": "Benefisiu",
         "status": "Status",
-        "viewAll": "Hare hotu {{count}} empregadu",
+        "viewAll": "Haree hotu {{count}} empregadu",
         "showLess": "Hatudu menus",
         "emptyFiltered": "Laiha empregadu ne'ebé tuir filtru sira ne'e."
       },
       "salaryDetail": {
-        "title": "Relatoriu Salariu Detalladu",
-        "description": "Fahe salariu kompletu ho kalkulasaun impostu Timor-Leste",
+        "title": "Relatoriu Saláriu Detalladu",
+        "description": "Fahe saláriu kompletu ho kalkulasaun impostu Timor-Leste",
         "highest": "Aas liu",
         "lowest": "Kraik liu",
         "average": "Média",
@@ -3974,7 +3974,7 @@ const messages = {
         "employees": "{{count}} empregadu",
         "monthlyCost": "Kustu Mensal",
         "annualCost": "Kustu Anual",
-        "avgSalary": "Média Salariu",
+        "avgSalary": "Média Saláriu",
         "employeesLabel": "Empregadu:",
         "totalAll": "Total Departamentu Hotu"
       },
@@ -3983,7 +3983,7 @@ const messages = {
         "description": "Distribuisaun empregadu tuir pakote benefisiu",
         "employees": "{{count}} empregadu",
         "totalMonthlyPayroll": "Total Folha Mensal",
-        "avgSalary": "Média Salariu"
+        "avgSalary": "Média Saláriu"
       },
       "csv": {
         "employeeId": "ID Empregadu",
@@ -3992,8 +3992,8 @@ const messages = {
         "email": "Email",
         "department": "Departamentu",
         "position": "Pozisaun",
-        "monthlySalary": "Salariu Mensal",
-        "annualSalary": "Salariu Anual",
+        "monthlySalary": "Saláriu Mensal",
+        "annualSalary": "Saláriu Anual",
         "benefitsPackage": "Pakote Benefisiu",
         "status": "Status",
         "irpsTax": "Impostu IRPS (10% > $500)",
@@ -4179,7 +4179,7 @@ const messages = {
         "endDate": "Data remata"
       },
       "stats": {
-        "salaryExpense": "Despesa Salariu",
+        "salaryExpense": "Despesa Saláriu",
         "inssEmployerExpense": "Despesa INSS Empregadór",
         "totalExpense": "Despesa Total"
       },
@@ -4189,7 +4189,7 @@ const messages = {
         "empty": "Laiha liña journal folha ba períodu ida-ne'e.",
         "project": "Projetu",
         "fundingSource": "Fonte Fundu",
-        "salary": "Salariu",
+        "salary": "Saláriu",
         "inssEmployer": "INSS Empregadór",
         "totalExpense": "Despesa Total"
       },
@@ -4200,7 +4200,7 @@ const messages = {
       "csv": {
         "projectCode": "Kódigu Projetu",
         "fundingSource": "Fonte Fundu",
-        "salaryExpense": "Despesa Salariu",
+        "salaryExpense": "Despesa Saláriu",
         "inssEmployerExpense": "Despesa INSS Empregadór",
         "totalExpense": "Despesa Total",
         "date": "Data",
@@ -4445,7 +4445,7 @@ const messages = {
       "title": "Painel Empregadu",
       "subtitle": "Visaun geral empregadu no organizasaun",
       "actions": {
-        "viewAll": "Hare hotu",
+        "viewAll": "Haree hotu",
         "addEmployee": "Tau Empregadu Foun"
       },
       "stats": {
@@ -4493,7 +4493,7 @@ const messages = {
     },
     "timeLeave": {
       "title": "Tempu no Lisensa",
-      "subtitle": "Presensa, kontrola tempu, no jere lisensa",
+      "subtitle": "Prezensa, kontrola tempu, no jere lisensa",
       "actions": {
         "trackTime": "Regista Tempu",
         "newRequest": "Pedido Foun"
@@ -4543,7 +4543,7 @@ const messages = {
       "quickActions": {
         "title": "Asaun Rapidu",
         "timeTracking": "Kontrola Tempu",
-        "attendance": "Presensa",
+        "attendance": "Prezensa",
         "leaveRequests": "Pedidos Lisensa",
         "scheduling": "Eskala"
       },
@@ -4556,9 +4556,9 @@ const messages = {
       "title": "Painel Rekrutamentu",
       "subtitle": "Resumo rekrutamentu no kontratasaun",
       "actions": {
-        "viewApplications": "Hare Aplikasaun",
+        "viewApplications": "Haree Aplikasaun",
         "postJob": "Publika Vaga Foun",
-        "viewAll": "Hare hotu"
+        "viewAll": "Haree hotu"
       },
       "stats": {
         "openPositions": "Vaga abertu",
@@ -4703,7 +4703,7 @@ const messages = {
       "wait": "Hein",
       "statusDraft": "Raskuñu",
       "statusSent": "Haruka ona",
-      "statusViewed": "Hare tiha",
+      "statusViewed": "Haree tiha",
       "statusPaid": "Selu tiha",
       "statusOverdue": "Atrazu"
     },
@@ -4831,7 +4831,7 @@ const messages = {
       "showing": "Hatudu",
       "noResults": "Pagamentu la hetan",
       "empty": "Seidauk iha pagamentu rejistadu",
-      "viewInvoices": "Hare Fatura",
+      "viewInvoices": "Haree Fatura",
       "searchPlaceholder": "Buka tuir fatura ka kliente...",
       "method": "Metodu Pagamentu",
       "cash": "Osan Cash",
@@ -4998,7 +4998,7 @@ const messages = {
     "status": {
       "draft": "Raskuñu",
       "sent": "Haruka tiha",
-      "viewed": "Hare tiha",
+      "viewed": "Haree tiha",
       "paid": "Selu tiha",
       "partial": "Parsial",
       "overdue": "Liu Prazu",
@@ -5116,7 +5116,7 @@ const messages = {
       "amountPerMonth": "Valor/Fulan",
       "startDate": "Data Hahu",
       "status": "Status",
-      "actions": "Aksaun",
+      "actions": "Asaun",
       "selectEmployee": "Hili empregadu",
       "selectType": "Hili tipu",
       "amountLabel": "Valor ba Fulan (USD)",
@@ -5225,10 +5225,10 @@ const messages = {
       "totalRevenue": "Rendimentu Total",
       "totalExpenses": "Despeza Total",
       "noExpenses": "Seidauk iha despeza rejistadu",
-      "viewInvoices": "Hare Fatura",
-      "invoicesDescription": "Hare fonte rendimentu hotu",
-      "viewExpenses": "Hare Despeza",
-      "expensesDescription": "Hare detalle despeza hotu",
+      "viewInvoices": "Haree Fatura",
+      "invoicesDescription": "Haree fonte rendimentu hotu",
+      "viewExpenses": "Haree Despeza",
+      "expensesDescription": "Haree detalle despeza hotu",
       "loadError": "Falha karrega relatoriu",
       "tooltipTitle": "Demonstrasaun Lukru no Lakon",
       "tooltipContent": "Konhesidu mós hanesan Demonstrasaun Resultadu. Hatudu rendimentu (osan hetan husi fatura) menus despeza (kustu) atu kalkula lukru likidu ka lakon ba períodu ida."
@@ -5765,9 +5765,9 @@ const messages = {
     "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
     "peopleBody": "Ida ne’e mak fatin atu jeréncia ema hotu ne’ebé serbisu iha ita-nia empreza — empregádu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregádu primeiru ho botãu iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
     "schedulingTitle": "Bemvindu ba Tempu & Lisensa.",
-    "schedulingBody": "Akompanha prezensia, jeréncia pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne’e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
+    "schedulingBody": "Akompanha prezensa, jeréncia pedidu lisensa, reviza timesheet, no konfigura turnu. Ida ne’e ita-nia hub lor-loron atu hatene sé mak iha no sé mak la iha.",
     "payrollTitle": "Bemvindu ba Folha Pagamentu.",
-    "payrollBody": "Ida ne’e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregádu, prezensia, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
+    "payrollBody": "Ida ne’e mak fatin atu prepara no halo folha pagamentu fulan-fulan. Lista verifikasaun iha kraik orienta ita liu husi pasu ida-idak — dadós empregádu, prezensa, kálkulu, no aprovásaun. Bainhira hotu verde tiha, ita prontu atu prosesa.",
     "moneyTitle": "Bemvindu ba Osan.",
     "moneyBody": "Akompanha ita-nia fluxu osan lor-loron iha ne’e — fatura ne’ebé ita haruka, pagamentu ne’ebé ita simu, no saida mak sei pendente. Kria fatura, rejista pagamentu, no mantein ita-nia livru atualizadu.",
     "accountingTitle": "Bemvindu ba Kontabilidade.",

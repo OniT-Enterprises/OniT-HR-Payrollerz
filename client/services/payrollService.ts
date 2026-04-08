@@ -154,20 +154,29 @@ class PayrollRunService {
     await firstBatch.commit();
 
     // Step 2: Subsequent batches for remaining records
-    const chunks = chunkArray(remaining, BATCH_LIMIT);
-    for (const chunk of chunks) {
-      const batch = writeBatch(db);
-      for (const record of chunk) {
-        const recordRef = doc(recordsCollection);
-        recordIds.push(recordRef.id);
-        batch.set(recordRef, {
-          ...record,
-          payrollRunId: runId,
-          createdAt: serverTimestamp(),
-          updatedAt: serverTimestamp(),
-        });
+    // If a batch fails, the run stays in 'writing_records' status and is
+    // detectable/repairable via repairStuckRun().
+    try {
+      const chunks = chunkArray(remaining, BATCH_LIMIT);
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        for (const record of chunk) {
+          const recordRef = doc(recordsCollection);
+          recordIds.push(recordRef.id);
+          batch.set(recordRef, {
+            ...record,
+            payrollRunId: runId,
+            createdAt: serverTimestamp(),
+            updatedAt: serverTimestamp(),
+          });
+        }
+        await batch.commit();
       }
-      await batch.commit();
+    } catch (batchError) {
+      // Run stays in 'writing_records' with expectedRecordCount set,
+      // so repairStuckRun() can detect and clean up the partial state.
+      console.error(`Payroll batch write failed for run ${runId}. Run is in 'writing_records' state and can be repaired.`, batchError);
+      throw batchError;
     }
 
     // Step 3: All records written — finalize the run with the intended status.
@@ -192,7 +201,7 @@ class PayrollRunService {
             totalGross: records.reduce((sum, r) => sum + (r.totalGrossPay || 0), 0),
             totalNet: records.reduce((sum, r) => sum + (r.netPay || 0), 0),
           },
-        }).catch(err => console.error('Audit log failed:', err));
+        }).catch(err => console.error('Audit log failed for run ' + runId + ':', err));
       }
     }
 
