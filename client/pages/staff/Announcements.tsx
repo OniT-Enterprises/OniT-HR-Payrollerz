@@ -67,7 +67,6 @@ import {
   Trash2,
   Pin,
   PinOff,
-  Eye,
   Image,
 } from "lucide-react";
 
@@ -343,47 +342,6 @@ export default function Announcements() {
             </Button>
           }
         />
-
-        {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t("announcements.summary.total")}</p>
-                  <p className="text-2xl font-bold">{announcements.length}</p>
-                </div>
-                <Megaphone className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t("announcements.summary.pinned")}</p>
-                  <p className="text-2xl font-bold">
-                    {announcements.filter((a) => a.pinned).length}
-                  </p>
-                </div>
-                <Pin className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">{t("announcements.summary.totalReads")}</p>
-                  <p className="text-2xl font-bold">
-                    {announcements.reduce((sum, a) => sum + getReadCount(a), 0)}
-                  </p>
-                </div>
-                <Eye className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Announcements Table */}
         {announcements.length === 0 ? (

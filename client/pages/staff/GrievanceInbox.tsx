@@ -69,8 +69,6 @@ import {
   ChevronDown,
   ChevronUp,
   Lock,
-  Inbox,
-  AlertTriangle,
 } from "lucide-react";
 
 type GrievanceCategory = "harassment" | "wage_issue" | "safety_concern" | "discrimination" | "other";
@@ -285,13 +283,6 @@ export default function GrievanceInbox() {
     }
   });
 
-  // Counts for tab badges
-  const newCount = grievances.filter((g) => g.status === "submitted").length;
-  const reviewingCount = grievances.filter((g) => g.status === "reviewing").length;
-  const resolvedCount = grievances.filter(
-    (g) => g.status === "resolved" || g.status === "dismissed"
-  ).length;
-
   // Loading skeleton
   if (loading) {
     return (
@@ -334,54 +325,6 @@ export default function GrievanceInbox() {
             Reports are anonymous. Employee identities are not recorded.
           </AlertDescription>
         </Alert>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total</p>
-                  <p className="text-2xl font-bold">{grievances.length}</p>
-                </div>
-                <Inbox className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">New</p>
-                  <p className="text-2xl font-bold text-yellow-600">{newCount}</p>
-                </div>
-                <AlertTriangle className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">In Review</p>
-                  <p className="text-2xl font-bold text-blue-600">{reviewingCount}</p>
-                </div>
-                <Eye className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Resolved</p>
-                  <p className="text-2xl font-bold text-green-600">{resolvedCount}</p>
-                </div>
-                <CheckCircle className="h-8 w-8 text-muted-foreground/30" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Status Filter */}
         <div className="mb-6">
