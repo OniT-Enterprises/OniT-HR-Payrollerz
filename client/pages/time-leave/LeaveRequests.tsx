@@ -565,7 +565,7 @@ export default function LeaveRequests() {
             icon={Calendar}
             iconColor="text-cyan-500"
             actions={
-              <Button onClick={() => setShowRequestDialog(true)}>
+              <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowRequestDialog(true)}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t("timeLeave.leaveRequests.actions.newRequest")}
               </Button>
