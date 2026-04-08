@@ -30,26 +30,33 @@ export default function PageHeader({
   actions,
   className = "",
 }: PageHeaderProps) {
+  // Derive accent border color from iconColor (e.g. "text-blue-500" → "border-blue-500")
+  const accentBorder = iconColor.replace("text-", "border-");
+
   return (
-    <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 ${className}`}>
-      <div className="flex items-center gap-3 min-w-0">
-        {Icon && (
-          <div className="p-2 rounded-xl bg-muted shrink-0">
-            <Icon className={`h-5 w-5 ${iconColor}`} />
+    <div className={`mb-6 ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3 min-w-0">
+          {Icon && (
+            <div className="p-2 rounded-xl bg-muted shrink-0">
+              <Icon className={`h-5 w-5 ${iconColor}`} />
+            </div>
+          )}
+          <div className="min-w-0">
+            <h1 className="text-xl font-bold tracking-tight truncate">{title}</h1>
+            {subtitle && (
+              <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+            )}
+          </div>
+        </div>
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            {actions}
           </div>
         )}
-        <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight truncate">{title}</h1>
-          {subtitle && (
-            <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
-          )}
-        </div>
       </div>
-      {actions && (
-        <div className="flex flex-wrap items-center gap-2 shrink-0">
-          {actions}
-        </div>
-      )}
+      {/* Module accent line */}
+      <div className={`mt-4 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`} />
     </div>
   );
 }

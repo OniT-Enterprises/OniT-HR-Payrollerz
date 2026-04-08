@@ -247,12 +247,12 @@ export default function AppSidebar() {
           <TooltipTrigger asChild>
             <button
               onMouseEnter={() => prefetchRoute(path)}
-                onClick={() => handleNavigate(path)}
+              onClick={() => handleNavigate(path)}
               className={`
-                w-full flex items-center justify-center h-10 rounded-lg transition-colors
+                w-full flex items-center justify-center h-10 rounded-lg transition-all
                 ${active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                  ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary"}`
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
                 }
               `}
             >
@@ -266,16 +266,19 @@ export default function AppSidebar() {
       );
     }
 
+    // Derive border color from icon color (e.g. "text-blue-500" → "border-blue-500")
+    const activeBorderColor = iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary";
+
     return (
       <button
         key={path}
         onMouseEnter={() => prefetchRoute(path)}
-                onClick={() => handleNavigate(path)}
+        onClick={() => handleNavigate(path)}
         className={`
-          w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-colors
+          w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-all relative
           ${active
-            ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+            ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${activeBorderColor}`
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
           }
         `}
       >
