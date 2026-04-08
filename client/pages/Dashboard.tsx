@@ -46,7 +46,6 @@ import {
   Play,
   Zap,
   FolderKanban,
-  Building2,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -210,12 +209,10 @@ export default function Dashboard() {
     canManage()
   );
   const setupIncomplete = setupProgress?.isComplete === false;
-  const setupPercent = setupProgress?.percentComplete ?? 0;
 
   // Payroll status
   const payrollPrepared = false; // In production, check actual payroll status
   const isPayrollUrgent = daysUntilPayday <= 7;
-  const isPayrollSafe = daysUntilPayday > 14 || payrollPrepared;
 
   // Next recommended action logic
   const getNextAction = () => {
@@ -239,56 +236,6 @@ export default function Dashboard() {
   };
 
   const nextAction = getNextAction();
-  const simpleCards = [
-    ...(setupIncomplete
-      ? [{
-          id: "setup",
-          title: t("dashboard.finishSetup"),
-          description: t("dashboard.setupProgress", { percent: setupPercent }),
-          path: "/setup",
-          icon: Building2,
-          stat: `${setupPercent}%`,
-          actionLabel: t("dashboard.resumeSetup"),
-          tone: "amber" as const,
-        }]
-      : []),
-    {
-      id: "payroll",
-      title: t("dashboard.payrollStatus"),
-      description: `${daysUntilPayday} ${t("dashboard.days")} ${t("dashboard.untilPayDate")}`,
-      path: "/payroll/run",
-      icon: Calculator,
-      stat: formatCurrencyTL(totalPayroll),
-      actionLabel: payrollPrepared ? t("dashboard.review") : t("dashboard.prepare"),
-      tone: isPayrollUrgent ? "amber" as const : "green" as const,
-    },
-    {
-      id: "people",
-      title: getBlockingIssues.length > 0 ? t("dashboard.attentionRequired") : t("dashboard.activeEmployees"),
-      description: getBlockingIssues.length > 0
-        ? getBlockingIssues[0].issue
-        : activeEmployees.length === 0
-          ? t("dashboard.addEmployee")
-          : `${activeEmployees.length} ${t("dashboard.activeEmployees")}`,
-      path: getBlockingIssues.length > 0 ? getBlockingIssues[0].path : activeEmployees.length === 0 ? "/people/add" : "/people/employees",
-      icon: getBlockingIssues.length > 0 ? AlertTriangle : UserPlus,
-      stat: String(getBlockingIssues.length > 0 ? getBlockingIssues.length : activeEmployees.length),
-      actionLabel: getBlockingIssues.length > 0 ? getBlockingIssues[0].action : activeEmployees.length === 0 ? t("dashboard.addEmployee") : t("common.review"),
-      tone: getBlockingIssues.length > 0 ? "amber" as const : "blue" as const,
-    },
-    {
-      id: "leave",
-      title: pendingLeave > 0 ? t("dashboard.pendingRequests") : t("dashboard.teamStatus"),
-      description: pendingLeave > 0
-        ? t("dashboard.reviewLeaveRequests", { count: pendingLeave })
-        : `${onLeaveToday} ${t("dashboard.onLeaveToday")}`,
-      path: pendingLeave > 0 ? "/time-leave/leave" : "/time-leave/attendance",
-      icon: pendingLeave > 0 ? CalendarDays : Users,
-      stat: String(pendingLeave > 0 ? pendingLeave : onLeaveToday),
-      actionLabel: pendingLeave > 0 ? t("common.review") : t("common.view"),
-      tone: pendingLeave > 0 ? "amber" as const : "green" as const,
-    },
-  ].slice(0, 3);
 
   if (loading) {
     return <DashboardSkeleton />;

@@ -48,10 +48,13 @@ export default function PayrollReports() {
   const { data: employees = [], isLoading: loading } = useAllEmployees(500);
   const { t, locale } = useI18n();
 
-  const getMonthlySalary = (employee: (typeof employees)[number]) =>
-    employee.compensation?.monthlySalary ||
-    Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
-    0;
+  const getMonthlySalary = React.useCallback(
+    (employee: (typeof employees)[number]) =>
+      employee.compensation?.monthlySalary ||
+      Math.round((employee.compensation.annualSalary ?? 0) / 12) ||
+      0,
+    [],
+  );
 
   // State for dialogs and filters
   const [showFilterDialog, setShowFilterDialog] = useState(false);
@@ -65,7 +68,7 @@ export default function PayrollReports() {
 
   const totalMonthlySalary = useMemo(
     () => employees.reduce((sum, emp) => sum + getMonthlySalary(emp), 0),
-    [employees],
+    [employees, getMonthlySalary],
   );
   const averageMonthlySalary = useMemo(() =>
     employees.length > 0
@@ -104,7 +107,7 @@ export default function PayrollReports() {
 
   const filteredMonthlySalaries = useMemo(
     () => filteredEmployees.map((employee) => getMonthlySalary(employee)),
-    [filteredEmployees],
+    [filteredEmployees, getMonthlySalary],
   );
   const highestFilteredSalary = filteredMonthlySalaries.length
     ? Math.max(...filteredMonthlySalaries)
@@ -133,7 +136,7 @@ export default function PayrollReports() {
       breakdown[dept].employees.push(emp);
     }
     return Object.entries(breakdown).sort((a, b) => b[1].totalSalary - a[1].totalSalary);
-  }, [filteredEmployees]);
+  }, [filteredEmployees, getMonthlySalary]);
 
   // Export to CSV
   const exportToCSV = () => {

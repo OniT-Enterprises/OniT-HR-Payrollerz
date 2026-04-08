@@ -54,7 +54,6 @@ import {
 import { useAllEmployees } from "@/hooks/useEmployees";
 import {
   useReviews,
-  useReviewStats,
   useCreateReview,
   useUpdateReview,
   useSubmitReview,
@@ -167,7 +166,6 @@ export default function Reviews() {
   // Data queries
   const { data: employees = [], isLoading: loadingEmployees } = useAllEmployees();
   const { data: reviews = [], isLoading: loadingReviews } = useReviews();
-  const { data: stats } = useReviewStats();
   const loading = loadingReviews || loadingEmployees;
 
   // Mutations

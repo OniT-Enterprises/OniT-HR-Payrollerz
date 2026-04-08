@@ -101,7 +101,7 @@ export function usePayrollCalculator({
   // Initialize payroll data when active employees change
   useEffect(() => {
     if (activeEmployees.length === 0) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- clearing payroll rows is the intended reset when there are no active employees
+       
       setEmployeePayrollData([]);
       return;
     }
@@ -228,7 +228,7 @@ export function usePayrollCalculator({
     );
 
     if (hasChanges) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- rows need one post-reset pass to hydrate missing calculations
+       
       setEmployeePayrollData(updatedData);
     }
   }, [employeePayrollData, calculateForEmployee]);
@@ -237,14 +237,15 @@ export function usePayrollCalculator({
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- recalculates existing rows when payroll assumptions change; calculateForEmployee excluded to prevent infinite loop
+     
     setEmployeePayrollData((prev) =>
       prev.map((data) => ({
         ...data,
         calculation: calculateForEmployee(data),
       }))
     );
-  }, [payFrequency, payDate, includeSubsidioAnual]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- calculateForEmployee excluded to prevent infinite loop
+  }, [payFrequency, payDate, includeSubsidioAnual, employeePayrollData.length]);
 
   // ─── Edit tracking helpers ──────────────────────────────────────
 

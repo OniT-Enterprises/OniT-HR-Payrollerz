@@ -114,7 +114,7 @@ function isModuleActive(pathname: string, config: ModuleNavConfig): boolean {
 // --- Component ---
 
 export default function AppSidebar() {
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed } = useLayout();
   const isMobile = useIsMobile();
   const { isDark } = useTheme();
   const { hasModule } = useTenant();

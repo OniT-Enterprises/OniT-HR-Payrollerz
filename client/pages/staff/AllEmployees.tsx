@@ -283,7 +283,6 @@ export default function AllEmployees() {
   const [maxSalary, setMaxSalary] = useState<string>("");
   const [showFilters, setShowFilters] = useState(false);
   const [showSalary, setShowSalary] = useState(true); // Toggle for salary visibility
-  const [showAdvancedTools, setShowAdvancedTools] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState<Employee | null>(
     null,
   );
@@ -924,7 +923,7 @@ export default function AllEmployees() {
               variant="outline"
               size="icon"
               className={`h-11 w-11 shrink-0 ${showFilters ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30" : ""}`}
-              onClick={() => { setShowFilters(!showFilters); setShowAdvancedTools(false); }}
+              onClick={() => { setShowFilters(!showFilters); }}
               title={t("employees.buttons.advanced")}
             >
               <SlidersHorizontal className="h-4 w-4" />

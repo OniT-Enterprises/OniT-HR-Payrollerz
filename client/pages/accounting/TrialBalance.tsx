@@ -70,7 +70,10 @@ export default function TrialBalance() {
     requestedReport?.periodStart,
   );
 
-  const trialBalanceRows: TrialBalanceRow[] = trialBalanceQuery.data?.rows ?? [];
+  const trialBalanceRows: TrialBalanceRow[] = useMemo(
+    () => trialBalanceQuery.data?.rows ?? [],
+    [trialBalanceQuery.data?.rows],
+  );
   const generating = trialBalanceQuery.isFetching;
 
   // Generate trial balance

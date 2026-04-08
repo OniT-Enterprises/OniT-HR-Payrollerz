@@ -524,20 +524,6 @@ export default function Interviews() {
     }
   };
 
-  // Calculate stats
-  const stats = {
-    total: interviews.length,
-    upcoming: interviews.filter(
-      (i) =>
-        i.interviewDate >= getTodayTL() &&
-        i.status === "scheduled"
-    ).length,
-    completed: interviews.filter((i) => i.status === "completed").length,
-    pending: interviews.filter(
-      (i) => i.status === "completed" && !i.decision
-    ).length,
-  };
-
   const filteredInterviews = getFilteredInterviews();
 
   if (loading) {

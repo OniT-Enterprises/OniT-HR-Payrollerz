@@ -108,28 +108,6 @@ export default function DeductionsAdvances() {
     { value: "monthly", label: t("deductions.freqMonthly") },
   ];
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const active = deductions.filter((d) => d.status === "active");
-    const advances = active.filter((d) => d.type === "advance_repayment");
-    const garnishments = active.filter((d) => d.type === "court_order");
-    const other = active.filter((d) => !["advance_repayment", "court_order"].includes(d.type));
-
-    const totalActive = active.reduce((sum, d) => sum + d.amount, 0);
-    const totalAdvances = advances.reduce((sum, d) => sum + d.amount, 0);
-    const totalGarnishments = garnishments.reduce((sum, d) => sum + d.amount, 0);
-
-    return {
-      totalActive: active.length,
-      totalActiveAmount: totalActive,
-      advancesCount: advances.length,
-      advancesAmount: totalAdvances,
-      garnishmentsCount: garnishments.length,
-      garnishmentsAmount: totalGarnishments,
-      otherCount: other.length,
-    };
-  }, [deductions]);
-
   // Filter deductions
   const filteredDeductions = useMemo(() => {
     return deductions.filter((deduction) => {

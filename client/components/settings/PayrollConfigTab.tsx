@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
-import { useNavigate } from 'react-router-dom';
+
 import {
   DollarSign,
   Percent,
@@ -42,7 +42,6 @@ export function PayrollConfigTab({
   initialData,
 }: PayrollConfigTabProps) {
   const { toast } = useToast();
-  const navigate = useNavigate();
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig>(initialData);
 
   const save = async () => {

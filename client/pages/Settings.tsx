@@ -4,13 +4,13 @@
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
-import { useAuth } from "@/contexts/AuthContext";
+
 import { useTenantId } from "@/contexts/TenantContext";
-import { holidayService } from "@/services/holidayService";
+
 import { useSettings, settingsKeys } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -33,7 +33,6 @@ import {
 } from "@/components/settings";
 
 export default function Settings() {
-  const { user } = useAuth();
   const navigate = useNavigate();
   const tenantId = useTenantId();
   const { t } = useI18n();
@@ -41,16 +40,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
   const { data: settings = null, isLoading: settingsLoading } = useSettings();
 
-  // Holiday overrides query
-  const year = new Date().getFullYear();
-  const { data: holidayOverrides = [], isLoading: holidaysLoading } = useQuery({
-    queryKey: ['tenants', tenantId, 'holidayOverrides', year] as const,
-    queryFn: () => holidayService.listTenantHolidayOverrides(tenantId, year),
-    staleTime: 10 * 60 * 1000,
-    enabled: !!tenantId,
-  });
-
-  const loading = settingsLoading || holidaysLoading;
+  const loading = settingsLoading;
 
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
@@ -58,7 +48,6 @@ export default function Settings() {
   // onReload for child tabs — invalidate queries so React Query refetches
   const handleReload = () => {
     queryClient.invalidateQueries({ queryKey: settingsKeys.all(tenantId) });
-    queryClient.invalidateQueries({ queryKey: ['tenants', tenantId, 'holidayOverrides', year] });
   };
 
   if (loading) {
