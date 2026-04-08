@@ -1308,6 +1308,12 @@ export default function ShiftScheduling() {
             subtitle={t("timeLeave.shiftScheduling.subtitle")}
             icon={Calendar}
             iconColor="text-cyan-500"
+            actions={
+              <Button className="bg-cyan-600 hover:bg-cyan-700 text-white" onClick={() => setShowCreateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t("timeLeave.shiftScheduling.controls.createShift")}
+              </Button>
+            }
           />
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3 mb-5">
@@ -1347,12 +1353,7 @@ export default function ShiftScheduling() {
 
                   <div className="ml-auto">
                     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-white shadow-sm h-8">
-                          <Plus className="h-3.5 w-3.5" />
-                          {t("timeLeave.shiftScheduling.controls.createShift")}
-                        </Button>
-                      </DialogTrigger>
+                      {/* Create Shift button moved to PageHeader */}
                       <DialogContent className="max-w-md">
                         <DialogHeader>
                           <DialogTitle>{t("timeLeave.shiftScheduling.create.title")}</DialogTitle>

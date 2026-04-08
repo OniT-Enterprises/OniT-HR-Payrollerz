@@ -268,6 +268,12 @@ export default function CandidateSelection() {
           subtitle={t("hiring.candidates.subtitle")}
           icon={Users}
           iconColor="text-blue-500"
+          actions={
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => setShowImportDialog(true)}>
+              <Upload className="h-4 w-4 mr-2" />
+              {t("hiring.candidates.controls.importApplication")}
+            </Button>
+          }
         />
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up">
@@ -403,12 +409,6 @@ export default function CandidateSelection() {
             </select>
 
             <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <Upload className="mr-2 h-4 w-4" />
-                  {t("hiring.candidates.controls.importApplication")}
-                </Button>
-              </DialogTrigger>
               <DialogContent className="max-w-2xl">
                 <DialogHeader>
                   <DialogTitle>

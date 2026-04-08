@@ -503,6 +503,16 @@ export default function BankTransfers() {
           subtitle={t("bankTransfers.subtitle")}
           icon={Send}
           iconColor="text-green-500"
+          actions={
+            <Button
+              className="bg-green-600 hover:bg-green-700 text-white"
+              disabled={availablePayrollRuns.length === 0}
+              onClick={() => setShowTransferDialog(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t("bankTransfers.newTransfer")}
+            </Button>
+          }
         />
 
           {/* Filters */}
@@ -718,12 +728,7 @@ export default function BankTransfers() {
                     open={showTransferDialog}
                     onOpenChange={setShowTransferDialog}
                   >
-                    <DialogTrigger asChild>
-                      <Button disabled={availablePayrollRuns.length === 0}>
-                        <Plus className="h-4 w-4 mr-2" />
-                        {t("bankTransfers.newTransfer")}
-                      </Button>
-                    </DialogTrigger>
+                    {/* New Transfer button moved to PageHeader */}
                     <DialogContent className="max-w-md">
                       <DialogHeader>
                         <DialogTitle>{t("bankTransfers.initiateBankTransfer")}</DialogTitle>

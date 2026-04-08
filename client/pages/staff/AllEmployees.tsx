@@ -826,6 +826,15 @@ export default function AllEmployees() {
           subtitle={t("employees.subtitle")}
           icon={Users}
           iconColor="text-blue-500"
+          actions={
+            <Button
+              onClick={() => navigate("/people/add")}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t("employees.buttons.add")}
+            </Button>
+          }
         />
         {/* Connection Status */}
         {(connectionError || !isOnline) && (
@@ -967,15 +976,6 @@ export default function AllEmployees() {
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
-
-          {/* Add Employee — the one CTA */}
-          <Button
-            onClick={() => navigate("/people/add")}
-            className="bg-blue-600 hover:bg-blue-700 h-11 shrink-0"
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            {t("employees.buttons.add")}
-          </Button>
 
           {/* Hidden file input for CSV import */}
           <input

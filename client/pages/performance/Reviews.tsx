@@ -420,6 +420,14 @@ export default function Reviews() {
           subtitle="Manage and track employee performance evaluations"
           icon={Star}
           iconColor="text-blue-500"
+          actions={
+            employees.length > 0 ? (
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => openNewReview()}>
+                <Plus className="h-4 w-4 mr-2" />
+                New Review
+              </Button>
+            ) : undefined
+          }
         />
         {employees.length === 0 ? (
           /* Empty State */
@@ -447,10 +455,7 @@ export default function Reviews() {
                     Reviews ({reviews.length})
                   </TabsTrigger>
                 </TabsList>
-                <Button onClick={() => openNewReview()}>
-                  <Plus className="mr-2 h-4 w-4" />
-                  New Review
-                </Button>
+                {/* New Review button moved to PageHeader */}
               </div>
 
               {/* Employees Tab */}

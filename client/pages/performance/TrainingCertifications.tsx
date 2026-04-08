@@ -39,7 +39,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -437,6 +436,12 @@ export default function TrainingCertifications() {
           subtitle="Manage employee training programs and certifications"
           icon={Award}
           iconColor="text-blue-500"
+          actions={
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { resetForm(); setShowAddDialog(true); }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Training
+            </Button>
+          }
         />
         {/* Filters */}
         <Card className="mb-6 border-border/50 shadow-lg">
@@ -541,12 +546,7 @@ export default function TrainingCertifications() {
                     if (!open) resetForm();
                   }}
                 >
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Training
-                    </Button>
-                  </DialogTrigger>
+                  {/* Add Training button moved to PageHeader */}
                   <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>

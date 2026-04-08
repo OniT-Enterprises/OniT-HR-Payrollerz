@@ -39,7 +39,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -473,6 +472,12 @@ export default function Disciplinary() {
           subtitle="Manage disciplinary actions and incident reports"
           icon={Shield}
           iconColor="text-blue-500"
+          actions={
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => { resetForm(); setShowRecordDialog(true); }}>
+              <Plus className="h-4 w-4 mr-2" />
+              Record Incident
+            </Button>
+          }
         />
         {/* Filters */}
         <Card className="mb-6 border-border/50 shadow-lg">
@@ -572,12 +577,7 @@ export default function Disciplinary() {
                     if (!open) resetForm();
                   }}
                 >
-                  <DialogTrigger asChild>
-                    <Button>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Record Incident
-                    </Button>
-                  </DialogTrigger>
+                  {/* Record Incident button moved to PageHeader */}
                   <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
                     <DialogHeader>
                       <DialogTitle>Record Disciplinary Incident</DialogTitle>
