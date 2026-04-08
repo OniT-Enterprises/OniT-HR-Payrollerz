@@ -275,7 +275,7 @@ export default function AddEmployee() {
           employmentType: normalizeEmploymentType(employee.jobDetails.employmentType),
           salary: getMonthlySalary(employee.compensation).toString(),
           leaveDays: employee.compensation.annualLeaveDays?.toString() || "25",
-          benefits: (employee.compensation.benefitsPackage || "standard") as "basic" | "standard" | "premium" | "executive",
+          benefits: ((employee.compensation.benefitsPackage || "standard").toLowerCase()) as "basic" | "standard" | "premium" | "executive",
           payFrequency: employee.compensation.payFrequency || "monthly",
           isResident: employee.compensation.isResident ?? true,
         });

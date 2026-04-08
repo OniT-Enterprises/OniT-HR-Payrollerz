@@ -53,116 +53,116 @@ const EMPLOYEES = [
   {
     personalInfo: { firstName: "James", lastName: "Wilson", email: "james.wilson@company.com", phone: "+670-7701-0101", dateOfBirth: "1970-03-15", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-001", department: "Executive", position: "Chief Executive Officer", hireDate: "2015-01-15", employmentType: "Full-time", workLocation: "Dili Head Office" },
-    compensation: { monthlySalary: 45000, annualLeaveDays: 30, benefitsPackage: "Executive" },
+    compensation: { monthlySalary: 45000, annualLeaveDays: 30, benefitsPackage: "executive" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Margaret", lastName: "Chen", email: "margaret.chen@company.com", phone: "+670-7701-0102", dateOfBirth: "1975-07-22", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-002", department: "Executive", position: "Chief Financial Officer", hireDate: "2016-03-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 38000, annualLeaveDays: 28, benefitsPackage: "Executive" },
+    compensation: { monthlySalary: 38000, annualLeaveDays: 28, benefitsPackage: "executive" },
     status: "active" as const,
   },
   // Engineering
   {
     personalInfo: { firstName: "Sarah", lastName: "Chen", email: "sarah.chen@company.com", phone: "+670-7701-0103", dateOfBirth: "1985-11-08", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-003", department: "Engineering", position: "VP of Engineering", hireDate: "2018-06-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 28000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 28000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Michael", lastName: "Torres", email: "michael.torres@company.com", phone: "+670-7701-0104", dateOfBirth: "1988-04-12", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-004", department: "Engineering", position: "Engineering Manager", hireDate: "2019-02-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Sarah Chen" },
-    compensation: { monthlySalary: 18000, annualLeaveDays: 22, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 18000, annualLeaveDays: 22, benefitsPackage: "standard" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Emily", lastName: "Rodriguez", email: "emily.rodriguez@company.com", phone: "+670-7701-0105", dateOfBirth: "1992-09-25", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-005", department: "Engineering", position: "Senior Software Engineer", hireDate: "2020-08-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Michael Torres" },
-    compensation: { monthlySalary: 14000, annualLeaveDays: 20, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 14000, annualLeaveDays: 20, benefitsPackage: "standard" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "David", lastName: "Park", email: "david.park@company.com", phone: "+670-7701-0106", dateOfBirth: "1994-02-18", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-006", department: "Engineering", position: "Software Engineer", hireDate: "2022-01-10", employmentType: "Full-time", workLocation: "Remote", manager: "Michael Torres" },
-    compensation: { monthlySalary: 11000, annualLeaveDays: 20, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 11000, annualLeaveDays: 20, benefitsPackage: "standard" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Ana", lastName: "Costa", email: "ana.costa@company.com", phone: "+670-7701-0107", dateOfBirth: "1996-06-30", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-007", department: "Engineering", position: "Junior Developer", hireDate: "2024-03-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Michael Torres" },
-    compensation: { monthlySalary: 6000, annualLeaveDays: 18, benefitsPackage: "Basic" },
+    compensation: { monthlySalary: 6000, annualLeaveDays: 18, benefitsPackage: "basic" },
     status: "active" as const,
   },
   // Human Resources
   {
     personalInfo: { firstName: "Patricia", lastName: "Moore", email: "patricia.moore@company.com", phone: "+670-7701-0108", dateOfBirth: "1978-06-30", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-008", department: "Human Resources", position: "Director of HR", hireDate: "2017-04-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 22000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 22000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "David", lastName: "Kim", email: "david.kim@company.com", phone: "+670-7701-0109", dateOfBirth: "1986-12-05", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-009", department: "Human Resources", position: "HR Manager", hireDate: "2019-07-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Patricia Moore" },
-    compensation: { monthlySalary: 12000, annualLeaveDays: 22, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 12000, annualLeaveDays: 22, benefitsPackage: "standard" },
     status: "active" as const,
   },
   // Finance
   {
     personalInfo: { firstName: "Robert", lastName: "Johnson", email: "robert.johnson@company.com", phone: "+670-7701-0110", dateOfBirth: "1972-08-20", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-010", department: "Finance", position: "Director of Finance", hireDate: "2016-09-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Margaret Chen" },
-    compensation: { monthlySalary: 24000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 24000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Emily", lastName: "Davis", email: "emily.davis@company.com", phone: "+670-7701-0111", dateOfBirth: "1990-01-14", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-011", department: "Finance", position: "Finance Manager", hireDate: "2020-03-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Robert Johnson" },
-    compensation: { monthlySalary: 13000, annualLeaveDays: 22, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 13000, annualLeaveDays: 22, benefitsPackage: "standard" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "João", lastName: "Pereira", email: "joao.pereira@company.com", phone: "+670-7701-0112", dateOfBirth: "1993-05-22", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-012", department: "Finance", position: "Accountant", hireDate: "2021-06-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Emily Davis" },
-    compensation: { monthlySalary: 8000, annualLeaveDays: 20, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 8000, annualLeaveDays: 20, benefitsPackage: "standard" },
     status: "active" as const,
   },
   // Security
   {
     personalInfo: { firstName: "Carlos", lastName: "Santos", email: "carlos.santos@company.com", phone: "+670-7701-0113", dateOfBirth: "1980-03-10", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-013", department: "Security", position: "Security Manager", hireDate: "2018-01-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "William Brown" },
-    compensation: { monthlySalary: 10000, annualLeaveDays: 20, benefitsPackage: "Standard" },
+    compensation: { monthlySalary: 10000, annualLeaveDays: 20, benefitsPackage: "standard" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "Maria", lastName: "Silva", email: "maria.silva@company.com", phone: "+670-7701-0114", dateOfBirth: "1985-09-18", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-014", department: "Security", position: "Security Officer", hireDate: "2019-04-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Carlos Santos" },
-    compensation: { monthlySalary: 4000, annualLeaveDays: 18, benefitsPackage: "Basic" },
+    compensation: { monthlySalary: 4000, annualLeaveDays: 18, benefitsPackage: "basic" },
     status: "active" as const,
   },
   {
     personalInfo: { firstName: "José", lastName: "Oliveira", email: "jose.oliveira@company.com", phone: "+670-7701-0115", dateOfBirth: "1990-11-25", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-015", department: "Security", position: "Security Officer", hireDate: "2020-02-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "Carlos Santos" },
-    compensation: { monthlySalary: 4000, annualLeaveDays: 18, benefitsPackage: "Basic" },
+    compensation: { monthlySalary: 4000, annualLeaveDays: 18, benefitsPackage: "basic" },
     status: "active" as const,
   },
   // Marketing
   {
     personalInfo: { firstName: "Jennifer", lastName: "Lee", email: "jennifer.lee@company.com", phone: "+670-7701-0116", dateOfBirth: "1983-05-28", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-016", department: "Marketing", position: "Director of Marketing", hireDate: "2018-01-15", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 21000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 21000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
   // Operations
   {
     personalInfo: { firstName: "William", lastName: "Brown", email: "william.brown@company.com", phone: "+670-7701-0117", dateOfBirth: "1976-03-17", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-017", department: "Operations", position: "Director of Operations", hireDate: "2017-08-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 23000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 23000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
   // Sales
   {
     personalInfo: { firstName: "Thomas", lastName: "Garcia", email: "thomas.garcia@company.com", phone: "+670-7701-0118", dateOfBirth: "1980-11-22", nationality: "Timorese" },
     jobDetails: { employeeId: "EMP-018", department: "Sales", position: "Director of Sales", hireDate: "2018-10-01", employmentType: "Full-time", workLocation: "Dili Head Office", manager: "James Wilson" },
-    compensation: { monthlySalary: 22000, annualLeaveDays: 25, benefitsPackage: "Premium" },
+    compensation: { monthlySalary: 22000, annualLeaveDays: 25, benefitsPackage: "premium" },
     status: "active" as const,
   },
 ];
