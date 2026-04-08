@@ -199,7 +199,9 @@ export default function AppSidebar() {
     Icon: ComponentType<{ className?: string }>,
     iconColorClass?: string,
     indent: number = 0,
+    labelKey?: string,
   ) => {
+    const displayLabel = labelKey ? (t(`nav.${labelKey}`) || label) : label;
     const active = isPathActive(location.pathname, path);
     const pl = indent === 0 ? "pl-3" : indent === 1 ? "pl-8" : "pl-12";
 
@@ -221,7 +223,7 @@ export default function AppSidebar() {
             </button>
           </TooltipTrigger>
           <TooltipContent side="right" sideOffset={8}>
-            {label}
+            {displayLabel}
           </TooltipContent>
         </Tooltip>
       );
@@ -240,7 +242,7 @@ export default function AppSidebar() {
         `}
       >
         <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
-        <span className="truncate">{label}</span>
+        <span className="truncate">{displayLabel}</span>
       </button>
     );
   };
@@ -296,7 +298,7 @@ export default function AppSidebar() {
             {mod.config.sections.map((section) => {
               if (section.subPages.length === 0) {
                 // Direct link — no children
-                return renderNavLink(section.label, section.path, section.icon, iconColor, 1);
+                return renderNavLink(section.label, section.path, section.icon, iconColor, 1, section.labelKey);
               }
 
               // Collapsible sub-section
@@ -317,13 +319,13 @@ export default function AppSidebar() {
                     `}
                   >
                     <section.icon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
-                    <span className="truncate">{section.label}</span>
+                    <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
                     <ChevronRight className={`h-3 w-3 ml-auto shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
                   </button>
                   {sectionExpanded && (
                     <div className="space-y-0.5">
                       {section.subPages.map((page) =>
-                        renderNavLink(page.label, page.path, page.icon, iconColor, 2)
+                        renderNavLink(page.label, page.path, page.icon, iconColor, 2, page.labelKey)
                       )}
                     </div>
                   )}

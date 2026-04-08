@@ -69,6 +69,7 @@ import {
 
 export interface NavItem {
   label: string;
+  labelKey?: string;     // i18n key — sidebar uses t(labelKey) when available
   path: string;
   icon: ComponentType<{ className?: string }>;
 }
@@ -76,6 +77,7 @@ export interface NavItem {
 export interface ModuleSection {
   id: string;
   label: string;
+  labelKey?: string;     // i18n key — sidebar uses t(labelKey) when available
   icon: ComponentType<{ className?: string }>;
   path: string;          // default page for this section
   matchPaths: string[];  // all URLs that belong to this section
@@ -98,6 +100,7 @@ export const peopleNavConfig: ModuleNavConfig = {
     {
       id: "employees",
       label: "Employees",
+      labelKey: "employees",
       icon: Users,
       path: "/people/employees",
       matchPaths: ["/people/employees", "/people/add", "/people/staff"],
@@ -106,6 +109,7 @@ export const peopleNavConfig: ModuleNavConfig = {
     {
       id: "announcements",
       label: "Announcements",
+      labelKey: "announcements",
       icon: Megaphone,
       path: "/people/announcements",
       matchPaths: ["/people/announcements"],
@@ -114,6 +118,7 @@ export const peopleNavConfig: ModuleNavConfig = {
     {
       id: "grievances",
       label: "Grievances",
+      labelKey: "grievances",
       icon: MessageSquare,
       path: "/people/grievances",
       matchPaths: ["/people/grievances"],
@@ -122,28 +127,30 @@ export const peopleNavConfig: ModuleNavConfig = {
     {
       id: "hiring",
       label: "Hiring",
+      labelKey: "hiring",
       icon: Briefcase,
       path: "/people/jobs",
       matchPaths: ["/people/hiring", "/people/jobs", "/people/candidates", "/people/interviews", "/people/onboarding", "/people/offboarding"],
       subPages: [
-        { label: "Jobs", path: "/people/jobs", icon: Briefcase },
-        { label: "Candidates", path: "/people/candidates", icon: UserCheck },
-        { label: "Interviews", path: "/people/interviews", icon: Calendar },
-        { label: "Onboarding", path: "/people/onboarding", icon: UserPlus },
-        { label: "Offboarding", path: "/people/offboarding", icon: UserMinus },
+        { label: "Jobs", labelKey: "jobs", path: "/people/jobs", icon: Briefcase },
+        { label: "Candidates", labelKey: "candidates", path: "/people/candidates", icon: UserCheck },
+        { label: "Interviews", labelKey: "interviews", path: "/people/interviews", icon: Calendar },
+        { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus },
+        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus },
       ],
     },
     {
       id: "performance",
       label: "Performance",
+      labelKey: "performance",
       icon: Target,
       path: "/people/reviews",
       matchPaths: ["/people/performance", "/people/goals", "/people/reviews", "/people/training", "/people/disciplinary"],
       subPages: [
-        { label: "Reviews", path: "/people/reviews", icon: Award },
-        { label: "Goals", path: "/people/goals", icon: Target },
-        { label: "Training", path: "/people/training", icon: GraduationCap },
-        { label: "Disciplinary", path: "/people/disciplinary", icon: Shield },
+        { label: "Reviews", labelKey: "reviews", path: "/people/reviews", icon: Award },
+        { label: "Goals", labelKey: "goals", path: "/people/goals", icon: Target },
+        { label: "Training", labelKey: "training", path: "/people/training", icon: GraduationCap },
+        { label: "Disciplinary", labelKey: "disciplinary", path: "/people/disciplinary", icon: Shield },
       ],
     },
   ],
@@ -159,6 +166,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
     {
       id: "attendance",
       label: "Attendance",
+      labelKey: "attendance",
       icon: CalendarCheck,
       path: "/time-leave/attendance",
       matchPaths: ["/time-leave/attendance"],
@@ -167,6 +175,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
     {
       id: "leave",
       label: "Leave",
+      labelKey: "leave",
       icon: CalendarDays,
       path: "/time-leave/leave",
       matchPaths: ["/time-leave/leave"],
@@ -175,6 +184,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
     {
       id: "time-tracking",
       label: "Time Tracking",
+      labelKey: "timeTracking",
       icon: Clock,
       path: "/time-leave/time-tracking",
       matchPaths: ["/time-leave/time-tracking"],
@@ -183,6 +193,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
     {
       id: "shifts",
       label: "Shifts",
+      labelKey: "shifts",
       icon: Calendar,
       path: "/time-leave/shifts",
       matchPaths: ["/time-leave/shifts"],
@@ -191,6 +202,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
     {
       id: "settings",
       label: "Leave Settings",
+      labelKey: "leaveSettings",
       icon: Settings,
       path: "/time-leave/settings",
       matchPaths: ["/time-leave/settings"],
@@ -210,6 +222,7 @@ export const payrollNavConfig: ModuleNavConfig = {
     {
       id: "run",
       label: "Run Payroll",
+      labelKey: "runPayroll",
       icon: Play,
       path: "/payroll/run",
       matchPaths: ["/payroll/run"],
@@ -218,6 +231,7 @@ export const payrollNavConfig: ModuleNavConfig = {
     {
       id: "history",
       label: "History",
+      labelKey: "history",
       icon: History,
       path: "/payroll/history",
       matchPaths: ["/payroll/history"],
@@ -226,6 +240,7 @@ export const payrollNavConfig: ModuleNavConfig = {
     {
       id: "payments",
       label: "Payments",
+      labelKey: "payments",
       icon: Banknote,
       path: "/payroll/payments",
       matchPaths: ["/payroll/payments"],
@@ -234,6 +249,7 @@ export const payrollNavConfig: ModuleNavConfig = {
     {
       id: "tax",
       label: "Tax & INSS",
+      labelKey: "taxInss",
       icon: FileSpreadsheet,
       path: "/payroll/reports",
       matchPaths: ["/payroll/reports"],
@@ -242,13 +258,14 @@ export const payrollNavConfig: ModuleNavConfig = {
     {
       id: "settings",
       label: "Settings",
+      labelKey: "payrollSettings",
       icon: Settings,
       path: "/payroll/settings",
       matchPaths: ["/payroll/settings", "/payroll/setup/benefits", "/payroll/setup/deductions"],
       subPages: [
-        { label: "Tax & Rates", path: "/payroll/settings", icon: DollarSign },
-        { label: "Benefits", path: "/payroll/setup/benefits", icon: Heart },
-        { label: "Deductions", path: "/payroll/setup/deductions", icon: MinusCircle },
+        { label: "Tax & Rates", labelKey: "taxRates", path: "/payroll/settings", icon: DollarSign },
+        { label: "Benefits", labelKey: "benefits", path: "/payroll/setup/benefits", icon: Heart },
+        { label: "Deductions", labelKey: "deductions", path: "/payroll/setup/deductions", icon: MinusCircle },
       ],
     },
   ],
@@ -266,29 +283,32 @@ export const moneyNavConfig: ModuleNavConfig = {
     {
       id: "invoices",
       label: "Invoices",
+      labelKey: "invoices",
       icon: FileText,
       path: "/money/invoices",
       matchPaths: ["/money/invoices", "/money/customers", "/money/payments"],
       subPages: [
-        { label: "Invoices", path: "/money/invoices", icon: FileText },
-        { label: "Customers", path: "/money/customers", icon: Users },
-        { label: "Payments", path: "/money/payments", icon: CreditCard },
+        { label: "Invoices", labelKey: "invoices", path: "/money/invoices", icon: FileText },
+        { label: "Customers", labelKey: "customers", path: "/money/customers", icon: Users },
+        { label: "Payments", labelKey: "payments", path: "/money/payments", icon: CreditCard },
       ],
     },
     {
       id: "bills",
       label: "Bills",
+      labelKey: "bills",
       icon: Receipt,
       path: "/money/bills",
       matchPaths: ["/money/bills", "/money/vendors"],
       subPages: [
-        { label: "Bills", path: "/money/bills", icon: Receipt },
-        { label: "Vendors", path: "/money/vendors", icon: Store },
+        { label: "Bills", labelKey: "bills", path: "/money/bills", icon: Receipt },
+        { label: "Vendors", labelKey: "vendors", path: "/money/vendors", icon: Store },
       ],
     },
     {
       id: "expenses",
       label: "Expenses",
+      labelKey: "expenses",
       icon: ShoppingCart,
       path: "/money/expenses",
       matchPaths: ["/money/expenses"],
@@ -297,6 +317,7 @@ export const moneyNavConfig: ModuleNavConfig = {
     {
       id: "financial-reports",
       label: "Financial Reports",
+      labelKey: "financialReports",
       icon: BarChart3,
       path: "/money/reports/profit-loss",
       matchPaths: [
@@ -309,13 +330,13 @@ export const moneyNavConfig: ModuleNavConfig = {
         "/money/reports/vat-returns",
       ],
       subPages: [
-        { label: "Profit & Loss", path: "/money/reports/profit-loss", icon: TrendingUp },
-        { label: "Balance Sheet", path: "/money/reports/balance-sheet", icon: Scale },
-        { label: "Cashflow", path: "/money/reports/cashflow", icon: DollarSign },
-        { label: "AR Aging", path: "/money/reports/ar-aging", icon: ClipboardList },
-        { label: "AP Aging", path: "/money/reports/ap-aging", icon: ClipboardList },
-        { label: "Reconciliation", path: "/money/reports/reconciliation", icon: CheckSquare },
-        { label: "VAT Returns", path: "/money/reports/vat-returns", icon: FileSpreadsheet },
+        { label: "Profit & Loss", labelKey: "profitLoss", path: "/money/reports/profit-loss", icon: TrendingUp },
+        { label: "Balance Sheet", labelKey: "balanceSheet", path: "/money/reports/balance-sheet", icon: Scale },
+        { label: "Cashflow", labelKey: "cashflow", path: "/money/reports/cashflow", icon: DollarSign },
+        { label: "AR Aging", labelKey: "arAging", path: "/money/reports/ar-aging", icon: ClipboardList },
+        { label: "AP Aging", labelKey: "apAging", path: "/money/reports/ap-aging", icon: ClipboardList },
+        { label: "Reconciliation", labelKey: "reconciliation", path: "/money/reports/reconciliation", icon: CheckSquare },
+        { label: "VAT Returns", labelKey: "vatReturns", path: "/money/reports/vat-returns", icon: FileSpreadsheet },
       ],
     },
   ],
@@ -333,6 +354,7 @@ export const accountingNavConfig: ModuleNavConfig = {
     {
       id: "chart",
       label: "Chart of Accounts",
+      labelKey: "chartOfAccounts",
       icon: Layers,
       path: "/accounting/core/chart",
       matchPaths: ["/accounting/core/chart"],
@@ -341,6 +363,7 @@ export const accountingNavConfig: ModuleNavConfig = {
     {
       id: "journal",
       label: "Journal Entries",
+      labelKey: "journalEntries",
       icon: BookOpen,
       path: "/accounting/core/journal",
       matchPaths: ["/accounting/core/journal"],
@@ -349,6 +372,7 @@ export const accountingNavConfig: ModuleNavConfig = {
     {
       id: "ledger",
       label: "General Ledger",
+      labelKey: "generalLedger",
       icon: Landmark,
       path: "/accounting/core/ledger",
       matchPaths: ["/accounting/core/ledger"],
@@ -357,6 +381,7 @@ export const accountingNavConfig: ModuleNavConfig = {
     {
       id: "reconciliation",
       label: "Reconciliation",
+      labelKey: "reconciliation",
       icon: CheckSquare,
       path: "/accounting/core/reconciliation",
       matchPaths: ["/accounting/core/reconciliation"],
@@ -365,6 +390,7 @@ export const accountingNavConfig: ModuleNavConfig = {
     {
       id: "statements",
       label: "Statements",
+      labelKey: "statements",
       icon: BarChart3,
       path: "/accounting/reports/trial-balance",
       matchPaths: [
@@ -375,11 +401,11 @@ export const accountingNavConfig: ModuleNavConfig = {
         "/accounting/reports/audit-trail",
       ],
       subPages: [
-        { label: "Trial Balance", path: "/accounting/reports/trial-balance", icon: ClipboardList },
-        { label: "Income Statement", path: "/accounting/reports/income-statement", icon: PieChart },
-        { label: "Balance Sheet", path: "/accounting/reports/balance-sheet", icon: Scale },
-        { label: "Fiscal Periods", path: "/accounting/reports/fiscal-periods", icon: CalendarRange },
-        { label: "Audit Trail", path: "/accounting/reports/audit-trail", icon: ScrollText },
+        { label: "Trial Balance", labelKey: "trialBalance", path: "/accounting/reports/trial-balance", icon: ClipboardList },
+        { label: "Income Statement", labelKey: "incomeStatement", path: "/accounting/reports/income-statement", icon: PieChart },
+        { label: "Balance Sheet", labelKey: "balanceSheet", path: "/accounting/reports/balance-sheet", icon: Scale },
+        { label: "Fiscal Periods", labelKey: "fiscalPeriods", path: "/accounting/reports/fiscal-periods", icon: CalendarRange },
+        { label: "Audit Trail", labelKey: "auditTrail", path: "/accounting/reports/audit-trail", icon: ScrollText },
       ],
     },
   ],
@@ -397,6 +423,7 @@ export const reportsNavConfig: ModuleNavConfig = {
     {
       id: "payroll-reports",
       label: "Payroll",
+      labelKey: "payrollReports",
       icon: DollarSign,
       path: "/reports/payroll",
       matchPaths: ["/reports/payroll"],
@@ -405,6 +432,7 @@ export const reportsNavConfig: ModuleNavConfig = {
     {
       id: "employee-reports",
       label: "Employees",
+      labelKey: "employeeReports",
       icon: Users,
       path: "/reports/employees",
       matchPaths: ["/reports/employees"],
@@ -413,6 +441,7 @@ export const reportsNavConfig: ModuleNavConfig = {
     {
       id: "attendance-reports",
       label: "Attendance",
+      labelKey: "attendanceReports",
       icon: CalendarCheck,
       path: "/reports/attendance",
       matchPaths: ["/reports/attendance"],
@@ -421,6 +450,7 @@ export const reportsNavConfig: ModuleNavConfig = {
     {
       id: "department-reports",
       label: "Departments",
+      labelKey: "departmentReports",
       icon: Building,
       path: "/reports/departments",
       matchPaths: ["/reports/departments"],
@@ -429,24 +459,26 @@ export const reportsNavConfig: ModuleNavConfig = {
     {
       id: "compliance",
       label: "Tax & Compliance",
+      labelKey: "taxCompliance",
       icon: ClipboardCheck,
       path: "/reports/attl-monthly-wit",
       matchPaths: ["/reports/attl-monthly-wit", "/reports/inss-monthly", "/reports/inss-annual"],
       subPages: [
-        { label: "Monthly WIT", path: "/reports/attl-monthly-wit", icon: FileSpreadsheet },
-        { label: "Monthly INSS", path: "/reports/inss-monthly", icon: FileText },
-        { label: "Annual INSS", path: "/reports/inss-annual", icon: CalendarRange },
+        { label: "Monthly WIT", labelKey: "monthlyWit", path: "/reports/attl-monthly-wit", icon: FileSpreadsheet },
+        { label: "Monthly INSS", labelKey: "monthlyInss", path: "/reports/inss-monthly", icon: FileText },
+        { label: "Annual INSS", labelKey: "annualInss", path: "/reports/inss-annual", icon: CalendarRange },
       ],
     },
     {
       id: "custom",
       label: "Custom",
+      labelKey: "custom",
       icon: Wrench,
       path: "/reports/custom",
       matchPaths: ["/reports/custom", "/reports/setup"],
       subPages: [
-        { label: "Custom Reports", path: "/reports/custom", icon: Wrench },
-        { label: "Report Setup", path: "/reports/setup", icon: Settings },
+        { label: "Custom Reports", labelKey: "customReports", path: "/reports/custom", icon: Wrench },
+        { label: "Report Setup", labelKey: "reportSetup", path: "/reports/setup", icon: Settings },
       ],
     },
   ],
