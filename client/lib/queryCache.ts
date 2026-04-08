@@ -54,6 +54,19 @@ const SAFE_TO_PERSIST_PATTERNS = [
   // Feature flags
   'features',
   'flags',
+  // Core business data (cached for instant page loads)
+  'employees',
+  'payrollRuns',
+  'invoices',
+  'bills',
+  'customers',
+  'vendors',
+  'expenses',
+  'leaveRequests',
+  'attendance',
+  'announcements',
+  'grievances',
+  'setupProgress',
 ];
 
 interface CacheEntry {

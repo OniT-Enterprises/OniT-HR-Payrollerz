@@ -59,14 +59,16 @@ const ROUTE_IMPORTS: Record<string, () => Promise<unknown>> = {
 
 const prefetched = new Set<string>();
 
-/** Prefetch a route's JS chunk. Safe to call multiple times — deduplicates. */
+/**
+ * Prefetch a route's JS chunk. Safe to call multiple times — deduplicates.
+ * Also accepts an optional queryClient to prefetch the page's main data query.
+ */
 export function prefetchRoute(path: string) {
   if (prefetched.has(path)) return;
   const importer = ROUTE_IMPORTS[path];
   if (importer) {
     prefetched.add(path);
     importer().catch(() => {
-      // Failed to prefetch — will load normally on navigation
       prefetched.delete(path);
     });
   }
