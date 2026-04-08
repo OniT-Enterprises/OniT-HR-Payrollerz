@@ -99,22 +99,22 @@ const STATUS_CONFIG: Record<
   },
   pending: {
     labelKey: "admin.foreignWorkers.statusPending",
-    className: "bg-yellow-100 text-yellow-800",
+    className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
     icon: Clock,
   },
   approved: {
     labelKey: "admin.foreignWorkers.statusActive",
-    className: "bg-green-100 text-green-800",
+    className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     icon: CheckCircle,
   },
   expired: {
     labelKey: "admin.foreignWorkers.statusExpired",
-    className: "bg-red-100 text-red-800",
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     icon: XCircle,
   },
   renewal_pending: {
     labelKey: "admin.foreignWorkers.statusRenewalPending",
-    className: "bg-orange-100 text-orange-800",
+    className: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
     icon: RefreshCw,
   },
 };

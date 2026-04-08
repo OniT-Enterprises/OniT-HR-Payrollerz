@@ -194,7 +194,7 @@ export default function TrainingCertifications() {
 
     if (expiring && status === "completed") {
       return (
-        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+        <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:bg-amber-900/30 dark:text-amber-400">
           <AlertTriangle className="h-3 w-3 mr-1" />
           Expiring Soon
         </Badge>
@@ -203,13 +203,13 @@ export default function TrainingCertifications() {
 
     switch (status) {
       case "completed":
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>;
       case "pending":
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Pending</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:bg-blue-900/30 dark:text-blue-400">Pending</Badge>;
       case "in_progress":
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">In Progress</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:bg-yellow-900/30 dark:text-yellow-400">In Progress</Badge>;
       case "expired":
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Expired</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400">Expired</Badge>;
       case "cancelled":
         return <Badge variant="outline">Cancelled</Badge>;
       default:

@@ -189,21 +189,21 @@ export default function JournalEntries() {
     switch (status) {
       case "posted":
         return (
-          <Badge className="bg-green-100 text-green-800">
+          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
             <CheckCircle className="h-3 w-3 mr-1" />
             {t("accounting.journalEntries.statusPosted")}
           </Badge>
         );
       case "draft":
         return (
-          <Badge className="bg-yellow-100 text-yellow-800">
+          <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">
             <Clock className="h-3 w-3 mr-1" />
             {t("accounting.journalEntries.statusDraft")}
           </Badge>
         );
       case "void":
         return (
-          <Badge className="bg-red-100 text-red-800">
+          <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
             <XCircle className="h-3 w-3 mr-1" />
             {t("accounting.journalEntries.statusVoid")}
           </Badge>
@@ -220,14 +220,14 @@ export default function JournalEntries() {
     }
     const colors: Record<string, string> = {
       manual: "bg-gray-100 text-gray-800",
-      payroll: "bg-blue-100 text-blue-800",
-      invoice: "bg-purple-100 text-purple-800",
-      adjustment: "bg-orange-100 text-orange-800",
-      opening: "bg-green-100 text-green-800",
-      expense: "bg-red-100 text-red-800",
-      revenue: "bg-emerald-100 text-emerald-800",
+      payroll: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      invoice: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
+      adjustment: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
+      opening: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      expense: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+      revenue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
       receipt: "bg-cyan-100 text-cyan-800",
-      payment: "bg-amber-100 text-amber-800",
+      payment: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
     };
 
     const sourceLabels: Record<string, string> = {

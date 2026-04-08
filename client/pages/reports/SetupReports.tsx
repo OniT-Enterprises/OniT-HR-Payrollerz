@@ -224,11 +224,11 @@ export default function SetupReports() {
 
   const getActionColor = (action: string) => {
     if (action.includes("created") || action.includes("granted"))
-      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+      return "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400";
     if (action.includes("suspended") || action.includes("revoked"))
-      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
     if (action.includes("impersonation"))
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200";
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
     return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
   };
 
@@ -431,8 +431,8 @@ export default function SetupReports() {
                   <Badge
                     className={
                       setupProgress?.isComplete
-                        ? "bg-green-100 text-green-800"
-                        : "bg-amber-100 text-amber-800"
+                        ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
                       }
                   >
                     {setupProgress?.isComplete
@@ -567,7 +567,7 @@ export default function SetupReports() {
                         <Badge
                           className={
                             u.isSuperAdmin
-                              ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                              ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                               : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                           }
                         >
@@ -616,7 +616,7 @@ export default function SetupReports() {
                             <Badge
                               className={
                                 u.isSuperAdmin
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200"
+                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
                                   : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
                               }
                             >

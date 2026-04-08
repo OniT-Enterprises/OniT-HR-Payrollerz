@@ -406,7 +406,7 @@ export default function FiscalPeriods() {
                   {fiscalYear.startDate} — {fiscalYear.endDate}
                 </p>
                 {fiscalYear.openingBalancesPosted && (
-                  <Badge className="mt-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <Badge className="mt-2 bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     {t("accounting.fiscalPeriods.obPostedBadge")}
                   </Badge>
@@ -490,17 +490,17 @@ export default function FiscalPeriods() {
                         </TableCell>
                         <TableCell>
                           {period.status === 'open' ? (
-                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400">
                               <CheckCircle2 className="h-3 w-3 mr-1" />
                               {t("accounting.fiscalPeriods.open")}
                             </Badge>
                           ) : period.status === 'locked' ? (
-                            <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
+                            <Badge variant="secondary" className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400">
                               <Lock className="h-3 w-3 mr-1" />
                               {t("accounting.fiscalPeriods.locked")}
                             </Badge>
                           ) : (
-                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400">
+                            <Badge variant="secondary" className="bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:bg-amber-900/30 dark:text-amber-400">
                               <Lock className="h-3 w-3 mr-1" />
                               {t("accounting.fiscalPeriods.closed")}
                             </Badge>
@@ -701,7 +701,7 @@ export default function FiscalPeriods() {
             <div className="flex items-center justify-between text-sm">
               <div className="flex items-center gap-2">
                 {obTotals.balanced ? (
-                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400">
                     <CheckCircle2 className="h-3 w-3 mr-1" />
                     {t("accounting.trialBalance.balanced")}
                   </Badge>

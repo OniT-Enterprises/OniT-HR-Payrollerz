@@ -147,19 +147,19 @@ export default function ATTLMonthlyWIT() {
       case "pending":
         return {
           label: t("reports.attlMonthlyWit.status.pending"),
-          className: "bg-yellow-100 text-yellow-800",
+          className: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
           icon: Clock,
         };
       case "overdue":
         return {
           label: t("reports.attlMonthlyWit.status.overdue"),
-          className: "bg-red-100 text-red-800",
+          className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
           icon: AlertTriangle,
         };
       case "filed":
         return {
           label: t("reports.attlMonthlyWit.status.filed"),
-          className: "bg-green-100 text-green-800",
+          className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
           icon: CheckCircle,
         };
       default:

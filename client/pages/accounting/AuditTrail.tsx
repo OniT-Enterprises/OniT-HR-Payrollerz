@@ -97,9 +97,9 @@ function formatTimestamp(value: unknown): string {
 function severityBadgeClass(severity: AuditSeverity) {
   switch (severity) {
     case "critical":
-      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
+      return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400";
     case "warning":
-      return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
+      return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 dark:bg-amber-900/30 dark:text-amber-400";
     default:
       return "bg-slate-100 text-slate-800 dark:bg-slate-900/30 dark:text-slate-300";
   }

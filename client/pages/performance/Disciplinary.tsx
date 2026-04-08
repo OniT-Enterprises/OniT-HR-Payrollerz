@@ -184,11 +184,11 @@ export default function Disciplinary() {
   const getStatusBadge = (status: DisciplinaryStatus) => {
     switch (status) {
       case "open":
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">Open</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400">Open</Badge>;
       case "in_review":
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">In Review</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:bg-yellow-900/30 dark:text-yellow-400">In Review</Badge>;
       case "closed":
-        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">Closed</Badge>;
+        return <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400">Closed</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -197,11 +197,11 @@ export default function Disciplinary() {
   const getSeverityBadge = (severity: SeverityLevel) => {
     switch (severity) {
       case "low":
-        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">Low</Badge>;
+        return <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:bg-blue-900/30 dark:text-blue-400">Low</Badge>;
       case "medium":
-        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400">Medium</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:bg-yellow-900/30 dark:text-yellow-400">Medium</Badge>;
       case "high":
-        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">High</Badge>;
+        return <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400">High</Badge>;
       default:
         return <Badge variant="outline">{severity}</Badge>;
     }
@@ -209,12 +209,12 @@ export default function Disciplinary() {
 
   const getTypeBadge = (type: DisciplinaryType) => {
     const colorMap: Record<DisciplinaryType, string> = {
-      warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-      suspension: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
-      termination: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      misconduct: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
-      attendance: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-      performance: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      warning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 dark:bg-yellow-900/30 dark:text-yellow-400",
+      suspension: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 dark:bg-orange-900/30 dark:text-orange-400",
+      termination: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 dark:bg-red-900/30 dark:text-red-400",
+      misconduct: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400 dark:bg-purple-900/30 dark:text-purple-400",
+      attendance: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 dark:bg-blue-900/30 dark:text-blue-400",
+      performance: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 dark:bg-green-900/30 dark:text-green-400",
     };
 
     return <Badge className={colorMap[type] || "bg-gray-100 text-gray-800"}>{getTypeName(type)}</Badge>;

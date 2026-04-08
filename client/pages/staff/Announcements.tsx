@@ -379,7 +379,7 @@ export default function Announcements() {
                         </p>
                       </div>
                       {announcement.pinned ? (
-                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                        <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                           {t("announcements.table.pinnedYes")}
                         </Badge>
                       ) : null}
@@ -447,7 +447,7 @@ export default function Announcements() {
                       </TableCell>
                       <TableCell>
                         {announcement.pinned ? (
-                          <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                          <Badge variant="default" className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                             {t("announcements.table.pinnedYes")}
                           </Badge>
                         ) : (

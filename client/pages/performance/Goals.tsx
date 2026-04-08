@@ -87,26 +87,26 @@ import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 const getStatusBadge = (status: string, type: "okr" | "goal" | "keyresult" | "milestone") => {
   const statusConfig: Record<string, Record<string, string>> = {
     okr: {
-      active: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      at_risk: "bg-red-100 text-red-800",
+      active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      at_risk: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
       draft: "bg-gray-100 text-gray-800",
     },
     keyresult: {
-      on_track: "bg-green-100 text-green-800",
-      at_risk: "bg-yellow-100 text-yellow-800",
-      behind: "bg-red-100 text-red-800",
-      completed: "bg-green-100 text-green-800",
+      on_track: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      at_risk: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+      behind: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
     },
     goal: {
-      active: "bg-blue-100 text-blue-800",
-      completed: "bg-green-100 text-green-800",
-      paused: "bg-yellow-100 text-yellow-800",
+      active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
+      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
     },
     milestone: {
       pending: "bg-gray-100 text-gray-800",
-      completed: "bg-green-100 text-green-800",
-      overdue: "bg-red-100 text-red-800",
+      completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
+      overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     },
   };
 
@@ -117,9 +117,9 @@ const getStatusBadge = (status: string, type: "okr" | "goal" | "keyresult" | "mi
 
 const getPriorityBadge = (priority: GoalPriority) => {
   const priorityConfig = {
-    high: "bg-red-100 text-red-800",
-    medium: "bg-yellow-100 text-yellow-800",
-    low: "bg-green-100 text-green-800",
+    high: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
+    low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
   };
   return <Badge className={priorityConfig[priority]}>{priority}</Badge>;
 };

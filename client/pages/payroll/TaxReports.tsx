@@ -96,12 +96,12 @@ export default function TaxReports() {
           iconColor="text-green-500"
           actions={
             hasOverdue ? (
-              <Badge className="bg-red-100 text-red-800">
+              <Badge className="bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400">
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 {t("taxReports.actionRequired")}
               </Badge>
             ) : (
-              <Badge className="bg-emerald-100 text-emerald-800">
+              <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                 <CheckCircle className="h-3 w-3 mr-1" />
                 {t("taxReports.onTrack")}
               </Badge>
