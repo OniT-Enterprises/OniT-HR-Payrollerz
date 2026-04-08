@@ -379,6 +379,15 @@ export default function TimeTracking() {
           subtitle={t("timeLeave.timeTracking.subtitle")}
           icon={Clock}
           iconColor="text-cyan-500"
+          actions={
+            <Button
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              onClick={() => openAddDialog()}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t("timeLeave.timeTracking.entries.logActivity")}
+            </Button>
+          }
         />
         {/* Inline Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
@@ -423,14 +432,7 @@ export default function TimeTracking() {
                 </span>
               </div>
             )}
-            <Button
-              size="sm"
-              className="h-9 bg-cyan-600 hover:bg-cyan-700 text-white"
-              onClick={() => openAddDialog()}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1.5" />
-              {t("timeLeave.timeTracking.entries.logActivity")}
-            </Button>
+            {/* Primary action button is in PageHeader */}
           </div>
         </div>
 
