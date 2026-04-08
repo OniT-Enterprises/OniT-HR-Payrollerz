@@ -29,14 +29,13 @@ import {
   getNextMonthlyAdjustedDeadline,
   getUrgencyFromDays,
 } from "@/lib/tax/compliance";
-import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import { canUseDonorExport } from "@/lib/ngo/access";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { settingsService } from "@/services/settingsService";
 import {
   Users,
   UserPlus,
   ChevronRight,
-  FileText,
   Calculator,
   AlertCircle,
   CheckCircle,
@@ -47,6 +46,8 @@ import {
   Play,
   Zap,
   FolderKanban,
+  CalendarCheck,
+  Wallet,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -230,7 +231,6 @@ export default function Dashboard() {
   const nextPayDate = getNextPayDate();
   const nextPayDateKey = formatDateKey(nextPayDate);
   const firstName = user?.displayName?.split(" ")[0] || "there";
-  const ngoReportingEnabled = canUseNgoReporting(session, hasReports);
   const donorExportEnabled = canUseDonorExport(
     session,
     hasReports,
@@ -305,60 +305,58 @@ export default function Dashboard() {
         {/* ════════════════════════════════════════════════════════════
             QUICK ACTIONS — big tappable buttons, first thing after greeting
         ════════════════════════════════════════════════════════════ */}
-        {(hasPayroll || hasStaff || hasReports || ngoReportingEnabled || donorExportEnabled) && (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
-            {hasPayroll && (
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex-col gap-2 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20"
-                onClick={() => navigate("/payroll/run")}
-              >
-                <Play className="h-5 w-5 text-green-600" />
-                <span className="text-xs font-medium">{t("dashboard.runPayroll")}</span>
-              </Button>
-            )}
-            {hasStaff && (
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex-col gap-2 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
-                onClick={() => navigate("/people/add")}
-              >
-                <UserPlus className="h-5 w-5 text-blue-600" />
-                <span className="text-xs font-medium">{t("dashboard.addEmployee")}</span>
-              </Button>
-            )}
-            {hasReports && (
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex-col gap-2 hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
-                onClick={() => navigate("/reports")}
-              >
-                <FileText className="h-5 w-5 text-violet-600" />
-                <span className="text-xs font-medium">{t("dashboard.generateReport")}</span>
-              </Button>
-            )}
-            {ngoReportingEnabled && (
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex-col gap-2 hover:border-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20"
-                onClick={() => navigate("/reports/payroll-allocation")}
-              >
-                <FolderKanban className="h-5 w-5 text-orange-600" />
-                <span className="text-xs font-medium">{t("dashboard.payrollAllocation")}</span>
-              </Button>
-            )}
-            {donorExportEnabled && (
-              <Button
-                variant="outline"
-                className="h-auto py-4 flex-col gap-2 hover:border-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20"
-                onClick={() => navigate("/reports/donor-export")}
-              >
-                <FileText className="h-5 w-5 text-orange-600" />
-                <span className="text-xs font-medium">{t("dashboard.donorExport")}</span>
-              </Button>
-            )}
-          </div>
-        )}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {hasPayroll && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20"
+              onClick={() => navigate("/payroll/run")}
+            >
+              <Play className="h-5 w-5 text-green-600" />
+              <span className="text-xs font-medium">{t("dashboard.runPayroll")}</span>
+            </Button>
+          )}
+          {hasStaff && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+              onClick={() => navigate("/people/add")}
+            >
+              <UserPlus className="h-5 w-5 text-blue-600" />
+              <span className="text-xs font-medium">{t("dashboard.addEmployee")}</span>
+            </Button>
+          )}
+          {hasTimeleave && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-cyan-400 hover:bg-cyan-50/50 dark:hover:bg-cyan-950/20"
+              onClick={() => navigate("/time-leave/attendance")}
+            >
+              <CalendarCheck className="h-5 w-5 text-cyan-600" />
+              <span className="text-xs font-medium">{t("nav.attendance")}</span>
+            </Button>
+          )}
+          {hasModule("money") && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-indigo-400 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20"
+              onClick={() => navigate("/money/invoices")}
+            >
+              <Wallet className="h-5 w-5 text-indigo-600" />
+              <span className="text-xs font-medium">{t("nav.invoices")}</span>
+            </Button>
+          )}
+          {donorExportEnabled && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20"
+              onClick={() => navigate("/reports/donor-export")}
+            >
+              <FolderKanban className="h-5 w-5 text-orange-600" />
+              <span className="text-xs font-medium">{t("dashboard.donorExport")}</span>
+            </Button>
+          )}
+        </div>
 
         {/* ════════════════════════════════════════════════════════════
             3 BIG TILES — Payroll / People / Leave

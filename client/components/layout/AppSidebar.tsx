@@ -23,6 +23,7 @@ import {
 } from "@/lib/moduleNav";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
 import { type SectionId, navColors } from "@/lib/sectionTheme";
+import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
@@ -245,7 +246,8 @@ export default function AppSidebar() {
         <Tooltip key={path}>
           <TooltipTrigger asChild>
             <button
-              onClick={() => handleNavigate(path)}
+              onMouseEnter={() => prefetchRoute(path)}
+                onClick={() => handleNavigate(path)}
               className={`
                 w-full flex items-center justify-center h-10 rounded-lg transition-colors
                 ${active
@@ -267,7 +269,8 @@ export default function AppSidebar() {
     return (
       <button
         key={path}
-        onClick={() => handleNavigate(path)}
+        onMouseEnter={() => prefetchRoute(path)}
+                onClick={() => handleNavigate(path)}
         className={`
           w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-colors
           ${active
