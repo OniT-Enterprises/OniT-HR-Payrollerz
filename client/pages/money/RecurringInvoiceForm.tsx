@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -34,8 +34,7 @@ import {
   useCreateRecurringInvoice,
   useUpdateRecurringInvoice,
 } from '@/hooks/useRecurringInvoices';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { recurringInvoiceFormSchema, type RecurringInvoiceFormSchemaData } from '@/lib/validations';
 import type { RecurringFrequency, InvoiceSettings } from '@/types/money';
@@ -254,8 +253,7 @@ export default function RecurringInvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-screen-lg mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="space-y-6">
@@ -274,39 +272,30 @@ export default function RecurringInvoiceForm() {
         description={t('money.recurringInvoiceForm.autoGenerate') || 'Set up a recurring invoice template'}
       />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/money/invoices/recurring')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('money.recurringInvoiceForm.back') || 'Back'}
-            </Button>
-            <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-              <Repeat className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">
-                {isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}
-              </p>
-            </div>
-          </div>
-          <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700">
-            {saving ? (
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            ) : (
-              <Save className="h-4 w-4 mr-2" />
-            )}
-            {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
-          </Button>
-        </div>
+      <div className="p-6 max-w-screen-lg mx-auto">
+        <PageHeader
+          title={isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
+          subtitle={t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}
+          icon={Repeat}
+          iconColor="text-purple-500"
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => navigate('/money/invoices/recurring')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('money.recurringInvoiceForm.back') || 'Back'}
+              </Button>
+              <Button onClick={handleSave} disabled={saving} className="bg-purple-600 hover:bg-purple-700">
+                {saving ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                {isEditMode ? (t('money.recurringInvoiceForm.saveChanges') || 'Save Changes') : (t('money.recurringInvoiceForm.createRecurring') || 'Create Recurring')}
+              </Button>
+            </>
+          }
+        />
 
         <div className="space-y-6">
           {/* Customer & Schedule */}

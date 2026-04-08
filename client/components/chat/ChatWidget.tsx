@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef, useState } from "react";
 import { useLocation } from "react-router-dom";
-import { Bot, Command, Minimize2, Maximize2 } from "lucide-react";
+import { Command, Minimize2, Maximize2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatStore } from "@/stores/chatStore";
 import { cn } from "@/lib/utils";
@@ -77,20 +77,7 @@ const ChatWidget = () => {
 
   return (
     <>
-      {/* Floating button */}
-      {!isOpen && (
-        <button
-          onClick={() => {
-            clearCloseTimer();
-            setIsClosing(false);
-            setOpen(true);
-          }}
-          className="fixed bottom-6 right-6 z-50 h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:shadow-xl transition-all hover:scale-110 flex items-center justify-center print:hidden ring-2 ring-primary/30 ring-offset-2 ring-offset-background"
-          aria-label="Open Meza assistant (⌘K)"
-        >
-          <Bot className="h-6 w-6" />
-        </button>
-      )}
+      {/* Floating button removed — chat is triggered from TopBar instead */}
 
       {/* Mini floating panel (bottom-right, no backdrop) */}
       {isOpen && isMini && (

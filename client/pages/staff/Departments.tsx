@@ -19,9 +19,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import type { Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -243,7 +241,6 @@ export default function Departments() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
           {/* Header Skeleton */}
           <div className="flex justify-end mb-4">
             <div className="flex gap-2">
@@ -309,28 +306,16 @@ export default function Departments() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.departments} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <Building className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t("departments.title")}</h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("departments.subtitle")}
-                </p>
-              </div>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2">
+      {/* Main Content */}
+      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <PageHeader
+          title={t("departments.title")}
+          subtitle={t("departments.subtitle")}
+          icon={Building}
+          iconColor="text-blue-500"
+          actions={
+            <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline">
@@ -362,15 +347,9 @@ export default function Departments() {
                 <Edit className="mr-2 h-4 w-4" />
                 {t("departments.editDepartments")}
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+            </>
+          }
+        />
         {employees.length === 0 ? (
           /* Empty State */
           <Card className="border-border/50 animate-fade-up">

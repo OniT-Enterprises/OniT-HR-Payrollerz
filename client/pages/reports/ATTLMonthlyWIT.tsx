@@ -47,9 +47,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   FileText,
   Download,
@@ -408,7 +406,7 @@ export default function ATTLMonthlyWIT() {
         <MainNavigation />
         {/* Hero Skeleton */}
         <div className="border-b bg-amber-50 dark:bg-amber-950/30">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mx-auto max-w-screen-2xl px-6 py-8">
             <Skeleton className="h-4 w-48 mb-4" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -422,7 +420,7 @@ export default function ATTLMonthlyWIT() {
             </div>
           </div>
         </div>
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Skeleton className="h-48" />
             <Skeleton className="h-48" />
@@ -441,26 +439,13 @@ export default function ATTLMonthlyWIT() {
         description={t("reports.attlMonthlyWit.subtitle")}
       />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-amber-50 dark:bg-amber-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/25">
-                <Landmark className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("reports.attlMonthlyWit.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("reports.attlMonthlyWit.subtitle")}
-                </p>
-              </div>
-            </div>
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+        <PageHeader
+          title={t("reports.attlMonthlyWit.title")}
+          subtitle={t("reports.attlMonthlyWit.subtitle")}
+          icon={Landmark}
+          iconColor="text-amber-500"
+          actions={
             <Button
               variant="outline"
               onClick={() => window.open("https://e-tax.mof.gov.tl/login", "_blank")}
@@ -468,13 +453,8 @@ export default function ATTLMonthlyWIT() {
               <ExternalLink className="h-4 w-4 mr-2" />
               {t("reports.attlMonthlyWit.actions.etaxPortal")}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+          }
+        />
         {/* Alert Banner */}
         {overdueFiling && (
           <Card className="border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50">

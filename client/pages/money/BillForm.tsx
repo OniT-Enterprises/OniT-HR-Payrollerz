@@ -8,13 +8,12 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -38,8 +37,7 @@ import { SEO } from '@/components/SEO';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { useBill, useBillPayments, useCreateBill, useUpdateBill, useRecordBillPayment } from '@/hooks/useBills';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { billFormSchema, type BillFormSchemaData } from '@/lib/validations';
 import type { BillFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
@@ -291,8 +289,7 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-screen-lg mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-64 w-full" />
         </div>
@@ -309,47 +306,36 @@ export default function BillForm() {
           description="View bill details"
         />
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
 
-        <div className="p-6 max-w-4xl mx-auto">
-          <AutoBreadcrumb className="mb-6" />
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div className="flex items-center gap-3">
-              <Button variant="ghost" onClick={() => navigate('/money/bills')}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                {t('common.back') || 'Back'}
-              </Button>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h1 className="text-2xl font-bold">
-                    {bill.billNumber || t('money.bills.bill') || 'Bill'}
-                  </h1>
-                  <Badge className={STATUS_STYLES[bill.status]}>
-                    {t(`money.billStatus.${bill.status}`) || bill.status}
-                  </Badge>
-                </div>
-                <p className="text-muted-foreground">{bill.vendorName}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              {canEdit && (
-                <Button variant="outline" onClick={() => navigate(`/money/bills/${id}/edit`)}>
-                  {t('common.edit') || 'Edit'}
+        <div className="p-6 max-w-screen-lg mx-auto">
+          <PageHeader
+            title={bill.billNumber || t('money.bills.bill') || 'Bill'}
+            subtitle={bill.vendorName}
+            icon={Building2}
+            iconColor="text-indigo-500"
+            actions={
+              <>
+                <Button variant="ghost" onClick={() => navigate('/money/bills')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('common.back') || 'Back'}
                 </Button>
-              )}
-              {['pending', 'partial', 'overdue'].includes(bill.status) && (
-                <Button
-                  onClick={() => setShowPaymentDialog(true)}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  {t('money.bills.recordPayment') || 'Record Payment'}
-                </Button>
-              )}
-            </div>
-          </div>
+                {canEdit && (
+                  <Button variant="outline" onClick={() => navigate(`/money/bills/${id}/edit`)}>
+                    {t('common.edit') || 'Edit'}
+                  </Button>
+                )}
+                {['pending', 'partial', 'overdue'].includes(bill.status) && (
+                  <Button
+                    onClick={() => setShowPaymentDialog(true)}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    {t('money.bills.recordPayment') || 'Record Payment'}
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {/* Bill Details */}
           <div className="grid gap-6 md:grid-cols-3">
@@ -545,40 +531,32 @@ export default function BillForm() {
         description={isNew ? 'Create a new bill' : 'Edit bill'}
       />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/money/bills')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('common.back') || 'Back'}
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">
-                {isNew
-                  ? t('money.bills.createBill') || 'New Bill'
-                  : t('money.bills.editBill') || 'Edit Bill'}
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.bills.formDescription') || 'Enter bill details'}
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {saving
-              ? t('common.saving') || 'Saving...'
-              : t('common.save') || 'Save'}
-          </Button>
-        </div>
+      <div className="p-6 max-w-screen-lg mx-auto">
+        <PageHeader
+          title={isNew ? t('money.bills.createBill') || 'New Bill' : t('money.bills.editBill') || 'Edit Bill'}
+          subtitle={t('money.bills.formDescription') || 'Enter bill details'}
+          icon={Building2}
+          iconColor="text-indigo-500"
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => navigate('/money/bills')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('common.back') || 'Back'}
+              </Button>
+              <Button
+                onClick={handleSave}
+                disabled={saving}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {saving
+                  ? t('common.saving') || 'Saving...'
+                  : t('common.save') || 'Save'}
+              </Button>
+            </>
+          }
+        />
 
         <div className="grid gap-6 md:grid-cols-3">
           {/* Main Form */}

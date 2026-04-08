@@ -308,6 +308,11 @@ export default function DocumentAlertsCard({ maxItems = 5, className = "" }: Doc
     total: alerts.length,
   }), [alerts]);
 
+  // Don't render anything if there are no alerts — keep dashboard clean
+  if (!loading && alerts.length === 0) {
+    return null;
+  }
+
   if (loading) {
     return (
       <Card className={className}>

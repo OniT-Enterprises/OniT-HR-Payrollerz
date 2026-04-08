@@ -10,11 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
@@ -37,7 +33,6 @@ import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { settingsService } from "@/services/settingsService";
 import {
   Users,
-  DollarSign,
   UserPlus,
   ChevronRight,
   FileText,
@@ -58,114 +53,71 @@ import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
 import DocumentAlertsCard from "@/components/dashboard/DocumentAlertsCard";
 import GuidancePanel from "@/components/GuidancePanel";
-import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="p-6 max-w-6xl mx-auto">
-        {/* Header */}
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        {/* Greeting */}
         <div className="flex items-center justify-between mb-6">
           <Skeleton className="h-8 w-56" />
           <Skeleton className="h-8 w-12" />
         </div>
 
-        {/* Status Cards */}
+        {/* Hero Action Card */}
+        <Card className="mb-6 border-2">
+          <CardContent className="py-5">
+            <div className="flex items-center gap-4">
+              <Skeleton className="h-14 w-14 rounded-2xl shrink-0" />
+              <div className="flex-1 space-y-2">
+                <Skeleton className="h-3 w-40" />
+                <Skeleton className="h-6 w-56" />
+              </div>
+              <Skeleton className="h-11 w-32 rounded-md" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* 3 Big Tiles */}
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div className="space-y-2">
-                    <Skeleton className="h-4 w-24" />
-                    <Skeleton className="h-9 w-20" />
-                    <Skeleton className="h-3 w-32" />
+              <CardContent className="pt-6 pb-5">
+                <div className="flex items-start justify-between mb-3">
+                  <Skeleton className="h-12 w-12 rounded-2xl" />
+                  <div className="text-right space-y-1.5">
+                    <Skeleton className="h-9 w-16 ml-auto" />
+                    <Skeleton className="h-3 w-24 ml-auto" />
                   </div>
-                  <Skeleton className="h-12 w-12 rounded-xl" />
                 </div>
                 <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                  <div className="flex items-center gap-2">
-                    <Skeleton className="h-4 w-4 rounded-full" />
-                    <Skeleton className="h-4 w-20" />
-                  </div>
-                  <Skeleton className="h-8 w-20 rounded-md" />
+                  <Skeleton className="h-3.5 w-24" />
+                  <Skeleton className="h-3.5 w-20" />
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
 
-        {/* Next Action Card */}
-        <Card className="mb-6">
-          <CardContent className="py-4">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-10 w-10 rounded-lg" />
-              <div className="flex-1">
-                <Skeleton className="h-3 w-36 mb-1" />
-                <Skeleton className="h-5 w-48" />
-              </div>
-              <Skeleton className="h-8 w-24 rounded-md" />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* KPI Cards */}
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
+        {/* Compliance Strip */}
+        <div className="flex items-center gap-6 mb-6 px-1">
+          <Skeleton className="h-4 w-24" />
           {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-5 pb-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Skeleton className="h-7 w-20 mb-1" />
-                    <Skeleton className="h-4 w-28" />
-                  </div>
-                  <Skeleton className="h-10 w-10 rounded-lg" />
-                </div>
-              </CardContent>
-            </Card>
+            <div key={i} className="flex items-center gap-1.5">
+              <Skeleton className="h-2 w-2 rounded-full" />
+              <Skeleton className="h-4 w-12" />
+              <Skeleton className="h-5 w-8 rounded" />
+            </div>
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <Card className="mb-6">
-          <CardContent className="py-3">
-            <div className="flex items-center gap-3">
-              <Skeleton className="h-4 w-24" />
-              <div className="h-4 w-px bg-border" />
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-8 w-28 rounded-md" />
-                <Skeleton className="h-8 w-32 rounded-md" />
-                <Skeleton className="h-8 w-36 rounded-md" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Attention Required */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex items-center gap-2">
-              <Skeleton className="h-4 w-4" />
-              <Skeleton className="h-5 w-36" />
-            </div>
-            <Skeleton className="h-4 w-52" />
-          </CardHeader>
-          <CardContent className="pt-0 space-y-2">
-            {[1, 2].map((i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg border">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-8 w-8 rounded-full" />
-                  <div>
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                </div>
-                <Skeleton className="h-8 w-20 rounded-md" />
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+        {/* Quick Actions Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-[72px] rounded-md" />
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -347,8 +299,8 @@ export default function Dashboard() {
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="p-6 max-w-6xl mx-auto">
-        {/* Header - Minimal */}
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        {/* Greeting — friendly, brief */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-semibold tracking-tight">
             {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}, {firstName}
@@ -366,370 +318,249 @@ export default function Dashboard() {
 
         <GuidancePanel section="dashboard" />
 
-        <section className="mb-6">
-          <div className="mb-3">
-            <h2 className="text-lg font-semibold">{t("dashboard.simpleOverview")}</h2>
-            <p className="text-sm text-muted-foreground">{t("dashboard.simpleOverviewDesc")}</p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-3">
-            {simpleCards.map((card) => {
-              const Icon = card.icon;
-              const toneClasses = card.tone === "amber"
-                ? {
-                    card: "border-amber-200 bg-amber-50/60 dark:border-amber-900/50 dark:bg-amber-950/20",
-                    icon: "bg-amber-500 text-white",
-                    stat: "text-amber-700 dark:text-amber-300",
-                  }
-                : card.tone === "blue"
-                  ? {
-                      card: "border-blue-200 bg-blue-50/60 dark:border-blue-900/50 dark:bg-blue-950/20",
-                      icon: "bg-blue-500 text-white",
-                      stat: "text-blue-700 dark:text-blue-300",
-                    }
-                  : {
-                      card: "border-emerald-200 bg-emerald-50/60 dark:border-emerald-900/50 dark:bg-emerald-950/20",
-                      icon: "bg-emerald-500 text-white",
-                      stat: "text-emerald-700 dark:text-emerald-300",
-                    };
+        {/* ════════════════════════════════════════════════════════════
+            QUICK ACTIONS — big tappable buttons, first thing after greeting
+        ════════════════════════════════════════════════════════════ */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-6">
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 hover:border-green-400 hover:bg-green-50/50 dark:hover:bg-green-950/20"
+            onClick={() => navigate("/payroll/run")}
+          >
+            <Play className="h-5 w-5 text-green-600" />
+            <span className="text-xs font-medium">{t("dashboard.runPayroll")}</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 hover:border-blue-400 hover:bg-blue-50/50 dark:hover:bg-blue-950/20"
+            onClick={() => navigate("/people/add")}
+          >
+            <UserPlus className="h-5 w-5 text-blue-600" />
+            <span className="text-xs font-medium">{t("dashboard.addEmployee")}</span>
+          </Button>
+          <Button
+            variant="outline"
+            className="h-auto py-4 flex-col gap-2 hover:border-violet-400 hover:bg-violet-50/50 dark:hover:bg-violet-950/20"
+            onClick={() => navigate("/reports")}
+          >
+            <FileText className="h-5 w-5 text-violet-600" />
+            <span className="text-xs font-medium">{t("dashboard.generateReport")}</span>
+          </Button>
+          {ngoReportingEnabled && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20"
+              onClick={() => navigate("/reports/payroll-allocation")}
+            >
+              <FolderKanban className="h-5 w-5 text-orange-600" />
+              <span className="text-xs font-medium">{t("dashboard.payrollAllocation")}</span>
+            </Button>
+          )}
+          {donorExportEnabled && (
+            <Button
+              variant="outline"
+              className="h-auto py-4 flex-col gap-2 hover:border-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20"
+              onClick={() => navigate("/reports/donor-export")}
+            >
+              <FileText className="h-5 w-5 text-orange-600" />
+              <span className="text-xs font-medium">{t("dashboard.donorExport")}</span>
+            </Button>
+          )}
+        </div>
 
-              return (
-                <Card
-                  key={card.id}
-                  className={`cursor-pointer transition-all hover:shadow-md ${toneClasses.card}`}
-                  onClick={() => navigate(card.path)}
-                >
-                  <CardContent className="pt-5">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">{card.title}</p>
-                        <p className="text-lg font-semibold leading-tight">{card.stat}</p>
-                        <p className="text-sm text-muted-foreground">{card.description}</p>
-                      </div>
-                      <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ${toneClasses.icon}`}>
-                        <Icon className="h-5 w-5" />
-                      </div>
-                    </div>
-                    <div className="mt-4 border-t border-border/50 pt-3">
-                      <Button size="sm" variant="outline" className="w-full">
-                        {card.actionLabel}
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
-
-        <MoreDetailsSection className="mb-6">
-          <div className="grid gap-4 md:grid-cols-3 mb-6">
-          {/* PAYROLL STATUS - PRIMARY CARD */}
+        {/* ════════════════════════════════════════════════════════════
+            3 BIG TILES — Payroll / People / Leave
+            Each tile: icon + big number + description + action button
+        ════════════════════════════════════════════════════════════ */}
+        <div className="grid gap-4 md:grid-cols-3 mb-6">
+          {/* Payroll Tile */}
           <Card
-            className={`cursor-pointer transition-all hover:shadow-lg ${
-              isPayrollUrgent && !payrollPrepared
-                ? "ring-2 ring-green-500 bg-green-50 dark:bg-green-950/30"
-                : isPayrollSafe
-                  ? "border-border/50"
-                  : "border-green-500/30"
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              isPayrollUrgent
+                ? "border-2 border-green-400 bg-green-50/60 dark:bg-green-950/20 dark:border-green-700"
+                : "border-border/50"
             }`}
             onClick={() => navigate("/payroll/run")}
           >
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="space-y-1">
-                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.payrollStatus")}</p>
-                  <p className="text-3xl font-bold">{daysUntilPayday} {t("dashboard.days")}</p>
-                  <p className="text-sm text-muted-foreground">{t("dashboard.untilPayDate")}</p>
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/20 flex items-center justify-center">
+                  <Calculator className="h-5 w-5 text-white" />
                 </div>
-                <div className={`h-12 w-12 rounded-xl flex items-center justify-center ${
-                  isPayrollUrgent
-                    ? "bg-green-500 text-white"
-                    : "bg-muted"
-                }`}>
-                  <Calculator className="h-6 w-6" />
-                </div>
+                <p className="text-sm font-bold">{t("dashboard.payrollStatus")}</p>
               </div>
-
-              <div className="flex items-center justify-between pt-3 border-t border-border/50">
-                <div className="flex items-center gap-2">
-                  {payrollPrepared ? (
-                    <>
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                      <span className="text-sm text-green-600 dark:text-green-400 font-medium">{t("dashboard.prepared")}</span>
-                    </>
-                  ) : (
-                    <>
-                      <AlertCircle className="h-4 w-4 text-amber-500" />
-                      <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">{t("dashboard.notPrepared")}</span>
-                    </>
-                  )}
-                </div>
-                <Button
-                  size="sm"
-                  className={isPayrollUrgent
-                    ? "bg-green-500 hover:bg-green-600 text-white"
-                    : ""
-                  }
-                  variant={isPayrollUrgent ? "default" : "outline"}
-                >
-                  {payrollPrepared ? t("dashboard.review") : t("dashboard.prepare")}
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* COMPLIANCE STATUS - Timeline Strip */}
-          <Card className="border-border/50">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-4">
+              <div className="flex items-baseline justify-between mb-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.compliance")}</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {compliance.wit.status === 'ok' && compliance.inss.status === 'ok'
-                      ? t("dashboard.onTrack")
-                      : t("dashboard.needsAttention")}
-                  </p>
+                  <p className="text-4xl font-extrabold tabular-nums">{daysUntilPayday}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.days")} {t("dashboard.untilPayDate")}</p>
                 </div>
+                <p className="text-lg font-bold tabular-nums text-muted-foreground">{formatCurrencyTL(totalPayroll)}</p>
               </div>
-
-              {/* Visual Timeline Strip */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-3">
-                  <span className={`h-2 w-2 rounded-full ${
-                    compliance.wit.status === 'ok' ? 'bg-green-500' :
-                    compliance.wit.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
-                  }`} />
-                  <span className="text-sm flex-1">{t("dashboard.wit")}</span>
-                  <span className="text-xs text-muted-foreground">{compliance.wit.days}d</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`h-2 w-2 rounded-full ${
-                    compliance.inss.status === 'ok' ? 'bg-green-500' :
-                    compliance.inss.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
-                  }`} />
-                  <span className="text-sm flex-1">{t("dashboard.inss")}</span>
-                  <span className="text-xs text-muted-foreground">{compliance.inss.days}d</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <span className={`h-2 w-2 rounded-full ${
-                    compliance.subsidio.status === 'ok' ? 'bg-green-500' :
-                    compliance.subsidio.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
-                  }`} />
-                  <span className="text-sm flex-1">{t("dashboard.thirteenthMonth")}</span>
-                  <span className="text-xs text-muted-foreground">{compliance.subsidio.days}d</span>
-                </div>
+              <div className="flex items-center gap-1.5 pt-3 border-t border-border/50">
+                {payrollPrepared ? (
+                  <><CheckCircle className="h-3.5 w-3.5 text-green-500" /><span className="text-xs text-green-600 dark:text-green-400 font-medium">{t("dashboard.prepared")}</span></>
+                ) : (
+                  <><AlertCircle className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{t("dashboard.notPrepared")}</span></>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* TEAM STATUS */}
-          <Card className="border-border/50">
-            <CardContent className="pt-6">
-              <div className="flex items-start justify-between mb-4">
+          {/* People Tile */}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              getBlockingIssues.length > 0
+                ? "border-border/50"
+                : "border-border/50"
+            }`}
+            onClick={() => getBlockingIssues.length > 0 ? navigate("/people/employees?filter=blocking-issues") : navigate("/people/employees")}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/20 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-white" />
+                </div>
+                <p className="text-sm font-bold">{t("dashboard.teamStatus")}</p>
+              </div>
+              <div className="flex items-baseline justify-between mb-4">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("dashboard.teamStatus")}</p>
-                  <p className="text-lg font-semibold mt-1">
-                    {activeEmployees.length - onLeaveToday} / {activeEmployees.length} {t("dashboard.present")}
-                  </p>
+                  <p className="text-4xl font-extrabold tabular-nums">{activeEmployees.length}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
                 </div>
-                <div className="h-10 w-10 rounded-lg bg-muted flex items-center justify-center">
-                  <Users className="h-5 w-5 text-muted-foreground" />
-                </div>
-              </div>
-
-              <div className="space-y-2 text-sm">
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("dashboard.onLeaveToday")}</span>
-                  <span className={onLeaveToday > 0 ? "font-medium" : "text-muted-foreground"}>{onLeaveToday}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">{t("dashboard.pendingRequests")}</span>
-                  <span className={pendingLeave > 0 ? "font-medium text-amber-600 dark:text-amber-400" : "text-muted-foreground"}>
-                    {pendingLeave}
-                  </span>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          </div>
-
-          {nextAction && (
-            <Card className={`mb-6 cursor-pointer transition-all hover:shadow-md ${
-              nextAction.urgent
-                ? "border-amber-500/50 bg-amber-50/50 dark:bg-amber-950/20"
-                : "border-primary/30"
-            }`} onClick={() => navigate(nextAction.path)}>
-              <CardContent className="py-4">
-                <div className="flex items-center gap-3">
-                  <div className={`h-10 w-10 rounded-lg flex items-center justify-center ${
-                    nextAction.urgent
-                      ? "bg-amber-500 text-white"
-                      : "bg-primary/10"
-                  }`}>
-                    <Zap className={`h-5 w-5 ${nextAction.urgent ? "" : "text-primary"}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("dashboard.nextRecommendedAction")}</p>
-                    <p className="font-semibold">{nextAction.label}</p>
-                  </div>
-                  <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
-                    nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
-                  }>
-                    {t("dashboard.doItNow")}
-                    <ArrowRight className="h-4 w-4 ml-1" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          <div className="grid gap-4 md:grid-cols-3">
-          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/people/employees")}>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{activeEmployees.length}</p>
-                  <p className="text-sm text-muted-foreground">{t("dashboard.activeEmployees")}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/payroll/history")}>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
-                  <p className="text-sm text-muted-foreground">{t("dashboard.monthlyPayroll")}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <DollarSign className="h-5 w-5 text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 cursor-pointer hover:shadow-sm transition-shadow" onClick={() => navigate("/payroll/run")}>
-            <CardContent className="pt-5 pb-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{formatCurrencyTL(totalPayroll)}</p>
-                  <p className="text-sm text-muted-foreground">{t("dashboard.nextPayrollAmount")}</p>
-                </div>
-                <div className="h-10 w-10 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <CalendarDays className="h-5 w-5 text-green-500" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          </div>
-        </MoreDetailsSection>
-
-        {/* ═══════════════════════════════════════════════════════════════
-            QUICK ACTIONS - Payroll, HR, Reports, NGO exports
-        ═══════════════════════════════════════════════════════════════ */}
-        <Card className="mb-6 border-border/50">
-          <CardContent className="py-3">
-            <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-              <span className="text-sm text-muted-foreground">{t("dashboard.quickActions")}</span>
-              <div className="h-px w-full bg-border sm:h-4 sm:w-px" />
-              <div className="flex flex-wrap items-center gap-2">
-                <Button
-                  size="sm"
-                  className={isPayrollUrgent
-                    ? "bg-green-500 hover:bg-green-600 text-white gap-2"
-                    : "gap-2"
-                  }
-                  variant={isPayrollUrgent ? "default" : "outline"}
-                  onClick={() => navigate("/payroll/run")}
-                >
-                  <Play className="h-3.5 w-3.5" />
-                  {t("dashboard.runPayroll")}
-                </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/people/add")}>
-                  <UserPlus className="h-3.5 w-3.5" />
+                <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={(e) => { e.stopPropagation(); navigate("/people/add"); }}>
+                  <UserPlus className="h-3 w-3 mr-1" />
                   {t("dashboard.addEmployee")}
                 </Button>
-                <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports")}>
-                  <FileText className="h-3.5 w-3.5" />
-                  {t("dashboard.generateReport")}
-                </Button>
-                {ngoReportingEnabled && (
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports/payroll-allocation")}>
-                    <FolderKanban className="h-3.5 w-3.5" />
-                    {t("dashboard.payrollAllocation")}
-                  </Button>
-                )}
-                {donorExportEnabled && (
-                  <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports/donor-export")}>
-                    <FileText className="h-3.5 w-3.5" />
-                    {t("dashboard.donorExport")}
-                  </Button>
+              </div>
+              <div className="flex items-center gap-1.5 pt-3 border-t border-border/50">
+                {getBlockingIssues.length > 0 ? (
+                  <><AlertTriangle className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{getBlockingIssues.length} {t("dashboard.needsAttention")}</span></>
+                ) : (
+                  <><CheckCircle className="h-3.5 w-3.5 text-green-500" /><span className="text-xs text-green-600 dark:text-green-400 font-medium">{t("dashboard.allGood")}</span></>
                 )}
               </div>
-            </div>
-            {ngoReportingEnabled && (
-              <div className="mt-3 inline-flex items-center gap-2 text-xs text-muted-foreground">
-                <Building2 className="h-3.5 w-3.5" />
-                <span>{t("dashboard.ngoReportingHint")}</span>
-              </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* ═══════════════════════════════════════════════════════════════
-            ATTENTION REQUIRED - Blocking issues before payroll
-        ═══════════════════════════════════════════════════════════════ */}
+          {/* Leave & Attendance Tile */}
+          <Card
+            className={`cursor-pointer transition-all hover:shadow-md ${
+              pendingLeave > 0
+                ? "border-border/50"
+                : "border-border/50"
+            }`}
+            onClick={() => pendingLeave > 0 ? navigate("/time-leave/leave") : navigate("/time-leave/attendance")}
+          >
+            <CardContent className="pt-5 pb-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/20 flex items-center justify-center">
+                  <CalendarDays className="h-5 w-5 text-white" />
+                </div>
+                <p className="text-sm font-bold">{pendingLeave > 0 ? t("dashboard.pendingRequests") : t("dashboard.teamStatus")}</p>
+              </div>
+              <div className="flex items-baseline justify-between mb-4">
+                <div>
+                  <p className="text-4xl font-extrabold tabular-nums">
+                    {pendingLeave > 0 ? pendingLeave : activeEmployees.length - onLeaveToday}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {pendingLeave > 0 ? t("dashboard.pendingRequests") : `${activeEmployees.length - onLeaveToday}/${activeEmployees.length} ${t("dashboard.present")}`}
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-1.5 pt-3 border-t border-border/50">
+                {pendingLeave > 0 ? (
+                  <><AlertCircle className="h-3.5 w-3.5 text-amber-500" /><span className="text-xs text-amber-600 dark:text-amber-400 font-medium">{t("common.review")}</span></>
+                ) : (
+                  <><CheckCircle className="h-3.5 w-3.5 text-green-500" /><span className="text-xs text-muted-foreground">{onLeaveToday} {t("dashboard.onLeaveToday")}</span></>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ════════════════════════════════════════════════════════════
+            COMPLIANCE — inline strip, not hidden in MoreDetailsSection
+        ════════════════════════════════════════════════════════════ */}
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 px-1 text-sm">
+          <span className="text-muted-foreground font-medium">{t("dashboard.compliance")}:</span>
+          {[
+            { label: t("dashboard.wit"), ...compliance.wit },
+            { label: t("dashboard.inss"), ...compliance.inss },
+            { label: t("dashboard.thirteenthMonth"), ...compliance.subsidio },
+          ].map((d) => (
+            <span key={d.label} className="inline-flex items-center gap-1.5">
+              <span className={`h-2 w-2 rounded-full ${
+                d.status === 'ok' ? 'bg-emerald-500' : d.status === 'warning' ? 'bg-amber-500' : 'bg-red-500'
+              }`} />
+              <span className="text-muted-foreground">{d.label}</span>
+              <span className={`text-xs font-semibold px-1.5 py-0.5 rounded ${
+                d.status === 'ok'
+                  ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                  : d.status === 'warning'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                  : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+              }`}>{d.days}d</span>
+            </span>
+          ))}
+        </div>
+
+        {/* Attention — compact banner */}
         {getBlockingIssues.length > 0 && (
-          <Card className="mb-6 border-amber-500/30 bg-amber-50/30 dark:bg-amber-950/10">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <AlertTriangle className="h-4 w-4 text-amber-500" />
-                {t("dashboard.attentionRequired")}
-              </CardTitle>
-              <CardDescription>{t("dashboard.attentionRequiredDesc")}</CardDescription>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-2">
-                {getBlockingIssues.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center justify-between p-3 rounded-lg bg-background border border-border/50 hover:border-amber-500/30 transition-colors cursor-pointer"
-                    onClick={() => navigate(item.path)}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="text-xs bg-muted">
-                          {item.employee.personalInfo.firstName[0]}
-                          {item.employee.personalInfo.lastName[0]}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="text-sm font-medium">
-                          {item.employee.personalInfo.firstName} {item.employee.personalInfo.lastName}
-                        </p>
-                        <p className="text-xs text-amber-600 dark:text-amber-400">{item.issue}</p>
-                      </div>
-                    </div>
-                    <Button size="sm" variant="ghost" className="text-amber-600 dark:text-amber-400 hover:text-amber-700">
-                      {item.action}
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                ))}
+          <div
+            className="mb-6 flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/50 cursor-pointer hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors"
+            onClick={() => navigate("/people/employees?filter=blocking-issues")}
+          >
+            <div className="flex items-center gap-2.5">
+              <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+              <span className="text-sm text-amber-800 dark:text-amber-200">
+                <span className="font-semibold">{getBlockingIssues.length}</span> {t("dashboard.attentionRequiredDesc")}
+              </span>
+            </div>
+            <Button size="sm" variant="outline" className="shrink-0 border-amber-300 text-amber-700 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300">
+              {t("common.review")}
+              <ChevronRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          </div>
+        )}
+
+        {/* ════════════════════════════════════════════════════════════
+            NEXT RECOMMENDED ACTION — at the bottom, not screaming at top
+        ════════════════════════════════════════════════════════════ */}
+        {nextAction && (
+          <Card
+            className={`mb-6 cursor-pointer transition-all hover:shadow-md border ${
+              nextAction.urgent
+                ? "border-amber-300 bg-amber-50/30 dark:bg-amber-950/10 dark:border-amber-800"
+                : "border-border/50"
+            }`}
+            onClick={() => navigate(nextAction.path)}
+          >
+            <CardContent className="py-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${
+                  nextAction.urgent
+                    ? "bg-amber-500 text-white"
+                    : "bg-primary/10 text-primary"
+                }`}>
+                  <Zap className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground">{t("dashboard.nextRecommendedAction")}</p>
+                  <p className="text-sm font-semibold">{nextAction.label}</p>
+                </div>
+                <Button size="sm" variant={nextAction.urgent ? "default" : "outline"} className={
+                  nextAction.urgent ? "bg-amber-500 hover:bg-amber-600" : ""
+                }>
+                  {t("dashboard.doItNow")}
+                  <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
-            DOCUMENT EXPIRY ALERTS - Employee documents requiring attention
-        ═══════════════════════════════════════════════════════════════ */}
+        {/* Document Expiry Alerts */}
         <DocumentAlertsCard className="border-border/50" maxItems={5} />
       </div>
 

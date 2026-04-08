@@ -7,9 +7,7 @@ import React, { useMemo, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { DocumentSnapshot } from "firebase/firestore";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -185,32 +183,19 @@ export default function AccountingAuditTrail() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accounting} />
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero */}
-      <div className="border-b bg-slate-50 dark:bg-slate-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-600 to-gray-700 shadow-lg shadow-slate-500/25">
-                <ClipboardList className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t("accounting.auditTrail.title")}</h1>
-                <p className="text-muted-foreground mt-1">{t("accounting.auditTrail.subtitle")}</p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">Who changed what and when — a complete record of accounting actions</p>
-              </div>
-            </div>
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+        <PageHeader
+          title={t("accounting.auditTrail.title")}
+          subtitle={t("accounting.auditTrail.subtitle")}
+          icon={ClipboardList}
+          iconColor="text-slate-500"
+          actions={
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />
               {t("accounting.auditTrail.refresh")}
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+          }
+        />
         {/* Filters */}
         <Card>
           <CardHeader>

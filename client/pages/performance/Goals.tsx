@@ -41,9 +41,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   type OKR,
   type Goal,
@@ -425,7 +423,6 @@ export default function Goals() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <AutoBreadcrumb className="mb-6" />
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
@@ -446,27 +443,15 @@ export default function Goals() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.goals} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <Target className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  Performance & Goals Management
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Strategic planning with OKRs and performance tracking
-                </p>
-              </div>
-            </div>
-            <div className="flex gap-2">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title="Performance & Goals Management"
+          subtitle="Strategic planning with OKRs and performance tracking"
+          icon={Target}
+          iconColor="text-orange-500"
+          actions={
+            <>
               <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>
                 <SelectTrigger className="w-32">
                   <SelectValue />
@@ -486,14 +471,9 @@ export default function Goals() {
                 <Plus className="h-4 w-4 mr-2" />
                 New OKR
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+            </>
+          }
+        />
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>

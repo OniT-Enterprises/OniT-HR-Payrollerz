@@ -37,7 +37,7 @@ import {
 
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   BookOpen,
   Plus,
@@ -59,8 +59,6 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import type { Account, AccountType, AccountSubType } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useAccounts, useCreateAccount, useUpdateAccount, useInitializeChartOfAccounts } from "@/hooks/useAccounting";
 import { useAuth } from "@/contexts/AuthContext";
@@ -422,7 +420,7 @@ export default function ChartOfAccounts() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -477,234 +475,216 @@ export default function ChartOfAccounts() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.chartOfAccounts} />
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <BookOpen className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("accounting.chartOfAccounts.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.chartOfAccounts.subtitle")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">Your list of categories for tracking where money goes</p>
-              </div>
-            </div>
-              <div className="flex items-center gap-3">
-                {accounts.length === 0 && (
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t("accounting.chartOfAccounts.title")}
+          subtitle={t("accounting.chartOfAccounts.subtitle")}
+          icon={BookOpen}
+          iconColor="text-orange-500"
+          actions={
+            <>
+              {accounts.length === 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleInitialize}
+                  disabled={initializing}
+                >
+                  {initializing ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t("accounting.chartOfAccounts.initializingBtn")}
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      {t("accounting.chartOfAccounts.initializeDefaults")}
+                    </>
+                  )}
+                </Button>
+              )}
+              <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+                <DialogTrigger asChild>
                   <Button
                     variant="outline"
-                    onClick={handleInitialize}
-                    disabled={initializing}
+                    onClick={() => { setEditingAccount(null); resetForm(); }}
                   >
-                    {initializing ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                        {t("accounting.chartOfAccounts.initializingBtn")}
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        {t("accounting.chartOfAccounts.initializeDefaults")}
-                      </>
-                    )}
+                    <Plus className="h-4 w-4 mr-2" />
+                    {t("accounting.chartOfAccounts.addAccount")}
                   </Button>
-                )}
-                <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="outline"
-                      onClick={() => { setEditingAccount(null); resetForm(); }}
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t("accounting.chartOfAccounts.addAccount")}
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>
-                        {editingAccount ? t("accounting.chartOfAccounts.editAccount") : t("accounting.chartOfAccounts.addNewAccount")}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {editingAccount
-                          ? t("accounting.chartOfAccounts.editAccountDesc")
-                          : t("accounting.chartOfAccounts.addAccountDesc")}
-                      </DialogDescription>
-                    </DialogHeader>
-                    {/* Warning for account changes */}
-                    <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-sm">
-                      <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
-                      <p className="text-amber-800 dark:text-amber-200">
-                        {t("accounting.chartOfAccounts.warning")}
-                      </p>
-                    </div>
-                    <form onSubmit={handleSubmit} className="space-y-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="code">{t("accounting.chartOfAccounts.accountCode")}</Label>
-                          <Input
-                            id="code"
-                            value={formData.code}
-                            onChange={(e) =>
-                              setFormData({ ...formData, code: e.target.value })
-                            }
-                            placeholder={t("accounting.chartOfAccounts.accountCodePlaceholder")}
-                            required
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="type">{t("accounting.chartOfAccounts.accountType")}</Label>
-                          <Select
-                            value={formData.type}
-                            onValueChange={(v) => {
-                              const newType = v as AccountType;
-                              const defaultSubTypes: Record<AccountType, AccountSubType> = {
-                                asset: 'other_asset',
-                                liability: 'other_liability',
-                                equity: 'owner_equity',
-                                revenue: 'service_revenue',
-                                expense: 'other_expense',
-                              };
-                              setFormData({ ...formData, type: newType, subType: defaultSubTypes[newType] });
-                            }}
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="asset">{t("accounting.chartOfAccounts.asset")}</SelectItem>
-                              <SelectItem value="liability">{t("accounting.chartOfAccounts.liability")}</SelectItem>
-                              <SelectItem value="equity">{t("accounting.chartOfAccounts.equity")}</SelectItem>
-                              <SelectItem value="revenue">{t("accounting.chartOfAccounts.revenue")}</SelectItem>
-                              <SelectItem value="expense">{t("accounting.chartOfAccounts.expense")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label>{t("accounting.chartOfAccounts.subType")}</Label>
-                          <Select
-                            value={formData.subType}
-                            onValueChange={(v) =>
-                              setFormData({ ...formData, subType: v as AccountSubType })
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {({
-                                asset: ['cash', 'bank', 'accounts_receivable', 'inventory', 'prepaid_expense', 'fixed_asset', 'accumulated_depreciation', 'other_asset'],
-                                liability: ['accounts_payable', 'accrued_expense', 'salaries_payable', 'tax_payable', 'inss_payable', 'loans_payable', 'other_liability'],
-                                equity: ['share_capital', 'retained_earnings', 'owner_equity', 'dividends'],
-                                revenue: ['service_revenue', 'sales_revenue', 'interest_income', 'other_income'],
-                                expense: ['salary_expense', 'inss_expense', 'rent_expense', 'utilities_expense', 'office_supplies', 'depreciation_expense', 'tax_expense', 'other_expense'],
-                              } as Record<string, string[]>)[formData.type]?.map((value) => (
-                                <SelectItem key={value} value={value}>
-                                  {t(`accounting.chartOfAccounts.subTypes.${value}`)}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
+                </DialogTrigger>
+                <DialogContent className="max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {editingAccount ? t("accounting.chartOfAccounts.editAccount") : t("accounting.chartOfAccounts.addNewAccount")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {editingAccount
+                        ? t("accounting.chartOfAccounts.editAccountDesc")
+                        : t("accounting.chartOfAccounts.addAccountDesc")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  {/* Warning for account changes */}
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800/50 text-sm">
+                    <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400 flex-shrink-0 mt-0.5" />
+                    <p className="text-amber-800 dark:text-amber-200">
+                      {t("accounting.chartOfAccounts.warning")}
+                    </p>
+                  </div>
+                  <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <Label htmlFor="name">{t("accounting.chartOfAccounts.accountNameEn")}</Label>
+                        <Label htmlFor="code">{t("accounting.chartOfAccounts.accountCode")}</Label>
                         <Input
-                          id="name"
-                          value={formData.name}
+                          id="code"
+                          value={formData.code}
                           onChange={(e) =>
-                            setFormData({ ...formData, name: e.target.value })
+                            setFormData({ ...formData, code: e.target.value })
                           }
-                          placeholder={t("accounting.chartOfAccounts.accountNameEnPlaceholder")}
+                          placeholder={t("accounting.chartOfAccounts.accountCodePlaceholder")}
                           required
                         />
                       </div>
                       <div>
-                        <Label htmlFor="nameTL">{t("accounting.chartOfAccounts.accountNameTet")}</Label>
-                        <Input
-                          id="nameTL"
-                          value={formData.nameTL}
-                          onChange={(e) =>
-                            setFormData({ ...formData, nameTL: e.target.value })
-                          }
-                          placeholder={t("accounting.chartOfAccounts.accountNameTetPlaceholder")}
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="parentAccount">{t("accounting.chartOfAccounts.parentAccount")}</Label>
+                        <Label htmlFor="type">{t("accounting.chartOfAccounts.accountType")}</Label>
                         <Select
-                          value={formData.parentAccountId || "_none_"}
-                          onValueChange={(v) =>
-                            setFormData({ ...formData, parentAccountId: v === "_none_" ? "" : v })
-                          }
+                          value={formData.type}
+                          onValueChange={(v) => {
+                            const newType = v as AccountType;
+                            const defaultSubTypes: Record<AccountType, AccountSubType> = {
+                              asset: 'other_asset',
+                              liability: 'other_liability',
+                              equity: 'owner_equity',
+                              revenue: 'service_revenue',
+                              expense: 'other_expense',
+                            };
+                            setFormData({ ...formData, type: newType, subType: defaultSubTypes[newType] });
+                          }}
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder={t("accounting.chartOfAccounts.noneTopLevel")} />
+                            <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="_none_">{t("accounting.chartOfAccounts.noneTopLevel")}</SelectItem>
-                            {accounts
-                              .filter((a) => a.type === formData.type && a.level === 1)
-                              .map((a) => (
-                                <SelectItem key={a.id} value={a.id!}>
-                                  {a.code} - {a.name}
-                                </SelectItem>
-                              ))}
+                            <SelectItem value="asset">{t("accounting.chartOfAccounts.asset")}</SelectItem>
+                            <SelectItem value="liability">{t("accounting.chartOfAccounts.liability")}</SelectItem>
+                            <SelectItem value="equity">{t("accounting.chartOfAccounts.equity")}</SelectItem>
+                            <SelectItem value="revenue">{t("accounting.chartOfAccounts.revenue")}</SelectItem>
+                            <SelectItem value="expense">{t("accounting.chartOfAccounts.expense")}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="description">{t("accounting.chartOfAccounts.description")}</Label>
-                        <Input
-                          id="description"
-                          value={formData.description}
-                          onChange={(e) =>
-                            setFormData({ ...formData, description: e.target.value })
+                        <Label>{t("accounting.chartOfAccounts.subType")}</Label>
+                        <Select
+                          value={formData.subType}
+                          onValueChange={(v) =>
+                            setFormData({ ...formData, subType: v as AccountSubType })
                           }
-                          placeholder={t("accounting.chartOfAccounts.descriptionPlaceholder")}
-                        />
-                      </div>
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowAddDialog(false)}
-                          className="flex-1"
-                          disabled={submitting}
                         >
-                          {t("accounting.chartOfAccounts.cancel")}
-                        </Button>
-                        <Button type="submit" className="flex-1" disabled={submitting}>
-                          {submitting ? (
-                            <>
-                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                              {t("accounting.chartOfAccounts.saving")}
-                            </>
-                          ) : editingAccount ? (
-                            t("accounting.chartOfAccounts.updateAccount")
-                          ) : (
-                            t("accounting.chartOfAccounts.createAccount")
-                          )}
-                        </Button>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {({
+                              asset: ['cash', 'bank', 'accounts_receivable', 'inventory', 'prepaid_expense', 'fixed_asset', 'accumulated_depreciation', 'other_asset'],
+                              liability: ['accounts_payable', 'accrued_expense', 'salaries_payable', 'tax_payable', 'inss_payable', 'loans_payable', 'other_liability'],
+                              equity: ['share_capital', 'retained_earnings', 'owner_equity', 'dividends'],
+                              revenue: ['service_revenue', 'sales_revenue', 'interest_income', 'other_income'],
+                              expense: ['salary_expense', 'inss_expense', 'rent_expense', 'utilities_expense', 'office_supplies', 'depreciation_expense', 'tax_expense', 'other_expense'],
+                            } as Record<string, string[]>)[formData.type]?.map((value) => (
+                              <SelectItem key={value} value={value}>
+                                {t(`accounting.chartOfAccounts.subTypes.${value}`)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
-                    </form>
-                  </DialogContent>
-                </Dialog>
-              </div>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto">
+                    </div>
+                    <div>
+                      <Label htmlFor="name">{t("accounting.chartOfAccounts.accountNameEn")}</Label>
+                      <Input
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                        placeholder={t("accounting.chartOfAccounts.accountNameEnPlaceholder")}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="nameTL">{t("accounting.chartOfAccounts.accountNameTet")}</Label>
+                      <Input
+                        id="nameTL"
+                        value={formData.nameTL}
+                        onChange={(e) =>
+                          setFormData({ ...formData, nameTL: e.target.value })
+                        }
+                        placeholder={t("accounting.chartOfAccounts.accountNameTetPlaceholder")}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="parentAccount">{t("accounting.chartOfAccounts.parentAccount")}</Label>
+                      <Select
+                        value={formData.parentAccountId || "_none_"}
+                        onValueChange={(v) =>
+                          setFormData({ ...formData, parentAccountId: v === "_none_" ? "" : v })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={t("accounting.chartOfAccounts.noneTopLevel")} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="_none_">{t("accounting.chartOfAccounts.noneTopLevel")}</SelectItem>
+                          {accounts
+                            .filter((a) => a.type === formData.type && a.level === 1)
+                            .map((a) => (
+                              <SelectItem key={a.id} value={a.id!}>
+                                {a.code} - {a.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="description">{t("accounting.chartOfAccounts.description")}</Label>
+                      <Input
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          setFormData({ ...formData, description: e.target.value })
+                        }
+                        placeholder={t("accounting.chartOfAccounts.descriptionPlaceholder")}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowAddDialog(false)}
+                        className="flex-1"
+                        disabled={submitting}
+                      >
+                        {t("accounting.chartOfAccounts.cancel")}
+                      </Button>
+                      <Button type="submit" className="flex-1" disabled={submitting}>
+                        {submitting ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            {t("accounting.chartOfAccounts.saving")}
+                          </>
+                        ) : editingAccount ? (
+                          t("accounting.chartOfAccounts.updateAccount")
+                        ) : (
+                          t("accounting.chartOfAccounts.createAccount")
+                        )}
+                      </Button>
+                    </div>
+                  </form>
+                </DialogContent>
+              </Dialog>
+            </>
+          }
+        />
         <MoreDetailsSection className="mb-6">
           <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <Card className="border-border/50">

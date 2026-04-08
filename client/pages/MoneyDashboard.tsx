@@ -115,7 +115,7 @@ export default function MoneyDashboard() {
         <MainNavigation />
         <ModuleSectionNav config={moneyNavConfig} />
         <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
-          <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="mx-auto max-w-screen-2xl px-6 py-8">
             <Skeleton className="h-4 w-24 mb-4" />
             <div className="flex items-center gap-4">
               <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -126,7 +126,7 @@ export default function MoneyDashboard() {
             </div>
           </div>
         </div>
-        <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
           <Skeleton className="h-32" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <Skeleton className="h-64" />
@@ -145,7 +145,7 @@ export default function MoneyDashboard() {
 
       {/* Hero Section */}
       <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -167,7 +167,7 @@ export default function MoneyDashboard() {
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto space-y-5">
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-5">
         <GuidancePanel section="money" />
 
         {/* Action items — slim banner when issues, one-liner when clear */}

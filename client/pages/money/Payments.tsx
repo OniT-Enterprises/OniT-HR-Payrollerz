@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,9 +24,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
-import { InfoTooltip } from '@/components/ui/info-tooltip';
+
 import { formatDateTL } from '@/lib/dateUtils';
 import {
   DollarSign,
@@ -102,8 +100,7 @@ export default function Payments() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -125,29 +122,14 @@ export default function Payments() {
     <div className="min-h-screen bg-background">
       <SEO title="Payments - Meza" description="View payment history" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-            <DollarSign className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.payments.title') || 'Payments'}
-                <InfoTooltip
-                  title={t('money.payments.tooltipTitle') || 'Payments Received'}
-                  content={t('money.payments.tooltipContent') || 'Record of all payments received from customers. Each payment is linked to an invoice and updates that invoice\'s balance.'}
-                />
-              </h1>
-            <p className="text-muted-foreground">
-              {t('money.payments.subtitle') || 'Payment history and summaries'}
-            </p>
-          </div>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.payments.title') || 'Payments'}
+          subtitle={t('money.payments.subtitle') || 'Payment history and summaries'}
+          icon={DollarSign}
+          iconColor="text-indigo-500"
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

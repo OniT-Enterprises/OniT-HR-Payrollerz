@@ -99,7 +99,7 @@ export function TimePicker({
           <Clock className="h-4 w-4 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0" align="start">
+      <PopoverContent className="w-[280px] p-0 z-[60]" align="start">
         {/* Quick presets */}
         <div className="border-b p-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1 mb-1.5">Quick Select</p>

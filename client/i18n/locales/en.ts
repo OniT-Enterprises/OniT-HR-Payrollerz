@@ -12,6 +12,7 @@ const messages = {
     "amount": "Amount",
     "back": "Back",
     "cancel": "Cancel",
+    "collapse": "Collapse",
     "city": "City",
     "date": "Date",
     "delete": "Delete",
@@ -4648,6 +4649,7 @@ const messages = {
       "billOverduePlural": "{{count}} bills overdue",
       "needsPayment": "{{amount}} needs payment",
       "allCaughtUp": "All caught up!",
+      "allGood": "All good",
       "noUrgentTasks": "No urgent tasks right now",
       "lookingGood": "Looking good!",
       "noUrgentItems": "No urgent items",
@@ -5485,7 +5487,13 @@ const messages = {
     "toastOverrideShortDesc": "Please provide at least 10 characters explaining why you are proceeding without full compliance.",
     "toastSyncedAttendance": "Attendance synced for {{count}} employee(s).",
     "toastSyncAttendanceNoData": "No attendance records found for this period.",
-    "toastLoadFailed": "Failed to load employees. Please refresh the page."
+    "toastLoadFailed": "Failed to load employees. Please refresh the page.",
+    "monthlyDesc": "Once per month",
+    "biweeklyDesc": "Every two weeks",
+    "weeklyDesc": "Every week",
+    "withIssues": "with issues",
+    "excludeFlagged": "Exclude flagged",
+    "employeeBreakdown": "Employee breakdown"
   },
   "deductions": {
     "title": "Deductions & Advances",

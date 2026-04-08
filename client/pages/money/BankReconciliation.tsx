@@ -5,7 +5,7 @@
 
 import { useState, useRef } from 'react';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Table,
@@ -30,8 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import {
   useBankTransactions,
   useReconciliationSummary,
@@ -333,79 +332,14 @@ export default function BankReconciliation() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
-          <div className="max-w-6xl mx-auto px-6 py-8">
-            <Skeleton className="h-4 w-48 mb-4" />
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-14 w-14 rounded-2xl" />
-                <div>
-                  <Skeleton className="h-8 w-56 mb-2" />
-                  <Skeleton className="h-4 w-72" />
-                </div>
-              </div>
-              <Skeleton className="h-10 w-32 rounded-md" />
-            </div>
-          </div>
-        </div>
-        <div className="max-w-6xl mx-auto px-6 py-6">
-          {/* Summary cards skeleton */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8 animate-fade-up stagger-1">
-            {[
-              "from-amber-500/5 to-orange-500/5",
-              "from-blue-500/5 to-indigo-500/5",
-              "from-emerald-500/5 to-green-500/5",
-              "from-green-500/5 to-teal-500/5",
-              "from-red-500/5 to-rose-500/5",
-            ].map((gradient, i) => (
-              <Card key={i} className="relative overflow-hidden border-border/50">
-                <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
-                <CardContent className="relative pt-5 pb-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <Skeleton className="h-3 w-16 mb-2" />
-                      <Skeleton className="h-7 w-20" />
-                    </div>
-                    <Skeleton className="h-8 w-8 rounded-lg" />
-                  </div>
-                </CardContent>
-              </Card>
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
+          <Skeleton className="h-8 w-48 mb-2" />
+          <Skeleton className="h-5 w-72 mb-8" />
+          <div className="grid gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
-          {/* Table skeleton */}
-          <Card className="border-border/50 animate-fade-up stagger-2">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-7 w-7 rounded-lg" />
-                  <Skeleton className="h-5 w-40" />
-                </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-9 w-36 rounded-md" />
-                  <Skeleton className="h-9 w-48 rounded-md" />
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <div key={i} className="flex items-center gap-4 py-3 border-b border-border/20 last:border-0">
-                    <Skeleton className="h-4 w-4" />
-                    <Skeleton className="h-4 w-20" />
-                    <div className="flex items-center gap-2 flex-1">
-                      <Skeleton className="h-4 w-4 rounded" />
-                      <Skeleton className="h-4 w-40" />
-                    </div>
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-5 w-20 rounded-full" />
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-8 w-8 rounded" />
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
@@ -415,54 +349,37 @@ export default function BankReconciliation() {
     <div className="min-h-screen bg-background">
       <SEO title="Bank Reconciliation - Meza" description="Reconcile bank transactions" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-indigo-50 dark:bg-indigo-950/30">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex flex-wrap items-center justify-between gap-4 animate-fade-up">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-indigo-500 to-indigo-600 shadow-lg shadow-indigo-500/25">
-                <Building2 className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight text-foreground">
-                  {t('money.bankRecon.title') || 'Bank Reconciliation'}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t('money.bankRecon.subtitle') || 'Import and match bank transactions'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <input
-                type="file"
-                ref={fileInputRef}
-                accept=".csv"
-                className="hidden"
-                onChange={handleFileUpload}
-              />
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={importing}
-                className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-lg shadow-indigo-500/25"
-              >
-                {importing ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Upload className="h-4 w-4 mr-2" />
-                )}
-                {importing
-                  ? t('money.bankRecon.importing') || 'Importing...'
-                  : t('money.bankRecon.importCSV') || 'Import CSV'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-6xl mx-auto px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept=".csv"
+          className="hidden"
+          onChange={handleFileUpload}
+        />
+        <PageHeader
+          title={t('money.bankRecon.title') || 'Bank Reconciliation'}
+          subtitle={t('money.bankRecon.subtitle') || 'Import and match bank transactions'}
+          icon={Building2}
+          iconColor="text-indigo-500"
+          actions={
+            <Button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={importing}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {importing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4 mr-2" />
+              )}
+              {importing
+                ? t('money.bankRecon.importing') || 'Importing...'
+                : t('money.bankRecon.importCSV') || 'Import CSV'}
+            </Button>
+          }
+        />
         {/* Summary Cards */}
         <MoreDetailsSection className="animate-fade-up stagger-1 mb-6">
         <div>

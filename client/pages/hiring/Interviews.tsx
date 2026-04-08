@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { TimePicker } from "@/components/ui/time-picker";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   Select,
   SelectContent,
@@ -39,9 +39,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -88,7 +86,6 @@ import {
   CheckCircle,
   X,
   Star,
-  AlertTriangle,
   CalendarDays,
   Video,
   MapPin,
@@ -547,7 +544,7 @@ export default function Interviews() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <div className="space-y-4">
             <Skeleton className="h-10 w-64" />
             <div className="grid grid-cols-4 gap-4">
@@ -566,28 +563,15 @@ export default function Interviews() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.interviews} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("hiring.interviews.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("hiring.interviews.subtitle")}
-                </p>
-              </div>
-            </div>
-
+      {/* Main Content */}
+      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <PageHeader
+          title={t("hiring.interviews.title")}
+          subtitle={t("hiring.interviews.subtitle")}
+          icon={Calendar}
+          iconColor="text-emerald-500"
+          actions={
             <Button
               onClick={() => {
                 resetForm();
@@ -598,73 +582,8 @@ export default function Interviews() {
               <Plus className="h-4 w-4 mr-2" />
               Schedule Interview
             </Button>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-blue-500/10">
-                  <CalendarDays className="h-5 w-5 text-blue-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.total}</p>
-                  <p className="text-sm text-muted-foreground">Total Interviews</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-500/10">
-                  <Clock className="h-5 w-5 text-emerald-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.upcoming}</p>
-                  <p className="text-sm text-muted-foreground">Upcoming</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-purple-500/10">
-                  <CheckCircle className="h-5 w-5 text-purple-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.completed}</p>
-                  <p className="text-sm text-muted-foreground">Completed</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-amber-500/10">
-                  <AlertTriangle className="h-5 w-5 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold">{stats.pending}</p>
-                  <p className="text-sm text-muted-foreground">Pending Decision</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+          }
+        />
         {/* Filters */}
         <div className="flex flex-col sm:flex-row gap-4 mb-6">
           <div className="relative flex-1">
@@ -676,6 +595,17 @@ export default function Interviews() {
               className="pl-9"
             />
           </div>
+
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Time filter" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="upcoming">Upcoming</SelectItem>
+              <SelectItem value="past">Past</SelectItem>
+              <SelectItem value="all">All</SelectItem>
+            </SelectContent>
+          </Select>
 
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-[180px]">
@@ -691,15 +621,7 @@ export default function Interviews() {
           </Select>
         </div>
 
-        {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList>
-            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-            <TabsTrigger value="past">Past</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value={activeTab} className="mt-4">
+        <div className="mt-4">
             {filteredInterviews.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
@@ -995,8 +917,7 @@ export default function Interviews() {
                 ))}
               </div>
             )}
-          </TabsContent>
-        </Tabs>
+        </div>
       </div>
 
       {/* Schedule Dialog */}

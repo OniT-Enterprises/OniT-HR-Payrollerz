@@ -36,13 +36,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { useTenantId } from "@/contexts/TenantContext";
 import { SEO } from "@/components/SEO";
 import { formatDateTL } from "@/lib/dateUtils";
@@ -293,7 +297,7 @@ export default function GrievanceInbox() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <Skeleton className="h-10 w-96 mb-6" />
@@ -314,29 +318,14 @@ export default function GrievanceInbox() {
         description="Anonymous employee grievance management"
       />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-              <ShieldAlert className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Grievance Inbox</h1>
-              <p className="text-muted-foreground mt-1">
-                Anonymous employee concerns and complaints
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title="Grievance Inbox"
+          subtitle="Anonymous employee concerns and complaints"
+          icon={ShieldAlert}
+          iconColor="text-blue-500"
+        />
 
         {/* Anonymity Notice */}
         <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
@@ -394,39 +383,20 @@ export default function GrievanceInbox() {
           </Card>
         </div>
 
-        {/* Filter Tabs */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-6">
-          <TabsList>
-            <TabsTrigger value="all">
-              All
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {grievances.length}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="new">
-              New
-              {newCount > 0 && (
-                <Badge variant="destructive" className="ml-2 text-xs">
-                  {newCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="reviewing">
-              In Review
-              {reviewingCount > 0 && (
-                <Badge className="ml-2 text-xs bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-                  {reviewingCount}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="resolved">
-              Resolved
-              <Badge variant="secondary" className="ml-2 text-xs">
-                {resolvedCount}
-              </Badge>
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
+        {/* Status Filter */}
+        <div className="mb-6">
+          <Select value={activeTab} onValueChange={setActiveTab}>
+            <SelectTrigger className="w-[160px] h-10">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              <SelectItem value="new">New</SelectItem>
+              <SelectItem value="reviewing">In Review</SelectItem>
+              <SelectItem value="resolved">Resolved</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Grievances Table */}
         {filteredGrievances.length === 0 ? (

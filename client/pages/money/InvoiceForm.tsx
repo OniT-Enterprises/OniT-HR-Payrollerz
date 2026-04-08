@@ -10,7 +10,7 @@ import { useForm, useFieldArray, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,8 +43,7 @@ import { invoiceService } from '@/services/invoiceService';
 import { useActiveCustomers } from '@/hooks/useCustomers';
 import { useInvoice, useInvoiceSettings, useCreateInvoice, useUpdateInvoice, invoiceKeys } from '@/hooks/useInvoices';
 
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { invoiceFormSchema, type InvoiceFormSchemaData } from '@/lib/validations';
@@ -401,8 +400,7 @@ export default function InvoiceForm() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-screen-lg mx-auto">
           <Skeleton className="h-8 w-48 mb-8" />
           <Skeleton className="h-96" />
         </div>
@@ -416,44 +414,46 @@ export default function InvoiceForm() {
       <div className="min-h-screen bg-background">
         <SEO title={`Invoice ${invoice.invoiceNumber} - Meza`} />
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
 
-        <div className="p-6 max-w-4xl mx-auto">
-          <AutoBreadcrumb className="mb-6" />
-
-          {/* Header */}
-          <div className="flex items-center justify-between mb-6">
-            <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('common.back') || 'Back'}
-            </Button>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
-                {downloadingPdf ? (
-                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4 mr-2" />
-                )}
-                {t('money.invoices.downloadPdf') || 'Download PDF'}
-              </Button>
-              <Button variant="outline" onClick={handleShare}>
-                <Share2 className="h-4 w-4 mr-2" />
-                {t('money.invoices.share') || 'Share'}
-              </Button>
-              {['sent', 'viewed', 'partial'].includes(invoice.status) && (
-                <Button
-                  onClick={() => {
-                    setPaymentAmount(invoice.balanceDue.toString());
-                    setShowPaymentDialog(true);
-                  }}
-                  className="bg-indigo-600 hover:bg-indigo-700"
-                >
-                  <DollarSign className="h-4 w-4 mr-2" />
-                  {t('money.invoices.recordPayment') || 'Record Payment'}
+        <div className="p-6 max-w-screen-lg mx-auto">
+          <PageHeader
+            title={`${t('money.invoices.invoice') || 'Invoice'} ${invoice.invoiceNumber}`}
+            subtitle={invoice.customerName}
+            icon={FileText}
+            iconColor="text-indigo-500"
+            actions={
+              <>
+                <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  {t('common.back') || 'Back'}
                 </Button>
-              )}
-            </div>
-          </div>
+                <Button variant="outline" onClick={handleDownloadPDF} disabled={downloadingPdf}>
+                  {downloadingPdf ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Download className="h-4 w-4 mr-2" />
+                  )}
+                  {t('money.invoices.downloadPdf') || 'Download PDF'}
+                </Button>
+                <Button variant="outline" onClick={handleShare}>
+                  <Share2 className="h-4 w-4 mr-2" />
+                  {t('money.invoices.share') || 'Share'}
+                </Button>
+                {['sent', 'viewed', 'partial'].includes(invoice.status) && (
+                  <Button
+                    onClick={() => {
+                      setPaymentAmount(invoice.balanceDue.toString());
+                      setShowPaymentDialog(true);
+                    }}
+                    className="bg-indigo-600 hover:bg-indigo-700"
+                  >
+                    <DollarSign className="h-4 w-4 mr-2" />
+                    {t('money.invoices.recordPayment') || 'Record Payment'}
+                  </Button>
+                )}
+              </>
+            }
+          />
 
           {/* Status Timeline */}
           <Card className="mb-6">
@@ -685,44 +685,33 @@ export default function InvoiceForm() {
         title={isNew ? 'New Invoice - Meza' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Meza`}
       />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              {t('common.back') || 'Back'}
-            </Button>
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold">
-                {isNew
-                  ? t('money.invoices.newInvoice') || 'New Invoice'
-                  : t('money.invoices.editInvoice') || 'Edit Invoice'}
-              </h1>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
-              <Save className="h-4 w-4 mr-2" />
-              {t('money.invoices.saveDraft') || 'Save Draft'}
-            </Button>
-            <Button
-              onClick={() => handleSave(true)}
-              disabled={saving}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Send className="h-4 w-4 mr-2" />
-              {t('money.invoices.saveAndSend') || 'Save & Send'}
-            </Button>
-          </div>
-        </div>
+      <div className="p-6 max-w-screen-lg mx-auto">
+        <PageHeader
+          title={isNew ? t('money.invoices.newInvoice') || 'New Invoice' : t('money.invoices.editInvoice') || 'Edit Invoice'}
+          icon={FileText}
+          iconColor="text-indigo-500"
+          actions={
+            <>
+              <Button variant="ghost" onClick={() => navigate('/money/invoices')}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                {t('common.back') || 'Back'}
+              </Button>
+              <Button variant="outline" onClick={() => handleSave(false)} disabled={saving}>
+                <Save className="h-4 w-4 mr-2" />
+                {t('money.invoices.saveDraft') || 'Save Draft'}
+              </Button>
+              <Button
+                onClick={() => handleSave(true)}
+                disabled={saving}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Send className="h-4 w-4 mr-2" />
+                {t('money.invoices.saveAndSend') || 'Save & Send'}
+              </Button>
+            </>
+          }
+        />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Main Form */}

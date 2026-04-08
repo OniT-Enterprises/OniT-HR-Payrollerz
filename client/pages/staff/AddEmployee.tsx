@@ -43,9 +43,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWizard";
 import { collection, doc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -661,7 +659,7 @@ export default function AddEmployee() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-5xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-64 mb-6" />
           <Skeleton className="h-20 w-full mb-6" />
           <Skeleton className="h-96 w-full" />
@@ -674,46 +672,26 @@ export default function AddEmployee() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.addEmployee} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-5xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
+      <PageHeader
+        title={isEditMode
+          ? t("addEmployee.header.editTitle")
+          : t("addEmployee.header.addTitle")}
+        subtitle={isEditMode
+          ? t("addEmployee.header.editSubtitle")
+          : t("addEmployee.header.addSubtitle")}
+        icon={UserPlus}
+        iconColor="text-blue-500"
+        actions={
+          <Button variant="outline" onClick={() => setShowBulkTools((prev) => !prev)}>
+            <FileText className="h-4 w-4 mr-2" />
+            {t("common.moreActions")}
+          </Button>
+        }
+        className="mx-auto max-w-screen-2xl px-6"
+      />
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <UserPlus className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {isEditMode
-                    ? t("addEmployee.header.editTitle")
-                    : t("addEmployee.header.addTitle")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {isEditMode
-                    ? t("addEmployee.header.editSubtitle")
-                    : t("addEmployee.header.addSubtitle")}
-                </p>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setShowBulkTools((prev) => !prev)}>
-                <FileText className="h-4 w-4 mr-2" />
-                {t("common.moreActions")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      <div className="max-w-5xl mx-auto px-6 py-8 -mt-6">
+      <div className="mx-auto max-w-screen-2xl px-6 py-8 -mt-6">
         {showBulkTools && (
           <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
             <p className="mb-3 text-sm text-muted-foreground">

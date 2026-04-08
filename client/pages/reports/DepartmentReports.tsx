@@ -18,9 +18,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAllDepartments } from "@/hooks/useDepartments";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import type { Department } from "@/services/departmentService";
@@ -201,8 +199,7 @@ export default function DepartmentReports() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-7xl mx-auto">
-          <AutoBreadcrumb className="mb-6" />
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
@@ -222,26 +219,13 @@ export default function DepartmentReports() {
     <div className="min-h-screen bg-background">
       <SEO title={`${t("reports.department.title")} | Meza`} description={t("reports.department.subtitle")} />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                <Building className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("reports.department.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("reports.department.subtitle")}
-                </p>
-              </div>
-            </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.department.title")}
+          subtitle={t("reports.department.subtitle")}
+          icon={Building}
+          iconColor="text-violet-500"
+          actions={
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">{t("reports.shared.periodLabel")}</span>
               <Select value={dateRange} onValueChange={setDateRange}>
@@ -256,13 +240,8 @@ export default function DepartmentReports() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+          }
+        />
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 -mt-10">
           <Card className="border-border/50 shadow-lg">

@@ -12,3 +12,6 @@ export { TaxSummaryCard } from './TaxSummaryCard';
 export { PayrollPeriodConfig } from './PayrollPeriodConfig';
 export { PayrollComplianceCard } from './PayrollComplianceCard';
 export { PayrollDialogs } from './PayrollDialogs';
+
+// Wizard step components
+export { WizardStepPeriod, WizardStepEmployees, WizardStepHours, WizardStepReview } from './wizard';

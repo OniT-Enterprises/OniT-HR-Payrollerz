@@ -20,6 +20,7 @@ import React from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import type { SectionId } from "@/lib/sectionTheme";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
+import { useLayoutOptional } from "@/contexts/LayoutContext";
 
 /**
  * Static map of active tab styles per module.
@@ -45,7 +46,13 @@ function isPathActive(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(path + "/");
 }
 
-export default function ModuleSectionNav({ config, mode }: ModuleSectionNavProps) {
+export default function ModuleSectionNav(props: ModuleSectionNavProps) {
+  const layoutCtx = useLayoutOptional();
+  if (layoutCtx) return null;
+  return <ModuleSectionNavInner {...props} />;
+}
+
+function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
 

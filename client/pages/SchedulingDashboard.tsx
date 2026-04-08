@@ -37,7 +37,7 @@ function SchedulingDashboardSkeleton() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <Skeleton className="h-4 w-32 mb-4" />
           <div className="flex items-center gap-4">
             <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -48,7 +48,7 @@ function SchedulingDashboardSkeleton() {
           </div>
         </div>
       </div>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <div className="grid gap-4 md:grid-cols-4 mb-6">
           {[1, 2, 3, 4].map((i) => (
             <Card key={i} className="border-l-4 border-l-muted">
@@ -105,7 +105,7 @@ export default function SchedulingDashboard() {
 
       {/* Hero Section */}
       <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -125,7 +125,7 @@ export default function SchedulingDashboard() {
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <GuidancePanel section="scheduling" />
 
         <MoreDetailsSection className="mb-6">

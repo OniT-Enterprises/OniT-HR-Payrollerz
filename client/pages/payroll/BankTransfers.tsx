@@ -36,11 +36,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { payrollNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
-  DollarSign,
   Plus,
   Download,
   Send,
@@ -234,40 +231,6 @@ export default function BankTransfers() {
         : [...prev, bankCode]
     );
   };
-
-  // Calculate summary stats
-  const stats = useMemo(() => {
-    const now = new Date();
-    const currentMonth = now.getMonth();
-    const currentYear = now.getFullYear();
-
-    const thisMonthTransfers = transfers.filter((t) => {
-      const transferDate = new Date(t.transferDate);
-      return (
-        transferDate.getMonth() === currentMonth &&
-        transferDate.getFullYear() === currentYear
-      );
-    });
-
-    const thisMonthTotal = thisMonthTransfers.reduce(
-      (sum, t) => sum + t.amount,
-      0
-    );
-    const pendingCount = transfers.filter(
-      (t) => t.status === "pending" || t.status === "processing"
-    ).length;
-    const completedCount = transfers.filter(
-      (t) => t.status === "completed"
-    ).length;
-    const failedCount = transfers.filter((t) => t.status === "failed").length;
-
-    return {
-      thisMonthTotal,
-      pendingCount,
-      completedCount,
-      failedCount,
-    };
-  }, [transfers]);
 
   // Get unique periods for filter
   const availablePeriods = useMemo(() => {
@@ -482,26 +445,14 @@ export default function BankTransfers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
                 <Skeleton className="h-8 w-48 mb-2" />
                 <Skeleton className="h-4 w-64" />
               </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              {[1, 2, 3, 4].map((i) => (
-                <Card key={i}>
-                  <CardContent className="p-5">
-                    <Skeleton className="h-4 w-28 mb-2" />
-                    <Skeleton className="h-8 w-20 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </CardContent>
-                </Card>
-              ))}
             </div>
             <Card className="mb-6">
               <CardHeader>
@@ -545,93 +496,14 @@ export default function BankTransfers() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.bankTransfers} />
       <MainNavigation />
-      <ModuleSectionNav config={payrollNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-green-50 dark:bg-green-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
-              <Send className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {t("bankTransfers.title")}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t("bankTransfers.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("bankTransfers.thisMonth")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(stats.thisMonthTotal)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("bankTransfers.pendingTransfers")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.pendingCount}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl">
-                    <Clock className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("bankTransfers.completed")}
-                    </p>
-                    <p className="text-2xl font-bold">{stats.completedCount}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl">
-                    <CheckCircle className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{t("bankTransfers.failed")}</p>
-                    <p className="text-2xl font-bold">{stats.failedCount}</p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                    <XCircle className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("bankTransfers.title")}
+          subtitle={t("bankTransfers.subtitle")}
+          icon={Send}
+          iconColor="text-green-500"
+        />
 
           {/* Filters */}
           <Card className="mb-6 border-border/50">
@@ -706,7 +578,7 @@ export default function BankTransfers() {
                   {/* Bank File Generation Dialog */}
                   <Dialog open={showBankFileDialog} onOpenChange={setShowBankFileDialog}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" className="border-green-200 text-green-700 hover:bg-green-50">
+                      <Button variant="outline" className="border-green-500/30 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-950/30">
                         <FileText className="h-4 w-4 mr-2" />
                         {t("bankTransfers.bankFiles")}
                       </Button>

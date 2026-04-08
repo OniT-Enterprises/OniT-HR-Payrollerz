@@ -13,9 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { payrollNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -66,9 +64,8 @@ export default function TaxReports() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -90,36 +87,27 @@ export default function TaxReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.taxes} />
       <MainNavigation />
-      <ModuleSectionNav config={payrollNavConfig} />
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <AutoBreadcrumb className="mb-4" />
-
-        <div className="flex items-start justify-between gap-4 mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-500/15">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">{t("taxReports.title")}</h1>
-              <p className="text-muted-foreground">
-                {t("taxReports.subtitle")}
-              </p>
-            </div>
-          </div>
-
-          {hasOverdue ? (
-            <Badge className="bg-red-100 text-red-800">
-              <AlertTriangle className="h-3 w-3 mr-1" />
-              {t("taxReports.actionRequired")}
-            </Badge>
-          ) : (
-            <Badge className="bg-emerald-100 text-emerald-800">
-              <CheckCircle className="h-3 w-3 mr-1" />
-              {t("taxReports.onTrack")}
-            </Badge>
-          )}
-        </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("taxReports.title")}
+          subtitle={t("taxReports.subtitle")}
+          icon={Shield}
+          iconColor="text-slate-500"
+          actions={
+            hasOverdue ? (
+              <Badge className="bg-red-100 text-red-800">
+                <AlertTriangle className="h-3 w-3 mr-1" />
+                {t("taxReports.actionRequired")}
+              </Badge>
+            ) : (
+              <Badge className="bg-emerald-100 text-emerald-800">
+                <CheckCircle className="h-3 w-3 mr-1" />
+                {t("taxReports.onTrack")}
+              </Badge>
+            )
+          }
+        />
 
         <Card className="mb-6">
           <CardHeader>

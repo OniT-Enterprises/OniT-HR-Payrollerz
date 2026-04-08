@@ -31,9 +31,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { employeeService, type Employee } from "@/services/employeeService";
 import { useTenantId } from "@/contexts/TenantContext";
 import { departmentService, Department } from "@/services/departmentService";
@@ -339,26 +337,13 @@ export default function CustomReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.customReports} />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                <BarChart3 className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("reports.custom.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("reports.custom.subtitle")}
-                </p>
-              </div>
-            </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.custom.title")}
+          subtitle={t("reports.custom.subtitle")}
+          icon={BarChart3}
+          iconColor="text-violet-500"
+          actions={
             <Dialog open={isBuilderOpen} onOpenChange={setIsBuilderOpen}>
               <DialogTrigger asChild>
                 <Button onClick={resetBuilder}>
@@ -534,13 +519,8 @@ export default function CustomReports() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+          }
+        />
         {/* Quick Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6 -mt-10">
           <Card className="border-border/50 shadow-lg">

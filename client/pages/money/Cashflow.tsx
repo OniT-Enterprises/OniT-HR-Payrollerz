@@ -6,7 +6,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Separator } from '@/components/ui/separator';
@@ -23,8 +23,7 @@ import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
 import { billService } from '@/services/billService';
 import { expenseService } from '@/services/expenseService';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { toDateStringTL, formatDateTL } from '@/lib/dateUtils';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
@@ -149,8 +148,7 @@ export default function Cashflow() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-4xl mx-auto">
+        <div className="p-6 max-w-screen-lg mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <Skeleton className="h-96 w-full" />
@@ -163,25 +161,14 @@ export default function Cashflow() {
     <div className="min-h-screen bg-background">
       <SEO title="Cashflow - Meza" description="View your cash flow statement" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-4xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Banknote className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">{t('money.cashflow.title') || 'Cash Flow'}</h1>
-              <p className="text-muted-foreground">
-                {t('money.cashflow.subtitle') || 'Track money in and out'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
+      <div className="p-6 max-w-screen-lg mx-auto">
+        <PageHeader
+          title={t('money.cashflow.title') || 'Cash Flow'}
+          subtitle={t('money.cashflow.subtitle') || 'Track money in and out'}
+          icon={Banknote}
+          iconColor="text-indigo-500"
+          actions={
             <Select value={period} onValueChange={setPeriod}>
               <SelectTrigger className="w-[180px]">
                 <Calendar className="h-4 w-4 mr-2" />
@@ -194,8 +181,8 @@ export default function Cashflow() {
                 <SelectItem value="this_year">{t('money.cashflow.thisYear') || 'This Year'}</SelectItem>
               </SelectContent>
             </Select>
-          </div>
-        </div>
+          }
+        />
 
         {/* Summary Cards */}
         <MoreDetailsSection className="mb-8">

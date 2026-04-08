@@ -50,21 +50,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { usePayrollRuns, useApprovePayrollRun, useRejectPayrollRun, useMarkPayrollRunAsPaid, useUpdatePayrollRun, useRepairStuckRun } from "@/hooks/usePayroll";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
+import PageHeader from "@/components/layout/PageHeader";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
-import { payrollNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import {
   FileText,
-  DollarSign,
-  Calendar,
-  Users,
   Download,
   Eye,
   MoreVertical,
@@ -176,9 +170,12 @@ export default function PayrollHistory() {
     import("@/components/payroll/PayslipPDF");
   }, []);
 
+  // Load allocation checks when approve dialog opens
+  const approveRunId = approveRun?.id ?? null;
   useEffect(() => {
-    if (!showApproveDialog || !approveRun?.id) {
-      setApproveRunRecords([]);
+    if (!showApproveDialog || !approveRunId) {
+      // Only reset if we actually have stale data
+      setApproveRunRecords(prev => prev.length > 0 ? [] : prev);
       setLoadingApproveAllocationCheck(false);
       setApproveUnassignedEmployeeCount(0);
       setApproveUnassignedGrossPay(0);
@@ -186,54 +183,37 @@ export default function PayrollHistory() {
       return;
     }
 
-    let cancelled = false;
-
-    const loadApprovalChecks = async () => {
-      if (loadingEmployees) {
-        setLoadingApproveAllocationCheck(true);
-        return;
-      }
+    if (loadingEmployees) {
       setLoadingApproveAllocationCheck(true);
-      setConfirmUnassignedAllocation(false);
-      try {
-        const records = await payrollService.records.getPayrollRecordsByRunId(approveRun.id!, tenantId);
-        if (cancelled) return;
+      return;
+    }
 
+    let cancelled = false;
+    setLoadingApproveAllocationCheck(true);
+    setConfirmUnassignedAllocation(false);
+
+    payrollService.records.getPayrollRecordsByRunId(approveRunId, tenantId)
+      .then((records) => {
+        if (cancelled) return;
         setApproveRunRecords(records);
         const allocationRollup = summarizePayrollAllocations(records, employeeAllocationMeta);
         setApproveUnassignedEmployeeCount(allocationRollup.unassignedEmployeeCount);
         setApproveUnassignedGrossPay(allocationRollup.unassignedGrossPay);
-      } catch (error) {
+      })
+      .catch((error) => {
         if (cancelled) return;
         console.error("Failed to load payroll records for approval check:", error);
         setApproveRunRecords([]);
         setApproveUnassignedEmployeeCount(0);
         setApproveUnassignedGrossPay(0);
-        toast({
-          title: t("common.error"),
-          description: t("payrollHistory.toastRecordsError"),
-          variant: "destructive",
-        });
-      } finally {
-        if (!cancelled) {
-          setLoadingApproveAllocationCheck(false);
-        }
-      }
-    };
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingApproveAllocationCheck(false);
+      });
 
-    loadApprovalChecks();
-    return () => {
-      cancelled = true;
-    };
-  }, [
-    approveRun?.id,
-    employeeAllocationMeta,
-    loadingEmployees,
-    showApproveDialog,
-    t,
-    tenantId,
-    toast,
-  ]);
+    return () => { cancelled = true; };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- employeeAllocationMeta is derived from employees which is stable per query; toast/t excluded as stable refs
+  }, [approveRunId, showApproveDialog, loadingEmployees, tenantId]);
 
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -571,9 +551,8 @@ export default function PayrollHistory() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={payrollNavConfig} />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -633,117 +612,46 @@ export default function PayrollHistory() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payrollHistory} />
       <MainNavigation />
-      <ModuleSectionNav config={payrollNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-green-50 dark:bg-green-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
-                <FileText className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("payrollHistory.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("payrollHistory.subtitle")}
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => navigate("/payroll/run")} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("payrollHistory.title")}
+          subtitle={t("payrollHistory.subtitle")}
+          icon={FileText}
+          iconColor="text-green-500"
+          actions={
+            <Button onClick={() => navigate("/payroll/run")}>
               {t("payrollHistory.runNewPayroll")}
             </Button>
-          </div>
-        </div>
-      </div>
+          }
+        />
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("payrollHistory.ytdTotalPaid")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(stats.totalPaid)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("payrollHistory.payrollRunsYtd")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.totalRuns}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                    <Calendar className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("payrollHistory.averagePerRun")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {formatCurrency(stats.averagePer)}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                    <Users className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("payrollHistory.trendVsLast")}
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <p
-                        className={`text-2xl font-bold ${
-                          stats.trend >= 0 ? "text-emerald-600" : "text-red-600"
-                        }`}
-                      >
-                        {stats.trend >= 0 ? "+" : ""}
-                        {stats.trend.toFixed(1)}%
-                      </p>
-                    </div>
-                  </div>
-                  <div className={`p-2.5 bg-gradient-to-br ${stats.trend >= 0 ? "from-emerald-500 to-teal-500" : "from-red-500 to-rose-500"} rounded-xl`}>
-                    {stats.trend >= 0 ? (
-                      <TrendingUp className="h-6 w-6 text-white" />
-                    ) : (
-                      <TrendingDown className="h-6 w-6 text-white" />
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {/* Summary — compact inline stats, not 4 big cards */}
+          {stats.totalRuns > 0 && (
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mb-6 px-1 text-sm">
+              <span className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{t("payrollHistory.ytdTotalPaid")}:</span>
+                <span className="font-bold tabular-nums">{formatCurrency(stats.totalPaid)}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{t("payrollHistory.payrollRunsYtd")}:</span>
+                <span className="font-bold tabular-nums">{stats.totalRuns}</span>
+              </span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-muted-foreground">{t("payrollHistory.averagePerRun")}:</span>
+                <span className="font-bold tabular-nums">{formatCurrency(stats.averagePer)}</span>
+              </span>
+              {stats.trend !== 0 && (
+                <span className="flex items-center gap-1.5">
+                  <span className="text-muted-foreground">{t("payrollHistory.trendVsLast")}:</span>
+                  <span className={`font-bold tabular-nums ${stats.trend >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                    {stats.trend >= 0 ? "+" : ""}{stats.trend.toFixed(1)}%
+                    {stats.trend >= 0 ? <TrendingUp className="inline h-3.5 w-3.5 ml-0.5" /> : <TrendingDown className="inline h-3.5 w-3.5 ml-0.5" />}
+                  </span>
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Filters */}
           <MoreDetailsSection className="mb-6" title={t("payrollHistory.filters")}>
@@ -839,22 +747,23 @@ export default function PayrollHistory() {
             </Card>
           )}
 
-          {/* Tabs: Pending Approval | All Runs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="mb-4">
-              <TabsTrigger value="pending" className="relative">
-                {t("payrollHistory.tabPending")}
-                {stats.pendingApprovalCount > 0 && (
-                  <Badge className="ml-2 bg-amber-500 text-white text-xs px-1.5 py-0.5 min-w-[20px] h-5">
-                    {stats.pendingApprovalCount}
-                  </Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="all">{t("payrollHistory.tabAll")}</TabsTrigger>
-            </TabsList>
+          {/* View Selector */}
+          <div className="flex items-center gap-3 mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">
+                  {t("payrollHistory.tabPending")}
+                  {stats.pendingApprovalCount > 0 ? ` (${stats.pendingApprovalCount})` : ""}
+                </SelectItem>
+                <SelectItem value="all">{t("payrollHistory.tabAll")}</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-            {/* Pending Approval Tab */}
-            <TabsContent value="pending">
+          {activeTab === "pending" ? (
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1025,10 +934,7 @@ export default function PayrollHistory() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-
-            {/* All Runs Tab */}
-            <TabsContent value="all">
+          ) : (
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -1211,8 +1117,7 @@ export default function PayrollHistory() {
                   )}
                 </CardContent>
               </Card>
-            </TabsContent>
-          </Tabs>
+          )}
         </div>
 
       {/* QuickBooks Export Dialog */}

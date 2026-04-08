@@ -535,7 +535,7 @@ export default function Sitemap() {
       <SEO title="Sitemap - Meza" description="Complete navigation guide for Meza system" />
       <MainNavigation />
 
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-4">

@@ -6,7 +6,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,8 +36,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InvoiceStatusTimeline } from '@/components/money/InvoiceStatusTimeline';
 import { RecordPaymentModal } from '@/components/money/RecordPaymentModal';
 import { VoidInvoiceDialog } from '@/components/money/VoidInvoiceDialog';
@@ -220,8 +219,7 @@ export default function Invoices() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid gap-4">
@@ -238,52 +236,43 @@ export default function Invoices() {
     <div className="min-h-screen bg-background">
       <SEO title="Invoices - Meza" description="Manage your invoices" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">{t('money.invoices.title') || 'Invoices'}</h1>
-              <p className="text-muted-foreground">
-                {t('money.invoices.subtitle') || 'Create and manage invoices'}
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline">
-                  <MoreHorizontal className="h-4 w-4 mr-2" />
-                  {t('common.moreActions') || 'More'}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate('/money/invoices/recurring')}>
-                  <Repeat className="h-4 w-4 mr-2" />
-                  {t('money.recurring.title') || 'Recurring Invoices'}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate('/money/invoices/settings')}>
-                  <Settings className="h-4 w-4 mr-2" />
-                  {t('money.settings.title') || 'Invoice Settings'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <Button
-              onClick={() => navigate('/money/invoices/new')}
-              className="bg-indigo-600 hover:bg-indigo-700"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t('money.invoices.new') || 'New Invoice'}
-            </Button>
-          </div>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.invoices.title') || 'Invoices'}
+          subtitle={t('money.invoices.subtitle') || 'Create and manage invoices'}
+          icon={FileText}
+          iconColor="text-indigo-500"
+          actions={
+            <>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">
+                    <MoreHorizontal className="h-4 w-4 mr-2" />
+                    {t('common.moreActions') || 'More'}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => navigate('/money/invoices/recurring')}>
+                    <Repeat className="h-4 w-4 mr-2" />
+                    {t('money.recurring.title') || 'Recurring Invoices'}
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/money/invoices/settings')}>
+                    <Settings className="h-4 w-4 mr-2" />
+                    {t('money.settings.title') || 'Invoice Settings'}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button
+                onClick={() => navigate('/money/invoices/new')}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t('money.invoices.new') || 'New Invoice'}
+              </Button>
+            </>
+          }
+        />
 
         {/* Filters */}
         <div className="relative mb-4 max-w-md">

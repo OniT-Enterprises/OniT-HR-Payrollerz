@@ -237,14 +237,14 @@ export function usePayrollCalculator({
   useEffect(() => {
     if (employeePayrollData.length === 0) return;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- recalculates existing rows when payroll assumptions change
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- recalculates existing rows when payroll assumptions change; calculateForEmployee excluded to prevent infinite loop
     setEmployeePayrollData((prev) =>
       prev.map((data) => ({
         ...data,
         calculation: calculateForEmployee(data),
       }))
     );
-  }, [payFrequency, payDate, includeSubsidioAnual, calculateForEmployee, employeePayrollData.length]);
+  }, [payFrequency, payDate, includeSubsidioAnual]);
 
   // ─── Edit tracking helpers ──────────────────────────────────────
 

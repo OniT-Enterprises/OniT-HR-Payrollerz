@@ -75,11 +75,8 @@ const Settings = lazy(() => import("@/pages/Settings"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
 const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
 
-// Section Dashboards
+// Section Dashboards (kept for /*/overview routes but not default landing)
 const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
-const StaffOverview = lazy(() => import("@/pages/people/StaffOverview"));
-const HiringOverview = lazy(() => import("@/pages/people/HiringOverview"));
-const PerformanceOverview = lazy(() => import("@/pages/people/PerformanceOverview"));
 const SchedulingDashboard = lazy(() => import("@/pages/SchedulingDashboard"));
 const PayrollDashboard = lazy(() => import("@/pages/PayrollDashboard"));
 const AccountingDashboard = lazy(() => import("@/pages/AccountingDashboard"));
@@ -105,6 +102,7 @@ const TimeTracking = lazy(() => import("@/pages/time-leave/TimeTracking"));
 const Attendance = lazy(() => import("@/pages/time-leave/Attendance"));
 const LeaveRequests = lazy(() => import("@/pages/time-leave/LeaveRequests"));
 const ShiftScheduling = lazy(() => import("@/pages/time-leave/ShiftScheduling"));
+const TimeLeaveSettings = lazy(() => import("@/pages/time-leave/TimeLeaveSettings"));
 
 // People - Performance
 const Reviews = lazy(() => import("@/pages/performance/Reviews"));
@@ -113,12 +111,13 @@ const TrainingCertifications = lazy(() => import("@/pages/performance/TrainingCe
 const Disciplinary = lazy(() => import("@/pages/performance/Disciplinary"));
 
 // Payroll
-const RunPayroll = lazy(() => import("@/pages/payroll/RunPayroll"));
+const RunPayrollWizard = lazy(() => import("@/pages/payroll/RunPayrollWizard"));
 const PayrollHistory = lazy(() => import("@/pages/payroll/PayrollHistory"));
 const TaxReports = lazy(() => import("@/pages/payroll/TaxReports"));
 const BankTransfers = lazy(() => import("@/pages/payroll/BankTransfers"));
 const BenefitsEnrollment = lazy(() => import("@/pages/payroll/BenefitsEnrollment"));
 const DeductionsAdvances = lazy(() => import("@/pages/payroll/DeductionsAdvances"));
+const PayrollSettings = lazy(() => import("@/pages/payroll/PayrollSettings"));
 
 // Money (Invoicing)
 const MoneyDashboard = lazy(() => import("@/pages/MoneyDashboard"));
@@ -230,35 +229,12 @@ export const peopleRoutes = (
       }
     />
 
-    {/* Staff Overview Hub */}
-    <Route
-      path="/people/staff"
-      element={
-        <FeatureRoute requiredModule="staff">
-          <StaffOverview />
-        </FeatureRoute>
-      }
-    />
+    {/* Staff hub → straight to employee directory */}
+    <Route path="/people/staff" element={<Navigate to="/people/employees" replace />} />
 
-    {/* Hiring Overview Hub */}
-    <Route
-      path="/people/hiring"
-      element={
-        <FeatureRoute requiredModule="hiring">
-          <HiringOverview />
-        </FeatureRoute>
-      }
-    />
-
-    {/* Performance Overview Hub */}
-    <Route
-      path="/people/performance"
-      element={
-        <FeatureRoute requiredModule="performance">
-          <PerformanceOverview />
-        </FeatureRoute>
-      }
-    />
+    {/* Hub redirects → straight to first sub-page */}
+    <Route path="/people/hiring" element={<Navigate to="/people/jobs" replace />} />
+    <Route path="/people/performance" element={<Navigate to="/people/reviews" replace />} />
 
     {/* Staff */}
     <Route
@@ -417,6 +393,14 @@ export const schedulingRoutes = (
         </FeatureRoute>
       }
     />
+    <Route
+      path="/time-leave/settings"
+      element={
+        <FeatureRoute requiredModule="timeleave">
+          <TimeLeaveSettings />
+        </FeatureRoute>
+      }
+    />
   </>
 );
 
@@ -437,7 +421,7 @@ export const payrollRoutes = (
       path="/payroll/run"
       element={
         <FeatureRoute requiredModule="payroll">
-          <RunPayroll />
+          <RunPayrollWizard />
         </FeatureRoute>
       }
     />
@@ -478,6 +462,14 @@ export const payrollRoutes = (
       element={
         <FeatureRoute requiredModule="payroll">
           <DeductionsAdvances />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/payroll/settings"
+      element={
+        <FeatureRoute requiredModule="payroll">
+          <PayrollSettings />
         </FeatureRoute>
       }
     />

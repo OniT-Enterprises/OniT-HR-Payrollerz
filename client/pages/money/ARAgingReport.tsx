@@ -7,7 +7,7 @@ import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -15,9 +15,7 @@ import { useI18n } from '@/i18n/I18nProvider';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
 import { invoiceService } from '@/services/invoiceService';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
-import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import type { Invoice } from '@/types/money';
 import {
@@ -141,8 +139,7 @@ export default function ARAgingReport() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-6xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid grid-cols-5 gap-4 mb-8">
@@ -160,35 +157,20 @@ export default function ARAgingReport() {
     <div className="min-h-screen bg-background">
       <SEO title="A/R Aging - Meza" description="Accounts receivable aging report" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-6xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Clock className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.arAging.title') || 'A/R Aging Report'}
+          subtitle={t('money.arAging.subtitle') || 'Outstanding invoices by age'}
+          icon={Clock}
+          iconColor="text-indigo-500"
+          actions={
+            <div className="text-right">
+              <p className="text-sm text-muted-foreground">{t('money.arAging.totalOutstanding') || 'Total Outstanding'}</p>
+              <p className="text-2xl font-bold">{formatCurrency(totalOutstanding)}</p>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.arAging.title') || 'A/R Aging Report'}
-                <InfoTooltip
-                  title={t('money.arAging.tooltipTitle') || 'Accounts Receivable Aging'}
-                  content={MoneyTooltips.terms.arAging}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.arAging.subtitle') || 'Outstanding invoices by age'}
-              </p>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-sm text-muted-foreground">{t('money.arAging.totalOutstanding') || 'Total Outstanding'}</p>
-            <p className="text-2xl font-bold">{formatCurrency(totalOutstanding)}</p>
-          </div>
-        </div>
+          }
+        />
 
         {/* Aging Buckets */}
         <MoreDetailsSection className="mb-8">

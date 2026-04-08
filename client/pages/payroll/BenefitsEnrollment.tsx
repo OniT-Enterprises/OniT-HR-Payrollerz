@@ -51,14 +51,11 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { payrollNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   Wallet,
   Plus,
   Users,
-  DollarSign,
   Search,
   Loader2,
   CheckCircle,
@@ -376,7 +373,6 @@ export default function EmployeeAllowances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
         <div className="p-6">
           <div className="max-w-7xl mx-auto">
             <div className="flex items-center gap-3 mb-6">
@@ -407,104 +403,20 @@ export default function EmployeeAllowances() {
     <div className="min-h-screen bg-background">
       <SEO title="Employee Allowances - Meza" description="Manage employee allowances for transport, housing, meals, and more" />
       <MainNavigation />
-      <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-teal-50 dark:bg-teal-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-teal-500 to-cyan-500 shadow-lg shadow-teal-500/25">
-                <Wallet className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("allowances.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("allowances.subtitle")}
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-teal-500 to-cyan-500 text-white hover:from-teal-600 hover:to-cyan-600">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("allowances.title")}
+          subtitle={t("allowances.subtitle")}
+          icon={Wallet}
+          iconColor="text-teal-500"
+          actions={
+            <Button onClick={() => setShowAddDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               {t("allowances.add")}
             </Button>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={payrollNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("allowances.activeAllowances")}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {stats.totalAllowances}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("allowances.forEmployees", { count: stats.employeesWithAllowances })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-teal-500 to-cyan-500 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("allowances.monthlyTotal")}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {formatCurrency(stats.totalMonthly)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("allowances.allCombined")}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <DollarSign className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("allowances.avgPerEmployee")}
-                  </p>
-                  <p className="text-2xl font-bold">
-                    {stats.employeesWithAllowances > 0
-                      ? formatCurrency(stats.totalMonthly / stats.employeesWithAllowances)
-                      : formatCurrency(0)}
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("allowances.monthlyAverage")}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                  <Wallet className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
+          }
+        />
         {/* Allowance Type Filter Cards */}
         <Card className="mb-6 border-border/50">
           <CardHeader className="pb-3">

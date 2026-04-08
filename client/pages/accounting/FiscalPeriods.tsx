@@ -60,9 +60,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { useAuth } from '@/contexts/AuthContext';
@@ -282,31 +280,13 @@ export default function FiscalPeriods() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-slate-50 dark:bg-slate-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-500 to-gray-600 shadow-lg shadow-slate-500/25">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t("accounting.fiscalPeriods.title")}</h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.fiscalPeriods.subtitle")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">Open and close monthly accounting periods for your financial year</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+        <PageHeader
+          title={t("accounting.fiscalPeriods.title")}
+          subtitle={t("accounting.fiscalPeriods.subtitle")}
+          icon={Calendar}
+          iconColor="text-slate-500"
+        />
 
       {/* Year Selector */}
       <Card>

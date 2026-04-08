@@ -41,7 +41,7 @@ import {
 } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   FileText,
   Plus,
@@ -68,8 +68,6 @@ import {
 import { formatCurrencyTL } from "@/lib/payroll/constants-tl";
 import type { JournalEntry, JournalEntryLine, JournalEntryStatus } from "@/types/accounting";
 import { SEO, seoConfig } from "@/components/SEO";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
@@ -429,7 +427,7 @@ export default function JournalEntries() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -487,37 +485,20 @@ export default function JournalEntries() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.journalEntries} />
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <FileText className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("accounting.journalEntries.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.journalEntries.subtitle")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">Record money moving between accounts — every entry must balance</p>
-              </div>
-            </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t("accounting.journalEntries.title")}
+          subtitle={t("accounting.journalEntries.subtitle")}
+          icon={FileText}
+          iconColor="text-orange-500"
+          actions={
             <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-                <DialogTrigger asChild>
-                  <div className="flex flex-col items-end gap-1">
-                    <Button onClick={resetForm} variant="outline" size="sm" className="border-orange-400 dark:border-orange-500 hover:border-orange-500 hover:bg-orange-500/10 text-orange-600 dark:text-orange-400">
-                      <Plus className="h-4 w-4 mr-2" />
-                      {t("accounting.journalEntries.manualEntry")}
-                    </Button>
-                    <span className="text-xs text-muted-foreground">{t("accounting.journalEntries.forNonPayroll")}</span>
-                  </div>
-                </DialogTrigger>
+              <DialogTrigger asChild>
+                <Button onClick={resetForm} variant="outline" size="sm">
+                  <Plus className="h-4 w-4 mr-2" />
+                  {t("accounting.journalEntries.manualEntry")}
+                </Button>
+              </DialogTrigger>
                 <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle>{t("accounting.journalEntries.createEntry")}</DialogTitle>
@@ -700,13 +681,9 @@ export default function JournalEntries() {
                     </div>
                   </div>
                 </DialogContent>
-              </Dialog>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto">
+            </Dialog>
+          }
+        />
         <MoreDetailsSection className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <Card>

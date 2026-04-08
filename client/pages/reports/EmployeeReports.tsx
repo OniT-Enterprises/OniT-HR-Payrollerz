@@ -19,9 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -130,8 +128,7 @@ export default function EmployeeReports() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-7xl mx-auto">
-          <AutoBreadcrumb className="mb-6" />
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
               <Card key={i}>
@@ -151,26 +148,13 @@ export default function EmployeeReports() {
     <div className="min-h-screen bg-background">
       <SEO title={`${t("reports.employee.title")} | Meza`} description={t("reports.employee.subtitle")} />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <Users className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("reports.employee.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("reports.employee.subtitle")}
-                </p>
-              </div>
-            </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.employee.title")}
+          subtitle={t("reports.employee.subtitle")}
+          icon={Users}
+          iconColor="text-blue-500"
+          actions={
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">{t("reports.shared.periodLabel")}</span>
               <Select value={dateRange} onValueChange={setDateRange}>
@@ -185,13 +169,8 @@ export default function EmployeeReports() {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+          }
+        />
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 -mt-10">
           <Card className="border-border/50 shadow-lg">

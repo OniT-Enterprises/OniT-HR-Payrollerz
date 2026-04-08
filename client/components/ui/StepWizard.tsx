@@ -31,6 +31,8 @@ interface StepWizardProps {
   canProceed?: boolean;
   cannotProceedMessage?: string;
   className?: string;
+  /** Override min-height on the content card (e.g. "min-h-0" for wizard steps that manage their own height) */
+  contentClassName?: string;
 }
 
 export function StepWizard({
@@ -46,6 +48,7 @@ export function StepWizard({
   canProceed = true,
   cannotProceedMessage,
   className,
+  contentClassName,
 }: StepWizardProps) {
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
@@ -165,34 +168,34 @@ export function StepWizard({
             <CardDescription>{currentStepData.description}</CardDescription>
           )}
         </CardHeader>
-        <CardContent className="min-h-[420px]">{children}</CardContent>
+        <CardContent className={cn("min-h-[420px]", contentClassName)}>{children}</CardContent>
       </Card>
 
-      {/* Navigation */}
-      <div className="flex items-center justify-between">
-        <div>
-          {onCancel && (
-            <Button type="button" variant="ghost" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-        </div>
-
-        <div className="flex gap-3">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleBack}
-            disabled={isFirstStep || isSubmitting}
-          >
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            Back
-          </Button>
-
-          <div className="flex items-center gap-2">
-            {!canProceed && cannotProceedMessage && (
-              <p className="text-sm text-amber-500">{cannotProceedMessage}</p>
+      {/* Sticky Bottom Navigation Bar */}
+      <div className="sticky bottom-0 z-30 -mx-6 -mb-6 mt-6 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 px-6 py-3">
+        <div className="flex items-center justify-between">
+          <div>
+            {onCancel && (
+              <Button type="button" variant="ghost" onClick={onCancel}>
+                Cancel
+              </Button>
             )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            {!canProceed && cannotProceedMessage && (
+              <p className="text-sm text-amber-500 hidden sm:block">{cannotProceedMessage}</p>
+            )}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleBack}
+              disabled={isFirstStep || isSubmitting}
+            >
+              <ChevronLeft className="h-4 w-4 mr-1" />
+              Back
+            </Button>
+
             <Button
               type="button"
               onClick={handleNext}

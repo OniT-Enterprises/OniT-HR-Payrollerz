@@ -1,0 +1,63 @@
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+
+interface LayoutContextValue {
+  /** Whether the sidebar layout is active (used by MainNavigation/ModuleSectionNav to no-op) */
+  active: true;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  sidebarCollapsed: boolean;
+  setSidebarCollapsed: (collapsed: boolean) => void;
+  toggleSidebar: () => void;
+  toggleCollapsed: () => void;
+}
+
+const LayoutContext = createContext<LayoutContextValue | null>(null);
+
+const COLLAPSED_KEY = "meza-sidebar-collapsed";
+
+export function LayoutProvider({ children }: { children: React.ReactNode }) {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_KEY, String(sidebarCollapsed));
+    } catch { /* ignore */ }
+  }, [sidebarCollapsed]);
+
+  const toggleSidebar = useCallback(() => setSidebarOpen((v) => !v), []);
+  const toggleCollapsed = useCallback(() => setSidebarCollapsed((v) => !v), []);
+
+  return (
+    <LayoutContext.Provider
+      value={{
+        active: true,
+        sidebarOpen,
+        setSidebarOpen,
+        sidebarCollapsed,
+        setSidebarCollapsed,
+        toggleSidebar,
+        toggleCollapsed,
+      }}
+    >
+      {children}
+    </LayoutContext.Provider>
+  );
+}
+
+export function useLayout() {
+  const ctx = useContext(LayoutContext);
+  if (!ctx) throw new Error("useLayout must be used within LayoutProvider");
+  return ctx;
+}
+
+/** Safe check — returns null if no layout is active (used by MainNavigation no-op) */
+export function useLayoutOptional() {
+  return useContext(LayoutContext);
+}

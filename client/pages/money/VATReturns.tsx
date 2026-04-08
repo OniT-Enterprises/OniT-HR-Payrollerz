@@ -7,7 +7,7 @@
 import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import {
   Card,
   CardContent,
@@ -29,8 +29,7 @@ import {
 import { useToast } from '@/hooks/use-toast';
 import { useTenantId } from '@/contexts/TenantContext';
 import { SEO } from '@/components/SEO';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import MoreDetailsSection from '@/components/MoreDetailsSection';
 import {
   Timestamp,
@@ -215,46 +214,40 @@ export default function VATReturnsPage() {
     <div className="min-h-screen bg-background">
       <SEO title="VAT Returns - Meza" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="max-w-4xl mx-auto p-6 space-y-6">
-        <AutoBreadcrumb className="mb-2" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => navigate('/money')}
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div>
-              <h1 className="text-2xl font-bold">VAT Returns</h1>
-              <p className="text-sm text-muted-foreground">
-                Build and file VAT returns for each period
-              </p>
-            </div>
-          </div>
-
-          {/* Period Selector */}
-          <Select
-            value={selectedPeriod}
-            onValueChange={setSelectedPeriod}
-          >
-            <SelectTrigger className="w-48">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="max-w-screen-lg mx-auto p-6 space-y-6">
+        <PageHeader
+          title="VAT Returns"
+          subtitle="Build and file VAT returns for each period"
+          icon={Receipt}
+          iconColor="text-indigo-500"
+          actions={
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/money')}
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <Select
+                value={selectedPeriod}
+                onValueChange={setSelectedPeriod}
+              >
+                <SelectTrigger className="w-48">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </>
+          }
+        />
 
         {loading ? (
           <div className="space-y-4">

@@ -25,9 +25,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -234,7 +232,6 @@ export default function PayrollReports() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
           <div className="flex items-center gap-3 mb-6">
             <Skeleton className="h-8 w-8 rounded" />
             <div>
@@ -281,31 +278,13 @@ export default function PayrollReports() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payrollReports} />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-              <FileText className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {t("reports.payroll.title")}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t("reports.payroll.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={reportsNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.payroll.title")}
+          subtitle={t("reports.payroll.subtitle")}
+          icon={FileText}
+          iconColor="text-violet-500"
+        />
         {employees.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">

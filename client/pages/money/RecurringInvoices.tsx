@@ -5,7 +5,7 @@
 
 import { useNavigate } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -27,8 +27,7 @@ import {
   useDeleteRecurringInvoice,
   useGenerateFromRecurring,
 } from '@/hooks/useRecurringInvoices';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
 import type { RecurringInvoice, RecurringStatus } from '@/types/money';
@@ -159,8 +158,7 @@ export default function RecurringInvoices() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid gap-4">
@@ -177,38 +175,23 @@ export default function RecurringInvoices() {
     <div className="min-h-screen bg-background">
       <SEO title="Recurring Invoices - Meza" description="Manage recurring invoice templates" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-purple-100 dark:bg-purple-900 flex items-center justify-center">
-              <Repeat className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.recurring.title') || 'Recurring Invoices'}
-                <InfoTooltip
-                  title={t('money.recurring.tooltipTitle') || 'Recurring Invoices'}
-                  content={t('money.recurring.tooltipContent') || 'Templates that automatically generate new invoices on a schedule. Great for subscription services, retainers, or regular billing cycles.'}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.recurring.subtitle') || 'Auto-generate invoices on a schedule'}
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate('/money/invoices/recurring/new')}
-            className="bg-purple-600 hover:bg-purple-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.recurring.new') || 'New Recurring'}
-          </Button>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.recurring.title') || 'Recurring Invoices'}
+          subtitle={t('money.recurring.subtitle') || 'Auto-generate invoices on a schedule'}
+          icon={Repeat}
+          iconColor="text-purple-500"
+          actions={
+            <Button
+              onClick={() => navigate('/money/invoices/recurring/new')}
+              className="bg-purple-600 hover:bg-purple-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.recurring.new') || 'New Recurring'}
+            </Button>
+          }
+        />
 
         {/* List */}
         {items.length === 0 ? (

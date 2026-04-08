@@ -37,7 +37,7 @@ function PeopleDashboardSkeleton() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <Skeleton className="h-4 w-32 mb-4" />
           <div className="flex items-center gap-4">
             <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -48,7 +48,7 @@ function PeopleDashboardSkeleton() {
           </div>
         </div>
       </div>
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {[1, 2, 3].map((i) => (
             <Card key={i} className="border-l-4 border-l-muted">
@@ -114,7 +114,7 @@ export default function PeopleDashboard() {
 
       {/* Hero Section */}
       <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -142,7 +142,7 @@ export default function PeopleDashboard() {
         </div>
       </div>
 
-      <div className="p-6 max-w-7xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <GuidancePanel section="people" />
 
         <MoreDetailsSection className="mb-6">

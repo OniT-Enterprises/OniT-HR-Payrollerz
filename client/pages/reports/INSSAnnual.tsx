@@ -33,9 +33,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   CalendarDays,
   Download,
@@ -253,7 +251,7 @@ export default function INSSAnnual() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <Skeleton className="h-8 w-56 mb-2" />
             <Skeleton className="h-4 w-80 mb-6" />
             <Card>
@@ -274,24 +272,13 @@ export default function INSSAnnual() {
         description={t("reports.inssAnnual.subtitle")}
       />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <AutoBreadcrumb className="mb-4" />
-
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-500/15">
-            <Shield className="h-7 w-7 text-white" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold">
-              {t("reports.inssAnnual.title")}
-            </h1>
-            <p className="text-muted-foreground">
-              {t("reports.inssAnnual.subtitle")}
-            </p>
-          </div>
-        </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.inssAnnual.title")}
+          subtitle={t("reports.inssAnnual.subtitle")}
+          icon={Shield}
+          iconColor="text-slate-500"
+        />
 
         <Card className="mb-6">
           <CardHeader>

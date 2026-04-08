@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,9 +42,7 @@ import { SEO } from '@/components/SEO';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { customerService } from '@/services/customerService';
 import { useAllCustomers, customerKeys } from '@/hooks/useCustomers';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
-import { InfoTooltip } from '@/components/ui/info-tooltip';
+
 import type { Customer, CustomerFormData } from '@/types/money';
 import {
   Users,
@@ -198,8 +196,7 @@ export default function Customers() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid gap-4">
@@ -216,35 +213,20 @@ export default function Customers() {
     <div className="min-h-screen bg-background">
       <SEO title="Customers - Meza" description="Manage your customers for invoicing" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.customers.title') || 'Customers'}
-                <InfoTooltip
-                  title={t('money.customers.tooltipTitle') || 'Customers'}
-                  content={t('money.customers.tooltipContent') || 'People or businesses you invoice for goods or services. Customer records store contact info and are linked to invoices.'}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.customers.subtitle') || 'Manage your customer list'}
-              </p>
-            </div>
-          </div>
-          <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.customers.add') || 'Add Customer'}
-          </Button>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.customers.title') || 'Customers'}
+          subtitle={t('money.customers.subtitle') || 'Manage your customer list'}
+          icon={Users}
+          iconColor="text-indigo-500"
+          actions={
+            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.customers.add') || 'Add Customer'}
+            </Button>
+          }
+        />
 
         {/* Search */}
         <div className="mb-6">

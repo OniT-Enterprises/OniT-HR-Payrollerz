@@ -37,10 +37,8 @@ import {
   TrendingDown,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
@@ -223,26 +221,14 @@ export default function TrialBalance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.trialBalance} />
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <Scale className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t("accounting.trialBalance.title")}</h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.trialBalance.subtitle")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">Check that all your accounts add up correctly</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+        <PageHeader
+          title={t("accounting.trialBalance.title")}
+          subtitle={t("accounting.trialBalance.subtitle")}
+          icon={Scale}
+          iconColor="text-orange-500"
+          actions={
+            <>
               <Button variant="outline" onClick={handlePrint} disabled={filteredRows.length === 0}>
                 <Printer className="mr-2 h-4 w-4" />
                 {t("accounting.trialBalance.print")}
@@ -251,13 +237,9 @@ export default function TrialBalance() {
                 <Download className="mr-2 h-4 w-4" />
                 {t("accounting.trialBalance.exportCsv")}
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+            </>
+          }
+        />
 
       {/* Generate Controls */}
       <Card>

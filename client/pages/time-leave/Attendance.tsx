@@ -22,12 +22,11 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { useTenantId } from "@/contexts/TenantContext";
 import {
@@ -59,8 +58,6 @@ import {
 } from "@/services/attendanceService";
 import { SEO, seoConfig } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { timeLeaveNavConfig } from "@/lib/moduleNav";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function Attendance() {
@@ -465,8 +462,7 @@ export default function Attendance() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <AutoBreadcrumb className="mb-6" />
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="mb-6">
               <Skeleton className="h-9 w-40 mb-2" />
               <Skeleton className="h-4 w-64" />
@@ -487,35 +483,22 @@ export default function Attendance() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.attendance} />
       <MainNavigation />
-      <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
-                <Clock className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {isToday ? (
-                    <>
-                      {formatDateLabel(selectedDate)}
-                      <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
-                    </>
-                  ) : (
-                    formatDateLabel(selectedDate)
-                  )}
-                </p>
-              </div>
-            </div>
-            <div className="flex flex-wrap gap-2">
+      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+        <PageHeader
+          title={isToday ? t("timeLeave.attendance.titleToday") : t("timeLeave.attendance.title")}
+          subtitle={isToday ? (
+            <>
+              {formatDateLabel(selectedDate)}
+              <span className="text-muted-foreground/70"> · {t("timeLeave.attendance.payrollHint")}</span>
+            </>
+          ) : (
+            formatDateLabel(selectedDate)
+          )}
+          icon={Clock}
+          iconColor="text-cyan-500"
+          actions={
+            <>
               {isToday && (
                 <Button
                   variant="outline"
@@ -525,169 +508,163 @@ export default function Attendance() {
                   {t("timeLeave.attendance.actions.faceClockIn")}
                 </Button>
               )}
-              <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Upload className="h-4 w-4 mr-2" />
-                    {t("timeLeave.attendance.actions.import")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {t("timeLeave.attendance.import.title")}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {t("timeLeave.attendance.import.description")}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div>
-                      <Label>{t("timeLeave.attendance.import.selectFile")}</Label>
-                      <Input
-                        type="file"
-                        accept=".csv,.xlsx"
-                        onChange={(e) => setImportFile(e.target.files?.[0] || null)}
-                      />
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {t("timeLeave.attendance.import.format")}
-                      </p>
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button variant="outline" onClick={() => setShowImportDialog(false)}>
-                      {t("timeLeave.attendance.actions.cancel")}
-                    </Button>
-                    <Button onClick={handleImportCSV} disabled={importing || !importFile}>
-                      {importing ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          {t("timeLeave.attendance.import.importing")}
-                        </>
-                      ) : (
-                        <>
-                          <FileUp className="h-4 w-4 mr-2" />
-                          {t("timeLeave.attendance.actions.import")}
-                        </>
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-
-              <Button
-                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
-                onClick={() => openMarkDialog()}
-              >
+              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
+                <Upload className="h-4 w-4 mr-2" />
+                {t("timeLeave.attendance.actions.import")}
+              </Button>
+              <Button onClick={() => openMarkDialog()}>
                 <Plus className="h-4 w-4 mr-2" />
                 {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
               </Button>
+            </>
+          }
+        />
 
-              <Dialog
-                open={showMarkDialog}
-                onOpenChange={(open) => {
-                  setShowMarkDialog(open);
-                  if (!open) {
-                    resetMarkForm(selectedDate);
-                  }
-                }}
-              >
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      {t("timeLeave.attendance.mark.title")}
-                    </DialogTitle>
-                    <DialogDescription>
-                      {t("timeLeave.attendance.mark.description")}
-                    </DialogDescription>
-                  </DialogHeader>
-                  <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                      <Label>{t("timeLeave.attendance.mark.employee")}</Label>
-                      <Select
-                        value={formData.employeeId}
-                        onValueChange={(value) => handleInputChange("employeeId", value)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("timeLeave.attendance.mark.employeePlaceholder")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id!}>
-                              {emp.personalInfo.firstName} {emp.personalInfo.lastName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label>{t("timeLeave.attendance.mark.date")}</Label>
-                      <Input
-                        type="date"
-                        value={formData.date}
-                        onChange={(e) => handleInputChange("date", e.target.value)}
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
-                        <TimePicker
-                          value={formData.clockIn}
-                          onChange={(v) => handleInputChange("clockIn", v)}
-                          placeholder="Clock in"
-                          required
-                        />
-                      </div>
-                      <div>
-                        <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
-                        <TimePicker
-                          value={formData.clockOut}
-                          onChange={(v) => handleInputChange("clockOut", v)}
-                          placeholder="Clock out"
-                        />
-                      </div>
-                    </div>
-                    <MoreDetailsSection>
-                      <div>
-                        <Label>{t("timeLeave.attendance.mark.notes")}</Label>
-                        <Input
-                          value={formData.notes}
-                          onChange={(e) => handleInputChange("notes", e.target.value)}
-                          placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
-                        />
-                      </div>
-                    </MoreDetailsSection>
-                    <DialogFooter>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={() => setShowMarkDialog(false)}
-                      >
-                        {t("timeLeave.attendance.actions.cancel")}
-                      </Button>
-                      <Button type="submit" disabled={markAttendanceMutation.isPending}>
-                        {markAttendanceMutation.isPending ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            {t("timeLeave.attendance.mark.saving")}
-                          </>
-                        ) : (
-                          t("timeLeave.attendance.actions.mark")
-                        )}
-                      </Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
+        {/* Import Dialog */}
+        <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t("timeLeave.attendance.import.title")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("timeLeave.attendance.import.description")}
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>{t("timeLeave.attendance.import.selectFile")}</Label>
+                <Input
+                  type="file"
+                  accept=".csv,.xlsx"
+                  onChange={(e) => setImportFile(e.target.files?.[0] || null)}
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  {t("timeLeave.attendance.import.format")}
+                </p>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowImportDialog(false)}>
+                {t("timeLeave.attendance.actions.cancel")}
+              </Button>
+              <Button onClick={handleImportCSV} disabled={importing || !importFile}>
+                {importing ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {t("timeLeave.attendance.import.importing")}
+                  </>
+                ) : (
+                  <>
+                    <FileUp className="h-4 w-4 mr-2" />
+                    {t("timeLeave.attendance.actions.import")}
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
-      <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
+        {/* Mark Attendance Dialog */}
+        <Dialog
+          open={showMarkDialog}
+          onOpenChange={(open) => {
+            setShowMarkDialog(open);
+            if (!open) {
+              resetMarkForm(selectedDate);
+            }
+          }}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {t("timeLeave.attendance.mark.title")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("timeLeave.attendance.mark.description")}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <Label>{t("timeLeave.attendance.mark.employee")}</Label>
+                <Select
+                  value={formData.employeeId}
+                  onValueChange={(value) => handleInputChange("employeeId", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue
+                      placeholder={t("timeLeave.attendance.mark.employeePlaceholder")}
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {employees.map((emp) => (
+                      <SelectItem key={emp.id} value={emp.id!}>
+                        {emp.personalInfo.firstName} {emp.personalInfo.lastName}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>{t("timeLeave.attendance.mark.date")}</Label>
+                <Input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleInputChange("date", e.target.value)}
+                  required
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>{t("timeLeave.attendance.mark.clockIn")}</Label>
+                  <TimePicker
+                    value={formData.clockIn}
+                    onChange={(v) => handleInputChange("clockIn", v)}
+                    placeholder="Clock in"
+                    required
+                  />
+                </div>
+                <div>
+                  <Label>{t("timeLeave.attendance.mark.clockOut")}</Label>
+                  <TimePicker
+                    value={formData.clockOut}
+                    onChange={(v) => handleInputChange("clockOut", v)}
+                    placeholder="Clock out"
+                  />
+                </div>
+              </div>
+              <MoreDetailsSection>
+                <div>
+                  <Label>{t("timeLeave.attendance.mark.notes")}</Label>
+                  <Input
+                    value={formData.notes}
+                    onChange={(e) => handleInputChange("notes", e.target.value)}
+                    placeholder={t("timeLeave.attendance.mark.notesPlaceholder")}
+                  />
+                </div>
+              </MoreDetailsSection>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setShowMarkDialog(false)}
+                >
+                  {t("timeLeave.attendance.actions.cancel")}
+                </Button>
+                <Button type="submit" disabled={markAttendanceMutation.isPending}>
+                  {markAttendanceMutation.isPending ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      {t("timeLeave.attendance.mark.saving")}
+                    </>
+                  ) : (
+                    t("timeLeave.attendance.actions.mark")
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
         {/* Inline Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}

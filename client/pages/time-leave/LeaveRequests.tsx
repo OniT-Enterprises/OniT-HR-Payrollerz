@@ -34,7 +34,6 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import {
@@ -47,12 +46,9 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { timeLeaveNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
@@ -512,8 +508,7 @@ export default function LeaveRequests() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="mb-6">
               <Skeleton className="h-9 w-64 mb-2" />
               <Skeleton className="h-4 w-80" />
@@ -561,281 +556,265 @@ export default function LeaveRequests() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.leave} />
       <MainNavigation />
-      <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
+      <div className="p-6">
+        <div className="mx-auto max-w-screen-2xl space-y-6">
+          <PageHeader
+            title={t("timeLeave.leaveRequests.title")}
+            subtitle={t("timeLeave.leaveRequests.subtitle")}
+            icon={Calendar}
+            iconColor="text-cyan-500"
+            actions={
+              <Button onClick={() => setShowRequestDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" />
+                {t("timeLeave.leaveRequests.actions.newRequest")}
+              </Button>
+            }
+          />
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
-                <Calendar className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("timeLeave.leaveRequests.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("timeLeave.leaveRequests.subtitle")}
-                </p>
-              </div>
-            </div>
-            <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
-              <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600">
-                  <Plus className="h-4 w-4 mr-2" />
-                  {t("timeLeave.leaveRequests.actions.newRequest")}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-lg">
-                <DialogHeader>
-                  <DialogTitle>
-                    {t("timeLeave.leaveRequests.dialog.title")}
-                  </DialogTitle>
-                  <DialogDescription>
-                    {t("timeLeave.leaveRequests.dialog.description")}
-                  </DialogDescription>
-                </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                  {/* Employee Select - hidden for employee self-service */}
-                  {isEmployee && currentEmployeeId ? (
-                    <input type="hidden" value={currentEmployeeId} />
-                  ) : (
-                    <div className="space-y-2">
-                      <Label>{t("timeLeave.leaveRequests.dialog.employee")}</Label>
-                      <Select
-                        value={formData.employeeId}
-                        onValueChange={(value) =>
-                          handleInputChange("employeeId", value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue
-                            placeholder={t("timeLeave.leaveRequests.dialog.employeePlaceholder")}
-                          />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {employees.map((emp) => (
-                            <SelectItem key={emp.id} value={emp.id!}>
-                              {emp.personalInfo.firstName}{" "}
-                              {emp.personalInfo.lastName}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-
-                  {/* Leave Type */}
+          {/* New Leave Request Dialog */}
+          <Dialog open={showRequestDialog} onOpenChange={setShowRequestDialog}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle>
+                  {t("timeLeave.leaveRequests.dialog.title")}
+                </DialogTitle>
+                <DialogDescription>
+                  {t("timeLeave.leaveRequests.dialog.description")}
+                </DialogDescription>
+              </DialogHeader>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {/* Employee Select - hidden for employee self-service */}
+                {isEmployee && currentEmployeeId ? (
+                  <input type="hidden" value={currentEmployeeId} />
+                ) : (
                   <div className="space-y-2">
-                    <Label>{t("timeLeave.leaveRequests.dialog.leaveType")}</Label>
+                    <Label>{t("timeLeave.leaveRequests.dialog.employee")}</Label>
                     <Select
-                      value={formData.leaveType}
+                      value={formData.employeeId}
                       onValueChange={(value) =>
-                        handleInputChange("leaveType", value)
+                        handleInputChange("employeeId", value)
                       }
                     >
                       <SelectTrigger>
                         <SelectValue
-                          placeholder={t("timeLeave.leaveRequests.dialog.leaveTypePlaceholder")}
+                          placeholder={t("timeLeave.leaveRequests.dialog.employeePlaceholder")}
                         />
                       </SelectTrigger>
                       <SelectContent>
-                        {TL_LEAVE_TYPES.map((type) => (
-                          <SelectItem key={type.id} value={type.id}>
-                            <div className="flex items-center gap-2">
-                              {getLeaveTypeIcon(type.id as LeaveType)}
-                              <span>{getLeaveTypeLabel(type.id as LeaveType)}</span>
-                              <span className="text-xs text-muted-foreground">
-                                {t("timeLeave.leaveRequests.dialog.daysPerYear", {
-                                  days: type.daysPerYear,
-                                })}
-                              </span>
-                            </div>
+                        {employees.map((emp) => (
+                          <SelectItem key={emp.id} value={emp.id!}>
+                            {emp.personalInfo.firstName}{" "}
+                            {emp.personalInfo.lastName}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
-                    {selectedLeaveType?.requiresCertificate && (
-                      <p className="text-xs text-amber-600 flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" />
-                        {t("timeLeave.leaveRequests.dialog.requiresCertificate", {
-                          certificate: getCertificateLabel(
-                            selectedLeaveType.certificateType,
-                          ),
-                        })}
-                      </p>
-                    )}
                   </div>
+                )}
 
-                  {/* Show remaining balance */}
-                  {selectedEmployeeBalance && formData.leaveType && (
-                    <div className="p-3 bg-muted rounded-lg">
-                      <p className="text-sm font-medium">
-                        {t("timeLeave.leaveRequests.dialog.balanceTitle")}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(() => {
-                          const balance =
-                            selectedEmployeeBalance[
-                              formData.leaveType as keyof LeaveBalance
-                            ];
-                          if (
-                            typeof balance === "object" &&
-                            "remaining" in balance
-                          ) {
-                            return t("timeLeave.leaveRequests.dialog.balanceSummary", {
-                              remaining: balance.remaining,
-                              used: balance.used,
-                              pending: balance.pending,
-                            });
-                          }
-                          return t("timeLeave.leaveRequests.dialog.balanceUnavailable");
-                        })()}
-                      </p>
-                    </div>
+                {/* Leave Type */}
+                <div className="space-y-2">
+                  <Label>{t("timeLeave.leaveRequests.dialog.leaveType")}</Label>
+                  <Select
+                    value={formData.leaveType}
+                    onValueChange={(value) =>
+                      handleInputChange("leaveType", value)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue
+                        placeholder={t("timeLeave.leaveRequests.dialog.leaveTypePlaceholder")}
+                      />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {TL_LEAVE_TYPES.map((type) => (
+                        <SelectItem key={type.id} value={type.id}>
+                          <div className="flex items-center gap-2">
+                            {getLeaveTypeIcon(type.id as LeaveType)}
+                            <span>{getLeaveTypeLabel(type.id as LeaveType)}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {t("timeLeave.leaveRequests.dialog.daysPerYear", {
+                                days: type.daysPerYear,
+                              })}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {selectedLeaveType?.requiresCertificate && (
+                    <p className="text-xs text-amber-600 flex items-center gap-1">
+                      <AlertTriangle className="h-3 w-3" />
+                      {t("timeLeave.leaveRequests.dialog.requiresCertificate", {
+                        certificate: getCertificateLabel(
+                          selectedLeaveType.certificateType,
+                        ),
+                      })}
+                    </p>
                   )}
+                </div>
 
-                  {/* Date Range */}
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>{t("timeLeave.leaveRequests.dialog.startDate")}</Label>
-                      <Input
-                        type="date"
-                        value={formData.startDate}
-                        onChange={(e) =>
-                          handleInputChange("startDate", e.target.value)
+                {/* Show remaining balance */}
+                {selectedEmployeeBalance && formData.leaveType && (
+                  <div className="p-3 bg-muted rounded-lg">
+                    <p className="text-sm font-medium">
+                      {t("timeLeave.leaveRequests.dialog.balanceTitle")}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const balance =
+                          selectedEmployeeBalance[
+                            formData.leaveType as keyof LeaveBalance
+                          ];
+                        if (
+                          typeof balance === "object" &&
+                          "remaining" in balance
+                        ) {
+                          return t("timeLeave.leaveRequests.dialog.balanceSummary", {
+                            remaining: balance.remaining,
+                            used: balance.used,
+                            pending: balance.pending,
+                          });
                         }
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label>{t("timeLeave.leaveRequests.dialog.endDate")}</Label>
-                      <Input
-                        type="date"
-                        value={formData.endDate}
-                        onChange={(e) =>
-                          handleInputChange("endDate", e.target.value)
-                        }
-                        required
-                      />
-                    </div>
+                        return t("timeLeave.leaveRequests.dialog.balanceUnavailable");
+                      })()}
+                    </p>
                   </div>
+                )}
 
-                  {/* Duration Display */}
-                  {formData.startDate && formData.endDate && (
-                    <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                      <span className="text-sm font-medium">
-                        {t("timeLeave.leaveRequests.dialog.duration")}
-                      </span>
-                      <span className="text-sm">
-                        {t("timeLeave.leaveRequests.dialog.durationValue", {
-                          days: calculatedDuration,
-                        })}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Half Day Toggle */}
-                  {calculatedDuration === 1 && (
-                    <div className="flex items-center gap-4">
-                      <input
-                        type="checkbox"
-                        id="halfDay"
-                        checked={formData.halfDay}
-                        onChange={(e) =>
-                          handleInputChange("halfDay", e.target.checked)
-                        }
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="halfDay" className="cursor-pointer">
-                        {t("timeLeave.leaveRequests.dialog.halfDay")}
-                      </Label>
-                      {formData.halfDay && (
-                        <Select
-                          value={formData.halfDayType}
-                          onValueChange={(value) =>
-                            handleInputChange("halfDayType", value)
-                          }
-                        >
-                          <SelectTrigger className="w-32">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="morning">
-                              {t("timeLeave.leaveRequests.dialog.halfDayMorning")}
-                            </SelectItem>
-                            <SelectItem value="afternoon">
-                              {t("timeLeave.leaveRequests.dialog.halfDayAfternoon")}
-                            </SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Reason */}
+                {/* Date Range */}
+                <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>{t("timeLeave.leaveRequests.dialog.reason")}</Label>
-                    <Textarea
-                      value={formData.reason}
+                    <Label>{t("timeLeave.leaveRequests.dialog.startDate")}</Label>
+                    <Input
+                      type="date"
+                      value={formData.startDate}
                       onChange={(e) =>
-                        handleInputChange("reason", e.target.value)
+                        handleInputChange("startDate", e.target.value)
                       }
-                      placeholder={t("timeLeave.leaveRequests.dialog.reasonPlaceholder")}
-                      rows={3}
                       required
                     />
                   </div>
+                  <div className="space-y-2">
+                    <Label>{t("timeLeave.leaveRequests.dialog.endDate")}</Label>
+                    <Input
+                      type="date"
+                      value={formData.endDate}
+                      onChange={(e) =>
+                        handleInputChange("endDate", e.target.value)
+                      }
+                      required
+                    />
+                  </div>
+                </div>
 
-                  {/* Certificate Checkbox */}
-                  {selectedLeaveType?.requiresCertificate && (
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="hasCertificate"
-                        checked={formData.hasCertificate}
-                        onChange={(e) =>
-                          handleInputChange("hasCertificate", e.target.checked)
+                {/* Duration Display */}
+                {formData.startDate && formData.endDate && (
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">
+                      {t("timeLeave.leaveRequests.dialog.duration")}
+                    </span>
+                    <span className="text-sm">
+                      {t("timeLeave.leaveRequests.dialog.durationValue", {
+                        days: calculatedDuration,
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {/* Half Day Toggle */}
+                {calculatedDuration === 1 && (
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="checkbox"
+                      id="halfDay"
+                      checked={formData.halfDay}
+                      onChange={(e) =>
+                        handleInputChange("halfDay", e.target.checked)
+                      }
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="halfDay" className="cursor-pointer">
+                      {t("timeLeave.leaveRequests.dialog.halfDay")}
+                    </Label>
+                    {formData.halfDay && (
+                      <Select
+                        value={formData.halfDayType}
+                        onValueChange={(value) =>
+                          handleInputChange("halfDayType", value)
                         }
-                        className="h-4 w-4"
-                      />
-                      <Label htmlFor="hasCertificate" className="cursor-pointer">
-                        {t("timeLeave.leaveRequests.dialog.certificateProvided", {
-                          certificate: getCertificateLabel(
-                            selectedLeaveType.certificateType,
-                          ),
-                        })}
-                      </Label>
-                    </div>
-                  )}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="morning">
+                            {t("timeLeave.leaveRequests.dialog.halfDayMorning")}
+                          </SelectItem>
+                          <SelectItem value="afternoon">
+                            {t("timeLeave.leaveRequests.dialog.halfDayAfternoon")}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
 
-                  <DialogFooter>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={() => setShowRequestDialog(false)}
-                    >
-                      {t("timeLeave.leaveRequests.actions.cancel")}
-                    </Button>
-                    <Button type="submit" disabled={saving}>
-                      {saving && (
-                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      )}
-                      {t("timeLeave.leaveRequests.actions.submit")}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-      </div>
+                {/* Reason */}
+                <div className="space-y-2">
+                  <Label>{t("timeLeave.leaveRequests.dialog.reason")}</Label>
+                  <Textarea
+                    value={formData.reason}
+                    onChange={(e) =>
+                      handleInputChange("reason", e.target.value)
+                    }
+                    placeholder={t("timeLeave.leaveRequests.dialog.reasonPlaceholder")}
+                    rows={3}
+                    required
+                  />
+                </div>
 
-      <div className="p-6">
-        <div className="max-w-7xl mx-auto space-y-6">
+                {/* Certificate Checkbox */}
+                {selectedLeaveType?.requiresCertificate && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="hasCertificate"
+                      checked={formData.hasCertificate}
+                      onChange={(e) =>
+                        handleInputChange("hasCertificate", e.target.checked)
+                      }
+                      className="h-4 w-4"
+                    />
+                    <Label htmlFor="hasCertificate" className="cursor-pointer">
+                      {t("timeLeave.leaveRequests.dialog.certificateProvided", {
+                        certificate: getCertificateLabel(
+                          selectedLeaveType.certificateType,
+                        ),
+                      })}
+                    </Label>
+                  </div>
+                )}
+
+                <DialogFooter>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowRequestDialog(false)}
+                  >
+                    {t("timeLeave.leaveRequests.actions.cancel")}
+                  </Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving && (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    )}
+                    {t("timeLeave.leaveRequests.actions.submit")}
+                  </Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
           {/* Employee Self-Service: Leave Balance Cards */}
           {(isEmployee || isManager) && myBalance && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -894,32 +873,48 @@ export default function LeaveRequests() {
             )}
           </div>
 
-          {/* Requests */}
-          <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList>
-              <TabsTrigger value="all">
-                {t("timeLeave.leaveRequests.tabs.all")}
-                <Badge variant="secondary" className="ml-2 text-[10px] px-1.5">{leaveRequests.length}</Badge>
-              </TabsTrigger>
-              <TabsTrigger value="pending">
-                {t("timeLeave.leaveRequests.tabs.pending")}
-                {stats.pending > 0 && (
-                  <Badge className="ml-2 text-[10px] px-1.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">{stats.pending}</Badge>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="approved">
-                {t("timeLeave.leaveRequests.tabs.approved")}
-              </TabsTrigger>
-              <TabsTrigger value="rejected">
-                {t("timeLeave.leaveRequests.tabs.rejected")}
-              </TabsTrigger>
-              <TabsTrigger value="calendar">
+          {/* Requests — status filter + calendar toggle */}
+          <div className="flex items-center gap-3 mb-4">
+            <Select value={activeTab} onValueChange={setActiveTab}>
+              <SelectTrigger className="w-[160px] h-10">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("timeLeave.leaveRequests.tabs.all")} ({leaveRequests.length})
+                </SelectItem>
+                <SelectItem value="pending">
+                  {t("timeLeave.leaveRequests.tabs.pending")} ({stats.pending})
+                </SelectItem>
+                <SelectItem value="approved">
+                  {t("timeLeave.leaveRequests.tabs.approved")}
+                </SelectItem>
+                <SelectItem value="rejected">
+                  {t("timeLeave.leaveRequests.tabs.rejected")}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            {stats.pending > 0 && activeTab !== "pending" && (
+              <button
+                onClick={() => setActiveTab("pending")}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium hover:bg-amber-200 transition-colors"
+              >
+                {stats.pending} {t("timeLeave.leaveRequests.tabs.pending")}
+              </button>
+            )}
+            <div className="ml-auto">
+              <Button
+                variant={activeTab === "calendar" ? "default" : "outline"}
+                size="sm"
+                onClick={() => setActiveTab(activeTab === "calendar" ? "all" : "calendar")}
+              >
                 <Calendar className="h-3.5 w-3.5 mr-1.5" />
                 {t("timeLeave.leaveRequests.tabs.calendar")}
-              </TabsTrigger>
-            </TabsList>
+              </Button>
+            </div>
+          </div>
 
-            <TabsContent value={activeTab} className="mt-4">
+          <div className="mt-4">
               {activeTab === "calendar" ? (
                 <LeaveCalendar requests={leaveRequests} departments={departments} />
               ) : filteredRequests.length === 0 ? (
@@ -1069,8 +1064,7 @@ export default function LeaveRequests() {
                   })}
                 </div>
               )}
-            </TabsContent>
-          </Tabs>
+          </div>
         </div>
       </div>
 

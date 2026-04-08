@@ -21,9 +21,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { SEO } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
 import { usePayrollRuns } from "@/hooks/usePayroll";
@@ -277,24 +275,19 @@ export default function PayrollAllocationReport() {
         description={t("reports.payrollAllocation.subtitle")}
       />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
-        <AutoBreadcrumb className="mb-6" />
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {t("reports.payrollAllocation.title")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("reports.payrollAllocation.subtitle")}
-            </p>
-          </div>
-          <Button variant="outline" onClick={exportCsv} disabled={!rows.length} className="w-full sm:w-auto">
-            <Download className="h-4 w-4 mr-2" />
-            {t("reports.payrollAllocation.actions.export")}
-          </Button>
-        </div>
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-6">
+        <PageHeader
+          title={t("reports.payrollAllocation.title")}
+          subtitle={t("reports.payrollAllocation.subtitle")}
+          icon={FolderKanban}
+          iconColor="text-violet-500"
+          actions={
+            <Button variant="outline" onClick={exportCsv} disabled={!rows.length} className="w-full sm:w-auto">
+              <Download className="h-4 w-4 mr-2" />
+              {t("reports.payrollAllocation.actions.export")}
+            </Button>
+          }
+        />
 
         <Card className="mb-6">
           <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

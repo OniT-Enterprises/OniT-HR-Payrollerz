@@ -4648,6 +4648,7 @@ const messages = {
       "billOverduePlural": "{{count}} contas em atraso",
       "needsPayment": "{{amount}} precisa de pagamento",
       "allCaughtUp": "Tudo em dia!",
+      "allGood": "Tudo certo",
       "noUrgentTasks": "Sem tarefas urgentes agora",
       "lookingGood": "Tudo bem!",
       "noUrgentItems": "Sem itens urgentes",
@@ -5485,7 +5486,13 @@ const messages = {
     "toastOverrideShortDesc": "Por favor forneça pelo menos 10 caracteres explicando porque prossegue sem conformidade total.",
     "toastSyncedAttendance": "Assiduidade sincronizada para {{count}} funcionário(s).",
     "toastSyncAttendanceNoData": "Nenhum registo de assiduidade encontrado para este período.",
-    "toastLoadFailed": "Falha ao carregar funcionários. Por favor atualize a página."
+    "toastLoadFailed": "Falha ao carregar funcionários. Por favor atualize a página.",
+    "monthlyDesc": "Uma vez por mês",
+    "biweeklyDesc": "A cada duas semanas",
+    "weeklyDesc": "Todas as semanas",
+    "withIssues": "com problemas",
+    "excludeFlagged": "Excluir sinalizados",
+    "employeeBreakdown": "Detalhes por funcionário"
   },
   "deductions": {
     "title": "Deduções e Adiantamentos",

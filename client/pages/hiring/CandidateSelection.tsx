@@ -22,9 +22,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -262,31 +260,15 @@ export default function CandidateSelection() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.candidates} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-              <Users className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{t("hiring.candidates.title")}</h1>
-              <p className="text-muted-foreground mt-1">
-                {t("hiring.candidates.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <PageHeader
+          title={t("hiring.candidates.title")}
+          subtitle={t("hiring.candidates.subtitle")}
+          icon={Users}
+          iconColor="text-emerald-500"
+        />
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up">
           <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">

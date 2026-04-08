@@ -54,7 +54,7 @@ function ReportsDashboardSkeleton() {
       <MainNavigation />
       {/* Hero Section */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
           <Skeleton className="h-4 w-24 mb-4" />
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
@@ -69,7 +69,7 @@ function ReportsDashboardSkeleton() {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 mx-auto max-w-screen-2xl space-y-8">
         {/* Recent Reports */}
         <section>
           <div className="flex items-center gap-2 mb-4">
@@ -320,7 +320,7 @@ export default function ReportsDashboard() {
 
       {/* Hero Section - Simplified */}
       <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div className="flex items-center gap-4">
@@ -364,7 +364,7 @@ export default function ReportsDashboard() {
         </div>
       </div>
 
-      <div className="p-4 sm:p-6 max-w-7xl mx-auto space-y-8">
+      <div className="p-4 sm:p-6 mx-auto max-w-screen-2xl space-y-8">
         <GuidancePanel section="reports" />
 
         {/* Recent Reports - Smart quick access */}

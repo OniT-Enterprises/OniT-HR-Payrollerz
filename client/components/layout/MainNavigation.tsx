@@ -50,6 +50,7 @@ import {
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import { useLayoutOptional } from "@/contexts/LayoutContext";
 
 // 7-tab navigation — no dropdowns, click navigates to module hub
 const NAV_ITEMS: Array<{
@@ -111,6 +112,13 @@ const NAV_ITEMS: Array<{
 ];
 
 export default function MainNavigation() {
+  // When AppLayout is active, the sidebar + top bar handle navigation — skip rendering
+  const layoutCtx = useLayoutOptional();
+  if (layoutCtx) return null;
+  return <MainNavigationInner />;
+}
+
+function MainNavigationInner() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut, isSuperAdmin } = useAuth();

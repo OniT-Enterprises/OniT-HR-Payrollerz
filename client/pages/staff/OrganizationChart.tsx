@@ -7,9 +7,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
   departmentService,
@@ -424,29 +422,15 @@ export default function OrganizationChart() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.orgChart} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <Building2 className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("orgChart.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("orgChart.subtitle") || "Visualize your company structure"}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3">
+      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+        <PageHeader
+          title={t("orgChart.title")}
+          subtitle={t("orgChart.subtitle") || "Visualize your company structure"}
+          icon={Building2}
+          iconColor="text-blue-500"
+          actions={
+            <>
               <Button
                 variant={dragMode ? "secondary" : "outline"}
                 onClick={() => setDragMode(!dragMode)}
@@ -476,14 +460,9 @@ export default function OrganizationChart() {
                 <Edit className="mr-2 h-4 w-4" />
                 {t("orgChart.manage")}
               </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
+            </>
+          }
+        />
         {/* Statistics Dashboard */}
         {employees.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

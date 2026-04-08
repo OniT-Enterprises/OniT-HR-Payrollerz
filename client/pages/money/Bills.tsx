@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,8 +36,7 @@ import { useSmartBills, billKeys } from '@/hooks/useBills';
 import { useDebounce } from '@/hooks/useDebounce';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
 import MoreDetailsSection from '@/components/MoreDetailsSection';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
+
 import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
 import { formatDateTL } from '@/lib/dateUtils';
 import type { Bill, BillStatus } from '@/types/money';
@@ -137,8 +136,7 @@ export default function Bills() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -160,38 +158,23 @@ export default function Bills() {
     <div className="min-h-screen bg-background">
       <SEO title="Bills - Meza" description="Manage your bills and accounts payable" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <FileText className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.bills.title') || 'Bills'}
-                <InfoTooltip
-                  title={t('money.bills.tooltipTitle') || 'Bills (Accounts Payable)'}
-                  content={t('money.bills.tooltipContent') || MoneyTooltips.bills.bill}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.bills.subtitle') || 'Manage accounts payable'}
-              </p>
-            </div>
-          </div>
-          <Button
-            onClick={() => navigate('/money/bills/new')}
-            className="bg-indigo-600 hover:bg-indigo-700"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.bills.new') || 'New Bill'}
-          </Button>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.bills.title') || 'Bills'}
+          subtitle={t('money.bills.subtitle') || 'Manage accounts payable'}
+          icon={FileText}
+          iconColor="text-indigo-500"
+          actions={
+            <Button
+              onClick={() => navigate('/money/bills/new')}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.bills.new') || 'New Bill'}
+            </Button>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">

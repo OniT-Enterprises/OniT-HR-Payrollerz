@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import {
   FileWarning,
@@ -178,7 +178,7 @@ export default function DocumentAlerts() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <Skeleton className="h-8 w-48 mb-6" />
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               {[1, 2, 3, 4].map(i => (
@@ -213,25 +213,13 @@ export default function DocumentAlerts() {
       />
       <MainNavigation />
 
-      {/* Hero Section */}
-      <div className="border-b bg-amber-50 dark:bg-amber-950/20">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/25">
-              <FileWarning className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{t("documentAlerts.title")}</h1>
-              <p className="text-muted-foreground mt-1">
-                {t("documentAlerts.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("documentAlerts.title")}
+          subtitle={t("documentAlerts.subtitle")}
+          icon={FileWarning}
+          iconColor="text-amber-500"
+        />
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
           <Card className="border-border/50">

@@ -21,9 +21,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -157,8 +155,7 @@ export default function CreateJobLocal() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6 lg:p-8">
-          <AutoBreadcrumb className="mb-6" />
-          <div className="max-w-4xl mx-auto">
+          <div className="max-w-screen-lg mx-auto">
             {/* Hero skeleton */}
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8">
               <div className="p-8">
@@ -204,7 +201,7 @@ export default function CreateJobLocal() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 lg:p-8 max-w-4xl mx-auto">
+        <div className="p-6 lg:p-8 max-w-screen-lg mx-auto">
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
               <p className="text-destructive">{t("hiring.createJob.errors.loadDepartments")}</p>
@@ -227,34 +224,17 @@ export default function CreateJobLocal() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.jobs} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-                <Briefcase className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("hiring.createJob.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("hiring.createJob.subtitle")}
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
+      <PageHeader
+        title={t("hiring.createJob.title")}
+        subtitle={t("hiring.createJob.subtitle")}
+        icon={Briefcase}
+        iconColor="text-emerald-500"
+        className="mx-auto max-w-screen-2xl px-6"
+      />
 
       <div className="p-6 lg:p-8">
-        <div className="max-w-4xl mx-auto">
+        <div className="max-w-screen-lg mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Details Card */}
             <Card className="border-border/50 animate-fade-up stagger-1">

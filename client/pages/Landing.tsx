@@ -26,7 +26,6 @@ import {
   Banknote,
   Languages,
   MapPin,
-  ChevronDown,
   Settings,
   Target,
   Wallet,

@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { holidayService } from "@/services/holidayService";
@@ -19,8 +19,6 @@ import {
   Building,
   Building2,
   CreditCard,
-  Calendar,
-  Calculator,
   Plug,
   Globe,
   ChevronRight,
@@ -32,8 +30,6 @@ import {
   CompanyDetailsTab,
   CompanyStructureTab,
   PaymentStructureTab,
-  TimeOffPoliciesTab,
-  PayrollConfigTab,
 } from "@/components/settings";
 
 export default function Settings() {
@@ -74,18 +70,13 @@ export default function Settings() {
       <SEO {...seoConfig.settings} />
       <MainNavigation />
 
-      <div className="p-6 max-w-6xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-        {/* Header */}
-        <div className="flex items-center gap-3 mb-6">
-          <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-            <SettingsIcon className="h-5 w-5 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold">{t("settings.headerTitle")}</h1>
-            <p className="text-muted-foreground">{t("settings.headerSubtitle")}</p>
-          </div>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t("settings.headerTitle")}
+          subtitle={t("settings.headerSubtitle")}
+          icon={SettingsIcon}
+          iconColor="text-primary"
+        />
 
         {/* Organization Quick Links */}
         <div className="mb-6">
@@ -136,14 +127,7 @@ export default function Settings() {
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">{t("settings.tabs.payment")}</span>
             </TabsTrigger>
-            <TabsTrigger value="timeoff" className="gap-2">
-              <Calendar className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.timeOff")}</span>
-            </TabsTrigger>
-            <TabsTrigger value="payroll" className="gap-2">
-              <Calculator className="h-4 w-4" />
-              <span className="hidden sm:inline">{t("settings.tabs.payroll")}</span>
-            </TabsTrigger>
+            {/* Time Off moved to /time-leave/settings, Payroll to /payroll/settings */}
             <TabsTrigger value="integrations" className="gap-2">
               <Plug className="h-4 w-4" />
               <span className="hidden sm:inline">{t("settings.tabs.integrations")}</span>
@@ -185,34 +169,6 @@ export default function Settings() {
                 onReload={handleReload}
                 t={t}
                 initialData={settings.paymentStructure}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="timeoff">
-            {settings && (
-              <TimeOffPoliciesTab
-                tenantId={tenantId}
-                saving={saving}
-                setSaving={setSaving}
-                onReload={handleReload}
-                t={t}
-                initialTimeOff={settings.timeOffPolicies}
-                initialHolidayOverrides={holidayOverrides}
-                userId={user?.uid}
-              />
-            )}
-          </TabsContent>
-
-          <TabsContent value="payroll">
-            {settings && (
-              <PayrollConfigTab
-                tenantId={tenantId}
-                saving={saving}
-                setSaving={setSaving}
-                onReload={handleReload}
-                t={t}
-                initialData={settings.payrollConfig}
               />
             )}
           </TabsContent>

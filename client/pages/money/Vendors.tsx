@@ -7,7 +7,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -42,9 +42,7 @@ import { SEO } from '@/components/SEO';
 import { useTenant, useTenantId } from '@/contexts/TenantContext';
 import { vendorService } from '@/services/vendorService';
 import { useAllVendors, vendorKeys } from '@/hooks/useVendors';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
-import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+
 import type { Vendor, VendorFormData } from '@/types/money';
 import {
   Truck,
@@ -199,8 +197,7 @@ export default function Vendors() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid gap-4">
@@ -217,35 +214,20 @@ export default function Vendors() {
     <div className="min-h-screen bg-background">
       <SEO title="Vendors - Meza" description="Manage your vendors and suppliers" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Truck className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.vendors.title') || 'Vendors'}
-                <InfoTooltip
-                  title={t('money.vendors.tooltipTitle') || 'Vendors (Suppliers)'}
-                  content={t('money.vendors.tooltipContent') || MoneyTooltips.bills.vendor}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.vendors.subtitle') || 'Manage your suppliers'}
-              </p>
-            </div>
-          </div>
-          <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.vendors.add') || 'Add Vendor'}
-          </Button>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.vendors.title') || 'Vendors'}
+          subtitle={t('money.vendors.subtitle') || 'Manage your suppliers'}
+          icon={Truck}
+          iconColor="text-indigo-500"
+          actions={
+            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.vendors.add') || 'Add Vendor'}
+            </Button>
+          }
+        />
 
         {/* Search */}
         <div className="mb-6">

@@ -40,10 +40,8 @@ import {
   ArrowDownRight,
 } from 'lucide-react';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { SEO, seoConfig } from "@/components/SEO";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { accountingNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
@@ -173,35 +171,19 @@ export default function GeneralLedger() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.generalLedger} />
       <MainNavigation />
-      <ModuleSectionNav config={accountingNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-                <BookOpen className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">{t("accounting.generalLedger.title")}</h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("accounting.generalLedger.subtitle")}
-                </p>
-                <p className="text-sm text-muted-foreground/70 mt-0.5">See every transaction for a specific account over time</p>
-              </div>
-            </div>
+      <div className="p-6 mx-auto max-w-screen-2xl space-y-6">
+        <PageHeader
+          title={t("accounting.generalLedger.title")}
+          subtitle={t("accounting.generalLedger.subtitle")}
+          icon={BookOpen}
+          iconColor="text-orange-500"
+          actions={
             <Button onClick={exportToCSV} disabled={!canExport}>
               <Download className="mr-2 h-4 w-4" />
               {t("accounting.generalLedger.exportCsv")}
             </Button>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={accountingNavConfig} mode="expanded" />
-
-      <div className="p-6 max-w-7xl mx-auto space-y-6">
+          }
+        />
 
       {/* Filters */}
       <Card>

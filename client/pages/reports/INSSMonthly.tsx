@@ -45,9 +45,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { useI18n } from "@/i18n/I18nProvider";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   Building,
   Calendar,
@@ -348,7 +346,7 @@ export default function INSSMonthly() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -374,26 +372,13 @@ export default function INSSMonthly() {
         description={t("reports.inssMonthly.subtitle")}
       />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} />
-
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <AutoBreadcrumb className="mb-4" />
-
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg shadow-slate-500/15">
-              <Shield className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold">
-                {t("reports.inssMonthly.title")}
-              </h1>
-              <p className="text-muted-foreground">
-                {t("reports.inssMonthly.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("reports.inssMonthly.title")}
+          subtitle={t("reports.inssMonthly.subtitle")}
+          icon={Shield}
+          iconColor="text-slate-500"
+        />
 
         {(overdueFiling || upcomingDue) && (
           <Card className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-900/20">

@@ -12,6 +12,7 @@ const messages = {
     "amount": "Valor",
     "back": "Fila",
     "cancel": "Kansela",
+    "collapse": "Taka",
     "city": "Sidade",
     "date": "Data",
     "delete": "Apaga",
@@ -4648,6 +4649,7 @@ const messages = {
       "billOverduePlural": "konta {{count}} atrazu",
       "needsPayment": "{{amount}} presiza pagamentu",
       "allCaughtUp": "Hotu tiha ona!",
+      "allGood": "Di'ak hotu",
       "noUrgentTasks": "Laiha tarefa urjente agora",
       "lookingGood": "Di'ak hela!",
       "noUrgentItems": "Laiha item urjente",
@@ -5485,7 +5487,13 @@ const messages = {
     "toastOverrideShortDesc": "Favór fó pelumenus karakter 10 esplika tanba saida ita kontinua sein konformidade tomak.",
     "toastSyncedAttendance": "Dadus attendance sinkroniza ba trabalhador {{count}}.",
     "toastSyncAttendanceNoData": "Laiha rejistu attendance ba períodu ida-ne'e.",
-    "toastLoadFailed": "La konsege karrega trabalhador. Favór atualiza pájina."
+    "toastLoadFailed": "La konsege karrega trabalhador. Favór atualiza pájina.",
+    "monthlyDesc": "Dala ida fulan ida",
+    "biweeklyDesc": "Semana rua-rua",
+    "weeklyDesc": "Semana ida-ida",
+    "withIssues": "ho problema",
+    "excludeFlagged": "Esklui ne'ebé iha problema",
+    "employeeBreakdown": "Detallu funsionáriu"
   },
   "deductions": {
     "title": "Dedusaun & Adianta",

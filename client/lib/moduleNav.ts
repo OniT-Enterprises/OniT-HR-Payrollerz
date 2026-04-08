@@ -2,7 +2,14 @@
  * Module Navigation Configuration
  *
  * Central source of truth for all module section hierarchies.
- * Used by ModuleSectionNav to render consistent 2-level navigation.
+ * Used by AppSidebar and ModuleSectionNav to render navigation.
+ *
+ * Restructured for child-simple sidebar:
+ *  - Flat where possible (no sub-sections for <4 items)
+ *  - Rarely-used pages grouped under section headers
+ *  - Reports unified into one module
+ *  - Accounting merged into Money
+ *  - Duplicate pages eliminated (Balance Sheet, Reconciliation)
  */
 
 import type { ComponentType } from "react";
@@ -37,27 +44,24 @@ import {
   FileText,
   Receipt,
   ShoppingCart,
-  BarChart3,
   Store,
   CreditCard,
-  TrendingUp,
-  DollarSign,
-  ArrowUpRight,
-  ArrowDownRight,
-  Building,
-  Scale,
-  // Accounting
+  // Accounting (now under Money)
   BookOpen,
   Landmark,
   Layers,
   CheckSquare,
+  // Reports
+  BarChart3,
+  ClipboardCheck,
   ClipboardList,
   PieChart,
   CalendarRange,
   ScrollText,
-  // Reports
-  BarChart,
-  ClipboardCheck,
+  TrendingUp,
+  Scale,
+  DollarSign,
+  Building,
   Wrench,
 } from "lucide-react";
 
@@ -73,9 +77,9 @@ export interface ModuleSection {
   id: string;
   label: string;
   icon: ComponentType<{ className?: string }>;
-  path: string;          // overview/default page for this section
+  path: string;          // default page for this section
   matchPaths: string[];  // all URLs that belong to this section
-  subPages: NavItem[];   // Level 2 sibling pages (empty = no Level 2)
+  subPages: NavItem[];   // Level 2 sibling pages (empty = direct link, no expand)
 }
 
 export interface ModuleNavConfig {
@@ -83,28 +87,43 @@ export interface ModuleNavConfig {
   sections: ModuleSection[];
 }
 
-/* ─── People ─── */
+/* ─── People ───
+ * Flat primary items: Employees, Jobs, Reviews
+ * Secondary items grouped under "More": Announcements, Grievances, Training, etc.
+ */
 
 export const peopleNavConfig: ModuleNavConfig = {
   moduleId: "people",
   sections: [
     {
-      id: "staff",
-      label: "Staff",
+      id: "employees",
+      label: "Employees",
       icon: Users,
-      path: "/people/staff",
-      matchPaths: ["/people/staff", "/people/employees", "/people/add", "/people/announcements", "/people/grievances"],
-      subPages: [
-        { label: "Employees", path: "/people/employees", icon: Users },
-        { label: "Announcements", path: "/people/announcements", icon: Megaphone },
-        { label: "Grievances", path: "/people/grievances", icon: MessageSquare },
-      ],
+      path: "/people/employees",
+      matchPaths: ["/people/employees", "/people/add", "/people/staff"],
+      subPages: [],
+    },
+    {
+      id: "announcements",
+      label: "Announcements",
+      icon: Megaphone,
+      path: "/people/announcements",
+      matchPaths: ["/people/announcements"],
+      subPages: [],
+    },
+    {
+      id: "grievances",
+      label: "Grievances",
+      icon: MessageSquare,
+      path: "/people/grievances",
+      matchPaths: ["/people/grievances"],
+      subPages: [],
     },
     {
       id: "hiring",
       label: "Hiring",
       icon: Briefcase,
-      path: "/people/hiring",
+      path: "/people/jobs",
       matchPaths: ["/people/hiring", "/people/jobs", "/people/candidates", "/people/interviews", "/people/onboarding", "/people/offboarding"],
       subPages: [
         { label: "Jobs", path: "/people/jobs", icon: Briefcase },
@@ -118,11 +137,11 @@ export const peopleNavConfig: ModuleNavConfig = {
       id: "performance",
       label: "Performance",
       icon: Target,
-      path: "/people/performance",
+      path: "/people/reviews",
       matchPaths: ["/people/performance", "/people/goals", "/people/reviews", "/people/training", "/people/disciplinary"],
       subPages: [
-        { label: "Goals", path: "/people/goals", icon: Target },
         { label: "Reviews", path: "/people/reviews", icon: Award },
+        { label: "Goals", path: "/people/goals", icon: Target },
         { label: "Training", path: "/people/training", icon: GraduationCap },
         { label: "Disciplinary", path: "/people/disciplinary", icon: Shield },
       ],
@@ -130,19 +149,13 @@ export const peopleNavConfig: ModuleNavConfig = {
   ],
 };
 
-/* ─── Time & Leave ─── */
+/* ─── Time & Leave ───
+ * Already flat — 4 direct links, no sub-sections needed
+ */
 
 export const timeLeaveNavConfig: ModuleNavConfig = {
   moduleId: "scheduling",
   sections: [
-    {
-      id: "time-tracking",
-      label: "Time Tracking",
-      icon: Clock,
-      path: "/time-leave/time-tracking",
-      matchPaths: ["/time-leave/time-tracking"],
-      subPages: [],
-    },
     {
       id: "attendance",
       label: "Attendance",
@@ -160,6 +173,14 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       subPages: [],
     },
     {
+      id: "time-tracking",
+      label: "Time Tracking",
+      icon: Clock,
+      path: "/time-leave/time-tracking",
+      matchPaths: ["/time-leave/time-tracking"],
+      subPages: [],
+    },
+    {
       id: "shifts",
       label: "Shifts",
       icon: Calendar,
@@ -167,32 +188,32 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
       matchPaths: ["/time-leave/shifts"],
       subPages: [],
     },
+    {
+      id: "settings",
+      label: "Leave Settings",
+      icon: Settings,
+      path: "/time-leave/settings",
+      matchPaths: ["/time-leave/settings"],
+      subPages: [],
+    },
   ],
 };
 
-/* ─── Payroll ─── */
+/* ─── Payroll ───
+ * Flat: Run, History, Payments are primary actions
+ * Setup (Benefits/Deductions) and Reports are secondary
+ */
 
 export const payrollNavConfig: ModuleNavConfig = {
   moduleId: "payroll",
   sections: [
     {
       id: "run",
-      label: "Run",
+      label: "Run Payroll",
       icon: Play,
       path: "/payroll/run",
       matchPaths: ["/payroll/run"],
       subPages: [],
-    },
-    {
-      id: "setup",
-      label: "Setup",
-      icon: Settings,
-      path: "/payroll/setup/benefits",
-      matchPaths: ["/payroll/setup/benefits", "/payroll/setup/deductions"],
-      subPages: [
-        { label: "Benefits", path: "/payroll/setup/benefits", icon: Heart },
-        { label: "Deductions", path: "/payroll/setup/deductions", icon: MinusCircle },
-      ],
     },
     {
       id: "history",
@@ -211,17 +232,33 @@ export const payrollNavConfig: ModuleNavConfig = {
       subPages: [],
     },
     {
-      id: "reports",
-      label: "Reports",
+      id: "tax",
+      label: "Tax & INSS",
       icon: FileSpreadsheet,
       path: "/payroll/reports",
       matchPaths: ["/payroll/reports"],
       subPages: [],
     },
+    {
+      id: "settings",
+      label: "Settings",
+      icon: Settings,
+      path: "/payroll/settings",
+      matchPaths: ["/payroll/settings", "/payroll/setup/benefits", "/payroll/setup/deductions"],
+      subPages: [
+        { label: "Tax & Rates", path: "/payroll/settings", icon: DollarSign },
+        { label: "Benefits", path: "/payroll/setup/benefits", icon: Heart },
+        { label: "Deductions", path: "/payroll/setup/deductions", icon: MinusCircle },
+      ],
+    },
   ],
 };
 
-/* ─── Money ─── */
+/* ─── Money & Accounting ───
+ * Merged: Money handles day-to-day (invoices, bills, expenses)
+ * Accounting section handles books (chart of accounts, journal, ledger)
+ * Financial reports consolidated here (no duplicate in Reports module)
+ */
 
 export const moneyNavConfig: ModuleNavConfig = {
   moduleId: "money",
@@ -258,8 +295,8 @@ export const moneyNavConfig: ModuleNavConfig = {
       subPages: [],
     },
     {
-      id: "reports",
-      label: "Reports",
+      id: "financial-reports",
+      label: "Financial Reports",
       icon: BarChart3,
       path: "/money/reports/profit-loss",
       matchPaths: [
@@ -269,49 +306,65 @@ export const moneyNavConfig: ModuleNavConfig = {
         "/money/reports/ar-aging",
         "/money/reports/ap-aging",
         "/money/reports/reconciliation",
-        "/money/reports/vat-settings",
         "/money/reports/vat-returns",
       ],
       subPages: [
         { label: "Profit & Loss", path: "/money/reports/profit-loss", icon: TrendingUp },
         { label: "Balance Sheet", path: "/money/reports/balance-sheet", icon: Scale },
         { label: "Cashflow", path: "/money/reports/cashflow", icon: DollarSign },
-        { label: "AR Aging", path: "/money/reports/ar-aging", icon: ArrowUpRight },
-        { label: "AP Aging", path: "/money/reports/ap-aging", icon: ArrowDownRight },
+        { label: "AR Aging", path: "/money/reports/ar-aging", icon: ClipboardList },
+        { label: "AP Aging", path: "/money/reports/ap-aging", icon: ClipboardList },
         { label: "Reconciliation", path: "/money/reports/reconciliation", icon: CheckSquare },
-        { label: "VAT Settings", path: "/money/reports/vat-settings", icon: Settings },
         { label: "VAT Returns", path: "/money/reports/vat-returns", icon: FileSpreadsheet },
       ],
     },
   ],
 };
 
-/* ─── Accounting ─── */
+/* ─── Accounting ───
+ * Books & ledger — separate module for accountants
+ * Balance Sheet and Reconciliation only here (removed from Money reports)
+ * VAT Settings moved to /settings
+ */
 
 export const accountingNavConfig: ModuleNavConfig = {
   moduleId: "accounting",
   sections: [
     {
-      id: "core",
-      label: "Core",
-      icon: BookOpen,
+      id: "chart",
+      label: "Chart of Accounts",
+      icon: Layers,
       path: "/accounting/core/chart",
-      matchPaths: [
-        "/accounting/core/chart",
-        "/accounting/core/journal",
-        "/accounting/core/ledger",
-        "/accounting/core/reconciliation",
-      ],
-      subPages: [
-        { label: "Chart of Accounts", path: "/accounting/core/chart", icon: Layers },
-        { label: "Journal Entries", path: "/accounting/core/journal", icon: BookOpen },
-        { label: "General Ledger", path: "/accounting/core/ledger", icon: Landmark },
-        { label: "Reconciliation", path: "/accounting/core/reconciliation", icon: CheckSquare },
-      ],
+      matchPaths: ["/accounting/core/chart"],
+      subPages: [],
     },
     {
-      id: "reports",
-      label: "Reports",
+      id: "journal",
+      label: "Journal Entries",
+      icon: BookOpen,
+      path: "/accounting/core/journal",
+      matchPaths: ["/accounting/core/journal"],
+      subPages: [],
+    },
+    {
+      id: "ledger",
+      label: "General Ledger",
+      icon: Landmark,
+      path: "/accounting/core/ledger",
+      matchPaths: ["/accounting/core/ledger"],
+      subPages: [],
+    },
+    {
+      id: "reconciliation",
+      label: "Reconciliation",
+      icon: CheckSquare,
+      path: "/accounting/core/reconciliation",
+      matchPaths: ["/accounting/core/reconciliation"],
+      subPages: [],
+    },
+    {
+      id: "statements",
+      label: "Statements",
       icon: BarChart3,
       path: "/accounting/reports/trial-balance",
       matchPaths: [
@@ -332,27 +385,50 @@ export const accountingNavConfig: ModuleNavConfig = {
   ],
 };
 
-/* ─── Reports ─── */
+/* ─── Reports ───
+ * Unified: all report types in one place
+ * HR reports, compliance filings, custom reports
+ * Financial reports live under Money (not duplicated here)
+ */
 
 export const reportsNavConfig: ModuleNavConfig = {
   moduleId: "reports",
   sections: [
     {
-      id: "standard",
-      label: "Standard",
-      icon: BarChart,
+      id: "payroll-reports",
+      label: "Payroll",
+      icon: DollarSign,
       path: "/reports/payroll",
-      matchPaths: ["/reports/payroll", "/reports/employees", "/reports/attendance", "/reports/departments"],
-      subPages: [
-        { label: "Payroll", path: "/reports/payroll", icon: DollarSign },
-        { label: "Employees", path: "/reports/employees", icon: Users },
-        { label: "Attendance", path: "/reports/attendance", icon: CalendarCheck },
-        { label: "Departments", path: "/reports/departments", icon: Building },
-      ],
+      matchPaths: ["/reports/payroll"],
+      subPages: [],
+    },
+    {
+      id: "employee-reports",
+      label: "Employees",
+      icon: Users,
+      path: "/reports/employees",
+      matchPaths: ["/reports/employees"],
+      subPages: [],
+    },
+    {
+      id: "attendance-reports",
+      label: "Attendance",
+      icon: CalendarCheck,
+      path: "/reports/attendance",
+      matchPaths: ["/reports/attendance"],
+      subPages: [],
+    },
+    {
+      id: "department-reports",
+      label: "Departments",
+      icon: Building,
+      path: "/reports/departments",
+      matchPaths: ["/reports/departments"],
+      subPages: [],
     },
     {
       id: "compliance",
-      label: "Compliance",
+      label: "Tax & Compliance",
       icon: ClipboardCheck,
       path: "/reports/attl-monthly-wit",
       matchPaths: ["/reports/attl-monthly-wit", "/reports/inss-monthly", "/reports/inss-annual"],

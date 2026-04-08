@@ -33,22 +33,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { payrollNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   CreditCard,
   Plus,
-  DollarSign,
   Search,
   Loader2,
   CheckCircle,
@@ -322,9 +313,8 @@ export default function DeductionsAdvances() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
         <div className="p-6">
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="flex items-center gap-3 mb-6">
               <Skeleton className="h-8 w-8 rounded" />
               <div>
@@ -378,119 +368,22 @@ export default function DeductionsAdvances() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.deductions} />
       <MainNavigation />
-      <ModuleSectionNav config={payrollNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-green-50 dark:bg-green-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-500 shadow-lg shadow-green-500/25">
-                <CreditCard className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("deductions.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("deductions.subtitle")}
-                </p>
-              </div>
-            </div>
-            <Button onClick={() => setShowAddDialog(true)} className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600">
+      <div className="mx-auto max-w-screen-2xl px-6 py-6">
+        <PageHeader
+          title={t("deductions.title")}
+          subtitle={t("deductions.subtitle")}
+          icon={CreditCard}
+          iconColor="text-green-500"
+          actions={
+            <Button onClick={() => setShowAddDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />
               {t("deductions.addDeduction")}
             </Button>
-          </div>
-        </div>
-      </div>
-      <ModuleSectionNav config={payrollNavConfig} mode="expanded" />
+          }
+        />
 
-      <div className="max-w-7xl mx-auto px-6 py-6">
-
-          {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-1">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("deductions.activeDeductions")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.totalActive}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("deductions.perPeriod", { amount: formatCurrency(stats.totalActiveAmount) })}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                    <CreditCard className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-2">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("deductions.payrollAdvances")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.advancesCount}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("deductions.outstanding", { amount: formatCurrency(stats.advancesAmount) })}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                    <ArrowUpCircle className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-3">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("deductions.garnishments")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.garnishmentsCount}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {t("deductions.perPeriod", { amount: formatCurrency(stats.garnishmentsAmount) })}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl">
-                    <ArrowDownCircle className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-border/50 shadow-lg animate-fade-up stagger-4">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      {t("deductions.otherDeductions")}
-                    </p>
-                    <p className="text-2xl font-bold">
-                      {stats.otherCount}
-                    </p>
-                  </div>
-                  <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                    <DollarSign className="h-6 w-6 text-white" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Deductions Table with Tabs */}
+          {/* Deductions Table */}
           <Card className="border-border/50">
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -515,15 +408,20 @@ export default function DeductionsAdvances() {
               </div>
             </CardHeader>
             <CardContent>
-              <Tabs value={activeTab} onValueChange={setActiveTab}>
-                <TabsList className="mb-4">
-                  <TabsTrigger value="all">{t("deductions.tabAll")}</TabsTrigger>
-                  <TabsTrigger value="advances">{t("deductions.tabAdvances")}</TabsTrigger>
-                  <TabsTrigger value="garnishments">{t("deductions.tabGarnishments")}</TabsTrigger>
-                  <TabsTrigger value="other">{t("deductions.tabOther")}</TabsTrigger>
-                </TabsList>
+              <div className="mb-4 w-48">
+                <Select value={activeTab} onValueChange={setActiveTab}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">{t("deductions.tabAll")}</SelectItem>
+                    <SelectItem value="advances">{t("deductions.tabAdvances")}</SelectItem>
+                    <SelectItem value="garnishments">{t("deductions.tabGarnishments")}</SelectItem>
+                    <SelectItem value="other">{t("deductions.tabOther")}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-                <TabsContent value={activeTab}>
                   {filteredDeductions.length === 0 ? (
                     <div className="text-center py-12">
                       <CreditCard className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
@@ -606,8 +504,6 @@ export default function DeductionsAdvances() {
                       </Table>
                     </div>
                   )}
-                </TabsContent>
-              </Tabs>
             </CardContent>
           </Card>
         </div>

@@ -1958,7 +1958,7 @@ export default function SeedDatabase() {
     <div className="min-h-screen bg-background">
       <MainNavigation />
 
-      <div className="p-6 max-w-5xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <div className="flex items-center gap-3 mb-8">
           <Database className="h-8 w-8 text-primary" />
           <div>

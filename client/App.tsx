@@ -16,6 +16,7 @@ import { I18nProvider } from "@/i18n/I18nProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 import ChatWidget from "@/components/chat/ChatWidget";
+import AppLayout from "@/components/layout/AppLayout";
 
 // Route definitions
 import {
@@ -83,42 +84,23 @@ const App = ({ queryClient }: { queryClient: QueryClient }) => (
                   <AuthProvider>
                     <TenantProvider>
                       <ChatWidget />
-                      <Suspense fallback={<PageLoader />}>
-                        <Routes>
-                          {/* Home route */}
-                          <Route path="/" element={<HomeRoute />} />
-
-                          {/* Auth & Core */}
-                          {authRoutes}
-
-                          {/* People Module (Staff, Hiring, Performance) */}
-                          {peopleRoutes}
-
-                          {/* Scheduling Module (Time Tracking, Attendance, Leave, Shifts) */}
-                          {schedulingRoutes}
-
-                          {/* Payroll Module */}
-                          {payrollRoutes}
-
-                          {/* Money Module (Invoicing) */}
-                          {moneyRoutes}
-
-                          {/* Accounting Module */}
-                          {accountingRoutes}
-
-                          {/* Reports Module */}
-                          {reportsRoutes}
-
-                          {/* Legacy Redirects */}
-                          {legacyRedirects}
-
-                          {/* Admin Routes */}
-                          {adminRoutes}
-
-                          {/* Catch-all 404 */}
-                          {notFoundRoute}
-                        </Routes>
-                      </Suspense>
+                      <AppLayout>
+                        <Suspense fallback={<PageLoader />}>
+                          <Routes>
+                            <Route path="/" element={<HomeRoute />} />
+                            {authRoutes}
+                            {peopleRoutes}
+                            {schedulingRoutes}
+                            {payrollRoutes}
+                            {moneyRoutes}
+                            {accountingRoutes}
+                            {reportsRoutes}
+                            {legacyRedirects}
+                            {adminRoutes}
+                            {notFoundRoute}
+                          </Routes>
+                        </Suspense>
+                      </AppLayout>
                     </TenantProvider>
                   </AuthProvider>
                 </FirebaseProvider>

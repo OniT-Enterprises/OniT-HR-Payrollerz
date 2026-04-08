@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,7 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Plus,
@@ -41,8 +40,6 @@ import { useDepartments } from "@/hooks/useDepartments";
 import { useAttendanceByDate, useMarkAttendance } from "@/hooks/useAttendance";
 import { useTenantId } from "@/contexts/TenantContext";
 import { formatDateTL, toDateStringTL } from "@/lib/dateUtils";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { timeLeaveNavConfig } from "@/lib/moduleNav";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 export default function TimeTracking() {
@@ -353,8 +350,7 @@ export default function TimeTracking() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-          <AutoBreadcrumb className="mb-6" />
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             <div className="mb-6">
               <Skeleton className="h-9 w-40 mb-2" />
               <Skeleton className="h-4 w-64" />
@@ -376,30 +372,14 @@ export default function TimeTracking() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.timeTracking} />
       <MainNavigation />
-      <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
-              <Clock className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {t("timeLeave.timeTracking.title")}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t("timeLeave.timeTracking.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="max-w-7xl mx-auto px-6 pt-6 pb-8">
+      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
+        <PageHeader
+          title={t("timeLeave.timeTracking.title")}
+          subtitle={t("timeLeave.timeTracking.subtitle")}
+          icon={Clock}
+          iconColor="text-cyan-500"
+        />
         {/* Inline Toolbar */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-3 mb-4">
           {/* Date navigation */}
@@ -565,11 +545,34 @@ export default function TimeTracking() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="mb-6">
-            <TabsTrigger value="entries">{t("timeLeave.timeTracking.tabs.entries")}</TabsTrigger>
-            <TabsTrigger value="daily">{t("timeLeave.timeTracking.tabs.daily")}</TabsTrigger>
-            <TabsTrigger value="reports">{t("timeLeave.timeTracking.tabs.reports")}</TabsTrigger>
-          </TabsList>
+          <div className="flex items-center justify-between mb-6">
+            <TabsList>
+              <TabsTrigger value="entries">{t("timeLeave.timeTracking.tabs.entries")}</TabsTrigger>
+              <TabsTrigger value="daily">{t("timeLeave.timeTracking.tabs.daily")}</TabsTrigger>
+            </TabsList>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={handleExportCSV}>
+                <Download className="h-3.5 w-3.5 mr-1.5" />
+                {t("timeLeave.timeTracking.reports.exportTimesheet")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportClientBilling") })}
+              >
+                <Building className="h-3.5 w-3.5 mr-1.5" />
+                {t("timeLeave.timeTracking.reports.clientBilling")}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportPerformance") })}
+              >
+                <User className="h-3.5 w-3.5 mr-1.5" />
+                {t("timeLeave.timeTracking.reports.guardPerformance")}
+              </Button>
+            </div>
+          </div>
 
           {/* ── ENTRIES TAB ── */}
           <TabsContent value="entries">
@@ -749,79 +752,41 @@ export default function TimeTracking() {
                 ))}
               </div>
             )}
-          </TabsContent>
 
-          {/* ── REPORTS TAB ── */}
-          <TabsContent value="reports">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Export options */}
-              <Card className="border-border/50">
-                <CardContent className="p-5 space-y-3">
-                  <p className="text-sm font-medium text-foreground mb-3">{t("timeLeave.timeTracking.reports.exportTitle")}</p>
-                  <Button onClick={handleExportCSV} variant="outline" className="w-full justify-start">
-                    <Download className="h-4 w-4 mr-2" />
-                    {t("timeLeave.timeTracking.reports.exportTimesheet")}
-                  </Button>
-                  <Button
-                    onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportClientBilling") })}
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <Building className="h-4 w-4 mr-2" />
-                    {t("timeLeave.timeTracking.reports.clientBilling")}
-                  </Button>
-                  <Button
-                    onClick={() => toast({ title: t("timeLeave.timeTracking.toast.reportTitle"), description: t("timeLeave.timeTracking.toast.reportPerformance") })}
-                    variant="outline"
-                    className="w-full justify-start"
-                  >
-                    <User className="h-4 w-4 mr-2" />
-                    {t("timeLeave.timeTracking.reports.guardPerformance")}
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Department summary */}
-              <Card className="border-border/50">
-                <CardContent className="p-5">
-                  <p className="text-sm font-medium text-foreground mb-3">{t("timeLeave.timeTracking.reports.coverageTitle")}</p>
-                  {departmentSummary.length === 0 ? (
-                    <div className="text-center py-6 text-muted-foreground">
-                      <p className="text-sm">{t("timeLeave.timeTracking.reports.noDepartmentData")}</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {departmentSummary.map((dept) => {
-                        const totalInDept = dept.present + dept.late + dept.absent;
-                        return (
-                          <div key={dept.name} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card">
-                            <div>
-                              <p className="font-medium text-sm text-foreground">{dept.name}</p>
-                              <p className="text-xs text-muted-foreground">
-                                {t("timeLeave.timeTracking.reports.coverageGuards", { count: totalInDept })}
-                              </p>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-mono text-sm font-medium text-foreground">{dept.totalHours.toFixed(1)}h</span>
-                              <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20")}>
-                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                                {dept.present}
-                              </span>
-                              {dept.late > 0 && (
-                                <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20")}>
-                                  <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
-                                  {dept.late}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
+            {/* Department Coverage — inline below daily entries */}
+            {departmentSummary.length > 0 && (
+              <div className="mt-6">
+                <p className="text-sm font-medium text-foreground mb-3">{t("timeLeave.timeTracking.reports.coverageTitle")}</p>
+                <div className="space-y-2">
+                  {departmentSummary.map((dept) => {
+                    const totalInDept = dept.present + dept.late + dept.absent;
+                    return (
+                      <div key={dept.name} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-card">
+                        <div>
+                          <p className="font-medium text-sm text-foreground">{dept.name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {t("timeLeave.timeTracking.reports.coverageGuards", { count: totalInDept })}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-medium text-foreground">{dept.totalHours.toFixed(1)}h</span>
+                          <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20")}>
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+                            {dept.present}
+                          </span>
+                          {dept.late > 0 && (
+                            <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium", "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20")}>
+                              <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+                              {dept.late}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

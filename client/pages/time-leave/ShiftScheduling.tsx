@@ -43,10 +43,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { timeLeaveNavConfig } from "@/lib/moduleNav";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
   Calendar,
@@ -1248,8 +1246,7 @@ export default function ShiftScheduling() {
       <div className="min-h-screen bg-background">
         <MainNavigation />
         <div className="p-6">
-        <AutoBreadcrumb className="mb-6" />
-          <div className="max-w-7xl mx-auto">
+          <div className="mx-auto max-w-screen-2xl">
             {/* Header skeleton */}
             <div className="mb-6">
               <Skeleton className="h-9 w-48 mb-2" />
@@ -1303,31 +1300,15 @@ export default function ShiftScheduling() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.schedules} />
       <MainNavigation />
-      <ModuleSectionNav config={timeLeaveNavConfig} />
-
-      {/* Hero Section */}
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
-              <Calendar className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">
-                {t("timeLeave.shiftScheduling.title")}
-              </h1>
-              <p className="text-muted-foreground mt-1">
-                {t("timeLeave.shiftScheduling.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
 
       <div className="p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="mx-auto max-w-screen-2xl">
+          <PageHeader
+            title={t("timeLeave.shiftScheduling.title")}
+            subtitle={t("timeLeave.shiftScheduling.subtitle")}
+            icon={Calendar}
+            iconColor="text-cyan-500"
+          />
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="grid w-full grid-cols-3 mb-5">
               <TabsTrigger value="schedule">

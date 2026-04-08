@@ -11,9 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import MainNavigation from "@/components/layout/MainNavigation";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import PageHeader from "@/components/layout/PageHeader";
 import { SEO } from "@/components/SEO";
 import { useJournalEntries } from "@/hooks/useAccounting";
 import { useToast } from "@/hooks/use-toast";
@@ -139,24 +137,19 @@ export default function DonorExportPack() {
         description={t("reports.donorExportPack.subtitle")}
       />
       <MainNavigation />
-      <ModuleSectionNav config={reportsNavConfig} />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
-        <AutoBreadcrumb />
-
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {t("reports.donorExportPack.title")}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("reports.donorExportPack.subtitle")}
-            </p>
-          </div>
-          <Button onClick={exportPack} disabled={!donorLines.length} className="w-full sm:w-auto">
-            <Download className="h-4 w-4 mr-2" />
-            {t("reports.donorExportPack.exportButton")}
-          </Button>
-        </div>
+      <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-6 space-y-6">
+        <PageHeader
+          title={t("reports.donorExportPack.title")}
+          subtitle={t("reports.donorExportPack.subtitle")}
+          icon={FileSpreadsheet}
+          iconColor="text-violet-500"
+          actions={
+            <Button onClick={exportPack} disabled={!donorLines.length} className="w-full sm:w-auto">
+              <Download className="h-4 w-4 mr-2" />
+              {t("reports.donorExportPack.exportButton")}
+            </Button>
+          }
+        />
 
         <Card>
           <CardContent className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-4">

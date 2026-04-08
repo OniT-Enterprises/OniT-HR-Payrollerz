@@ -20,9 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { type Employee } from "@/services/employeeService";
 import { useSmartEmployees } from "@/hooks/useEmployees";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -53,6 +51,8 @@ import {
   SlidersHorizontal,
   Smartphone,
   Loader2,
+  MoreHorizontal,
+  X,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -64,6 +64,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { httpsCallable } from "firebase/functions";
 import { functions } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
@@ -813,31 +819,15 @@ export default function AllEmployees() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.employees} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-              <Users className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">{t("employees.title")}</h1>
-              <p className="text-muted-foreground mt-1">
-                {t("employees.subtitle")}
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <PageHeader
+          title={t("employees.title")}
+          subtitle={t("employees.subtitle")}
+          icon={Users}
+          iconColor="text-blue-500"
+        />
         {/* Connection Status */}
         {(connectionError || !isOnline) && (
           <Alert className="mb-6" variant="destructive">
@@ -861,38 +851,9 @@ export default function AllEmployees() {
           </Alert>
         )}
 
-        {/* Statistics - Quieter, data-first orientation */}
-        <div className="flex items-center gap-6 mb-6 text-sm">
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{t("employees.stats.total")}</span>
-            <span className="font-semibold">{employees.length}</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{t("employees.stats.active")}</span>
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-              {employees.filter((emp) => emp.status === "active").length}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-muted-foreground">{t("employees.stats.depts")}</span>
-            <span className="font-semibold">
-              {new Set(employees.map((emp) => emp.jobDetails.department)).size}
-            </span>
-          </div>
-          {incompleteEmployees.length > 0 && (
-            <button
-              onClick={() => setShowIncompleteProfiles(true)}
-              className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 hover:underline"
-            >
-              <AlertTriangle className="h-3.5 w-3.5" />
-              <span>{t("employees.stats.incomplete", { count: incompleteEmployees.length })}</span>
-            </button>
-          )}
-        </div>
-
         {/* Compliance Filter Alert - Shows when filtering by compliance issues */}
         {complianceFilter !== "all" && (
-          <div className="mb-4 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
+          <div className="mb-4 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
               <span className="text-sm font-medium text-amber-800 dark:text-amber-200">
@@ -901,9 +862,7 @@ export default function AllEmployees() {
                 {complianceFilter === "missing-bank" && t("employees.compliance.missingBank")}
                 {complianceFilter === "blocking-issues" && t("employees.compliance.blockingIssues")}
               </span>
-              <span className="text-xs text-amber-600 dark:text-amber-400">
-                {t("employees.compliance.found", { count: filteredEmployees.length })}
-              </span>
+              <Badge variant="secondary" className="text-xs">{filteredEmployees.length}</Badge>
             </div>
             <Button
               variant="ghost"
@@ -914,29 +873,30 @@ export default function AllEmployees() {
               }}
               className="text-amber-700 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-300 dark:hover:bg-amber-900/50"
             >
+              <X className="h-3.5 w-3.5 mr-1" />
               {t("employees.compliance.clearFilter")}
             </Button>
           </div>
         )}
 
-        {/* Controls - Streamlined */}
-        <div className="flex flex-col lg:flex-row items-center gap-3 mb-6">
-          {/* Search */}
-          <div className="relative flex-1 max-w-sm">
+        {/* Controls — One clean row: Search | Filters | Actions */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 mb-4">
+          {/* Search — full width on mobile, flex-1 on desktop */}
+          <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder={t("employees.searchPlaceholder")}
-              className="pl-9"
+              className="pl-9 h-11 border-border/50"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
             />
           </div>
 
-          {/* Quick filters inline */}
+          {/* Quick filters — compact */}
           <div className="flex items-center gap-2">
             <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
-              <SelectTrigger className="w-[140px] h-9">
+              <SelectTrigger className="w-[140px] h-11">
                 <SelectValue placeholder={t("employees.filterLabels.department")} />
               </SelectTrigger>
               <SelectContent>
@@ -948,7 +908,7 @@ export default function AllEmployees() {
             </Select>
 
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[110px] h-9">
+              <SelectTrigger className="w-[120px] h-11">
                 <SelectValue placeholder={t("employees.filterLabels.status")} />
               </SelectTrigger>
               <SelectContent>
@@ -958,27 +918,65 @@ export default function AllEmployees() {
                 ))}
               </SelectContent>
             </Select>
-          </div>
 
-          <div className="flex items-center gap-2 lg:ml-auto">
+            {/* Advanced filters toggle */}
             <Button
               variant="outline"
-              size="sm"
-              onClick={() => setShowAdvancedTools((prev) => !prev)}
-              className={showAdvancedTools || hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
+              size="icon"
+              className={`h-11 w-11 shrink-0 ${showFilters ? "border-blue-500 bg-blue-50 text-blue-600 dark:bg-blue-950/30" : ""}`}
+              onClick={() => { setShowFilters(!showFilters); setShowAdvancedTools(false); }}
+              title={t("employees.buttons.advanced")}
             >
-              <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-              {t("common.moreActions")}
+              <SlidersHorizontal className="h-4 w-4" />
+              {activeFilterCount > 2 && (
+                <span className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-blue-500 text-[10px] font-bold text-white flex items-center justify-center">
+                  {activeFilterCount - 2}
+                </span>
+              )}
             </Button>
-            <Button
-              size="sm"
-              onClick={() => navigate("/people/add")}
-              className="bg-blue-500 hover:bg-blue-600"
-            >
-              <Plus className="h-4 w-4 mr-1.5" />
-              {t("employees.buttons.add")}
-            </Button>
+
+            {/* CSV tools dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-11 w-11 shrink-0">
+                  <MoreHorizontal className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setShowSalary(!showSalary)}>
+                  {showSalary ? <EyeOff className="h-4 w-4 mr-2" /> : <Eye className="h-4 w-4 mr-2" />}
+                  {showSalary ? t("employees.buttons.hideSalary") : t("employees.buttons.showSalary")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleExport}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("employees.tooltips.exportCsv")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => document.getElementById("csv-upload")?.click()}>
+                  <Upload className="h-4 w-4 mr-2" />
+                  {t("employees.tooltips.importCsv")}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleDownloadTemplate}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t("employees.tooltips.downloadTemplate")}
+                </DropdownMenuItem>
+                {incompleteEmployees.length > 0 && (
+                  <DropdownMenuItem onClick={() => setShowIncompleteProfiles(true)} className="text-amber-600">
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    {t("employees.stats.incomplete", { count: incompleteEmployees.length })}
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
+
+          {/* Add Employee — the one CTA */}
+          <Button
+            onClick={() => navigate("/people/add")}
+            className="bg-blue-500 hover:bg-blue-600 h-11 shrink-0"
+          >
+            <Plus className="h-4 w-4 mr-1.5" />
+            {t("employees.buttons.add")}
+          </Button>
 
           {/* Hidden file input for CSV import */}
           <input
@@ -990,288 +988,89 @@ export default function AllEmployees() {
           />
         </div>
 
-        {showAdvancedTools && (
-          <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowFilters(!showFilters)}
-                className={hasActiveFilters ? "border-blue-500 text-blue-600" : ""}
-              >
-                <SlidersHorizontal className="h-4 w-4 mr-1.5" />
-                {t("employees.buttons.advanced")}
-                {activeFilterCount > 2 && ` (${activeFilterCount - 2})`}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowSalary(!showSalary)}
-                className="text-muted-foreground"
-                title={showSalary ? t("employees.tooltips.hideSalaryColumn") : t("employees.tooltips.showSalaryColumn")}
-              >
-                {showSalary ? <EyeOff className="h-4 w-4 mr-1.5" /> : <Eye className="h-4 w-4 mr-1.5" />}
-                {showSalary ? t("employees.buttons.hideSalary") : t("employees.buttons.showSalary")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleDownloadTemplate}
-                title={t("employees.tooltips.downloadTemplate")}
-              >
-                <FileText className="h-4 w-4 mr-1.5" />
-                {t("employees.tooltips.downloadTemplate")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => document.getElementById("csv-upload")?.click()}
-                title={t("employees.tooltips.importCsv")}
-              >
-                <Upload className="h-4 w-4 mr-1.5" />
-                {t("employees.tooltips.importCsv")}
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleExport}
-                title={t("employees.tooltips.exportCsv")}
-              >
-                <Download className="h-4 w-4 mr-1.5" />
-                {t("employees.tooltips.exportCsv")}
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {/* Clear Filters */}
+        {/* Active filter chips — show what's active, tap to remove */}
         {hasActiveFilters && (
-          <div className="flex justify-start mb-4">
-            <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <div className="flex flex-wrap items-center gap-2 mb-4">
+            <span className="text-xs text-muted-foreground">{t("employees.activeFiltersTitle")}:</span>
+            {departmentFilter && departmentFilter !== "all" && (
+              <button onClick={() => setDepartmentFilter("all")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                {departmentFilter} <X className="h-3 w-3" />
+              </button>
+            )}
+            {positionFilter && positionFilter !== "all" && (
+              <button onClick={() => setPositionFilter("all")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                {positionFilter} <X className="h-3 w-3" />
+              </button>
+            )}
+            {employmentTypeFilter && employmentTypeFilter !== "all" && (
+              <button onClick={() => setEmploymentTypeFilter("all")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                {employmentTypeFilter} <X className="h-3 w-3" />
+              </button>
+            )}
+            {workLocationFilter && workLocationFilter !== "all" && (
+              <button onClick={() => setWorkLocationFilter("all")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                {workLocationFilter} <X className="h-3 w-3" />
+              </button>
+            )}
+            {statusFilter && statusFilter !== "all" && (
+              <button onClick={() => setStatusFilter("all")} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                {getStatusLabel(statusFilter)} <X className="h-3 w-3" />
+              </button>
+            )}
+            {(minSalary || maxSalary) && (
+              <button onClick={() => { setMinSalary(""); setMaxSalary(""); }} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium hover:bg-blue-200 transition-colors">
+                ${minSalary || "0"} - ${maxSalary || "..."} <X className="h-3 w-3" />
+              </button>
+            )}
+            <button onClick={clearFilters} className="text-xs text-muted-foreground hover:text-foreground transition-colors underline">
               {t("employees.buttons.clearFilters")}
-            </Button>
+            </button>
           </div>
         )}
 
-        {/* Filter Panel */}
+        {/* Advanced Filter Panel — single level, no nesting */}
         {showFilters && (
-          <Card className="mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg">{t("employees.filterPanelTitle")}</CardTitle>
-              <CardDescription>
-                {t("employees.filterPanelDesc")}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {/* Department Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.department")}
-                  </label>
-                  <Select
-                    value={departmentFilter}
-                    onValueChange={setDepartmentFilter}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("employees.filterPlaceholders.allDepartments")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("employees.filterPlaceholders.allDepartments")}</SelectItem>
-                      {getUniqueValues("department").map((dept) => (
-                        <SelectItem key={dept} value={dept}>
-                          {dept}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Position Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.position")}
-                  </label>
-                  <Select
-                    value={positionFilter}
-                    onValueChange={setPositionFilter}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("employees.filterPlaceholders.allPositions")} />
-                    </SelectTrigger>
+          <Card className="mb-6 border-blue-200/50 dark:border-blue-800/30">
+            <CardContent className="pt-5 pb-5">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("employees.filterLabels.position")}</label>
+                  <Select value={positionFilter} onValueChange={setPositionFilter}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder={t("employees.filterPlaceholders.allPositions")} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("employees.filterPlaceholders.allPositions")}</SelectItem>
-                      {getUniqueValues("position").map((position) => (
-                        <SelectItem key={position} value={position}>
-                          {position}
-                        </SelectItem>
-                      ))}
+                      {getUniqueValues("position").map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Employment Type Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.employmentType")}
-                  </label>
-                  <Select
-                    value={employmentTypeFilter}
-                    onValueChange={setEmploymentTypeFilter}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("employees.filterPlaceholders.allTypes")} />
-                    </SelectTrigger>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("employees.filterLabels.employmentType")}</label>
+                  <Select value={employmentTypeFilter} onValueChange={setEmploymentTypeFilter}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder={t("employees.filterPlaceholders.allTypes")} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("employees.filterPlaceholders.allTypes")}</SelectItem>
-                      {getUniqueValues("employmentType").map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type}
-                        </SelectItem>
-                      ))}
+                      {getUniqueValues("employmentType").map((t) => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Work Location Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.workLocation")}
-                  </label>
-                  <Select
-                    value={workLocationFilter}
-                    onValueChange={setWorkLocationFilter}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("employees.filterPlaceholders.allLocations")} />
-                    </SelectTrigger>
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("employees.filterLabels.workLocation")}</label>
+                  <Select value={workLocationFilter} onValueChange={setWorkLocationFilter}>
+                    <SelectTrigger className="h-10"><SelectValue placeholder={t("employees.filterPlaceholders.allLocations")} /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">{t("employees.filterPlaceholders.allLocations")}</SelectItem>
-                      {getUniqueValues("workLocation").map((location) => (
-                        <SelectItem key={location} value={location}>
-                          {location}
-                        </SelectItem>
-                      ))}
+                      {getUniqueValues("workLocation").map((l) => <SelectItem key={l} value={l}>{l}</SelectItem>)}
                     </SelectContent>
                   </Select>
                 </div>
-
-                {/* Status Filter */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.status")}
-                  </label>
-                  <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("employees.filterPlaceholders.allStatuses")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">{t("employees.filterPlaceholders.allStatuses")}</SelectItem>
-                      {getUniqueValues("status").map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {getStatusLabel(status)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Salary Range */}
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.minSalary")}
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder={t("employees.filterPlaceholders.minSalary")}
-                    value={minSalary}
-                    onChange={(e) => setMinSalary(e.target.value)}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-sm font-medium mb-2 block">
-                    {t("employees.filterLabels.maxSalary")}
-                  </label>
-                  <Input
-                    type="number"
-                    placeholder={t("employees.filterPlaceholders.maxSalary")}
-                    value={maxSalary}
-                    onChange={(e) => setMaxSalary(e.target.value)}
-                  />
-                </div>
-
-                {/* Clear Filters Button */}
-                <div className="flex items-end">
-                  <Button
-                    variant="outline"
-                    onClick={clearFilters}
-                    disabled={!hasActiveFilters}
-                    className="w-full"
-                  >
-                    {t("employees.buttons.clearAllFilters")}
-                  </Button>
-                </div>
-              </div>
-
-              {/* Filter Summary */}
-              {hasActiveFilters && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <p className="text-sm text-foreground">
-                    <strong>{t("employees.activeFiltersTitle")}</strong>{" "}
-                    {t("employees.activeFiltersSummary", {
-                      shown: filteredEmployees.length,
-                      total: employees.length,
-                    })}
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {departmentFilter && departmentFilter !== "all" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.department", {
-                          value: departmentFilter,
-                        })}
-                      </Badge>
-                    )}
-                    {positionFilter && positionFilter !== "all" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.position", {
-                          value: positionFilter,
-                        })}
-                      </Badge>
-                    )}
-                    {employmentTypeFilter && employmentTypeFilter !== "all" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.employmentType", {
-                          value: employmentTypeFilter,
-                        })}
-                      </Badge>
-                    )}
-                    {workLocationFilter && workLocationFilter !== "all" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.workLocation", {
-                          value: workLocationFilter,
-                        })}
-                      </Badge>
-                    )}
-                    {statusFilter && statusFilter !== "all" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.status", {
-                          value: getStatusLabel(statusFilter),
-                        })}
-                      </Badge>
-                    )}
-                    {(minSalary || maxSalary) && (
-                      <Badge variant="secondary" className="text-xs">
-                        {t("employees.filterBadge.salary", {
-                          range: `${minSalary ? `$${minSalary}` : ""}${
-                            minSalary && maxSalary ? " - " : minSalary && !maxSalary ? "+" : ""
-                          }${maxSalary ? `$${maxSalary}` : ""}`,
-                        })}
-                      </Badge>
-                    )}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-medium text-muted-foreground">{t("employees.filterLabels.minSalary")}</label>
+                  <div className="flex gap-2">
+                    <Input type="number" placeholder="Min" value={minSalary} onChange={(e) => setMinSalary(e.target.value)} className="h-10" />
+                    <Input type="number" placeholder="Max" value={maxSalary} onChange={(e) => setMaxSalary(e.target.value)} className="h-10" />
                   </div>
                 </div>
-              )}
+              </div>
             </CardContent>
           </Card>
         )}

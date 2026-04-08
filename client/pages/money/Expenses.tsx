@@ -10,7 +10,7 @@ import { collection, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import MainNavigation from '@/components/layout/MainNavigation';
-import AutoBreadcrumb from '@/components/AutoBreadcrumb';
+import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -49,9 +49,7 @@ import { useSmartExpenses, expenseKeys } from '@/hooks/useExpenses';
 import { useDebounce } from '@/hooks/useDebounce';
 import { useActiveVendors } from '@/hooks/useVendors';
 import { InfiniteScrollTrigger } from '@/components/ui/InfiniteScrollTrigger';
-import ModuleSectionNav from '@/components/ModuleSectionNav';
-import { moneyNavConfig } from '@/lib/moduleNav';
-import { InfoTooltip, MoneyTooltips } from '@/components/ui/info-tooltip';
+
 import type { Expense, ExpenseFormData, ExpenseCategory, PaymentMethod } from '@/types/money';
 import { getTodayTL, formatDateTL } from '@/lib/dateUtils';
 import {
@@ -353,8 +351,7 @@ export default function Expenses() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <ModuleSectionNav config={moneyNavConfig} />
-        <div className="p-6 max-w-7xl mx-auto">
+        <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
@@ -376,35 +373,20 @@ export default function Expenses() {
     <div className="min-h-screen bg-background">
       <SEO title="Expenses - Meza" description="Track and manage business expenses" />
       <MainNavigation />
-      <ModuleSectionNav config={moneyNavConfig} />
 
-      <div className="p-6 max-w-7xl mx-auto">
-        <AutoBreadcrumb className="mb-6" />
-
-        {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-lg bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center">
-              <Receipt className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold flex items-center gap-2">
-                {t('money.expenses.title') || 'Expenses'}
-                <InfoTooltip
-                  title={t('money.expenses.expensesVsBillsTitle') || 'Expenses vs Bills'}
-                  content={MoneyTooltips.bills.expense}
-                />
-              </h1>
-              <p className="text-muted-foreground">
-                {t('money.expenses.subtitle') || 'Track business expenses'}
-              </p>
-            </div>
-          </div>
-          <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
-            <Plus className="h-4 w-4 mr-2" />
-            {t('money.expenses.add') || 'Add Expense'}
-          </Button>
-        </div>
+      <div className="p-6 mx-auto max-w-screen-2xl">
+        <PageHeader
+          title={t('money.expenses.title') || 'Expenses'}
+          subtitle={t('money.expenses.subtitle') || 'Track business expenses'}
+          icon={Receipt}
+          iconColor="text-indigo-500"
+          actions={
+            <Button onClick={openAddDialog} className="bg-indigo-600 hover:bg-indigo-700">
+              <Plus className="h-4 w-4 mr-2" />
+              {t('money.expenses.add') || 'Add Expense'}
+            </Button>
+          }
+        />
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">

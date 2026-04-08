@@ -64,9 +64,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import {
   Filter,
   Plus,
@@ -432,29 +430,14 @@ export default function TrainingCertifications() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.training} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
 
-      {/* Hero Section */}
-      <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center gap-4">
-            <div className="p-3 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg shadow-orange-500/25">
-              <Award className="h-8 w-8 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Training & Certifications</h1>
-              <p className="text-muted-foreground mt-1">
-                Manage employee training programs and certifications
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
-
-      <div className="max-w-7xl mx-auto px-6 pt-6 pb-6">
+      <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-6">
+        <PageHeader
+          title="Training & Certifications"
+          subtitle="Manage employee training programs and certifications"
+          icon={Award}
+          iconColor="text-orange-500"
+        />
         {/* Filters */}
         <Card className="mb-6 border-border/50 shadow-lg">
           <CardHeader>

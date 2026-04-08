@@ -29,13 +29,10 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
   DialogFooter,
 } from "@/components/ui/dialog";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { peopleNavConfig } from "@/lib/moduleNav";
+import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useToast } from "@/hooks/use-toast";
@@ -296,189 +293,173 @@ export default function Offboarding() {
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.offboarding} />
       <MainNavigation />
-      <ModuleSectionNav config={peopleNavConfig} mode="collapsed" />
-
-      {/* Hero Section */}
-      <div className="border-b bg-emerald-50 dark:bg-emerald-950/30">
-        <div className="max-w-6xl mx-auto px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg shadow-emerald-500/25">
-                <UserMinus className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("hiring.offboarding.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("hiring.offboarding.subtitle")}
-                </p>
-              </div>
-            </div>
-
-            {employees.length > 0 && (
-              <Dialog open={showDialog} onOpenChange={setShowDialog}>
-                <DialogTrigger asChild>
-                  <Button className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg">
-                    <UserMinus className="mr-2 h-4 w-4" />
-                    {t("hiring.offboarding.actions.start")}
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl">
-                  <DialogHeader>
-                    <DialogTitle>{t("hiring.offboarding.dialog.title")}</DialogTitle>
-                    <DialogDescription>{t("hiring.offboarding.dialog.description")}</DialogDescription>
-                  </DialogHeader>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>{t("hiring.offboarding.dialog.department")}</Label>
-                        <Select
-                          value={newOffboarding.department}
-                          onValueChange={(value) =>
-                            setNewOffboarding((prev) => ({ ...prev, department: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="all">
-                              {t("hiring.offboarding.dialog.departmentAll")}
-                            </SelectItem>
-                            {departments.map((dept) => (
-                              <SelectItem key={dept} value={dept}>
-                                {dept}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t("hiring.offboarding.dialog.search")}</Label>
-                        <div className="relative">
-                          <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            placeholder={t("hiring.offboarding.dialog.searchPlaceholder")}
-                            value={newOffboarding.search}
-                            onChange={(e) =>
-                              setNewOffboarding((prev) => ({ ...prev, search: e.target.value }))
-                            }
-                            className="pl-10"
-                          />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>
-                        {t("hiring.offboarding.dialog.selectEmployee", {
-                          count: filteredEmployees.length,
-                        })}
-                      </Label>
-                      <Select
-                        value={newOffboarding.employeeId}
-                        onValueChange={(value) =>
-                          setNewOffboarding((prev) => ({ ...prev, employeeId: value }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("hiring.offboarding.dialog.selectPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {filteredEmployees.map((employee) => (
-                            <SelectItem key={employee.id} value={employee.id || ""}>
-                              {employee.personalInfo.firstName} {employee.personalInfo.lastName} -{" "}
-                              {employee.jobDetails.department}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>{t("hiring.offboarding.dialog.reason")}</Label>
-                      <Select
-                        value={newOffboarding.departureReason}
-                        onValueChange={(value) =>
-                          setNewOffboarding((prev) => ({ ...prev, departureReason: value as DepartureReason }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder={t("hiring.offboarding.dialog.reasonPlaceholder")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {DEPARTURE_REASONS.map((reason) => (
-                            <SelectItem key={reason.id} value={reason.id}>
-                              {reason.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>{t("hiring.offboarding.dialog.lastDay")}</Label>
-                        <Input
-                          type="date"
-                          value={newOffboarding.lastWorkingDay}
-                          onChange={(e) =>
-                            setNewOffboarding((prev) => ({ ...prev, lastWorkingDay: e.target.value }))
-                          }
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>{t("hiring.offboarding.dialog.noticeDate")}</Label>
-                        <Input
-                          type="date"
-                          value={newOffboarding.noticeDate}
-                          onChange={(e) =>
-                            setNewOffboarding((prev) => ({ ...prev, noticeDate: e.target.value }))
-                          }
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label>{t("hiring.offboarding.dialog.notes")}</Label>
-                      <Textarea
-                        placeholder={t("hiring.offboarding.dialog.notesPlaceholder")}
-                        value={newOffboarding.notes}
-                        onChange={(e) =>
-                          setNewOffboarding((prev) => ({ ...prev, notes: e.target.value }))
-                        }
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter className="gap-2">
-                    <Button variant="outline" onClick={() => setShowDialog(false)}>
-                      {t("hiring.offboarding.dialog.cancel")}
-                    </Button>
-                    <Button onClick={handleStartOffboarding} disabled={createOffboardingMutation.isPending}>
-                      {createOffboardingMutation.isPending ? (
-                        <>
-                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          Starting...
-                        </>
-                      ) : (
-                        t("hiring.offboarding.dialog.confirm")
-                      )}
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <ModuleSectionNav config={peopleNavConfig} mode="expanded" />
 
       {/* Main Content */}
-      <div className="max-w-6xl mx-auto px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <PageHeader
+          title={t("hiring.offboarding.title")}
+          subtitle={t("hiring.offboarding.subtitle")}
+          icon={UserMinus}
+          iconColor="text-emerald-500"
+          actions={
+            employees.length > 0 ? (
+              <Button
+                onClick={() => setShowDialog(true)}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg"
+              >
+                <UserMinus className="mr-2 h-4 w-4" />
+                {t("hiring.offboarding.actions.start")}
+              </Button>
+            ) : undefined
+          }
+        />
+
+        {/* Start Offboarding Dialog */}
+        <Dialog open={showDialog} onOpenChange={setShowDialog}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>{t("hiring.offboarding.dialog.title")}</DialogTitle>
+              <DialogDescription>{t("hiring.offboarding.dialog.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("hiring.offboarding.dialog.department")}</Label>
+                  <Select
+                    value={newOffboarding.department}
+                    onValueChange={(value) =>
+                      setNewOffboarding((prev) => ({ ...prev, department: value }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">
+                        {t("hiring.offboarding.dialog.departmentAll")}
+                      </SelectItem>
+                      {departments.map((dept) => (
+                        <SelectItem key={dept} value={dept}>
+                          {dept}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("hiring.offboarding.dialog.search")}</Label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder={t("hiring.offboarding.dialog.searchPlaceholder")}
+                      value={newOffboarding.search}
+                      onChange={(e) =>
+                        setNewOffboarding((prev) => ({ ...prev, search: e.target.value }))
+                      }
+                      className="pl-10"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>
+                  {t("hiring.offboarding.dialog.selectEmployee", {
+                    count: filteredEmployees.length,
+                  })}
+                </Label>
+                <Select
+                  value={newOffboarding.employeeId}
+                  onValueChange={(value) =>
+                    setNewOffboarding((prev) => ({ ...prev, employeeId: value }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("hiring.offboarding.dialog.selectPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {filteredEmployees.map((employee) => (
+                      <SelectItem key={employee.id} value={employee.id || ""}>
+                        {employee.personalInfo.firstName} {employee.personalInfo.lastName} -{" "}
+                        {employee.jobDetails.department}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("hiring.offboarding.dialog.reason")}</Label>
+                <Select
+                  value={newOffboarding.departureReason}
+                  onValueChange={(value) =>
+                    setNewOffboarding((prev) => ({ ...prev, departureReason: value as DepartureReason }))
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("hiring.offboarding.dialog.reasonPlaceholder")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {DEPARTURE_REASONS.map((reason) => (
+                      <SelectItem key={reason.id} value={reason.id}>
+                        {reason.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>{t("hiring.offboarding.dialog.lastDay")}</Label>
+                  <Input
+                    type="date"
+                    value={newOffboarding.lastWorkingDay}
+                    onChange={(e) =>
+                      setNewOffboarding((prev) => ({ ...prev, lastWorkingDay: e.target.value }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>{t("hiring.offboarding.dialog.noticeDate")}</Label>
+                  <Input
+                    type="date"
+                    value={newOffboarding.noticeDate}
+                    onChange={(e) =>
+                      setNewOffboarding((prev) => ({ ...prev, noticeDate: e.target.value }))
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>{t("hiring.offboarding.dialog.notes")}</Label>
+                <Textarea
+                  placeholder={t("hiring.offboarding.dialog.notesPlaceholder")}
+                  value={newOffboarding.notes}
+                  onChange={(e) =>
+                    setNewOffboarding((prev) => ({ ...prev, notes: e.target.value }))
+                  }
+                />
+              </div>
+            </div>
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setShowDialog(false)}>
+                {t("hiring.offboarding.dialog.cancel")}
+              </Button>
+              <Button onClick={handleStartOffboarding} disabled={createOffboardingMutation.isPending}>
+                {createOffboardingMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Starting...
+                  </>
+                ) : (
+                  t("hiring.offboarding.dialog.confirm")
+                )}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
         {employees.length === 0 ? (
           <Card className="border-border/50">
             <CardContent className="text-center py-16">

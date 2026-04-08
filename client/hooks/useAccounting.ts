@@ -12,8 +12,6 @@ import type {
   Account,
   AccountType,
   AccountSubType,
-  BalanceSheet,
-  IncomeStatement,
   JournalEntry,
   JournalEntryStatus,
 } from '@/types/accounting';

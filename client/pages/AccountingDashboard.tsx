@@ -55,7 +55,7 @@ function AccountingDashboardSkeleton() {
       <MainNavigation />
       {/* Hero Section */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
           <Skeleton className="h-4 w-24 mb-3" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ function AccountingDashboardSkeleton() {
         </div>
       </div>
 
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         {/* Status Card */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
@@ -285,7 +285,7 @@ export default function AccountingDashboard() {
 
       {/* Hero Section - Simplified */}
       <div className="border-b bg-orange-50 dark:bg-orange-950/30">
-        <div className="max-w-6xl mx-auto px-6 py-6">
+        <div className="mx-auto max-w-screen-2xl px-6 py-6">
           <AutoBreadcrumb className="mb-3" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -321,7 +321,7 @@ export default function AccountingDashboard() {
         </div>
       </div>
 
-      <div className="p-6 max-w-6xl mx-auto">
+      <div className="p-6 mx-auto max-w-screen-2xl">
         <GuidancePanel section="accounting" />
 
         {/* ═══════════════════════════════════════════════════════════════
