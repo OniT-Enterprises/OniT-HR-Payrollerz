@@ -53,7 +53,6 @@ import {
   CheckSquare,
   // Reports
   BarChart3,
-  ClipboardCheck,
   ClipboardList,
   PieChart,
   CalendarRange,
@@ -252,8 +251,13 @@ export const payrollNavConfig: ModuleNavConfig = {
       labelKey: "taxInss",
       icon: FileSpreadsheet,
       path: "/payroll/reports",
-      matchPaths: ["/payroll/reports"],
-      subPages: [],
+      matchPaths: ["/payroll/reports", "/reports/attl-monthly-wit", "/reports/inss-monthly", "/reports/inss-annual"],
+      subPages: [
+        { label: "Overview", labelKey: "taxInss", path: "/payroll/reports", icon: FileSpreadsheet },
+        { label: "Monthly WIT", labelKey: "monthlyWit", path: "/reports/attl-monthly-wit", icon: FileSpreadsheet },
+        { label: "Monthly INSS", labelKey: "monthlyInss", path: "/reports/inss-monthly", icon: FileText },
+        { label: "Annual INSS", labelKey: "annualInss", path: "/reports/inss-annual", icon: CalendarRange },
+      ],
     },
     {
       id: "settings",
@@ -456,19 +460,7 @@ export const reportsNavConfig: ModuleNavConfig = {
       matchPaths: ["/reports/departments"],
       subPages: [],
     },
-    {
-      id: "compliance",
-      label: "Tax & Compliance",
-      labelKey: "taxCompliance",
-      icon: ClipboardCheck,
-      path: "/reports/attl-monthly-wit",
-      matchPaths: ["/reports/attl-monthly-wit", "/reports/inss-monthly", "/reports/inss-annual"],
-      subPages: [
-        { label: "Monthly WIT", labelKey: "monthlyWit", path: "/reports/attl-monthly-wit", icon: FileSpreadsheet },
-        { label: "Monthly INSS", labelKey: "monthlyInss", path: "/reports/inss-monthly", icon: FileText },
-        { label: "Annual INSS", labelKey: "annualInss", path: "/reports/inss-annual", icon: CalendarRange },
-      ],
-    },
+    // Tax & Compliance moved to Payroll > Tax & INSS
     {
       id: "custom",
       label: "Custom",
