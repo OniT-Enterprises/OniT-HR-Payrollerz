@@ -444,7 +444,7 @@ export default function ATTLMonthlyWIT() {
           title={t("reports.attlMonthlyWit.title")}
           subtitle={t("reports.attlMonthlyWit.subtitle")}
           icon={Landmark}
-          iconColor="text-amber-500"
+          iconColor="text-violet-500"
           actions={
             <Button
               variant="outline"

@@ -277,7 +277,7 @@ export default function INSSAnnual() {
           title={t("reports.inssAnnual.title")}
           subtitle={t("reports.inssAnnual.subtitle")}
           icon={Shield}
-          iconColor="text-slate-500"
+          iconColor="text-violet-500"
         />
 
         <Card className="mb-6">

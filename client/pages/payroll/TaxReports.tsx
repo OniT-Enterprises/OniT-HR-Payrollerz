@@ -93,7 +93,7 @@ export default function TaxReports() {
           title={t("taxReports.title")}
           subtitle={t("taxReports.subtitle")}
           icon={Shield}
-          iconColor="text-slate-500"
+          iconColor="text-green-500"
           actions={
             hasOverdue ? (
               <Badge className="bg-red-100 text-red-800">

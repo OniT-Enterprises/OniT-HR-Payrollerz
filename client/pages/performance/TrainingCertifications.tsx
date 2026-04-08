@@ -436,7 +436,7 @@ export default function TrainingCertifications() {
           title="Training & Certifications"
           subtitle="Manage employee training programs and certifications"
           icon={Award}
-          iconColor="text-orange-500"
+          iconColor="text-blue-500"
         />
         {/* Filters */}
         <Card className="mb-6 border-border/50 shadow-lg">

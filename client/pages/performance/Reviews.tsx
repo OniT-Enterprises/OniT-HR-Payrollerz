@@ -419,7 +419,7 @@ export default function Reviews() {
           title="Performance Reviews"
           subtitle="Manage and track employee performance evaluations"
           icon={Star}
-          iconColor="text-orange-500"
+          iconColor="text-blue-500"
         />
         {employees.length === 0 ? (
           /* Empty State */

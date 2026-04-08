@@ -300,7 +300,7 @@ export default function Offboarding() {
           title={t("hiring.offboarding.title")}
           subtitle={t("hiring.offboarding.subtitle")}
           icon={UserMinus}
-          iconColor="text-emerald-500"
+          iconColor="text-blue-500"
           actions={
             employees.length > 0 ? (
               <Button

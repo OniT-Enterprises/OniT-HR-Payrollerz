@@ -449,7 +449,7 @@ export default function Goals() {
           title="Performance & Goals Management"
           subtitle="Strategic planning with OKRs and performance tracking"
           icon={Target}
-          iconColor="text-orange-500"
+          iconColor="text-blue-500"
           actions={
             <>
               <Select value={selectedQuarter} onValueChange={setSelectedQuarter}>

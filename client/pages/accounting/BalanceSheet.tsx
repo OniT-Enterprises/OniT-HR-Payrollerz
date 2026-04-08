@@ -149,7 +149,7 @@ export default function BalanceSheet() {
           title={t("accounting.balanceSheet.title")}
           subtitle={t("accounting.balanceSheet.subtitle")}
           icon={BarChart3}
-          iconColor="text-violet-500"
+          iconColor="text-orange-500"
           actions={
             <>
               <Button variant="outline" onClick={handlePrint} disabled={!report}>

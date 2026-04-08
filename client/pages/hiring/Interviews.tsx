@@ -556,7 +556,7 @@ export default function Interviews() {
           title={t("hiring.interviews.title")}
           subtitle={t("hiring.interviews.subtitle")}
           icon={Calendar}
-          iconColor="text-emerald-500"
+          iconColor="text-blue-500"
           actions={
             <Button
               onClick={() => {

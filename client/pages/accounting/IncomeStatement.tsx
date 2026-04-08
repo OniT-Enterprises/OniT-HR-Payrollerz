@@ -152,7 +152,7 @@ export default function IncomeStatement() {
           title={t("accounting.incomeStatement.title")}
           subtitle={t("accounting.incomeStatement.subtitle")}
           icon={FileText}
-          iconColor="text-emerald-500"
+          iconColor="text-orange-500"
           actions={
             <>
               <Button variant="outline" onClick={handlePrint} disabled={!report}>

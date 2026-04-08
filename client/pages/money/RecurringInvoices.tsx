@@ -181,7 +181,7 @@ export default function RecurringInvoices() {
           title={t('money.recurring.title') || 'Recurring Invoices'}
           subtitle={t('money.recurring.subtitle') || 'Auto-generate invoices on a schedule'}
           icon={Repeat}
-          iconColor="text-purple-500"
+          iconColor="text-indigo-500"
           actions={
             <Button
               onClick={() => navigate('/money/invoices/recurring/new')}

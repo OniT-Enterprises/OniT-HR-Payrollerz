@@ -211,7 +211,7 @@ export default function Onboarding() {
           title={t("hiring.onboarding.title")}
           subtitle={t("hiring.onboarding.subtitle")}
           icon={UserPlus}
-          iconColor="text-emerald-500"
+          iconColor="text-blue-500"
         />
         {/* Horizontal Stepper */}
         <Card className="mb-8 border-border/50 animate-fade-up stagger-1">

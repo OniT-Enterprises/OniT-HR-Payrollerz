@@ -377,7 +377,7 @@ export default function INSSMonthly() {
           title={t("reports.inssMonthly.title")}
           subtitle={t("reports.inssMonthly.subtitle")}
           icon={Shield}
-          iconColor="text-slate-500"
+          iconColor="text-violet-500"
         />
 
         {(overdueFiling || upcomingDue) && (

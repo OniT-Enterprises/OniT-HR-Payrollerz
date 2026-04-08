@@ -153,7 +153,7 @@ export default function EmployeeReports() {
           title={t("reports.employee.title")}
           subtitle={t("reports.employee.subtitle")}
           icon={Users}
-          iconColor="text-blue-500"
+          iconColor="text-violet-500"
           actions={
             <div className="flex items-center gap-2">
               <span className="text-sm text-muted-foreground">{t("reports.shared.periodLabel")}</span>

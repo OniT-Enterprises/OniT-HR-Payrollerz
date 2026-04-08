@@ -267,7 +267,7 @@ export default function CandidateSelection() {
           title={t("hiring.candidates.title")}
           subtitle={t("hiring.candidates.subtitle")}
           icon={Users}
-          iconColor="text-emerald-500"
+          iconColor="text-blue-500"
         />
         {/* Statistics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-up">

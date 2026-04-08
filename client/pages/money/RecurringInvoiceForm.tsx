@@ -278,7 +278,7 @@ export default function RecurringInvoiceForm() {
           title={isEditMode ? (t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice') : (t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice')}
           subtitle={t('money.recurringInvoiceForm.autoGenerate') || 'Auto-generate invoices on a schedule'}
           icon={Repeat}
-          iconColor="text-purple-500"
+          iconColor="text-indigo-500"
           actions={
             <>
               <Button variant="ghost" onClick={() => navigate('/money/invoices/recurring')}>

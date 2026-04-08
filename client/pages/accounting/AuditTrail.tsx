@@ -188,7 +188,7 @@ export default function AccountingAuditTrail() {
           title={t("accounting.auditTrail.title")}
           subtitle={t("accounting.auditTrail.subtitle")}
           icon={ClipboardList}
-          iconColor="text-slate-500"
+          iconColor="text-orange-500"
           actions={
             <Button variant="outline" onClick={() => refetch()} disabled={isFetching}>
               <RefreshCw className={`mr-2 h-4 w-4 ${isFetching ? "animate-spin" : ""}`} />

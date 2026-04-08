@@ -285,7 +285,7 @@ export default function FiscalPeriods() {
           title={t("accounting.fiscalPeriods.title")}
           subtitle={t("accounting.fiscalPeriods.subtitle")}
           icon={Calendar}
-          iconColor="text-slate-500"
+          iconColor="text-orange-500"
         />
 
       {/* Year Selector */}

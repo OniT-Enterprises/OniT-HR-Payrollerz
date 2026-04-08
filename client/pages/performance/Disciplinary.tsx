@@ -472,7 +472,7 @@ export default function Disciplinary() {
           title="Disciplinary"
           subtitle="Manage disciplinary actions and incident reports"
           icon={Shield}
-          iconColor="text-orange-500"
+          iconColor="text-blue-500"
         />
         {/* Filters */}
         <Card className="mb-6 border-border/50 shadow-lg">

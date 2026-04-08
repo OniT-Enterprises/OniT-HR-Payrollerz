@@ -229,7 +229,7 @@ export default function CreateJobLocal() {
         title={t("hiring.createJob.title")}
         subtitle={t("hiring.createJob.subtitle")}
         icon={Briefcase}
-        iconColor="text-emerald-500"
+        iconColor="text-blue-500"
         className="mx-auto max-w-screen-2xl px-6"
       />
 
