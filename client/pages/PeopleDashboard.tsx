@@ -143,7 +143,7 @@ export default function PeopleDashboard() {
               <Button
                 onClick={() => navigate("/people/add")}
                 size="lg"
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <UserPlus className="h-5 w-5 mr-2" />
                 {t("people.dashboard.actions.addEmployee")}

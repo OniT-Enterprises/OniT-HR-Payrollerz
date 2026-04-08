@@ -1330,7 +1330,7 @@ export default function PayrollHistory() {
                     setSendPayslipsRecords(runRecords);
                     setShowSendPayslipsDialog(true);
                   }}
-                  className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
                   <Mail className="h-4 w-4 mr-2" />
                   {t("payrollHistory.sendPayslips")}

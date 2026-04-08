@@ -90,7 +90,7 @@ const getStatusBadge = (status: string, type: "okr" | "goal" | "keyresult" | "mi
       active: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
       completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
       at_risk: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
-      draft: "bg-gray-100 text-gray-800",
+      draft: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
     },
     keyresult: {
       on_track: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
@@ -104,14 +104,14 @@ const getStatusBadge = (status: string, type: "okr" | "goal" | "keyresult" | "mi
       paused: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
     },
     milestone: {
-      pending: "bg-gray-100 text-gray-800",
+      pending: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
       completed: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
       overdue: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
     },
   };
 
   const config = statusConfig[type] || {};
-  const className = config[status] || "bg-gray-100 text-gray-800";
+  const className = config[status] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
   return <Badge className={className}>{status.replace("_", " ")}</Badge>;
 };
 
@@ -466,7 +466,7 @@ export default function Goals() {
               </Select>
               <Button
                 onClick={() => openOKRDialog()}
-                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 New OKR

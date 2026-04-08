@@ -403,7 +403,7 @@ export default function BankReconciliation() {
             <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300">
               {t('common.cancel') || 'Clear'}
             </Button>
-            <Button size="sm" onClick={handleReconcile} className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-sm">
+            <Button size="sm" onClick={handleReconcile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
               <CheckCircle2 className="h-4 w-4 mr-2" />
               {t('money.bankRecon.markReconciled') || 'Mark Reconciled'}
             </Button>
@@ -454,7 +454,7 @@ export default function BankReconciliation() {
                 <p className="text-sm text-muted-foreground mb-5">
                   {t('money.bankRecon.uploadCsvHint') || 'Upload a CSV export from your bank to get started'}
                 </p>
-                <Button onClick={() => fileInputRef.current?.click()} className="bg-gradient-to-r from-indigo-500 to-indigo-600 hover:from-indigo-600 hover:to-indigo-700 text-white shadow-sm">
+                <Button onClick={() => fileInputRef.current?.click()} className="bg-indigo-600 hover:bg-indigo-700 text-white">
                   <Upload className="h-4 w-4 mr-2" />
                   {t('money.bankRecon.importFirst') || 'Import your first CSV'}
                 </Button>

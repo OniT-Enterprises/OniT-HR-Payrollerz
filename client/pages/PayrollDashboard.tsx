@@ -589,7 +589,7 @@ export default function PayrollDashboard() {
               <Button
                 size="lg"
                 onClick={() => navigate("/payroll/run")}
-                className="bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white shadow-lg shadow-green-500/25 shrink-0"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {canRunPayroll ? (
                   <><Play className="h-5 w-5 mr-2" />{t("payrollDashboard.confirmRunPayroll")}</>

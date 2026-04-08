@@ -467,7 +467,7 @@ export default function CreateJobLocal() {
               <Button
                 type="submit"
                 disabled={createJobMutation.isPending}
-                className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
               >
                 {createJobMutation.isPending ? (
                   <>

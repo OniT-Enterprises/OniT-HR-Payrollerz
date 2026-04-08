@@ -214,7 +214,7 @@ export default function CreateTenant() {
               <Button
                 type="submit"
                 disabled={loading}
-                className="gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white"
+                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
               >
                 {loading ? (
                   <>

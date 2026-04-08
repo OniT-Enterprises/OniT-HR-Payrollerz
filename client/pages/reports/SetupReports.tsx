@@ -229,7 +229,7 @@ export default function SetupReports() {
       return "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400";
     if (action.includes("impersonation"))
       return "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400";
-    return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200";
+    return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200";
   };
 
   if (loading) {
@@ -568,7 +568,7 @@ export default function SetupReports() {
                           className={
                             u.isSuperAdmin
                               ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
                           }
                         >
                           {u.isSuperAdmin ? t("reports.setup.values.superAdmin") : t("reports.setup.values.user")}
@@ -617,7 +617,7 @@ export default function SetupReports() {
                               className={
                                 u.isSuperAdmin
                                   ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
                               }
                             >
                               {u.isSuperAdmin ? t("reports.setup.values.superAdmin") : t("reports.setup.values.user")}

@@ -971,7 +971,7 @@ export default function AllEmployees() {
           {/* Add Employee — the one CTA */}
           <Button
             onClick={() => navigate("/people/add")}
-            className="bg-blue-500 hover:bg-blue-600 h-11 shrink-0"
+            className="bg-blue-600 hover:bg-blue-700 h-11 shrink-0"
           >
             <Plus className="h-4 w-4 mr-1.5" />
             {t("employees.buttons.add")}

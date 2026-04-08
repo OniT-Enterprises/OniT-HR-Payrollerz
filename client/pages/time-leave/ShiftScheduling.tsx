@@ -605,7 +605,7 @@ export default function ShiftScheduling() {
               <Button
                 size="sm"
                 onClick={handlePublishSchedule}
-                className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm"
+                className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-white shadow-sm"
               >
                 <Send className="h-3.5 w-3.5" />
                 Publish {stats.draftCount} draft{stats.draftCount !== 1 ? 's' : ''}
@@ -1348,7 +1348,7 @@ export default function ShiftScheduling() {
                   <div className="ml-auto">
                     <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="gap-1.5 bg-gradient-to-r from-cyan-500 to-teal-500 hover:from-cyan-600 hover:to-teal-600 text-white shadow-sm h-8">
+                        <Button size="sm" className="gap-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-white shadow-sm h-8">
                           <Plus className="h-3.5 w-3.5" />
                           {t("timeLeave.shiftScheduling.controls.createShift")}
                         </Button>

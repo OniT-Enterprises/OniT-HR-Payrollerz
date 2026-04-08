@@ -90,14 +90,14 @@ const CATEGORY_CONFIG: Record<GrievanceCategory, { label: string; color: string 
   wage_issue: { label: "Wage Issue", color: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400" },
   safety_concern: { label: "Safety Concern", color: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400" },
   discrimination: { label: "Discrimination", color: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400" },
-  other: { label: "Other", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
+  other: { label: "Other", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200" },
 };
 
 const STATUS_CONFIG: Record<GrievanceStatus, { label: string; color: string }> = {
   submitted: { label: "New", color: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400" },
   reviewing: { label: "In Review", color: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400" },
   resolved: { label: "Resolved", color: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400" },
-  dismissed: { label: "Dismissed", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200" },
+  dismissed: { label: "Dismissed", color: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200" },
 };
 
 export default function GrievanceInbox() {

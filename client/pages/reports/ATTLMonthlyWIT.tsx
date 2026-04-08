@@ -165,7 +165,7 @@ export default function ATTLMonthlyWIT() {
       default:
         return {
           label: t("reports.attlMonthlyWit.status.draft"),
-          className: "bg-gray-100 text-gray-800",
+          className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
           icon: FileText,
         };
     }

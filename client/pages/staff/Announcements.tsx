@@ -336,7 +336,7 @@ export default function Announcements() {
           icon={Megaphone}
           iconColor="text-blue-500"
           actions={
-            <Button onClick={openCreateDialog} className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600" size="lg">
+            <Button onClick={openCreateDialog} className="bg-blue-600 hover:bg-blue-700 text-white" size="lg">
               <Plus className="h-5 w-5 mr-2" />
               {t("announcements.new")}
             </Button>

@@ -216,17 +216,17 @@ export default function JournalEntries() {
   // Source badge
   const getSourceBadge = (source: JournalEntry["source"] | undefined) => {
     if (!source) {
-      return <Badge className="bg-gray-100 text-gray-800">{t("accounting.journalEntries.sourceManual")}</Badge>;
+      return <Badge className="bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300">{t("accounting.journalEntries.sourceManual")}</Badge>;
     }
     const colors: Record<string, string> = {
-      manual: "bg-gray-100 text-gray-800",
+      manual: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
       payroll: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
       invoice: "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400",
       adjustment: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400",
       opening: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
       expense: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
       revenue: "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400",
-      receipt: "bg-cyan-100 text-cyan-800",
+      receipt: "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/30 dark:text-cyan-400",
       payment: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400",
     };
 
@@ -243,7 +243,7 @@ export default function JournalEntries() {
     };
 
     return (
-      <Badge className={colors[source] || "bg-gray-100 text-gray-800"}>
+      <Badge className={colors[source] || "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"}>
         {sourceLabels[source] || source.charAt(0).toUpperCase() + source.slice(1)}
       </Badge>
     );

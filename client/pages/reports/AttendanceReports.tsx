@@ -552,7 +552,7 @@ export default function AttendanceReports() {
                                   ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
                                   : record.status === "absent"
                                   ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
                               }
                             >
                               {getStatusLabel(record.status)}

@@ -448,7 +448,7 @@ export default function AddEmployee() {
       </Button>
       <Dialog open={showImportDialog} onOpenChange={setShowImportDialog}>
         <DialogTrigger asChild>
-          <Button className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600">
+          <Button className="bg-blue-600 hover:bg-blue-700 text-white">
             <FileUp className="h-4 w-4 mr-2" />
             {t("addEmployee.buttons.import")}
           </Button>

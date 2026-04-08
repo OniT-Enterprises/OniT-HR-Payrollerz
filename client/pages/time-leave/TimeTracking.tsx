@@ -425,7 +425,7 @@ export default function TimeTracking() {
             )}
             <Button
               size="sm"
-              className="h-9 bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+              className="h-9 bg-cyan-600 hover:bg-cyan-700 text-white"
               onClick={() => openAddDialog()}
             >
               <Plus className="h-3.5 w-3.5 mr-1.5" />
@@ -588,7 +588,7 @@ export default function TimeTracking() {
                   {t("timeLeave.timeTracking.entries.emptyDescription", { date: selectedDateLabel })}
                 </p>
                 <Button
-                  className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
                   onClick={() => openAddDialog()}
                 >
                   <Plus className="h-4 w-4 mr-2" />

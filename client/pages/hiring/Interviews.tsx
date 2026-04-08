@@ -563,7 +563,7 @@ export default function Interviews() {
                 resetForm();
                 setShowScheduleDialog(true);
               }}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               <Plus className="h-4 w-4 mr-2" />
               Schedule Interview
@@ -1115,7 +1115,7 @@ export default function Interviews() {
             <Button
               onClick={handleScheduleInterview}
               disabled={saving}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               {selectedInterview ? "Update" : "Schedule"}
@@ -1275,7 +1275,7 @@ export default function Interviews() {
             <Button
               onClick={handleSubmitFeedback}
               disabled={saving}
-              className="bg-gradient-to-r from-emerald-500 to-teal-500"
+              className="bg-blue-600 hover:bg-blue-700 text-white"
             >
               {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
               Submit Feedback

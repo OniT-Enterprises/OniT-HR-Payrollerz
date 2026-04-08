@@ -223,9 +223,9 @@ export default function Onboarding() {
                     onClick={() => scrollToSection(step.id)}
                     className={`flex items-center justify-center w-10 h-10 rounded-full border-2 mb-2 transition-all duration-200 ${
                       getStepStatus(step.id) === "completed"
-                        ? "bg-gradient-to-r from-emerald-500 to-teal-500 border-transparent text-white shadow-lg shadow-emerald-500/25"
+                        ? "bg-blue-600 hover:bg-blue-700 text-white border-transparent text-white shadow-lg shadow-emerald-500/25"
                         : getStepStatus(step.id) === "current"
-                          ? "bg-gradient-to-r from-emerald-500 to-teal-500 border-transparent text-white shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-500/20"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white border-transparent text-white shadow-lg shadow-emerald-500/25 ring-4 ring-emerald-500/20"
                           : "bg-muted border-border text-muted-foreground hover:border-emerald-300 hover:text-emerald-600"
                     }`}
                   >
@@ -250,7 +250,7 @@ export default function Onboarding() {
                     <div
                       className={`absolute top-5 left-[calc(50%+20px)] w-[calc(100%-40px)] h-0.5 ${
                         getStepStatus(step.id) === "completed"
-                          ? "bg-gradient-to-r from-emerald-500 to-teal-500"
+                          ? "bg-blue-600 hover:bg-blue-700 text-white"
                           : "bg-border"
                       }`}
                     />
@@ -265,7 +265,7 @@ export default function Onboarding() {
               </div>
               <div className="h-2 rounded-full bg-muted overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 transition-all duration-500"
+                  className="h-full bg-blue-600 hover:bg-blue-700 text-white transition-all duration-500"
                   style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
                 />
               </div>
@@ -331,7 +331,7 @@ export default function Onboarding() {
                   </div>
                   <Button
                     onClick={() => scrollToSection(1)}
-                    className="bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {t("hiring.onboarding.preBoarding.start")}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -534,7 +534,7 @@ export default function Onboarding() {
 
                   <Button
                     type="submit"
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                   >
                     {t("hiring.onboarding.personal.actions.saveContinue")}
                     <ArrowRight className="ml-2 h-4 w-4" />
@@ -653,7 +653,7 @@ export default function Onboarding() {
 
                 <Button
                   onClick={handleAcknowledgementsSubmit}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {t("hiring.onboarding.policies.confirm")}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -727,7 +727,7 @@ export default function Onboarding() {
                 <Button
                   onClick={() => setCurrentStep(4)}
                   disabled={!allSOPsCompleted}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                 >
                   {t("hiring.onboarding.sops.continue")}
                   <ArrowRight className="ml-2 h-4 w-4" />
@@ -772,7 +772,7 @@ export default function Onboarding() {
                 <div className="p-4 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
                   <p className="text-sm text-blue-700 dark:text-blue-400">{t("hiring.onboarding.itEquipment.notice")}</p>
                 </div>
-                <Button onClick={() => setCurrentStep(5)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                <Button onClick={() => setCurrentStep(5)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   {t("hiring.onboarding.itEquipment.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
@@ -813,7 +813,7 @@ export default function Onboarding() {
                     </div>
                   ))}
                 </div>
-                <Button onClick={() => setCurrentStep(6)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                <Button onClick={() => setCurrentStep(6)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   {t("hiring.onboarding.orientation.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
@@ -852,7 +852,7 @@ export default function Onboarding() {
                 <div className="p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
                   <p className="text-sm text-amber-700 dark:text-amber-400">{t("hiring.onboarding.benefits.notice")}</p>
                 </div>
-                <Button onClick={() => setCurrentStep(7)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                <Button onClick={() => setCurrentStep(7)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   {t("hiring.onboarding.benefits.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>
@@ -898,7 +898,7 @@ export default function Onboarding() {
                     </div>
                   ))}
                 </div>
-                <Button onClick={() => setCurrentStep(8)} className="w-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25">
+                <Button onClick={() => setCurrentStep(8)} className="w-full bg-blue-600 hover:bg-blue-700 text-white">
                   {t("hiring.onboarding.probation.continue")} <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardContent>

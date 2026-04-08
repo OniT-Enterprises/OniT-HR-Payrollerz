@@ -338,7 +338,7 @@ export default function Departments() {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
                 onClick={() => {
                   setManagerMode("edit");
                   setShowDepartmentManager(true);
@@ -365,7 +365,7 @@ export default function Departments() {
               </p>
               <Button
                 onClick={() => (window.location.href = "/staff/add")}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white shadow-lg shadow-blue-500/25"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <User className="mr-2 h-4 w-4" />
                 {t("departments.addFirstEmployee")}

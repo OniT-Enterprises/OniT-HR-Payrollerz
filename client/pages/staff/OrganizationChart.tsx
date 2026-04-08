@@ -455,7 +455,7 @@ export default function OrganizationChart() {
                   setManagerMode("edit");
                   setShowDepartmentManager(true);
                 }}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 text-white hover:from-blue-600 hover:to-indigo-600"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Edit className="mr-2 h-4 w-4" />
                 {t("orgChart.manage")}
@@ -577,7 +577,7 @@ export default function OrganizationChart() {
               </p>
               <Button
                 onClick={() => (window.location.href = "/staff/add")}
-                className="bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <User className="mr-2 h-4 w-4" />
                 {t("orgChart.addFirstEmployee")}

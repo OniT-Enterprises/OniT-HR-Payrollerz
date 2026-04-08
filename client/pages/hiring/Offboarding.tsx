@@ -305,7 +305,7 @@ export default function Offboarding() {
             employees.length > 0 ? (
               <Button
                 onClick={() => setShowDialog(true)}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 shadow-lg"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <UserMinus className="mr-2 h-4 w-4" />
                 {t("hiring.offboarding.actions.start")}
@@ -680,7 +680,7 @@ export default function Offboarding() {
                         </div>
                         <div className="h-3 bg-muted rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-emerald-500 to-teal-500 rounded-full transition-all duration-500"
+                            className="h-full bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-all duration-500"
                             style={{ width: `${getChecklistProgress(selectedCase.checklist)}%` }}
                           />
                         </div>
@@ -849,7 +849,7 @@ export default function Offboarding() {
                           onClick={() =>
                             updateChecklist(selectedCase.id!, "exitInterviewCompleted", true)
                           }
-                          className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white shadow-lg shadow-emerald-500/25 disabled:opacity-50"
+                          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50"
                           disabled={getChecklistProgress(selectedCase.checklist) === 100}
                         >
                           {t("hiring.offboarding.actions.completeExit")}

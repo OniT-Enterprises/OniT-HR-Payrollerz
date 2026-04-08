@@ -815,7 +815,7 @@ export default function SetupWizard() {
           <Button
             onClick={handleNext}
             disabled={saving}
-            className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
             {saving ? (
               <>

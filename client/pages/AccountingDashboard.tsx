@@ -310,7 +310,7 @@ export default function AccountingDashboard() {
               </Button>
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600"
+                className="bg-orange-600 hover:bg-orange-700 text-white"
                 onClick={() => navigate("/accounting/journal?filter=payroll")}
               >
                 <Eye className="h-4 w-4 mr-1.5" />

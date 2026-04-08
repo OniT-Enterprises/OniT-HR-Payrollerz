@@ -36,7 +36,7 @@ export default function Unauthorized() {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">
-          <Button asChild size="lg" className="bg-gradient-to-r from-red-600 to-amber-500 hover:from-red-500 hover:to-amber-400 text-white">
+          <Button asChild size="lg" className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
             <Link to={user ? "/" : "/auth/login"}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               {user ? t("unauthorized.backHome") : t("unauthorized.goToLogin")}

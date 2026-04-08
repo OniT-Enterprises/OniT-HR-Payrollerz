@@ -767,7 +767,7 @@ export default function Attendance() {
                 {t("timeLeave.attendance.empty.importButton")}
               </Button>
               <Button
-                className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
                 onClick={() => openMarkDialog()}
               >
                 <Plus className="h-4 w-4 mr-2" />

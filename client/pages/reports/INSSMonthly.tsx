@@ -169,7 +169,7 @@ export default function INSSMonthly() {
       default:
         return {
           label: t("reports.inssMonthly.status.draft"),
-          className: "bg-gray-100 text-gray-800",
+          className: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300",
           icon: FileSpreadsheet,
         };
     }
