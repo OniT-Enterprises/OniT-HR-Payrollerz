@@ -221,7 +221,7 @@ function ChatHeader({
         <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
           <Bot className="h-4 w-4 text-primary" />
         </div>
-        <span className="font-semibold text-sm text-foreground">Meza AI</span>
+        <span className="font-semibold text-sm text-foreground">PrimosBot</span>
       </div>
       <div className="flex items-center gap-1">
         {headerExtra}
