@@ -66,6 +66,11 @@ export function WizardStepHours({
 
   return (
     <div className="space-y-4">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">{t("runPayroll.stepHoursTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("runPayroll.stepHoursDesc")}</p>
+      </div>
+
       {/* Sync Attendance — prominent, first thing they see */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 rounded-xl border border-border/50 bg-muted/20">
         <div>

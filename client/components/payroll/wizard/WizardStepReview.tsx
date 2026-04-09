@@ -63,6 +63,11 @@ export function WizardStepReview({
 
   return (
     <div className="space-y-6">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">{t("runPayroll.stepReviewTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("runPayroll.stepReviewDesc")}</p>
+      </div>
+
       {/* Hero Number — the one thing they care about most */}
       <div className="text-center py-6 px-4 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/20 border border-green-200 dark:border-green-800">
         <p className="text-sm font-medium text-muted-foreground mb-1">{t("runPayroll.netToEmployees")}</p>

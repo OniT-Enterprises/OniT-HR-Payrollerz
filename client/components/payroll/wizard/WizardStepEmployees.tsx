@@ -102,6 +102,11 @@ export function WizardStepEmployees({
 
   return (
     <div className="space-y-4">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">{t("runPayroll.stepEmployeesTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("runPayroll.stepEmployeesDesc")}</p>
+      </div>
+
       {/* Summary Bar — big numbers, obvious */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-5 text-sm">

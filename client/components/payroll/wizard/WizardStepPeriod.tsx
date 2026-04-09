@@ -46,6 +46,11 @@ export function WizardStepPeriod({
 
   return (
     <div className="space-y-8">
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold">{t("runPayroll.stepPeriodTitle")}</h2>
+        <p className="text-sm text-muted-foreground">{t("runPayroll.stepPeriodDesc")}</p>
+      </div>
+
       {/* Frequency Radio Cards — big, obvious, one tap */}
       <div>
         <Label className="text-base font-semibold mb-4 block">{t("runPayroll.payFrequency")}</Label>

@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
@@ -41,10 +40,6 @@ import {
   ArrowRight,
   CalendarDays,
   Play,
-  Zap,
-  FolderKanban,
-  CalendarCheck,
-  Wallet,
 } from "lucide-react";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
@@ -296,23 +291,6 @@ export default function Dashboard() {
           />
         </div>
 
-        {/* ── Next action banner ── */}
-        {nextAction && (
-          <div className={`flex items-center gap-4 mb-6 rounded-xl border p-4 ${nextAction.urgent ? "border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20" : "border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/10"}`}>
-            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${nextAction.urgent ? "bg-amber-500/15" : "bg-primary/10"}`}>
-              <Zap className={`h-5 w-5 ${nextAction.urgent ? "text-amber-600" : "text-primary"}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{t("dashboard.nextRecommendedAction")}</p>
-              <p className="text-sm font-semibold truncate">{nextAction.label}</p>
-            </div>
-            <Button size="sm" onClick={() => navigate(nextAction.path)} className={nextAction.urgent ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}>
-              {t("dashboard.doItNow")}
-              <ArrowRight className="h-4 w-4 ml-1.5" />
-            </Button>
-          </div>
-        )}
-
         {/* ── Overview cards ── */}
         {(hasPayroll || hasStaff || hasTimeleave) && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
@@ -381,34 +359,57 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* ── Quick Actions ── */}
+        {/* ── Things to do ── */}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{t("dashboard.quickActions")}</p>
-          <div className="flex flex-wrap gap-2">
-            {hasPayroll && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/payroll/run")}>
-                <Play className="h-3.5 w-3.5 text-primary" /> {t("dashboard.runPayroll")}
-              </Button>
+          <p className="text-sm font-semibold mb-3">{t("dashboard.thingsToDo")}</p>
+          <div className="space-y-2">
+            {hasPayroll && !payrollPrepared && (
+              <button onClick={() => navigate("/payroll/run")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-primary/30 transition-all text-left">
+                <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                  <Play className="h-4 w-4 text-primary" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t("dashboard.runPayroll")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoRunPayrollDesc", { days: daysUntilPayday })}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            )}
+            {hasTimeleave && pendingLeave > 0 && (
+              <button onClick={() => navigate("/time-leave/leave")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-cyan-400/30 transition-all text-left">
+                <div className="h-9 w-9 rounded-lg bg-cyan-500/10 flex items-center justify-center shrink-0">
+                  <CalendarDays className="h-4 w-4 text-cyan-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t("dashboard.todoLeaveTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoLeaveDesc", { count: pendingLeave })}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
+            )}
+            {blockingIssues.length > 0 && (
+              <button onClick={() => navigate(blockingIssues[0].path)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 hover:shadow-sm transition-all text-left">
+                <div className="h-9 w-9 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <AlertCircle className="h-4 w-4 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t("dashboard.todoBlockingTitle")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: blockingIssues.length })}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
             )}
             {hasStaff && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/people/add")}>
-                <UserPlus className="h-3.5 w-3.5 text-blue-500" /> {t("dashboard.addEmployee")}
-              </Button>
-            )}
-            {hasTimeleave && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/time-leave/attendance")}>
-                <CalendarCheck className="h-3.5 w-3.5 text-cyan-500" /> {t("nav.attendance")}
-              </Button>
-            )}
-            {hasModule("money") && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/money/invoices")}>
-                <Wallet className="h-3.5 w-3.5 text-indigo-500" /> {t("nav.invoices")}
-              </Button>
-            )}
-            {donorExportEnabled && (
-              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/reports/donor-export")}>
-                <FolderKanban className="h-3.5 w-3.5 text-orange-500" /> {t("dashboard.donorExport")}
-              </Button>
+              <button onClick={() => navigate("/people/add")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:shadow-sm hover:border-blue-400/30 transition-all text-left">
+                <div className="h-9 w-9 rounded-lg bg-blue-500/10 flex items-center justify-center shrink-0">
+                  <UserPlus className="h-4 w-4 text-blue-500" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t("dashboard.addEmployee")}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoAddEmployeeDesc")}</p>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+              </button>
             )}
           </div>
         </div>
