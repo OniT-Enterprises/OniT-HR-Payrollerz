@@ -287,7 +287,7 @@ export default function Dashboard() {
           <img
             src="/images/illustrations/dashboard-greeting.png"
             alt=""
-            className="hidden md:block h-24 w-auto -mr-2 -my-2 object-contain opacity-90 dark:opacity-70"
+            className="hidden md:block h-32 w-auto -mr-2 -my-4 object-contain opacity-90 dark:opacity-70"
           />
         </div>
 
