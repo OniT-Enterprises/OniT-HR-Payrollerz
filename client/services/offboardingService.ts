@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -90,6 +91,7 @@ export interface OffboardingCase {
 }
 
 interface OffboardingFilters {
+  employeeId?: string;
   status?: OffboardingStatus;
   departureReason?: DepartureReason;
   year?: number;
@@ -228,14 +230,36 @@ class OffboardingService {
     filters?: OffboardingFilters
   ): Promise<OffboardingCase[]> {
     try {
-      let q = query(
-        collection(db, OFFBOARDING_COLLECTION),
-        where('tenantId', '==', tenantId),
-        orderBy('createdAt', 'desc')
+      const canApplyYearServerSide = Boolean(
+        filters?.year &&
+        !filters.employeeId &&
+        !filters.status &&
+        !filters.departureReason
       );
+
+      const yearStart = filters?.year ? new Date(Date.UTC(filters.year, 0, 1)) : null;
+      const nextYearStart = filters?.year ? new Date(Date.UTC(filters.year + 1, 0, 1)) : null;
+
+      let q = canApplyYearServerSide
+        ? query(
+            collection(db, OFFBOARDING_COLLECTION),
+            where('tenantId', '==', tenantId),
+            where('createdAt', '>=', Timestamp.fromDate(yearStart!)),
+            where('createdAt', '<', Timestamp.fromDate(nextYearStart!)),
+            orderBy('createdAt', 'desc')
+          )
+        : query(
+            collection(db, OFFBOARDING_COLLECTION),
+            where('tenantId', '==', tenantId),
+            orderBy('createdAt', 'desc')
+          );
 
       if (filters?.status) {
         q = query(q, where('status', '==', filters.status));
+      }
+
+      if (filters?.employeeId) {
+        q = query(q, where('employeeId', '==', filters.employeeId));
       }
 
       if (filters?.departureReason) {
@@ -249,8 +273,8 @@ class OffboardingService {
         cases.push(this.mapDocToCase(doc.id, doc.data()));
       });
 
-      // Client-side year filter
-      if (filters?.year) {
+      // Client-side year filter when additional equality filters are applied.
+      if (filters?.year && !canApplyYearServerSide) {
         cases = cases.filter((c) => {
           if (!c.createdAt) return false;
           return new Date(c.createdAt).getFullYear() === filters.year;
@@ -268,8 +292,14 @@ class OffboardingService {
    * Get active (non-completed) cases
    */
   async getActiveCases(tenantId: string): Promise<OffboardingCase[]> {
-    const allCases = await this.getCases(tenantId);
-    return allCases.filter((c) => c.status !== 'completed' && c.status !== 'cancelled');
+    const q = query(
+      collection(db, OFFBOARDING_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['pending', 'in_progress']),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToCase(doc.id, doc.data()));
   }
 
   /**
@@ -478,14 +508,38 @@ class OffboardingService {
    */
   async getStats(tenantId: string, year?: number): Promise<OffboardingStats> {
     try {
-      const allCases = await this.getCases(tenantId, year ? { year } : undefined);
+      const collectionRef = collection(db, OFFBOARDING_COLLECTION);
+      const baseQuery = year
+        ? query(
+            collectionRef,
+            where('tenantId', '==', tenantId),
+            where('createdAt', '>=', Timestamp.fromDate(new Date(Date.UTC(year, 0, 1)))),
+            where('createdAt', '<', Timestamp.fromDate(new Date(Date.UTC(year + 1, 0, 1))))
+          )
+        : query(collectionRef, where('tenantId', '==', tenantId));
 
-      const pending = allCases.filter((c) => c.status === 'pending').length;
-      const inProgress = allCases.filter((c) => c.status === 'in_progress').length;
-      const completed = allCases.filter((c) => c.status === 'completed').length;
+      const [
+        totalSnapshot,
+        pendingSnapshot,
+        inProgressSnapshot,
+        completedSnapshot,
+        reasonSnapshots,
+      ] = await Promise.all([
+        getCountFromServer(baseQuery),
+        getCountFromServer(query(baseQuery, where('status', '==', 'pending'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'in_progress'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'completed'))),
+        Promise.all(
+          DEPARTURE_REASONS.map(({ id }) =>
+            getCountFromServer(query(baseQuery, where('departureReason', '==', id)))
+          )
+        ),
+      ]);
 
-      // Count by reason
-      const byReason: Record<DepartureReason, number> = {
+      const byReason = DEPARTURE_REASONS.reduce<Record<DepartureReason, number>>((acc, { id }, index) => {
+        acc[id] = reasonSnapshots[index].data().count;
+        return acc;
+      }, {
         resignation: 0,
         redundancy: 0,
         termination: 0,
@@ -493,16 +547,13 @@ class OffboardingService {
         contract_end: 0,
         mutual_agreement: 0,
         other: 0,
-      };
-      allCases.forEach((c) => {
-        byReason[c.departureReason]++;
       });
 
       return {
-        totalCases: allCases.length,
-        pending,
-        inProgress,
-        completed,
+        totalCases: totalSnapshot.data().count,
+        pending: pendingSnapshot.data().count,
+        inProgress: inProgressSnapshot.data().count,
+        completed: completedSnapshot.data().count,
         byReason,
       };
     } catch (error) {
@@ -515,8 +566,7 @@ class OffboardingService {
    * Get cases for an employee
    */
   async getEmployeeCases(tenantId: string, employeeId: string): Promise<OffboardingCase[]> {
-    const allCases = await this.getCases(tenantId);
-    return allCases.filter((c) => c.employeeId === employeeId);
+    return this.getCases(tenantId, { employeeId });
   }
 
   // ----------------------------------------

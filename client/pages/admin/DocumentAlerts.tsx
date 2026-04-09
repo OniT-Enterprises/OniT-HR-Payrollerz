@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useMemo } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -41,29 +42,49 @@ import {
   ShieldAlert,
   Search,
   Download,
+  RotateCcw,
   User,
   Calendar,
   FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { useAllEmployees } from "@/hooks/useEmployees";
-import {
-  extractAlerts,
-  SEVERITY_CONFIG,
-} from "@/components/dashboard/DocumentAlertsCard";
+import { SEVERITY_CONFIG } from "@/components/dashboard/DocumentAlertsCard";
 import { SEO } from "@/components/SEO";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import { useI18n } from "@/i18n/I18nProvider";
+import { useTenantId } from "@/contexts/TenantContext";
+import { documentAlertService } from "@/services/documentAlertService";
 
 export default function DocumentAlerts() {
   const { toast } = useToast();
   const { t } = useI18n();
-  const { data: employees = [], isLoading: loading } = useAllEmployees();
+  const tenantId = useTenantId();
+  const queryClient = useQueryClient();
+  const { data: allAlerts = [], isLoading: loading } = useQuery({
+    queryKey: ["tenants", tenantId, "documentAlerts"],
+    queryFn: () => documentAlertService.getDocumentAlerts(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const refreshMutation = useMutation({
+    mutationFn: () => documentAlertService.refreshDocumentAlerts(tenantId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["tenants", tenantId, "documentAlerts"] });
+      toast({
+        title: "Document alerts refreshed",
+        description: "Latest document expiry data loaded.",
+      });
+    },
+    onError: () => {
+      toast({
+        title: "Refresh failed",
+        description: "Failed to refresh document alerts.",
+        variant: "destructive",
+      });
+    },
+  });
   const [searchTerm, setSearchTerm] = useState("");
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [documentFilter, setDocumentFilter] = useState<string>("all");
-
-  const allAlerts = useMemo(() => extractAlerts(employees), [employees]);
 
   const filteredAlerts = useMemo(() => {
     return allAlerts.filter(alert => {
@@ -341,10 +362,20 @@ export default function DocumentAlerts() {
                   {t("documentAlerts.table.showing", { shown: filteredAlerts.length, total: allAlerts.length })}
                 </CardDescription>
               </div>
-              <Button variant="outline" onClick={handleExportCSV}>
-                <Download className="h-4 w-4 mr-2" />
-                {t("documentAlerts.actions.export")}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => refreshMutation.mutate()}
+                  disabled={refreshMutation.isPending}
+                >
+                  <RotateCcw className="h-4 w-4 mr-2" />
+                  Refresh
+                </Button>
+                <Button variant="outline" onClick={handleExportCSV}>
+                  <Download className="h-4 w-4 mr-2" />
+                  {t("documentAlerts.actions.export")}
+                </Button>
+              </div>
             </div>
           </CardHeader>
           <CardContent>

@@ -237,20 +237,17 @@ class BankReconciliationService {
     const tenantId = this.ensureTenant();
     const q = query(
       getCollection(tenantId),
-      where('status', 'in', ['unmatched', 'matched'])
+      where('status', 'in', ['unmatched', 'matched']),
+      orderBy('date', 'desc')
     );
 
     const snapshot = await getDocs(q);
-    const transactions = snapshot.docs.map(doc => ({
+    return snapshot.docs.map(doc => ({
       id: doc.id,
       ...doc.data(),
       createdAt: doc.data().createdAt?.toDate() || new Date(),
       reconciledAt: doc.data().reconciledAt?.toDate(),
     })) as BankTransaction[];
-
-    // Sort in memory to avoid requiring composite indexes for (status in ...) + orderBy(date)
-    transactions.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    return transactions;
   }
 
   /**

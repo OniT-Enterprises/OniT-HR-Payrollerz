@@ -9,6 +9,7 @@ import {
   getDocs,
   getDoc,
   getAggregateFromServer,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -29,7 +30,7 @@ import {
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { addDays, formatDateISO, getTodayTL, parseDateISO } from '@/lib/dateUtils';
-import { addMoney, subtractMoney, percentOf, sumMoney } from '@/lib/currency';
+import { addMoney, subtractMoney, percentOf } from '@/lib/currency';
 import type {
   Bill,
   BillFormData,
@@ -72,6 +73,7 @@ export interface PaginatedResult<T> {
 }
 
 const PAYMENT_EPSILON = 0.00001;
+const UNPAID_BILL_STATUSES: BillStatus[] = ['pending', 'partial', 'overdue'];
 
 /**
  * Maps Firestore document to Bill with Zod validation
@@ -257,12 +259,18 @@ class BillService {
   }
 
   async getOutstandingPayablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const unpaidBills = await this.getUnpaidBills(tenantId);
-    return sumMoney(
-      unpaidBills
-        .filter((bill) => bill.billDate <= asOfDate)
-        .map((bill) => bill.amount - (bill.amountPaid || 0))
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', 'in', UNPAID_BILL_STATUSES),
+        where('billDate', '<=', asOfDate),
+      ),
+      {
+        totalAmount: sum('balanceDue'),
+      }
     );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
   }
 
   async getPaidBillAmountByDateRange(
@@ -887,8 +895,14 @@ class BillService {
    * Get total payables
    */
   async getTotalPayables(tenantId: string): Promise<number> {
-    const bills = await this.getUnpaidBills(tenantId);
-    return sumMoney(bills.map(bill => bill.balanceDue));
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(this.collectionRef(tenantId), where('status', 'in', UNPAID_BILL_STATUSES)),
+      {
+        totalAmount: sum('balanceDue'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
   }
 
   /**
@@ -921,33 +935,50 @@ class BillService {
     dueLater: number;
     dueLaterCount: number;
   }> {
-    const unpaidBills = await this.getUnpaidBills(tenantId);
     const todayStr = getTodayTL();
     const nextWeekStr = formatDateISO(addDays(parseDateISO(todayStr), 7));
 
-    const result = {
-      overdue: 0,
-      overdueCount: 0,
-      dueThisWeek: 0,
-      dueThisWeekCount: 0,
-      dueLater: 0,
-      dueLaterCount: 0,
+    const aggregateBucket = async (bucketQuery: ReturnType<typeof query>) => {
+      const [countSnapshot, totalSnapshot] = await Promise.all([
+        getCountFromServer(bucketQuery),
+        getAggregateFromServer(bucketQuery, {
+          totalAmount: sum('balanceDue'),
+        }),
+      ]);
+
+      return {
+        count: countSnapshot.data().count,
+        total: Number(totalSnapshot.data().totalAmount ?? 0),
+      };
     };
 
-    for (const bill of unpaidBills) {
-      if (bill.dueDate < todayStr) {
-        result.overdue = addMoney(result.overdue, bill.balanceDue);
-        result.overdueCount++;
-      } else if (bill.dueDate <= nextWeekStr) {
-        result.dueThisWeek = addMoney(result.dueThisWeek, bill.balanceDue);
-        result.dueThisWeekCount++;
-      } else {
-        result.dueLater = addMoney(result.dueLater, bill.balanceDue);
-        result.dueLaterCount++;
-      }
-    }
+    const [overdue, dueThisWeek, dueLater] = await Promise.all([
+      aggregateBucket(query(
+        this.collectionRef(tenantId),
+        where('status', 'in', UNPAID_BILL_STATUSES),
+        where('dueDate', '<', todayStr),
+      )),
+      aggregateBucket(query(
+        this.collectionRef(tenantId),
+        where('status', 'in', ['pending', 'partial']),
+        where('dueDate', '>=', todayStr),
+        where('dueDate', '<=', nextWeekStr),
+      )),
+      aggregateBucket(query(
+        this.collectionRef(tenantId),
+        where('status', 'in', UNPAID_BILL_STATUSES),
+        where('dueDate', '>', nextWeekStr),
+      )),
+    ]);
 
-    return result;
+    return {
+      overdue: overdue.total,
+      overdueCount: overdue.count,
+      dueThisWeek: dueThisWeek.total,
+      dueThisWeekCount: dueThisWeek.count,
+      dueLater: dueLater.total,
+      dueLaterCount: dueLater.count,
+    };
   }
 
   /**

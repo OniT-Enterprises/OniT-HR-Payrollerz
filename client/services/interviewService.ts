@@ -291,20 +291,24 @@ class InterviewService {
         q = query(q, where('jobId', '==', filters.jobId));
       }
 
+      if (filters?.candidateId) {
+        q = query(q, where('candidateId', '==', filters.candidateId));
+      }
+
+      if (filters?.dateFrom) {
+        q = query(q, where('interviewDate', '>=', filters.dateFrom));
+      }
+
+      if (filters?.dateTo) {
+        q = query(q, where('interviewDate', '<=', filters.dateTo));
+      }
+
       const querySnapshot = await getDocs(q);
       let interviews: Interview[] = [];
 
       querySnapshot.forEach((doc) => {
         interviews.push(this.mapDocToInterview(doc.id, doc.data()));
       });
-
-      // Client-side date range filter
-      if (filters?.dateFrom) {
-        interviews = interviews.filter((i) => i.interviewDate >= filters.dateFrom!);
-      }
-      if (filters?.dateTo) {
-        interviews = interviews.filter((i) => i.interviewDate <= filters.dateTo!);
-      }
 
       // Client-side interviewer filter (array contains)
       if (filters?.interviewerId) {
@@ -326,12 +330,16 @@ class InterviewService {
   async getUpcomingInterviews(tenantId: string): Promise<Interview[]> {
     const today = getTodayTL();
     const nextWeek = toDateStringTL(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000));
-
-    return this.getInterviews(tenantId, {
-      status: 'scheduled',
-      dateFrom: today,
-      dateTo: nextWeek,
-    });
+    const q = query(
+      collection(db, INTERVIEWS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('status', '==', 'scheduled'),
+      where('interviewDate', '>=', today),
+      where('interviewDate', '<=', nextWeek),
+      orderBy('interviewDate', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToInterview(doc.id, doc.data()));
   }
 
   /**
@@ -339,8 +347,14 @@ class InterviewService {
    */
   async getTodayInterviews(tenantId: string): Promise<Interview[]> {
     const today = getTodayTL();
-    const all = await this.getInterviews(tenantId);
-    return all.filter((i) => i.interviewDate === today && i.status === 'scheduled');
+    const q = query(
+      collection(db, INTERVIEWS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('status', '==', 'scheduled'),
+      where('interviewDate', '==', today)
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToInterview(doc.id, doc.data()));
   }
 
   /**
@@ -631,8 +645,14 @@ class InterviewService {
    * Get interviews for a candidate
    */
   async getCandidateInterviews(tenantId: string, candidateId: string): Promise<Interview[]> {
-    const allInterviews = await this.getInterviews(tenantId);
-    return allInterviews.filter((i) => i.candidateId === candidateId);
+    const q = query(
+      collection(db, INTERVIEWS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('candidateId', '==', candidateId),
+      orderBy('interviewDate', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToInterview(doc.id, doc.data()));
   }
 
   /**

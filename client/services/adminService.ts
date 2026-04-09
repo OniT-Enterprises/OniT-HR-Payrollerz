@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   setDoc,
   updateDoc,
   query,
@@ -297,13 +298,13 @@ class AdminService {
       const employeesRef = collection(db, paths.employees(tenantId));
 
       const [membersSnap, employeesSnap] = await Promise.all([
-        getDocs(membersRef),
-        getDocs(employeesRef),
+        getCountFromServer(query(membersRef)),
+        getCountFromServer(query(employeesRef)),
       ]);
 
       return {
-        memberCount: membersSnap.size,
-        employeeCount: employeesSnap.size,
+        memberCount: membersSnap.data().count,
+        employeeCount: employeesSnap.data().count,
       };
     } catch (error) {
       console.error('Error fetching tenant stats:', error);

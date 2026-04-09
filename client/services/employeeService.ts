@@ -1,12 +1,16 @@
 import {
   collection,
   doc,
+  documentId,
   getDocs,
   getDoc,
+  getCountFromServer,
+  getAggregateFromServer,
   addDoc,
   setDoc,
   updateDoc,
   query,
+  sum,
   where,
   orderBy,
   limit,
@@ -21,6 +25,10 @@ import { paths } from "@/lib/paths";
 import type { ForeignWorkerData } from "@/types/tax-filing";
 import { auditLogService } from "./auditLogService";
 import { firestoreEmployeeSchema } from "@/lib/validations";
+import {
+  buildEmployeeComplianceSnapshot,
+  type EmployeeComplianceSnapshot,
+} from "@/lib/employeeCompliance";
 
 /**
  * Audit context for logging user actions
@@ -129,9 +137,21 @@ export interface Employee {
   status: "active" | "inactive" | "terminated";
   createdAt?: Date | Timestamp;
   updatedAt?: Date | Timestamp;
+  compliance?: EmployeeComplianceSnapshot;
   // Foreign worker tracking (optional - only for non-resident employees)
   isForeignWorker?: boolean;
   foreignWorker?: ForeignWorkerData;
+}
+
+export interface ActiveEmployeeSummary {
+  active: number;
+  totalMonthlySalary: number;
+  totalIssues: number;
+  employeesWithIssues: number;
+  employeesWithBlockingIssues: number;
+  missingInss: number;
+  missingContract: number;
+  missingDepartment: number;
 }
 
 /**
@@ -186,6 +206,47 @@ function mapEmployee(doc: DocumentSnapshot): Employee {
     id: doc.id,
     ...parsed,
   } as Employee;
+}
+
+function mergeEmployeeForCompliance(existing: Employee | null, updates: Partial<Employee>): Partial<Employee> {
+  return {
+    ...existing,
+    ...updates,
+    jobDetails: {
+      employeeId: existing?.jobDetails?.employeeId ?? "",
+      department: existing?.jobDetails?.department ?? "",
+      position: existing?.jobDetails?.position ?? "",
+      hireDate: existing?.jobDetails?.hireDate ?? "",
+      employmentType: existing?.jobDetails?.employmentType ?? "",
+      workLocation: existing?.jobDetails?.workLocation ?? "",
+      manager: existing?.jobDetails?.manager ?? "",
+      ...existing?.jobDetails,
+      ...updates.jobDetails,
+    },
+    documents: {
+      employeeIdCard: existing?.documents?.employeeIdCard ?? { number: "", expiryDate: "", required: false },
+      electoralCard: existing?.documents?.electoralCard ?? { number: "", expiryDate: "", required: false },
+      idCard: existing?.documents?.idCard ?? { number: "", expiryDate: "", required: false },
+      passport: existing?.documents?.passport ?? { number: "", expiryDate: "", required: false },
+      nationality: existing?.documents?.nationality ?? "",
+      workingVisaResidency: existing?.documents?.workingVisaResidency ?? { number: "", expiryDate: "", fileUrl: "" },
+      ...existing?.documents,
+      ...updates.documents,
+      socialSecurityNumber: {
+        number: existing?.documents?.socialSecurityNumber?.number ?? "",
+        expiryDate: existing?.documents?.socialSecurityNumber?.expiryDate ?? "",
+        required: existing?.documents?.socialSecurityNumber?.required ?? true,
+        ...existing?.documents?.socialSecurityNumber,
+        ...updates.documents?.socialSecurityNumber,
+      },
+      workContract: {
+        fileUrl: existing?.documents?.workContract?.fileUrl ?? "",
+        uploadDate: existing?.documents?.workContract?.uploadDate ?? "",
+        ...existing?.documents?.workContract,
+        ...updates.documents?.workContract,
+      },
+    },
+  };
 }
 
 class EmployeeService {
@@ -336,6 +397,27 @@ class EmployeeService {
     return mapEmployee(docSnap);
   }
 
+  async getEmployeesByIds(tenantId: string, ids: string[]): Promise<Employee[]> {
+    const uniqueIds = Array.from(new Set(ids.filter(Boolean)));
+    if (uniqueIds.length === 0) {
+      return [];
+    }
+
+    const employees: Employee[] = [];
+
+    for (let i = 0; i < uniqueIds.length; i += 10) {
+      const chunk = uniqueIds.slice(i, i + 10);
+      const q = query(
+        this.collectionRef(tenantId),
+        where(documentId(), 'in', chunk)
+      );
+      const snapshot = await getDocs(q);
+      employees.push(...snapshot.docs.map(mapEmployee));
+    }
+
+    return employees;
+  }
+
   /**
    * Find employees by their employeeId field (e.g., National ID / BI number).
    * Searches across ALL statuses including terminated.
@@ -375,6 +457,7 @@ class EmployeeService {
 
     const data = {
       ...employee,
+      compliance: buildEmployeeComplianceSnapshot(employee),
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     };
@@ -415,10 +498,16 @@ class EmployeeService {
     if (audit) {
       oldEmployee = await this.getEmployeeById(tenantId, id);
     }
+    const currentEmployee = oldEmployee ?? await this.getEmployeeById(tenantId, id);
+    if (!currentEmployee) {
+      throw new Error("Employee not found");
+    }
 
     const docRef = doc(db, paths.employee(tenantId, id));
+    const mergedEmployee = mergeEmployeeForCompliance(currentEmployee, updates);
     await updateDoc(docRef, {
       ...updates,
+      compliance: buildEmployeeComplianceSnapshot(mergedEmployee),
       updatedAt: serverTimestamp(),
     });
 
@@ -504,13 +593,70 @@ class EmployeeService {
    * Get count of employees by status (useful for dashboards)
    */
   async getEmployeeCounts(tenantId: string): Promise<{ active: number; inactive: number; terminated: number; total: number }> {
-    const all = await this.getAllEmployees(tenantId);
+    const collectionRef = this.collectionRef(tenantId);
+    const [active, inactive, terminated, total] = await Promise.all([
+      getCountFromServer(query(collectionRef, where("status", "==", "active"))),
+      getCountFromServer(query(collectionRef, where("status", "==", "inactive"))),
+      getCountFromServer(query(collectionRef, where("status", "==", "terminated"))),
+      getCountFromServer(query(collectionRef)),
+    ]);
+
     return {
-      active: all.filter(e => e.status === "active").length,
-      inactive: all.filter(e => e.status === "inactive").length,
-      terminated: all.filter(e => e.status === "terminated").length,
-      total: all.length,
+      active: active.data().count,
+      inactive: inactive.data().count,
+      terminated: terminated.data().count,
+      total: total.data().count,
     };
+  }
+
+  async getActiveEmployeeSummary(tenantId: string): Promise<ActiveEmployeeSummary> {
+    const collectionRef = this.collectionRef(tenantId);
+    const activeQuery = query(collectionRef, where("status", "==", "active"));
+
+    const [
+      activeSnapshot,
+      salaryAndIssuesSnapshot,
+      employeesWithIssuesSnapshot,
+      employeesWithBlockingIssuesSnapshot,
+      missingInssSnapshot,
+      missingContractSnapshot,
+      missingDepartmentSnapshot,
+    ] = await Promise.all([
+      getCountFromServer(activeQuery),
+      getAggregateFromServer(activeQuery, {
+        totalMonthlySalary: sum("compensation.monthlySalary"),
+        totalIssues: sum("compliance.issueCount"),
+      }),
+      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasIssues", "==", true))),
+      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasBlockingIssue", "==", true))),
+      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingInss", "==", true))),
+      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingContract", "==", true))),
+      getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingDepartment", "==", true))),
+    ]);
+
+    return {
+      active: activeSnapshot.data().count,
+      totalMonthlySalary: Number(salaryAndIssuesSnapshot.data().totalMonthlySalary ?? 0),
+      totalIssues: Number(salaryAndIssuesSnapshot.data().totalIssues ?? 0),
+      employeesWithIssues: employeesWithIssuesSnapshot.data().count,
+      employeesWithBlockingIssues: employeesWithBlockingIssuesSnapshot.data().count,
+      missingInss: missingInssSnapshot.data().count,
+      missingContract: missingContractSnapshot.data().count,
+      missingDepartment: missingDepartmentSnapshot.data().count,
+    };
+  }
+
+  async getEmployeesWithComplianceIssues(tenantId: string, maxResults: number = 6): Promise<Employee[]> {
+    const q = query(
+      this.collectionRef(tenantId),
+      where("status", "==", "active"),
+      where("compliance.hasIssues", "==", true),
+      orderBy("compliance.blockingIssueCount", "desc"),
+      orderBy("updatedAt", "desc"),
+      limit(maxResults)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(mapEmployee);
   }
 }
 

@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import { useEmployeeDirectory } from "@/hooks/useEmployees";
+import { useActiveEmployeeSummary, useComplianceIssuePreview } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { usePayrollRuns } from "@/hooks/usePayroll";
@@ -61,7 +61,7 @@ function formatDateKey(date: Date) {
 }
 
 function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
-  const { setOpen, addMessage } = useChatStore();
+  const { setOpen, setPendingQuery } = useChatStore();
   const [input, setInput] = useState("");
   const greeting = new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite";
 
@@ -73,10 +73,10 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
 
   const handleSend = useCallback((query: string) => {
     if (!query.trim()) return;
-    addMessage({ role: "user", text: query.trim() });
+    setPendingQuery(query.trim());
     setOpen(true);
     setInput("");
-  }, [addMessage, setOpen]);
+  }, [setPendingQuery, setOpen]);
 
   const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${t("dashboard.botGreeting")}`;
   const [charCount, setCharCount] = useState(0);
@@ -286,10 +286,13 @@ export default function Dashboard() {
   const hasTimeleave = hasModule("timeleave");
   const hasPayroll = hasModule("payroll");
   const hasReports = hasModule("reports");
-  const shouldLoadEmployees = hasStaff || hasPayroll || hasTimeleave;
-  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory(
-    { status: "active" },
-    shouldLoadEmployees
+  const shouldLoadEmployeeSummary = hasStaff || hasPayroll || hasTimeleave;
+  const { data: employeeSummary, isLoading: employeeSummaryLoading } = useActiveEmployeeSummary(
+    shouldLoadEmployeeSummary
+  );
+  const { data: issuePreviewEmployees = [], isLoading: issuePreviewLoading } = useComplianceIssuePreview(
+    6,
+    hasStaff
   );
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats(hasTimeleave);
   const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2, hasPayroll);
@@ -302,7 +305,8 @@ export default function Dashboard() {
     staleTime: 5 * 60 * 1000,
   });
   const loading =
-    employeesLoading ||
+    employeeSummaryLoading ||
+    (hasStaff && issuePreviewLoading) ||
     leaveStatsLoading ||
     dueDatesLoading ||
     payrollRunsLoading ||
@@ -317,10 +321,7 @@ export default function Dashboard() {
   });
 
   // Derived data
-  const totalPayroll = activeEmployees.reduce(
-    (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
-    0
-  );
+  const totalPayroll = employeeSummary?.totalMonthlySalary ?? 0;
 
   // Calculate days until next payroll (25th)
   const getDaysUntilPayday = () => {
@@ -363,7 +364,9 @@ export default function Dashboard() {
   };
 
   // Compliance issues — shared utility, single source of truth
-  const blockingIssues = hasStaff ? getComplianceIssues(activeEmployees).slice(0, 6) : [];
+  const blockingIssues = hasStaff ? getComplianceIssues(issuePreviewEmployees).slice(0, 6) : [];
+  const totalComplianceIssues = hasStaff ? (employeeSummary?.totalIssues ?? 0) : 0;
+  const activeEmployeeCount = employeeSummary?.active ?? 0;
 
   const daysUntilPayday = getDaysUntilPayday();
   const compliance = hasPayroll ? getComplianceStatus() : null;
@@ -398,10 +401,10 @@ export default function Dashboard() {
     if (hasPayroll && isPayrollUrgent && !payrollPrepared) {
       return { label: t("dashboard.preparePayroll"), path: "/payroll/run", urgent: true };
     }
-    if (blockingIssues.length > 0) {
+    if (totalComplianceIssues > 0) {
       return {
-        label: t("dashboard.fixBlockingIssues", { count: blockingIssues.length }),
-        path: blockingIssues[0].path,
+        label: t("dashboard.fixBlockingIssues", { count: totalComplianceIssues }),
+        path: blockingIssues[0]?.path || "/people/employees?filter=blocking-issues",
         urgent: true,
       };
     }
@@ -460,9 +463,9 @@ export default function Dashboard() {
                   <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                     <Users className="h-4 w-4 text-blue-500" />
                   </div>
-                  {blockingIssues.length > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{blockingIssues.length} issues</span>}
+                  {totalComplianceIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{totalComplianceIssues} issues</span>}
                 </div>
-                <p className="text-2xl font-bold tabular-nums">{activeEmployees.length}</p>
+                <p className="text-2xl font-bold tabular-nums">{activeEmployeeCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
               </button>
             )}

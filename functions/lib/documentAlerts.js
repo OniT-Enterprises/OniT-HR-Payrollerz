@@ -16,9 +16,13 @@ const DOCUMENT_LABELS = {
     bi: "Bilhete de Identidade",
     passport: "Passport",
     work_permit: "Work Permit/Visa",
+    work_visa: "Work Visa (Type C)",
+    residence_permit: "Residence Permit",
     electoral: "Electoral Card",
     inss: "INSS Card",
+    contract: "Employment Contract",
 };
+const BATCH_WRITE_LIMIT = 450;
 // ============================================================================
 // HELPER FUNCTIONS
 // ============================================================================
@@ -51,79 +55,128 @@ function calculateExpiryInfo(expiryDate) {
  * Extract document expiry alerts from an employee
  */
 function extractEmployeeAlerts(tenantId, employee, alertThresholdDays = 60) {
-    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k;
+    var _a, _b, _c, _d, _e, _f, _g, _h, _j, _k, _l, _m, _o, _p, _q, _r, _s, _t, _u;
     const alerts = [];
     const employeeName = `${((_a = employee.personalInfo) === null || _a === void 0 ? void 0 : _a.firstName) || ""} ${((_b = employee.personalInfo) === null || _b === void 0 ? void 0 : _b.lastName) || ""}`.trim();
+    const pushAlert = (alertKey, documentType, expiryDate, windowDays) => {
+        if (!expiryDate) {
+            return;
+        }
+        const { days, severity } = calculateExpiryInfo(expiryDate);
+        if (days > windowDays) {
+            return;
+        }
+        alerts.push({
+            alertKey,
+            tenantId,
+            employeeId: employee.id,
+            employeeName,
+            documentType,
+            documentLabel: DOCUMENT_LABELS[documentType],
+            expiryDate,
+            daysUntilExpiry: days,
+            severity,
+            acknowledged: false,
+        });
+    };
     // Check Bilhete de Identidade
     const bi = ((_c = employee.documents) === null || _c === void 0 ? void 0 : _c.bilheteIdentidade) || ((_d = employee.documents) === null || _d === void 0 ? void 0 : _d.employeeIdCard);
-    if (bi === null || bi === void 0 ? void 0 : bi.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(bi.expiryDate);
-        if (days <= alertThresholdDays) {
-            alerts.push({
-                tenantId,
-                employeeId: employee.id,
-                employeeName,
-                documentType: "bi",
-                documentLabel: DOCUMENT_LABELS.bi,
-                expiryDate: bi.expiryDate,
-                daysUntilExpiry: days,
-                severity,
-                acknowledged: false,
-            });
-        }
-    }
+    pushAlert("bi", "bi", bi === null || bi === void 0 ? void 0 : bi.expiryDate, alertThresholdDays);
     // Check Passport
-    if ((_f = (_e = employee.documents) === null || _e === void 0 ? void 0 : _e.passport) === null || _f === void 0 ? void 0 : _f.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.documents.passport.expiryDate);
-        if (days <= alertThresholdDays) {
-            alerts.push({
-                tenantId,
-                employeeId: employee.id,
-                employeeName,
-                documentType: "passport",
-                documentLabel: DOCUMENT_LABELS.passport,
-                expiryDate: employee.documents.passport.expiryDate,
-                daysUntilExpiry: days,
-                severity,
-                acknowledged: false,
-            });
-        }
-    }
+    pushAlert("passport", "passport", (_f = (_e = employee.documents) === null || _e === void 0 ? void 0 : _e.passport) === null || _f === void 0 ? void 0 : _f.expiryDate, alertThresholdDays);
     // Check Work Permit/Visa
-    if ((_h = (_g = employee.documents) === null || _g === void 0 ? void 0 : _g.workingVisaResidency) === null || _h === void 0 ? void 0 : _h.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.documents.workingVisaResidency.expiryDate);
-        if (days <= alertThresholdDays) {
-            alerts.push({
-                tenantId,
-                employeeId: employee.id,
-                employeeName,
-                documentType: "work_permit",
-                documentLabel: DOCUMENT_LABELS.work_permit,
-                expiryDate: employee.documents.workingVisaResidency.expiryDate,
-                daysUntilExpiry: days,
-                severity,
-                acknowledged: false,
-            });
-        }
-    }
+    pushAlert("work_permit", "work_permit", (_h = (_g = employee.documents) === null || _g === void 0 ? void 0 : _g.workingVisaResidency) === null || _h === void 0 ? void 0 : _h.expiryDate, alertThresholdDays);
     // Check Electoral Card
-    if ((_k = (_j = employee.documents) === null || _j === void 0 ? void 0 : _j.electoralCard) === null || _k === void 0 ? void 0 : _k.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.documents.electoralCard.expiryDate);
-        if (days <= alertThresholdDays) {
-            alerts.push({
-                tenantId,
-                employeeId: employee.id,
-                employeeName,
-                documentType: "electoral",
-                documentLabel: DOCUMENT_LABELS.electoral,
-                expiryDate: employee.documents.electoralCard.expiryDate,
-                daysUntilExpiry: days,
-                severity,
-                acknowledged: false,
+    pushAlert("electoral", "electoral", (_k = (_j = employee.documents) === null || _j === void 0 ? void 0 : _j.electoralCard) === null || _k === void 0 ? void 0 : _k.expiryDate, alertThresholdDays);
+    pushAlert("inss", "inss", (_m = (_l = employee.documents) === null || _l === void 0 ? void 0 : _l.socialSecurityNumber) === null || _m === void 0 ? void 0 : _m.expiryDate, alertThresholdDays);
+    pushAlert("work_visa", "work_visa", (_p = (_o = employee.foreignWorker) === null || _o === void 0 ? void 0 : _o.workVisa) === null || _p === void 0 ? void 0 : _p.expiryDate, 90);
+    pushAlert("residence_permit", "residence_permit", (_r = (_q = employee.foreignWorker) === null || _q === void 0 ? void 0 : _q.residencePermit) === null || _r === void 0 ? void 0 : _r.expiryDate, 90);
+    pushAlert("fw_work_permit", "work_permit", (_t = (_s = employee.foreignWorker) === null || _s === void 0 ? void 0 : _s.workPermit) === null || _t === void 0 ? void 0 : _t.expiryDate, 90);
+    pushAlert("contract", "contract", (_u = employee.jobDetails) === null || _u === void 0 ? void 0 : _u.contractEndDate, 90);
+    return alerts;
+}
+function sortAlerts(alerts) {
+    const severityOrder = ["expired", "critical", "warning", "upcoming"];
+    return alerts.sort((left, right) => {
+        const severityDiff = severityOrder.indexOf(left.severity) - severityOrder.indexOf(right.severity);
+        if (severityDiff !== 0) {
+            return severityDiff;
+        }
+        return left.daysUntilExpiry - right.daysUntilExpiry;
+    });
+}
+async function commitDocumentAlertMutations(mutations) {
+    for (let index = 0; index < mutations.length; index += BATCH_WRITE_LIMIT) {
+        const batch = db.batch();
+        for (const mutate of mutations.slice(index, index + BATCH_WRITE_LIMIT)) {
+            mutate(batch);
+        }
+        await batch.commit();
+    }
+}
+async function syncTenantDocumentAlerts(tenantId, alertThresholdDays = 60) {
+    const [employeesSnapshot, existingAlertsSnapshot] = await Promise.all([
+        db
+            .collection(`tenants/${tenantId}/employees`)
+            .where("status", "==", "active")
+            .get(),
+        db.collection(`tenants/${tenantId}/document_alerts`).get(),
+    ]);
+    const alerts = [];
+    for (const empDoc of employeesSnapshot.docs) {
+        const employee = Object.assign({ id: empDoc.id }, empDoc.data());
+        alerts.push(...extractEmployeeAlerts(tenantId, employee, alertThresholdDays));
+    }
+    sortAlerts(alerts);
+    const now = firestore_1.FieldValue.serverTimestamp();
+    const existingAlertsById = new Map(existingAlertsSnapshot.docs.map((docSnap) => [docSnap.id, docSnap]));
+    const currentAlertIds = new Set();
+    const mutations = [];
+    let created = 0;
+    let updated = 0;
+    let deleted = 0;
+    for (const alert of alerts) {
+        const alertId = `${alert.employeeId}_${alert.alertKey}`;
+        currentAlertIds.add(alertId);
+        const alertRef = db.doc(`tenants/${tenantId}/document_alerts/${alertId}`);
+        if (existingAlertsById.has(alertId)) {
+            mutations.push((batch) => {
+                batch.update(alertRef, {
+                    employeeName: alert.employeeName,
+                    documentLabel: alert.documentLabel,
+                    expiryDate: alert.expiryDate,
+                    daysUntilExpiry: alert.daysUntilExpiry,
+                    severity: alert.severity,
+                    updatedAt: now,
+                });
             });
+            updated += 1;
+        }
+        else {
+            mutations.push((batch) => {
+                batch.set(alertRef, Object.assign(Object.assign({}, alert), { id: alertId, createdAt: now, updatedAt: now }));
+            });
+            created += 1;
         }
     }
-    return alerts;
+    for (const existingAlert of existingAlertsSnapshot.docs) {
+        if (currentAlertIds.has(existingAlert.id)) {
+            continue;
+        }
+        mutations.push((batch) => {
+            batch.delete(existingAlert.ref);
+        });
+        deleted += 1;
+    }
+    await commitDocumentAlertMutations(mutations);
+    return {
+        employeesScanned: employeesSnapshot.size,
+        alertsFound: alerts.length,
+        created,
+        updated,
+        deleted,
+        alerts,
+    };
 }
 // ============================================================================
 // SCHEDULED FUNCTION: Daily Document Alert Check
@@ -154,62 +207,20 @@ exports.checkDocumentExpiry = (0, scheduler_1.onSchedule)({
         for (const tenantDoc of tenantsSnapshot.docs) {
             const tenantId = tenantDoc.id;
             try {
-                // Get all active employees for this tenant
-                const employeesSnapshot = await db
-                    .collection(`tenants/${tenantId}/employees`)
-                    .where("status", "==", "active")
-                    .get();
-                if (employeesSnapshot.empty) {
+                const syncResult = await syncTenantDocumentAlerts(tenantId);
+                if (syncResult.employeesScanned === 0) {
                     v2_1.logger.debug(`No active employees for tenant ${tenantId}`);
                     continue;
                 }
-                const alerts = [];
-                // Extract alerts from each employee
-                for (const empDoc of employeesSnapshot.docs) {
-                    const employee = Object.assign({ id: empDoc.id }, empDoc.data());
-                    const empAlerts = extractEmployeeAlerts(tenantId, employee);
-                    alerts.push(...empAlerts);
-                }
-                // Update alerts collection
-                const batch = db.batch();
-                const now = firestore_1.FieldValue.serverTimestamp();
-                for (const alert of alerts) {
-                    const alertId = `${alert.employeeId}_${alert.documentType}`;
-                    const alertRef = db.doc(`tenants/${tenantId}/document_alerts/${alertId}`);
-                    // Check if alert already exists
-                    const existingAlert = await alertRef.get();
-                    if (existingAlert.exists) {
-                        // Update existing alert (preserve acknowledged status)
-                        batch.update(alertRef, {
-                            daysUntilExpiry: alert.daysUntilExpiry,
-                            severity: alert.severity,
-                            updatedAt: now,
-                            // Don't overwrite acknowledged status
-                        });
-                        totalAlertsUpdated++;
-                    }
-                    else {
-                        // Create new alert
-                        batch.set(alertRef, Object.assign(Object.assign({}, alert), { id: alertId, createdAt: now, updatedAt: now }));
-                        totalAlertsCreated++;
-                    }
-                }
-                // Remove alerts for documents that are no longer expiring
-                const existingAlertsSnapshot = await db
-                    .collection(`tenants/${tenantId}/document_alerts`)
-                    .get();
-                const currentAlertIds = new Set(alerts.map(a => `${a.employeeId}_${a.documentType}`));
-                for (const alertDoc of existingAlertsSnapshot.docs) {
-                    if (!currentAlertIds.has(alertDoc.id)) {
-                        // This alert is no longer needed (document was renewed or employee no longer active)
-                        batch.delete(alertDoc.ref);
-                    }
-                }
-                await batch.commit();
+                totalAlertsCreated += syncResult.created;
+                totalAlertsUpdated += syncResult.updated;
                 tenantsProcessed++;
                 v2_1.logger.info(`Processed tenant ${tenantId}`, {
-                    employees: employeesSnapshot.size,
-                    alertsFound: alerts.length,
+                    employees: syncResult.employeesScanned,
+                    alertsFound: syncResult.alertsFound,
+                    alertsCreated: syncResult.created,
+                    alertsUpdated: syncResult.updated,
+                    alertsDeleted: syncResult.deleted,
                 });
             }
             catch (tenantError) {
@@ -244,40 +255,24 @@ exports.refreshDocumentAlerts = (0, https_1.onCall)(async (request) => {
     await (0, authz_1.requireTenantManagerOrAdmin)(tenantId, auth.uid);
     try {
         v2_1.logger.info(`Manual document alert refresh for tenant ${tenantId}`, { uid: auth.uid });
-        // Get all active employees
-        const employeesSnapshot = await db
-            .collection(`tenants/${tenantId}/employees`)
-            .where("status", "==", "active")
-            .get();
-        const alerts = [];
-        for (const empDoc of employeesSnapshot.docs) {
-            const employee = Object.assign({ id: empDoc.id }, empDoc.data());
-            const empAlerts = extractEmployeeAlerts(tenantId, employee);
-            alerts.push(...empAlerts);
-        }
-        // Update alerts collection
-        const batch = db.batch();
-        const now = firestore_1.FieldValue.serverTimestamp();
-        for (const alert of alerts) {
-            const alertId = `${alert.employeeId}_${alert.documentType}`;
-            const alertRef = db.doc(`tenants/${tenantId}/document_alerts/${alertId}`);
-            batch.set(alertRef, Object.assign(Object.assign({}, alert), { id: alertId, updatedAt: now }), { merge: true });
-        }
-        await batch.commit();
+        const syncResult = await syncTenantDocumentAlerts(tenantId);
         // Count by severity
         const counts = {
-            expired: alerts.filter(a => a.severity === "expired").length,
-            critical: alerts.filter(a => a.severity === "critical").length,
-            warning: alerts.filter(a => a.severity === "warning").length,
-            upcoming: alerts.filter(a => a.severity === "upcoming").length,
-            total: alerts.length,
+            expired: syncResult.alerts.filter(a => a.severity === "expired").length,
+            critical: syncResult.alerts.filter(a => a.severity === "critical").length,
+            warning: syncResult.alerts.filter(a => a.severity === "warning").length,
+            upcoming: syncResult.alerts.filter(a => a.severity === "upcoming").length,
+            total: syncResult.alerts.length,
+            created: syncResult.created,
+            updated: syncResult.updated,
+            deleted: syncResult.deleted,
         };
         v2_1.logger.info(`Document alerts refreshed for tenant ${tenantId}`, counts);
         return {
             success: true,
-            message: `Found ${alerts.length} document alerts`,
+            message: `Found ${syncResult.alerts.length} document alerts`,
             counts,
-            alerts: alerts.map(a => ({
+            alerts: syncResult.alerts.map(a => ({
                 employeeName: a.employeeName,
                 documentType: a.documentType,
                 daysUntilExpiry: a.daysUntilExpiry,

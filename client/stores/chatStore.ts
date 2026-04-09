@@ -27,8 +27,10 @@ interface ChatState {
   isLoading: boolean;
   sessionKey: string;
   currentRoute: string;
+  pendingQuery: string | null;
 
   setOpen: (open: boolean) => void;
+  setPendingQuery: (query: string | null) => void;
   addMessage: (msg: ChatMessage) => void;
   updateLastMessage: (update: Partial<ChatMessage> | ((prev: ChatMessage) => Partial<ChatMessage>)) => void;
   setLoading: (loading: boolean) => void;
@@ -44,8 +46,10 @@ export const useChatStore = create<ChatState>()((set) => ({
   isLoading: false,
   sessionKey: createSessionKey(),
   currentRoute: '/',
+  pendingQuery: null,
 
   setOpen: (open) => set({ isOpen: open }),
+  setPendingQuery: (query) => set({ pendingQuery: query }),
   addMessage: (msg) => set((s) => ({ messages: [...s.messages, msg] })),
   updateLastMessage: (update) =>
     set((s) => {

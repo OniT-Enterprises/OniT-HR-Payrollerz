@@ -9,6 +9,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   query,
@@ -667,24 +668,28 @@ class LeaveService {
    */
   async getLeaveStats(tenantId: string): Promise<LeaveStats> {
     try {
-      const allRequests = await this.getLeaveRequests(tenantId);
       const today = getTodayTL();
-
-      const pendingRequests = allRequests.filter(r => r.status === 'pending').length;
-      const approvedRequests = allRequests.filter(r => r.status === 'approved').length;
-      const rejectedRequests = allRequests.filter(r => r.status === 'rejected').length;
-
-      // Employees on leave today
-      const employeesOnLeaveToday = allRequests.filter(
-        r => r.status === 'approved' && r.startDate <= today && r.endDate >= today
-      ).length;
+      const leaveRequestsRef = collection(db, LEAVE_REQUESTS_COLLECTION);
+      const [totalRequests, pendingRequests, approvedRequests, rejectedRequests, employeesOnLeaveToday] = await Promise.all([
+        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId))),
+        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'pending'))),
+        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'approved'))),
+        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'rejected'))),
+        getCountFromServer(query(
+          leaveRequestsRef,
+          where('tenantId', '==', tenantId),
+          where('status', '==', 'approved'),
+          where('startDate', '<=', today),
+          where('endDate', '>=', today)
+        )),
+      ]);
 
       return {
-        totalRequests: allRequests.length,
-        pendingRequests,
-        approvedRequests,
-        rejectedRequests,
-        employeesOnLeaveToday,
+        totalRequests: totalRequests.data().count,
+        pendingRequests: pendingRequests.data().count,
+        approvedRequests: approvedRequests.data().count,
+        rejectedRequests: rejectedRequests.data().count,
+        employeesOnLeaveToday: employeesOnLeaveToday.data().count,
       };
     } catch (error) {
       console.error('Error getting leave stats:', error);
@@ -697,11 +702,23 @@ class LeaveService {
    */
   async getEmployeesOnLeave(tenantId: string, startDate: string, endDate: string): Promise<LeaveRequest[]> {
     try {
-      const approvedRequests = await this.getLeaveRequests(tenantId, { status: 'approved' });
+      const q = query(
+        collection(db, LEAVE_REQUESTS_COLLECTION),
+        where('tenantId', '==', tenantId),
+        where('status', '==', 'approved'),
+        where('startDate', '<=', endDate),
+        where('endDate', '>=', startDate)
+      );
 
-      return approvedRequests.filter(req => {
-        // Check if leave period overlaps with query period
-        return req.endDate >= startDate && req.startDate <= endDate;
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map((doc) => {
+        const data = doc.data();
+        return {
+          ...data,
+          id: doc.id,
+          createdAt: data.createdAt?.toDate(),
+          updatedAt: data.updatedAt?.toDate(),
+        } as LeaveRequest;
       });
     } catch (error) {
       console.error('Error getting employees on leave:', error);

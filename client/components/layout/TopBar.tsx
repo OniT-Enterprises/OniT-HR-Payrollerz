@@ -43,8 +43,7 @@ import {
 import { useChatStore } from "@/stores/chatStore";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
-import { useEmployeeDirectory } from "@/hooks/useEmployees";
-import { getComplianceIssues } from "@/lib/employeeUtils";
+import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 
 // --- Helpers ---
 
@@ -84,10 +83,10 @@ function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasSt
 
   const { data: leaveStats } = useLeaveStats(hasTimeleave && notificationsReady);
   const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll && notificationsReady);
-  const { data: employees = [] } = useEmployeeDirectory({ status: "active" }, hasStaff && notificationsReady);
+  const { data: employeeSummary } = useActiveEmployeeSummary(hasStaff && notificationsReady);
 
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
-  const blockingIssues = hasStaff ? getComplianceIssues(employees).length : 0;
+  const blockingIssues = hasStaff ? employeeSummary?.employeesWithIssues ?? 0 : 0;
   const overdueTaxes = filingsDue.filter((f) => f.isOverdue).length;
   const total = (overdueTaxes > 0 ? 1 : 0) + (blockingIssues > 0 ? 1 : 0) + (pendingLeave > 0 ? 1 : 0);
 

@@ -203,32 +203,42 @@ function getRecordINSSEmployer(record: TaxablePayrollRecord | null): number {
  * multiple payroll runs.
  */
 async function bulkFetchPayrollRecordsByTenant(
-  tenantId: string,
+  _tenantId: string,
   runIds: Set<string>
 ): Promise<Map<string, TaxablePayrollRecord[]>> {
-  const q = query(
-    collection(db, 'payrollRecords'),
-    where('tenantId', '==', tenantId)
-  );
-  const snapshot = await getDocs(q);
-
   const grouped = new Map<string, TaxablePayrollRecord[]>();
-  for (const docSnap of snapshot.docs) {
-    const raw = docSnap.data();
-    const runId = raw.payrollRunId as string;
-    if (!runId || !runIds.has(runId)) continue;
+  const runIdList = Array.from(runIds);
 
-    const data = normalizeLegacyRecord({ ...raw });
-    const record = {
-      id: docSnap.id,
-      ...data,
-      createdAt: data.createdAt?.toDate?.() || new Date(),
-      updatedAt: data.updatedAt?.toDate?.() || new Date(),
-    } as TaxablePayrollRecord & { employeeId?: string; payrollRunId?: string };
+  if (runIdList.length === 0) {
+    return grouped;
+  }
 
-    const existing = grouped.get(runId) || [];
-    existing.push(record);
-    grouped.set(runId, existing);
+  for (let i = 0; i < runIdList.length; i += 10) {
+    const chunk = runIdList.slice(i, i + 10);
+    const snapshot = await getDocs(
+      query(
+        collection(db, 'payrollRecords'),
+        where('payrollRunId', 'in', chunk)
+      )
+    );
+
+    for (const docSnap of snapshot.docs) {
+      const raw = docSnap.data();
+      const runId = raw.payrollRunId as string;
+      if (!runId || !runIds.has(runId)) continue;
+
+      const data = normalizeLegacyRecord({ ...raw });
+      const record = {
+        id: docSnap.id,
+        ...data,
+        createdAt: data.createdAt?.toDate?.() || new Date(),
+        updatedAt: data.updatedAt?.toDate?.() || new Date(),
+      } as TaxablePayrollRecord & { employeeId?: string; payrollRunId?: string };
+
+      const existing = grouped.get(runId) || [];
+      existing.push(record);
+      grouped.set(runId, existing);
+    }
   }
 
   return grouped;
@@ -310,18 +320,12 @@ class TaxFilingService {
     // Fetch dynamic tax config (falls back to static constants)
     const taxConfig = await getTaxConfig();
 
-    // Get all employees
-    const employees = await employeeService.getAllEmployees(tenantId);
-
     // Get payroll records for this period
-    const payrollRuns = await payrollService.runs.getAllPayrollRuns(
-      { tenantId }
+    const periodRuns = await payrollService.runs.getPaidPayrollRunsByPayDateRange(
+      tenantId,
+      `${period}-01`,
+      `${period}-31`
     );
-    const periodRuns = payrollRuns.filter(run => {
-      // Reporting period is based on wages paid during the month (pay date).
-      const runPeriod = run.payDate?.substring(0, 7); // "YYYY-MM"
-      return runPeriod === period && run.status === 'paid';
-    });
 
     // Bulk-fetch all payroll records for the relevant runs in a single query
     const periodRunIds = new Set(periodRuns.filter(r => !!r.id).map(r => r.id!));
@@ -339,6 +343,11 @@ class TaxFilingService {
         witWithheld: addMoney(existing.witWithheld, getRecordWITWithheld(rec)),
       });
     });
+
+    const employees = await employeeService.getEmployeesByIds(
+      tenantId,
+      Array.from(totalsByEmployee.keys())
+    );
 
     // Build employee records
     const employeeRecords: MonthlyWITEmployeeRecord[] = [];
@@ -418,15 +427,11 @@ class TaxFilingService {
     // Fetch dynamic tax config (falls back to static constants)
     const taxConfig = await getTaxConfig();
 
-    const employees = await employeeService.getAllEmployees(tenantId);
-
-    const payrollRuns = await payrollService.runs.getAllPayrollRuns(
-      { tenantId }
+    const periodRuns = await payrollService.runs.getPaidPayrollRunsByPayDateRange(
+      tenantId,
+      `${period}-01`,
+      `${period}-31`
     );
-    const periodRuns = payrollRuns.filter(run => {
-      const runPeriod = run.payDate?.substring(0, 7);
-      return runPeriod === period && run.status === 'paid';
-    });
 
     // Bulk-fetch all payroll records for the relevant runs in a single query
     const periodRunIds = new Set(periodRuns.filter(r => !!r.id).map(r => r.id!));
@@ -458,6 +463,11 @@ class TaxFilingService {
         contributionBase: addMoney(existing.contributionBase, contributionBase),
       });
     });
+
+    const employees = await employeeService.getEmployeesByIds(
+      tenantId,
+      Array.from(totalsByEmployee.keys())
+    );
 
     const employeeRecords: MonthlyINSSEmployeeRecord[] = [];
     let totalContributionBase = 0;
@@ -523,17 +533,11 @@ class TaxFilingService {
     company: Partial<CompanyDetails>,
     tenantId: string
   ): Promise<AnnualWITReturn> {
-    // Get all employees (including those terminated during the year)
-    const employees = await employeeService.getAllEmployees(tenantId);
-
-    // Get all payroll runs for the year
-    const payrollRuns = await payrollService.runs.getAllPayrollRuns(
-      { tenantId }
+    const yearRuns = await payrollService.runs.getPaidPayrollRunsByPayDateRange(
+      tenantId,
+      `${taxYear}-01-01`,
+      `${taxYear}-12-31`
     );
-    const yearRuns = payrollRuns.filter(run => {
-      const runYear = parseInt(run.payDate.substring(0, 4));
-      return runYear === taxYear && run.status === 'paid';
-    });
 
     // Bulk-fetch all payroll records for the relevant runs in a single query
     const yearRunIds = new Set(yearRuns.filter(r => !!r.id).map(r => r.id!));
@@ -541,6 +545,19 @@ class TaxFilingService {
 
     // Build a lookup for run payDate by run ID
     const runPayDateMap = new Map(yearRuns.map(r => [r.id!, r.payDate]));
+    const employeeIds = new Set<string>();
+
+    for (const records of recordsByRun.values()) {
+      for (const record of records) {
+        const employeeId = (record as TaxablePayrollRecord & { employeeId?: string }).employeeId;
+        if (employeeId) {
+          employeeIds.add(employeeId);
+        }
+      }
+    }
+
+    const employees = await employeeService.getEmployeesByIds(tenantId, Array.from(employeeIds));
+    const employeesById = new Map(employees.filter((employee) => employee.id).map((employee) => [employee.id!, employee]));
 
     // Aggregate employee data for the year
     const employeeAggregates: Map<string, {
@@ -557,7 +574,7 @@ class TaxFilingService {
       for (const record of records) {
         const rec = record as TaxablePayrollRecord & { employeeId?: string };
         if (!rec.employeeId) continue;
-        const employee = employees.find(e => e.id === rec.employeeId);
+        const employee = employeesById.get(rec.employeeId);
         if (!employee) continue;
 
         const existing = employeeAggregates.get(rec.employeeId) || {

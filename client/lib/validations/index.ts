@@ -101,6 +101,15 @@ export const firestoreEmployeeSchema = z.object({
     }).optional(),
   }).default({}),
   status: z.string().default('active'),
+  compliance: z.object({
+    missingInss: z.boolean().default(false),
+    missingContract: z.boolean().default(false),
+    missingDepartment: z.boolean().default(false),
+    issueCount: z.number().default(0),
+    blockingIssueCount: z.number().default(0),
+    hasIssues: z.boolean().default(false),
+    hasBlockingIssue: z.boolean().default(false),
+  }).optional(),
   createdAt: firestoreDateSchema,
   updatedAt: firestoreDateSchema,
 }).passthrough(); // Allow additional fields
@@ -365,4 +374,3 @@ export const holidayOverrideFormSchema = z.object({
 );
 
 export type HolidayOverrideFormData = z.infer<typeof holidayOverrideFormSchema>;
-

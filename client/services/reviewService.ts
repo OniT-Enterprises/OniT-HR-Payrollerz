@@ -8,12 +8,16 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
+  getAggregateFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
   query,
+  sum,
   where,
   orderBy,
+  limit,
   Timestamp,
   serverTimestamp,
   type DocumentData,
@@ -173,6 +177,17 @@ export function getReviewTypeName(type: ReviewType): string {
 // ============================================
 
 class ReviewService {
+  private buildStatsBaseQuery(tenantId: string, year?: number) {
+    const constraints = [where('tenantId', '==', tenantId)];
+
+    if (year) {
+      constraints.push(where('reviewDate', '>=', `${year}-01-01`));
+      constraints.push(where('reviewDate', '<=', `${year}-12-31`));
+    }
+
+    return query(collection(db, REVIEWS_COLLECTION), ...constraints);
+  }
+
   // ----------------------------------------
   // CRUD Operations
   // ----------------------------------------
@@ -231,11 +246,27 @@ class ReviewService {
     filters?: ReviewFilters
   ): Promise<PerformanceReview[]> {
     try {
-      let q = query(
-        collection(db, REVIEWS_COLLECTION),
-        where('tenantId', '==', tenantId),
-        orderBy('createdAt', 'desc')
+      const canApplyYearServerSide = Boolean(
+        filters?.year &&
+        !filters.employeeId &&
+        !filters.reviewerId &&
+        !filters.status &&
+        !filters.reviewType
       );
+
+      let q = canApplyYearServerSide
+        ? query(
+            collection(db, REVIEWS_COLLECTION),
+            where('tenantId', '==', tenantId),
+            where('reviewDate', '>=', `${filters!.year!}-01-01`),
+            where('reviewDate', '<=', `${filters!.year!}-12-31`),
+            orderBy('reviewDate', 'desc')
+          )
+        : query(
+            collection(db, REVIEWS_COLLECTION),
+            where('tenantId', '==', tenantId),
+            orderBy('createdAt', 'desc')
+          );
 
       if (filters?.employeeId) {
         q = query(q, where('employeeId', '==', filters.employeeId));
@@ -260,8 +291,8 @@ class ReviewService {
         reviews.push(this.mapDocToReview(doc.id, doc.data()));
       });
 
-      // Client-side year filter
-      if (filters?.year) {
+      // Client-side year filter when the query shape would otherwise require too many composite indexes.
+      if (filters?.year && !canApplyYearServerSide) {
         reviews = reviews.filter((r) => {
           if (!r.reviewDate) return false;
           return new Date(r.reviewDate).getFullYear() === filters.year;
@@ -439,41 +470,57 @@ class ReviewService {
    */
   async getStats(tenantId: string, year?: number): Promise<ReviewStats> {
     try {
-      const allReviews = await this.getReviews(tenantId, year ? { year } : undefined);
+      const baseQuery = this.buildStatsBaseQuery(tenantId, year);
+      const completedQuery = query(baseQuery, where('status', '==', 'completed'));
 
-      const draft = allReviews.filter((r) => r.status === 'draft').length;
-      const submitted = allReviews.filter((r) => r.status === 'submitted').length;
-      const acknowledged = allReviews.filter((r) => r.status === 'acknowledged').length;
-      const completed = allReviews.filter((r) => r.status === 'completed').length;
+      const [
+        totalSnapshot,
+        draftSnapshot,
+        submittedSnapshot,
+        acknowledgedSnapshot,
+        completedSnapshot,
+        completedRatingsSnapshot,
+        typeSnapshots,
+      ] = await Promise.all([
+        getCountFromServer(baseQuery),
+        getCountFromServer(query(baseQuery, where('status', '==', 'draft'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'submitted'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'acknowledged'))),
+        getCountFromServer(completedQuery),
+        getAggregateFromServer(completedQuery, {
+          totalRating: sum('overallRating'),
+        }),
+        Promise.all(
+          REVIEW_TYPES.map(({ id }) =>
+            getCountFromServer(query(baseQuery, where('reviewType', '==', id)))
+          )
+        ),
+      ]);
 
-      // Count by type
-      const byType: Record<ReviewType, number> = {
+      const completed = completedSnapshot.data().count;
+      const totalRating = Number(completedRatingsSnapshot.data().totalRating ?? 0);
+
+      const byType = REVIEW_TYPES.reduce<Record<ReviewType, number>>((acc, { id }, index) => {
+        acc[id] = typeSnapshots[index].data().count;
+        return acc;
+      }, {
         annual: 0,
         mid_year: 0,
         quarterly: 0,
         probation: 0,
         project: 0,
         adhoc: 0,
-      };
-      allReviews.forEach((r) => {
-        byType[r.reviewType]++;
       });
 
-      // Calculate average rating (from completed reviews)
-      const completedReviews = allReviews.filter((r) => r.status === 'completed');
-      const averageRating = completedReviews.length > 0
-        ? Math.round(
-            (completedReviews.reduce((sum, r) => sum + r.overallRating, 0) /
-              completedReviews.length) *
-              10
-          ) / 10
+      const averageRating = completed > 0
+        ? Math.round((totalRating / completed) * 10) / 10
         : 0;
 
       return {
-        totalReviews: allReviews.length,
-        draft,
-        submitted,
-        acknowledged,
+        totalReviews: totalSnapshot.data().count,
+        draft: draftSnapshot.data().count,
+        submitted: submittedSnapshot.data().count,
+        acknowledged: acknowledgedSnapshot.data().count,
         completed,
         byType,
         averageRating,
@@ -502,16 +549,29 @@ class ReviewService {
    * Get pending reviews (draft + submitted)
    */
   async getPendingReviews(tenantId: string): Promise<PerformanceReview[]> {
-    const allReviews = await this.getReviews(tenantId);
-    return allReviews.filter((r) => r.status === 'draft' || r.status === 'submitted');
+    const q = query(
+      collection(db, REVIEWS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['draft', 'submitted']),
+      orderBy('createdAt', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToReview(doc.id, doc.data()));
   }
 
   /**
    * Check if employee has a pending review
    */
   async hasActiveReview(tenantId: string, employeeId: string): Promise<boolean> {
-    const reviews = await this.getEmployeeReviews(tenantId, employeeId);
-    return reviews.some((r) => r.status === 'draft' || r.status === 'submitted');
+    const q = query(
+      collection(db, REVIEWS_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('employeeId', '==', employeeId),
+      where('status', 'in', ['draft', 'submitted']),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(q);
+    return !querySnapshot.empty;
   }
 
   // ----------------------------------------

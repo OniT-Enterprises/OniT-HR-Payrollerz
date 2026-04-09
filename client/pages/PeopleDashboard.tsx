@@ -14,9 +14,8 @@ import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { peopleNavConfig } from "@/lib/moduleNav";
-import { useEmployeeDirectory } from "@/hooks/useEmployees";
+import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
-import { getComplianceIssues } from "@/lib/employeeUtils";
 import { useTenant } from "@/contexts/TenantContext";
 import {
   Users,
@@ -90,25 +89,22 @@ export default function PeopleDashboard() {
   const hasHiring = hasModule("hiring");
   const hasPerformance = hasModule("performance");
   const hasTimeleave = hasModule("timeleave");
-  const { data: activeEmployees = [], isLoading: employeesLoading } = useEmployeeDirectory(
-    { status: 'active' },
-    hasStaff
-  );
+  const { data: employeeSummary, isLoading: employeesLoading } = useActiveEmployeeSummary(hasStaff);
   const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats(hasTimeleave);
   const loading = employeesLoading || leaveStatsLoading;
 
   const stats = useMemo(
     () => ({
-      activeEmployees: activeEmployees.length,
+      activeEmployees: employeeSummary?.active ?? 0,
       pendingLeave: hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0,
       onLeaveToday: hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0,
     }),
-    [activeEmployees, hasTimeleave, leaveStats]
+    [employeeSummary?.active, hasTimeleave, leaveStats]
   );
 
   const attentionCount = useMemo(
-    () => (hasStaff ? getComplianceIssues(activeEmployees).length : 0),
-    [activeEmployees, hasStaff],
+    () => (hasStaff ? employeeSummary?.totalIssues ?? 0 : 0),
+    [employeeSummary?.totalIssues, hasStaff],
   );
 
   if (loading) {

@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -434,40 +435,59 @@ class DisciplinaryService {
    */
   async getStats(tenantId: string): Promise<DisciplinaryStats> {
     try {
-      const allRecords = await this.getRecords(tenantId);
+      const collectionRef = collection(db, DISCIPLINARY_COLLECTION);
+      const baseQuery = query(collectionRef, where('tenantId', '==', tenantId));
 
-      const open = allRecords.filter((r) => r.status === 'open').length;
-      const inReview = allRecords.filter((r) => r.status === 'in_review').length;
-      const closed = allRecords.filter((r) => r.status === 'closed').length;
+      const [
+        totalSnapshot,
+        openSnapshot,
+        inReviewSnapshot,
+        closedSnapshot,
+        typeSnapshots,
+        severitySnapshots,
+      ] = await Promise.all([
+        getCountFromServer(baseQuery),
+        getCountFromServer(query(baseQuery, where('status', '==', 'open'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'in_review'))),
+        getCountFromServer(query(baseQuery, where('status', '==', 'closed'))),
+        Promise.all(
+          DISCIPLINARY_TYPES.map(({ id }) =>
+            getCountFromServer(query(baseQuery, where('type', '==', id)))
+          )
+        ),
+        Promise.all(
+          SEVERITY_LEVELS.map(({ id }) =>
+            getCountFromServer(query(baseQuery, where('severity', '==', id)))
+          )
+        ),
+      ]);
 
-      // Count by type
-      const byType: Record<DisciplinaryType, number> = {
+      const byType = DISCIPLINARY_TYPES.reduce<Record<DisciplinaryType, number>>((acc, { id }, index) => {
+        acc[id] = typeSnapshots[index].data().count;
+        return acc;
+      }, {
         warning: 0,
         suspension: 0,
         termination: 0,
         misconduct: 0,
         attendance: 0,
         performance: 0,
-      };
-      allRecords.forEach((r) => {
-        byType[r.type]++;
       });
 
-      // Count by severity
-      const bySeverity: Record<SeverityLevel, number> = {
+      const bySeverity = SEVERITY_LEVELS.reduce<Record<SeverityLevel, number>>((acc, { id }, index) => {
+        acc[id] = severitySnapshots[index].data().count;
+        return acc;
+      }, {
         low: 0,
         medium: 0,
         high: 0,
-      };
-      allRecords.forEach((r) => {
-        bySeverity[r.severity]++;
       });
 
       return {
-        totalRecords: allRecords.length,
-        open,
-        inReview,
-        closed,
+        totalRecords: totalSnapshot.data().count,
+        open: openSnapshot.data().count,
+        inReview: inReviewSnapshot.data().count,
+        closed: closedSnapshot.data().count,
         byType,
         bySeverity,
       };
@@ -491,8 +511,14 @@ class DisciplinaryService {
    * Get open/in-review cases (for dashboard alerts)
    */
   async getActiveCases(tenantId: string): Promise<DisciplinaryRecord[]> {
-    const allRecords = await this.getRecords(tenantId);
-    return allRecords.filter((r) => r.status !== 'closed');
+    const q = query(
+      collection(db, DISCIPLINARY_COLLECTION),
+      where('tenantId', '==', tenantId),
+      where('status', 'in', ['open', 'in_review']),
+      orderBy('date', 'desc')
+    );
+    const querySnapshot = await getDocs(q);
+    return querySnapshot.docs.map((doc) => this.mapDocToRecord(doc.id, doc.data()));
   }
 
   // ----------------------------------------

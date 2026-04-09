@@ -366,7 +366,7 @@ exports.bootstrapFirstAdmin = (0, https_1.onCall)(async (request) => {
                 slug: companySlug,
                 status: "active",
                 plan: "professional",
-                limits: { employees: 100, members: 20, storage: 10 },
+                limits: { maxEmployees: 100, maxUsers: 20, storageGB: 10 },
                 createdBy: callerUid,
                 createdAt: firestore_2.FieldValue.serverTimestamp(),
                 updatedAt: firestore_2.FieldValue.serverTimestamp(),

@@ -74,6 +74,7 @@ export interface PaginatedResult<T> {
 
 const PAYMENT_EPSILON = 0.00001;
 const TL_TIMEZONE_OFFSET = '+09:00';
+const OUTSTANDING_INVOICE_STATUSES: InvoiceStatus[] = ['sent', 'viewed', 'partial', 'overdue'];
 
 function startOfTLDay(dateISO: string): Date {
   return new Date(`${dateISO}T00:00:00.000${TL_TIMEZONE_OFFSET}`);
@@ -332,8 +333,18 @@ class InvoiceService {
   }
 
   async getOutstandingReceivablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const invoices = await this.getOutstandingInvoices(tenantId, asOfDate);
-    return sumMoney(invoices.map((invoice) => invoice.total - (invoice.amountPaid || 0)));
+    const aggregateSnapshot = await getAggregateFromServer(
+      query(
+        this.collectionRef(tenantId),
+        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
+        where('issueDate', '<=', asOfDate),
+      ),
+      {
+        totalAmount: sum('balanceDue'),
+      }
+    );
+
+    return Number(aggregateSnapshot.data().totalAmount ?? 0);
   }
 
   async getPaidInvoiceTotalByDateRange(
@@ -1144,78 +1155,67 @@ class InvoiceService {
     const lastMonthStart = `${lastMonth}-01`;
     const lastMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth(), 0));
     const today = getTodayTL();
-    const todayDate = parseDateISO(today);
 
     const [
-      outstandingInvoices,
       draftCountSnapshot,
-      sentCountSnapshot,
-      viewedCountSnapshot,
+      outstandingCountSnapshot,
+      outstandingTotalSnapshot,
+      overdueCountSnapshot,
+      overdueAmountSnapshot,
       totalRevenueSnapshot,
       revenueThisMonth,
       revenuePreviousMonth,
-      recentInvoicesPage,
     ] = await Promise.all([
-      this.getOutstandingInvoices(tenantId),
       getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
-      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'sent'))),
-      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'viewed'))),
+      getCountFromServer(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES))),
+      getAggregateFromServer(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES)), {
+        totalAmount: sum('balanceDue'),
+      }),
+      getCountFromServer(query(
+        this.collectionRef(tenantId),
+        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
+        where('dueDate', '<', today),
+      )),
+      getAggregateFromServer(query(
+        this.collectionRef(tenantId),
+        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
+        where('dueDate', '<', today),
+      ), {
+        totalAmount: sum('balanceDue'),
+      }),
       getAggregateFromServer(query(this.collectionRef(tenantId), where('status', '==', 'paid')), {
         totalAmount: sum('total'),
       }),
       this.getPaidInvoiceTotalByDateRange(tenantId, thisMonthStart, thisMonthEnd),
       this.getPaidInvoiceTotalByDateRange(tenantId, lastMonthStart, lastMonthEnd),
-      this.getInvoices(tenantId, { pageSize: 100 }),
     ]);
 
-    // Calculate stats
     const totalRevenue = Number(totalRevenueSnapshot.data().totalAmount ?? 0);
-    const totalOutstanding = sumMoney(outstandingInvoices.map(inv => inv.balanceDue));
-    const overdueInvoices = outstandingInvoices.filter((inv) => inv.dueDate < today);
-    const overdueAmount = sumMoney(overdueInvoices.map(inv => inv.balanceDue));
 
-    // Calculate AR Aging
-    const aging = { current: 0, days30to60: 0, days60to90: 0, over90: 0 };
-    outstandingInvoices.forEach((inv) => {
-      const dueDate = parseDateISO(inv.dueDate);
-      const daysPastDue = Math.floor((todayDate.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+      totalRevenue,
+      revenueThisMonth,
+      revenuePreviousMonth,
+      totalOutstanding: Number(outstandingTotalSnapshot.data().totalAmount ?? 0),
+      overdueAmount: Number(overdueAmountSnapshot.data().totalAmount ?? 0),
+      invoicesDraft: draftCountSnapshot.data().count,
+      invoicesSent: outstandingCountSnapshot.data().count,
+      invoicesOverdue: overdueCountSnapshot.data().count,
+      totalExpenses: 0, // From expense service
+      expensesThisMonth: 0, // From expense service
+      profitThisMonth: revenueThisMonth,
+      profitPreviousMonth: revenuePreviousMonth,
+    };
+  }
 
-      if (daysPastDue <= 0) {
-        aging.current = addMoney(aging.current, inv.balanceDue);
-      } else if (daysPastDue <= 30) {
-        aging.current = addMoney(aging.current, inv.balanceDue);
-      } else if (daysPastDue <= 60) {
-        aging.days30to60 = addMoney(aging.days30to60, inv.balanceDue);
-      } else if (daysPastDue <= 90) {
-        aging.days60to90 = addMoney(aging.days60to90, inv.balanceDue);
-      } else {
-        aging.over90 = addMoney(aging.over90, inv.balanceDue);
-      }
-    });
-
-    // Calculate cash flow for last 6 months
-    const cashFlowTotals = await Promise.all(
-      Array.from({ length: 6 }, (_, index) => {
-        const monthOffset = 5 - index;
-        const monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-        const periodStart = formatDateISO(monthDate);
-        const periodEnd = formatDateISO(new Date(monthDate.getFullYear(), monthDate.getMonth() + 1, 0));
-
-        return this.getPaidInvoiceTotalByDateRange(tenantId, periodStart, periodEnd);
-      })
-    );
-    const cashFlow: MoneyStats['cashFlow'] = cashFlowTotals.map((received, index) => {
-      const monthOffset = 5 - index;
-      const monthDate = new Date(now.getFullYear(), now.getMonth() - monthOffset, 1);
-      return {
-        month: monthDate.toLocaleDateString('en-US', { month: 'short', timeZone: 'Asia/Dili' }),
-        received,
-        spent: 0,
-      };
-    });
-
-    // Top customers by outstanding balance
+  async getTopCustomersByOutstanding(
+    tenantId: string,
+    maxResults: number = 5
+  ): Promise<NonNullable<MoneyStats['topCustomers']>> {
+    const outstandingInvoices = await this.getOutstandingInvoices(tenantId);
+    const now = new Date();
     const customerBalances = new Map<string, { id: string; name: string; outstanding: number; invoiceCount: number; oldestInvoiceDays: number }>();
+
     outstandingInvoices.forEach((inv) => {
       const invoiceDate = parseDateISO(inv.issueDate);
       const daysSinceIssue = Math.floor((now.getTime() - invoiceDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -1232,60 +1232,10 @@ class InvoiceService {
       existing.oldestInvoiceDays = Math.max(existing.oldestInvoiceDays, daysSinceIssue);
       customerBalances.set(inv.customerId, existing);
     });
-    const topCustomers = Array.from(customerBalances.values())
+
+    return Array.from(customerBalances.values())
       .sort((a, b) => b.outstanding - a.outstanding)
-      .slice(0, 5);
-
-    // Recent activity (from invoice updates)
-    const recentActivity: MoneyStats['recentActivity'] = recentInvoicesPage.data
-      .sort((a, b) => new Date(b.updatedAt || b.createdAt).getTime() - new Date(a.updatedAt || a.createdAt).getTime())
-      .slice(0, 10)
-      .map((inv) => {
-        let type: 'invoice_created' | 'invoice_sent' | 'invoice_viewed' | 'payment_received' | 'invoice_overdue' = 'invoice_created';
-        let description = `Invoice ${inv.invoiceNumber} created`;
-
-        if (inv.status === 'paid') {
-          type = 'payment_received';
-          description = `Payment received from ${inv.customerName}`;
-        } else if (inv.status === 'viewed') {
-          type = 'invoice_viewed';
-          description = `${inv.customerName} viewed invoice`;
-        } else if (inv.status === 'sent') {
-          type = 'invoice_sent';
-          description = `Invoice sent to ${inv.customerName}`;
-        } else if (inv.dueDate < today && ['sent', 'viewed'].includes(inv.status)) {
-          type = 'invoice_overdue';
-          description = `Invoice to ${inv.customerName} is overdue`;
-        }
-
-        return {
-          id: inv.id!,
-          type,
-          description,
-          amount: inv.total,
-          timestamp: new Date(inv.updatedAt || inv.createdAt),
-          entityId: inv.id,
-        };
-      });
-
-    return {
-      totalRevenue,
-      revenueThisMonth,
-      revenuePreviousMonth,
-      totalOutstanding,
-      overdueAmount,
-      invoicesDraft: draftCountSnapshot.data().count,
-      invoicesSent: sentCountSnapshot.data().count + viewedCountSnapshot.data().count,
-      invoicesOverdue: overdueInvoices.length,
-      totalExpenses: 0, // From expense service
-      expensesThisMonth: 0, // From expense service
-      profitThisMonth: revenueThisMonth,
-      profitPreviousMonth: revenuePreviousMonth,
-      aging,
-      cashFlow,
-      topCustomers,
-      recentActivity,
-    };
+      .slice(0, maxResults);
   }
 
   // ----------------------------------------

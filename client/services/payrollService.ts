@@ -6,6 +6,7 @@
 import {
   collection,
   doc,
+  documentId,
   getDocs,
   getDoc,
   addDoc,
@@ -55,6 +56,36 @@ class PayrollRunService {
     if (options.limit) {
       q = query(q, limit(options.limit));
     }
+
+    const querySnapshot = await getDocs(q);
+
+    return querySnapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+        approvedAt: data.approvedAt?.toDate() || null,
+        paidAt: data.paidAt?.toDate() || null,
+        rejectedAt: data.rejectedAt?.toDate() || null,
+      } as PayrollRun;
+    });
+  }
+
+  async getPaidPayrollRunsByPayDateRange(
+    tenantId: string,
+    startDate: string,
+    endDate: string
+  ): Promise<PayrollRun[]> {
+    const q = query(
+      this.collectionRef,
+      where('tenantId', '==', tenantId),
+      where('status', '==', 'paid'),
+      where('payDate', '>=', startDate),
+      where('payDate', '<=', endDate),
+      orderBy('payDate', 'asc')
+    );
 
     const querySnapshot = await getDocs(q);
 
@@ -556,11 +587,19 @@ class PayrollRecordService {
     const runYears = new Map<string, number>();
 
     await Promise.all(
-      runIds.map(async (runId) => {
-        const run = await payrollRunService.getPayrollRunById(runId);
-        if (run?.payDate) {
-          runYears.set(runId, parseInt(run.payDate.substring(0, 4), 10));
-        }
+      chunkArray(runIds, 10).map(async (runIdChunk) => {
+        const runsQuery = query(
+          collection(db, 'payrollRuns'),
+          where(documentId(), 'in', runIdChunk)
+        );
+        const runsSnapshot = await getDocs(runsQuery);
+
+        runsSnapshot.forEach((doc) => {
+          const payDate = doc.data().payDate as string | undefined;
+          if (payDate) {
+            runYears.set(doc.id, parseInt(payDate.substring(0, 4), 10));
+          }
+        });
       })
     );
 

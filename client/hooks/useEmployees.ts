@@ -8,6 +8,7 @@ import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   employeeService,
+  type ActiveEmployeeSummary,
   type Employee,
   type EmployeeFilters,
   type PaginatedResult,
@@ -24,6 +25,8 @@ export const employeeKeys = {
   details: (tenantId: string) => [...employeeKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...employeeKeys.details(tenantId), id] as const,
   counts: (tenantId: string) => [...employeeKeys.all(tenantId), 'counts'] as const,
+  activeSummary: (tenantId: string) => [...employeeKeys.all(tenantId), 'activeSummary'] as const,
+  issuePreview: (tenantId: string, maxResults: number) => [...employeeKeys.all(tenantId), 'issuePreview', maxResults] as const,
 };
 
 /**
@@ -53,6 +56,30 @@ export function useEmployeeDirectory(
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
+  });
+}
+
+export function useActiveEmployeeSummary(enabled: boolean = true) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: employeeKeys.activeSummary(tenantId),
+    queryFn: () => employeeService.getActiveEmployeeSummary(tenantId),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
+    placeholderData: (previousData) => previousData as ActiveEmployeeSummary | undefined,
+  });
+}
+
+export function useComplianceIssuePreview(maxResults: number = 6, enabled: boolean = true) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: employeeKeys.issuePreview(tenantId, maxResults),
+    queryFn: () => employeeService.getEmployeesWithComplianceIssues(tenantId, maxResults),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
+    placeholderData: (previousData) => previousData,
   });
 }
 

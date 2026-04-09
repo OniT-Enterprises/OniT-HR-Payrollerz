@@ -72,6 +72,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import { getTodayTL, formatDateTL } from "@/lib/dateUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
+import { SEARCH_FETCH_LIMIT } from "@/lib/queryCache";
 
 interface EntryLineForm {
   accountId: string;
@@ -114,6 +115,7 @@ export default function JournalEntries() {
     fiscalYear,
     status: statusQuery,
     source: sourceQuery,
+    maxResults: SEARCH_FETCH_LIMIT,
   }, isSearching);
   const { data: summary, isLoading: loadingSummary } = useJournalEntrySummary(fiscalYear);
   const createEntryMutation = useCreateJournalEntry();

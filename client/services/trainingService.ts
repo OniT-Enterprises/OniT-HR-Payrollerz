@@ -8,6 +8,7 @@ import {
   doc,
   getDoc,
   getDocs,
+  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -240,17 +241,36 @@ class TrainingService {
     filters?: TrainingFilters
   ): Promise<TrainingRecord[]> {
     try {
-      let q = query(
-        collection(db, TRAINING_COLLECTION),
-        where('tenantId', '==', tenantId),
-        orderBy('createdAt', 'desc')
-      );
+      const today = getTodayTL();
+      const expiringCutoff = new Date(`${today}T00:00:00`);
+      expiringCutoff.setDate(expiringCutoff.getDate() + 30);
+      const expiringCutoffStr = expiringCutoff.toISOString().slice(0, 10);
+      const canQueryExpiringSoon =
+        filters?.expiringSoon &&
+        !filters.employeeId &&
+        !filters.category &&
+        (!filters.status || filters.status === 'completed');
+
+      let q = canQueryExpiringSoon
+        ? query(
+            collection(db, TRAINING_COLLECTION),
+            where('tenantId', '==', tenantId),
+            where('status', '==', 'completed'),
+            where('expiryDate', '>=', today),
+            where('expiryDate', '<=', expiringCutoffStr),
+            orderBy('expiryDate', 'asc')
+          )
+        : query(
+            collection(db, TRAINING_COLLECTION),
+            where('tenantId', '==', tenantId),
+            orderBy('createdAt', 'desc')
+          );
 
       if (filters?.employeeId) {
         q = query(q, where('employeeId', '==', filters.employeeId));
       }
 
-      if (filters?.status) {
+      if (filters?.status && !canQueryExpiringSoon) {
         q = query(q, where('status', '==', filters.status));
       }
 
@@ -265,8 +285,8 @@ class TrainingService {
         records.push(this.mapDocToRecord(doc.id, doc.data()));
       });
 
-      // Client-side filter for expiring soon
-      if (filters?.expiringSoon) {
+      // Client-side filter for expiring soon when using more complex query shapes.
+      if (filters?.expiringSoon && !canQueryExpiringSoon) {
         records = records.filter((r) => isExpiringSoon(r.expiryDate));
       }
 
@@ -421,21 +441,34 @@ class TrainingService {
    */
   async getTrainingStats(tenantId: string): Promise<TrainingStats> {
     try {
-      const allRecords = await this.getTrainingRecords(tenantId);
+      const today = getTodayTL();
+      const expiringCutoff = new Date(`${today}T00:00:00`);
+      expiringCutoff.setDate(expiringCutoff.getDate() + 30);
+      const expiringCutoffStr = expiringCutoff.toISOString().slice(0, 10);
+      const collectionRef = collection(db, TRAINING_COLLECTION);
 
-      const pending = allRecords.filter((r) => r.status === 'pending').length;
-      const inProgress = allRecords.filter((r) => r.status === 'in_progress').length;
-      const completed = allRecords.filter((r) => r.status === 'completed').length;
-      const expired = allRecords.filter((r) => r.status === 'expired').length;
-      const expiringSoon = allRecords.filter((r) => isExpiringSoon(r.expiryDate)).length;
+      const [total, pending, inProgress, completed, expired, expiringSoon] = await Promise.all([
+        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId))),
+        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'pending'))),
+        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'in_progress'))),
+        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'completed'))),
+        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'expired'))),
+        getCountFromServer(query(
+          collectionRef,
+          where('tenantId', '==', tenantId),
+          where('status', '==', 'completed'),
+          where('expiryDate', '>=', today),
+          where('expiryDate', '<=', expiringCutoffStr)
+        )),
+      ]);
 
       return {
-        totalRecords: allRecords.length,
-        pending,
-        inProgress,
-        completed,
-        expired,
-        expiringSoon,
+        totalRecords: total.data().count,
+        pending: pending.data().count,
+        inProgress: inProgress.data().count,
+        completed: completed.data().count,
+        expired: expired.data().count,
+        expiringSoon: expiringSoon.data().count,
       };
     } catch (error) {
       console.error('Error getting training stats:', error);
@@ -454,10 +487,7 @@ class TrainingService {
    * Get expiring certifications (for alerts)
    */
   async getExpiringCertifications(tenantId: string): Promise<TrainingRecord[]> {
-    const allRecords = await this.getTrainingRecords(tenantId);
-    return allRecords.filter(
-      (r) => r.status === 'completed' && r.expiryDate && isExpiringSoon(r.expiryDate)
-    );
+    return this.getTrainingRecords(tenantId, { status: 'completed', expiringSoon: true });
   }
 
   /**

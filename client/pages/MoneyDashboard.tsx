@@ -12,8 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useI18n } from '@/i18n/I18nProvider';
 import { SEO } from '@/components/SEO';
-import { useInvoiceStats } from '@/hooks/useInvoices';
+import { useInvoiceStats, useInvoiceTopCustomers } from '@/hooks/useInvoices';
 import { usePayablesSummary } from '@/hooks/useBills';
+import { useIntersectionObserver } from '@/hooks/useIntersectionObserver';
 import GuidancePanel from '@/components/GuidancePanel';
 import ModuleSectionNav from '@/components/ModuleSectionNav';
 import { moneyNavConfig } from '@/lib/moduleNav';
@@ -38,7 +39,9 @@ import {
 export default function MoneyDashboard() {
   const navigate = useNavigate();
   const { t } = useI18n();
+  const { ref: topCustomersRef, isIntersecting: shouldLoadTopCustomers } = useIntersectionObserver({ rootMargin: '300px' });
   const { data: stats = null, isLoading: statsLoading } = useInvoiceStats();
+  const { data: topCustomers = [], isLoading: topCustomersLoading } = useInvoiceTopCustomers(6, shouldLoadTopCustomers);
   const { data: payablesSummary = null, isLoading: payablesLoading } = usePayablesSummary();
   const loading = statsLoading || payablesLoading;
 
@@ -307,8 +310,24 @@ export default function MoneyDashboard() {
         </div>
         </MoreDetailsSection>
 
+        <div ref={topCustomersRef} className="h-px w-full" />
+
         {/* Who Owes You — compact table */}
-        {stats?.topCustomers && stats.topCustomers.length > 0 && (
+        {topCustomersLoading ? (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-muted-foreground" />
+                {t('money.dashboard.whoOwesYou')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </CardContent>
+          </Card>
+        ) : topCustomers.length > 0 && (
           <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
@@ -323,7 +342,7 @@ export default function MoneyDashboard() {
             </CardHeader>
             <CardContent>
               <div className="divide-y divide-border/50">
-                {stats.topCustomers.slice(0, 6).map((customer) => {
+                {topCustomers.map((customer) => {
                   const oldestDays = customer.oldestInvoiceDays || 0;
                   const isOverdue = oldestDays > 30;
                   const needsReminder = oldestDays > 14;

@@ -553,9 +553,11 @@ function useChatPanel(tenantId: string) {
     isLoading,
     sessionKey,
     currentRoute,
+    pendingQuery,
     addMessage,
     updateLastMessage,
     setLoading,
+    setPendingQuery,
     newChat,
     toggleCollapsed,
   } = useChatStore();
@@ -607,6 +609,14 @@ function useChatPanel(tenantId: string) {
     },
     [isLoading, tenantId, sessionKey, currentRoute, addMessage, updateLastMessage, setLoading]
   );
+
+  // Auto-send pending query from dashboard PrimosBot widget
+  useEffect(() => {
+    if (pendingQuery && !isLoading) {
+      setPendingQuery(null);
+      doSendStreaming(pendingQuery);
+    }
+  }, [pendingQuery, isLoading, setPendingQuery, doSendStreaming]);
 
   const sendMessage = useCallback(() => {
     const trimmed = input.trim();

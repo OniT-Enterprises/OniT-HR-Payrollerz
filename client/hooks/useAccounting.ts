@@ -29,7 +29,7 @@ const accountKeys = {
 const journalEntryKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'journalEntries'] as const,
   lists: (tenantId: string) => [...journalEntryKeys.all(tenantId), 'list'] as const,
-  list: (tenantId: string, filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string }) =>
+  list: (tenantId: string, filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string; maxResults?: number }) =>
     [...journalEntryKeys.lists(tenantId), filters ?? {}] as const,
   paginated: (tenantId: string, filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string; pageSize?: number }) =>
     [...journalEntryKeys.lists(tenantId), 'paginated', filters ?? {}] as const,
@@ -155,7 +155,7 @@ export function useInitializeChartOfAccounts() {
 
 /** Fetch journal entries with optional filters */
 export function useJournalEntries(
-  filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string },
+  filters?: { status?: JournalEntryStatus; source?: string; fiscalYear?: number; startDate?: string; endDate?: string; maxResults?: number },
   enabled: boolean = true,
 ) {
   const tenantId = useTenantId();

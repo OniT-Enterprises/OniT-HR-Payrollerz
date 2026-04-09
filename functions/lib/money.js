@@ -479,7 +479,10 @@ exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
 }, async () => {
     const todayTL = getTodayTL();
     v2_1.logger.info("Starting recurring invoice processing", { todayTL });
-    const tenantsSnap = await db.collection("tenants").get();
+    const tenantsSnap = await db
+        .collection("tenants")
+        .where("status", "==", "active")
+        .get();
     if (tenantsSnap.empty) {
         v2_1.logger.info("No tenants found; skipping recurring invoice processing");
         return;
@@ -494,10 +497,6 @@ exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
     let errors = 0;
     for (const tenantDoc of tenantsSnap.docs) {
         const tenantId = tenantDoc.id;
-        const tenantData = tenantDoc.data();
-        if (tenantData.status && tenantData.status !== "active") {
-            continue;
-        }
         try {
             // Resolve accounting accounts once per tenant
             const hasAccounts = await tenantHasAnyAccounts(tenantId);
@@ -510,14 +509,12 @@ exports.processRecurringInvoices = (0, scheduler_1.onSchedule)({
             const recurringSnap = await db
                 .collection(`tenants/${tenantId}/recurring_invoices`)
                 .where("status", "==", "active")
+                .where("nextRunDate", "<=", todayTL)
                 .get();
             if (recurringSnap.empty)
                 continue;
             tenantsProcessed += 1;
             for (const recurringDoc of recurringSnap.docs) {
-                const recurring = recurringDoc.data();
-                if (!recurring.nextRunDate || recurring.nextRunDate > todayTL)
-                    continue;
                 templatesProcessed += 1;
                 const out = await processRecurringInvoiceDoc(tenantId, recurringDoc.id, todayTL, { hasAccounts, ar, revenue });
                 invoicesGenerated += out.generated;

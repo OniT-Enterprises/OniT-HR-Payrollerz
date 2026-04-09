@@ -17,7 +17,7 @@ import {
 import MainNavigation from "@/components/layout/MainNavigation";
 import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import { useQuery } from '@tanstack/react-query';
-import { useEmployeeDirectory } from "@/hooks/useEmployees";
+import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { usePayrollRuns } from "@/hooks/usePayroll";
 import { leaveService } from "@/services/leaveService";
 import { formatCurrencyTL, TL_INSS } from "@/lib/payroll/constants-tl";
@@ -53,7 +53,6 @@ import GuidancePanel from "@/components/GuidancePanel";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
-import { getComplianceIssues, countBlockedEmployees } from "@/lib/employeeUtils";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 const theme = sectionThemes.payroll;
@@ -87,7 +86,7 @@ export default function PayrollDashboard() {
   );
 
   // React Query: fetch active employees, payroll runs, and leave stats
-  const { data: activeEmployees = [], isLoading: loadingEmployees } = useEmployeeDirectory({ status: 'active' });
+  const { data: employeeSummary, isLoading: loadingEmployees } = useActiveEmployeeSummary();
   const { data: allPayrollRuns = [], isLoading: loadingRuns } = usePayrollRuns({ status: 'paid', limit: 1 });
   const { data: leaveStats, isLoading: loadingLeave } = useQuery({
     queryKey: ['tenants', tenantId, 'leaveStats'],
@@ -99,23 +98,13 @@ export default function PayrollDashboard() {
 
   // Derive stats from fetched data
   const stats = useMemo(() => {
-    const grossPayroll = activeEmployees.reduce(
-      (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
-      0
-    );
+    const grossPayroll = employeeSummary?.totalMonthlySalary ?? 0;
 
     // Calculate INSS contributions
-    const inssBaseTotal = activeEmployees.reduce(
-      (sum, emp) => sum + (emp.compensation?.monthlySalary || 0),
-      0
-    );
+    const inssBaseTotal = grossPayroll;
     const employerINSS = inssBaseTotal * TL_INSS.employerRate;
     const employeeINSS = inssBaseTotal * TL_INSS.employeeRate;
     const estimatedNet = grossPayroll - employeeINSS; // Simplified - actual would include WIT
-
-    // Count employees with compliance issues (shared utility)
-    const allIssues = getComplianceIssues(activeEmployees);
-    const blockedEmployees = countBlockedEmployees(allIssues);
 
     // Calculate next pay date (25th of current or next month)
     const now = new Date();
@@ -130,7 +119,7 @@ export default function PayrollDashboard() {
     const paidRuns = allPayrollRuns;
 
     return {
-      totalEmployees: activeEmployees.length,
+      totalEmployees: employeeSummary?.active ?? 0,
       grossPayroll,
       employerINSS,
       employeeINSS,
@@ -145,16 +134,15 @@ export default function PayrollDashboard() {
         : "N/A",
       daysUntilPayday,
       currentMonth: payrollMonth,
-      blockedEmployees,
+      blockedEmployees: employeeSummary?.employeesWithIssues ?? 0,
     };
-  }, [activeEmployees, allPayrollRuns]);
+  }, [allPayrollRuns, employeeSummary]);
 
   // Derive checklist from fetched data
   const checklist = useMemo<PayrollChecklistItem[]>(() => {
-    const issues = getComplianceIssues(activeEmployees);
-    const contractIssues = issues.filter(i => i.field === "contract").length;
-    const inssIssues = issues.filter(i => i.field === "inss").length;
-    const deptIssues = issues.filter(i => i.field === "department").length;
+    const contractIssues = employeeSummary?.missingContract ?? 0;
+    const inssIssues = employeeSummary?.missingInss ?? 0;
+    const deptIssues = employeeSummary?.missingDepartment ?? 0;
     const pendingLeave = leaveStats?.pendingRequests ?? 0;
 
     return [
@@ -217,7 +205,7 @@ export default function PayrollDashboard() {
         linkLabel: t("payrollDashboard.checklist.salariesLink"),
       },
     ];
-  }, [activeEmployees, leaveStats, t]);
+  }, [employeeSummary, leaveStats, t]);
 
   // Calculate payroll status based on checklist
   const payrollStatus = useMemo<PayrollStatus>(() => {

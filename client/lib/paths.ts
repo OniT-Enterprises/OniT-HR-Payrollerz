@@ -87,6 +87,8 @@ export const paths = {
 
   archives: (tid: string) => `tenants/${tid}/archives`,
   archive: (tid: string, archiveId: string) => `tenants/${tid}/archives/${archiveId}`,
+  documentAlerts: (tid: string) => `tenants/${tid}/document_alerts`,
+  documentAlert: (tid: string, alertId: string) => `tenants/${tid}/document_alerts/${alertId}`,
 
   qbExportLogs: (tid: string) => `tenants/${tid}/qbExportLogs`,
   qbExportLog: (tid: string, logId: string) => `tenants/${tid}/qbExportLogs/${logId}`,
@@ -185,5 +187,4 @@ export const paths = {
   faceEmbeddings: (tid: string) => `tenants/${tid}/face_embeddings`,
   faceEmbedding: (tid: string, empId: string) => `tenants/${tid}/face_embeddings/${empId}`,
 } as const;
-
 

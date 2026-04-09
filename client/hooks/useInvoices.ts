@@ -19,6 +19,7 @@ export const invoiceKeys = {
   list: (tenantId: string, filters: InvoiceFilters) => [...invoiceKeys.lists(tenantId), filters] as const,
   details: (tenantId: string) => [...invoiceKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...invoiceKeys.details(tenantId), id] as const,
+  topCustomers: (tenantId: string, maxResults: number) => [...invoiceKeys.all(tenantId), 'topCustomers', maxResults] as const,
 };
 
 function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
@@ -76,6 +77,17 @@ export function useInvoiceStats() {
     queryFn: () => invoiceService.getStats(tenantId),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
+  });
+}
+
+export function useInvoiceTopCustomers(maxResults: number = 6, enabled: boolean = true) {
+  const tenantId = useTenantId();
+  return useQuery({
+    queryKey: invoiceKeys.topCustomers(tenantId, maxResults),
+    queryFn: () => invoiceService.getTopCustomersByOutstanding(tenantId, maxResults),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    enabled,
   });
 }
 

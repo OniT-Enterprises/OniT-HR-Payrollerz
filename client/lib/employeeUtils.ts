@@ -1,4 +1,5 @@
 import type { Employee } from "@/services/employeeService";
+import { buildEmployeeComplianceSnapshot } from "@/lib/employeeCompliance";
 
 interface ProfileCompletenessResult {
   completionPercentage: number;
@@ -139,9 +140,10 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
 
   employees.forEach((emp) => {
     const id = emp.id || "";
+    const compliance = emp.compliance ?? buildEmployeeComplianceSnapshot(emp);
 
     // INSS number — required for tax filing
-    if (!emp.documents?.socialSecurityNumber?.number) {
+    if (compliance.missingInss) {
       issues.push({
         employee: emp,
         field: "inss",
@@ -153,7 +155,7 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
     }
 
     // Work contract — required for legal compliance
-    if (!emp.documents?.workContract?.fileUrl) {
+    if (compliance.missingContract) {
       issues.push({
         employee: emp,
         field: "contract",
@@ -165,7 +167,7 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
     }
 
     // Department — needed for reporting
-    if (!emp.jobDetails?.department) {
+    if (compliance.missingDepartment) {
       issues.push({
         employee: emp,
         field: "department",

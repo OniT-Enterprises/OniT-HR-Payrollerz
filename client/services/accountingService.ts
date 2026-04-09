@@ -412,8 +412,12 @@ class JournalEntryService {
     startDate?: string;
     endDate?: string;
     fiscalYear?: number;
+    maxResults?: number;
   }): Promise<JournalEntry[]> {
     const { queryConstraints } = this.buildJournalEntryQueryConstraints(options);
+    if (options?.maxResults) {
+      queryConstraints.push(limit(options.maxResults));
+    }
     const q = query(this.collectionRef(tenantId), ...queryConstraints);
 
     const snapshot = await getDocs(q);
@@ -458,6 +462,7 @@ class JournalEntryService {
     startDate?: string;
     endDate?: string;
     fiscalYear?: number;
+    maxResults?: number;
   }) {
     const constraints: Parameters<typeof query>[1][] = [];
 
@@ -530,25 +535,20 @@ class JournalEntryService {
   }
 
   async getLatestPayrollDashboardEntry(tenantId: string): Promise<JournalEntry | null> {
-    const recentLimit = 100;
-    const recentPostedQuery = query(
+    const payrollQuery = query(
       this.collectionRef(tenantId),
       where('status', '==', 'posted'),
+      where('source', '==', 'payroll'),
       orderBy('date', 'desc'),
-      limit(recentLimit),
+      limit(1),
     );
-    const recentPostedSnapshot = await getDocs(recentPostedQuery);
-    const recentEntries = recentPostedSnapshot.docs.map(
-      doc => ({ id: doc.id, ...doc.data() } as JournalEntry),
-    );
-
-    const latestPayrollEntry = recentEntries.find(entry => entry.source === 'payroll') ?? null;
-    if (latestPayrollEntry || recentPostedSnapshot.size < recentLimit) {
-      return latestPayrollEntry;
+    const payrollSnapshot = await getDocs(payrollQuery);
+    if (payrollSnapshot.empty) {
+      return null;
     }
 
-    const allPostedEntries = await this.getAllJournalEntries(tenantId, { status: 'posted' });
-    return allPostedEntries.find(entry => entry.source === 'payroll') ?? null;
+    const latestPayrollDoc = payrollSnapshot.docs[0];
+    return { id: latestPayrollDoc.id, ...latestPayrollDoc.data() } as JournalEntry;
   }
 
   async postJournalEntry(tenantId: string, id: string, postedBy: string): Promise<void> {
