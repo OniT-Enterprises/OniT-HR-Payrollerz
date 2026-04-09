@@ -78,7 +78,18 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
     setInput("");
   }, [setPendingQuery, setOpen]);
 
-  const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${t("dashboard.botGreeting")}`;
+  const [botIntro] = useState(() => {
+    const intros = [
+      t("dashboard.botGreeting"),
+      t("dashboard.botGreeting2"),
+      t("dashboard.botGreeting3"),
+      t("dashboard.botGreeting4"),
+      t("dashboard.botGreeting5"),
+      t("dashboard.botGreeting6"),
+    ];
+    return intros[Math.floor(Math.random() * intros.length)];
+  });
+  const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${botIntro}`;
   const [charCount, setCharCount] = useState(0);
   const displayedText = fullText.slice(0, charCount);
 
