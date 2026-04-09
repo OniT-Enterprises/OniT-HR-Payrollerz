@@ -88,7 +88,7 @@ export function TimePicker({
           type="button"
           id={id}
           className={cn(
-            "flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
+            "flex h-12 w-full items-center justify-between rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background",
             "placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-50",
             !value && "text-muted-foreground",
@@ -99,7 +99,7 @@ export function TimePicker({
           <Clock className="h-4 w-4 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0 z-[60]" align="start">
+      <PopoverContent className="w-[280px] p-0 z-[100]" align="start">
         {/* Quick presets */}
         <div className="border-b p-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1 mb-1.5">Quick Select</p>
