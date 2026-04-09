@@ -1173,7 +1173,7 @@ export default function AllEmployees() {
                     </>
                   ) : (
                     <>
-                      <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground/30" />
+                      <img src="/images/illustrations/empty-employees.webp" alt="" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                       <h3 className="text-lg font-semibold mb-2">
                         {t("employees.empty.noEmployeesTitle")}
                       </h3>

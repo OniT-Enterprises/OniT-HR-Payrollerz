@@ -946,7 +946,7 @@ export default function PayrollHistory() {
                 <CardContent>
                   {filteredRuns.length === 0 ? (
                     <div className="text-center py-12">
-                      <FileText className="h-12 w-12 text-muted-foreground/50 mx-auto mb-4" />
+                      <img src="/images/illustrations/empty-payroll.webp" alt="" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
                       <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
                       <Button onClick={() => navigate("/payroll/run")}>
                         {t("payrollHistory.runFirstPayroll")}
