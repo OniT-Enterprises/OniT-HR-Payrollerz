@@ -227,6 +227,7 @@ const messages = {
     "monthlyPayroll": "Monthly Payroll",
     "nextPayrollAmount": "Next Payroll Amount",
     "quickActions": "Quick actions",
+    "heresWhatsGoing": "Here's what's going on with your team today.",
     "overdue": "overdue by",
     "taxOverdue": "Tax filings overdue",
     "overdueFilings": "filing(s) past deadline",

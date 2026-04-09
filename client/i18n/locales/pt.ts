@@ -225,6 +225,7 @@ const messages = {
     "monthlyPayroll": "Folha Mensal",
     "nextPayrollAmount": "Próximo Montante da Folha",
     "quickActions": "Ações rápidas",
+    "heresWhatsGoing": "Veja o que está a acontecer com a sua equipa hoje.",
     "runPayroll": "Processar Folha",
     "addEmployee": "Adicionar Funcionário",
     "generateReport": "Gerar Relatório",

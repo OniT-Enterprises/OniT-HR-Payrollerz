@@ -40,7 +40,6 @@ import {
   CheckCircle,
   ArrowRight,
   CalendarDays,
-  HelpCircle,
   Play,
   Zap,
   FolderKanban,
@@ -279,67 +278,89 @@ export default function Dashboard() {
       <SEO {...seoConfig.dashboard} />
       <MainNavigation />
 
-      <div className="p-6 mx-auto max-w-screen-2xl pb-24">
-        {/* ── Greeting ── */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
+      <div className="p-6 mx-auto max-w-screen-2xl pb-12">
+        {/* ── Greeting banner with illustration ── */}
+        <div className="flex items-center justify-between mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
+          <div className="flex-1">
             <h1 className="text-2xl font-semibold tracking-tight">
               {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}{firstName ? `, ${firstName}` : ""}
             </h1>
-            <p className="text-sm text-muted-foreground mt-0.5">
-              {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+            <p className="text-sm text-muted-foreground mt-1">
+              {t("dashboard.heresWhatsGoing")}
             </p>
           </div>
-          <Button variant="ghost" size="sm" className="text-muted-foreground" onClick={() => setShowShortcuts(true)}>
-            <HelpCircle className="h-4 w-4 mr-1" />
-            <kbd className="text-xs bg-muted px-1.5 py-0.5 rounded">?</kbd>
-          </Button>
+          <img
+            src="/images/illustrations/hero-dashboard.webp"
+            alt=""
+            className="hidden md:block h-24 w-auto -mr-2 -my-2 object-contain opacity-90 dark:opacity-70"
+          />
         </div>
 
-        {/* Alerts moved to TopBar notification bell */}
+        {/* ── Next action banner ── */}
+        {nextAction && (
+          <div className={`flex items-center gap-4 mb-6 rounded-xl border p-4 ${nextAction.urgent ? "border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20" : "border-primary/20 bg-primary/5 dark:border-primary/30 dark:bg-primary/10"}`}>
+            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${nextAction.urgent ? "bg-amber-500/15" : "bg-primary/10"}`}>
+              <Zap className={`h-5 w-5 ${nextAction.urgent ? "text-amber-600" : "text-primary"}`} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">{t("dashboard.nextRecommendedAction")}</p>
+              <p className="text-sm font-semibold truncate">{nextAction.label}</p>
+            </div>
+            <Button size="sm" onClick={() => navigate(nextAction.path)} className={nextAction.urgent ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}>
+              {t("dashboard.doItNow")}
+              <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+          </div>
+        )}
 
-        {/* ── Stats Row — compact, side by side ── */}
+        {/* ── Overview cards ── */}
         {(hasPayroll || hasStaff || hasTimeleave) && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-8">
             {hasPayroll && (
-              <button onClick={() => navigate("/payroll/run")} className="p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all text-left">
-                <div className="flex items-center justify-between mb-2">
-                  <Calculator className="h-4 w-4 text-primary" />
+              <button onClick={() => navigate("/payroll/run")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-primary/30 transition-all text-left">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Calculator className="h-4 w-4 text-primary" />
+                  </div>
                   {payrollPrepared
-                    ? <CheckCircle className="h-3.5 w-3.5 text-primary" />
-                    : <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
+                    ? <CheckCircle className="h-4 w-4 text-primary" />
+                    : <AlertCircle className="h-4 w-4 text-amber-500" />
                   }
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}<span className="text-sm font-normal text-muted-foreground ml-1">{t("dashboard.days")}</span></p>
-                <p className="text-xs text-muted-foreground">{formatCurrencyTL(totalPayroll)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{formatCurrencyTL(totalPayroll)}</p>
               </button>
             )}
             {hasStaff && (
-              <button onClick={() => navigate("/people/employees")} className="p-4 rounded-xl border border-border bg-card hover:border-blue-400/50 hover:shadow-sm transition-all text-left">
-                <div className="flex items-center justify-between mb-2">
-                  <Users className="h-4 w-4 text-blue-500" />
+              <button onClick={() => navigate("/people/employees")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-blue-400/40 transition-all text-left">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-blue-500" />
+                  </div>
                   {blockingIssues.length > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{blockingIssues.length} issues</span>}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{activeEmployees.length}</p>
-                <p className="text-xs text-muted-foreground">{t("dashboard.activeEmployees")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
               </button>
             )}
             {hasTimeleave && (
-              <button onClick={() => navigate("/time-leave/leave")} className="p-4 rounded-xl border border-border bg-card hover:border-cyan-400/50 hover:shadow-sm transition-all text-left">
-                <div className="flex items-center justify-between mb-2">
-                  <CalendarDays className="h-4 w-4 text-cyan-500" />
+              <button onClick={() => navigate("/time-leave/leave")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-cyan-400/40 transition-all text-left">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                    <CalendarDays className="h-4 w-4 text-cyan-500" />
+                  </div>
                   {pendingLeave > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{pendingLeave} pending</span>}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{onLeaveToday}</p>
-                <p className="text-xs text-muted-foreground">{t("dashboard.onLeaveToday")}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.onLeaveToday")}</p>
               </button>
             )}
             {compliance && (
-              <button onClick={() => navigate("/payroll/tax")} className="p-4 rounded-xl border border-border bg-card hover:border-border hover:shadow-sm transition-all text-left">
-                <div className="flex items-center justify-between mb-2">
+              <button onClick={() => navigate("/payroll/tax")} className="group p-4 rounded-xl border border-border bg-card hover:shadow-md hover:border-border transition-all text-left">
+                <div className="mb-3">
                   <span className="text-xs font-medium text-muted-foreground">{t("dashboard.compliance")}</span>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-2">
                   {[
                     { label: "WIT", ...compliance.wit },
                     { label: "INSS", ...compliance.inss },
@@ -361,7 +382,7 @@ export default function Dashboard() {
         )}
 
         {/* ── Quick Actions ── */}
-        <div className="mb-6">
+        <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-3">{t("dashboard.quickActions")}</p>
           <div className="flex flex-wrap gap-2">
             {hasPayroll && (
@@ -391,29 +412,7 @@ export default function Dashboard() {
             )}
           </div>
         </div>
-
-        {/* Document Expiry Alerts */}
-        {/* Document alerts accessible via People > Employees */}
       </div>
-
-      {/* ── Bottom Bar — Next Action (inside scroll, sticks to bottom) ── */}
-      {nextAction && (
-        <div className="mx-6 mb-6 mt-auto rounded-xl border border-border/50 bg-card p-4 shadow-sm">
-          <div className="flex items-center gap-3 max-w-screen-2xl mx-auto">
-            <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${nextAction.urgent ? "bg-amber-500/15" : "bg-primary/10"}`}>
-              <Zap className={`h-4 w-4 ${nextAction.urgent ? "text-amber-500" : "text-primary"}`} />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{t("dashboard.nextRecommendedAction")}</p>
-              <p className="text-sm font-semibold truncate">{nextAction.label}</p>
-            </div>
-            <Button onClick={() => navigate(nextAction.path)} className={nextAction.urgent ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}>
-              {t("dashboard.doItNow")}
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
-        </div>
-      )}
 
       <KeyboardShortcutsDialog
         open={showShortcuts}

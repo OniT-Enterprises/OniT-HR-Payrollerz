@@ -227,6 +227,7 @@ const messages = {
     "monthlyPayroll": "Saláriu Mensal",
     "nextPayrollAmount": "Saláriu Tuir Mai",
     "quickActions": "Asaun lalais",
+    "heresWhatsGoing": "Haree saida mak akontese ho ita-nia ekipa ohin.",
     "overdue": "atrazu ona",
     "taxOverdue": "Impostu atrazu",
     "overdueFilings": "filing(s) liu prazu",
