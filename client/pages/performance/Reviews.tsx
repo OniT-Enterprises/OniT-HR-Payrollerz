@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -66,7 +67,6 @@ import { useToast } from "@/hooks/use-toast";
 import { Employee } from "@/services/employeeService";
 import {
   Star,
-  Users,
   AlertCircle,
   User,
   Plus,
@@ -112,7 +112,7 @@ function RatingStars({ value, onChange, readonly = false, size = "md" }: RatingS
             className={`${sizeClasses[size]} ${
               star <= value
                 ? "fill-yellow-400 text-yellow-400"
-                : "fill-gray-200 text-gray-300"
+                : "fill-gray-200 text-muted-foreground/50"
             }`}
           />
         </button>
@@ -191,6 +191,7 @@ export default function Reviews() {
   const [typeFilter, setTypeFilter] = useState<ReviewType | "all">("all");
 
   const { toast } = useToast();
+  const navigate = useNavigate();
   const { user } = useAuth();
 
   const activeEmployees = employees.filter((emp) => emp.status === "active");
@@ -432,14 +433,14 @@ export default function Reviews() {
         {employees.length === 0 ? (
           /* Empty State */
           <div className="text-center py-16">
-            <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-orange-500 to-amber-500 rounded-2xl flex items-center justify-center">
-              <Star className="h-10 w-10 text-white" />
+            <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 dark:bg-blue-900/30 rounded-2xl flex items-center justify-center">
+              <Star className="h-8 w-8 text-blue-500" />
             </div>
             <h3 className="text-lg font-semibold mb-2">No Performance Data</h3>
             <p className="text-muted-foreground mb-6">
               Add employees to your database to start performance reviews
             </p>
-            <Button onClick={() => (window.location.href = "/staff/add")}>
+            <Button className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => navigate("/people/add")}>
               <User className="mr-2 h-4 w-4" />
               Add Employees First
             </Button>
@@ -460,81 +461,68 @@ export default function Reviews() {
 
               {/* Employees Tab */}
               <TabsContent value="employees" className="mt-6">
-                <Card className="border-border/50">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-                      Employees Ready for Review
-                    </CardTitle>
-                    <CardDescription>
-                      {activeEmployees.length} active employees available for performance review
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {activeEmployees.length === 0 ? (
-                      <div className="text-center py-8">
-                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-sm text-gray-600">No active employees to review</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {activeEmployees.map((employee) => {
-                          const employeeReviews = reviews.filter(
-                            (r) => r.employeeId === employee.id
-                          );
-                          const hasActiveReview = employeeReviews.some(
-                            (r) => r.status === "draft" || r.status === "submitted"
-                          );
-                          const lastReview = employeeReviews[0];
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h3 className="text-sm font-semibold">{activeEmployees.length} Employees</h3>
+                      <p className="text-xs text-muted-foreground">Select an employee to start a review</p>
+                    </div>
+                  </div>
+                  {activeEmployees.length === 0 ? (
+                    <div className="text-center py-8">
+                      <AlertCircle className="h-8 w-8 mx-auto mb-3 text-muted-foreground/50" />
+                      <p className="text-sm text-muted-foreground">No active employees to review</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      {activeEmployees.map((employee) => {
+                        const employeeReviews = reviews.filter(
+                          (r) => r.employeeId === employee.id
+                        );
+                        const hasActiveReview = employeeReviews.some(
+                          (r) => r.status === "draft" || r.status === "submitted"
+                        );
+                        const lastReview = employeeReviews[0];
+                        const initials = `${employee.personalInfo.firstName[0]}${employee.personalInfo.lastName[0]}`;
 
-                          return (
-                            <Card key={employee.id} className="border border-gray-200">
-                              <CardContent className="p-4">
-                                <div className="space-y-3">
-                                  <div>
-                                    <h4 className="font-semibold">
-                                      {employee.personalInfo.firstName}{" "}
-                                      {employee.personalInfo.lastName}
-                                    </h4>
-                                    <p className="text-sm text-gray-600">
-                                      {employee.jobDetails.position}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      {employee.jobDetails.department}
-                                    </p>
-                                  </div>
-                                  <div className="flex items-center gap-2">
-                                    <Badge variant="outline" className="text-xs">
-                                      {employee.jobDetails.employeeId}
-                                    </Badge>
-                                    {lastReview && (
-                                      <Badge variant="secondary" className="text-xs">
-                                        Last: {formatDateTL(lastReview.reviewDate)}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <div className="flex items-center justify-between pt-2 border-t">
-                                    <span className="text-xs text-muted-foreground">
-                                      {employeeReviews.length} review(s)
-                                    </span>
-                                    <Button
-                                      size="sm"
-                                      variant={hasActiveReview ? "outline" : "default"}
-                                      onClick={() => openNewReview(employee)}
-                                      disabled={hasActiveReview}
-                                    >
-                                      {hasActiveReview ? "Review in Progress" : "Start Review"}
-                                    </Button>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+                        return (
+                          <div
+                            key={employee.id}
+                            className="flex items-center gap-3 p-3 rounded-xl border border-border/50 hover:bg-accent/30 transition-colors"
+                          >
+                            <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+                              <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">{initials}</span>
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <h4 className="text-sm font-medium truncate">
+                                  {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                                </h4>
+                                <Badge variant="outline" className="text-[10px] shrink-0">
+                                  {employee.jobDetails.department}
+                                </Badge>
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {employee.jobDetails.position}
+                                {lastReview && <> · Last: {formatDateTL(lastReview.reviewDate)}</>}
+                                {` · ${employeeReviews.length} review(s)`}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              variant={hasActiveReview ? "outline" : "default"}
+                              onClick={() => openNewReview(employee)}
+                              disabled={hasActiveReview}
+                              className={!hasActiveReview ? "bg-blue-600 hover:bg-blue-700 text-white" : ""}
+                            >
+                              {hasActiveReview ? "In Progress" : "Review"}
+                            </Button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </TabsContent>
 
               {/* Reviews Tab */}
@@ -544,7 +532,7 @@ export default function Reviews() {
                     <div className="flex items-center justify-between">
                       <div>
                         <CardTitle className="flex items-center gap-2">
-                          <FileText className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                          <FileText className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                           All Reviews
                         </CardTitle>
                         <CardDescription>
@@ -589,8 +577,8 @@ export default function Reviews() {
                   <CardContent>
                     {filteredReviews.length === 0 ? (
                       <div className="text-center py-8">
-                        <FileText className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p className="text-sm text-gray-600">No reviews found</p>
+                        <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p className="text-sm text-muted-foreground">No reviews found</p>
                         <Button className="mt-4" onClick={() => openNewReview()}>
                           <Plus className="mr-2 h-4 w-4" />
                           Create First Review
