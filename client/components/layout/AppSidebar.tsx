@@ -435,7 +435,7 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: Sid
         <img
           src={isDark ? "/images/illustrations/primos-books-logo-light.png" : "/images/illustrations/primos-books-logo-dark.png"}
           alt="Meza"
-          className={collapsed ? "h-7 w-auto" : "h-8 w-auto"}
+          className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
         />
       </button>
       {isMobile && (
