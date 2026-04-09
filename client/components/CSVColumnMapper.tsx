@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -552,6 +552,32 @@ function handleColumnDragEnd(
   }
 }
 
+// --- Helpers for CSV state management ---
+
+interface CSVStateSetters {
+  setCsvColumns: (v: CSVColumn[]) => void;
+  setCsvData: (v: Record<string, string>[]) => void;
+  setMappings: (v: ColumnMapping[]) => void;
+  setUnmappedColumns: (v: CSVColumn[]) => void;
+  setStep: (v: "upload" | "map" | "preview") => void;
+}
+
+function resetCSVState(s: CSVStateSetters) {
+  s.setCsvColumns([]);
+  s.setCsvData([]);
+  s.setMappings([]);
+  s.setUnmappedColumns([]);
+  s.setStep("upload");
+}
+
+function applyParsedCSV(s: CSVStateSetters, result: { columns: CSVColumn[]; data: Record<string, string>[]; autoMappings: ColumnMapping[]; unmapped: CSVColumn[] }) {
+  s.setCsvColumns(result.columns);
+  s.setCsvData(result.data);
+  s.setMappings(result.autoMappings);
+  s.setUnmappedColumns(result.unmapped);
+  s.setStep("map");
+}
+
 // --- Custom hook for CSV parsing and mapping state ---
 
 function useCSVMapper(csvFile: File | null) {
@@ -561,26 +587,17 @@ function useCSVMapper(csvFile: File | null) {
   const [unmappedColumns, setUnmappedColumns] = useState<CSVColumn[]>([]);
   const [step, setStep] = useState<"upload" | "map" | "preview">("upload");
 
+  const setters: CSVStateSetters = useMemo(() => ({ setCsvColumns, setCsvData, setMappings, setUnmappedColumns, setStep }), []);
+
   useEffect(() => {
-    if (!csvFile) {
-      setCsvColumns([]);
-      setCsvData([]);
-      setMappings([]);
-      setUnmappedColumns([]);
-      setStep("upload");
-      return;
-    }
+    if (!csvFile) { resetCSVState(setters); return; }
 
     let cancelled = false;
 
     void parseCSVFile(csvFile)
-      .then(({ columns, data, autoMappings, unmapped }) => {
+      .then((result) => {
         if (cancelled) return;
-        setCsvColumns(columns);
-        setCsvData(data);
-        setMappings(autoMappings);
-        setUnmappedColumns(unmapped);
-        setStep("map");
+        applyParsedCSV(setters, result);
       })
       .catch((error) => {
         if (cancelled) return;
@@ -589,7 +606,7 @@ function useCSVMapper(csvFile: File | null) {
       });
 
     return () => { cancelled = true; };
-  }, [csvFile]);
+  }, [csvFile, setters]);
 
   const handleDragEnd = useCallback((result: DropResult) => {
     handleColumnDragEnd(result, csvColumns, setUnmappedColumns, setMappings);

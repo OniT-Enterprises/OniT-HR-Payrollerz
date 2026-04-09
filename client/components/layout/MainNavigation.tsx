@@ -385,7 +385,7 @@ function HeaderBar({
   isDark,
   visibleNavItems,
   pathname,
-  userInitials,
+  userInitials: _userInitials,
   mobileMenuOpen,
   onNavigate,
   onToggleMobile,

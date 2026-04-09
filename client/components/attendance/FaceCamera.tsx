@@ -168,6 +168,7 @@ async function initCamera(
   cancelledRef: { current: boolean },
   setStatus: (s: CameraStatus) => void,
 ) {
+  setStatus('loading');
   const [stream] = await Promise.all([
     navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } }),
     ensureModelsLoaded(),
@@ -205,7 +206,6 @@ function useFaceCamera(active: boolean, refs: CameraRefs) {
     if (!active) { stopStream(); return; }
 
     const cancelledRef = { current: false };
-    setStatus('loading');
 
     initCamera(refs, streamRef, rafRef, cancelledRef, setStatus).catch((err: unknown) => {
       if (cancelledRef.current) return;

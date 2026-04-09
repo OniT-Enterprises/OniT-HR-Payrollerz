@@ -144,12 +144,11 @@ function useFaceClockIn(
   const [matchedEmployee, setMatchedEmployee] = useState<MatchedEmployee | null>(null);
   const [saving, setSaving] = useState(false);
 
-  const tracking: MatchTrackingRefs = {
-    matchCountRef: useRef(0),
-    lastMatchIdRef: useRef<string | null>(null),
-    prevLandmarksRef: useRef<DetectionResult['landmarks'] | null>(null),
-    livenessPassedRef: useRef(false),
-  };
+  const matchCountRef = useRef(0);
+  const lastMatchIdRef = useRef<string | null>(null);
+  const prevLandmarksRef = useRef<DetectionResult['landmarks'] | null>(null);
+  const livenessPassedRef = useRef(false);
+  const tracking = useRef<MatchTrackingRefs>({ matchCountRef, lastMatchIdRef, prevLandmarksRef, livenessPassedRef }).current;
   const transitionTimeoutRef = useRef<number | null>(null);
 
   const clearTransitionTimeout = useCallback(() => {
@@ -167,7 +166,7 @@ function useFaceClockIn(
       setMatchedEmployee(null);
       resetMatchTracking(tracking);
     }
-  }, [open, embeddingsLoading, clearTransitionTimeout]);
+  }, [open, embeddingsLoading, clearTransitionTimeout, tracking]);
 
   useEffect(() => clearTransitionTimeout, [clearTransitionTimeout]);
 
@@ -193,7 +192,7 @@ function useFaceClockIn(
           setState('confirming');
         });
     },
-    [state, embeddings, tenantId],
+    [state, embeddings, tenantId, tracking],
   );
 
   const handleConfirmClockIn = useCallback(async () => {
@@ -215,7 +214,7 @@ function useFaceClockIn(
     setState('not-recognized');
     setMatchedEmployee(null);
     scheduleReset(transitionTimeoutRef, () => { setState('scanning'); resetMatchTracking(tracking); });
-  }, [clearTransitionTimeout]);
+  }, [clearTransitionTimeout, tracking]);
 
   const handleClose = useCallback(() => { clearTransitionTimeout(); onOpenChange(false); }, [clearTransitionTimeout, onOpenChange]);
 

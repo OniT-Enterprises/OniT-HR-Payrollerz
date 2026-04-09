@@ -3,47 +3,6 @@
  */
 
 // ============================================
-// Section A1: HR Admin Levels
-// ============================================
-
-type HRAdminLevel = 'owner' | 'hr_director' | 'senior_hr' | 'junior_hr';
-
-interface HRAdmin {
-  id: string;
-  userId: string;
-  email: string;
-  name: string;
-  phone?: string;
-  level: HRAdminLevel;
-  permissions: HRPermissions;
-  isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-interface HRPermissions {
-  // Module access
-  canAccessHiring: boolean;
-  canAccessStaff: boolean;
-  canAccessTimeLeave: boolean;
-  canAccessPerformance: boolean;
-  canAccessPayroll: boolean;
-  canAccessAccounting: boolean;
-  canAccessReports: boolean;
-  canAccessSettings: boolean;
-
-  // Action permissions
-  canAddEmployees: boolean;
-  canEditEmployees: boolean;
-  canDeleteEmployees: boolean;
-  canApproveLeave: boolean;
-  canRunPayroll: boolean;
-  canApprovePayroll: boolean;
-  canManageAdmins: boolean;
-  canEditCompanySettings: boolean;
-}
-
-// ============================================
 // Section A2: Company Details
 // ============================================
 

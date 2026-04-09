@@ -171,35 +171,3 @@ export interface QBExportOptions {
   customMappings?: QBAccountMapping[];
 }
 
-// ============================================
-// CSV EXPORT STRUCTURE
-// ============================================
-
-// Simple CSV format (Transaction Pro Importer compatible)
-interface CSVJournalRow {
-  RefNumber: string;
-  TxnDate: string;
-  Account: string;
-  Debit: string;
-  Credit: string;
-  Memo: string;
-  Name: string;
-  Class: string;
-}
-
-// ============================================
-// IIF EXPORT STRUCTURE
-// ============================================
-
-// IIF format for QuickBooks Desktop
-interface IIFTransaction {
-  type: 'TRNS' | 'SPL' | 'ENDTRNS';
-  trnsType?: string;          // e.g., "GENERAL JOURNAL"
-  date?: string;              // MM/DD/YYYY
-  account?: string;
-  name?: string;
-  class?: string;
-  amount?: number;
-  docNum?: string;
-  memo?: string;
-}

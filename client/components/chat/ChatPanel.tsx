@@ -593,14 +593,11 @@ function useChatPanel(tenantId: string) {
 
   // Rotate thinking message every 3s while loading
   useEffect(() => {
-    if (!isLoading) {
-      setThinkingIdx(0);
-      return;
-    }
+    if (!isLoading) return;
     const timer = setInterval(() => {
       setThinkingIdx((i) => i + 1);
     }, 3000);
-    return () => clearInterval(timer);
+    return () => { clearInterval(timer); setThinkingIdx(0); };
   }, [isLoading]);
 
   const doSendStreaming = useCallback(

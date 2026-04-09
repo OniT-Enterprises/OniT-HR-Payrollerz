@@ -461,25 +461,6 @@ export interface BankTransaction {
   reconciledAt?: Date;
 }
 
-interface BankReconciliation {
-  id: string;
-  accountName: string;
-  statementDate: string;
-  statementBalance: number;
-
-  // Calculated
-  clearedBalance: number;
-  outstandingDeposits: number;
-  outstandingWithdrawals: number;
-  difference: number;
-
-  transactions: BankTransaction[];
-
-  status: 'in_progress' | 'completed';
-  createdAt: Date;
-  completedAt?: Date;
-}
-
 // ============================================
 // RECURRING INVOICES
 // ============================================
@@ -537,53 +518,3 @@ export interface RecurringInvoiceFormData {
   autoSend: boolean;
 }
 
-// ============================================
-// VAT RETURN (when vatEnabled)
-// ============================================
-
-type VATReturnStatus = 'draft' | 'reviewed' | 'filed' | 'paid';
-
-interface VATReturn {
-  id: string;
-
-  // Period
-  periodStart: string;             // "2027-01-01"
-  periodEnd: string;               // "2027-01-31"
-  filingDeadline: string;          // periodEnd + X days
-
-  // Output VAT (from sales)
-  outputVAT: {
-    standardRate: { net: number; vat: number };
-    reducedRate?: { net: number; vat: number };
-    zeroRated: { net: number; vat: number };
-    exempt: { net: number };
-    total: number;
-  };
-
-  // Input VAT (from purchases)
-  inputVAT: {
-    domesticPurchases: { net: number; vat: number };
-    imports: { net: number; vat: number };
-    total: number;
-  };
-
-  // Net
-  netVATDue: number;               // output.total - input.total
-
-  // Status
-  status: VATReturnStatus;
-
-  // Drill-down references
-  outputInvoiceIds: string[];
-  outputTransactionIds: string[];  // Kaixa transaction IDs
-  inputBillIds: string[];
-  inputExpenseIds: string[];
-
-  // Filing
-  filedAt?: Date;
-  filedBy?: string;
-  paymentReference?: string;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
