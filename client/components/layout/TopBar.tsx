@@ -11,7 +11,6 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFirebase } from "@/contexts/FirebaseContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useGuidance } from "@/contexts/GuidanceContext";
 import { useLayout } from "@/contexts/LayoutContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -31,10 +30,6 @@ import {
   Moon,
   Shield,
   Map,
-  BookOpen,
-  Check,
-  FolderKanban,
-  FileSpreadsheet,
   Menu,
   WifiOff,
   RotateCcw,
@@ -50,16 +45,14 @@ import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { getComplianceIssues } from "@/lib/employeeUtils";
-import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 export default function TopBar() {
   const navigate = useNavigate();
   const { user, signOut, isSuperAdmin } = useAuth();
   const { isOnline, isConnected, retryConnection } = useFirebase();
-  const { session, hasModule, canManage } = useTenant();
+  const { hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
-  const { guidanceEnabled, toggleGuidance } = useGuidance();
   const { toggleSidebar } = useLayout();
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
@@ -68,8 +61,6 @@ export default function TopBar() {
   const hasPayroll = hasModule("payroll");
   const hasTimeleave = hasModule("timeleave");
   const hasStaff = hasModule("staff");
-  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
-  const donorExportEnabled = canUseDonorExport(session, hasModule("reports"), canManageTenant);
 
   // Notification data — reuses existing cached queries
   const { data: leaveStats } = useLeaveStats(hasTimeleave);
@@ -243,29 +234,7 @@ export default function TopBar() {
                   <Map className="h-4 w-4 mr-2" />
                   {t("common.sitemap")}
                 </DropdownMenuItem>
-                {ngoReportingEnabled && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <p className="px-2 pb-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground/80">
-                      {t("reports.dashboard.ngo.title")}
-                    </p>
-                    <DropdownMenuItem onClick={() => handleNavigate("/reports/payroll-allocation")}>
-                      <FolderKanban className="h-4 w-4 mr-2" />
-                      {t("reports.dashboard.ngo.allocationTitle")}
-                    </DropdownMenuItem>
-                    {donorExportEnabled && (
-                      <DropdownMenuItem onClick={() => handleNavigate("/reports/donor-export")}>
-                        <FileSpreadsheet className="h-4 w-4 mr-2" />
-                        {t("reports.dashboard.ngo.donorExportTitle")}
-                      </DropdownMenuItem>
-                    )}
-                  </>
-                )}
-                <DropdownMenuItem onClick={toggleGuidance}>
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  {t("common.guidance")}
-                  {guidanceEnabled && <Check className="h-4 w-4 ml-auto text-emerald-500" />}
-                </DropdownMenuItem>
+                {/* NGO reports moved to Reports sidebar, Guidance removed */}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleSignOut} className="text-red-500">
                   <LogOut className="h-4 w-4 mr-2" />

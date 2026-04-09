@@ -472,6 +472,18 @@ export const reportsNavConfig: ModuleNavConfig = {
     },
     // Tax & Compliance moved to Payroll > Tax & INSS
     {
+      id: "ngo",
+      label: "NGO & Donor",
+      labelKey: "ngoDonor",
+      icon: Building,
+      path: "/reports/payroll-allocation",
+      matchPaths: ["/reports/payroll-allocation", "/reports/donor-export"],
+      subPages: [
+        { label: "Payroll Allocation", labelKey: "payrollAllocation", path: "/reports/payroll-allocation", icon: DollarSign },
+        { label: "Donor Export", labelKey: "donorExport", path: "/reports/donor-export", icon: FileSpreadsheet },
+      ],
+    },
+    {
       id: "custom",
       label: "Custom",
       labelKey: "custom",

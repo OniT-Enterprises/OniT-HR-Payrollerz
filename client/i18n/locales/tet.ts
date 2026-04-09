@@ -132,6 +132,7 @@ const messages = {
     "monthlyWit": "WIT Mensal",
     "monthlyInss": "INSS Mensal",
     "annualInss": "INSS Anual",
+    "ngoDonor": "ONG & Doador",
     "custom": "Personalizadu",
     "customReports": "Relatóriu Personalizadu",
     "reportSetup": "Konfig. Relatóriu"

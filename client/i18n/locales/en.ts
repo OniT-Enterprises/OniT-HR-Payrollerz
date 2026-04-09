@@ -132,6 +132,7 @@ const messages = {
     "monthlyWit": "Monthly WIT",
     "monthlyInss": "Monthly INSS",
     "annualInss": "Annual INSS",
+    "ngoDonor": "NGO & Donor",
     "custom": "Custom",
     "customReports": "Custom Reports",
     "reportSetup": "Report Setup"
