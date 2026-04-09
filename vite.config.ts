@@ -90,26 +90,9 @@ export default defineConfig(({ mode }) => ({
           // Charts - let Vite handle recharts/d3 to avoid circular dependency issues
           // Manual chunking can break d3's module initialization order
 
-          // Group page modules by section — reduces chunk count, speeds up navigation
-          // within a module (e.g., clicking between People pages loads no new JS)
-          if (id.includes("client/pages/staff/") || id.includes("client/pages/hiring/") || id.includes("client/pages/performance/")) {
-            return "pages-people";
-          }
-          if (id.includes("client/pages/time-leave/")) {
-            return "pages-timeleave";
-          }
-          if (id.includes("client/pages/payroll/")) {
-            return "pages-payroll";
-          }
-          if (id.includes("client/pages/money/")) {
-            return "pages-money";
-          }
-          if (id.includes("client/pages/accounting/")) {
-            return "pages-accounting";
-          }
-          if (id.includes("client/pages/reports/")) {
-            return "pages-reports";
-          }
+          // Page chunking removed — caused circular dependency issues
+          // (ReferenceError: Cannot access 'X' before initialization).
+          // Vite's default per-route splitting works fine with hover prefetch.
         },
       },
     },
