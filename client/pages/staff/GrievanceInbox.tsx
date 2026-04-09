@@ -318,14 +318,6 @@ export default function GrievanceInbox() {
           iconColor="text-blue-500"
         />
 
-        {/* Anonymity Notice */}
-        <Alert className="mb-6 border-amber-200 bg-amber-50 dark:border-amber-800 dark:bg-amber-950">
-          <Lock className="h-4 w-4 text-amber-600" />
-          <AlertDescription className="text-amber-800 dark:text-amber-200">
-            Reports are anonymous. Employee identities are not recorded.
-          </AlertDescription>
-        </Alert>
-
         {/* Status Filter */}
         <div className="mb-6">
           <Select value={activeTab} onValueChange={setActiveTab}>
@@ -572,6 +564,12 @@ export default function GrievanceInbox() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Anonymity Notice */}
+      <div className="mt-8 flex items-center gap-2 text-xs text-muted-foreground px-1">
+        <Lock className="h-3.5 w-3.5" />
+        <span>Reports are anonymous. Employee identities are not recorded.</span>
+      </div>
 
       {/* Dismiss Confirmation Dialog */}
       <AlertDialog
