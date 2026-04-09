@@ -58,6 +58,77 @@ function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
+function GreetingParticles() {
+  const hour = new Date().getHours();
+  const isNight = hour >= 19 || hour < 6;
+  const isMorning = hour >= 6 && hour < 12;
+
+  if (isNight) {
+    // Twinkling stars
+    return (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(8)].map((_, i) => (
+          <span
+            key={i}
+            className="absolute rounded-full bg-white/30 dark:bg-white/40"
+            style={{
+              width: `${2 + (i % 3)}px`,
+              height: `${2 + (i % 3)}px`,
+              left: `${10 + i * 12}%`,
+              top: `${15 + (i * 17) % 60}%`,
+              animation: `twinkle ${2 + (i % 3) * 0.7}s ease-in-out ${i * 0.4}s infinite`,
+            }}
+          />
+        ))}
+        <style>{`@keyframes twinkle { 0%, 100% { opacity: 0.2; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.4); } }`}</style>
+      </div>
+    );
+  }
+
+  if (isMorning) {
+    // Soft rising rays
+    return (
+      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+        {[...Array(4)].map((_, i) => (
+          <span
+            key={i}
+            className="absolute bg-gradient-to-t from-amber-300/10 to-transparent dark:from-amber-400/5"
+            style={{
+              width: "2px",
+              height: `${30 + i * 10}%`,
+              left: `${60 + i * 8}%`,
+              bottom: 0,
+              animation: `ray ${3 + i * 0.5}s ease-in-out ${i * 0.6}s infinite`,
+              transformOrigin: "bottom",
+            }}
+          />
+        ))}
+        <style>{`@keyframes ray { 0%, 100% { opacity: 0.3; transform: scaleY(0.8); } 50% { opacity: 0.7; transform: scaleY(1); } }`}</style>
+      </div>
+    );
+  }
+
+  // Afternoon — gentle floating warm dots
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden">
+      {[...Array(5)].map((_, i) => (
+        <span
+          key={i}
+          className="absolute rounded-full bg-primary/10 dark:bg-primary/15"
+          style={{
+            width: `${4 + i * 2}px`,
+            height: `${4 + i * 2}px`,
+            left: `${15 + i * 16}%`,
+            top: `${30 + (i * 23) % 50}%`,
+            animation: `float ${4 + i}s ease-in-out ${i * 0.8}s infinite`,
+          }}
+        />
+      ))}
+      <style>{`@keyframes float { 0%, 100% { transform: translateY(0) scale(1); opacity: 0.4; } 50% { transform: translateY(-8px) scale(1.2); opacity: 0.7; } }`}</style>
+    </div>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
@@ -274,9 +345,10 @@ export default function Dashboard() {
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl pb-12">
-        {/* ── Greeting banner with illustration ── */}
-        <div className="flex items-center justify-between mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
-          <div className="flex-1">
+        {/* ── Greeting banner with illustration + ambient particles ── */}
+        <div className="relative flex items-center justify-between mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
+          <GreetingParticles />
+          <div className="relative flex-1">
             <h1 className="text-2xl font-semibold tracking-tight">
               {new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite"}{firstName ? `, ${firstName}` : ""}
             </h1>
@@ -287,7 +359,7 @@ export default function Dashboard() {
           <img
             src="/images/illustrations/dashboard-greeting.webp"
             alt=""
-            className="hidden md:block h-32 w-auto -mr-2 -my-4 object-contain opacity-90 dark:opacity-70"
+            className="relative hidden md:block h-32 w-auto -mr-2 -my-4 object-contain opacity-90 dark:opacity-70"
           />
         </div>
 
