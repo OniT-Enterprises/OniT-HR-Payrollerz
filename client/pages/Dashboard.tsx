@@ -96,15 +96,17 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
   const greetingEnd = greeting.length + (firstName ? `, ${firstName}` : "").length + 1;
 
   return (
-    <div className="flex-1 min-w-0">
-      <p className="text-sm mb-2">
-        <span className="font-semibold">{displayedText.slice(0, greetingEnd)}</span>
+    <div className="flex-1 min-w-0 space-y-3">
+      <div>
+        <h2 className="text-lg font-bold tracking-tight">
+          {displayedText.slice(0, greetingEnd)}
+          {displayedText.length < fullText.length && <span className="inline-block w-0.5 h-5 bg-primary align-text-bottom ml-0.5 animate-pulse" />}
+        </h2>
         {displayedText.length > greetingEnd && (
-          <span className="text-muted-foreground">{" "}{displayedText.slice(greetingEnd + 1)}</span>
+          <p className="text-sm text-muted-foreground mt-0.5">{displayedText.slice(greetingEnd + 1)}</p>
         )}
-        {displayedText.length < fullText.length && <span className="inline-block w-0.5 h-4 bg-primary align-text-bottom ml-0.5 animate-pulse" />}
-      </p>
-      <div className="flex flex-wrap gap-2 mb-3">
+      </div>
+      <div className="flex flex-wrap gap-2">
         {quickPrompts.map((p) => (
           <button
             key={p.query}
