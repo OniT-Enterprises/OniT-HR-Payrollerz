@@ -222,6 +222,7 @@ const messages = {
     "monthlyPayroll": "Monthly Payroll",
     "nextPayrollAmount": "Next Payroll Amount",
     "quickActions": "Quick actions",
+    "overdue": "overdue by",
     "runPayroll": "Run Payroll",
     "addEmployee": "Add Employee",
     "generateReport": "Generate Report",

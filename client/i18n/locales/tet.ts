@@ -222,6 +222,7 @@ const messages = {
     "monthlyPayroll": "Saláriu Mensal",
     "nextPayrollAmount": "Saláriu Tuir Mai",
     "quickActions": "Asaun lalais",
+    "overdue": "atrazu ona",
     "runPayroll": "Prosesu Saláriu",
     "addEmployee": "Tau Empregadu",
     "generateReport": "Kria Relatóriu",
