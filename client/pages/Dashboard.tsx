@@ -4,9 +4,11 @@
  * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
+import { useChatStore } from "@/stores/chatStore";
+import { Send } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -56,6 +58,66 @@ function getNextPayDate() {
 
 function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
+function PrimosBotInline({ t }: { t: (key: string) => string }) {
+  const { setOpen, addMessage } = useChatStore();
+  const [input, setInput] = useState("");
+
+  const quickPrompts = [
+    { label: t("dashboard.botPromptStaff"), query: "How many employees do we have?" },
+    { label: t("dashboard.botPromptPayroll"), query: "When is the next payroll due?" },
+    { label: t("dashboard.botPromptLeave"), query: "Who is on leave today?" },
+  ];
+
+  const handleSend = useCallback((query: string) => {
+    if (!query.trim()) return;
+    addMessage({ role: "user", text: query.trim() });
+    setOpen(true);
+    setInput("");
+  }, [addMessage, setOpen]);
+
+  return (
+    <div className="flex items-start gap-3">
+      <img
+        src="/images/illustrations/dashboard-greeting.webp"
+        alt="PrimosBot"
+        className="h-9 w-9 object-contain shrink-0 mt-0.5"
+      />
+      <div className="flex-1 min-w-0">
+        <div className="flex items-baseline gap-2 mb-2">
+          <span className="text-sm font-semibold">PrimosBot</span>
+          <span className="text-xs text-muted-foreground">{t("dashboard.botBriefing")}</span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {quickPrompts.map((p) => (
+            <button
+              key={p.query}
+              onClick={() => handleSend(p.query)}
+              className="text-xs px-3 py-1.5 rounded-full border border-border bg-muted/50 hover:bg-muted text-foreground transition-colors"
+            >
+              {p.label}
+            </button>
+          ))}
+          <form
+            onSubmit={(e) => { e.preventDefault(); handleSend(input); }}
+            className="flex items-center gap-1.5 flex-1 min-w-[200px]"
+          >
+            <input
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder={t("dashboard.botPlaceholder")}
+              className="flex-1 h-8 px-3 rounded-full border border-border bg-background text-xs placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+            <button type="submit" disabled={!input.trim()} className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shrink-0 disabled:opacity-40 hover:bg-primary/90 transition-colors">
+              <Send className="h-3 w-3" />
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function GreetingParticles() {
@@ -345,22 +407,27 @@ export default function Dashboard() {
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl pb-12">
-        {/* ── Greeting banner with illustration + ambient particles ── */}
-        <div className="relative flex items-center justify-between mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
+        {/* ── Greeting + PrimosBot combined ── */}
+        <div className="relative mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
           <GreetingParticles />
-          <div className="relative flex-1">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              {new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite"}{firstName ? `, ${firstName}` : ""}
-            </h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              {t("dashboard.heresWhatsGoing")}
-            </p>
+          <div className="relative flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                {new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite"}{firstName ? `, ${firstName}` : ""}
+              </h1>
+              <p className="text-sm text-muted-foreground mt-1">
+                {t("dashboard.heresWhatsGoing")}
+              </p>
+            </div>
+            <img
+              src="/images/illustrations/dashboard-greeting.webp"
+              alt=""
+              className="hidden md:block h-28 w-auto -mr-2 -mt-2 object-contain opacity-90 dark:opacity-70"
+            />
           </div>
-          <img
-            src="/images/illustrations/dashboard-greeting.webp"
-            alt=""
-            className="relative hidden md:block h-32 w-auto -mr-2 -my-4 object-contain opacity-90 dark:opacity-70"
-          />
+          <div className="relative border-t border-border/50 pt-4">
+            <PrimosBotInline t={t} />
+          </div>
         </div>
 
         {/* ── Overview cards ── */}
