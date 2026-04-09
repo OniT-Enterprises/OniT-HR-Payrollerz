@@ -409,7 +409,7 @@ export default function EmployeeAllowances() {
           title={t("allowances.title")}
           subtitle={t("allowances.subtitle")}
           icon={Wallet}
-          iconColor="text-green-500"
+          iconColor="text-primary"
           actions={
             <Button onClick={() => setShowAddDialog(true)}>
               <Plus className="h-4 w-4 mr-2" />

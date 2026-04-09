@@ -142,7 +142,7 @@ export default function DonorExportPack() {
           title={t("reports.donorExportPack.title")}
           subtitle={t("reports.donorExportPack.subtitle")}
           icon={FileSpreadsheet}
-          iconColor="text-violet-500"
+          iconColor="text-primary"
           actions={
             <Button onClick={exportPack} disabled={!donorLines.length} className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" />

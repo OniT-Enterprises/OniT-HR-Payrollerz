@@ -502,7 +502,7 @@ export default function BankTransfers() {
           title={t("bankTransfers.title")}
           subtitle={t("bankTransfers.subtitle")}
           icon={Send}
-          iconColor="text-green-500"
+          iconColor="text-primary"
           actions={
             <Button
               className="bg-green-600 hover:bg-green-700 text-white"

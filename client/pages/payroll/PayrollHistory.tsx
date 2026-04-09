@@ -618,7 +618,7 @@ export default function PayrollHistory() {
           title={t("payrollHistory.title")}
           subtitle={t("payrollHistory.subtitle")}
           icon={FileText}
-          iconColor="text-green-500"
+          iconColor="text-primary"
           actions={
             <Button onClick={() => navigate("/payroll/run")}>
               {t("payrollHistory.runNewPayroll")}

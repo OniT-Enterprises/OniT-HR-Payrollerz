@@ -280,7 +280,7 @@ export default function PayrollAllocationReport() {
           title={t("reports.payrollAllocation.title")}
           subtitle={t("reports.payrollAllocation.subtitle")}
           icon={FolderKanban}
-          iconColor="text-violet-500"
+          iconColor="text-primary"
           actions={
             <Button variant="outline" onClick={exportCsv} disabled={!rows.length} className="w-full sm:w-auto">
               <Download className="h-4 w-4 mr-2" />

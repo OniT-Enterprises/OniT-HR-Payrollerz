@@ -272,7 +272,7 @@ export default function PayrollReports() {
           title={t("reports.payroll.title")}
           subtitle={t("reports.payroll.subtitle")}
           icon={FileText}
-          iconColor="text-violet-500"
+          iconColor="text-primary"
         />
         {employees.length === 0 ? (
           /* Empty State */

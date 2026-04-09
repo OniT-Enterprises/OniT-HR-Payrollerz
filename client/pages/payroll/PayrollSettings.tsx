@@ -49,7 +49,7 @@ export default function PayrollSettings() {
           title={t("settings.payroll.title") || "Payroll Settings"}
           subtitle={t("settings.payroll.description") || "Tax, social security, overtime, benefits, and deductions"}
           icon={Settings}
-          iconColor="text-green-500"
+          iconColor="text-primary"
         />
 
         {/* Tax / INSS / Overtime / 13th Month config */}

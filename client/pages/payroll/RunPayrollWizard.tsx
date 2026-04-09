@@ -230,7 +230,7 @@ export default function RunPayrollWizard() {
           title={t("runPayroll.title")}
           subtitle={t("runPayroll.processPayrollFor", { count: String(activeEmployees.length) })}
           icon={Calculator}
-          iconColor="text-green-500"
+          iconColor="text-primary"
         />
         <StepWizard
           steps={wizardSteps}
