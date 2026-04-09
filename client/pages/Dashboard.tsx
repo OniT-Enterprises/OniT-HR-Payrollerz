@@ -4,7 +4,7 @@
  * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState, useCallback, useEffect, useRef } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useChatStore } from "@/stores/chatStore";
@@ -79,29 +79,18 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
   }, [addMessage, setOpen]);
 
   const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${t("dashboard.botGreeting")}`;
-  const [displayedText, setDisplayedText] = useState("");
-  const indexRef = useRef(0);
-  const fullTextRef = useRef(fullText);
-  fullTextRef.current = fullText;
+  const [charCount, setCharCount] = useState(0);
+  const displayedText = fullText.slice(0, charCount);
 
   useEffect(() => {
-    indexRef.current = 0;
-    let active = true;
-    const tick = () => {
-      if (!active) return;
-      indexRef.current++;
-      setDisplayedText(fullTextRef.current.slice(0, indexRef.current));
-      if (indexRef.current < fullTextRef.current.length) {
-        setTimeout(tick, 25);
-      }
-    };
-    // Reset then start on next frame to avoid sync setState
-    requestAnimationFrame(() => {
-      if (!active) return;
-      setDisplayedText("");
-      setTimeout(tick, 25);
-    });
-    return () => { active = false; };
+    let i = 0;
+    const id = setInterval(() => {
+      i++;
+      setCharCount(i);
+      if (i >= fullText.length) clearInterval(id);
+    }, 25);
+    return () => clearInterval(id);
+     
   }, [fullText]);
 
   const greetingEnd = greeting.length + (firstName ? `, ${firstName}` : "").length + 1;
