@@ -467,7 +467,7 @@ export default function PayrollDashboard() {
           {/* Stats Cards */}
           <div className="grid gap-4 md:grid-cols-3 mb-6">
             {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-l-4 border-l-green-500">
+              <Card key={i}>
                 <CardContent className="pt-5 pb-5">
                   <div className="flex items-center justify-between">
                     <div>

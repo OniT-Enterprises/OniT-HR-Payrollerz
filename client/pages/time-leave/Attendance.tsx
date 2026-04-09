@@ -205,18 +205,6 @@ export default function Attendance() {
     );
   };
 
-  const getStatusBorderColor = (status: AttendanceStatus) => {
-    const map: Record<string, string> = {
-      present: "border-l-emerald-500",
-      late: "border-l-amber-500",
-      absent: "border-l-red-500",
-      half_day: "border-l-orange-500",
-      leave: "border-l-blue-500",
-      holiday: "border-l-purple-500",
-    };
-    return map[status] || "border-l-muted-foreground";
-  };
-
   const getStatusLabel = (status: AttendanceStatus) => {
     switch (status) {
       case "present":
@@ -793,8 +781,6 @@ export default function Attendance() {
                 key={record.id}
                 className={cn(
                   "group rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors",
-                  "border-l-[3px]",
-                  getStatusBorderColor(record.status),
                 )}
               >
                 {/* Desktop layout */}

@@ -662,7 +662,7 @@ export default function Goals() {
                 ) : (
                   <div className="space-y-6">
                     {okrs.map((okr) => (
-                      <Card key={okr.id} className="border-l-4 border-l-orange-500 border-border/50">
+                      <Card key={okr.id} className="border-border/50">
                         <CardContent className="pt-6">
                           <div className="space-y-4">
                             <div className="flex items-start justify-between">

@@ -91,7 +91,7 @@ function ProfileCard({
   onEditEmployee?: (employee: Employee) => void;
 }) {
   return (
-    <Card className="border-l-4 border-l-orange-500">
+    <Card>
       <CardHeader className="pb-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

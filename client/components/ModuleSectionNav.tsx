@@ -28,10 +28,10 @@ import { useTenant } from "@/contexts/TenantContext";
  * Full class names so Tailwind's purge can find them.
  */
 const activeStyles: Record<SectionId, string> = {
-  dashboard: "border-slate-500 text-slate-600 dark:text-slate-400",
+  dashboard: "border-primary text-primary dark:text-primary",
   people:    "border-blue-500 text-blue-600 dark:text-blue-400",
   scheduling:"border-cyan-500 text-cyan-600 dark:text-cyan-400",
-  payroll:   "border-green-500 text-green-600 dark:text-green-400",
+  payroll:   "border-primary text-primary dark:text-primary",
   money:     "border-indigo-500 text-indigo-600 dark:text-indigo-400",
   accounting:"border-orange-500 text-orange-600 dark:text-orange-400",
   reports:   "border-violet-500 text-violet-600 dark:text-violet-400",

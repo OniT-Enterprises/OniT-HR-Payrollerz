@@ -52,7 +52,7 @@ function PeopleDashboardSkeleton() {
       <div className="p-6 mx-auto max-w-screen-2xl">
         <div className="grid gap-4 md:grid-cols-3 mb-6">
           {[1, 2, 3].map((i) => (
-            <Card key={i} className="border-l-4 border-l-muted">
+            <Card key={i}>
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-center justify-between">
                   <div>
@@ -161,7 +161,7 @@ export default function PeopleDashboard() {
             <div className="grid gap-4 md:grid-cols-3">
               {hasStaff && (
                 <Card
-                  className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-blue-500"
+                  className="cursor-pointer hover:shadow-md transition-all"
                   onClick={() => navigate("/people/employees")}
                 >
                   <CardContent className="pt-5 pb-5">
@@ -182,9 +182,7 @@ export default function PeopleDashboard() {
 
               {hasTimeleave && (
                 <Card
-                  className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-                    stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
-                  }`}
+                  className="cursor-pointer hover:shadow-md transition-all"
                   onClick={() => navigate("/time-leave/leave")}
                 >
                   <CardContent className="pt-5 pb-5">
@@ -212,9 +210,7 @@ export default function PeopleDashboard() {
 
               {hasStaff && (
                 <Card
-                  className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-                    attentionCount > 0 ? "border-l-amber-500" : "border-l-blue-500/50"
-                  }`}
+                  className="cursor-pointer hover:shadow-md transition-all"
                   onClick={() => navigate("/people/employees")}
                 >
                   <CardContent className="pt-5 pb-5">

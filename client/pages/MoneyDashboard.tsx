@@ -205,7 +205,7 @@ export default function MoneyDashboard() {
         <MoreDetailsSection className="mb-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {/* Money Coming In */}
-          <Card className="border-l-4 border-l-green-500">
+          <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -253,7 +253,7 @@ export default function MoneyDashboard() {
           </Card>
 
           {/* Money Going Out */}
-          <Card className="border-l-4 border-l-red-500">
+          <Card>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

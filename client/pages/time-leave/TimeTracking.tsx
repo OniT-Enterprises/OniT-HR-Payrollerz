@@ -107,36 +107,30 @@ export default function TimeTracking() {
     notes: "",
   });
 
-  const statusStyles: Record<string, { color: string; dot: string; border: string }> = {
+  const statusStyles: Record<string, { color: string; dot: string }> = {
     present: {
       color: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20",
       dot: "bg-emerald-500",
-      border: "border-l-emerald-500",
     },
     late: {
       color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20",
       dot: "bg-amber-500",
-      border: "border-l-amber-500",
     },
     absent: {
       color: "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20",
       dot: "bg-red-500",
-      border: "border-l-red-500",
     },
     half_day: {
       color: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20",
       dot: "bg-orange-500",
-      border: "border-l-orange-500",
     },
     leave: {
       color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20",
       dot: "bg-blue-500",
-      border: "border-l-blue-500",
     },
     holiday: {
       color: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-500/20",
       dot: "bg-purple-500",
-      border: "border-l-purple-500",
     },
   };
 
@@ -615,8 +609,6 @@ export default function TimeTracking() {
                     key={entry.id}
                     className={cn(
                       "group rounded-lg border border-border/50 bg-card hover:bg-accent/50 transition-colors",
-                      "border-l-[3px]",
-                      statusStyles[entry.status]?.border || "border-l-muted-foreground",
                     )}
                   >
                     {/* Desktop */}
@@ -727,8 +719,6 @@ export default function TimeTracking() {
                     key={entry.id}
                     className={cn(
                       "rounded-lg border border-border/50 bg-card p-4",
-                      "border-l-[3px]",
-                      statusStyles[entry.status]?.border || "border-l-muted-foreground",
                     )}
                   >
                     <div className="flex items-center justify-between">

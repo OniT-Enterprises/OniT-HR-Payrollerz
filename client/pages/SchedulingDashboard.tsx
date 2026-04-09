@@ -51,7 +51,7 @@ function SchedulingDashboardSkeleton() {
       <div className="p-6 mx-auto max-w-screen-2xl">
         <div className="grid gap-4 md:grid-cols-4 mb-6">
           {[1, 2, 3, 4].map((i) => (
-            <Card key={i} className="border-l-4 border-l-muted">
+            <Card key={i}>
               <CardContent className="pt-5 pb-5">
                 <div className="flex items-center justify-between">
                   <div>
@@ -131,7 +131,7 @@ export default function SchedulingDashboard() {
         <MoreDetailsSection className="mb-6">
         <div className="grid gap-4 md:grid-cols-4">
           <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500"
+            className="cursor-pointer hover:shadow-md transition-all"
             onClick={() => navigate("/time-leave/attendance")}
           >
             <CardContent className="pt-5 pb-5">
@@ -150,9 +150,7 @@ export default function SchedulingDashboard() {
           </Card>
 
           <Card
-            className={`cursor-pointer hover:shadow-md transition-all border-l-4 ${
-              stats.pendingLeave > 0 ? "border-l-amber-500" : "border-l-cyan-500/50"
-            }`}
+            className="cursor-pointer hover:shadow-md transition-all"
             onClick={() => navigate("/time-leave/leave")}
           >
             <CardContent className="pt-5 pb-5">
@@ -178,7 +176,7 @@ export default function SchedulingDashboard() {
           </Card>
 
           <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
+            className="cursor-pointer hover:shadow-md transition-all"
             onClick={() => navigate("/time-leave/attendance")}
           >
             <CardContent className="pt-5 pb-5">
@@ -197,7 +195,7 @@ export default function SchedulingDashboard() {
           </Card>
 
           <Card
-            className="cursor-pointer hover:shadow-md transition-all border-l-4 border-l-cyan-500/50"
+            className="cursor-pointer hover:shadow-md transition-all"
             onClick={() => navigate("/time-leave/shifts")}
           >
             <CardContent className="pt-5 pb-5">

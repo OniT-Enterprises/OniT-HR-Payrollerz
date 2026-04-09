@@ -928,24 +928,12 @@ export default function LeaveRequests() {
                 <div className="space-y-2">
                   {filteredRequests.map((request) => {
                     const isPending = request.status === "pending";
-                    const leaveTypeColor = {
-                      annual: "border-l-cyan-500",
-                      sick: "border-l-red-500",
-                      maternity: "border-l-pink-500",
-                      paternity: "border-l-blue-500",
-                      bereavement: "border-l-gray-500",
-                      unpaid: "border-l-orange-500",
-                      marriage: "border-l-rose-500",
-                      study: "border-l-violet-500",
-                      custom: "border-l-gray-400",
-                    }[request.leaveType] || "border-l-gray-400";
 
                     return (
                       <div
                         key={request.id}
                         className={cn(
-                          "flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card transition-all hover:shadow-sm border-l-4",
-                          leaveTypeColor,
+                          "flex items-center gap-4 p-4 rounded-xl border border-border/50 bg-card transition-all hover:shadow-sm",
                           isPending && "bg-amber-500/[0.02] dark:bg-amber-500/[0.03]"
                         )}
                       >

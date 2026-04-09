@@ -140,6 +140,11 @@ createdAt: data.createdAt instanceof Timestamp
   : data.createdAt || new Date()
 ```
 
+## UI Rules
+- **No left border accents on cards** — do not use `border-l-4 border-l-{color}` on Card components. Use standard borders only.
+- **No stat cards on report pages** — report pages should use report cards (title, description, label:value rows, export button) and data tables, not 4-column stat card grids.
+- **Brand color** is `#6A9C29` — use `text-primary` / `bg-primary` instead of hardcoded `text-green-500` / `bg-green-500` for brand accent colors. Semantic status colors (success/error badges) can stay as Tailwind greens/reds.
+
 ## Page Patterns
 All pages follow consistent patterns:
 - `useTenantId()` - tenant isolation for multi-tenant support

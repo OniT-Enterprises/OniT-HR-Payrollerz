@@ -501,7 +501,7 @@ export default function ATTLMonthlyWIT() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Generate Return Card */}
-          <Card className="border-l-4 border-l-amber-500">
+          <Card>
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
@@ -574,7 +574,7 @@ export default function ATTLMonthlyWIT() {
           </Card>
 
           {/* Company Info Card */}
-          <Card className="border-l-4 border-l-blue-500">
+          <Card>
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -622,7 +622,7 @@ export default function ATTLMonthlyWIT() {
           </Card>
 
           {/* Quick Stats Card */}
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card>
             <CardHeader className="pb-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -673,7 +673,7 @@ export default function ATTLMonthlyWIT() {
 
         {/* Return Preview */}
         {selectedReturn && (
-          <Card className="border-l-4 border-l-violet-500">
+          <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -840,7 +840,7 @@ export default function ATTLMonthlyWIT() {
         )}
 
         {/* Filing History */}
-        <Card className="border-l-4 border-l-slate-500">
+        <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
