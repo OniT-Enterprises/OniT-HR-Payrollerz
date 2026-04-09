@@ -78,13 +78,14 @@ export default defineConfig(({ mode }) => ({
             }
             return "vendor-firebase-core";
           }
-          // UI components (Radix)
+          // UI components (Radix) — must be in same chunk as React to avoid
+          // forwardRef initialization errors in production builds
           if (id.includes("node_modules/@radix-ui")) {
-            return "vendor-ui";
+            return "vendor-react";
           }
           // Data management
           if (id.includes("node_modules/@tanstack")) {
-            return "vendor-data";
+            return "vendor-react";
           }
           // Charts - let Vite handle recharts/d3 to avoid circular dependency issues
           // Manual chunking can break d3's module initialization order
