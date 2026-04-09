@@ -135,7 +135,9 @@ const messages = {
     "ngoDonor": "ONG & Doador",
     "custom": "Personalizadu",
     "customReports": "Relatóriu Personalizadu",
-    "reportSetup": "Konfig. Relatóriu"
+    "reportSetup": "Konfig. Relatóriu",
+    "payrollAllocation": "Alokasaun Saláriu",
+    "donorExport": "Exportasaun Doador"
   },
   "allowances": {
     "title": "Subsidiu",

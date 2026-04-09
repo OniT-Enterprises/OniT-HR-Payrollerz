@@ -30,8 +30,6 @@ import {
   Download,
   CalendarDays,
   Timer,
-  AlertTriangle,
-  UserCheck,
   Calendar,
   FileSpreadsheet,
 } from "lucide-react";
@@ -245,88 +243,6 @@ export default function AttendanceReports() {
             </div>
           }
         />
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 -mt-10">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.attendanceRate")}</p>
-                  <p className="text-3xl font-bold">{attendanceRate}%</p>
-                  <p className="text-xs text-green-600">
-                    {t("reports.attendance.stats.attendanceRateSummary", {
-                      present: presentRecords.length,
-                      total: totalRecords,
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <UserCheck className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.lateArrivals")}</p>
-                  <p className="text-3xl font-bold">{lateRecords.length}</p>
-                  <p className="text-xs text-orange-600">
-                    {t("reports.attendance.stats.lateHoursSummary", {
-                      hours: Math.round(totalLateMinutes / 60),
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
-                  <AlertTriangle className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.overtimeHours")}</p>
-                  <p className="text-3xl font-bold">{totalOvertimeHours.toFixed(1)}</p>
-                  <p className="text-xs text-blue-600">
-                    {t("reports.attendance.stats.overtimeEmployees", {
-                      count: attendanceRecords.filter((r) => r.overtimeHours > 0).length,
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                  <Timer className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.attendance.stats.onLeaveToday")}</p>
-                  <p className="text-3xl font-bold">{todayOnLeave.length}</p>
-                  <p className="text-xs text-purple-600">
-                    {t("reports.attendance.stats.onLeaveSummary", {
-                      percent: employees.length > 0
-                        ? ((todayOnLeave.length / employees.length) * 100).toFixed(0)
-                        : 0,
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                  <CalendarDays className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Report Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <Card className="border-border/50 shadow-lg">

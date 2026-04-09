@@ -133,7 +133,9 @@ const messages = {
     "ngoDonor": "ONG & Doadores",
     "custom": "Personalizado",
     "customReports": "Relatórios Personalizados",
-    "reportSetup": "Config. Relatórios"
+    "reportSetup": "Config. Relatórios",
+    "payrollAllocation": "Alocação de Folha",
+    "donorExport": "Exportação para Doadores"
   },
   "allowances": {
     "title": "Subsídios",

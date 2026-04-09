@@ -27,7 +27,6 @@ import {
   Users,
   Download,
   UserPlus,
-  UserMinus,
   Building,
   Calendar,
   FileSpreadsheet,
@@ -171,79 +170,6 @@ export default function EmployeeReports() {
             </div>
           }
         />
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 -mt-10">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.totalEmployees")}</p>
-                  <p className="text-3xl font-bold">{employees.length}</p>
-                  <p className="text-xs text-blue-600">
-                    {t("reports.employee.stats.activeEmployees", { count: String(activeEmployees.length) })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.newHires")}</p>
-                  <p className="text-3xl font-bold">{newHires.length}</p>
-                  <p className="text-xs text-green-600">
-                    {t("reports.employee.stats.hiresPeriod", { period: getDateRangeLabel(dateRange) })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <UserPlus className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.departments")}</p>
-                  <p className="text-3xl font-bold">{Object.keys(departmentCounts).length}</p>
-                  <p className="text-xs text-purple-600">{t("reports.employee.stats.withEmployees")}</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-purple-500 to-violet-500 rounded-xl">
-                  <Building className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">{t("reports.employee.stats.inactive")}</p>
-                  <p className="text-3xl font-bold">{inactiveEmployees.length}</p>
-                  <p className="text-xs text-orange-600">
-                    {t("reports.employee.stats.turnover", {
-                      percent: employees.length > 0
-                        ? ((inactiveEmployees.length / employees.length) * 100).toFixed(1)
-                        : "0",
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
-                  <UserMinus className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Report Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <Card className="border-border/50 shadow-lg">

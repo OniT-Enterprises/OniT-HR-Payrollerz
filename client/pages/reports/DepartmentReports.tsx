@@ -29,8 +29,6 @@ import {
   Download,
   Users,
   TrendingUp,
-  UserPlus,
-  BarChart3,
   PieChart,
 } from "lucide-react";
 import { SEO } from "@/components/SEO";
@@ -116,22 +114,6 @@ export default function DepartmentReports() {
   // Calculate overall stats
   const totalDepartments = departments.length;
   const totalEmployees = employees.length;
-  const activeEmployees = useMemo(() => employees.filter((e) => e.status === "active").length, [employees]);
-  const largestDept = departmentStats[0];
-  const avgHeadcount = useMemo(() =>
-    totalDepartments > 0
-      ? (totalEmployees / totalDepartments).toFixed(1)
-      : "0", [totalDepartments, totalEmployees]);
-
-  // Unassigned employees
-  const unassignedEmployees = useMemo(() => {
-    const assignedDepts = departments.map((d) => d.name);
-    return employees.filter(
-      (e) =>
-        !e.jobDetails?.department ||
-        !assignedDepts.includes(e.jobDetails?.department)
-    );
-  }, [departments, employees]);
 
   const doExport = (data: Record<string, unknown>[], filename: string, columns: { key: string; label: string }[]) => {
     exportToCSV(data, filename, columns);
@@ -242,91 +224,6 @@ export default function DepartmentReports() {
             </div>
           }
         />
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 -mt-10">
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("reports.department.stats.totalDepartments")}
-                  </p>
-                  <p className="text-3xl font-bold">{totalDepartments}</p>
-                  <p className="text-xs text-violet-600">
-                    {t("reports.department.stats.activeEmployees", { count: String(activeEmployees) })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-violet-500 to-purple-500 rounded-xl">
-                  <Building className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("reports.department.stats.largestDepartment")}
-                  </p>
-                  <p className="text-3xl font-bold truncate max-w-[140px]">
-                    {largestDept?.department.name || "-"}
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    {t("reports.department.stats.employeeCount", { count: String(largestDept?.headcount || 0) })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-xl">
-                  <Users className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("reports.department.stats.avgHeadcount")}
-                  </p>
-                  <p className="text-3xl font-bold">{avgHeadcount}</p>
-                  <p className="text-xs text-green-600">{t("reports.department.stats.perDepartment")}</p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-green-500 to-emerald-500 rounded-xl">
-                  <BarChart3 className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border-border/50 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    {t("reports.department.stats.unassigned")}
-                  </p>
-                  <p className="text-3xl font-bold">
-                    {unassignedEmployees.length}
-                  </p>
-                  <p className="text-xs text-orange-600">
-                    {t("reports.department.stats.ofStaff", {
-                      percent: totalEmployees > 0
-                        ? ((unassignedEmployees.length / totalEmployees) * 100).toFixed(0)
-                        : "0",
-                    })}
-                  </p>
-                </div>
-                <div className="p-2.5 bg-gradient-to-br from-orange-500 to-amber-500 rounded-xl">
-                  <UserPlus className="h-6 w-6 text-white" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Report Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
           <Card className="border-border/50 shadow-lg">

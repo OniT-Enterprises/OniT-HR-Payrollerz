@@ -135,7 +135,9 @@ const messages = {
     "ngoDonor": "NGO & Donor",
     "custom": "Custom",
     "customReports": "Custom Reports",
-    "reportSetup": "Report Setup"
+    "reportSetup": "Report Setup",
+    "payrollAllocation": "Payroll Allocation",
+    "donorExport": "Donor Export"
   },
   "allowances": {
     "title": "Allowances",
