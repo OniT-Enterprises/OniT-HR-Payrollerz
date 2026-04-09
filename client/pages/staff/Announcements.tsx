@@ -3,7 +3,8 @@
  * Broadcasts messages to all employees via the Ekipa mobile app
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -102,22 +103,15 @@ export default function Announcements() {
   const tenantId = useTenantId();
   const { user } = useAuth();
 
-  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [showDialog, setShowDialog] = useState(false);
-  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
-  const [deletingAnnouncement, setDeletingAnnouncement] = useState<Announcement | null>(null);
-  const [formData, setFormData] = useState<AnnouncementFormData>(EMPTY_FORM);
+  const queryClient = useQueryClient();
 
-  const fetchAnnouncements = useCallback(async () => {
-    if (!tenantId) return;
-    try {
-      setLoading(true);
+  const { data: announcements = [], isLoading: loading } = useQuery({
+    queryKey: ["announcements", tenantId],
+    queryFn: async () => {
       const ref = collection(db, `tenants/${tenantId}/announcements`);
       const q = query(ref, orderBy("createdAt", "desc"));
       const snapshot = await getDocs(q);
-      const items: Announcement[] = snapshot.docs.map((docSnap) => {
+      return snapshot.docs.map((docSnap) => {
         const data = docSnap.data();
         return {
           id: docSnap.id,
@@ -132,26 +126,20 @@ export default function Announcements() {
           createdBy: data.createdBy || "",
           createdByName: data.createdByName || t("common.unknown"),
           readBy: data.readBy || {},
-        };
+        } as Announcement;
       });
-      setAnnouncements(items);
-    } catch (error) {
-      console.error("Error fetching announcements:", error);
-      toast({
-        title: t("common.error"),
-        description: t("announcements.toast.loadFailed"),
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  }, [tenantId, t, toast]);
+    },
+    enabled: Boolean(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    if (tenantId) {
-      fetchAnnouncements();
-    }
-  }, [tenantId, fetchAnnouncements]);
+  const invalidate = () => queryClient.invalidateQueries({ queryKey: ["announcements", tenantId] });
+
+  const [saving, setSaving] = useState(false);
+  const [showDialog, setShowDialog] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
+  const [deletingAnnouncement, setDeletingAnnouncement] = useState<Announcement | null>(null);
+  const [formData, setFormData] = useState<AnnouncementFormData>(EMPTY_FORM);
 
   const resetForm = () => {
     setFormData(EMPTY_FORM);
@@ -234,7 +222,7 @@ export default function Announcements() {
       }
 
       handleCloseDialog();
-      await fetchAnnouncements();
+      invalidate();
     } catch (error) {
       console.error("Error saving announcement:", error);
       toast({
@@ -260,7 +248,7 @@ export default function Announcements() {
         description: t("announcements.toast.deleted"),
       });
       setDeletingAnnouncement(null);
-      await fetchAnnouncements();
+      invalidate();
     } catch (error) {
       console.error("Error deleting announcement:", error);
       toast({
@@ -286,7 +274,7 @@ export default function Announcements() {
           ? t("announcements.toast.unpinned")
           : t("announcements.toast.pinned"),
       });
-      await fetchAnnouncements();
+      invalidate();
     } catch (error) {
       console.error("Error toggling pin:", error);
       toast({
