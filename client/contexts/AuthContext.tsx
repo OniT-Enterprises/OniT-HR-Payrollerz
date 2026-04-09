@@ -72,22 +72,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
     }
   }, []);
 
-  // Check if user is superadmin (from custom claims or profile)
-  const checkSuperAdmin = useCallback(async (firebaseUser: User, profile: UserProfile | null): Promise<boolean> => {
-    // First check custom claims (fast path, set by Cloud Functions)
-    try {
-      const tokenResult = await getIdTokenResult(firebaseUser, true);
-      if (tokenResult.claims.superadmin === true) {
-        return true;
-      }
-    } catch {
-      // Ignore token claim errors
-    }
-
-    // Fall back to Firestore profile
-    return profile?.isSuperAdmin === true;
-  }, []);
-
   // Refresh user profile manually
   const refreshUserProfile = useCallback(async () => {
     const activeUser = user ?? auth?.currentUser;
@@ -97,12 +81,17 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(activeUser);
     }
 
-    const profile = await fetchUserProfile(activeUser);
+    // Run profile fetch and token claim check in parallel
+    const [profile, tokenIsAdmin] = await Promise.all([
+      fetchUserProfile(activeUser),
+      getIdTokenResult(activeUser, true)
+        .then(r => r.claims.superadmin === true)
+        .catch(() => false),
+    ]);
     setUserProfile(profile);
-
-    const isAdmin = await checkSuperAdmin(activeUser, profile);
-    setIsSuperAdmin(isAdmin);
-  }, [user, fetchUserProfile, checkSuperAdmin]);
+    // Token claim is authoritative; profile.isSuperAdmin is fallback
+    setIsSuperAdmin(tokenIsAdmin || profile?.isSuperAdmin === true);
+  }, [user, fetchUserProfile]);
 
   useEffect(() => {
     try {
@@ -120,13 +109,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setUser(firebaseUser);
 
           if (firebaseUser) {
-            // Load user profile from Firestore
-            const profile = await fetchUserProfile(firebaseUser);
+            // Run profile fetch and token claim check in parallel
+            const [profile, tokenIsAdmin] = await Promise.all([
+              fetchUserProfile(firebaseUser),
+              getIdTokenResult(firebaseUser, true)
+                .then(r => r.claims.superadmin === true)
+                .catch(() => false),
+            ]);
             setUserProfile(profile);
-
-            // Check superadmin status
-            const isAdmin = await checkSuperAdmin(firebaseUser, profile);
-            setIsSuperAdmin(isAdmin);
+            // Token claim is authoritative; profile.isSuperAdmin is fallback
+            setIsSuperAdmin(tokenIsAdmin || profile?.isSuperAdmin === true);
           } else {
             setUserProfile(null);
             setIsSuperAdmin(false);
@@ -151,7 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
       return () => {};
     }
-  }, [fetchUserProfile, checkSuperAdmin]);
+  }, [fetchUserProfile]);
 
   const signIn = async (email: string, password: string) => {
     const user = await authService.signIn(email, password);

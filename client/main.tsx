@@ -47,3 +47,12 @@ hydrateQueryClient(queryClient);
 
 // Prefetch common routes after browser is idle
 prefetchCommonRoutesOnIdle();
+
+// Register service worker after page load (don't block render)
+if ('serviceWorker' in navigator && import.meta.env.PROD) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // SW registration failed — app works fine without it
+    });
+  });
+}
