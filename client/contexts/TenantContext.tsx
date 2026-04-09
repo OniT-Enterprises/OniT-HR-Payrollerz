@@ -103,14 +103,55 @@ interface TenantProviderProps {
   children: ReactNode;
 }
 
+const TENANT_CACHE_KEY = 'meza-tenant-cache';
+const TENANT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
+
+interface TenantCache {
+  session: TenantSession | null;
+  availableTenants: Array<{ id: string; name: string; role: TenantRole }>;
+  timestamp: number;
+}
+
+function readTenantCache(): TenantCache | null {
+  try {
+    const raw = localStorage.getItem(TENANT_CACHE_KEY);
+    if (!raw) return null;
+    const data: TenantCache = JSON.parse(raw);
+    if (Date.now() - data.timestamp > TENANT_CACHE_TTL) {
+      localStorage.removeItem(TENANT_CACHE_KEY);
+      return null;
+    }
+    return data;
+  } catch {
+    localStorage.removeItem(TENANT_CACHE_KEY);
+    return null;
+  }
+}
+
+function writeTenantCache(session: TenantSession | null, availableTenants: Array<{ id: string; name: string; role: TenantRole }>): void {
+  try {
+    localStorage.setItem(TENANT_CACHE_KEY, JSON.stringify({
+      session,
+      availableTenants,
+      timestamp: Date.now(),
+    }));
+  } catch {
+    // Storage full or unavailable — ignore
+  }
+}
+
 export function TenantProvider({ children }: TenantProviderProps) {
   const { user, isSuperAdmin, userProfile } = useAuth();
-  const [session, setSession] = useState<TenantSession | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  // Restore cached state for instant returning-user loads
+  const cachedTenant = readTenantCache();
+
+  const [session, setSession] = useState<TenantSession | null>(cachedTenant?.session ?? null);
+  const [loading, setLoading] = useState(cachedTenant ? false : true);
   const [error, setError] = useState<string | null>(null);
   const [availableTenants, setAvailableTenants] = useState<
     Array<{ id: string; name: string; role: TenantRole }>
-  >([]);
+  >(cachedTenant?.availableTenants ?? []);
 
   // Impersonation state
   const [isImpersonating, setIsImpersonating] = useState(false);
@@ -411,6 +452,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setSession(newSession);
         // Store current tenant in localStorage for persistence
         localStorage.setItem("currentTenantId", tid);
+        // Update cache with new session
+        writeTenantCache(newSession, availableTenants);
       }
     } catch (error: unknown) {
       console.error("Failed to switch tenant:", error);
@@ -464,11 +507,15 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setImpersonatedTenantId(null);
         setImpersonatedTenantName(null);
         setLoading(false);
+        localStorage.removeItem(TENANT_CACHE_KEY);
         return;
       }
 
       try {
-        setLoading(true);
+        // Only show loading if we don't have cached state already
+        if (!readTenantCache()) {
+          setLoading(true);
+        }
         setError(null);
 
         // Check sessionStorage for persisted impersonation (session-only, no Firestore)
@@ -484,6 +531,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
               setIsImpersonating(true);
               setImpersonatedTenantId(savedImpersonatingId);
               setImpersonatedTenantName(savedImpersonatingName || savedImpersonatingId);
+              // Don't cache impersonation sessions
               setLoading(false);
               return;
             }
@@ -510,6 +558,8 @@ export function TenantProvider({ children }: TenantProviderProps) {
             const session = await loadTenantSession(targetTenant, user);
             setSession(session);
             localStorage.setItem("currentTenantId", targetTenant);
+            // Cache session + tenants for instant returning-user loads
+            writeTenantCache(session, tenants);
           } catch (error) {
             console.error("Failed to load tenant session:", error);
             setError(`Failed to load tenant: ${error}`);
@@ -592,7 +642,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   return (
     <TenantContext.Provider value={value}>
-      {loading ? <div className="min-h-screen bg-background" /> : children}
+      {children}
     </TenantContext.Provider>
   );
 }

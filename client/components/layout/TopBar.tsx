@@ -3,7 +3,7 @@
  * Contains: sidebar toggle, locale switcher, theme toggle, user menu, banners.
  */
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -66,9 +66,25 @@ interface NotificationCounts {
 }
 
 function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasStaff: boolean): NotificationCounts {
-  const { data: leaveStats } = useLeaveStats(hasTimeleave);
-  const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll);
-  const { data: employees = [] } = useEmployeeDirectory({ status: "active" }, hasStaff);
+  // Defer notification queries until after first meaningful paint
+  const [notificationsReady, setNotificationsReady] = useState(false);
+
+  useEffect(() => {
+    const id = typeof requestIdleCallback === "function"
+      ? requestIdleCallback(() => setNotificationsReady(true), { timeout: 3000 })
+      : (setTimeout(() => setNotificationsReady(true), 2000) as unknown as number);
+    return () => {
+      if (typeof cancelIdleCallback === "function") {
+        cancelIdleCallback(id);
+      } else {
+        clearTimeout(id);
+      }
+    };
+  }, []);
+
+  const { data: leaveStats } = useLeaveStats(hasTimeleave && notificationsReady);
+  const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll && notificationsReady);
+  const { data: employees = [] } = useEmployeeDirectory({ status: "active" }, hasStaff && notificationsReady);
 
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
   const blockingIssues = hasStaff ? getComplianceIssues(employees).length : 0;

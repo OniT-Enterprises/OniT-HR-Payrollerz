@@ -1,12 +1,21 @@
-import { useEffect, useCallback, useRef, useState } from "react";
+import { useEffect, useCallback, useRef, useState, lazy, Suspense } from "react";
 import { useLocation } from "react-router-dom";
-import { Command, Minimize2, Maximize2 } from "lucide-react";
+import { Command, Minimize2, Maximize2, Loader2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { useChatStore } from "@/stores/chatStore";
 import { cn } from "@/lib/utils";
-import ChatPanel from "./ChatPanel";
+
+const ChatPanel = lazy(() => import("./ChatPanel"));
 
 /* ─── Sub-components ─── */
+
+function ChatPanelFallback() {
+  return (
+    <div className="flex h-full items-center justify-center">
+      <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
 
 function MiniPanel({
   onClose, onExpand,
@@ -23,18 +32,20 @@ function MiniPanel({
         "animate-in slide-in-from-bottom-4 fade-in duration-200",
       )}
     >
-      <ChatPanel
-        className="h-full" showHeader onClose={onClose}
-        headerExtra={
-          <button
-            onClick={onExpand}
-            className="h-7 w-7 p-0 inline-flex items-center justify-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-            title="Expand to spotlight"
-          >
-            <Maximize2 className="h-3.5 w-3.5" />
-          </button>
-        }
-      />
+      <Suspense fallback={<ChatPanelFallback />}>
+        <ChatPanel
+          className="h-full" showHeader onClose={onClose}
+          headerExtra={
+            <button
+              onClick={onExpand}
+              className="h-7 w-7 p-0 inline-flex items-center justify-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+              title="Expand to spotlight"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+            </button>
+          }
+        />
+      </Suspense>
     </div>
   );
 }
@@ -60,18 +71,20 @@ function SpotlightPanel({
           isClosing ? "meza-spotlight-panel-out" : "meza-spotlight-panel-in",
         )}
       >
-        <ChatPanel
-          className="h-full" showHeader onClose={onClose}
-          headerExtra={
-            <button
-              onClick={onMinimize}
-              className="h-7 w-7 p-0 inline-flex items-center justify-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
-              title="Minimize to corner"
-            >
-              <Minimize2 className="h-3.5 w-3.5" />
-            </button>
-          }
-        />
+        <Suspense fallback={<ChatPanelFallback />}>
+          <ChatPanel
+            className="h-full" showHeader onClose={onClose}
+            headerExtra={
+              <button
+                onClick={onMinimize}
+                className="h-7 w-7 p-0 inline-flex items-center justify-center rounded-md text-sm font-medium hover:bg-accent hover:text-accent-foreground transition-colors"
+                title="Minimize to corner"
+              >
+                <Minimize2 className="h-3.5 w-3.5" />
+              </button>
+            }
+          />
+        </Suspense>
         <div className="meza-spotlight-footer">
           <div className="flex items-center gap-3 text-[11px] text-white/30">
             <span className="flex items-center gap-1"><kbd className="meza-spotlight-kbd">Esc</kbd>close</span>
