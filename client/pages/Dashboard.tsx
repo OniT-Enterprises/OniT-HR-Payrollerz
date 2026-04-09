@@ -226,7 +226,7 @@ export default function Dashboard() {
   const compliance = hasPayroll ? getComplianceStatus() : null;
   const nextPayDate = getNextPayDate();
   const nextPayDateKey = formatDateKey(nextPayDate);
-  const firstName = user?.displayName?.split(" ")[0] || "there";
+  const firstName = user?.displayName?.split(" ")[0] || "";
   const donorExportEnabled = canUseDonorExport(
     session,
     hasReports,
@@ -284,7 +284,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">
-              {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}, {firstName}
+              {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}{firstName ? `, ${firstName}` : ""}
             </h1>
             <p className="text-sm text-muted-foreground mt-0.5">
               {new Date().toLocaleDateString("en-US", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
