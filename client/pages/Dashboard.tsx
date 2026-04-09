@@ -189,9 +189,9 @@ function PrimosBotAvatar() {
         />
       </button>
       {quip && (
-        <div className="absolute -top-8 left-16 bg-card border border-border rounded-lg px-3 py-1.5 text-xs shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-200 z-10">
+        <div className="absolute top-0 left-[85px] bg-card border border-border rounded-lg px-3 py-1.5 text-xs shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-left-2 duration-200 z-10">
           {quip}
-          <div className="absolute -bottom-1 left-3 w-2 h-2 bg-card border-b border-r border-border rotate-45" />
+          <div className="absolute top-2.5 -left-1 w-2 h-2 bg-card border-b border-l border-border rotate-45" />
         </div>
       )}
       <style>{`@keyframes wiggle { 0% { transform: rotate(0deg); } 15% { transform: rotate(-12deg); } 30% { transform: rotate(10deg); } 45% { transform: rotate(-8deg); } 60% { transform: rotate(6deg); } 75% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
