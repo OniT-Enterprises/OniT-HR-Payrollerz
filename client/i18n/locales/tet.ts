@@ -236,6 +236,7 @@ const messages = {
     "todoBlockingDesc": "Empregadu {{count}} presiza dokumentu ka dadus.",
     "todoAddEmployeeDesc": "Tau membru foun ba ita-nia organizasaun.",
     "botBriefing": "rezumu",
+    "botGreeting": "Ha'u PrimosBot — husu kona-ba ekipa, saláriu, lisensa, ka buat seluk.",
     "botIntro": "Husu ba ha'u kona-ba ita-nia ekipa, saláriu, ka dadus empreza.",
     "botPromptStaff": "Empregadu hira?",
     "botPromptPayroll": "Saláriu tuirmai?",

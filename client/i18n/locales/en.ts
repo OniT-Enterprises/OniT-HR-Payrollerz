@@ -236,6 +236,7 @@ const messages = {
     "todoBlockingDesc": "{{count}} employee(s) need missing documents or details.",
     "todoAddEmployeeDesc": "Add a new team member to your organization.",
     "botBriefing": "briefing",
+    "botGreeting": "I'm PrimosBot — ask me about your team, payroll, leave, or anything else.",
     "botIntro": "Ask me anything about your team, payroll, or company data.",
     "botPromptStaff": "How many staff?",
     "botPromptPayroll": "Next payroll?",

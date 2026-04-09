@@ -234,6 +234,7 @@ const messages = {
     "todoBlockingDesc": "{{count}} funcionário(s) precisam de documentos ou dados.",
     "todoAddEmployeeDesc": "Adicione um novo membro à sua organização.",
     "botBriefing": "resumo",
+    "botGreeting": "Sou o PrimosBot — pergunte sobre a equipa, folha, licenças ou qualquer coisa.",
     "botIntro": "Pergunte-me sobre a sua equipa, folha ou dados da empresa.",
     "botPromptStaff": "Quantos funcionários?",
     "botPromptPayroll": "Próxima folha?",
