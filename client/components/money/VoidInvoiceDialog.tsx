@@ -29,6 +29,42 @@ interface VoidInvoiceDialogProps {
   onVoided?: () => void;
 }
 
+const fmtVoidCurrency = (amount: number) =>
+  new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(amount);
+
+/** Invoice summary for void dialog */
+function VoidInvoiceSummary({ invoice }: { invoice: Invoice }) {
+  return (
+    <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">Customer</span>
+        <span className="font-medium">{invoice.customerName}</span>
+      </div>
+      <div className="flex justify-between">
+        <span className="text-muted-foreground">Amount</span>
+        <span>{fmtVoidCurrency(invoice.total)}</span>
+      </div>
+      {invoice.amountPaid > 0 && (
+        <div className="flex justify-between text-yellow-600">
+          <span>Payments Received</span>
+          <span>{fmtVoidCurrency(invoice.amountPaid)}</span>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Warning about partial payments when voiding */
+function VoidPartialPaymentWarning({ amountPaid }: { amountPaid: number }) {
+  if (amountPaid <= 0) return null;
+  return (
+    <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-700 dark:text-yellow-400">
+      <strong>Note:</strong> This invoice has received partial payments.
+      Voiding will not refund these payments. You may need to process a refund separately.
+    </div>
+  );
+}
+
 export function VoidInvoiceDialog({
   invoice,
   open,
@@ -42,40 +78,22 @@ export function VoidInvoiceDialog({
 
   const handleVoid = async () => {
     if (!session?.tid) return;
-
     try {
       setLoading(true);
       await invoiceService.cancelInvoice(session.tid, invoice.id, reason || "");
-
-      toast({
-        title: 'Invoice voided',
-        description: `Invoice ${invoice.invoiceNumber} has been voided`,
-      });
-
+      toast({ title: 'Invoice voided', description: `Invoice ${invoice.invoiceNumber} has been voided` });
       onVoided?.();
       onClose();
     } catch (error) {
       console.error('Error voiding invoice:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to void invoice',
-        variant: 'destructive',
-      });
+      toast({ title: 'Error', description: error instanceof Error ? error.message : 'Failed to void invoice', variant: 'destructive' });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
-
   return (
-    <AlertDialog open={open} onOpenChange={(open) => !open && onClose()}>
+    <AlertDialog open={open} onOpenChange={(o) => !o && onClose()}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle className="flex items-center gap-2">
@@ -88,32 +106,9 @@ export function VoidInvoiceDialog({
           </AlertDialogDescription>
         </AlertDialogHeader>
 
-        {/* Invoice Summary */}
-        <div className="p-3 rounded-lg bg-muted/50 space-y-1 text-sm">
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Customer</span>
-            <span className="font-medium">{invoice.customerName}</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-muted-foreground">Amount</span>
-            <span>{formatCurrency(invoice.total)}</span>
-          </div>
-          {invoice.amountPaid > 0 && (
-            <div className="flex justify-between text-yellow-600">
-              <span>Payments Received</span>
-              <span>{formatCurrency(invoice.amountPaid)}</span>
-            </div>
-          )}
-        </div>
+        <VoidInvoiceSummary invoice={invoice} />
+        <VoidPartialPaymentWarning amountPaid={invoice.amountPaid} />
 
-        {invoice.amountPaid > 0 && (
-          <div className="p-3 rounded-lg bg-yellow-50 dark:bg-yellow-950/30 border border-yellow-200 dark:border-yellow-800 text-sm text-yellow-700 dark:text-yellow-400">
-            <strong>Note:</strong> This invoice has received partial payments.
-            Voiding will not refund these payments. You may need to process a refund separately.
-          </div>
-        )}
-
-        {/* Reason Input */}
         <div className="space-y-2">
           <Label htmlFor="reason">
             Reason for voiding
@@ -130,16 +125,9 @@ export function VoidInvoiceDialog({
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={loading}>Cancel</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleVoid}
-            disabled={loading}
-            className="bg-red-600 hover:bg-red-700"
-          >
+          <AlertDialogAction onClick={handleVoid} disabled={loading} className="bg-red-600 hover:bg-red-700">
             {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Voiding...
-              </>
+              <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Voiding...</>
             ) : (
               'Void Invoice'
             )}

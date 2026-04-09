@@ -30,26 +30,126 @@ interface FaceClockInProps {
   onSuccess?: () => void;
 }
 
+interface MatchedEmployee {
+  id: string;
+  name: string;
+  department: string;
+}
+
 const CONSECUTIVE_MATCH_THRESHOLD = 3;
 
-export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClockInProps) {
+const STATE_DESCRIPTIONS: Record<ClockInState, string> = {
+  scanning: 'Look at the camera to clock in.',
+  loading: 'Loading face data...',
+  matched: 'Identifying...',
+  confirming: 'Employee identified!',
+  success: 'Clock-in recorded!',
+  'not-recognized': 'Face not recognized. Try again or use manual entry.',
+};
+
+/* ─── Match tracking refs type ─── */
+
+interface MatchTrackingRefs {
+  matchCountRef: React.MutableRefObject<number>;
+  lastMatchIdRef: React.MutableRefObject<string | null>;
+  prevLandmarksRef: React.MutableRefObject<DetectionResult['landmarks'] | null>;
+  livenessPassedRef: React.MutableRefObject<boolean>;
+}
+
+/* ─── Face matching logic (pure function) ─── */
+
+function processFaceMatch(
+  result: DetectionResult,
+  embeddings: ReturnType<typeof useFaceEmbeddings>['data'],
+  tracking: MatchTrackingRefs,
+): { employeeId: string; employeeName: string } | null {
+  // Liveness check between frames
+  if (tracking.prevLandmarksRef.current && checkLiveness(tracking.prevLandmarksRef.current, result.landmarks)) {
+    tracking.livenessPassedRef.current = true;
+  }
+  tracking.prevLandmarksRef.current = result.landmarks;
+
+  const match = findBestMatch(result.descriptor, embeddings!);
+  if (!match) {
+    if (tracking.lastMatchIdRef.current) {
+      tracking.matchCountRef.current = 0;
+      tracking.lastMatchIdRef.current = null;
+    }
+    return null;
+  }
+
+  tracking.matchCountRef.current = match.employeeId === tracking.lastMatchIdRef.current
+    ? tracking.matchCountRef.current + 1
+    : 1;
+  tracking.lastMatchIdRef.current = match.employeeId;
+
+  if (tracking.matchCountRef.current >= CONSECUTIVE_MATCH_THRESHOLD && tracking.livenessPassedRef.current) {
+    return match;
+  }
+  return null;
+}
+
+/* ─── Clock-in submission helper ─── */
+
+async function submitClockIn(
+  tenantId: string,
+  employee: MatchedEmployee,
+): Promise<string> {
+  const now = new Date();
+  const clockIn = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+  await attendanceService.markAttendance(tenantId, {
+    employeeId: employee.id, employeeName: employee.name,
+    department: employee.department, date: getTodayTL(), clockIn, source: 'facial',
+  });
+  return clockIn;
+}
+
+/* ─── Reset match tracking refs ─── */
+
+function resetMatchTracking(tracking: MatchTrackingRefs) {
+  tracking.matchCountRef.current = 0;
+  tracking.lastMatchIdRef.current = null;
+  tracking.prevLandmarksRef.current = null;
+  tracking.livenessPassedRef.current = false;
+}
+
+function scheduleAutoClose(
+  ref: React.MutableRefObject<number | null>,
+  clearFn: () => void,
+  closeFn: () => void,
+) {
+  clearFn();
+  ref.current = window.setTimeout(() => { closeFn(); ref.current = null; }, 2000);
+}
+
+function scheduleReset(
+  ref: React.MutableRefObject<number | null>,
+  resetFn: () => void,
+) {
+  ref.current = window.setTimeout(() => { resetFn(); ref.current = null; }, 3000);
+}
+
+/* ─── Custom hook: face clock-in state machine ─── */
+
+function useFaceClockIn(
+  open: boolean,
+  onOpenChange: (open: boolean) => void,
+  onSuccess?: () => void,
+) {
   const { toast } = useToast();
   const tenantId = useTenantId();
   const { data: embeddings, isLoading: embeddingsLoading } = useFaceEmbeddings();
 
   const [state, setState] = useState<ClockInState>('loading');
-  const [matchedEmployee, setMatchedEmployee] = useState<{
-    id: string;
-    name: string;
-    department: string;
-  } | null>(null);
+  const [matchedEmployee, setMatchedEmployee] = useState<MatchedEmployee | null>(null);
   const [saving, setSaving] = useState(false);
 
-  // Consecutive match tracking
-  const matchCountRef = useRef(0);
-  const lastMatchIdRef = useRef<string | null>(null);
-  const prevLandmarksRef = useRef<DetectionResult['landmarks'] | null>(null);
-  const livenessPassedRef = useRef(false);
+  const tracking: MatchTrackingRefs = {
+    matchCountRef: useRef(0),
+    lastMatchIdRef: useRef<string | null>(null),
+    prevLandmarksRef: useRef<DetectionResult['landmarks'] | null>(null),
+    livenessPassedRef: useRef(false),
+  };
   const transitionTimeoutRef = useRef<number | null>(null);
 
   const clearTransitionTimeout = useCallback(() => {
@@ -65,142 +165,127 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
       clearTransitionTimeout();
       setState(embeddingsLoading ? 'loading' : 'scanning');
       setMatchedEmployee(null);
-      matchCountRef.current = 0;
-      lastMatchIdRef.current = null;
-      prevLandmarksRef.current = null;
-      livenessPassedRef.current = false;
+      resetMatchTracking(tracking);
     }
   }, [open, embeddingsLoading, clearTransitionTimeout]);
 
   useEffect(() => clearTransitionTimeout, [clearTransitionTimeout]);
 
   useEffect(() => {
-    if (!embeddingsLoading && state === 'loading') {
-      setState('scanning');
-    }
+    if (!embeddingsLoading && state === 'loading') setState('scanning');
   }, [embeddingsLoading, state]);
 
   const handleFaceDetected = useCallback(
     (result: DetectionResult) => {
       if (state !== 'scanning' || !embeddings?.length) return;
 
-      // Liveness check between frames
-      if (prevLandmarksRef.current) {
-        if (checkLiveness(prevLandmarksRef.current, result.landmarks)) {
-          livenessPassedRef.current = true;
-        }
-      }
-      prevLandmarksRef.current = result.landmarks;
+      const confirmedMatch = processFaceMatch(result, embeddings, tracking);
+      if (!confirmedMatch) return;
 
-      // Match against registered embeddings
-      const match = findBestMatch(result.descriptor, embeddings);
-
-      if (match) {
-        if (match.employeeId === lastMatchIdRef.current) {
-          matchCountRef.current++;
-        } else {
-          matchCountRef.current = 1;
-          lastMatchIdRef.current = match.employeeId;
-        }
-
-        // Require consecutive matches + liveness
-        if (matchCountRef.current >= CONSECUTIVE_MATCH_THRESHOLD && livenessPassedRef.current) {
-          setState('matched');
-
-          // Look up department from embeddings (we don't store it there, so fetch employee)
-          employeeService
-            .getEmployeeById(tenantId, match.employeeId)
-            .then(emp => {
-              setMatchedEmployee({
-                id: match.employeeId,
-                name: match.employeeName,
-                department: emp?.jobDetails.department || '',
-              });
-              setState('confirming');
-            })
-            .catch(() => {
-              // Fallback: use name from embedding
-              setMatchedEmployee({
-                id: match.employeeId,
-                name: match.employeeName,
-                department: '',
-              });
-              setState('confirming');
-            });
-        }
-      } else {
-        // No match — reset consecutive count
-        if (lastMatchIdRef.current) {
-          matchCountRef.current = 0;
-          lastMatchIdRef.current = null;
-        }
-      }
+      setState('matched');
+      employeeService.getEmployeeById(tenantId, confirmedMatch.employeeId)
+        .then(emp => {
+          setMatchedEmployee({ id: confirmedMatch.employeeId, name: confirmedMatch.employeeName, department: emp?.jobDetails.department || '' });
+          setState('confirming');
+        })
+        .catch(() => {
+          setMatchedEmployee({ id: confirmedMatch.employeeId, name: confirmedMatch.employeeName, department: '' });
+          setState('confirming');
+        });
     },
-    [state, embeddings, tenantId]
+    [state, embeddings, tenantId],
   );
 
-  const handleConfirmClockIn = async () => {
+  const handleConfirmClockIn = useCallback(async () => {
     if (!matchedEmployee) return;
-
     setSaving(true);
     try {
-      const now = new Date();
-      const clockIn = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-
-      await attendanceService.markAttendance(tenantId, {
-        employeeId: matchedEmployee.id,
-        employeeName: matchedEmployee.name,
-        department: matchedEmployee.department,
-        date: getTodayTL(),
-        clockIn,
-        source: 'facial',
-      });
-
+      const clockIn = await submitClockIn(tenantId, matchedEmployee);
       setState('success');
-
-      toast({
-        title: 'Clocked In',
-        description: `${matchedEmployee.name} clocked in at ${clockIn}.`,
-      });
-
-      // Auto-close after 2s
-      clearTransitionTimeout();
-      transitionTimeoutRef.current = window.setTimeout(() => {
-        onOpenChange(false);
-        onSuccess?.();
-        transitionTimeoutRef.current = null;
-      }, 2000);
-    } catch (error) {
-      console.error('Clock-in failed:', error);
-      toast({
-        title: 'Clock-In Failed',
-        description: 'Could not save attendance. Please try again.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Clocked In', description: `${matchedEmployee.name} clocked in at ${clockIn}.` });
+      scheduleAutoClose(transitionTimeoutRef, clearTransitionTimeout, () => { onOpenChange(false); onSuccess?.(); });
+    } catch {
+      toast({ title: 'Clock-In Failed', description: 'Could not save attendance. Please try again.', variant: 'destructive' });
       setState('scanning');
-    } finally {
-      setSaving(false);
-    }
-  };
+    } finally { setSaving(false); }
+  }, [matchedEmployee, tenantId, toast, clearTransitionTimeout, onOpenChange, onSuccess]);
 
-  const handleNotRecognized = () => {
+  const handleNotRecognized = useCallback(() => {
     clearTransitionTimeout();
     setState('not-recognized');
     setMatchedEmployee(null);
-    // Auto-reset after 3s
-    transitionTimeoutRef.current = window.setTimeout(() => {
-      setState('scanning');
-      matchCountRef.current = 0;
-      lastMatchIdRef.current = null;
-      livenessPassedRef.current = false;
-      transitionTimeoutRef.current = null;
-    }, 3000);
-  };
+    scheduleReset(transitionTimeoutRef, () => { setState('scanning'); resetMatchTracking(tracking); });
+  }, [clearTransitionTimeout]);
 
-  const handleClose = () => {
-    clearTransitionTimeout();
-    onOpenChange(false);
+  const handleClose = useCallback(() => { clearTransitionTimeout(); onOpenChange(false); }, [clearTransitionTimeout, onOpenChange]);
+
+  return {
+    state, matchedEmployee, saving, embeddings, handleFaceDetected,
+    handleConfirmClockIn, handleNotRecognized, handleClose,
   };
+}
+
+/* ─── Sub-components ─── */
+
+function ConfirmingPanel({
+  employee, saving, onNotMe, onConfirm,
+}: {
+  employee: MatchedEmployee; saving: boolean;
+  onNotMe: () => void; onConfirm: () => void;
+}) {
+  return (
+    <div className="text-center space-y-4 py-4">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-50 dark:bg-cyan-950/30">
+        <Check className="h-8 w-8 text-cyan-600" />
+      </div>
+      <div>
+        <p className="text-lg font-semibold">{employee.name}</p>
+        {employee.department && (
+          <p className="text-sm text-muted-foreground">{employee.department}</p>
+        )}
+      </div>
+      <div className="flex gap-2 justify-center">
+        <Button variant="outline" onClick={onNotMe} disabled={saving}>Not Me</Button>
+        <Button
+          onClick={onConfirm} disabled={saving}
+          className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
+        >
+          {saving ? (<><Loader2 className="h-4 w-4 mr-2 animate-spin" />Saving...</>) : 'Confirm Clock-In'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function SuccessPanel({ name }: { name: string }) {
+  return (
+    <div className="text-center space-y-3 py-6">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 dark:bg-green-950/30">
+        <Check className="h-8 w-8 text-green-600" />
+      </div>
+      <p className="text-lg font-semibold text-green-700 dark:text-green-400">{name} Clocked In</p>
+    </div>
+  );
+}
+
+function NotRecognizedPanel() {
+  return (
+    <div className="text-center space-y-3 py-6">
+      <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30">
+        <UserX className="h-8 w-8 text-red-500" />
+      </div>
+      <p className="text-sm text-muted-foreground">Returning to scanning...</p>
+    </div>
+  );
+}
+
+/* ─── Main component ─── */
+
+export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClockInProps) {
+  const {
+    state, matchedEmployee, saving, embeddings, handleFaceDetected,
+    handleConfirmClockIn, handleNotRecognized, handleClose,
+  } = useFaceClockIn(open, onOpenChange, onSuccess);
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
@@ -210,18 +295,10 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
             <ScanFace className="h-5 w-5 text-cyan-500" />
             Face Clock-In
           </DialogTitle>
-          <DialogDescription>
-            {state === 'scanning' && 'Look at the camera to clock in.'}
-            {state === 'loading' && 'Loading face data...'}
-            {state === 'matched' && 'Identifying...'}
-            {state === 'confirming' && 'Employee identified!'}
-            {state === 'success' && 'Clock-in recorded!'}
-            {state === 'not-recognized' && 'Face not recognized. Try again or use manual entry.'}
-          </DialogDescription>
+          <DialogDescription>{STATE_DESCRIPTIONS[state]}</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Camera feed — active during scanning */}
           {(state === 'loading' || state === 'scanning' || state === 'matched') && (
             <FaceCamera
               onFaceDetected={handleFaceDetected}
@@ -230,70 +307,21 @@ export default function FaceClockIn({ open, onOpenChange, onSuccess }: FaceClock
             />
           )}
 
-          {/* No embeddings registered */}
           {state === 'scanning' && embeddings && embeddings.length === 0 && (
             <div className="p-3 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg text-sm text-yellow-700 dark:text-yellow-400">
               No employees have enrolled their face yet. Ask an admin to enroll employees first.
             </div>
           )}
 
-          {/* Confirming match */}
           {state === 'confirming' && matchedEmployee && (
-            <div className="text-center space-y-4 py-4">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-cyan-50 dark:bg-cyan-950/30">
-                <Check className="h-8 w-8 text-cyan-600" />
-              </div>
-              <div>
-                <p className="text-lg font-semibold">{matchedEmployee.name}</p>
-                {matchedEmployee.department && (
-                  <p className="text-sm text-muted-foreground">{matchedEmployee.department}</p>
-                )}
-              </div>
-              <div className="flex gap-2 justify-center">
-                <Button variant="outline" onClick={handleNotRecognized} disabled={saving}>
-                  Not Me
-                </Button>
-                <Button
-                  onClick={handleConfirmClockIn}
-                  disabled={saving}
-                  className="bg-gradient-to-r from-cyan-500 to-teal-500 text-white hover:from-cyan-600 hover:to-teal-600"
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    'Confirm Clock-In'
-                  )}
-                </Button>
-              </div>
-            </div>
+            <ConfirmingPanel
+              employee={matchedEmployee} saving={saving}
+              onNotMe={handleNotRecognized} onConfirm={handleConfirmClockIn}
+            />
           )}
 
-          {/* Success state */}
-          {state === 'success' && matchedEmployee && (
-            <div className="text-center space-y-3 py-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-50 dark:bg-green-950/30">
-                <Check className="h-8 w-8 text-green-600" />
-              </div>
-              <p className="text-lg font-semibold text-green-700 dark:text-green-400">
-                {matchedEmployee.name} Clocked In
-              </p>
-            </div>
-          )}
-
-          {/* Not recognized */}
-          {state === 'not-recognized' && (
-            <div className="text-center space-y-3 py-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-50 dark:bg-red-950/30">
-                <UserX className="h-8 w-8 text-red-500" />
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Returning to scanning...
-              </p>
-            </div>
-          )}
+          {state === 'success' && matchedEmployee && <SuccessPanel name={matchedEmployee.name} />}
+          {state === 'not-recognized' && <NotRecognizedPanel />}
         </div>
       </DialogContent>
     </Dialog>

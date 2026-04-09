@@ -53,95 +53,96 @@ export default function ModuleSectionNav(props: ModuleSectionNavProps) {
   return <ModuleSectionNavInner {...props} />;
 }
 
+interface NavTab {
+  key: string;
+  label: string;
+  path: string;
+  icon: React.ComponentType<{ className?: string }>;
+  active: boolean;
+  isAnchor: boolean;
+}
+
+function buildTabs(
+  visibleConfig: ReturnType<typeof filterModuleNavConfigByPermissions>,
+  pathname: string,
+  mode: ModuleSectionNavProps['mode'],
+): NavTab[] {
+  const activeSection = visibleConfig.sections.find((s) =>
+    s.matchPaths.some((mp) => isPathActive(pathname, mp))
+  );
+  const tabs: NavTab[] = [];
+
+  for (const section of visibleConfig.sections) {
+    const isSectionActive = section.id === activeSection?.id;
+    if (mode === "expanded" && !isSectionActive) continue;
+
+    const shouldExpand = mode === "expanded"
+      ? section.subPages.length > 0
+      : mode === "collapsed"
+        ? false
+        : isSectionActive && section.subPages.length > 0 && pathname !== section.path;
+
+    if (shouldExpand) {
+      for (const sub of section.subPages) {
+        tabs.push({ key: sub.path, label: sub.label, path: sub.path, icon: sub.icon, active: isPathActive(pathname, sub.path), isAnchor: false });
+      }
+    } else {
+      tabs.push({ key: section.id, label: section.label, path: section.path, icon: section.icon, active: isSectionActive, isAnchor: true });
+    }
+  }
+  return tabs;
+}
+
+function NavTabButton({
+  tab, activeClass, onClick,
+}: {
+  tab: NavTab; activeClass: string; onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={`
+        flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap
+        border-b-2 transition-colors
+        ${tab.active
+          ? `${activeClass} font-medium`
+          : tab.isAnchor
+            ? "border-transparent text-muted-foreground hover:text-foreground hover:border-border font-medium"
+            : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+        }
+      `}
+    >
+      <tab.icon className="h-4 w-4" />
+      {tab.label}
+    </button>
+  );
+}
+
 function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   const navigate = useNavigate();
   const { pathname } = useLocation();
   const { hasModule } = useTenant();
   const visibleConfig = React.useMemo(
     () => filterModuleNavConfigByPermissions(config, hasModule),
-    [config, hasModule]
+    [config, hasModule],
   );
 
-  const activeClass = activeStyles[visibleConfig.moduleId];
-
-  // Find which section is active
-  const activeSection = visibleConfig.sections.find((s) =>
-    s.matchPaths.some((mp) => isPathActive(pathname, mp))
+  const tabs = React.useMemo(
+    () => buildTabs(visibleConfig, pathname, mode),
+    [visibleConfig, pathname, mode],
   );
 
-  // Build the flat list of tabs to render
-  const tabs: {
-    key: string;
-    label: string;
-    path: string;
-    icon: React.ComponentType<{ className?: string }>;
-    active: boolean;
-    isAnchor: boolean;
-  }[] = [];
-
-  for (const section of visibleConfig.sections) {
-    const isSectionActive = section.id === activeSection?.id;
-    const isOnOverviewPage = pathname === section.path;
-
-    // In "expanded" mode, skip non-active sections entirely
-    if (mode === "expanded" && !isSectionActive) continue;
-
-    // Decide whether to expand this section
-    const shouldExpand = mode === "expanded"
-      ? section.subPages.length > 0
-      : mode === "collapsed"
-        ? false
-        : isSectionActive && section.subPages.length > 0 && !isOnOverviewPage;
-
-    if (shouldExpand) {
-      for (const sub of section.subPages) {
-        tabs.push({
-          key: sub.path,
-          label: sub.label,
-          path: sub.path,
-          icon: sub.icon,
-          active: isPathActive(pathname, sub.path),
-          isAnchor: false,
-        });
-      }
-    } else {
-      tabs.push({
-        key: section.id,
-        label: section.label,
-        path: section.path,
-        icon: section.icon,
-        active: isSectionActive,
-        isAnchor: true,
-      });
-    }
-  }
-
-  // In expanded mode with no tabs (active section has no sub-pages), render nothing
   if (visibleConfig.sections.length === 0) return null;
   if (mode === "expanded" && tabs.length === 0) return null;
+
+  const activeClass = activeStyles[visibleConfig.moduleId];
 
   return (
     <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-6">
         <nav className="flex gap-1 -mb-px overflow-x-auto" aria-label={`${visibleConfig.moduleId} sections`}>
           {tabs.map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => navigate(tab.path)}
-              className={`
-                flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap
-                border-b-2 transition-colors
-                ${tab.active
-                  ? `${activeClass} font-medium`
-                  : tab.isAnchor
-                    ? "border-transparent text-muted-foreground hover:text-foreground hover:border-border font-medium"
-                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
-                }
-              `}
-            >
-              <tab.icon className="h-4 w-4" />
-              {tab.label}
-            </button>
+            <NavTabButton key={tab.key} tab={tab} activeClass={activeClass} onClick={() => navigate(tab.path)} />
           ))}
         </nav>
       </div>

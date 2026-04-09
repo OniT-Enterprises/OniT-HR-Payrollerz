@@ -419,6 +419,383 @@ interface PayslipPDFProps {
   language?: PayslipLocale;
 }
 
+// --- Shared types for sub-components ---
+
+type PayslipStrings = Record<string, string>;
+
+// --- Sub-components ---
+
+function PayslipHeader({
+  companyName,
+  companyAddress,
+  companyPhone,
+  companyEmail,
+  payrollRun,
+  s,
+}: {
+  companyName: string;
+  companyAddress: string;
+  companyPhone: string;
+  companyEmail: string;
+  payrollRun: PayrollRun;
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.header}>
+      <View>
+        <Text style={styles.companyName}>{companyName}</Text>
+        <Text style={styles.companyInfo}>{companyAddress}</Text>
+        <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
+      </View>
+      <View>
+        <Text style={styles.payslipTitle}>{s.title}</Text>
+        <Text style={styles.payslipSubtitle}>{s.payDate} {formatDate(payrollRun.payDate)}</Text>
+        <Text style={styles.payslipSubtitle}>{s.period} {formatPayPeriod(payrollRun.periodStart, payrollRun.periodEnd)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function EmployeePayInfoSection({
+  record,
+  payrollRun,
+  s,
+}: {
+  record: PayrollRecord;
+  payrollRun: PayrollRun;
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.twoColumn}>
+      <View style={styles.column}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{s.employeeInfo}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.name}</Text>
+            <Text style={styles.infoValue}>{record.employeeName}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.employeeId}</Text>
+            <Text style={styles.infoValue}>{record.employeeNumber}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.department}</Text>
+            <Text style={styles.infoValue}>{record.department}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.position}</Text>
+            <Text style={styles.infoValue}>{record.position}</Text>
+          </View>
+        </View>
+      </View>
+
+      <View style={styles.column}>
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{s.payInfo}</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.payFrequency}</Text>
+            <Text style={styles.infoValue}>{payrollRun.payFrequency.charAt(0).toUpperCase() + payrollRun.payFrequency.slice(1)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.hourlyRate}</Text>
+            <Text style={styles.infoValue}>{formatCurrency(record.hourlyRate)}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>{s.overtimeRate}</Text>
+            <Text style={styles.infoValue}>{record.overtimeRate}x</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function HoursSummaryGrid({
+  hourItems,
+  s,
+}: {
+  hourItems: { label: string; value: number }[];
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.hoursGrid}>
+      {hourItems.map((item) => (
+        <View key={item.label} style={styles.hoursItem}>
+          <Text style={styles.hoursLabel}>{item.label}</Text>
+          <Text style={styles.hoursValue}>{item.value.toFixed(2)} {s.hrs}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+function EarningsColumn({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.column}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{s.earnings}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, { width: '50%' }]}>{s.description}</Text>
+            <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'center' }]}>{s.hours}</Text>
+            <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'right' }]}>{s.rate}</Text>
+            <Text style={[styles.tableHeaderText, { width: '20%', textAlign: 'right' }]}>{s.amount}</Text>
+          </View>
+          {record.earnings.map((earning, index) => (
+            <View key={index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+              <Text style={[styles.tableCell, { width: '50%' }]}>{earning.description}</Text>
+              <Text style={[styles.tableCell, { width: '15%', textAlign: 'center' }]}>
+                {earning.hours?.toFixed(2) || '-'}
+              </Text>
+              <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
+                {earning.rate ? formatCurrency(earning.rate) : '-'}
+              </Text>
+              <Text style={[styles.tableCell, { width: '20%', textAlign: 'right' }]}>
+                {formatCurrency(earning.amount)}
+              </Text>
+            </View>
+          ))}
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>{s.grossPay}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(record.totalGrossPay)}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function DeductionsColumn({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  const taxTypes = ['income_tax', 'inss_employee'];
+  const taxDeductions = record.deductions.filter(d => taxTypes.includes(d.type));
+  const preTaxDeductions = record.deductions.filter(d => d.isPreTax && !taxTypes.includes(d.type));
+  const postTaxDeductions = record.deductions.filter(d => !d.isPreTax && !taxTypes.includes(d.type));
+
+  return (
+    <View style={styles.column}>
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>{s.deductions}</Text>
+        <View style={styles.table}>
+          <View style={styles.tableHeader}>
+            <Text style={[styles.tableHeaderText, { width: '70%' }]}>{s.description}</Text>
+            <Text style={[styles.tableHeaderText, { width: '30%', textAlign: 'right' }]}>{s.amount}</Text>
+          </View>
+
+          {/* Tax Deductions */}
+          {taxDeductions.map((deduction, index) => (
+            <View key={`tax-${index}`} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
+              <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
+              <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
+                {formatCurrency(deduction.amount)}
+              </Text>
+            </View>
+          ))}
+
+          {/* Pre-tax Deductions */}
+          {preTaxDeductions.length > 0 && (
+            <>
+              {preTaxDeductions.map((deduction, index) => (
+                <View key={`pre-${index}`} style={styles.tableRow}>
+                  <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description} {s.preTax}</Text>
+                  <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
+                    {formatCurrency(deduction.amount)}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+
+          {/* Post-tax Deductions */}
+          {postTaxDeductions.length > 0 && (
+            <>
+              {postTaxDeductions.map((deduction, index) => (
+                <View key={`post-${index}`} style={styles.tableRowAlt}>
+                  <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
+                  <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
+                    {formatCurrency(deduction.amount)}
+                  </Text>
+                </View>
+              ))}
+            </>
+          )}
+
+          <View style={styles.totalRow}>
+            <Text style={styles.totalLabel}>{s.totalDeductions}</Text>
+            <Text style={styles.totalValue}>{formatCurrency(record.totalDeductions)}</Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function NetPaySummary({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.summaryBox}>
+      <View style={styles.summaryItem}>
+        <Text style={styles.summaryLabel}>{s.grossPay}</Text>
+        <Text style={styles.summaryValue}>{formatCurrency(record.totalGrossPay)}</Text>
+      </View>
+      <View style={styles.summaryItem}>
+        <Text style={styles.summaryLabel}>{s.totalDeductions}</Text>
+        <Text style={styles.summaryValue}>{formatCurrency(record.totalDeductions)}</Text>
+      </View>
+      <View style={styles.summaryItem}>
+        <Text style={styles.summaryLabel}>{s.netPay}</Text>
+        <Text style={styles.summaryValue}>{formatCurrency(record.netPay)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function EmployerContributionsSection({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  if (!(record.employerContributions?.length > 0 || record.employerTaxes?.length > 0)) {
+    return null;
+  }
+  return (
+    <View style={styles.employerSection}>
+      <Text style={styles.employerSectionTitle}>{s.employerContributions}</Text>
+      <Text style={styles.employerNote}>{s.employerNote}</Text>
+      {record.employerTaxes?.map((tax, i) => (
+        <View key={`etax-${i}`} style={styles.employerRow}>
+          <Text style={styles.employerLabel}>{tax.description}</Text>
+          <Text style={styles.employerValue}>{formatCurrency(tax.amount)}</Text>
+        </View>
+      ))}
+      {record.employerContributions?.map((contrib, i) => (
+        <View key={`econtrib-${i}`} style={styles.employerRow}>
+          <Text style={styles.employerLabel}>{contrib.description}</Text>
+          <Text style={styles.employerValue}>{formatCurrency(contrib.amount)}</Text>
+        </View>
+      ))}
+      <View style={styles.employerTotalRow}>
+        <Text style={styles.employerTotalLabel}>{s.totalEmployerCost}</Text>
+        <Text style={styles.employerTotalValue}>{formatCurrency(record.totalEmployerCost)}</Text>
+      </View>
+    </View>
+  );
+}
+
+function SubsidioAnualSection({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  if (!(record.totalGrossPay > 0)) {
+    return null;
+  }
+  return (
+    <View style={styles.employerSection}>
+      <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
+      <Text style={styles.employerNote}>{s.subsidioAnualNote}</Text>
+      <View style={styles.employerRow}>
+        <Text style={styles.employerLabel}>{s.subsidioAnualAccrual}</Text>
+        <Text style={styles.employerValue}>
+          {formatCurrency(+(record.totalGrossPay / 12).toFixed(2))}{s.perMonth}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+function YtdSection({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  const showYtd = [
+    record.ytdGrossPay,
+    record.ytdNetPay,
+    record.ytdIncomeTax,
+    record.ytdINSSEmployee,
+  ].some((value) => Math.abs(value || 0) > 0.0001);
+
+  if (!showYtd) {
+    return null;
+  }
+
+  return (
+    <View style={styles.ytdSection}>
+      <Text style={styles.ytdTitle}>{s.ytdSummary}</Text>
+      <View style={styles.ytdGrid}>
+        <View style={styles.ytdItem}>
+          <Text style={styles.ytdLabel}>{s.ytdGrossPay}</Text>
+          <Text style={styles.ytdValue}>{formatCurrency(record.ytdGrossPay)}</Text>
+        </View>
+        <View style={styles.ytdItem}>
+          <Text style={styles.ytdLabel}>{s.ytdNetPay}</Text>
+          <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
+        </View>
+        <View style={styles.ytdItem}>
+          <Text style={styles.ytdLabel}>{s.ytdWIT}</Text>
+          <Text style={styles.ytdValue}>{formatCurrency(record.ytdIncomeTax)}</Text>
+        </View>
+        <View style={styles.ytdItem}>
+          <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
+          <Text style={styles.ytdValue}>{formatCurrency(record.ytdINSSEmployee)}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function PayslipFooter({
+  companyEmail,
+  s,
+}: {
+  companyEmail: string;
+  s: PayslipStrings;
+}) {
+  return (
+    <Text style={styles.footer}>
+      {s.footer}
+      {'\n'}
+      {s.footerContact} {companyEmail}
+    </Text>
+  );
+}
+
+// --- Helpers ---
+
+function buildHourItems(record: PayrollRecord, s: PayslipStrings) {
+  return [
+    { label: s.regular, value: record.regularHours },
+    { label: s.overtime, value: record.overtimeHours },
+    { label: s.doubleTime, value: record.doubleTimeHours },
+    { label: s.holiday, value: record.holidayHours },
+    { label: s.ptoUsed, value: record.ptoHoursUsed },
+    { label: s.sickUsed, value: record.sickHoursUsed },
+  ].filter((item) => item.label === s.regular || item.value > 0);
+}
+
 /**
  * PayslipDocument - The actual PDF document component
  */
@@ -433,281 +810,33 @@ const PayslipDocument = ({
   language = 'en',
 }: PayslipPDFProps) => {
   const s = payslipStrings[language];
-
-  // Group earnings
-  const _taxableEarnings = record.earnings.filter(e => !['reimbursement'].includes(e.type));
-  const _nonTaxableEarnings = record.earnings.filter(e => ['reimbursement'].includes(e.type));
-
-  const showYtd = [
-    record.ytdGrossPay,
-    record.ytdNetPay,
-    record.ytdIncomeTax,
-    record.ytdINSSEmployee,
-  ].some((value) => Math.abs(value || 0) > 0.0001);
-
-  const hourItems = [
-    { label: s.regular, value: record.regularHours },
-    { label: s.overtime, value: record.overtimeHours },
-    { label: s.doubleTime, value: record.doubleTimeHours },
-    { label: s.holiday, value: record.holidayHours },
-    { label: s.ptoUsed, value: record.ptoHoursUsed },
-    { label: s.sickUsed, value: record.sickHoursUsed },
-  ].filter((item) => item.label === s.regular || item.value > 0);
-
-  // Group deductions
-  const taxTypes = ['income_tax', 'inss_employee'];
-  const taxDeductions = record.deductions.filter(d => taxTypes.includes(d.type));
-  const preTaxDeductions = record.deductions.filter(d => d.isPreTax && !taxTypes.includes(d.type));
-  const postTaxDeductions = record.deductions.filter(d => !d.isPreTax && !taxTypes.includes(d.type));
+  const hourItems = buildHourItems(record, s);
 
   return (
     <Document>
       <Page size="LETTER" style={styles.page}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View>
-            <Text style={styles.companyName}>{companyName}</Text>
-            <Text style={styles.companyInfo}>{companyAddress}</Text>
-            <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
-          </View>
-          <View>
-            <Text style={styles.payslipTitle}>{s.title}</Text>
-            <Text style={styles.payslipSubtitle}>{s.payDate} {formatDate(payrollRun.payDate)}</Text>
-            <Text style={styles.payslipSubtitle}>{s.period} {formatPayPeriod(payrollRun.periodStart, payrollRun.periodEnd)}</Text>
-          </View>
-        </View>
-
-        {/* Employee & Pay Info */}
-        <View style={styles.twoColumn}>
-          <View style={styles.column}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{s.employeeInfo}</Text>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.name}</Text>
-                <Text style={styles.infoValue}>{record.employeeName}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.employeeId}</Text>
-                <Text style={styles.infoValue}>{record.employeeNumber}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.department}</Text>
-                <Text style={styles.infoValue}>{record.department}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.position}</Text>
-                <Text style={styles.infoValue}>{record.position}</Text>
-              </View>
-            </View>
-          </View>
-
-          <View style={styles.column}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{s.payInfo}</Text>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.payFrequency}</Text>
-                <Text style={styles.infoValue}>{payrollRun.payFrequency.charAt(0).toUpperCase() + payrollRun.payFrequency.slice(1)}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.hourlyRate}</Text>
-                <Text style={styles.infoValue}>{formatCurrency(record.hourlyRate)}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>{s.overtimeRate}</Text>
-                <Text style={styles.infoValue}>{record.overtimeRate}x</Text>
-              </View>
-            </View>
-          </View>
-        </View>
-
-        {/* Hours Summary */}
-        <View style={styles.hoursGrid}>
-          {hourItems.map((item) => (
-            <View key={item.label} style={styles.hoursItem}>
-              <Text style={styles.hoursLabel}>{item.label}</Text>
-              <Text style={styles.hoursValue}>{item.value.toFixed(2)} {s.hrs}</Text>
-            </View>
-          ))}
-        </View>
+        <PayslipHeader
+          companyName={companyName}
+          companyAddress={companyAddress}
+          companyPhone={companyPhone}
+          companyEmail={companyEmail}
+          payrollRun={payrollRun}
+          s={s}
+        />
+        <EmployeePayInfoSection record={record} payrollRun={payrollRun} s={s} />
+        <HoursSummaryGrid hourItems={hourItems} s={s} />
 
         {/* Two Column Layout for Earnings/Deductions */}
         <View style={styles.twoColumn}>
-          {/* Earnings Column */}
-          <View style={styles.column}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{s.earnings}</Text>
-              <View style={styles.table}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: '50%' }]}>{s.description}</Text>
-                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'center' }]}>{s.hours}</Text>
-                  <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'right' }]}>{s.rate}</Text>
-                  <Text style={[styles.tableHeaderText, { width: '20%', textAlign: 'right' }]}>{s.amount}</Text>
-                </View>
-                {record.earnings.map((earning, index) => (
-                  <View key={index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-                    <Text style={[styles.tableCell, { width: '50%' }]}>{earning.description}</Text>
-                    <Text style={[styles.tableCell, { width: '15%', textAlign: 'center' }]}>
-                      {earning.hours?.toFixed(2) || '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                      {earning.rate ? formatCurrency(earning.rate) : '-'}
-                    </Text>
-                    <Text style={[styles.tableCell, { width: '20%', textAlign: 'right' }]}>
-                      {formatCurrency(earning.amount)}
-                    </Text>
-                  </View>
-                ))}
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>{s.grossPay}</Text>
-                  <Text style={styles.totalValue}>{formatCurrency(record.totalGrossPay)}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
-
-          {/* Deductions Column */}
-          <View style={styles.column}>
-            <View style={styles.section}>
-              <Text style={styles.sectionTitle}>{s.deductions}</Text>
-              <View style={styles.table}>
-                <View style={styles.tableHeader}>
-                  <Text style={[styles.tableHeaderText, { width: '70%' }]}>{s.description}</Text>
-                  <Text style={[styles.tableHeaderText, { width: '30%', textAlign: 'right' }]}>{s.amount}</Text>
-                </View>
-
-                {/* Tax Deductions */}
-                {taxDeductions.map((deduction, index) => (
-                  <View key={`tax-${index}`} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-                    <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
-                    <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                      {formatCurrency(deduction.amount)}
-                    </Text>
-                  </View>
-                ))}
-
-                {/* Pre-tax Deductions */}
-                {preTaxDeductions.length > 0 && (
-                  <>
-                    {preTaxDeductions.map((deduction, index) => (
-                      <View key={`pre-${index}`} style={styles.tableRow}>
-                        <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description} {s.preTax}</Text>
-                        <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                          {formatCurrency(deduction.amount)}
-                        </Text>
-                      </View>
-                    ))}
-                  </>
-                )}
-
-                {/* Post-tax Deductions */}
-                {postTaxDeductions.length > 0 && (
-                  <>
-                    {postTaxDeductions.map((deduction, index) => (
-                      <View key={`post-${index}`} style={styles.tableRowAlt}>
-                        <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
-                        <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                          {formatCurrency(deduction.amount)}
-                        </Text>
-                      </View>
-                    ))}
-                  </>
-                )}
-
-                <View style={styles.totalRow}>
-                  <Text style={styles.totalLabel}>{s.totalDeductions}</Text>
-                  <Text style={styles.totalValue}>{formatCurrency(record.totalDeductions)}</Text>
-                </View>
-              </View>
-            </View>
-          </View>
+          <EarningsColumn record={record} s={s} />
+          <DeductionsColumn record={record} s={s} />
         </View>
 
-        {/* Net Pay Summary */}
-        <View style={styles.summaryBox}>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>{s.grossPay}</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(record.totalGrossPay)}</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>{s.totalDeductions}</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(record.totalDeductions)}</Text>
-          </View>
-          <View style={styles.summaryItem}>
-            <Text style={styles.summaryLabel}>{s.netPay}</Text>
-            <Text style={styles.summaryValue}>{formatCurrency(record.netPay)}</Text>
-          </View>
-        </View>
-
-        {/* Employer Contributions (informational — not deducted from employee) */}
-        {(record.employerContributions?.length > 0 || record.employerTaxes?.length > 0) && (
-          <View style={styles.employerSection}>
-            <Text style={styles.employerSectionTitle}>{s.employerContributions}</Text>
-            <Text style={styles.employerNote}>{s.employerNote}</Text>
-            {record.employerTaxes?.map((tax, i) => (
-              <View key={`etax-${i}`} style={styles.employerRow}>
-                <Text style={styles.employerLabel}>{tax.description}</Text>
-                <Text style={styles.employerValue}>{formatCurrency(tax.amount)}</Text>
-              </View>
-            ))}
-            {record.employerContributions?.map((contrib, i) => (
-              <View key={`econtrib-${i}`} style={styles.employerRow}>
-                <Text style={styles.employerLabel}>{contrib.description}</Text>
-                <Text style={styles.employerValue}>{formatCurrency(contrib.amount)}</Text>
-              </View>
-            ))}
-            <View style={styles.employerTotalRow}>
-              <Text style={styles.employerTotalLabel}>{s.totalEmployerCost}</Text>
-              <Text style={styles.employerTotalValue}>{formatCurrency(record.totalEmployerCost)}</Text>
-            </View>
-          </View>
-        )}
-
-        {/* 13th Month Accrual (TL payslips only — informational) */}
-        {record.totalGrossPay > 0 && (
-          <View style={styles.employerSection}>
-            <Text style={styles.employerSectionTitle}>{s.subsidioAnualAccrual}</Text>
-            <Text style={styles.employerNote}>{s.subsidioAnualNote}</Text>
-            <View style={styles.employerRow}>
-              <Text style={styles.employerLabel}>{s.subsidioAnualAccrual}</Text>
-              <Text style={styles.employerValue}>
-                {formatCurrency(+(record.totalGrossPay / 12).toFixed(2))}{s.perMonth}
-              </Text>
-            </View>
-          </View>
-        )}
-
-        {/* YTD Section */}
-        {showYtd && (
-          <View style={styles.ytdSection}>
-            <Text style={styles.ytdTitle}>{s.ytdSummary}</Text>
-            <View style={styles.ytdGrid}>
-              <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>{s.ytdGrossPay}</Text>
-                <Text style={styles.ytdValue}>{formatCurrency(record.ytdGrossPay)}</Text>
-              </View>
-              <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>{s.ytdNetPay}</Text>
-                <Text style={styles.ytdValue}>{formatCurrency(record.ytdNetPay)}</Text>
-              </View>
-
-              <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>{s.ytdWIT}</Text>
-                <Text style={styles.ytdValue}>{formatCurrency(record.ytdIncomeTax)}</Text>
-              </View>
-              <View style={styles.ytdItem}>
-                <Text style={styles.ytdLabel}>{s.ytdINSS}</Text>
-                <Text style={styles.ytdValue}>{formatCurrency(record.ytdINSSEmployee)}</Text>
-              </View>
-            </View>
-          </View>
-        )}
-
-        {/* Footer */}
-        <Text style={styles.footer}>
-          {s.footer}
-          {'\n'}
-          {s.footerContact} {companyEmail}
-        </Text>
+        <NetPaySummary record={record} s={s} />
+        <EmployerContributionsSection record={record} s={s} />
+        <SubsidioAnualSection record={record} s={s} />
+        <YtdSection record={record} s={s} />
+        <PayslipFooter companyEmail={companyEmail} s={s} />
       </Page>
     </Document>
   );
@@ -741,7 +870,7 @@ export const downloadPayslip = async (
 /**
  * Generate payslip PDF as blob (for preview or other uses)
  */
- 
+
 export const generatePayslipBlob = async (
   record: PayrollRecord,
   payrollRun: PayrollRun,
@@ -767,4 +896,3 @@ export const generatePayslipBlob = async (
 
   return await pdf(doc).toBlob();
 };
-

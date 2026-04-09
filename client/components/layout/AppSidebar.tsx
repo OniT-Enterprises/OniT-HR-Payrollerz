@@ -122,35 +122,17 @@ function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
   return true;
 }
 
-// --- Component ---
+function getIndentClass(indent: number): string {
+  if (indent === 0) return "pl-3";
+  if (indent === 1) return "pl-8";
+  return "pl-12";
+}
 
-export default function AppSidebar() {
-  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
-  const isMobile = useIsMobile();
-  const { isDark } = useTheme();
-  const { hasModule } = useTenant();
-  const { t } = useI18n();
-  const navigate = useNavigate();
+// --- Custom hook: sidebar expansion state ---
+
+function useSidebarExpansion(visibleModules: ModuleDef[]) {
   const location = useLocation();
 
-  const visibleModules = useMemo(
-    () =>
-      MODULES.flatMap((module) => {
-        if (!module.visibilityCheck(hasModule)) {
-          return [];
-        }
-
-        const filteredConfig = filterModuleNavConfigByPermissions(module.config, hasModule);
-        if (filteredConfig.sections.length === 0) {
-          return [];
-        }
-
-        return [{ ...module, config: filteredConfig }];
-      }),
-    [hasModule]
-  );
-
-  // Compute which module + section should be expanded based on current path
   const activeExpansion = useMemo(() => {
     const modules = new Set<string>();
     for (const mod of visibleModules) {
@@ -162,12 +144,9 @@ export default function AppSidebar() {
     return { modules };
   }, [location.pathname, visibleModules]);
 
-  // Which modules and sub-sections are expanded
   const [expandedModules, setExpandedModules] = useState<Set<string>>(activeExpansion.modules);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
 
-  // When navigation changes, collapse everything except the active module
-  // and auto-expand the active sub-section
   useEffect(() => {
     if (activeExpansion.modules.size > 0) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- syncing sidebar expansion with route changes
@@ -189,23 +168,16 @@ export default function AppSidebar() {
       setExpandedSections((prev) => {
         const next = new Set(prev);
         let changed = false;
-
         for (const key of activeSectionKeys) {
           if (!next.has(key)) {
             next.add(key);
             changed = true;
           }
         }
-
         return changed ? next : prev;
       });
     }
   }, [activeExpansion.modules, location.pathname, visibleModules]);
-
-  const handleNavigate = (path: string) => {
-    navigate(path);
-    if (isMobile) setSidebarOpen(false);
-  };
 
   const toggleModule = (moduleId: string) => {
     setExpandedModules((prev) => {
@@ -225,260 +197,452 @@ export default function AppSidebar() {
     });
   };
 
-  const collapsed = sidebarCollapsed && !isMobile;
-  const sidebarWidth = collapsed ? "w-16" : "w-64";
+  return { expandedModules, expandedSections, toggleModule, toggleSection };
+}
 
-  // --- Render helpers ---
+// --- Sub-components ---
 
-  const renderNavLink = (
-    label: string,
-    path: string,
-    Icon: ComponentType<{ className?: string }>,
-    iconColorClass?: string,
-    indent: number = 0,
-    labelKey?: string,
-  ) => {
-    const displayLabel = labelKey ? (t(`nav.${labelKey}`) || label) : label;
-    const active = isPathActive(location.pathname, path);
-    const pl = indent === 0 ? "pl-3" : indent === 1 ? "pl-8" : "pl-12";
+interface NavLinkProps {
+  label: string;
+  path: string;
+  Icon: ComponentType<{ className?: string }>;
+  iconColorClass?: string;
+  indent?: number;
+  labelKey?: string;
+  collapsed: boolean;
+  pathname: string;
+  onNavigate: (path: string) => void;
+  t: (key: string) => string;
+}
 
-    if (collapsed) {
-      return (
-        <Tooltip key={path}>
-          <TooltipTrigger asChild>
-            <button
-              onMouseEnter={() => prefetchRoute(path)}
-              onClick={() => handleNavigate(path)}
-              className={`
-                w-full flex items-center justify-center h-10 rounded-lg transition-all
-                ${active
-                  ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary"}`
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
-                }
-              `}
-            >
-              <Icon className={`h-5 w-5 ${active && iconColorClass ? iconColorClass : ""}`} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {displayLabel}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
+function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, collapsed, pathname, onNavigate, t }: NavLinkProps) {
+  const displayLabel = labelKey ? (t(`nav.${labelKey}`) || label) : label;
+  const active = isPathActive(pathname, path);
 
-    // Derive border color from icon color (e.g. "text-blue-500" → "border-blue-500")
-    const activeBorderColor = iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary";
-
+  if (collapsed) {
     return (
-      <button
-        key={path}
-        onMouseEnter={() => prefetchRoute(path)}
-        onClick={() => handleNavigate(path)}
-        className={`
-          w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-all relative
-          ${active
-            ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${activeBorderColor}`
-            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
-          }
-        `}
-      >
-        <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
-        <span className="truncate">{displayLabel}</span>
-      </button>
-    );
-  };
-
-  const renderModule = (mod: ModuleDef) => {
-    const isExpanded = expandedModules.has(mod.id);
-    const moduleActive = isModuleActive(location.pathname, mod.config);
-    const Icon = mod.icon;
-    const iconColor = navColors[mod.id];
-
-    if (collapsed) {
-      return (
-        <Tooltip key={mod.id}>
-          <TooltipTrigger asChild>
-            <button
-              onClick={() => handleNavigate(mod.config.sections[0]?.path || "/")}
-              className={`
-                w-full flex items-center justify-center h-10 rounded-lg transition-colors
-                ${moduleActive
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
-                }
-              `}
-            >
-              <Icon className={`h-5 w-5 ${moduleActive ? iconColor : ""}`} />
-            </button>
-          </TooltipTrigger>
-          <TooltipContent side="right" sideOffset={8}>
-            {t(mod.labelKey)}
-          </TooltipContent>
-        </Tooltip>
-      );
-    }
-
-    return (
-      <div key={mod.id} className="space-y-0.5">
-        <button
-          onClick={() => toggleModule(mod.id)}
-          className={`
-            w-full flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-sm font-medium transition-colors
-            ${moduleActive
-              ? "text-sidebar-foreground"
-              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-            }
-          `}
-        >
-          <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
-          <span className="truncate">{t(mod.labelKey)}</span>
-          <ChevronRight className={`h-3.5 w-3.5 ml-auto shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-        </button>
-        {isExpanded && (
-          <div className="space-y-0.5">
-            {mod.config.sections.map((section) => {
-              if (section.subPages.length === 0) {
-                // Direct link — no children
-                return renderNavLink(section.label, section.path, section.icon, iconColor, 1, section.labelKey);
-              }
-
-              // Collapsible sub-section
-              const sectionKey = `${mod.id}:${section.id}`;
-              const sectionExpanded = expandedSections.has(sectionKey);
-              const sectionActive = section.matchPaths.some((mp) => isPathActive(location.pathname, mp));
-
-              return (
-                <div key={sectionKey} className="space-y-0.5">
-                  <button
-                    onClick={() => toggleSection(sectionKey)}
-                    className={`
-                      w-full flex items-center gap-3 h-9 pl-8 pr-3 rounded-lg text-sm transition-colors
-                      ${sectionActive
-                        ? "text-sidebar-foreground font-medium"
-                        : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                      }
-                    `}
-                  >
-                    <section.icon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
-                    <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
-                    <ChevronRight className={`h-3 w-3 ml-auto shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
-                  </button>
-                  {sectionExpanded && (
-                    <div className="space-y-0.5">
-                      {section.subPages.map((page) =>
-                        renderNavLink(page.label, page.path, page.icon, iconColor, 2, page.labelKey)
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  // --- Sidebar content ---
-
-  const sidebarContent = (
-    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
-      {/* Logo */}
-      <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
-        <button onClick={() => handleNavigate("/")} className="flex items-center">
-          <img
-            src={isDark ? "/images/illustrations/logo-v2-dark.webp" : "/images/illustrations/logo-v2-light.webp"}
-            alt="Meza"
-            className={collapsed ? "h-7 w-auto" : "h-8 w-auto"}
-          />
-        </button>
-        {isMobile && (
+      <Tooltip key={path}>
+        <TooltipTrigger asChild>
           <button
-            onClick={() => setSidebarOpen(false)}
-            className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+            onMouseEnter={() => prefetchRoute(path)}
+            onClick={() => onNavigate(path)}
+            className={`
+              w-full flex items-center justify-center h-10 rounded-lg transition-all
+              ${active
+                ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary"}`
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
+              }
+            `}
           >
-            <X className="h-5 w-5" />
+            <Icon className={`h-5 w-5 ${active && iconColorClass ? iconColorClass : ""}`} />
           </button>
-        )}
-      </div>
-
-      {/* Navigation */}
-      <ScrollArea className="flex-1 py-3">
-        <div className={`space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
-          {/* Dashboard */}
-          {renderNavLink(
-            t("common.dashboard"),
-            "/",
-            LayoutDashboard,
-            "text-sidebar-primary",
-            0,
-          )}
-
-          {/* Module separator */}
-          <div className="h-px bg-sidebar-border my-2" />
-
-          {/* Modules */}
-          {visibleModules.map(renderModule)}
-        </div>
-      </ScrollArea>
-
-      {/* Bottom section */}
-      <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
-        <div className="flex items-center gap-1">
-          <div className="flex-1">
-            {renderNavLink(t("common.settings"), "/settings", Settings, undefined, 0)}
-          </div>
-          {!isMobile && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={toggleCollapsed}
-                  className="h-9 w-9 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors shrink-0"
-                >
-                  <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right" sideOffset={8}>
-                {collapsed ? "Expand" : "Collapse"}
-              </TooltipContent>
-            </Tooltip>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  // --- Mobile drawer ---
-
-  if (isMobile) {
-    return (
-      <>
-        {/* Backdrop */}
-        {sidebarOpen && (
-          <div
-            className="fixed inset-0 z-40 bg-black/50 animate-in fade-in duration-200"
-            onClick={() => setSidebarOpen(false)}
-          />
-        )}
-        {/* Drawer */}
-        <aside
-          className={`
-            fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out
-            ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          `}
-        >
-          {sidebarContent}
-        </aside>
-      </>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {displayLabel}
+        </TooltipContent>
+      </Tooltip>
     );
   }
 
-  // --- Desktop sidebar ---
+  const pl = getIndentClass(indent);
+  const activeBorderColor = iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary";
+
+  return (
+    <button
+      key={path}
+      onMouseEnter={() => prefetchRoute(path)}
+      onClick={() => onNavigate(path)}
+      className={`
+        w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-all relative
+        ${active
+          ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${activeBorderColor}`
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
+        }
+      `}
+    >
+      <Icon className={`h-4 w-4 shrink-0 ${active && iconColorClass ? iconColorClass : ""}`} />
+      <span className="truncate">{displayLabel}</span>
+    </button>
+  );
+}
+
+interface SubSectionProps {
+  mod: ModuleDef;
+  section: ModuleDef["config"]["sections"][number];
+  iconColor: string;
+  sectionExpanded: boolean;
+  onToggleSection: (key: string) => void;
+  collapsed: boolean;
+  pathname: string;
+  onNavigate: (path: string) => void;
+  t: (key: string) => string;
+}
+
+function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection, collapsed, pathname, onNavigate, t }: SubSectionProps) {
+  const sectionKey = `${mod.id}:${section.id}`;
+  const sectionActive = section.matchPaths.some((mp) => isPathActive(pathname, mp));
+  const SectionIcon = section.icon;
+
+  return (
+    <div key={sectionKey} className="space-y-0.5">
+      <button
+        onClick={() => onToggleSection(sectionKey)}
+        className={`
+          w-full flex items-center gap-3 h-9 pl-8 pr-3 rounded-lg text-sm transition-colors
+          ${sectionActive
+            ? "text-sidebar-foreground font-medium"
+            : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          }
+        `}
+      >
+        <SectionIcon className={`h-4 w-4 shrink-0 ${sectionActive ? iconColor : ""}`} />
+        <span className="truncate">{section.labelKey ? (t(`nav.${section.labelKey}`) || section.label) : section.label}</span>
+        <ChevronRight className={`h-3 w-3 ml-auto shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
+      </button>
+      {sectionExpanded && (
+        <div className="space-y-0.5">
+          {section.subPages.map((page) => (
+            <NavLink
+              key={page.path}
+              label={page.label}
+              path={page.path}
+              Icon={page.icon}
+              iconColorClass={iconColor}
+              indent={2}
+              labelKey={page.labelKey}
+              collapsed={collapsed}
+              pathname={pathname}
+              onNavigate={onNavigate}
+              t={t}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface ModuleSectionProps {
+  mod: ModuleDef;
+  collapsed: boolean;
+  pathname: string;
+  isExpanded: boolean;
+  expandedSections: Set<string>;
+  onToggleModule: (id: string) => void;
+  onToggleSection: (key: string) => void;
+  onNavigate: (path: string) => void;
+  t: (key: string) => string;
+}
+
+function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections, onToggleModule, onToggleSection, onNavigate, t }: ModuleSectionProps) {
+  const moduleActive = isModuleActive(pathname, mod.config);
+  const Icon = mod.icon;
+  const iconColor = navColors[mod.id];
+
+  if (collapsed) {
+    return (
+      <Tooltip key={mod.id}>
+        <TooltipTrigger asChild>
+          <button
+            onClick={() => onNavigate(mod.config.sections[0]?.path || "/")}
+            className={`
+              w-full flex items-center justify-center h-10 rounded-lg transition-colors
+              ${moduleActive
+                ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+              }
+            `}
+          >
+            <Icon className={`h-5 w-5 ${moduleActive ? iconColor : ""}`} />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent side="right" sideOffset={8}>
+          {t(mod.labelKey)}
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return (
+    <div key={mod.id} className="space-y-0.5">
+      <button
+        onClick={() => onToggleModule(mod.id)}
+        className={`
+          w-full flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-sm font-medium transition-colors
+          ${moduleActive
+            ? "text-sidebar-foreground"
+            : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+          }
+        `}
+      >
+        <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
+        <span className="truncate">{t(mod.labelKey)}</span>
+        <ChevronRight className={`h-3.5 w-3.5 ml-auto shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+      </button>
+      {isExpanded && (
+        <div className="space-y-0.5">
+          {mod.config.sections.map((section) => {
+            if (section.subPages.length === 0) {
+              return (
+                <NavLink
+                  key={section.path}
+                  label={section.label}
+                  path={section.path}
+                  Icon={section.icon}
+                  iconColorClass={iconColor}
+                  indent={1}
+                  labelKey={section.labelKey}
+                  collapsed={collapsed}
+                  pathname={pathname}
+                  onNavigate={onNavigate}
+                  t={t}
+                />
+              );
+            }
+            return (
+              <SubSection
+                key={`${mod.id}:${section.id}`}
+                mod={mod}
+                section={section}
+                iconColor={iconColor}
+                sectionExpanded={expandedSections.has(`${mod.id}:${section.id}`)}
+                onToggleSection={onToggleSection}
+                collapsed={collapsed}
+                pathname={pathname}
+                onNavigate={onNavigate}
+                t={t}
+              />
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SidebarHeaderProps {
+  collapsed: boolean;
+  isDark: boolean;
+  isMobile: boolean;
+  onNavigate: (path: string) => void;
+  onClose: () => void;
+}
+
+function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: SidebarHeaderProps) {
+  return (
+    <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
+      <button onClick={() => onNavigate("/")} className="flex items-center">
+        <img
+          src={isDark ? "/images/illustrations/logo-v2-dark.webp" : "/images/illustrations/logo-v2-light.webp"}
+          alt="Meza"
+          className={collapsed ? "h-7 w-auto" : "h-8 w-auto"}
+        />
+      </button>
+      {isMobile && (
+        <button
+          onClick={onClose}
+          className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+        >
+          <X className="h-5 w-5" />
+        </button>
+      )}
+    </div>
+  );
+}
+
+interface SidebarFooterProps {
+  collapsed: boolean;
+  isMobile: boolean;
+  onNavigate: (path: string) => void;
+  onToggleCollapsed: () => void;
+  pathname: string;
+  t: (key: string) => string;
+}
+
+function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pathname, t }: SidebarFooterProps) {
+  return (
+    <div className={`shrink-0 border-t border-sidebar-border py-2 ${collapsed ? "px-2" : "px-3"}`}>
+      <div className="flex items-center gap-1">
+        <div className="flex-1">
+          <NavLink
+            label={t("common.settings")}
+            path="/settings"
+            Icon={Settings}
+            collapsed={collapsed}
+            pathname={pathname}
+            onNavigate={onNavigate}
+            t={t}
+          />
+        </div>
+        {!isMobile && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                onClick={onToggleCollapsed}
+                className="h-9 w-9 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors shrink-0"
+              >
+                <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent side="right" sideOffset={8}>
+              {collapsed ? "Expand" : "Collapse"}
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// --- Sidebar content ---
+
+interface SidebarContentProps {
+  collapsed: boolean;
+  isDark: boolean;
+  isMobile: boolean;
+  pathname: string;
+  visibleModules: ModuleDef[];
+  expandedModules: Set<string>;
+  expandedSections: Set<string>;
+  onNavigate: (path: string) => void;
+  onClose: () => void;
+  onToggleModule: (id: string) => void;
+  onToggleSection: (key: string) => void;
+  onToggleCollapsed: () => void;
+  t: (key: string) => string;
+}
+
+function SidebarContent({
+  collapsed, isDark, isMobile, pathname, visibleModules,
+  expandedModules, expandedSections, onNavigate, onClose,
+  onToggleModule, onToggleSection, onToggleCollapsed, t,
+}: SidebarContentProps) {
+  return (
+    <div className="flex flex-col h-full bg-sidebar border-r border-sidebar-border">
+      <SidebarHeader
+        collapsed={collapsed}
+        isDark={isDark}
+        isMobile={isMobile}
+        onNavigate={onNavigate}
+        onClose={onClose}
+      />
+
+      <ScrollArea className="flex-1 py-3">
+        <div className={`space-y-1 ${collapsed ? "px-2" : "px-3"}`}>
+          <NavLink
+            label={t("common.dashboard")}
+            path="/"
+            Icon={LayoutDashboard}
+            iconColorClass="text-sidebar-primary"
+            collapsed={collapsed}
+            pathname={pathname}
+            onNavigate={onNavigate}
+            t={t}
+          />
+
+          <div className="h-px bg-sidebar-border my-2" />
+
+          {visibleModules.map((mod) => (
+            <ModuleSection
+              key={mod.id}
+              mod={mod}
+              collapsed={collapsed}
+              pathname={pathname}
+              isExpanded={expandedModules.has(mod.id)}
+              expandedSections={expandedSections}
+              onToggleModule={onToggleModule}
+              onToggleSection={onToggleSection}
+              onNavigate={onNavigate}
+              t={t}
+            />
+          ))}
+        </div>
+      </ScrollArea>
+
+      <SidebarFooter
+        collapsed={collapsed}
+        isMobile={isMobile}
+        onNavigate={onNavigate}
+        onToggleCollapsed={onToggleCollapsed}
+        pathname={pathname}
+        t={t}
+      />
+    </div>
+  );
+}
+
+function MobileSidebar({ open, onClose, children }: { open: boolean; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <>
+      {open && (
+        <div
+          className="fixed inset-0 z-40 bg-black/50 animate-in fade-in duration-200"
+          onClick={onClose}
+        />
+      )}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out
+          ${open ? "translate-x-0" : "-translate-x-full"}
+        `}
+      >
+        {children}
+      </aside>
+    </>
+  );
+}
+
+// --- Component ---
+
+export default function AppSidebar() {
+  const { sidebarOpen, setSidebarOpen, sidebarCollapsed, toggleCollapsed } = useLayout();
+  const isMobile = useIsMobile();
+  const { isDark } = useTheme();
+  const { hasModule } = useTenant();
+  const { t } = useI18n();
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const visibleModules = useMemo(
+    () =>
+      MODULES.flatMap((module) => {
+        if (!module.visibilityCheck(hasModule)) return [];
+        const filteredConfig = filterModuleNavConfigByPermissions(module.config, hasModule);
+        if (filteredConfig.sections.length === 0) return [];
+        return [{ ...module, config: filteredConfig }];
+      }),
+    [hasModule]
+  );
+
+  const { expandedModules, expandedSections, toggleModule, toggleSection } = useSidebarExpansion(visibleModules);
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+    if (isMobile) setSidebarOpen(false);
+  };
+
+  const collapsed = sidebarCollapsed && !isMobile;
+  const sidebarWidth = collapsed ? "w-16" : "w-64";
+
+  const contentProps: SidebarContentProps = {
+    collapsed, isDark, isMobile, pathname: location.pathname,
+    visibleModules, expandedModules, expandedSections,
+    onNavigate: handleNavigate, onClose: () => setSidebarOpen(false),
+    onToggleModule: toggleModule, onToggleSection: toggleSection,
+    onToggleCollapsed: toggleCollapsed, t,
+  };
+
+  if (isMobile) {
+    return (
+      <MobileSidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)}>
+        <SidebarContent {...contentProps} />
+      </MobileSidebar>
+    );
+  }
 
   return (
     <aside className={`shrink-0 ${sidebarWidth} transition-[width] duration-200`}>
-      {sidebarContent}
+      <SidebarContent {...contentProps} />
     </aside>
   );
 }

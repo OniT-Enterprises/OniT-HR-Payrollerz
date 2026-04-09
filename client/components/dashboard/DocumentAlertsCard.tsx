@@ -85,6 +85,34 @@ function calculateExpiryInfo(expiryDate: string): { days: number; severity: Aler
 }
 
 /**
+ * Check a single document's expiry and push an alert if within the window
+ */
+function checkDocumentExpiry(
+  alerts: DocumentAlert[],
+  employeeId: string,
+  employeeName: string,
+  expiryDate: string | undefined,
+  idSuffix: string,
+  docType: DocumentType,
+  windowDays: number,
+) {
+  if (!expiryDate) return;
+  const { days, severity } = calculateExpiryInfo(expiryDate);
+  if (days <= windowDays) {
+    alerts.push({
+      id: `${employeeId}-${idSuffix}`,
+      employeeId: employeeId || "",
+      employeeName,
+      documentType: docType,
+      documentLabel: DOCUMENT_LABELS[docType],
+      expiryDate,
+      daysUntilExpiry: days,
+      severity,
+    });
+  }
+}
+
+/**
  * Extract document alerts from employees
  */
 function extractAlerts(employees: Employee[]): DocumentAlert[] {
@@ -94,146 +122,24 @@ function extractAlerts(employees: Employee[]): DocumentAlert[] {
     if (employee.status !== "active") continue;
 
     const employeeName = `${employee.personalInfo.firstName} ${employee.personalInfo.lastName}`;
+    const empId = employee.id || "";
 
-    // Check Bilhete de Identidade
+    // Standard documents (60-day window)
     const bi = employee.documents?.bilheteIdentidade || employee.documents?.employeeIdCard;
-    if (bi?.expiryDate) {
-      const { days, severity } = calculateExpiryInfo(bi.expiryDate);
-      if (days <= 60) {
-        alerts.push({
-          id: `${employee.id}-bi`,
-          employeeId: employee.id || "",
-          employeeName,
-          documentType: "bi",
-          documentLabel: DOCUMENT_LABELS.bi,
-          expiryDate: bi.expiryDate,
-          daysUntilExpiry: days,
-          severity,
-        });
-      }
-    }
+    checkDocumentExpiry(alerts, empId, employeeName, bi?.expiryDate, "bi", "bi", 60);
+    checkDocumentExpiry(alerts, empId, employeeName, employee.documents?.passport?.expiryDate, "passport", "passport", 60);
+    checkDocumentExpiry(alerts, empId, employeeName, employee.documents?.workingVisaResidency?.expiryDate, "work_permit", "work_permit", 60);
+    checkDocumentExpiry(alerts, empId, employeeName, employee.documents?.electoralCard?.expiryDate, "electoral", "electoral", 60);
 
-    // Check Passport
-    if (employee.documents?.passport?.expiryDate) {
-      const { days, severity } = calculateExpiryInfo(employee.documents.passport.expiryDate);
-      if (days <= 60) {
-        alerts.push({
-          id: `${employee.id}-passport`,
-          employeeId: employee.id || "",
-          employeeName,
-          documentType: "passport",
-          documentLabel: DOCUMENT_LABELS.passport,
-          expiryDate: employee.documents.passport.expiryDate,
-          daysUntilExpiry: days,
-          severity,
-        });
-      }
-    }
-
-    // Check Work Permit/Visa (legacy field)
-    if (employee.documents?.workingVisaResidency?.expiryDate) {
-      const { days, severity } = calculateExpiryInfo(employee.documents.workingVisaResidency.expiryDate);
-      if (days <= 60) {
-        alerts.push({
-          id: `${employee.id}-work_permit`,
-          employeeId: employee.id || "",
-          employeeName,
-          documentType: "work_permit",
-          documentLabel: DOCUMENT_LABELS.work_permit,
-          expiryDate: employee.documents.workingVisaResidency.expiryDate,
-          daysUntilExpiry: days,
-          severity,
-        });
-      }
-    }
-
-    // Check Foreign Worker Documents (new comprehensive tracking)
+    // Foreign worker documents (90-day window for visa renewals)
     if (employee.isForeignWorker && employee.foreignWorker) {
-      // Work Visa
-      if (employee.foreignWorker.workVisa?.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.workVisa.expiryDate);
-        if (days <= 90) { // Extended window for visa renewals
-          alerts.push({
-            id: `${employee.id}-work_visa`,
-            employeeId: employee.id || "",
-            employeeName,
-            documentType: "work_visa",
-            documentLabel: DOCUMENT_LABELS.work_visa,
-            expiryDate: employee.foreignWorker.workVisa.expiryDate,
-            daysUntilExpiry: days,
-            severity,
-          });
-        }
-      }
-
-      // Residence Permit
-      if (employee.foreignWorker.residencePermit?.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.residencePermit.expiryDate);
-        if (days <= 90) {
-          alerts.push({
-            id: `${employee.id}-residence_permit`,
-            employeeId: employee.id || "",
-            employeeName,
-            documentType: "residence_permit",
-            documentLabel: DOCUMENT_LABELS.residence_permit,
-            expiryDate: employee.foreignWorker.residencePermit.expiryDate,
-            daysUntilExpiry: days,
-            severity,
-          });
-        }
-      }
-
-      // Work Permit (separate from visa)
-      if (employee.foreignWorker.workPermit?.expiryDate) {
-        const { days, severity } = calculateExpiryInfo(employee.foreignWorker.workPermit.expiryDate);
-        if (days <= 90) {
-          alerts.push({
-            id: `${employee.id}-fw_work_permit`,
-            employeeId: employee.id || "",
-            employeeName,
-            documentType: "work_permit",
-            documentLabel: DOCUMENT_LABELS.work_permit,
-            expiryDate: employee.foreignWorker.workPermit.expiryDate,
-            daysUntilExpiry: days,
-            severity,
-          });
-        }
-      }
+      checkDocumentExpiry(alerts, empId, employeeName, employee.foreignWorker.workVisa?.expiryDate, "work_visa", "work_visa", 90);
+      checkDocumentExpiry(alerts, empId, employeeName, employee.foreignWorker.residencePermit?.expiryDate, "residence_permit", "residence_permit", 90);
+      checkDocumentExpiry(alerts, empId, employeeName, employee.foreignWorker.workPermit?.expiryDate, "fw_work_permit", "work_permit", 90);
     }
 
-    // Check Electoral Card
-    if (employee.documents?.electoralCard?.expiryDate) {
-      const { days, severity } = calculateExpiryInfo(employee.documents.electoralCard.expiryDate);
-      if (days <= 60) {
-        alerts.push({
-          id: `${employee.id}-electoral`,
-          employeeId: employee.id || "",
-          employeeName,
-          documentType: "electoral",
-          documentLabel: DOCUMENT_LABELS.electoral,
-          expiryDate: employee.documents.electoralCard.expiryDate,
-          daysUntilExpiry: days,
-          severity,
-        });
-      }
-    }
-
-    // Check fixed-term contract end date (90 day window for renewal planning)
-    if (employee.jobDetails?.contractEndDate) {
-      const { days, severity } = calculateExpiryInfo(employee.jobDetails.contractEndDate);
-      if (days <= 90) {
-        alerts.push({
-          id: `${employee.id}-contract`,
-          employeeId: employee.id || "",
-          employeeName,
-          documentType: "contract",
-          documentLabel: DOCUMENT_LABELS.contract,
-          expiryDate: employee.jobDetails.contractEndDate,
-          daysUntilExpiry: days,
-          severity,
-        });
-      }
-    }
+    // Fixed-term contract end date (90-day window for renewal planning)
+    checkDocumentExpiry(alerts, empId, employeeName, employee.jobDetails?.contractEndDate, "contract", "contract", 90);
   }
 
   // Sort by severity (most urgent first), then by days

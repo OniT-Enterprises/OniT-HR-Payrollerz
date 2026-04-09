@@ -16,6 +16,8 @@ export function ImpersonationBanner() {
       navigate("/admin/tenants");
     } catch (error) {
       console.error("Error stopping impersonation:", error);
+      // Surface the error so the user is aware the exit failed
+      throw error;
     }
   };
 

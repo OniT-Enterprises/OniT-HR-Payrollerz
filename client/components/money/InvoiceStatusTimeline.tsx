@@ -38,56 +38,120 @@ interface InvoiceStatusTimelineProps {
   compact?: boolean;
 }
 
+/** Derive step-level display flags from invoice status */
+function getStepState(
+  stepStatus: InvoiceStatus,
+  invoiceStatus: InvoiceStatus,
+  effectiveOrder: number
+) {
+  const isOverdue = invoiceStatus === 'overdue';
+  const isPartial = invoiceStatus === 'partial';
+  const isComplete = STATUS_ORDER[stepStatus] < effectiveOrder;
+  const isCurrent = stepStatus === invoiceStatus ||
+    (isPartial && stepStatus === 'viewed') ||
+    (isOverdue && stepStatus === 'viewed');
+  return { isComplete, isCurrent, isOverdue, isPartial };
+}
+
+/** Color class for the step dot/circle based on state */
+function getStepDotClass(isComplete: boolean, isCurrent: boolean, isOverdue: boolean, isPartial: boolean) {
+  if (isComplete) return 'bg-green-500';
+  if (isCurrent && isOverdue) return 'bg-red-500';
+  if (isCurrent && isPartial) return 'bg-yellow-500';
+  if (isCurrent) return 'bg-indigo-500';
+  return 'bg-muted';
+}
+
+/** Color class for the full-size step circle (with ring) */
+function getStepCircleClass(isComplete: boolean, isCurrent: boolean, isOverdue: boolean, isPartial: boolean) {
+  if (isComplete) return 'bg-green-500 text-white';
+  if (isCurrent && isOverdue) return 'bg-red-500 text-white ring-4 ring-red-100 dark:ring-red-900';
+  if (isCurrent && isPartial) return 'bg-yellow-500 text-white ring-4 ring-yellow-100 dark:ring-yellow-900';
+  if (isCurrent) return 'bg-indigo-500 text-white ring-4 ring-indigo-100 dark:ring-indigo-900';
+  return 'bg-muted text-muted-foreground';
+}
+
+/** Color class for the step label text */
+function getStepLabelClass(isComplete: boolean, isCurrent: boolean, isOverdue: boolean, isPartial: boolean) {
+  if (isComplete) return 'text-green-600 dark:text-green-400';
+  if (isCurrent && isOverdue) return 'text-red-600 dark:text-red-400';
+  if (isCurrent && isPartial) return 'text-yellow-600 dark:text-yellow-400';
+  if (isCurrent) return 'text-indigo-600 dark:text-indigo-400';
+  return 'text-muted-foreground';
+}
+
+/** Timestamp shown below a step label, if applicable */
+function StepTimestamp({ step, invoice, isComplete, isCurrent }: {
+  step: StatusStep; invoice: Invoice; isComplete: boolean; isCurrent: boolean;
+}) {
+  if (isComplete && step.status === 'sent' && invoice.sentAt) {
+    return <span className="text-[10px] text-muted-foreground mt-0.5">{formatDateTL(invoice.sentAt)}</span>;
+  }
+  if (isCurrent && step.status === 'viewed' && invoice.viewedAt) {
+    return <span className="text-[10px] text-muted-foreground mt-0.5">{formatDateTL(invoice.viewedAt)}</span>;
+  }
+  if (isCurrent && step.status === 'paid' && invoice.paidAt) {
+    return <span className="text-[10px] text-muted-foreground mt-0.5">{formatDateTL(invoice.paidAt)}</span>;
+  }
+  return null;
+}
+
+/** Compact dot-based timeline */
+function CompactTimeline({ invoice, className, effectiveOrder }: {
+  invoice: Invoice; className?: string; effectiveOrder: number;
+}) {
+  const isOverdue = invoice.status === 'overdue';
+  const isCancelled = invoice.status === 'cancelled';
+
+  return (
+    <div className={cn('flex items-center gap-1', className)}>
+      {MAIN_FLOW.map((step, index) => {
+        const state = getStepState(step.status, invoice.status, effectiveOrder);
+        return (
+          <div key={step.status} className="flex items-center">
+            <div className={cn('w-2 h-2 rounded-full transition-colors', getStepDotClass(state.isComplete, state.isCurrent, state.isOverdue, state.isPartial))} />
+            {index < MAIN_FLOW.length - 1 && (
+              <div className={cn('w-4 h-0.5 mx-0.5', state.isComplete ? 'bg-green-500' : 'bg-muted')} />
+            )}
+          </div>
+        );
+      })}
+      {isOverdue && <AlertCircle className="h-3 w-3 text-red-500 ml-1" />}
+      {isCancelled && <XCircle className="h-3 w-3 text-muted-foreground ml-1" />}
+    </div>
+  );
+}
+
+/** Full-size step node in the expanded timeline */
+function FullTimelineStep({ step, invoice, effectiveOrder }: {
+  step: StatusStep; invoice: Invoice; effectiveOrder: number;
+}) {
+  const { isComplete, isCurrent, isOverdue, isPartial } = getStepState(step.status, invoice.status, effectiveOrder);
+  const Icon = step.icon;
+  const label = isCurrent && isOverdue ? 'Overdue' : isCurrent && isPartial ? 'Partial' : step.label;
+
+  return (
+    <div className="flex flex-col items-center relative z-10">
+      <div className={cn('w-10 h-10 rounded-full flex items-center justify-center transition-all', getStepCircleClass(isComplete, isCurrent, isOverdue, isPartial))}>
+        {isComplete ? <Check className="h-5 w-5" /> : isCurrent && isOverdue ? <AlertCircle className="h-5 w-5" /> : <Icon className="h-5 w-5" />}
+      </div>
+      <span className={cn('text-xs font-medium mt-2', getStepLabelClass(isComplete, isCurrent, isOverdue, isPartial))}>
+        {label}
+      </span>
+      <StepTimestamp step={step} invoice={invoice} isComplete={isComplete} isCurrent={isCurrent} />
+    </div>
+  );
+}
+
 export function InvoiceStatusTimeline({ invoice, className, compact = false }: InvoiceStatusTimelineProps) {
   const currentOrder = STATUS_ORDER[invoice.status];
   const isOverdue = invoice.status === 'overdue';
   const isCancelled = invoice.status === 'cancelled';
   const isPartial = invoice.status === 'partial';
-
-  // For overdue, show progress up to 'viewed' with alert
-  // For partial, show progress up to 'viewed' with partial indicator
   const effectiveOrder = isOverdue || isPartial ? 2 : currentOrder;
 
   if (compact) {
-    return (
-      <div className={cn('flex items-center gap-1', className)}>
-        {MAIN_FLOW.map((step, index) => {
-          const isComplete = STATUS_ORDER[step.status] < effectiveOrder;
-          const isCurrent = step.status === invoice.status ||
-            (isPartial && step.status === 'viewed') ||
-            (isOverdue && step.status === 'viewed');
-
-          return (
-            <div key={step.status} className="flex items-center">
-              <div
-                className={cn(
-                  'w-2 h-2 rounded-full transition-colors',
-                  isComplete && 'bg-green-500',
-                  isCurrent && !isOverdue && !isPartial && 'bg-indigo-500',
-                  isCurrent && isOverdue && 'bg-red-500',
-                  isCurrent && isPartial && 'bg-yellow-500',
-                  !isComplete && !isCurrent && 'bg-muted'
-                )}
-              />
-              {index < MAIN_FLOW.length - 1 && (
-                <div
-                  className={cn(
-                    'w-4 h-0.5 mx-0.5',
-                    isComplete ? 'bg-green-500' : 'bg-muted'
-                  )}
-                />
-              )}
-            </div>
-          );
-        })}
-        {isOverdue && (
-          <AlertCircle className="h-3 w-3 text-red-500 ml-1" />
-        )}
-        {isCancelled && (
-          <XCircle className="h-3 w-3 text-muted-foreground ml-1" />
-        )}
-      </div>
-    );
+    return <CompactTimeline invoice={invoice} className={className} effectiveOrder={effectiveOrder} />;
   }
 
   if (isCancelled) {
@@ -104,81 +168,16 @@ export function InvoiceStatusTimeline({ invoice, className, compact = false }: I
   return (
     <div className={cn('py-4', className)}>
       <div className="flex items-center justify-between relative">
-        {/* Background line */}
         <div className="absolute top-5 left-0 right-0 h-0.5 bg-muted" />
-
-        {/* Progress line */}
         <div
-          className={cn(
-            'absolute top-5 left-0 h-0.5 transition-all',
-            isOverdue ? 'bg-red-500' : 'bg-green-500'
-          )}
-          style={{
-            width: `${Math.min(100, (effectiveOrder / (MAIN_FLOW.length - 1)) * 100)}%`
-          }}
+          className={cn('absolute top-5 left-0 h-0.5 transition-all', isOverdue ? 'bg-red-500' : 'bg-green-500')}
+          style={{ width: `${Math.min(100, (effectiveOrder / (MAIN_FLOW.length - 1)) * 100)}%` }}
         />
-
-        {MAIN_FLOW.map((step, _index) => {
-          const isComplete = STATUS_ORDER[step.status] < effectiveOrder;
-          const isCurrent = step.status === invoice.status ||
-            (isPartial && step.status === 'viewed') ||
-            (isOverdue && step.status === 'viewed');
-          const Icon = step.icon;
-
-          return (
-            <div key={step.status} className="flex flex-col items-center relative z-10">
-              <div
-                className={cn(
-                  'w-10 h-10 rounded-full flex items-center justify-center transition-all',
-                  isComplete && 'bg-green-500 text-white',
-                  isCurrent && !isOverdue && !isPartial && 'bg-indigo-500 text-white ring-4 ring-indigo-100 dark:ring-indigo-900',
-                  isCurrent && isOverdue && 'bg-red-500 text-white ring-4 ring-red-100 dark:ring-red-900',
-                  isCurrent && isPartial && 'bg-yellow-500 text-white ring-4 ring-yellow-100 dark:ring-yellow-900',
-                  !isComplete && !isCurrent && 'bg-muted text-muted-foreground'
-                )}
-              >
-                {isComplete ? (
-                  <Check className="h-5 w-5" />
-                ) : isCurrent && isOverdue ? (
-                  <AlertCircle className="h-5 w-5" />
-                ) : (
-                  <Icon className="h-5 w-5" />
-                )}
-              </div>
-              <span
-                className={cn(
-                  'text-xs font-medium mt-2',
-                  isComplete && 'text-green-600 dark:text-green-400',
-                  isCurrent && !isOverdue && !isPartial && 'text-indigo-600 dark:text-indigo-400',
-                  isCurrent && isOverdue && 'text-red-600 dark:text-red-400',
-                  isCurrent && isPartial && 'text-yellow-600 dark:text-yellow-400',
-                  !isComplete && !isCurrent && 'text-muted-foreground'
-                )}
-              >
-                {isCurrent && isOverdue ? 'Overdue' : isCurrent && isPartial ? 'Partial' : step.label}
-              </span>
-              {/* Timestamp below label */}
-              {isComplete && step.status === 'sent' && invoice.sentAt && (
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {formatDateTL(invoice.sentAt)}
-                </span>
-              )}
-              {isCurrent && step.status === 'viewed' && invoice.viewedAt && (
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {formatDateTL(invoice.viewedAt)}
-                </span>
-              )}
-              {isCurrent && step.status === 'paid' && invoice.paidAt && (
-                <span className="text-[10px] text-muted-foreground mt-0.5">
-                  {formatDateTL(invoice.paidAt)}
-                </span>
-              )}
-            </div>
-          );
-        })}
+        {MAIN_FLOW.map((step) => (
+          <FullTimelineStep key={step.status} step={step} invoice={invoice} effectiveOrder={effectiveOrder} />
+        ))}
       </div>
 
-      {/* Status message */}
       {isOverdue && (
         <div className="mt-4 text-center">
           <span className="text-sm text-red-600 dark:text-red-400 font-medium">

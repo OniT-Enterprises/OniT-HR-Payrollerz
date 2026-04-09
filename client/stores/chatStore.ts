@@ -8,7 +8,7 @@ export type ProgressStep = {
   timestamp?: number;
 };
 
-type ChatMessage = {
+export type ChatMessage = {
   role: 'user' | 'assistant';
   text: string;
   isStreaming?: boolean;
