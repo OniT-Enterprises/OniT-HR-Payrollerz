@@ -841,11 +841,11 @@ export default function PayrollHistory() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>{t("payrollHistory.period")}</TableHead>
-                            <TableHead>{t("payrollHistory.payDate")}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t("payrollHistory.payDate")}</TableHead>
                             <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
-                            <TableHead className="text-right">{t("payrollHistory.grossPay")}</TableHead>
-                            <TableHead className="text-right">{t("payrollHistory.netPay")}</TableHead>
-                            <TableHead>{t("payrollHistory.submittedBy")}</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.grossPay")}</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.netPay")}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t("payrollHistory.submittedBy")}</TableHead>
                             <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -854,42 +854,40 @@ export default function PayrollHistory() {
                             const isSameUser = run.createdBy === user?.uid;
                             return (
                               <TableRow key={run.id} className="bg-amber-50/50 dark:bg-amber-950/10">
-                                <TableCell>
-                                  <div>
-                                    <p className="font-medium">
-                                      {getPayPeriodLabel(run.periodStart, run.periodEnd)}
-                                    </p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {formatPayPeriod(run.periodStart, run.periodEnd)}
-                                    </p>
-                                  </div>
+                                <TableCell className="whitespace-nowrap">
+                                  <p className="font-medium">
+                                    {getPayPeriodLabel(run.periodStart, run.periodEnd)}
+                                  </p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {formatPayPeriod(run.periodStart, run.periodEnd)}
+                                  </p>
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="whitespace-nowrap">
                                   {formatDateTL(run.payDate)}
                                 </TableCell>
                                 <TableCell className="text-right">
                                   {run.employeeCount}
                                 </TableCell>
-                                <TableCell className="text-right font-medium tabular-nums">
+                                <TableCell className="text-right font-medium tabular-nums whitespace-nowrap">
                                   {formatCurrency(run.totalGrossPay)}
                                 </TableCell>
-                                <TableCell className="text-right font-semibold text-emerald-600 tabular-nums">
+                                <TableCell className="text-right font-semibold text-emerald-600 tabular-nums whitespace-nowrap">
                                   {formatCurrency(run.totalNetPay)}
                                 </TableCell>
-                                <TableCell>
+                                <TableCell className="whitespace-nowrap">
                                   <span className="text-sm text-muted-foreground">
                                     {run.createdBy === user?.uid ? t("payrollHistory.you") : run.createdBy?.slice(0, 8) + "..."}
                                   </span>
                                 </TableCell>
                                 <TableCell className="text-right">
-                                  <div className="flex items-center justify-end gap-2">
+                                  <div className="flex items-center justify-end gap-1.5">
                                     <Button
                                       variant="outline"
                                       size="sm"
                                       onClick={() => handleViewDetails(run)}
+                                      title={t("payrollHistory.viewDetails")}
                                     >
-                                      <Eye className="h-4 w-4 mr-1.5" />
-                                      {t("payrollHistory.viewDetails")}
+                                      <Eye className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       size="sm"
@@ -899,7 +897,7 @@ export default function PayrollHistory() {
                                         setShowApproveDialog(true);
                                       }}
                                       className="bg-green-600 hover:bg-green-700 text-white"
-                                      title={isSameUser ? "Cannot approve your own payroll submission" : "Approve payroll"}
+                                      title={isSameUser ? t("payrollHistory.twoPersonRule") : t("payrollHistory.approve")}
                                     >
                                       <CheckCircle className="h-4 w-4 mr-1" />
                                       {t("payrollHistory.approve")}
@@ -913,13 +911,13 @@ export default function PayrollHistory() {
                                         setShowRejectDialog(true);
                                       }}
                                       className="border-red-300 text-red-600 hover:bg-red-50 dark:border-red-800 dark:text-red-400 dark:hover:bg-red-950/30"
+                                      title={t("payrollHistory.reject")}
                                     >
-                                      <XCircle className="h-4 w-4 mr-1" />
-                                      {t("payrollHistory.reject")}
+                                      <XCircle className="h-4 w-4" />
                                     </Button>
                                   </div>
                                   {isSameUser && (
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <p className="text-xs text-muted-foreground mt-1 text-right">
                                       {t("payrollHistory.twoPersonRule")}
                                     </p>
                                   )}
@@ -1013,10 +1011,10 @@ export default function PayrollHistory() {
                         <TableHeader>
                           <TableRow>
                             <TableHead>{t("payrollHistory.period")}</TableHead>
-                            <TableHead>{t("payrollHistory.payDate")}</TableHead>
+                            <TableHead className="whitespace-nowrap">{t("payrollHistory.payDate")}</TableHead>
                             <TableHead className="text-right">{t("payrollHistory.employees")}</TableHead>
-                            <TableHead className="text-right">{t("payrollHistory.grossPay")}</TableHead>
-                            <TableHead className="text-right">{t("payrollHistory.netPay")}</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.grossPay")}</TableHead>
+                            <TableHead className="text-right whitespace-nowrap">{t("payrollHistory.netPay")}</TableHead>
                             <TableHead>{t("payrollHistory.status")}</TableHead>
                             <TableHead className="text-right">{t("payrollHistory.actions")}</TableHead>
                           </TableRow>
@@ -1024,29 +1022,27 @@ export default function PayrollHistory() {
                         <TableBody>
                           {filteredRuns.map((run) => (
                             <TableRow key={run.id}>
-                              <TableCell>
-                                <div>
-                                  <p className="font-medium">
-                                    {getPayPeriodLabel(run.periodStart, run.periodEnd)}
-                                  </p>
-                                  <p className="text-sm text-muted-foreground">
-                                    {formatPayPeriod(run.periodStart, run.periodEnd)}
-                                  </p>
-                                </div>
+                              <TableCell className="whitespace-nowrap">
+                                <p className="font-medium">
+                                  {getPayPeriodLabel(run.periodStart, run.periodEnd)}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                  {formatPayPeriod(run.periodStart, run.periodEnd)}
+                                </p>
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="whitespace-nowrap">
                                 {formatDateTL(run.payDate)}
                               </TableCell>
                               <TableCell className="text-right">
                                 {run.employeeCount}
                               </TableCell>
-                              <TableCell className="text-right font-medium tabular-nums">
+                              <TableCell className="text-right font-medium tabular-nums whitespace-nowrap">
                                 {formatCurrency(run.totalGrossPay)}
                               </TableCell>
-                              <TableCell className="text-right font-semibold text-emerald-600 tabular-nums">
+                              <TableCell className="text-right font-semibold text-emerald-600 tabular-nums whitespace-nowrap">
                                 {formatCurrency(run.totalNetPay)}
                               </TableCell>
-                              <TableCell>{getStatusBadge(run.status)}</TableCell>
+                              <TableCell className="whitespace-nowrap">{getStatusBadge(run.status)}</TableCell>
                               <TableCell className="text-right">
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
