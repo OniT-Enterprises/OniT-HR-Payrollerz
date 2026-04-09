@@ -140,8 +140,8 @@ export default function Landing() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/illustrations/logo-v2-dark.webp"
-                alt="Meza"
+                src="/images/illustrations/primos-books-logo-light.png"
+                alt="Primos Books"
                 className="h-9 w-auto"
               />
             </Link>
@@ -1304,8 +1304,8 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <img
-                src="/images/illustrations/logo-v2-dark.webp"
-                alt="Meza"
+                src="/images/illustrations/primos-books-logo-light.png"
+                alt="Primos Books"
                 className="h-7 w-auto"
               />
               <span className="text-zinc-600 text-sm">

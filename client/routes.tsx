@@ -44,13 +44,13 @@ export function PageLoader() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <img
-          src="/images/illustrations/logo-v2-light.webp"
-          alt="Meza"
+          src="/images/illustrations/primos-books-logo-dark.png"
+          alt="Primos Books"
           className="h-10 w-auto dark:hidden"
         />
         <img
-          src="/images/illustrations/logo-v2-dark.webp"
-          alt="Meza"
+          src="/images/illustrations/primos-books-logo-light.png"
+          alt="Primos Books"
           className="h-10 w-auto hidden dark:block"
         />
         <div className="animate-spin h-7 w-7 border-[3px] border-primary/20 border-t-primary rounded-full" />

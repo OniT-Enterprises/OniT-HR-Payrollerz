@@ -588,8 +588,8 @@ export default function ProductDetails() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/illustrations/logo-v2-dark.webp"
-                alt="Meza"
+                src="/images/illustrations/primos-books-logo-light.png"
+                alt="Primos Books"
                 className="h-9 w-auto"
               />
             </Link>
@@ -954,8 +954,8 @@ export default function ProductDetails() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img
-              src="/images/illustrations/logo-v2-dark.webp"
-              alt="Meza"
+              src="/images/illustrations/primos-books-logo-light.png"
+              alt="Primos Books"
               className="h-7 w-auto"
             />
             <span className="text-zinc-600 text-sm">Dili, Timor-Leste</span>

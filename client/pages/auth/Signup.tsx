@@ -187,8 +187,8 @@ export default function Signup() {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
             <img
-              src="/images/illustrations/logo-v2-light.webp"
-              alt="Meza"
+              src="/images/illustrations/primos-books-logo-dark.png"
+              alt="Primos Books"
               className="h-10 w-auto"
             />
           </div>
