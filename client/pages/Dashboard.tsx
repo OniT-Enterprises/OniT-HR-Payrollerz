@@ -81,16 +81,27 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
   const fullText = `${greeting}${firstName ? `, ${firstName}` : ""}! ${t("dashboard.botGreeting")}`;
   const [displayedText, setDisplayedText] = useState("");
   const indexRef = useRef(0);
+  const fullTextRef = useRef(fullText);
+  fullTextRef.current = fullText;
 
   useEffect(() => {
     indexRef.current = 0;
-    setDisplayedText("");
-    const interval = setInterval(() => {
+    let active = true;
+    const tick = () => {
+      if (!active) return;
       indexRef.current++;
-      setDisplayedText(fullText.slice(0, indexRef.current));
-      if (indexRef.current >= fullText.length) clearInterval(interval);
-    }, 25);
-    return () => clearInterval(interval);
+      setDisplayedText(fullTextRef.current.slice(0, indexRef.current));
+      if (indexRef.current < fullTextRef.current.length) {
+        setTimeout(tick, 25);
+      }
+    };
+    // Reset then start on next frame to avoid sync setState
+    requestAnimationFrame(() => {
+      if (!active) return;
+      setDisplayedText("");
+      setTimeout(tick, 25);
+    });
+    return () => { active = false; };
   }, [fullText]);
 
   const greetingEnd = greeting.length + (firstName ? `, ${firstName}` : "").length + 1;
