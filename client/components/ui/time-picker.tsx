@@ -61,6 +61,11 @@ export function TimePicker({
   id,
 }: TimePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const [popoverContainer, setPopoverContainer] = React.useState<HTMLElement | null>(null);
+
+  const handleTriggerRef = React.useCallback((node: HTMLButtonElement | null) => {
+    setPopoverContainer((node?.closest("[role='dialog']") as HTMLElement | null) ?? null);
+  }, []);
 
   // Parse current value
   const parsed = React.useMemo(() => {
@@ -85,6 +90,7 @@ export function TimePicker({
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <button
+          ref={handleTriggerRef}
           type="button"
           id={id}
           className={cn(
@@ -99,7 +105,11 @@ export function TimePicker({
           <Clock className="h-4 w-4 text-muted-foreground" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[280px] p-0 z-[100]" align="start">
+      <PopoverContent
+        className="z-[100] w-[280px] p-0"
+        align="start"
+        container={popoverContainer}
+      >
         {/* Quick presets */}
         <div className="border-b p-2">
           <p className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider px-1 mb-1.5">Quick Select</p>

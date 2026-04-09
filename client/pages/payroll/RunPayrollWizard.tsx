@@ -35,17 +35,17 @@ import { SEO, seoConfig } from "@/components/SEO";
 import { toDateStringTL } from "@/lib/dateUtils";
 import { Calculator, Calendar, CheckCircle, Clock, Users } from "lucide-react";
 
-const WIZARD_STEPS: WizardStep[] = [
-  { id: "period", title: "Pay Period", icon: Calendar },
-  { id: "employees", title: "Employees", icon: Users },
-  { id: "hours", title: "Hours & Pay", icon: Clock },
-  { id: "review", title: "Review", icon: CheckCircle },
-];
-
 export default function RunPayrollWizard() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
+
+  const wizardSteps: WizardStep[] = [
+    { id: "period", title: t("payroll.payPeriod"), icon: Calendar },
+    { id: "employees", title: t("payroll.employees"), icon: Users },
+    { id: "hours", title: t("payroll.hoursPay"), icon: Clock },
+    { id: "review", title: t("common.review"), icon: CheckCircle },
+  ];
   const { user } = useAuth();
   const tenantId = useTenantId();
 
@@ -218,7 +218,7 @@ export default function RunPayrollWizard() {
     return <PayrollLoadingSkeleton />;
   }
 
-  const currentStepId = WIZARD_STEPS[currentStep].id;
+  const currentStepId = wizardSteps[currentStep].id;
 
   return (
     <div className="min-h-screen bg-background">
@@ -233,7 +233,7 @@ export default function RunPayrollWizard() {
           iconColor="text-green-500"
         />
         <StepWizard
-          steps={WIZARD_STEPS}
+          steps={wizardSteps}
           currentStep={currentStep}
           onStepChange={setCurrentStep}
           onBeforeNext={handleBeforeNext}

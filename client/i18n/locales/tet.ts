@@ -5518,6 +5518,7 @@ const messages = {
     "reviewTitle": "Revizaun Saláriu",
     "reviewDescription": "Reviza sumáriu saláriu molok prosesa.",
     "payPeriod": "Períodu Pagamentu",
+    "hoursPay": "Oras & Pagamentu",
     "payDateLabel": "Data pagamentu:",
     "employees": "Trabalhador sira",
     "totalGross": "Totál Brutu",

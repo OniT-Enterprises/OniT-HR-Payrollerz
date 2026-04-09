@@ -5513,6 +5513,7 @@ const messages = {
     "reviewTitle": "Rever Folha",
     "reviewDescription": "Reveja o resumo da folha antes de processar.",
     "payPeriod": "Período de Pagamento",
+    "hoursPay": "Horas & Pagamento",
     "payDateLabel": "Data de pagamento:",
     "employees": "Funcionários",
     "totalGross": "Total Bruto",

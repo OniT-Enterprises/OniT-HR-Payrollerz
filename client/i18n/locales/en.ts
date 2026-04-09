@@ -5518,6 +5518,7 @@ const messages = {
     "reviewTitle": "Review Payroll",
     "reviewDescription": "Review the payroll summary before processing.",
     "payPeriod": "Pay Period",
+    "hoursPay": "Hours & Pay",
     "payDateLabel": "Pay date:",
     "employees": "Employees",
     "totalGross": "Total Gross",

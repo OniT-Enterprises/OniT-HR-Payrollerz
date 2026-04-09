@@ -460,15 +460,15 @@ export default function AttendanceReports() {
 
         {/* Attendance Status Breakdown */}
         <Card className="border-border/50 shadow-lg mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <FileSpreadsheet className="h-5 w-5 text-violet-600" />
-                {t("reports.attendance.breakdown.title")}
-              </CardTitle>
-              <CardDescription>{t("reports.attendance.breakdown.description")}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5 text-violet-600" />
+              {t("reports.attendance.breakdown.title")}
+            </CardTitle>
+            <CardDescription>{t("reports.attendance.breakdown.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               {[
                 { key: "present", color: "bg-green-100 dark:bg-green-900" },
                 { key: "late", color: "bg-orange-100 dark:bg-orange-900" },
@@ -492,14 +492,14 @@ export default function AttendanceReports() {
 
         {/* Recent Attendance Table */}
         <Card className="border-border/50 shadow-lg">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Calendar className="h-5 w-5 text-violet-600" />
-                {t("reports.attendance.recent.title")}
-              </CardTitle>
-              <CardDescription>{t("reports.attendance.recent.description")}</CardDescription>
-            </CardHeader>
-            <CardContent>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-violet-600" />
+              {t("reports.attendance.recent.title")}
+            </CardTitle>
+            <CardDescription>{t("reports.attendance.recent.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
             {attendanceRecords.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 <Clock className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -507,62 +507,118 @@ export default function AttendanceReports() {
                 <p className="text-sm">{t("reports.attendance.recent.emptyDescription")}</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b">
-                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.csv.date")}</th>
-                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.employee")}</th>
-                      <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.department")}</th>
-                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockIn")}</th>
-                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockOut")}</th>
-                      <th className="text-center p-3 font-medium">{t("timeLeave.timeTracking.table.totalHours")}</th>
-                      <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.status")}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {attendanceRecords
-                      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-                      .slice(0, 15)
-                      .map((record) => (
-                        <tr key={record.id} className="border-b hover:bg-muted/50">
-                          <td className="p-3">
-                            {formatDateTL(record.date)}
-                          </td>
-                          <td className="p-3">
+              <>
+                {/* Mobile card layout */}
+                <div className="space-y-3 md:hidden">
+                  {attendanceRecords
+                    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                    .slice(0, 15)
+                    .map((record) => (
+                      <div key={record.id} className="rounded-lg border border-border/50 p-4">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
                             <div className="font-medium">{record.employeeName}</div>
-                          </td>
-                          <td className="p-3">{record.department || "-"}</td>
-                          <td className="p-3 text-center">{record.clockIn || "-"}</td>
-                          <td className="p-3 text-center">{record.clockOut || "-"}</td>
-                          <td className="p-3 text-center">
-                            <span>{record.totalHours?.toFixed(1) || 0}</span>
-                            {record.overtimeHours > 0 && (
-                              <span className="text-xs text-blue-600 ml-1">
-                                (+{record.overtimeHours.toFixed(1)} {t("timeLeave.attendance.table.overtime")})
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <Badge
-                              className={
-                                record.status === "present"
-                                  ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
-                                  : record.status === "late"
-                                  ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
-                                  : record.status === "absent"
-                                  ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
-                                  : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300 dark:bg-gray-800 dark:text-gray-200"
-                              }
-                            >
-                              {getStatusLabel(record.status)}
-                            </Badge>
-                          </td>
-                        </tr>
-                      ))}
-                  </tbody>
-                </table>
-              </div>
+                            <div className="text-sm text-muted-foreground">{record.department || "-"}</div>
+                          </div>
+                          <Badge
+                            className={
+                              record.status === "present"
+                                ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                : record.status === "late"
+                                ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+                                : record.status === "absent"
+                                ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                            }
+                          >
+                            {getStatusLabel(record.status)}
+                          </Badge>
+                        </div>
+                        <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("timeLeave.attendance.csv.date")}</p>
+                            <p>{formatDateTL(record.date)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("timeLeave.timeTracking.table.totalHours")}</p>
+                            <p>
+                              {record.totalHours?.toFixed(1) || 0}
+                              {record.overtimeHours > 0 && (
+                                <span className="text-xs text-blue-600 ml-1">
+                                  (+{record.overtimeHours.toFixed(1)})
+                                </span>
+                              )}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("timeLeave.attendance.table.clockIn")}</p>
+                            <p>{record.clockIn || "-"}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">{t("timeLeave.attendance.table.clockOut")}</p>
+                            <p>{record.clockOut || "-"}</p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+
+                {/* Desktop table */}
+                <div className="hidden overflow-x-auto md:block">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b">
+                        <th className="text-left p-3 font-medium">{t("timeLeave.attendance.csv.date")}</th>
+                        <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.employee")}</th>
+                        <th className="text-left p-3 font-medium">{t("timeLeave.attendance.table.department")}</th>
+                        <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockIn")}</th>
+                        <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.clockOut")}</th>
+                        <th className="text-center p-3 font-medium">{t("timeLeave.timeTracking.table.totalHours")}</th>
+                        <th className="text-center p-3 font-medium">{t("timeLeave.attendance.table.status")}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {attendanceRecords
+                        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                        .slice(0, 15)
+                        .map((record) => (
+                          <tr key={record.id} className="border-b hover:bg-muted/50">
+                            <td className="p-3">{formatDateTL(record.date)}</td>
+                            <td className="p-3">
+                              <div className="font-medium">{record.employeeName}</div>
+                            </td>
+                            <td className="p-3">{record.department || "-"}</td>
+                            <td className="p-3 text-center">{record.clockIn || "-"}</td>
+                            <td className="p-3 text-center">{record.clockOut || "-"}</td>
+                            <td className="p-3 text-center">
+                              <span>{record.totalHours?.toFixed(1) || 0}</span>
+                              {record.overtimeHours > 0 && (
+                                <span className="text-xs text-blue-600 ml-1">
+                                  (+{record.overtimeHours.toFixed(1)} {t("timeLeave.attendance.table.overtime")})
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              <Badge
+                                className={
+                                  record.status === "present"
+                                    ? "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400"
+                                    : record.status === "late"
+                                    ? "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400"
+                                    : record.status === "absent"
+                                    ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400"
+                                    : "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-200"
+                                }
+                              >
+                                {getStatusLabel(record.status)}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
             )}
           </CardContent>
         </Card>
