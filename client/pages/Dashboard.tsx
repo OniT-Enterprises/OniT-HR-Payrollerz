@@ -285,7 +285,7 @@ export default function Dashboard() {
             </p>
           </div>
           <img
-            src="/images/illustrations/dashboard-greeting.png"
+            src="/images/illustrations/dashboard-greeting.webp"
             alt=""
             className="hidden md:block h-32 w-auto -mr-2 -my-4 object-contain opacity-90 dark:opacity-70"
           />
