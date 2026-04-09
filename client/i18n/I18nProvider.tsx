@@ -1,7 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 
 type TranslationParams = Record<string, string | number>;
-export type Locale = "en" | "tet" | "pt";
+type Locale = "en" | "tet" | "pt";
 type TranslationTree = Record<string, unknown>;
 type TranslationBundle = Partial<Record<Locale, TranslationTree>>;
 

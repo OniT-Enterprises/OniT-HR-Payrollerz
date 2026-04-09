@@ -89,7 +89,7 @@ const TL_INSS_OPTIONAL_CONTRIBUTION_BAND_MULTIPLIERS = [
   2, 2.5, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 30, 40, 50, 100, 200,
 ] as const;
 
-export interface TLInssContributionBand {
+interface TLInssContributionBand {
   band: number;
   multiplier: number;
   base: number;

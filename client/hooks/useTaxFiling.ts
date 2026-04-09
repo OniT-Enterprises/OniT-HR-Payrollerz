@@ -9,7 +9,7 @@ import type { TaxFilingType, MonthlyWITReturn, AnnualWITReturn, MonthlyINSSRetur
 import type { TaxFilingTask } from '@/types/tax-filing';
 import type { AuditContext } from '@/services/employeeService';
 
-export const taxFilingKeys = {
+const taxFilingKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'taxFilings'] as const,
   lists: (tenantId: string) => [...taxFilingKeys.all(tenantId), 'list'] as const,
   byType: (tenantId: string, type: TaxFilingType) => [...taxFilingKeys.lists(tenantId), type] as const,
@@ -24,17 +24,6 @@ export function useTaxFilings(type?: TaxFilingType) {
   return useQuery({
     queryKey: type ? taxFilingKeys.byType(tenantId, type) : taxFilingKeys.lists(tenantId),
     queryFn: () => taxFilingService.getAllFilings(tenantId, type),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/** Fetch a filing by type and period */
-export function useTaxFilingByPeriod(type: TaxFilingType, period: string, enabled: boolean = true) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: taxFilingKeys.byPeriod(tenantId, type, period),
-    queryFn: () => taxFilingService.getFilingByPeriod(type, period, tenantId),
-    enabled,
     staleTime: 5 * 60 * 1000,
   });
 }

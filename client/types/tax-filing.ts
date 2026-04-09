@@ -227,7 +227,7 @@ export interface FilingDueDate {
 // AUDIT LOG TYPES
 // ============================================
 
-export type AuditEntityType =
+type AuditEntityType =
   | 'employee'
   | 'payroll'
   | 'tax_filing'
@@ -236,7 +236,7 @@ export type AuditEntityType =
   | 'settings'
   | 'document';
 
-export type AuditAction =
+type AuditAction =
   | 'create'
   | 'update'
   | 'delete'
@@ -246,7 +246,7 @@ export type AuditAction =
   | 'file'
   | 'approve';
 
-export interface AuditLogEntry {
+interface AuditLogEntry {
   id: string;
   tenantId: string;
 
@@ -278,7 +278,7 @@ export interface AuditLogEntry {
 // ARCHIVED EMPLOYEE
 // ============================================
 
-export type TerminationReason =
+type TerminationReason =
   | 'resignation'
   | 'dismissal'
   | 'redundancy'
@@ -287,12 +287,12 @@ export type TerminationReason =
   | 'death'
   | 'mutual_agreement';
 
-export type TerminationType =
+type TerminationType =
   | 'with_cause'
   | 'without_cause'
   | 'mutual';
 
-export interface ArchivedEmployee {
+interface ArchivedEmployee {
   id: string;
   tenantId: string;
   originalEmployeeId: string;
@@ -322,7 +322,7 @@ export interface ArchivedEmployee {
 // TAX FILING ARCHIVE
 // ============================================
 
-export interface TaxFilingArchive {
+interface TaxFilingArchive {
   id: string;
   tenantId: string;
   originalFilingId: string;
@@ -351,7 +351,7 @@ export interface TaxFilingArchive {
 // FOREIGN WORKER TYPES
 // ============================================
 
-export type VisaType = 'C' | 'other';
+type VisaType = 'C' | 'other';
 
 export type WorkPermitStatus =
   | 'not_required'
@@ -426,7 +426,7 @@ export interface ForeignWorkerData {
   renewalHistory: RenewalHistoryEntry[];
 }
 
-export interface ForeignWorkerAlert {
+interface ForeignWorkerAlert {
   employeeId: string;
   employeeName: string;
   documentType: 'work_visa' | 'residence_permit' | 'work_permit';

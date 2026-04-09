@@ -2,7 +2,6 @@
  * Shared types for Settings tab components
  */
 export type {
-  TenantSettings,
   CompanyDetails,
   CompanyStructure,
   PaymentStructure,

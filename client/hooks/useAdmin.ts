@@ -6,7 +6,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { adminService } from '@/services/adminService';
 
-export const adminKeys = {
+const adminKeys = {
   tenants: () => ['admin', 'tenants'] as const,
   tenant: (id: string) => ['admin', 'tenant', id] as const,
   tenantStats: (id: string) => ['admin', 'tenant', id, 'stats'] as const,

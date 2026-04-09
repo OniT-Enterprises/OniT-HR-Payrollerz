@@ -40,4 +40,3 @@ function exportToCSV(
 }
 
 export { exportToCSV };
-export type { CsvColumn };

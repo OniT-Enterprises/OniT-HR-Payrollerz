@@ -71,7 +71,7 @@ const BNU_ACCOUNTS = {
 /**
  * Generate ATTL Consolidated Monthly Taxes Form as Excel
  */
-export async function generateATTLExcel(
+async function generateATTLExcel(
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>,
   additionalData?: Partial<ATTLFormData>

@@ -197,14 +197,3 @@ export function PageSkeleton({
   );
 }
 
-export function TablePageSkeleton({ rows = 10 }: { rows?: number }) {
-  return <PageSkeleton type="table" tableRows={rows} />;
-}
-
-export function FormPageSkeleton() {
-  return <PageSkeleton type="form" statCards={0} />;
-}
-
-export function ListPageSkeleton({ items = 6 }: { items?: number }) {
-  return <PageSkeleton type="list" statCards={0} tableRows={items} />;
-}

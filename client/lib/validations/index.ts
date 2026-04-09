@@ -105,7 +105,7 @@ export const firestoreEmployeeSchema = z.object({
   updatedAt: firestoreDateSchema,
 }).passthrough(); // Allow additional fields
 
-export type FirestoreEmployee = z.infer<typeof firestoreEmployeeSchema>;
+type FirestoreEmployee = z.infer<typeof firestoreEmployeeSchema>;
 
 /**
  * Firestore Invoice document schema
@@ -134,7 +134,7 @@ export const firestoreInvoiceSchema = z.object({
   updatedAt: firestoreDateSchema,
 }).passthrough();
 
-export type FirestoreInvoice = z.infer<typeof firestoreInvoiceSchema>;
+type FirestoreInvoice = z.infer<typeof firestoreInvoiceSchema>;
 
 /**
  * Firestore Customer document schema
@@ -154,7 +154,7 @@ export const firestoreCustomerSchema = z.object({
   updatedAt: firestoreDateSchema,
 }).passthrough();
 
-export type FirestoreCustomer = z.infer<typeof firestoreCustomerSchema>;
+type FirestoreCustomer = z.infer<typeof firestoreCustomerSchema>;
 
 /**
  * Firestore Bill document schema
@@ -174,7 +174,7 @@ export const firestoreBillSchema = z.object({
   updatedAt: firestoreDateSchema,
 }).passthrough();
 
-export type FirestoreBill = z.infer<typeof firestoreBillSchema>;
+type FirestoreBill = z.infer<typeof firestoreBillSchema>;
 
 // ============================================
 // COERCION HELPERS

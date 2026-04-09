@@ -28,7 +28,7 @@ import type {
   RecurringFrequency,
   InvoiceItem,
 } from '@/types/money';
-export type { RecurringInvoice, RecurringInvoiceFormData };
+export type { RecurringInvoiceFormData };
 import { customerService } from './customerService';
 import { invoiceService } from './invoiceService';
 

@@ -522,7 +522,7 @@ const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
 /**
  * Generate invoice PDF as blob (for preview or email attachment)
  */
-export const generateInvoiceBlob = async (
+const generateInvoiceBlob = async (
   invoice: Invoice,
   settings?: Partial<InvoiceSettings>
 ): Promise<Blob> => {

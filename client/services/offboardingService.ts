@@ -89,13 +89,13 @@ export interface OffboardingCase {
   updatedAt?: Date;
 }
 
-export interface OffboardingFilters {
+interface OffboardingFilters {
   status?: OffboardingStatus;
   departureReason?: DepartureReason;
   year?: number;
 }
 
-export interface OffboardingStats {
+interface OffboardingStats {
   totalCases: number;
   pending: number;
   inProgress: number;

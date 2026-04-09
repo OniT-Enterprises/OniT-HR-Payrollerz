@@ -44,7 +44,7 @@ export interface Job {
 /**
  * Filter options for job queries
  */
-export interface JobFilters {
+interface JobFilters {
   // Server-side filters
   status?: JobStatus;
   department?: string;
@@ -59,7 +59,7 @@ export interface JobFilters {
   location?: string;
 }
 
-export interface PaginatedResult<T> {
+interface PaginatedResult<T> {
   data: T[];
   lastDoc: DocumentSnapshot | null;
   hasMore: boolean;

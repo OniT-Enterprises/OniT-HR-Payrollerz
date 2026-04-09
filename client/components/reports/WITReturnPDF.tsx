@@ -409,7 +409,7 @@ const WITReturnDocument = ({
 /**
  * Generate WIT Return PDF as Blob
  */
-export const generateWITReturnBlob = async (
+const generateWITReturnBlob = async (
   witReturn: MonthlyWITReturn,
   company?: Partial<CompanyDetails>
 ): Promise<Blob> => {

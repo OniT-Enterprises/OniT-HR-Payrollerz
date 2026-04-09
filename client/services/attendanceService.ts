@@ -74,7 +74,7 @@ export interface AttendanceRecord {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface AttendanceImportBatch {
+interface AttendanceImportBatch {
   id?: string;
   tenantId: string;
   fileName: string;
@@ -95,7 +95,7 @@ export interface AttendanceImportBatch {
   createdAt?: FirestoreTimestamp;
 }
 
-export interface AttendanceSummary {
+interface AttendanceSummary {
   employeeId: string;
   employeeName: string;
   department: string;
@@ -119,7 +119,7 @@ export interface AttendanceSummary {
   averageHoursPerDay: number;
 }
 
-export interface DailyAttendanceReport {
+interface DailyAttendanceReport {
   date: string;
   totalEmployees: number;
   present: number;

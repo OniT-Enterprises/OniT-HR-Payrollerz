@@ -11,7 +11,7 @@ import { db } from '@/lib/firebase';
 // TAX CONFIGURATION TYPES
 // ============================================
 
-export interface TLTaxConfig {
+interface TLTaxConfig {
   // Withholding Income Tax (WIT)
   incomeTax: {
     rate: number;                  // e.g., 0.10 for 10%

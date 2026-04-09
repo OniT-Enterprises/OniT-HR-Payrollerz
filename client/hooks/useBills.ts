@@ -22,17 +22,7 @@ export const billKeys = {
   payments: (tenantId: string, billId: string) => [...billKeys.all(tenantId), 'payments', billId] as const,
 };
 
-export function useBills(filters: BillFilters = {}) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: billKeys.list(tenantId, filters),
-    queryFn: () => billService.getBills(tenantId, filters),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-}
-
-export function useAllBills(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+function useAllBills(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: billKeys.list(tenantId, { pageSize: maxResults }),
@@ -118,7 +108,7 @@ export function useRecordBillPayment() {
 /**
  * Server-side paginated bills using infinite query
  */
-export function usePaginatedBills(
+function usePaginatedBills(
   filters: Omit<BillFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {
@@ -143,7 +133,7 @@ export function usePaginatedBills(
 /**
  * Helper hook to flatten paginated bill results
  */
-export function useFlattenedPaginatedBills(
+function useFlattenedPaginatedBills(
   filters: Omit<BillFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {

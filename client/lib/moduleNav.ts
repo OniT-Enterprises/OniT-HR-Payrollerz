@@ -67,7 +67,7 @@ import {
 
 /* ─── Types ─── */
 
-export interface NavItem {
+interface NavItem {
   label: string;
   labelKey?: string;     // i18n key — sidebar uses t(labelKey) when available
   path: string;
@@ -499,19 +499,6 @@ export const reportsNavConfig: ModuleNavConfig = {
 };
 
 /* ─── Lookup helper ─── */
-
-const allConfigs: Record<string, ModuleNavConfig> = {
-  people: peopleNavConfig,
-  scheduling: timeLeaveNavConfig,
-  payroll: payrollNavConfig,
-  money: moneyNavConfig,
-  accounting: accountingNavConfig,
-  reports: reportsNavConfig,
-};
-
-export function getModuleNavConfig(moduleId: SectionId): ModuleNavConfig | undefined {
-  return allConfigs[moduleId];
-}
 
 function canViewNavEntry(
   entry: { requiredModule?: ModulePermission; requiredAnyModules?: ModulePermission[] },

@@ -461,7 +461,7 @@ export interface BankTransaction {
   reconciledAt?: Date;
 }
 
-export interface BankReconciliation {
+interface BankReconciliation {
   id: string;
   accountName: string;
   statementDate: string;
@@ -541,9 +541,9 @@ export interface RecurringInvoiceFormData {
 // VAT RETURN (when vatEnabled)
 // ============================================
 
-export type VATReturnStatus = 'draft' | 'reviewed' | 'filed' | 'paid';
+type VATReturnStatus = 'draft' | 'reviewed' | 'filed' | 'paid';
 
-export interface VATReturn {
+interface VATReturn {
   id: string;
 
   // Period

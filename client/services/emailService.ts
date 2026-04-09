@@ -43,9 +43,9 @@ const generatePayslipBlob = async (
 // TYPES
 // ============================================================================
 
-export type EmailStatus = "pending" | "processing" | "sent" | "failed";
+type EmailStatus = "pending" | "processing" | "sent" | "failed";
 
-export interface EmailRecord {
+interface EmailRecord {
   id?: string;
   tenantId: string;
   to: string[];
@@ -65,7 +65,7 @@ export interface EmailRecord {
   relatedId?: string; // e.g., payrollRunId, employeeId
 }
 
-export interface EmailAttachment {
+interface EmailAttachment {
   filename: string;
   content?: string; // base64 encoded
   contentType: string;

@@ -8,7 +8,7 @@ import {
   faceRecognitionService,
 } from '@/services/faceRecognitionService';
 
-export const faceEmbeddingKeys = {
+const faceEmbeddingKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'face_embeddings'] as const,
   detail: (tenantId: string, empId: string) =>
     ['tenants', tenantId, 'face_embeddings', empId] as const,
@@ -24,19 +24,6 @@ export function useFaceEmbeddings() {
     queryFn: () => faceRecognitionService.getAllEmbeddings(tenantId),
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
-  });
-}
-
-/**
- * Fetch a single employee's face embedding
- */
-export function useFaceEmbedding(employeeId: string) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: faceEmbeddingKeys.detail(tenantId, employeeId),
-    queryFn: () => faceRecognitionService.getEmbedding(tenantId, employeeId),
-    enabled: !!employeeId,
-    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -72,20 +59,3 @@ export function useRegisterFace() {
   });
 }
 
-/**
- * Deactivate face embeddings mutation
- */
-export function useDeactivateFace() {
-  const tenantId = useTenantId();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (employeeId: string) =>
-      faceRecognitionService.deactivateFace(tenantId, employeeId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: faceEmbeddingKeys.all(tenantId),
-      });
-    },
-  });
-}

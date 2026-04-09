@@ -176,7 +176,7 @@ export interface QBExportOptions {
 // ============================================
 
 // Simple CSV format (Transaction Pro Importer compatible)
-export interface CSVJournalRow {
+interface CSVJournalRow {
   RefNumber: string;
   TxnDate: string;
   Account: string;
@@ -192,7 +192,7 @@ export interface CSVJournalRow {
 // ============================================
 
 // IIF format for QuickBooks Desktop
-export interface IIFTransaction {
+interface IIFTransaction {
   type: 'TRNS' | 'SPL' | 'ENDTRNS';
   trnsType?: string;          // e.g., "GENERAL JOURNAL"
   date?: string;              // MM/DD/YYYY

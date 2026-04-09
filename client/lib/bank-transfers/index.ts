@@ -38,7 +38,7 @@ export interface BankFileResult {
   summary: BankTransferSummary;
 }
 
-export interface BankTransferInput {
+interface BankTransferInput {
   payrollRun: TLPayrollRun | PayrollRun;
   records: AnyPayrollRecord[];
   employees: Employee[];

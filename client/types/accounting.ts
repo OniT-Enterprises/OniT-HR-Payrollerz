@@ -347,7 +347,7 @@ export interface FiscalPeriod {
 // BANK RECONCILIATION
 // ============================================
 
-export interface BankAccount {
+interface BankAccount {
   id?: string;
   accountId: string;         // Link to Chart of Accounts
   bankName: string;
@@ -366,7 +366,7 @@ export interface BankAccount {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface BankReconciliation {
+interface BankReconciliation {
   id?: string;
   bankAccountId: string;
   statementDate: string;
@@ -395,7 +395,7 @@ export interface BankReconciliation {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface BankReconciliationItem {
+interface BankReconciliationItem {
   id?: string;
   type: 'deposit_in_transit' | 'outstanding_check' | 'bank_fee' | 'interest' | 'adjustment';
   date: string;
@@ -446,7 +446,7 @@ export interface PayrollAccountMapping {
 /**
  * Journal entry generated from payroll run
  */
-export interface PayrollJournalEntry {
+interface PayrollJournalEntry {
   payrollRunId: string;
   journalEntryId: string;
 
@@ -474,7 +474,7 @@ export interface PayrollJournalEntry {
 // REPORTS
 // ============================================
 
-export interface AccountingReportParams {
+interface AccountingReportParams {
   reportType:
     | 'trial_balance'
     | 'income_statement'
@@ -503,7 +503,7 @@ export interface AccountingReportParams {
 // INVOICE / BILLING (Future)
 // ============================================
 
-export interface Invoice {
+interface Invoice {
   id?: string;
   invoiceNumber: string;
 
@@ -535,7 +535,7 @@ export interface Invoice {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface InvoiceLineItem {
+interface InvoiceLineItem {
   description: string;
   quantity: number;
   unitPrice: number;
@@ -548,7 +548,7 @@ export interface InvoiceLineItem {
 // EXPENSE TRACKING
 // ============================================
 
-export interface Expense {
+interface Expense {
   id?: string;
 
   // Vendor
@@ -593,7 +593,7 @@ export interface Expense {
 // AUDIT TRAIL
 // ============================================
 
-export interface AccountingAuditLog {
+interface AccountingAuditLog {
   id?: string;
   action:
     | 'account_created'

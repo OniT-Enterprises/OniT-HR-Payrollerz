@@ -810,7 +810,7 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
 /**
  * Weekly payroll breakdown with reconciliation
  */
-export interface WeeklyPayrollBreakdown {
+interface WeeklyPayrollBreakdown {
   weekNumber: number;
   workingDays: number;
   amount: number;

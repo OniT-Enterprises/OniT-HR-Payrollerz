@@ -18,7 +18,7 @@ import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 
-export interface FaceEmbeddingDoc {
+interface FaceEmbeddingDoc {
   employeeId: string;
   employeeName: string;
   tenantId: string;

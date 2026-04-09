@@ -26,7 +26,7 @@ export type DeductionType =
   | 'other';
 
 // Earning types
-export type EarningType =
+type EarningType =
   | 'regular'
   | 'overtime'
   | 'double_time'

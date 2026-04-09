@@ -46,7 +46,7 @@ export interface Candidate {
 /**
  * Filter options for candidate queries
  */
-export interface CandidateFilters {
+interface CandidateFilters {
   // Server-side filters
   status?: CandidateStatus;
   position?: string;
@@ -61,7 +61,7 @@ export interface CandidateFilters {
   maxScore?: number;
 }
 
-export interface PaginatedResult<T> {
+interface PaginatedResult<T> {
   data: T[];
   lastDoc: DocumentSnapshot | null;
   hasMore: boolean;

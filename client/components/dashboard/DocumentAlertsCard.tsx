@@ -1,30 +1,19 @@
 /**
- * Document Alerts Dashboard Card
- * Shows expiring/expired employee documents on the main dashboard
+ * Document Alerts — shared utilities for document expiry tracking
  */
 
-import React, { useState, useEffect, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
+import React from "react";
 import {
   AlertTriangle,
   Clock,
-  FileWarning,
-  ChevronRight,
   ShieldAlert,
-  User,
 } from "lucide-react";
-import { Link } from "react-router-dom";
-import { employeeService, type Employee } from "@/services/employeeService";
-import { useTenantId } from "@/contexts/TenantContext";
-import { useI18n } from "@/i18n/I18nProvider";
+import { type Employee } from "@/services/employeeService";
 
-export type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss" | "contract";
-export type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
+type DocumentType = "bi" | "passport" | "work_permit" | "work_visa" | "residence_permit" | "electoral" | "inss" | "contract";
+type AlertSeverity = "expired" | "critical" | "warning" | "upcoming";
 
-export interface DocumentAlert {
+interface DocumentAlert {
   id: string;
   employeeId: string;
   employeeName: string;
@@ -256,163 +245,5 @@ function extractAlerts(employees: Employee[]): DocumentAlert[] {
   });
 }
 
-interface DocumentAlertsCardProps {
-  maxItems?: number;
-  className?: string;
-}
-
-export default function DocumentAlertsCard({ maxItems = 5, className = "" }: DocumentAlertsCardProps) {
-  const tenantId = useTenantId();
-  const { t } = useI18n();
-  const [loading, setLoading] = useState(true);
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
-  useEffect(() => {
-    const loadEmployees = async () => {
-      try {
-        const result = await employeeService.getAllEmployees(tenantId);
-        setEmployees(result);
-      } catch (error) {
-        console.error("Failed to load employees:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadEmployees();
-  }, [tenantId]);
-
-  const alerts = useMemo(() => extractAlerts(employees), [employees]);
-  const displayAlerts = alerts.slice(0, maxItems);
-
-  const getDocumentLabel = (documentType: DocumentType) => {
-    const labels: Record<DocumentType, string> = {
-      bi: t("documentAlerts.types.bi"),
-      passport: t("documentAlerts.types.passport"),
-      work_permit: t("documentAlerts.types.workPermit"),
-      work_visa: t("documentAlerts.types.workVisa"),
-      residence_permit: t("documentAlerts.types.residencePermit"),
-      electoral: t("documentAlerts.types.electoral"),
-      inss: t("documentAlerts.types.inssCard"),
-      contract: t("documentAlerts.types.contract"),
-    };
-    return labels[documentType];
-  };
-
-  const getSeverityLabel = (severity: AlertSeverity) =>
-    t(`documentAlerts.severity.${severity}`);
-
-  const counts = useMemo(() => ({
-    expired: alerts.filter(a => a.severity === "expired").length,
-    critical: alerts.filter(a => a.severity === "critical").length,
-    warning: alerts.filter(a => a.severity === "warning").length,
-    total: alerts.length,
-  }), [alerts]);
-
-  // Don't render anything if there are no alerts — keep dashboard clean
-  if (!loading && alerts.length === 0) {
-    return null;
-  }
-
-  if (loading) {
-    return (
-      <Card className={className}>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileWarning className="h-5 w-5" />
-            {t("documentAlerts.title")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className="h-12 w-full" />
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className={className}>
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-base">
-            <FileWarning className="h-5 w-5 text-amber-600" />
-            {t("documentAlerts.title")}
-          </CardTitle>
-          <div className="flex gap-1">
-            {counts.expired > 0 && (
-              <Badge className={SEVERITY_CONFIG.expired.className}>
-                {counts.expired} {t("documentAlerts.expired")}
-              </Badge>
-            )}
-            {counts.critical > 0 && (
-              <Badge className={SEVERITY_CONFIG.critical.className}>
-                {counts.critical} {t("documentAlerts.critical")}
-              </Badge>
-            )}
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {alerts.length === 0 ? (
-          <div className="text-center py-6 text-muted-foreground">
-            <FileWarning className="h-10 w-10 mx-auto mb-2 opacity-30" />
-            <p className="text-sm">{t("documentAlerts.noAlerts")}</p>
-            <p className="text-xs">{t("documentAlerts.noAlertsDesc")}</p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {displayAlerts.map((alert) => {
-              const config = SEVERITY_CONFIG[alert.severity];
-              return (
-                <div
-                  key={alert.id}
-                  className="flex items-center gap-3 p-2 rounded-lg hover:bg-muted/50 transition-colors"
-                >
-                  <div className={`p-1.5 rounded-full ${config.className}`}>
-                    {config.icon}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <User className="h-3 w-3 text-muted-foreground shrink-0" />
-                      <span className="font-medium text-sm truncate">{alert.employeeName}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {getDocumentLabel(alert.documentType)}
-                      {" - "}
-                      {alert.daysUntilExpiry < 0
-                        ? t("documentAlerts.expiredDaysAgo", { count: Math.abs(alert.daysUntilExpiry) })
-                        : alert.daysUntilExpiry === 0
-                        ? t("documentAlerts.expiresToday")
-                        : alert.daysUntilExpiry === 1
-                        ? t("documentAlerts.expiresTomorrow")
-                        : t("documentAlerts.expiresInDays", { count: alert.daysUntilExpiry })}
-                    </p>
-                  </div>
-                  <Badge variant="outline" className={config.className}>
-                    {getSeverityLabel(alert.severity)}
-                  </Badge>
-                </div>
-              );
-            })}
-
-            <Link to="/admin/document-alerts">
-              <Button variant="ghost" className="w-full mt-2 text-sm">
-                {alerts.length > maxItems
-                  ? t("documentAlerts.viewAllAlerts", { count: alerts.length })
-                  : t("documentAlerts.manageAlerts")}
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </Button>
-            </Link>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-// Export for use in alerts page
 // eslint-disable-next-line react-refresh/only-export-components
 export { extractAlerts, SEVERITY_CONFIG };

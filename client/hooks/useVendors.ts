@@ -2,14 +2,14 @@
  * React Query hooks for vendor data fetching
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
   vendorService,
   type VendorFilters,
   type PaginatedResult,
 } from '@/services/vendorService';
-import type { Vendor, VendorFormData } from '@/types/money';
+import type { Vendor } from '@/types/money';
 import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const vendorKeys = {
@@ -19,16 +19,6 @@ export const vendorKeys = {
   details: (tenantId: string) => [...vendorKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...vendorKeys.details(tenantId), id] as const,
 };
-
-export function useVendors(filters: VendorFilters = {}) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: vendorKeys.list(tenantId, filters),
-    queryFn: () => vendorService.getVendors(tenantId, filters),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-}
 
 export function useAllVendors(maxResults: number = SEARCH_FETCH_LIMIT) {
   const tenantId = useTenantId();
@@ -52,38 +42,3 @@ export function useActiveVendors() {
   });
 }
 
-export function useVendor(id: string | undefined) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: vendorKeys.detail(tenantId, id!),
-    queryFn: () => vendorService.getVendorById(tenantId, id!),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useCreateVendor() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: (data: VendorFormData) => vendorService.createVendor(tenantId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: vendorKeys.all(tenantId) });
-    },
-  });
-}
-
-export function useUpdateVendor() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<VendorFormData> }) =>
-      vendorService.updateVendor(tenantId, id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: vendorKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: vendorKeys.lists(tenantId) });
-    },
-  });
-}

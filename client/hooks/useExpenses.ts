@@ -2,7 +2,7 @@
  * React Query hooks for expense data fetching
  */
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
@@ -10,7 +10,7 @@ import {
   type ExpenseFilters,
   type PaginatedResult,
 } from '@/services/expenseService';
-import type { Expense, ExpenseFormData } from '@/types/money';
+import type { Expense } from '@/types/money';
 import { SEARCH_FETCH_LIMIT } from '@/lib/queryCache';
 
 export const expenseKeys = {
@@ -21,17 +21,7 @@ export const expenseKeys = {
   detail: (tenantId: string, id: string) => [...expenseKeys.details(tenantId), id] as const,
 };
 
-export function useExpenses(filters: ExpenseFilters = {}) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: expenseKeys.list(tenantId, filters),
-    queryFn: () => expenseService.getExpenses(tenantId, filters),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-}
-
-export function useAllExpenses(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+function useAllExpenses(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: expenseKeys.list(tenantId, { pageSize: maxResults }),
@@ -43,59 +33,10 @@ export function useAllExpenses(maxResults: number = SEARCH_FETCH_LIMIT, enabled:
   });
 }
 
-export function useExpense(id: string | undefined) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: expenseKeys.detail(tenantId, id!),
-    queryFn: () => expenseService.getExpenseById(tenantId, id!),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useCreateExpense() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: (data: ExpenseFormData & { receiptUrl?: string }) =>
-      expenseService.createExpense(tenantId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
-    },
-  });
-}
-
-export function useUpdateExpense() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<ExpenseFormData> & { receiptUrl?: string } }) =>
-      expenseService.updateExpense(tenantId, id, data),
-    onSuccess: (_, { id }) => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: expenseKeys.lists(tenantId) });
-    },
-  });
-}
-
-export function useDeleteExpense() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: (id: string) => expenseService.deleteExpense(tenantId, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: expenseKeys.all(tenantId) });
-    },
-  });
-}
-
 /**
  * Server-side paginated expenses using infinite query
  */
-export function usePaginatedExpenses(
+function usePaginatedExpenses(
   filters: Omit<ExpenseFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {
@@ -120,7 +61,7 @@ export function usePaginatedExpenses(
 /**
  * Helper hook to flatten paginated expense results
  */
-export function useFlattenedPaginatedExpenses(
+function useFlattenedPaginatedExpenses(
   filters: Omit<ExpenseFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {

@@ -18,7 +18,7 @@ import type { AuditContext } from '@/services/employeeService';
 
 // ─── Query key factories ─────────────────────────────────────────
 
-export const payrollRunKeys = {
+const payrollRunKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'payrollRuns'] as const,
   lists: (tenantId: string) => [...payrollRunKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, options?: ListPayrollRunsOptions) =>
@@ -29,7 +29,7 @@ export const payrollRunKeys = {
     [...payrollRunKeys.all(tenantId), 'recent', count ?? 5] as const,
 };
 
-export const payrollRecordKeys = {
+const payrollRecordKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'payrollRecords'] as const,
   byRun: (tenantId: string, runId: string) =>
     [...payrollRecordKeys.all(tenantId), 'byRun', runId] as const,
@@ -37,21 +37,21 @@ export const payrollRecordKeys = {
     [...payrollRecordKeys.all(tenantId), 'byEmployee', employeeId] as const,
 };
 
-export const benefitKeys = {
+const benefitKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'benefits'] as const,
   lists: (tenantId: string) => [...benefitKeys.all(tenantId), 'list'] as const,
   byEmployee: (tenantId: string, employeeId: string) =>
     [...benefitKeys.all(tenantId), 'byEmployee', employeeId] as const,
 };
 
-export const deductionKeys = {
+const deductionKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'deductions'] as const,
   lists: (tenantId: string) => [...deductionKeys.all(tenantId), 'list'] as const,
   byEmployee: (tenantId: string, employeeId: string) =>
     [...deductionKeys.all(tenantId), 'byEmployee', employeeId] as const,
 };
 
-export const bankTransferKeys = {
+const bankTransferKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'bankTransfers'] as const,
   lists: (tenantId: string) => [...bankTransferKeys.all(tenantId), 'list'] as const,
 };
@@ -67,27 +67,6 @@ export function usePayrollRuns(options?: ListPayrollRunsOptions, enabled: boolea
     staleTime: 5 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
     enabled,
-  });
-}
-
-/** Fetch recent payroll runs */
-export function useRecentPayrollRuns(count: number = 5) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: payrollRunKeys.recent(tenantId, count),
-    queryFn: () => payrollService.runs.getRecentPayrollRuns(count),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/** Fetch a single payroll run */
-export function usePayrollRun(id: string | undefined) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: payrollRunKeys.detail(tenantId, id!),
-    queryFn: () => payrollService.runs.getPayrollRunById(id!),
-    enabled: !!id,
-    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -192,17 +171,6 @@ export function usePayrollRecordsByRun(runId: string | undefined) {
     queryKey: payrollRecordKeys.byRun(tenantId, runId!),
     queryFn: () => payrollService.records.getPayrollRecordsByRunId(runId!, tenantId),
     enabled: !!runId,
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/** Fetch employee payroll history */
-export function useEmployeePayrollHistory(employeeId: string | undefined, limitCount?: number) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: payrollRecordKeys.byEmployee(tenantId, employeeId!),
-    queryFn: () => payrollService.records.getEmployeePayrollHistory(employeeId!, limitCount),
-    enabled: !!employeeId,
     staleTime: 5 * 60 * 1000,
   });
 }
@@ -356,16 +324,3 @@ export function useCreateBankTransfer() {
   });
 }
 
-/** Update bank transfer status */
-export function useUpdateBankTransferStatus() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: ({ id, status, errorMessage }: { id: string; status: BankTransfer['status']; errorMessage?: string }) =>
-      payrollService.transfers.updateTransferStatus(id, status, errorMessage),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: bankTransferKeys.all(tenantId) });
-    },
-  });
-}

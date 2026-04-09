@@ -2,12 +2,12 @@ import type { JournalEntry, JournalEntryLine } from "@/types/accounting";
 
 export const UNASSIGNED_ALLOCATION = "Unassigned";
 
-export interface EmployeeAllocationMeta {
+interface EmployeeAllocationMeta {
   projectCode: string;
   fundingSource: string;
 }
 
-export interface EmployeeAllocationSource {
+interface EmployeeAllocationSource {
   id?: string;
   jobDetails?: {
     projectCode?: string | null;
@@ -20,7 +20,7 @@ function normalizeAllocationDimension(value?: string | null): string {
   return normalized ? normalized : UNASSIGNED_ALLOCATION;
 }
 
-export function normalizeAllocationMeta(
+function normalizeAllocationMeta(
   projectCode?: string | null,
   fundingSource?: string | null
 ): EmployeeAllocationMeta {
@@ -30,7 +30,7 @@ export function normalizeAllocationMeta(
   };
 }
 
-export function isUnassignedAllocation(meta: EmployeeAllocationMeta): boolean {
+function isUnassignedAllocation(meta: EmployeeAllocationMeta): boolean {
   return (
     meta.projectCode === UNASSIGNED_ALLOCATION ||
     meta.fundingSource === UNASSIGNED_ALLOCATION
@@ -65,14 +65,14 @@ function findAmountByType(lines: AmountLineLike[] | undefined, type: string): nu
   return lines?.find((line) => line.type === type)?.amount || 0;
 }
 
-export interface PayrollAllocationBucket {
+interface PayrollAllocationBucket {
   projectCode: string;
   fundingSource: string;
   grossPay: number;
   inssEmployer: number;
 }
 
-export interface PayrollAllocationRollup {
+interface PayrollAllocationRollup {
   allocations: PayrollAllocationBucket[];
   unassignedEmployeeCount: number;
   unassignedRecordCount: number;

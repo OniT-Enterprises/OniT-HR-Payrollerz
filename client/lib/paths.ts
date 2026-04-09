@@ -186,9 +186,4 @@ export const paths = {
   faceEmbedding: (tid: string, empId: string) => `tenants/${tid}/face_embeddings/${empId}`,
 } as const;
 
-// Type definitions for better TypeScript support
-export type TenantPath = ReturnType<typeof paths.tenant>;
-export type DepartmentPath = ReturnType<typeof paths.departments>;
-export type EmployeePath = ReturnType<typeof paths.employees>;
-export type JobPath = ReturnType<typeof paths.jobs>;
 

@@ -2,10 +2,9 @@
  * React Query hooks for department data fetching
  */
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import {
   departmentService,
-  type DepartmentInput,
 } from '@/services/departmentService';
 
 export const departmentKeys = {
@@ -36,38 +35,3 @@ export function useAllDepartments(tenantId: string, maxResults: number = 100) {
   });
 }
 
-export function useCreateDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ tenantId, data }: { tenantId: string; data: DepartmentInput }) =>
-      departmentService.addDepartment(tenantId, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: departmentKeys.all });
-    },
-  });
-}
-
-export function useUpdateDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ tenantId, id, data }: { tenantId: string; id: string; data: Partial<DepartmentInput> }) =>
-      departmentService.updateDepartment(tenantId, id, data),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: departmentKeys.all });
-    },
-  });
-}
-
-export function useDeleteDepartment() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ tenantId, id }: { tenantId: string; id: string }) =>
-      departmentService.deleteDepartment(tenantId, id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: departmentKeys.all });
-    },
-  });
-}

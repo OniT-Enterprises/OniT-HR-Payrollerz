@@ -106,7 +106,7 @@ export interface ReviewFilters {
   year?: number;
 }
 
-export interface ReviewStats {
+interface ReviewStats {
   totalReviews: number;
   draft: number;
   submitted: number;

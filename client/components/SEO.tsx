@@ -1,6 +1,6 @@
 import { Helmet } from 'react-helmet-async';
 
-export interface SEOProps {
+interface SEOProps {
   title?: string;
   description?: string;
   keywords?: string;

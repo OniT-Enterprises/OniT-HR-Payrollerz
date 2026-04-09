@@ -122,7 +122,7 @@ export interface TenantSession {
 }
 
 // Department types
-export interface Department {
+interface Department {
   id?: string;
   name: string;
   description?: string;
@@ -134,7 +134,7 @@ export interface Department {
 }
 
 // Employee types
-export interface Employee {
+interface Employee {
   id?: string;
   personalInfo: {
     firstName: string;
@@ -185,7 +185,7 @@ export interface Employee {
 }
 
 // Position types
-export interface Position {
+interface Position {
   id?: string;
   title: string;
   grade?: string;
@@ -200,7 +200,7 @@ export interface Position {
 }
 
 // Job posting types
-export interface Job {
+interface Job {
   id?: string;
   title: string;
   description?: string;
@@ -227,7 +227,7 @@ export interface Job {
 }
 
 // Candidate types
-export interface Candidate {
+interface Candidate {
   id?: string;
   jobId: string;
   name: string;
@@ -247,7 +247,7 @@ export interface Candidate {
 }
 
 // Contract types
-export interface Contract {
+interface Contract {
   id?: string;
   employeeId: string;
   positionId: string;
@@ -261,7 +261,7 @@ export interface Contract {
 }
 
 // Filter and query options
-export interface ListEmployeesOptions {
+interface ListEmployeesOptions {
   departmentId?: string;
   status?: Employee['status'];
   managerId?: string;
@@ -269,7 +269,7 @@ export interface ListEmployeesOptions {
   offset?: number;
 }
 
-export interface ListJobsOptions {
+interface ListJobsOptions {
   departmentId?: string;
   status?: Job['status'];
   hiringManagerId?: string;
@@ -277,7 +277,7 @@ export interface ListJobsOptions {
   offset?: number;
 }
 
-export interface ListShiftsOptions {
+interface ListShiftsOptions {
   employeeId?: string;
   dateRange?: {
     start: string; // YYYY-MM-DD

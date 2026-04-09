@@ -10,7 +10,7 @@ import {
 } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 
-export interface UserProfile {
+interface UserProfile {
   uid: string;
   email: string | null;
   displayName: string | null;

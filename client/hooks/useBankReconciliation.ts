@@ -7,7 +7,7 @@ import { useTenantId } from '@/contexts/TenantContext';
 import { bankReconciliationService } from '@/services/bankReconciliationService';
 import type { BankTransaction } from '@/services/bankReconciliationService';
 
-export const bankReconciliationKeys = {
+const bankReconciliationKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'bankReconciliation'] as const,
   transactions: (tenantId: string) => [...bankReconciliationKeys.all(tenantId), 'transactions'] as const,
   summary: (tenantId: string) => [...bankReconciliationKeys.all(tenantId), 'summary'] as const,

@@ -105,7 +105,7 @@ export interface GoalFilters {
   year?: number;
 }
 
-export interface OKRStats {
+interface OKRStats {
   totalOKRs: number;
   active: number;
   completed: number;
@@ -114,7 +114,7 @@ export interface OKRStats {
   avgProgress: number;
 }
 
-export interface GoalStats {
+interface GoalStats {
   totalGoals: number;
   active: number;
   completed: number;

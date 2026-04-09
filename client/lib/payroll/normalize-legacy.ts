@@ -39,14 +39,14 @@ const LEGACY_EMPLOYER_TAX_MAP: Record<string, string> = {
  * Normalize a single deduction type string.
  * Returns the input unchanged if it's already a TL-native type.
  */
-export function normalizeLegacyDeductionType(type: string): DeductionType {
+function normalizeLegacyDeductionType(type: string): DeductionType {
   return (LEGACY_DEDUCTION_MAP[type] as DeductionType) ?? (type as DeductionType);
 }
 
 /**
  * Normalize a single employer tax type string.
  */
-export function normalizeLegacyEmployerTaxType(type: string): string {
+function normalizeLegacyEmployerTaxType(type: string): string {
   return LEGACY_EMPLOYER_TAX_MAP[type] ?? type;
 }
 

@@ -21,17 +21,7 @@ export const invoiceKeys = {
   detail: (tenantId: string, id: string) => [...invoiceKeys.details(tenantId), id] as const,
 };
 
-export function useInvoices(filters: InvoiceFilters = {}) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: invoiceKeys.list(tenantId, filters),
-    queryFn: () => invoiceService.getInvoices(tenantId, filters),
-    staleTime: 5 * 60 * 1000,
-    gcTime: 30 * 60 * 1000,
-  });
-}
-
-export function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
+function useAllInvoices(maxResults: number = SEARCH_FETCH_LIMIT, enabled: boolean = true) {
   const tenantId = useTenantId();
   return useQuery({
     queryKey: invoiceKeys.list(tenantId, { pageSize: maxResults }),
@@ -102,7 +92,7 @@ export function useInvoiceSettings() {
 /**
  * Server-side paginated invoices using infinite query
  */
-export function usePaginatedInvoices(
+function usePaginatedInvoices(
   filters: Omit<InvoiceFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {
@@ -127,7 +117,7 @@ export function usePaginatedInvoices(
 /**
  * Helper hook to flatten paginated invoice results
  */
-export function useFlattenedPaginatedInvoices(
+function useFlattenedPaginatedInvoices(
   filters: Omit<InvoiceFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {

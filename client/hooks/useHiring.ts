@@ -16,25 +16,25 @@ import type { OffboardingCase, OffboardingChecklist, ExitInterview } from '@/ser
 
 // ─── Query key factories ─────────────────────────────────────────
 
-export const candidateKeys = {
+const candidateKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'candidates'] as const,
   lists: (tenantId: string) => [...candidateKeys.all(tenantId), 'list'] as const,
 };
 
-export const jobKeys = {
+const jobKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'jobs'] as const,
   lists: (tenantId: string) => [...jobKeys.all(tenantId), 'list'] as const,
   details: (tenantId: string) => [...jobKeys.all(tenantId), 'detail'] as const,
   detail: (tenantId: string, id: string) => [...jobKeys.details(tenantId), id] as const,
 };
 
-export const interviewKeys = {
+const interviewKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'interviews'] as const,
   lists: (tenantId: string) => [...interviewKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, filters?: InterviewFilters) => [...interviewKeys.lists(tenantId), filters ?? {}] as const,
 };
 
-export const offboardingKeys = {
+const offboardingKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'offboarding'] as const,
   active: (tenantId: string) => [...offboardingKeys.all(tenantId), 'active'] as const,
   completed: (tenantId: string) => [...offboardingKeys.all(tenantId), 'completed'] as const,
@@ -63,28 +63,7 @@ export function useAddCandidate() {
   });
 }
 
-export function useUpdateCandidate() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Candidate> }) =>
-      candidateService.updateCandidate(tenantId, id, updates),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: candidateKeys.all(tenantId) });
-    },
-  });
-}
-
 // ─── Job hooks ───────────────────────────────────────────────────
-
-export function useJobs() {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: jobKeys.lists(tenantId),
-    queryFn: () => jobService.getAllJobs(tenantId),
-    staleTime: 5 * 60 * 1000,
-  });
-}
 
 export function useCreateJob() {
   const queryClient = useQueryClient();
@@ -92,18 +71,6 @@ export function useCreateJob() {
   return useMutation({
     mutationFn: (job: Omit<Job, 'id' | 'tenantId'>) =>
       jobService.createJob(tenantId, job),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
-    },
-  });
-}
-
-export function useUpdateJob() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Job> }) =>
-      jobService.updateJob(tenantId, id, updates),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobKeys.all(tenantId) });
     },

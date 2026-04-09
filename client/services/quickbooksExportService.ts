@@ -567,7 +567,7 @@ function escapeCSV(value: string): string {
 // MAIN EXPORT FUNCTION
 // ============================================
 
-export interface ExportResult {
+interface ExportResult {
   content: string;
   fileName: string;
   mimeType: string;

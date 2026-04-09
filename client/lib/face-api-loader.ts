@@ -66,7 +66,7 @@ export async function detectAndDescribe(
 /**
  * Euclidean distance between two 128-dim embeddings
  */
-export function computeDistance(a: Float32Array | number[], b: Float32Array | number[]): number {
+function computeDistance(a: Float32Array | number[], b: Float32Array | number[]): number {
   const left = a instanceof Float32Array ? a : Float32Array.from(a);
   const right = b instanceof Float32Array ? b : Float32Array.from(b);
   const length = Math.min(left.length, right.length);
@@ -78,7 +78,7 @@ export function computeDistance(a: Float32Array | number[], b: Float32Array | nu
   return Math.sqrt(sum);
 }
 
-export interface MatchResult {
+interface MatchResult {
   employeeId: string;
   employeeName: string;
   distance: number;

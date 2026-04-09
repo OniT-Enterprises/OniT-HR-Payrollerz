@@ -16522,8 +16522,6 @@ pt: {
 },
 } as const;
 
-export type TranslationKey = keyof typeof translations.en;
-export type Locale = 'en' | 'tet' | 'pt';
 
 // Add locale labels to each translation set dynamically
 // These are referenced by I18nProvider for the language switcher

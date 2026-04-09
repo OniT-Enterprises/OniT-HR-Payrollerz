@@ -22,7 +22,7 @@ interface OriginalValues {
   allowances: number;
 }
 
-export interface EmployeePayrollRowData {
+interface EmployeePayrollRowData {
   employee: Employee;
   regularHours: number;
   overtimeHours: number;

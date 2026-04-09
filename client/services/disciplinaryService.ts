@@ -72,14 +72,14 @@ export interface DisciplinaryRecord {
   updatedAt?: Date;
 }
 
-export interface DisciplinaryFilters {
+interface DisciplinaryFilters {
   employeeId?: string;
   type?: DisciplinaryType;
   status?: DisciplinaryStatus;
   severity?: SeverityLevel;
 }
 
-export interface DisciplinaryStats {
+interface DisciplinaryStats {
   totalRecords: number;
   open: number;
   inReview: number;

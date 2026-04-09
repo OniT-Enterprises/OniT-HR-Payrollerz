@@ -124,7 +124,7 @@ export interface AuditLogEntry {
   userAgent?: string;
 }
 
-export interface AuditLogFilters {
+interface AuditLogFilters {
   // Tenant (required for tenant-scoped queries)
   tenantId: string;
   // Time range

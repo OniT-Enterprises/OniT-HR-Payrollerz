@@ -107,7 +107,7 @@ export interface LeaveBalanceItem {
   remaining: number; // entitled - used - pending
 }
 
-export interface LeaveStats {
+interface LeaveStats {
   totalRequests: number;
   pendingRequests: number;
   approvedRequests: number;

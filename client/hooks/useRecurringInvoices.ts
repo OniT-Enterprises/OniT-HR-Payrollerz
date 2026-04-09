@@ -8,7 +8,7 @@ import { recurringInvoiceService } from '@/services/recurringInvoiceService';
 import type { RecurringInvoiceFormData } from '@/services/recurringInvoiceService';
 import { invoiceKeys } from './useInvoices';
 
-export const recurringInvoiceKeys = {
+const recurringInvoiceKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'recurringInvoices'] as const,
   lists: (tenantId: string) => [...recurringInvoiceKeys.all(tenantId), 'list'] as const,
   details: (tenantId: string) => [...recurringInvoiceKeys.all(tenantId), 'detail'] as const,

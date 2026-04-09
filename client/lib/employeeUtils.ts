@@ -1,6 +1,6 @@
 import type { Employee } from "@/services/employeeService";
 
-export interface ProfileCompletenessResult {
+interface ProfileCompletenessResult {
   completionPercentage: number;
   isComplete: boolean;
   missingFields: string[];
@@ -112,10 +112,10 @@ export function getCompletionStatusColor(completeness: number): string {
 
 // ─── Payroll Compliance ─────────────────────────────────────────────────
 
-export type ComplianceField = "inss" | "contract" | "department";
-export type ComplianceSeverity = "error" | "warning";
+type ComplianceField = "inss" | "contract" | "department";
+type ComplianceSeverity = "error" | "warning";
 
-export interface ComplianceIssue {
+interface ComplianceIssue {
   employee: Employee;
   field: ComplianceField;
   severity: ComplianceSeverity;
@@ -189,9 +189,4 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
 /** Count unique employees with any compliance issues */
 export function countBlockedEmployees(issues: ComplianceIssue[]): number {
   return new Set(issues.map((i) => i.employee.id)).size;
-}
-
-/** Only payroll-blocking issues (severity === "error") */
-export function getPayrollBlockers(issues: ComplianceIssue[]): ComplianceIssue[] {
-  return issues.filter((i) => i.severity === "error");
 }

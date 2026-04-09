@@ -68,14 +68,14 @@ export interface TrainingRecord {
   createdBy?: string;
 }
 
-export interface TrainingFilters {
+interface TrainingFilters {
   employeeId?: string;
   status?: TrainingStatus;
   category?: string;
   expiringSoon?: boolean; // Records expiring within 30 days
 }
 
-export interface TrainingStats {
+interface TrainingStats {
   totalRecords: number;
   pending: number;
   inProgress: number;

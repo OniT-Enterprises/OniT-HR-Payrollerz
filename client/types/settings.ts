@@ -6,9 +6,9 @@
 // Section A1: HR Admin Levels
 // ============================================
 
-export type HRAdminLevel = 'owner' | 'hr_director' | 'senior_hr' | 'junior_hr';
+type HRAdminLevel = 'owner' | 'hr_director' | 'senior_hr' | 'junior_hr';
 
-export interface HRAdmin {
+interface HRAdmin {
   id: string;
   userId: string;
   email: string;
@@ -21,7 +21,7 @@ export interface HRAdmin {
   updatedAt: Date;
 }
 
-export interface HRPermissions {
+interface HRPermissions {
   // Module access
   canAccessHiring: boolean;
   canAccessStaff: boolean;

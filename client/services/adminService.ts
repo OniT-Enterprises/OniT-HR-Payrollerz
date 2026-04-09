@@ -23,8 +23,6 @@ import { TenantConfig, TenantStatus, TenantPlan, PLAN_LIMITS } from '@/types/ten
 import { UserProfile, AdminAuditEntry, AuditLogEntry } from '@/types/user';
 
 export type { AuditLogEntry };
-export type { TenantConfig };
-export type { UserProfile, AdminAuditEntry };
 
 type LegacyTenantLimits = {
   employees?: number;

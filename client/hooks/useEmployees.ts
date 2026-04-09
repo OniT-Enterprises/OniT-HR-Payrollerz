@@ -3,7 +3,7 @@
  * Provides caching, background refetching, and optimistic updates
  */
 
-import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
+import { useQuery, useInfiniteQuery } from '@tanstack/react-query';
 import { DocumentSnapshot } from 'firebase/firestore';
 import { useTenantId } from '@/contexts/TenantContext';
 import {
@@ -25,21 +25,6 @@ export const employeeKeys = {
   detail: (tenantId: string, id: string) => [...employeeKeys.details(tenantId), id] as const,
   counts: (tenantId: string) => [...employeeKeys.all(tenantId), 'counts'] as const,
 };
-
-/**
- * Fetch all employees with optional filters
- * Uses React Query for caching and background refetching
- */
-export function useEmployees(filters: EmployeeFilters = {}) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: employeeKeys.list(tenantId, filters),
-    queryFn: () => employeeService.getEmployees(tenantId, filters),
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 30 * 60 * 1000, // Keep in cache for 30 minutes
-  });
-}
-
 
 /**
  * Fetch all employees (convenience hook for components that need all data)
@@ -72,98 +57,6 @@ export function useEmployeeDirectory(
 }
 
 /**
- * Fetch a single employee by ID
- */
-export function useEmployee(id: string | undefined) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: employeeKeys.detail(tenantId, id!),
-    queryFn: () => employeeService.getEmployeeById(tenantId, id!),
-    enabled: !!id, // Only run query if ID is provided
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/**
- * Fetch employee counts by status
- */
-export function useEmployeeCounts() {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: employeeKeys.counts(tenantId),
-    queryFn: () => employeeService.getEmployeeCounts(tenantId),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-/**
- * Mutation for adding a new employee
- */
-export function useAddEmployee() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: (employee: Omit<Employee, 'id'>) =>
-      employeeService.addEmployee(tenantId, employee),
-    onSuccess: () => {
-      // Invalidate all employee queries to refetch
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) });
-    },
-  });
-}
-
-/**
- * Mutation for updating an employee
- */
-export function useUpdateEmployee() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Employee> }) =>
-      employeeService.updateEmployee(tenantId, id, updates),
-    onSuccess: (_, { id }) => {
-      // Invalidate specific employee and lists
-      queryClient.invalidateQueries({ queryKey: employeeKeys.detail(tenantId, id) });
-      queryClient.invalidateQueries({ queryKey: employeeKeys.lists(tenantId) });
-    },
-  });
-}
-
-/**
- * Mutation for terminating (soft-deleting) an employee
- * Sets status to "terminated" instead of destroying the document,
- * preserving references in payroll history, journal entries, and tax reports.
- */
-export function useDeleteEmployee() {
-  const queryClient = useQueryClient();
-  const tenantId = useTenantId();
-
-  return useMutation({
-    mutationFn: (id: string) => employeeService.deleteEmployee(tenantId, id),
-    onSuccess: () => {
-      // Invalidate all employee queries
-      queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) });
-    },
-  });
-}
-
-/**
- * Prefetch employees (useful for preloading data)
- */
-export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClient>) {
-  const tenantId = useTenantId();
-  return (filters: EmployeeFilters = {}) => {
-    queryClient.prefetchQuery({
-      queryKey: employeeKeys.list(tenantId, filters),
-      queryFn: () => employeeService.getEmployees(tenantId, filters),
-      staleTime: 5 * 60 * 1000,
-    });
-  };
-}
-
-/**
  * Server-side paginated employees using infinite query
  * Ideal for large datasets - only fetches data as needed
  *
@@ -177,7 +70,7 @@ export function usePrefetchEmployees(queryClient: ReturnType<typeof useQueryClie
  * // Flatten pages into single array
  * const employees = data?.pages.flatMap(page => page.data) ?? [];
  */
-export function usePaginatedEmployees(
+function usePaginatedEmployees(
   filters: Omit<EmployeeFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {
@@ -203,7 +96,7 @@ export function usePaginatedEmployees(
  * Helper hook to flatten paginated results into a single array
  * Returns employees array plus pagination controls
  */
-export function useFlattenedPaginatedEmployees(
+function useFlattenedPaginatedEmployees(
   filters: Omit<EmployeeFilters, 'startAfterDoc'> = {},
   enabled: boolean = true,
 ) {

@@ -12,7 +12,7 @@ import { trainingService, type TrainingRecord } from '@/services/trainingService
 
 // ─── Query key factories ─────────────────────────────────────────
 
-export const reviewKeys = {
+const reviewKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'reviews'] as const,
   lists: (tenantId: string) => [...reviewKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, filters?: ReviewFilters) => [...reviewKeys.lists(tenantId), filters ?? {}] as const,
@@ -21,26 +21,26 @@ export const reviewKeys = {
   stats: (tenantId: string, year?: number) => [...reviewKeys.all(tenantId), 'stats', year] as const,
 };
 
-export const okrKeys = {
+const okrKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'okrs'] as const,
   lists: (tenantId: string) => [...okrKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, filters?: OKRFilters) => [...okrKeys.lists(tenantId), filters ?? {}] as const,
   stats: (tenantId: string, quarter?: string, year?: number) => [...okrKeys.all(tenantId), 'stats', quarter, year] as const,
 };
 
-export const goalKeys = {
+const goalKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'goals'] as const,
   lists: (tenantId: string) => [...goalKeys.all(tenantId), 'list'] as const,
   list: (tenantId: string, filters?: GoalFilters) => [...goalKeys.lists(tenantId), filters ?? {}] as const,
   stats: (tenantId: string, year?: number) => [...goalKeys.all(tenantId), 'stats', year] as const,
 };
 
-export const disciplinaryKeys = {
+const disciplinaryKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'disciplinary'] as const,
   lists: (tenantId: string) => [...disciplinaryKeys.all(tenantId), 'list'] as const,
 };
 
-export const trainingKeys = {
+const trainingKeys = {
   all: (tenantId: string) => ['tenants', tenantId, 'training'] as const,
   lists: (tenantId: string) => [...trainingKeys.all(tenantId), 'list'] as const,
 };
@@ -52,15 +52,6 @@ export function useReviews(filters?: ReviewFilters) {
   return useQuery({
     queryKey: reviewKeys.list(tenantId, filters),
     queryFn: () => reviewService.getReviews(tenantId, filters),
-    staleTime: 5 * 60 * 1000,
-  });
-}
-
-export function useReviewStats(year?: number) {
-  const tenantId = useTenantId();
-  return useQuery({
-    queryKey: reviewKeys.stats(tenantId, year),
-    queryFn: () => reviewService.getStats(tenantId, year),
     staleTime: 5 * 60 * 1000,
   });
 }

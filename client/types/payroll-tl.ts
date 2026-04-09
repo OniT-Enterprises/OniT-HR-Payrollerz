@@ -10,7 +10,7 @@ import { FirestoreTimestamp } from './firebase';
 // EMPLOYEE TYPES (TL-Specific)
 // ============================================
 
-export interface TLEmployeePayrollInfo {
+interface TLEmployeePayrollInfo {
   employeeId: string;
 
   // Personal
@@ -197,7 +197,7 @@ export interface TLPayrollDeductionRecord {
 // SUBSIDIO ANUAL (13th Month)
 // ============================================
 
-export interface TLSubsidioAnual {
+interface TLSubsidioAnual {
   id?: string;
   year: number;
   employeeId: string;
@@ -222,7 +222,7 @@ export interface TLSubsidioAnual {
 // SICK LEAVE TRACKING
 // ============================================
 
-export interface TLSickLeaveRecord {
+interface TLSickLeaveRecord {
   id?: string;
   employeeId: string;
   year: number;
@@ -238,7 +238,7 @@ export interface TLSickLeaveRecord {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface TLSickLeaveEntry {
+interface TLSickLeaveEntry {
   date: string;
   days: number;
   hasMedicalCertificate: boolean;
@@ -253,7 +253,7 @@ export interface TLSickLeaveEntry {
 // LOAN / ADVANCE
 // ============================================
 
-export interface TLEmployeeLoan {
+interface TLEmployeeLoan {
   id?: string;
   employeeId: string;
   employeeName: string;
@@ -286,7 +286,7 @@ export interface TLEmployeeLoan {
 // PER DIEM / TRAVEL
 // ============================================
 
-export interface TLPerDiem {
+interface TLPerDiem {
   id?: string;
   employeeId: string;
   employeeName: string;
@@ -321,7 +321,7 @@ export interface TLPerDiem {
 // BANK TRANSFER FILE
 // ============================================
 
-export interface TLBankTransferFile {
+interface TLBankTransferFile {
   id?: string;
   payrollRunId: string;
   bankCode: 'BNU' | 'MANDIRI' | 'ANZ' | 'BNCTL';
@@ -348,7 +348,7 @@ export interface TLBankTransferFile {
 // TAX / INSS REPORTS
 // ============================================
 
-export interface TLTaxReport {
+interface TLTaxReport {
   id?: string;
   type: 'monthly_irps' | 'annual_irps' | 'inss_monthly' | 'inss_annual';
   year: number;
@@ -381,7 +381,7 @@ export interface TLTaxReport {
 // SHIFT SCHEDULING (For Security Companies)
 // ============================================
 
-export interface TLShift {
+interface TLShift {
   id?: string;
 
   // Assignment
@@ -427,7 +427,7 @@ export interface TLShift {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface TLSite {
+interface TLSite {
   id?: string;
   name: string;
   address: string;
@@ -456,7 +456,7 @@ export interface TLSite {
 // ATTENDANCE (Fingerprint Import)
 // ============================================
 
-export interface TLAttendanceRecord {
+interface TLAttendanceRecord {
   id?: string;
   employeeId: string;
   date: string;
@@ -488,7 +488,7 @@ export interface TLAttendanceRecord {
   updatedAt?: FirestoreTimestamp;
 }
 
-export interface TLAttendanceImport {
+interface TLAttendanceImport {
   id?: string;
   fileName: string;
   deviceType: 'zkteco' | 'anviz' | 'hikvision' | 'other';
@@ -510,7 +510,7 @@ export interface TLAttendanceImport {
 // DISCIPLINARY
 // ============================================
 
-export interface TLWarningLetter {
+interface TLWarningLetter {
   id?: string;
   employeeId: string;
   employeeName: string;
@@ -545,7 +545,7 @@ export interface TLWarningLetter {
 // HELPER TYPES
 // ============================================
 
-export interface TLPayrollSummary {
+interface TLPayrollSummary {
   periodLabel: string;
   grossPay: number;
   incomeTax: number;
@@ -555,7 +555,7 @@ export interface TLPayrollSummary {
   employeeCount: number;
 }
 
-export interface TLEmployeePayrollHistory {
+interface TLEmployeePayrollHistory {
   employeeId: string;
   records: {
     payrollRunId: string;

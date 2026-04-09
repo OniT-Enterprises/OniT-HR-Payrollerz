@@ -5,7 +5,7 @@
 
 export type SectionId = "dashboard" | "people" | "scheduling" | "payroll" | "money" | "accounting" | "reports";
 
-export interface SectionTheme {
+interface SectionTheme {
   id: SectionId;
   // Tailwind color classes
   text: string;           // Icon and accent text color

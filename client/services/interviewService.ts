@@ -112,7 +112,7 @@ export interface InterviewFilters {
   dateTo?: string;
 }
 
-export interface InterviewStats {
+interface InterviewStats {
   totalInterviews: number;
   scheduled: number;
   completed: number;

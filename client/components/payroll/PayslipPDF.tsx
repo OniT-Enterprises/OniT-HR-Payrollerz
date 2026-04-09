@@ -768,4 +768,3 @@ export const generatePayslipBlob = async (
   return await pdf(doc).toBlob();
 };
 
-export type { PayslipLocale };
