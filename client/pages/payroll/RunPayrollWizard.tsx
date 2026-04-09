@@ -41,9 +41,9 @@ export default function RunPayrollWizard() {
   const { t } = useI18n();
 
   const wizardSteps: WizardStep[] = [
-    { id: "period", title: t("payroll.payPeriod"), icon: Calendar },
-    { id: "employees", title: t("payroll.employees"), icon: Users },
-    { id: "hours", title: t("payroll.hoursPay"), icon: Clock },
+    { id: "period", title: t("runPayroll.payPeriod"), icon: Calendar },
+    { id: "employees", title: t("runPayroll.employees"), icon: Users },
+    { id: "hours", title: t("runPayroll.hoursPay"), icon: Clock },
     { id: "review", title: t("common.review"), icon: CheckCircle },
   ];
   const { user } = useAuth();
