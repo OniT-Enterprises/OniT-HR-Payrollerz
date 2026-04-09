@@ -4,7 +4,7 @@
  * Structure: Status → Action Required → KPIs → Quick Actions
  */
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { useChatStore } from "@/stores/chatStore";
@@ -143,6 +143,59 @@ function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstNa
           <Send className="h-3.5 w-3.5" />
         </button>
       </form>
+    </div>
+  );
+}
+
+const BOT_QUIPS = [
+  "Hey, that tickles!",
+  "I'm a book, not a button!",
+  "Stop poking me, I'm working!",
+  "Beep boop... just kidding.",
+  "You found my secret! ...there is no secret.",
+  "I run on data and good vibes.",
+  "Ask me something, I'm bored!",
+  "Fun fact: I never take sick days.",
+  "I know all the payslips. ALL of them.",
+  "Please don't close the tab, I live here.",
+];
+
+function PrimosBotAvatar() {
+  const [wobble, setWobble] = useState(false);
+  const [quip, setQuip] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleClick = useCallback(() => {
+    setWobble(true);
+    setQuip(BOT_QUIPS[Math.floor(Math.random() * BOT_QUIPS.length)]);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => { setWobble(false); setQuip(null); }, 2500);
+  }, []);
+
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={handleClick}
+        className="focus:outline-none"
+        aria-label="Poke PrimosBot"
+      >
+        <img
+          src="/images/illustrations/primosbot.webp"
+          alt="PrimosBot"
+          className={`h-20 w-20 object-contain cursor-pointer transition-transform hover:scale-105 ${wobble ? "animate-wiggle" : ""}`}
+        />
+      </button>
+      {quip && (
+        <div className="absolute -top-8 left-16 bg-card border border-border rounded-lg px-3 py-1.5 text-xs shadow-lg whitespace-nowrap animate-in fade-in slide-in-from-bottom-2 duration-200 z-10">
+          {quip}
+          <div className="absolute -bottom-1 left-3 w-2 h-2 bg-card border-b border-r border-border rotate-45" />
+        </div>
+      )}
+      <style>{`@keyframes wiggle { 0% { transform: rotate(0deg); } 15% { transform: rotate(-12deg); } 30% { transform: rotate(10deg); } 45% { transform: rotate(-8deg); } 60% { transform: rotate(6deg); } 75% { transform: rotate(-3deg); } 100% { transform: rotate(0deg); } }
+.animate-wiggle { animation: wiggle 0.6s ease-in-out; }`}</style>
     </div>
   );
 }
@@ -441,11 +494,7 @@ export default function Dashboard() {
         <div className="relative mb-8 rounded-2xl bg-card border border-border p-5 overflow-hidden">
           <GreetingParticles />
           <div className="relative flex items-start gap-4">
-            <img
-              src="/images/illustrations/primosbot.webp"
-              alt="PrimosBot"
-              className="h-20 w-20 object-contain shrink-0"
-            />
+            <PrimosBotAvatar />
             <PrimosBotInline t={t} firstName={firstName} />
           </div>
         </div>
