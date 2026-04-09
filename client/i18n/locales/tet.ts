@@ -47,6 +47,7 @@ const messages = {
     "previous": "Antes",
     "next": "Tuirmai",
     "review": "Reviza",
+    "askAI": "Husu AI",
     "retry": "Koko fali",
     "connectionIssueTitle": "Problema ligasaun",
     "connectionIssueDesc": "Sinal fraku. Husik pajina ida-ne'e loke nafatin no koko fali bainhira internet di'ak liu.",

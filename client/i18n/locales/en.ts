@@ -47,6 +47,7 @@ const messages = {
     "previous": "Previous",
     "next": "Next",
     "review": "Review",
+    "askAI": "Ask AI",
     "retry": "Retry",
     "connectionIssueTitle": "Connection problem",
     "connectionIssueDesc": "Your signal is weak. Keep this page open and try again when the internet stabilizes.",

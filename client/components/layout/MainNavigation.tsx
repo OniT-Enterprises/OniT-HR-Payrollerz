@@ -12,6 +12,7 @@ import { useFirebase } from "@/contexts/FirebaseContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useGuidance } from "@/contexts/GuidanceContext";
+import { useChatStore } from "@/stores/chatStore";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { settingsService } from "@/services/settingsService";
@@ -46,6 +47,7 @@ import {
   WifiOff,
   RotateCcw,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import { useState } from "react";
 import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionTheme";
@@ -381,6 +383,21 @@ export default function MainNavigation() {
   return <MainNavigationInner />;
 }
 
+function AskAIButton({ t }: { t: (key: string) => string }) {
+  const { setOpen } = useChatStore();
+  return (
+    <Button
+      variant="ghost"
+      size="sm"
+      onClick={() => setOpen(true)}
+      className="hidden md:inline-flex h-8 gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+    >
+      <Sparkles className="h-3.5 w-3.5" />
+      {t("common.askAI")}
+    </Button>
+  );
+}
+
 function HeaderBar({
   isDark,
   visibleNavItems,
@@ -420,6 +437,8 @@ function HeaderBar({
       </div>
 
       <div className="flex items-center gap-2">
+        <AskAIButton t={t} />
+
         <Button
           variant="ghost"
           size="icon"

@@ -45,6 +45,7 @@ const messages = {
     "previous": "Anterior",
     "next": "Seguinte",
     "review": "Rever",
+    "askAI": "Perguntar IA",
     "retry": "Tentar novamente",
     "connectionIssueTitle": "Problema de conexão",
     "connectionIssueDesc": "O sinal está fraco. Mantenha esta página aberta e tente novamente quando a internet estabilizar.",
