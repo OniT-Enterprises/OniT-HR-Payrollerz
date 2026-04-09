@@ -956,89 +956,61 @@ class TaxFilingService {
    * Get upcoming and overdue filings
    */
   async getFilingsDueSoon(tenantId: string, months: number = 3): Promise<FilingDueDate[]> {
-    const dueDates: FilingDueDate[] = [];
     const today = new Date();
     const currentYear = today.getFullYear();
     const currentMonth = today.getMonth() + 1;
 
-    // Check monthly WIT filings for past and upcoming months
+    // Build all periods to check
+    const periods: { year: number; month: number; period: string }[] = [];
     for (let i = -2; i <= months; i++) {
       let year = currentYear;
-      let month = currentMonth + i - 1; // -1 because we file for previous month
+      let month = currentMonth + i - 1;
+      if (month < 1) { month += 12; year -= 1; }
+      else if (month > 12) { month -= 12; year += 1; }
+      periods.push({ year, month, period: `${year}-${String(month).padStart(2, '0')}` });
+    }
 
-      if (month < 1) {
-        month += 12;
-        year -= 1;
-      } else if (month > 12) {
-        month -= 12;
-        year += 1;
-      }
+    // Fetch all filings and due dates in parallel
+    const monthlyResults = await Promise.all(
+      periods.map(async ({ period }) => {
+        const [witDueDate, inssDueDate, inssPaymentDueDate, witFiling, inssFiling] = await Promise.all([
+          this.getMonthlyWITDueDate(period, tenantId),
+          this.getMonthlyINSSStatementDueDate(period, tenantId),
+          this.getMonthlyINSSPaymentDueDate(period, tenantId),
+          this.getFilingByPeriod('monthly_wit', period, tenantId),
+          this.getFilingByPeriod('inss_monthly', period, tenantId),
+        ]);
+        return { period, witDueDate, inssDueDate, inssPaymentDueDate, witFiling, inssFiling };
+      })
+    );
 
-      const period = `${year}-${String(month).padStart(2, '0')}`;
-      const dueDate = await this.getMonthlyWITDueDate(period, tenantId);
-      const daysUntilDue = getDaysUntilDue(dueDate);
+    const dueDates: FilingDueDate[] = [];
 
-      // Get existing filing if any
-      const filing = await this.getFilingByPeriod('monthly_wit', period, tenantId);
-
-      let status: TaxFilingStatus;
-      if (filing?.status === 'filed') {
-        status = 'filed';
-      } else if (daysUntilDue < 0) {
-        status = 'overdue';
-      } else {
-        status = 'pending';
-      }
-
+    for (const { period, witDueDate, inssDueDate, inssPaymentDueDate, witFiling, inssFiling } of monthlyResults) {
+      // WIT
+      const witDays = getDaysUntilDue(witDueDate);
+      const witStatus: TaxFilingStatus = witFiling?.status === 'filed' ? 'filed' : witDays < 0 ? 'overdue' : 'pending';
       dueDates.push({
-        type: 'monthly_wit',
-        period,
-        dueDate,
-        status,
-        daysUntilDue,
-        isOverdue: daysUntilDue < 0 && status !== 'filed',
-        filing: filing || undefined,
+        type: 'monthly_wit', period, dueDate: witDueDate, status: witStatus,
+        daysUntilDue: witDays, isOverdue: witDays < 0 && witStatus !== 'filed',
+        filing: witFiling || undefined,
       });
 
-      const inssDueDate = await this.getMonthlyINSSStatementDueDate(period, tenantId);
-      const inssDaysUntilDue = getDaysUntilDue(inssDueDate);
-      const inssFiling = await this.getFilingByPeriod('inss_monthly', period, tenantId);
-
-      const inssStatus = resolveTaskStatus({
-        explicitStatus: inssFiling?.statementStatus,
-        legacyStatus: inssFiling?.status,
-        daysUntilDue: inssDaysUntilDue,
-      });
-
+      // INSS statement
+      const inssDays = getDaysUntilDue(inssDueDate);
+      const inssStatus = resolveTaskStatus({ explicitStatus: inssFiling?.statementStatus, legacyStatus: inssFiling?.status, daysUntilDue: inssDays });
       dueDates.push({
-        type: 'inss_monthly',
-        task: 'statement',
-        period,
-        dueDate: inssDueDate,
-        status: inssStatus,
-        daysUntilDue: inssDaysUntilDue,
-        isOverdue: inssDaysUntilDue < 0 && inssStatus !== 'filed',
+        type: 'inss_monthly', task: 'statement', period, dueDate: inssDueDate, status: inssStatus,
+        daysUntilDue: inssDays, isOverdue: inssDays < 0 && inssStatus !== 'filed',
         filing: inssFiling || undefined,
       });
 
-      // INSS payment deadline (following month 10th–20th window ends on 20th)
-      const inssPaymentDueDate = await this.getMonthlyINSSPaymentDueDate(period, tenantId);
-      const inssPaymentDaysUntilDue = getDaysUntilDue(inssPaymentDueDate);
-
-      const inssPaymentStatus = resolveTaskStatus({
-        explicitStatus: inssFiling?.paymentStatus,
-        legacyStatus: inssFiling?.status,
-        daysUntilDue: inssPaymentDaysUntilDue,
-      });
-
+      // INSS payment
+      const inssPayDays = getDaysUntilDue(inssPaymentDueDate);
+      const inssPayStatus = resolveTaskStatus({ explicitStatus: inssFiling?.paymentStatus, legacyStatus: inssFiling?.status, daysUntilDue: inssPayDays });
       dueDates.push({
-        type: 'inss_monthly',
-        task: 'payment',
-        period,
-        dueDate: inssPaymentDueDate,
-        status: inssPaymentStatus,
-        daysUntilDue: inssPaymentDaysUntilDue,
-        isOverdue: inssPaymentDaysUntilDue < 0 && inssPaymentStatus !== 'filed',
+        type: 'inss_monthly', task: 'payment', period, dueDate: inssPaymentDueDate, status: inssPayStatus,
+        daysUntilDue: inssPayDays, isOverdue: inssPayDays < 0 && inssPayStatus !== 'filed',
         filing: inssFiling || undefined,
       });
     }
@@ -1046,34 +1018,20 @@ class TaxFilingService {
     // Check annual WIT for previous year if we're in Q1
     if (currentMonth <= 3) {
       const period = String(currentYear - 1);
-      const dueDate = await this.getAnnualWITDueDate(currentYear - 1, tenantId);
+      const [dueDate, filing] = await Promise.all([
+        this.getAnnualWITDueDate(currentYear - 1, tenantId),
+        this.getFilingByPeriod('annual_wit', period, tenantId),
+      ]);
       const daysUntilDue = getDaysUntilDue(dueDate);
-
-      const filing = await this.getFilingByPeriod('annual_wit', period, tenantId);
-
-      let status: TaxFilingStatus;
-      if (filing?.status === 'filed') {
-        status = 'filed';
-      } else if (daysUntilDue < 0) {
-        status = 'overdue';
-      } else {
-        status = 'pending';
-      }
-
+      const status: TaxFilingStatus = filing?.status === 'filed' ? 'filed' : daysUntilDue < 0 ? 'overdue' : 'pending';
       dueDates.push({
-        type: 'annual_wit',
-        period,
-        dueDate,
-        status,
-        daysUntilDue,
+        type: 'annual_wit', period, dueDate, status, daysUntilDue,
         isOverdue: daysUntilDue < 0 && status !== 'filed',
         filing: filing || undefined,
       });
     }
 
-    // Sort by due date
     dueDates.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
     return dueDates;
   }
 
