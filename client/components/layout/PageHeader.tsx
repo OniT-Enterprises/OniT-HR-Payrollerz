@@ -50,7 +50,7 @@ export default function PageHeader({
           </div>
         </div>
         {actions && (
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 animate-in slide-in-from-right-4 fade-in duration-300">
             {actions}
           </div>
         )}
