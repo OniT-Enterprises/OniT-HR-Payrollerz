@@ -21,14 +21,14 @@ interface SectionTheme {
 export const sectionThemes: Record<SectionId, SectionTheme> = {
   dashboard: {
     id: "dashboard",
-    text: "text-slate-600 dark:text-slate-400",
-    textMuted: "text-slate-500 dark:text-slate-500",
-    bg: "bg-slate-100 dark:bg-slate-800",
-    bgSubtle: "bg-slate-50 dark:bg-slate-900/50",
-    border: "border-slate-300 dark:border-slate-700",
-    borderLeft: "border-l-4 border-l-slate-500",
-    gradient: "from-slate-500 to-slate-600",
-    ring: "ring-slate-500",
+    text: "text-primary dark:text-primary",
+    textMuted: "text-primary/70 dark:text-primary/70",
+    bg: "bg-primary/10 dark:bg-primary/20",
+    bgSubtle: "bg-primary/5 dark:bg-primary/10",
+    border: "border-primary/30 dark:border-primary/30",
+    borderLeft: "border-l-4 border-l-primary",
+    gradient: "from-primary to-primary",
+    ring: "ring-primary",
   },
   people: {
     id: "people",
@@ -102,7 +102,7 @@ export const sectionThemes: Record<SectionId, SectionTheme> = {
  * Navigation item colors (for MainNavigation)
  */
 export const navColors: Record<SectionId, string> = {
-  dashboard: "text-slate-600 dark:text-slate-400",
+  dashboard: "text-primary",
   people: "text-blue-500",
   scheduling: "text-cyan-500",
   payroll: "text-green-500",
@@ -115,7 +115,7 @@ export const navColors: Record<SectionId, string> = {
  * Active indicator colors for navigation
  */
 export const navActiveIndicator: Record<SectionId, string> = {
-  dashboard: "bg-slate-500",
+  dashboard: "bg-primary",
   people: "bg-blue-500",
   scheduling: "bg-cyan-500",
   payroll: "bg-green-500",

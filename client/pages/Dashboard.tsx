@@ -302,11 +302,11 @@ export default function Dashboard() {
         {(hasPayroll || hasStaff || hasTimeleave) && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
             {hasPayroll && (
-              <button onClick={() => navigate("/payroll/run")} className="p-4 rounded-xl border border-border/50 hover:border-green-400/50 hover:shadow-sm transition-all text-left">
+              <button onClick={() => navigate("/payroll/run")} className="p-4 rounded-xl border border-border bg-card hover:border-primary/40 hover:shadow-sm transition-all text-left">
                 <div className="flex items-center justify-between mb-2">
-                  <Calculator className="h-4 w-4 text-green-500" />
+                  <Calculator className="h-4 w-4 text-primary" />
                   {payrollPrepared
-                    ? <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                    ? <CheckCircle className="h-3.5 w-3.5 text-primary" />
                     : <AlertCircle className="h-3.5 w-3.5 text-amber-500" />
                   }
                 </div>
@@ -315,7 +315,7 @@ export default function Dashboard() {
               </button>
             )}
             {hasStaff && (
-              <button onClick={() => navigate("/people/employees")} className="p-4 rounded-xl border border-border/50 hover:border-blue-400/50 hover:shadow-sm transition-all text-left">
+              <button onClick={() => navigate("/people/employees")} className="p-4 rounded-xl border border-border bg-card hover:border-blue-400/50 hover:shadow-sm transition-all text-left">
                 <div className="flex items-center justify-between mb-2">
                   <Users className="h-4 w-4 text-blue-500" />
                   {blockingIssues.length > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{blockingIssues.length} issues</span>}
@@ -325,7 +325,7 @@ export default function Dashboard() {
               </button>
             )}
             {hasTimeleave && (
-              <button onClick={() => navigate("/time-leave/leave")} className="p-4 rounded-xl border border-border/50 hover:border-cyan-400/50 hover:shadow-sm transition-all text-left">
+              <button onClick={() => navigate("/time-leave/leave")} className="p-4 rounded-xl border border-border bg-card hover:border-cyan-400/50 hover:shadow-sm transition-all text-left">
                 <div className="flex items-center justify-between mb-2">
                   <CalendarDays className="h-4 w-4 text-cyan-500" />
                   {pendingLeave > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{pendingLeave} pending</span>}
@@ -335,7 +335,7 @@ export default function Dashboard() {
               </button>
             )}
             {compliance && (
-              <button onClick={() => navigate("/payroll/tax")} className="p-4 rounded-xl border border-border/50 hover:border-border hover:shadow-sm transition-all text-left">
+              <button onClick={() => navigate("/payroll/tax")} className="p-4 rounded-xl border border-border bg-card hover:border-border hover:shadow-sm transition-all text-left">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs font-medium text-muted-foreground">{t("dashboard.compliance")}</span>
                 </div>
@@ -366,7 +366,7 @@ export default function Dashboard() {
           <div className="flex flex-wrap gap-2">
             {hasPayroll && (
               <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate("/payroll/run")}>
-                <Play className="h-3.5 w-3.5 text-green-500" /> {t("dashboard.runPayroll")}
+                <Play className="h-3.5 w-3.5 text-primary" /> {t("dashboard.runPayroll")}
               </Button>
             )}
             {hasStaff && (
