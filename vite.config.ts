@@ -38,7 +38,7 @@ export default defineConfig(({ mode }) => ({
             return "vendor-react";
           }
           if (id.includes("node_modules/react-router")) {
-            return "vendor-router";
+            return "vendor-react";
           }
           // Heavy export/rendering libraries
           if (id.includes("node_modules/exceljs")) {
