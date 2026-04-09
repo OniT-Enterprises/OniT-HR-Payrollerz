@@ -278,7 +278,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-between mb-8 rounded-2xl bg-card border border-border p-6 overflow-hidden">
           <div className="flex-1">
             <h1 className="text-2xl font-semibold tracking-tight">
-              {new Date().getHours() < 12 ? t("common.greetingMorning") : new Date().getHours() < 18 ? t("common.greetingAfternoon") : t("common.greetingEvening")}{firstName ? `, ${firstName}` : ""}
+              {new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite"}{firstName ? `, ${firstName}` : ""}
             </h1>
             <p className="text-sm text-muted-foreground mt-1">
               {t("dashboard.heresWhatsGoing")}
