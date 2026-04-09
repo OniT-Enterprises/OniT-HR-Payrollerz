@@ -61,7 +61,6 @@ const prefetched = new Set<string>();
 
 /**
  * Prefetch a route's JS chunk. Safe to call multiple times — deduplicates.
- * Also accepts an optional queryClient to prefetch the page's main data query.
  */
 export function prefetchRoute(path: string) {
   if (prefetched.has(path)) return;
@@ -71,5 +70,32 @@ export function prefetchRoute(path: string) {
     importer().catch(() => {
       prefetched.delete(path);
     });
+  }
+}
+
+/**
+ * Prefetch the most common routes after the app is idle.
+ * Call once from App.tsx after initial render.
+ */
+export function prefetchCommonRoutesOnIdle() {
+  const COMMON_ROUTES = [
+    "/people/employees",
+    "/payroll/run",
+    "/payroll/history",
+    "/money/invoices",
+    "/time-leave/attendance",
+    "/time-leave/leave",
+    "/accounting/chart",
+    "/reports/payroll",
+  ];
+
+  const prefetchBatch = () => {
+    COMMON_ROUTES.forEach(prefetchRoute);
+  };
+
+  if ("requestIdleCallback" in window) {
+    requestIdleCallback(prefetchBatch, { timeout: 5000 });
+  } else {
+    setTimeout(prefetchBatch, 3000);
   }
 }

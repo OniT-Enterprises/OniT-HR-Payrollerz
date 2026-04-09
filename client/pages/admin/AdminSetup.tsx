@@ -7,8 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, ShieldCheck, Building2, CheckCircle2, AlertTriangle } from "lucide-react";
 import { doc, getDoc } from "firebase/firestore";
-import { httpsCallable } from "firebase/functions";
-import { db, functions } from "@/lib/firebase";
+import { db, getFunctionsLazy } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function AdminSetup() {
@@ -60,7 +59,7 @@ export default function AdminSetup() {
   }, []);
 
   const handleSetup = async () => {
-    if (!user || !functions) {
+    if (!user) {
       setError("You must be logged in to set up admin access");
       return;
     }
@@ -69,7 +68,8 @@ export default function AdminSetup() {
     setError(null);
 
     try {
-      const bootstrapFn = httpsCallable(functions, "bootstrapFirstAdmin");
+      const { httpsCallable } = await import("firebase/functions");
+      const bootstrapFn = httpsCallable(await getFunctionsLazy(), "bootstrapFirstAdmin");
       await bootstrapFn({ companyName, companySlug });
 
       // Refresh user profile in auth context

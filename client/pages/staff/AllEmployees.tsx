@@ -70,8 +70,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { httpsCallable } from "firebase/functions";
-import { functions } from "@/lib/firebase";
+import { getFunctionsLazy } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
 // Compliance filter types for URL params
@@ -626,7 +625,8 @@ export default function AllEmployees() {
     setEkipaCreating(true);
     const name = `${ekipaTarget.personalInfo.firstName} ${ekipaTarget.personalInfo.lastName}`;
     try {
-      const addMember = httpsCallable(functions, "addTenantMember");
+      const { httpsCallable } = await import("firebase/functions");
+      const addMember = httpsCallable(await getFunctionsLazy(), "addTenantMember");
       await addMember({
         tenantId,
         userEmail: ekipaTarget.personalInfo.email,

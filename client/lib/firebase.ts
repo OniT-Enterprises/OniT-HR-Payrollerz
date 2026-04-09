@@ -1,4 +1,4 @@
-// Firebase SDK imports
+// Firebase SDK imports — Storage and Functions are lazy-loaded (only used by 2-3 files)
 import { initializeApp } from "firebase/app";
 import {
   initializeFirestore,
@@ -6,8 +6,6 @@ import {
   persistentMultipleTabManager,
 } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
-import { getFunctions } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
 
 /**
@@ -48,10 +46,29 @@ export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 
-// Initialize other services
+// Auth is always needed (blocking) — init eagerly
 export const auth = getAuth(app);
-export const storage = getStorage(app);
-export const functions = getFunctions(app);
+
+// Storage and Functions are rarely used (2-3 files) — lazy-init on first access.
+// Keeps vendor-firebase-storage (~33KB) and vendor-firebase-functions out of the critical path.
+let _storage: import("firebase/storage").FirebaseStorage | null = null;
+let _functions: import("firebase/functions").Functions | null = null;
+
+export async function getStorageLazy() {
+  if (!_storage) {
+    const { getStorage } = await import("firebase/storage");
+    _storage = getStorage(app);
+  }
+  return _storage;
+}
+
+export async function getFunctionsLazy() {
+  if (!_functions) {
+    const { getFunctions } = await import("firebase/functions");
+    _functions = getFunctions(app);
+  }
+  return _functions;
+}
 
 // Initialize App Check (protects Firebase APIs from abuse)
 // Requires VITE_RECAPTCHA_ENTERPRISE_KEY env var; skipped in dev if not set

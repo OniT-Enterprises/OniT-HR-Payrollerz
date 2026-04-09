@@ -1,6 +1,35 @@
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+
+/**
+ * Vite plugin: inject modulepreload hints for critical vendor chunks.
+ * Tells the browser to fetch these in parallel while the entry chunk parses,
+ * eliminating the waterfall: entry → discovers vendor import → fetches vendor.
+ */
+function modulePreloadPlugin(): Plugin {
+  return {
+    name: "inject-modulepreload",
+    enforce: "post",
+    transformIndexHtml(html, ctx) {
+      if (!ctx.bundle) return html;
+      const CRITICAL_CHUNKS = [
+        "vendor-react",
+        "vendor-firebase-core",
+        "vendor-firebase-auth",
+        "vendor-firebase-firestore",
+      ];
+      const links: string[] = [];
+      for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
+        if (chunk.type === "chunk" && CRITICAL_CHUNKS.some(c => fileName.includes(c))) {
+          links.push(`<link rel="modulepreload" crossorigin href="/${fileName}" />`);
+        }
+      }
+      if (links.length === 0) return html;
+      return html.replace("</head>", `  ${links.join("\n  ")}\n</head>`);
+    },
+  };
+}
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
@@ -102,7 +131,7 @@ export default defineConfig(({ mode }) => ({
     // Uses Vite's mode (set by `vite build`) for reliable detection
     drop: mode === "production" ? ["console", "debugger"] : [],
   },
-  plugins: [react()],
+  plugins: [react(), modulePreloadPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./client"),

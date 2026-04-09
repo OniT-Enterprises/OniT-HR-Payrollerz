@@ -7,6 +7,7 @@ import {
   hydrateQueryClient,
   setupQueryPersistence,
 } from "@/lib/queryCache";
+import { prefetchCommonRoutesOnIdle } from "@/lib/prefetch";
 
 
 // Initialize Sentry for production error tracking
@@ -36,10 +37,13 @@ if (!root) {
   containerWithRoot._reactRoot = root;
 }
 
-// Create QueryClient, hydrate from IndexedDB, then render
+// Create QueryClient and render immediately — don't block on IDB hydration
 const queryClient = createOptimizedQueryClient();
 setupQueryPersistence(queryClient);
 
-hydrateQueryClient(queryClient).finally(() => {
-  root.render(<App queryClient={queryClient} />);
-});
+// Render first, hydrate cache in background (data arrives shortly after)
+root.render(<App queryClient={queryClient} />);
+hydrateQueryClient(queryClient);
+
+// Prefetch common routes after browser is idle
+prefetchCommonRoutesOnIdle();

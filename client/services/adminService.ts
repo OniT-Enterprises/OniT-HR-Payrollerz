@@ -16,8 +16,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '@/lib/firebase';
+import { db, getFunctionsLazy } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 import { TenantConfig, TenantStatus, TenantPlan, PLAN_LIMITS } from '@/types/tenant';
 import { UserProfile, AdminAuditEntry, AuditLogEntry } from '@/types/user';
@@ -116,6 +115,7 @@ class AdminService {
     try {
       const tenantId = generateTenantId(name);
       const normalizedOwnerEmail = ownerEmail.trim().toLowerCase();
+      const { httpsCallable } = await import('firebase/functions');
       const provisionTenant = httpsCallable<
         {
           name: string;
@@ -127,7 +127,7 @@ class AdminService {
           };
         },
         { tenantId: string; ownerUid: string; message: string }
-      >(functions, 'provisionTenant');
+      >(await getFunctionsLazy(), 'provisionTenant');
 
       const features: TenantConfig['features'] = {
         hiring: true,

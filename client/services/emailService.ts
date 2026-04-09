@@ -10,8 +10,7 @@ import {
   serverTimestamp,
   Timestamp,
 } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import { db, storage } from "@/lib/firebase";
+import { db, getStorageLazy } from "@/lib/firebase";
 import { PayrollRecord, PayrollRun } from "@/types/payroll";
 
 /**
@@ -131,6 +130,8 @@ async function uploadPayslipPdf(
   pdfBlob: Blob
 ): Promise<string> {
   const timestamp = Date.now();
+  const storage = await getStorageLazy();
+  const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
   const storagePath = `tenants/${tenantId}/payslips/${payrollRunId}/${employeeId}_${timestamp}.pdf`;
   const storageRef = ref(storage, storagePath);
 

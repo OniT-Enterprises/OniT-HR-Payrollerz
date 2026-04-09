@@ -1,10 +1,4 @@
-import {
-  ref,
-  uploadBytes,
-  getDownloadURL,
-  deleteObject,
-} from "firebase/storage";
-import { storage } from "@/lib/firebase";
+import { getStorageLazy } from "@/lib/firebase";
 
 class FileUploadService {
   private static instance: FileUploadService;
@@ -24,6 +18,8 @@ class FileUploadService {
    */
   async uploadFile(file: File, path: string): Promise<string> {
     try {
+      const storage = await getStorageLazy();
+      const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
       const storageRef = ref(storage, path);
       const snapshot = await uploadBytes(storageRef, file);
       const downloadURL = await getDownloadURL(snapshot.ref);
@@ -62,6 +58,8 @@ class FileUploadService {
    */
   async deleteFile(url: string): Promise<void> {
     try {
+      const storage = await getStorageLazy();
+      const { ref, deleteObject } = await import("firebase/storage");
       const fileRef = ref(storage, url);
       await deleteObject(fileRef);
     } catch (error) {

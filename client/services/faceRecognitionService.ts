@@ -14,8 +14,7 @@ import {
   where,
   serverTimestamp,
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage } from '@/lib/firebase';
+import { db, getStorageLazy } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
 
 interface FaceEmbeddingDoc {
@@ -115,6 +114,8 @@ class FaceRecognitionService {
     index: number
   ): Promise<string> {
     const timestamp = Date.now();
+    const storage = await getStorageLazy();
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
     const storageRef = ref(
       storage,
       `tenants/${tenantId}/face_photos/${employeeId}/ref_${index}_${timestamp}.jpg`
