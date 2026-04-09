@@ -230,10 +230,10 @@ export default function CreateJobLocal() {
         subtitle={t("hiring.createJob.subtitle")}
         icon={Briefcase}
         iconColor="text-blue-500"
-        className="mx-auto max-w-screen-2xl px-6"
+        className="mx-auto max-w-screen-lg px-6 lg:px-8"
       />
 
-      <div className="p-6 lg:p-8">
+      <div className="px-6 lg:px-8 pb-8">
         <div className="max-w-screen-lg mx-auto">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Job Details Card */}
