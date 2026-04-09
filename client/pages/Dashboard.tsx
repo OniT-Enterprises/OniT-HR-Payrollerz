@@ -35,14 +35,12 @@ import { settingsService } from "@/services/settingsService";
 import {
   Users,
   UserPlus,
-  ChevronRight,
   Calculator,
   AlertCircle,
   CheckCircle,
   ArrowRight,
   CalendarDays,
   HelpCircle,
-  AlertTriangle,
   Play,
   Zap,
   FolderKanban,
@@ -299,38 +297,7 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        {/* ── Alerts (overdue taxes, blocking issues) ── */}
-        {compliance && (compliance.wit.status === 'urgent' || compliance.inss.status === 'urgent') && (
-          <div className="mb-6 space-y-2">
-            {compliance.wit.status === 'urgent' && (
-              <button onClick={() => navigate("/payroll/tax/monthly-wit")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-300 bg-red-50/50 dark:bg-red-950/20 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0 animate-pulse" />
-                <span className="text-sm flex-1"><span className="font-semibold text-red-700 dark:text-red-400">WIT</span> <span className="text-red-600 dark:text-red-300">{t("dashboard.overdue")} {Math.abs(compliance.wit.days)} {t("dashboard.days")}</span></span>
-                <ChevronRight className="h-4 w-4 text-red-400" />
-              </button>
-            )}
-            {compliance.inss.status === 'urgent' && (
-              <button onClick={() => navigate("/payroll/tax/inss-monthly")} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-red-300 bg-red-50/50 dark:bg-red-950/20 dark:border-red-800/50 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left">
-                <span className="h-2.5 w-2.5 rounded-full bg-red-500 shrink-0 animate-pulse" />
-                <span className="text-sm flex-1"><span className="font-semibold text-red-700 dark:text-red-400">INSS</span> <span className="text-red-600 dark:text-red-300">{t("dashboard.overdue")} {Math.abs(compliance.inss.days)} {t("dashboard.days")}</span></span>
-                <ChevronRight className="h-4 w-4 text-red-400" />
-              </button>
-            )}
-          </div>
-        )}
-
-        {blockingIssues.length > 0 && (
-          <button
-            onClick={() => navigate("/people/employees?filter=blocking-issues")}
-            className="w-full mb-6 flex items-center gap-3 px-4 py-3 rounded-xl border border-amber-200 bg-amber-50/50 dark:bg-amber-950/20 dark:border-amber-800/50 hover:bg-amber-50 dark:hover:bg-amber-950/30 transition-colors text-left"
-          >
-            <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
-            <span className="text-sm flex-1 text-amber-800 dark:text-amber-200">
-              <span className="font-semibold">{blockingIssues.length}</span> {t("dashboard.attentionRequiredDesc")}
-            </span>
-            <ChevronRight className="h-4 w-4 text-amber-400" />
-          </button>
-        )}
+        {/* Alerts moved to TopBar notification bell */}
 
         {/* ── Stats Row — compact, side by side ── */}
         {(hasPayroll || hasStaff || hasTimeleave) && (
@@ -430,18 +397,20 @@ export default function Dashboard() {
         {hasStaff && <DocumentAlertsCard className="border-border/50" maxItems={5} />}
       </div>
 
-      {/* ── Sticky Bottom Bar — Next Action (inside content flow, not over sidebar) ── */}
+      {/* ── Bottom Bar — Next Action (inside scroll, sticks to bottom) ── */}
       {nextAction && (
-        <div className="sticky bottom-0 z-30 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 -mx-6 px-6">
-          <div className="py-3 flex items-center gap-3">
-            <Zap className={`h-4 w-4 shrink-0 ${nextAction.urgent ? "text-amber-500" : "text-primary"}`} />
-            <div className="flex-1 min-w-0">
-              <p className="text-xs text-muted-foreground">{t("dashboard.nextRecommendedAction")}</p>
-              <p className="text-sm font-medium truncate">{nextAction.label}</p>
+        <div className="mx-6 mb-6 mt-auto rounded-xl border border-border/50 bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-3 max-w-screen-2xl mx-auto">
+            <div className={`h-8 w-8 rounded-lg flex items-center justify-center shrink-0 ${nextAction.urgent ? "bg-amber-500/15" : "bg-primary/10"}`}>
+              <Zap className={`h-4 w-4 ${nextAction.urgent ? "text-amber-500" : "text-primary"}`} />
             </div>
-            <Button size="sm" onClick={() => navigate(nextAction.path)} className={nextAction.urgent ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">{t("dashboard.nextRecommendedAction")}</p>
+              <p className="text-sm font-semibold truncate">{nextAction.label}</p>
+            </div>
+            <Button onClick={() => navigate(nextAction.path)} className={nextAction.urgent ? "bg-amber-500 hover:bg-amber-600 text-white" : ""}>
               {t("dashboard.doItNow")}
-              <ArrowRight className="h-3.5 w-3.5 ml-1.5" />
+              <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>

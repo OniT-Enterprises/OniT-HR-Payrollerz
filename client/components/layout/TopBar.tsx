@@ -40,8 +40,16 @@ import {
   RotateCcw,
   AlertTriangle,
   Bot,
+  Bell,
+  ChevronRight,
+  AlertCircle,
+  CalendarDays,
 } from "lucide-react";
 import { useChatStore } from "@/stores/chatStore";
+import { useLeaveStats } from "@/hooks/useLeaveRequests";
+import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import { useEmployeeDirectory } from "@/hooks/useEmployees";
+import { getComplianceIssues } from "@/lib/employeeUtils";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 
 export default function TopBar() {
@@ -57,8 +65,20 @@ export default function TopBar() {
   const { t } = useI18n();
   const canManageTenant = canManage();
 
+  const hasPayroll = hasModule("payroll");
+  const hasTimeleave = hasModule("timeleave");
+  const hasStaff = hasModule("staff");
   const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
   const donorExportEnabled = canUseDonorExport(session, hasModule("reports"), canManageTenant);
+
+  // Notification data — reuses existing cached queries
+  const { data: leaveStats } = useLeaveStats(hasTimeleave);
+  const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll);
+  const { data: employees = [] } = useEmployeeDirectory({ status: "active" }, hasStaff);
+  const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
+  const blockingIssues = hasStaff ? getComplianceIssues(employees).length : 0;
+  const overdueTaxes = filingsDue.filter((f) => f.isOverdue).length;
+  const notificationCount = (overdueTaxes > 0 ? 1 : 0) + (blockingIssues > 0 ? 1 : 0) + (pendingLeave > 0 ? 1 : 0);
 
   const { data: setupProgress } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress", "nav"],
@@ -105,6 +125,64 @@ export default function TopBar() {
           {/* Right side tools */}
           <div className="flex items-center gap-2">
             <LocaleSwitcher className="hidden sm:flex" />
+
+            {/* Notifications */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
+                  <Bell className="h-4 w-4" />
+                  {notificationCount > 0 && (
+                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+                      {notificationCount}
+                    </span>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-80">
+                <div className="px-3 py-2">
+                  <p className="text-sm font-semibold">{t("common.notifications") || "Notifications"}</p>
+                </div>
+                <DropdownMenuSeparator />
+                {notificationCount === 0 ? (
+                  <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                    {t("dashboard.allGood") || "All good — nothing needs attention"}
+                  </div>
+                ) : (
+                  <>
+                    {overdueTaxes > 0 && (
+                      <DropdownMenuItem onClick={() => handleNavigate("/payroll/tax")} className="gap-3 py-2.5">
+                        <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{t("dashboard.taxOverdue") || "Tax filings overdue"}</p>
+                          <p className="text-xs text-muted-foreground">{overdueTaxes} {t("dashboard.overdueFilings") || "filing(s) past deadline"}</p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    {blockingIssues > 0 && (
+                      <DropdownMenuItem onClick={() => handleNavigate("/people/employees?filter=blocking-issues")} className="gap-3 py-2.5">
+                        <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{t("dashboard.attentionRequired") || "Attention required"}</p>
+                          <p className="text-xs text-muted-foreground">{blockingIssues} {t("dashboard.attentionRequiredDesc") || "employees need documents"}</p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                    {pendingLeave > 0 && (
+                      <DropdownMenuItem onClick={() => handleNavigate("/time-leave/leave")} className="gap-3 py-2.5">
+                        <CalendarDays className="h-4 w-4 text-cyan-500 shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{t("dashboard.pendingRequests") || "Pending leave"}</p>
+                          <p className="text-xs text-muted-foreground">{pendingLeave} {t("dashboard.reviewLeaveRequests", { count: pendingLeave })}</p>
+                        </div>
+                        <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                      </DropdownMenuItem>
+                    )}
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             {/* Chat / Meza Assistant */}
             <Button
