@@ -512,7 +512,7 @@ export default function Attendance() {
                 <Upload className="h-4 w-4 mr-2" />
                 {t("timeLeave.attendance.actions.import")}
               </Button>
-              <Button onClick={() => openMarkDialog()}>
+              <Button onClick={() => openMarkDialog()} className="bg-cyan-600 hover:bg-cyan-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 {isToday ? t("timeLeave.attendance.actions.markToday") : t("timeLeave.attendance.actions.mark")}
               </Button>
