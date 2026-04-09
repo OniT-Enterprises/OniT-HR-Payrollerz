@@ -3150,7 +3150,7 @@ function openClawChat(message, sessionKey) {
         type: 'req', id: state.connectReqId, method: 'connect',
         params: {
           minProtocol: 3, maxProtocol: 3,
-          client: { id: 'meza-api', version: '1.0.0', platform: 'linux', mode: 'backend' },
+          client: { id: 'gateway-client', version: '1.0.0', platform: 'linux', mode: 'backend' },
           role: 'operator', scopes: ['operator.read', 'operator.write'], caps: [],
           auth: { password: OPENCLAW_PASSWORD },
         },
@@ -3704,7 +3704,7 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
           type: 'req', id: wsState.connectReqId, method: 'connect',
           params: {
             minProtocol: 3, maxProtocol: 3,
-            client: { id: 'meza-api', version: '1.0.0', platform: 'linux', mode: 'backend' },
+            client: { id: 'gateway-client', version: '1.0.0', platform: 'linux', mode: 'backend' },
             role: 'operator', scopes: ['operator.read', 'operator.write'], caps: [],
             auth: { password: OPENCLAW_PASSWORD },
           },
