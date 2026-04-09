@@ -50,7 +50,6 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
-import DocumentAlertsCard from "@/components/dashboard/DocumentAlertsCard";
 
 function getNextPayDate() {
   const now = new Date();
@@ -394,7 +393,7 @@ export default function Dashboard() {
         </div>
 
         {/* Document Expiry Alerts */}
-        {hasStaff && <DocumentAlertsCard className="border-border/50" maxItems={5} />}
+        {/* Document alerts accessible via People > Employees */}
       </div>
 
       {/* ── Bottom Bar — Next Action (inside scroll, sticks to bottom) ── */}
