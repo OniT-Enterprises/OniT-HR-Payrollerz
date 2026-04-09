@@ -50,9 +50,7 @@ import {
   DollarSign,
   Archive,
   Download,
-  Users,
   Search,
-  History,
   Save,
   Loader2,
 } from "lucide-react";
@@ -479,82 +477,6 @@ export default function Offboarding() {
           </Card>
         ) : (
           <div className="space-y-6">
-            {/* Statistics */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("hiring.offboarding.stats.totalEmployees")}
-                      </p>
-                      <p className="text-2xl font-bold">{employees.length}</p>
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
-                        {t("hiring.offboarding.stats.inDatabase")}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg">
-                      <Users className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("hiring.offboarding.stats.departures")}
-                      </p>
-                      <p className="text-2xl font-bold">{departuresLastYear}</p>
-                      <p className="text-xs text-orange-600 dark:text-orange-400">
-                        {t("hiring.offboarding.stats.lastYear")}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 shadow-lg">
-                      <History className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("hiring.offboarding.stats.cases")}
-                      </p>
-                      <p className="text-2xl font-bold">{activeCases.length}</p>
-                      <p className="text-xs text-emerald-600 dark:text-emerald-400">
-                        {t("hiring.offboarding.stats.active")}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
-                      <Clock className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-border/50 hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-muted-foreground">
-                        {t("hiring.offboarding.stats.history")}
-                      </p>
-                      <p className="text-2xl font-bold">{completedCases.length}</p>
-                      <p className="text-xs text-violet-600 dark:text-violet-400">
-                        {t("hiring.offboarding.stats.completed")}
-                      </p>
-                    </div>
-                    <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg">
-                      <Archive className="h-5 w-5 text-white" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
             <div className="grid lg:grid-cols-2 gap-6">
               {/* Ongoing Departures */}
               <Card className="border-border/50">
