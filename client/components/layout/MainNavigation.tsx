@@ -243,7 +243,7 @@ function UserMenu({ user, userInitials, isSuperAdmin, ngoReportingEnabled, donor
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
           <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-gradient-to-br from-primary to-violet-500 text-white text-sm font-semibold">
+            <AvatarFallback className="bg-primary text-white text-sm font-semibold">
               {userInitials}
             </AvatarFallback>
           </Avatar>
