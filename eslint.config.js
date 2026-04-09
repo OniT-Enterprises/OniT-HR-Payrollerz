@@ -20,6 +20,7 @@ export default [
       "mobile/",
       "client/i18n/translations.ts",
       "client/i18n/locales/",
+      "public/sw.js",
       "*.config.js",
       "*.config.ts",
     ],

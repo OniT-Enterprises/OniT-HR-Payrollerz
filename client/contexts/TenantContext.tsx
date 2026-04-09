@@ -464,7 +464,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
       switchingRef.current = false;
       setLoading(false);
     }
-  }, [user, isImpersonating, loadTenantSession]);
+  }, [user, isImpersonating, loadTenantSession, availableTenants]);
 
   // Refresh current session
   const refreshSession = useCallback(async () => {
