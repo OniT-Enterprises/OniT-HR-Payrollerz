@@ -38,8 +38,8 @@ export default function PageHeader({
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           {Icon && (
-            <div className="p-2 rounded-xl bg-muted shrink-0">
-              <Icon className={`h-5 w-5 ${iconColor}`} />
+            <div className="p-2.5 rounded-xl bg-muted shrink-0">
+              <Icon className={`h-6 w-6 ${iconColor}`} />
             </div>
           )}
           <div className="min-w-0">
