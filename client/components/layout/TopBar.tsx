@@ -345,12 +345,12 @@ export default function TopBar() {
 
             <Button
               variant="ghost"
-              size="icon"
+              size="sm"
               onClick={() => setChatOpen(true)}
-              className="h-9 w-9 text-muted-foreground hover:text-foreground"
-              title="Meza Assistant"
+              className="h-9 gap-1.5 text-muted-foreground hover:text-foreground"
             >
               <Bot className="h-4 w-4" />
+              <span className="hidden sm:inline text-xs">{t("common.askAI")}</span>
             </Button>
 
             <Button
