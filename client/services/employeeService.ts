@@ -5,12 +5,10 @@ import {
   getDocs,
   getDoc,
   getCountFromServer,
-  getAggregateFromServer,
   addDoc,
   setDoc,
   updateDoc,
   query,
-  sum,
   where,
   orderBy,
   limit,
@@ -613,20 +611,17 @@ class EmployeeService {
     const collectionRef = this.collectionRef(tenantId);
     const activeQuery = query(collectionRef, where("status", "==", "active"));
 
+    // Fetch active employees to compute salary/issue totals client-side
+    // (getAggregateFromServer with sum() on nested map fields can fail with 400)
     const [
-      activeSnapshot,
-      salaryAndIssuesSnapshot,
+      activeDocs,
       employeesWithIssuesSnapshot,
       employeesWithBlockingIssuesSnapshot,
       missingInssSnapshot,
       missingContractSnapshot,
       missingDepartmentSnapshot,
     ] = await Promise.all([
-      getCountFromServer(activeQuery),
-      getAggregateFromServer(activeQuery, {
-        totalMonthlySalary: sum("compensation.monthlySalary"),
-        totalIssues: sum("compliance.issueCount"),
-      }),
+      getDocs(activeQuery),
       getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasIssues", "==", true))),
       getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.hasBlockingIssue", "==", true))),
       getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingInss", "==", true))),
@@ -634,10 +629,18 @@ class EmployeeService {
       getCountFromServer(query(collectionRef, where("status", "==", "active"), where("compliance.missingDepartment", "==", true))),
     ]);
 
+    let totalMonthlySalary = 0;
+    let totalIssues = 0;
+    activeDocs.forEach((doc) => {
+      const data = doc.data();
+      totalMonthlySalary += Number(data.compensation?.monthlySalary ?? 0);
+      totalIssues += Number(data.compliance?.issueCount ?? 0);
+    });
+
     return {
-      active: activeSnapshot.data().count,
-      totalMonthlySalary: Number(salaryAndIssuesSnapshot.data().totalMonthlySalary ?? 0),
-      totalIssues: Number(salaryAndIssuesSnapshot.data().totalIssues ?? 0),
+      active: activeDocs.size,
+      totalMonthlySalary,
+      totalIssues,
       employeesWithIssues: employeesWithIssuesSnapshot.data().count,
       employeesWithBlockingIssues: employeesWithBlockingIssuesSnapshot.data().count,
       missingInss: missingInssSnapshot.data().count,

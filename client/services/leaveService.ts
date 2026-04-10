@@ -670,26 +670,35 @@ class LeaveService {
     try {
       const today = getTodayTL();
       const leaveRequestsRef = collection(db, LEAVE_REQUESTS_COLLECTION);
-      const [totalRequests, pendingRequests, approvedRequests, rejectedRequests, employeesOnLeaveToday] = await Promise.all([
+      // The "on leave today" query uses inequality on 2 fields (startDate <= today AND
+      // endDate >= today) which can fail with 400 if the composite index isn't ready.
+      // Use getDocs with a single inequality + client-side filter as fallback.
+      const [totalRequests, pendingRequests, approvedRequests, rejectedRequests, onLeaveDocs] = await Promise.all([
         getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId))),
         getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'pending'))),
         getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'approved'))),
         getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'rejected'))),
-        getCountFromServer(query(
+        getDocs(query(
           leaveRequestsRef,
           where('tenantId', '==', tenantId),
           where('status', '==', 'approved'),
           where('startDate', '<=', today),
-          where('endDate', '>=', today)
         )),
       ]);
+
+      // Client-side filter for endDate >= today
+      let employeesOnLeaveTodayCount = 0;
+      onLeaveDocs.forEach((doc) => {
+        const data = doc.data();
+        if (data.endDate >= today) employeesOnLeaveTodayCount++;
+      });
 
       return {
         totalRequests: totalRequests.data().count,
         pendingRequests: pendingRequests.data().count,
         approvedRequests: approvedRequests.data().count,
         rejectedRequests: rejectedRequests.data().count,
-        employeesOnLeaveToday: employeesOnLeaveToday.data().count,
+        employeesOnLeaveToday: employeesOnLeaveTodayCount,
       };
     } catch (error) {
       console.error('Error getting leave stats:', error);
