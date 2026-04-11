@@ -3122,101 +3122,43 @@ router.get('/verify/compliance', async (req, res) => {
 // OpenClaw Chat Relay
 // ============================================================================
 
-// WebSocket-based OpenClaw chat (protocol v3)
-const WebSocket = require('ws');
+// HTTP-based OpenClaw chat relay
+async function openClawChat(message, sessionKey) {
+  const url = `${OPENCLAW_HTTP_URL}/v1/chat/completions`;
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 120000);
 
-function openClawChat(message, sessionKey) {
-  return new Promise((resolve, reject) => {
-    let settled = false;
-    const done = (err, result) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      try { ws.close(); } catch {}
-      if (err) reject(err);
-      else resolve(result || { reply: '(No response)', toolNames: [] });
-    };
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENCLAW_PASSWORD}`,
+        'x-openclaw-agent-id': 'main',
+        'x-openclaw-session-key': sessionKey || 'main',
+      },
+      body: JSON.stringify({
+        model: 'openclaw:main',
+        messages: [{ role: 'user', content: message }],
+        stream: false,
+        user: sessionKey || 'webchat',
+      }),
+      signal: controller.signal,
+    });
 
-    const timeout = setTimeout(() => done(new Error('Gateway timeout (120s)')), 120000);
-    const ws = new WebSocket(OPENCLAW_WS_URL);
-
-    const state = { connected: false, connectReqId: null, chatReqId: null, streamBuf: '', toolNames: [] };
-    let reqSeq = 0;
-    const genReqId = () => `meza-${Date.now()}-${++reqSeq}`;
-
-    function sendConnect() {
-      state.connectReqId = genReqId();
-      ws.send(JSON.stringify({
-        type: 'req', id: state.connectReqId, method: 'connect',
-        params: {
-          minProtocol: 3, maxProtocol: 3,
-          client: { id: 'gateway-client', version: '1.0.0', platform: 'linux', mode: 'backend' },
-          role: 'operator', scopes: ['operator.read', 'operator.write'], caps: [],
-          auth: { password: OPENCLAW_PASSWORD },
-        },
-      }));
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      throw new Error(`Gateway HTTP ${res.status}: ${body.slice(0, 200)}`);
     }
 
-    ws.on('error', (err) => done(new Error('Gateway connection error: ' + err.message)));
-    ws.on('close', () => { if (!settled) done(new Error('Gateway connection closed unexpectedly')); });
+    const data = await res.json();
+    const choice = data.choices?.[0];
+    const reply = choice?.message?.content || '(No response)';
 
-    ws.on('open', () => {
-      setTimeout(() => { if (!state.connected && !state.connectReqId) sendConnect(); }, 2000);
-    });
-
-    ws.on('message', (raw) => {
-      let msg;
-      try { msg = JSON.parse(String(raw)); } catch { return; }
-
-      // Connect challenge
-      if (msg.type === 'event' && msg.event === 'connect.challenge') {
-        if (!state.connectReqId) sendConnect();
-        return;
-      }
-
-      // Connect response
-      if (msg.type === 'res' && msg.id === state.connectReqId && !state.connected) {
-        if (!msg.ok || msg.error) return done(new Error('Gateway auth failed: ' + (msg.error?.message || JSON.stringify(msg.error))));
-        state.connected = true;
-        state.chatReqId = genReqId();
-        ws.send(JSON.stringify({
-          type: 'req', id: state.chatReqId, method: 'chat.send',
-          params: { sessionKey, message, deliver: false, idempotencyKey: state.chatReqId },
-        }));
-        return;
-      }
-
-      // Chat response (ack)
-      if (msg.type === 'res' && msg.id === state.chatReqId) {
-        if (!msg.ok || msg.error) done(new Error('Chat error: ' + (msg.error?.message || JSON.stringify(msg.error))));
-        return;
-      }
-
-      // Agent streaming events
-      if (msg.type === 'event' && msg.event === 'agent') {
-        const data = msg.payload?.data;
-        if (data?.delta && typeof data.delta === 'string') state.streamBuf += data.delta;
-        if (data?.toolName) state.toolNames.push(data.toolName);
-        return;
-      }
-
-      // Chat completion event
-      if (msg.type === 'event' && msg.event === 'chat') {
-        const p = msg.payload;
-        if (p?.state === 'final' || p?.state === 'error' || p?.state === 'aborted') {
-          if (p.state === 'error') return done(new Error('Chat error: ' + (p.errorMessage || 'unknown')));
-          // Extract reply from final payload or stream buffer
-          let reply = '';
-          if (p.message?.content) {
-            reply = typeof p.message.content === 'string' ? p.message.content
-              : Array.isArray(p.message.content) ? p.message.content.filter(b => b.type === 'text').map(b => b.text).join('\n') : '';
-          }
-          if (!reply) reply = state.streamBuf.trim();
-          return done(null, { reply: reply || '(No response)', toolNames: state.toolNames });
-        }
-      }
-    });
-  });
+    return { reply, toolNames: [] };
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 // Page context map — maps frontend routes to descriptions for the AI
@@ -3676,130 +3618,57 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
     const prefixedMessage = systemPrefix + effectiveMessage;
     const chatSessionKey = `agent:main:${tenantId}:webchat-${req.user.uid}:${safeSessionKey}`;
 
-    // WebSocket relay to OpenClaw (protocol v3)
-    await new Promise((resolveRelay, rejectRelay) => {
-      let settled = false;
-      const doneRelay = (err) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(wsTimeout);
-        try { ocWs.close(); } catch {}
-        if (err) rejectRelay(err);
-        else resolveRelay();
-      };
+    // HTTP relay to OpenClaw — non-streaming, send complete response
+    const url = `${OPENCLAW_HTTP_URL}/v1/chat/completions`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 120000);
 
-      const wsTimeout = setTimeout(() => doneRelay(new Error('Gateway timeout (120s)')), 120000);
-      const ocWs = new WebSocket(OPENCLAW_WS_URL);
+    try {
+      const ocRes = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${OPENCLAW_PASSWORD}`,
+          'x-openclaw-agent-id': 'main',
+          'x-openclaw-session-key': chatSessionKey,
+        },
+        body: JSON.stringify({
+          model: 'openclaw:main',
+          messages: [{ role: 'user', content: prefixedMessage }],
+          stream: false,
+          user: chatSessionKey,
+        }),
+        signal: controller.signal,
+      });
 
-      const wsState = { connected: false, connectReqId: null, chatReqId: null };
-      let wsReqSeq = 0;
-      const wsGenId = () => `meza-stream-${Date.now()}-${++wsReqSeq}`;
-      const fullContent = { current: '' };
-      const toolNames = [];
-      const completedSteps = new Set();
-
-      function wsSendConnect() {
-        wsState.connectReqId = wsGenId();
-        ocWs.send(JSON.stringify({
-          type: 'req', id: wsState.connectReqId, method: 'connect',
-          params: {
-            minProtocol: 3, maxProtocol: 3,
-            client: { id: 'gateway-client', version: '1.0.0', platform: 'linux', mode: 'backend' },
-            role: 'operator', scopes: ['operator.read', 'operator.write'], caps: [],
-            auth: { password: OPENCLAW_PASSWORD },
-          },
-        }));
+      if (!ocRes.ok) {
+        const body = await ocRes.text().catch(() => '');
+        throw new Error(`Gateway HTTP ${ocRes.status}: ${body.slice(0, 200)}`);
       }
 
-      // Handle client disconnect — close WS
-      req.on('close', () => doneRelay(new Error('Client disconnected')));
+      const data = await ocRes.json();
+      const choice = data.choices?.[0];
+      const reply = choice?.message?.content || '(No response)';
+      const toolNames = (choice?.message?.tool_calls || []).map(tc => tc.function?.name).filter(Boolean);
 
-      ocWs.on('error', (err) => doneRelay(new Error('Gateway connection error: ' + err.message)));
-      ocWs.on('close', () => { if (!settled) doneRelay(new Error('Gateway connection closed unexpectedly')); });
+      for (const tn of toolNames) {
+        sendEvent({ type: 'step', content: humanizeToolName(tn), status: 'done' });
+      }
 
-      ocWs.on('open', () => {
-        setTimeout(() => { if (!wsState.connected && !wsState.connectReqId) wsSendConnect(); }, 2000);
-      });
+      const actions = detectActions(toolNames, reply);
+      sendEvent({ type: 'complete', content: reply, actions });
 
-      ocWs.on('message', (raw) => {
-        let msg;
-        try { msg = JSON.parse(String(raw)); } catch { return; }
-
-        // Connect challenge
-        if (msg.type === 'event' && msg.event === 'connect.challenge') {
-          if (!wsState.connectReqId) wsSendConnect();
-          return;
-        }
-
-        // Connect response
-        if (msg.type === 'res' && msg.id === wsState.connectReqId && !wsState.connected) {
-          if (!msg.ok || msg.error) return doneRelay(new Error('Gateway auth failed: ' + (msg.error?.message || JSON.stringify(msg.error))));
-          wsState.connected = true;
-          wsState.chatReqId = wsGenId();
-          ocWs.send(JSON.stringify({
-            type: 'req', id: wsState.chatReqId, method: 'chat.send',
-            params: { sessionKey: chatSessionKey, message: prefixedMessage, deliver: false, idempotencyKey: wsState.chatReqId },
-          }));
-          return;
-        }
-
-        // Chat ack
-        if (msg.type === 'res' && msg.id === wsState.chatReqId) {
-          if (!msg.ok || msg.error) doneRelay(new Error('Chat error: ' + (msg.error?.message || JSON.stringify(msg.error))));
-          return;
-        }
-
-        // Agent streaming events (deltas + tool calls)
-        if (msg.type === 'event' && msg.event === 'agent') {
-          const data = msg.payload?.data;
-          if (data?.delta && typeof data.delta === 'string') {
-            fullContent.current += data.delta;
-            sendEvent({ type: 'chunk', content: data.delta });
-          }
-          if (data?.toolName && !completedSteps.has(data.toolName)) {
-            toolNames.push(data.toolName);
-            completedSteps.add(data.toolName);
-            sendEvent({ type: 'step', content: humanizeToolName(data.toolName), status: 'running' });
-          }
-          return;
-        }
-
-        // Chat completion
-        if (msg.type === 'event' && msg.event === 'chat') {
-          const p = msg.payload;
-          if (p?.state === 'final' || p?.state === 'error' || p?.state === 'aborted') {
-            if (p.state === 'error') return doneRelay(new Error('Chat error: ' + (p.errorMessage || 'unknown')));
-
-            // Extract reply
-            let reply = '';
-            if (p.message?.content) {
-              reply = typeof p.message.content === 'string' ? p.message.content
-                : Array.isArray(p.message.content) ? p.message.content.filter(b => b.type === 'text').map(b => b.text).join('\n') : '';
-            }
-            if (!reply) reply = fullContent.current.trim();
-
-            // Mark steps done
-            for (const tn of toolNames) {
-              sendEvent({ type: 'step', content: humanizeToolName(tn), status: 'done' });
-            }
-
-            const actions = detectActions(toolNames, reply);
-            sendEvent({ type: 'complete', content: reply || '(No response)', actions });
-
-            // Audit
-            db.collection(`tenants/${tenantId}/chat_audit`).add({
-              requestId, userId: req.user.uid, userEmail: req.user.email,
-              message: trimmedMessage, effectiveMessage, intent, allowWrites,
-              replyLength: (reply || '').length, sessionKey: safeSessionKey,
-              chatSessionKey, actions, toolNames: toolNames.slice(0, 50),
-              streaming: true, createdAt: admin.firestore.FieldValue.serverTimestamp(),
-            }).catch(auditErr => console.error(`[${requestId}] Audit failed:`, auditErr.message));
-
-            doneRelay(null);
-          }
-        }
-      });
-    });
+      // Audit
+      db.collection(`tenants/${tenantId}/chat_audit`).add({
+        requestId, userId: req.user.uid, userEmail: req.user.email,
+        message: trimmedMessage, effectiveMessage, intent, allowWrites,
+        replyLength: reply.length, sessionKey: safeSessionKey,
+        chatSessionKey, actions, toolNames: toolNames.slice(0, 50),
+        streaming: false, createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }).catch(auditErr => console.error(`[${requestId}] Audit failed:`, auditErr.message));
+    } finally {
+      clearTimeout(timeout);
+    }
   } catch (error) {
     console.error(`[${requestId}] Chat-stream error:`, error.message);
     sendEvent({ type: 'error', content: error.message || 'Failed to communicate with AI gateway' });

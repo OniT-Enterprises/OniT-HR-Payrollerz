@@ -405,7 +405,7 @@ const messages = {
     }
   },
   "auth": {
-    "loginTitle": "Sign in to Meza",
+    "loginTitle": "Sign in to Primos Books",
     "loginSubtitle": "Sign in to access your dashboard",
     "email": "Email",
     "password": "Password",

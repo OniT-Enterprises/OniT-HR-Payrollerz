@@ -405,7 +405,7 @@ const messages = {
     }
   },
   "auth": {
-    "loginTitle": "Tama ba Meza",
+    "loginTitle": "Tama ba Primos Books",
     "loginSubtitle": "Tama atu asesu painael",
     "email": "Email",
     "password": "Password",

@@ -312,7 +312,7 @@ export const translations = {
     }
   },
   "auth": {
-    "loginTitle": "Sign in to Meza",
+    "loginTitle": "Sign in to Primos Books",
     "loginSubtitle": "Sign in to access your dashboard",
     "email": "Email",
     "password": "Password",
@@ -5694,7 +5694,7 @@ export const translations = {
     }
   },
   "auth": {
-    "loginTitle": "Tama ba Meza",
+    "loginTitle": "Tama ba Primos Books",
     "loginSubtitle": "Tama atu asesu painael",
     "email": "Email",
     "password": "Password",
@@ -11076,7 +11076,7 @@ pt: {
     }
   },
   "auth": {
-    "loginTitle": "Entrar no Meza",
+    "loginTitle": "Entrar no Primos Books",
     "loginSubtitle": "Inicie sessão para aceder ao seu painel",
     "email": "Email",
     "password": "Palavra-passe",

@@ -228,24 +228,66 @@ function GreetingParticles() {
   }
 
   if (isMorning) {
-    // Soft rising rays
+    // Sunrise: sun rising with warm glow and spreading rays
     return (
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(4)].map((_, i) => (
-          <span
-            key={i}
-            className="absolute bg-gradient-to-t from-amber-300/10 to-transparent dark:from-amber-400/5"
-            style={{
-              width: "2px",
-              height: `${30 + i * 10}%`,
-              left: `${60 + i * 8}%`,
-              bottom: 0,
-              animation: `ray ${3 + i * 0.5}s ease-in-out ${i * 0.6}s infinite`,
-              transformOrigin: "bottom",
-            }}
-          />
-        ))}
-        <style>{`@keyframes ray { 0%, 100% { opacity: 0.3; transform: scaleY(0.8); } 50% { opacity: 0.7; transform: scaleY(1); } }`}</style>
+        {/* Warm horizon gradient */}
+        <div
+          className="absolute bottom-0 left-0 right-0 h-1/2"
+          style={{
+            background: "linear-gradient(to top, rgba(251,191,36,0.08), transparent)",
+            animation: "horizon 3s ease-out forwards",
+          }}
+        />
+        {/* Sun orb */}
+        <div
+          className="absolute rounded-full"
+          style={{
+            width: 60,
+            height: 60,
+            right: "12%",
+            top: "15%",
+            background: "radial-gradient(circle, rgba(251,191,36,0.30) 0%, rgba(251,146,60,0.10) 45%, transparent 70%)",
+            boxShadow: "0 0 40px 15px rgba(251,191,36,0.08)",
+            animation: "sunRise 2.5s ease-out forwards",
+          }}
+        />
+        {/* Radiating rays from sun position */}
+        {[...Array(6)].map((_, i) => {
+          const angle = -150 + i * 25; // fan downward from sun
+          return (
+            <span
+              key={i}
+              className="absolute"
+              style={{
+                ["--r" as string]: `${angle}deg`,
+                width: 1.5,
+                height: `${25 + i * 6}%`,
+                right: "calc(12% + 28px)",
+                top: "calc(15% + 28px)",
+                background: `linear-gradient(to bottom, rgba(251,191,36,${0.12 - i * 0.01}), transparent)`,
+                transformOrigin: "top center",
+                animation: `raySpread 3s ease-out ${0.8 + i * 0.15}s both`,
+              }}
+            />
+          );
+        })}
+        <style>{`
+          @keyframes sunRise {
+            0% { transform: scale(0.3); opacity: 0; }
+            60% { opacity: 1; }
+            100% { transform: scale(1); opacity: 1; }
+          }
+          @keyframes horizon {
+            0% { opacity: 0; }
+            100% { opacity: 1; }
+          }
+          @keyframes raySpread {
+            0% { opacity: 0; transform: rotate(var(--r)) scaleY(0); }
+            50% { opacity: 0.6; }
+            100% { opacity: 0.4; transform: rotate(var(--r)) scaleY(1); }
+          }
+        `}</style>
       </div>
     );
   }

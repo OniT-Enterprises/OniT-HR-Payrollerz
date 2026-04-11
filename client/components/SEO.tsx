@@ -77,13 +77,13 @@ export const seoConfig = {
   },
   login: {
     title: 'Login',
-    description: 'Sign in to your Meza account to manage your workforce.',
+    description: 'Sign in to your Primos Books account to manage your workforce.',
     url: '/auth/login',
     noIndex: true,
   },
   signup: {
     title: 'Sign Up',
-    description: 'Create your Meza account and start managing your workforce today.',
+    description: 'Create your Primos Books account and start managing your workforce today.',
     url: '/auth/signup',
   },
   unauthorized: {

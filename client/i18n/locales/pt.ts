@@ -400,7 +400,7 @@ const messages = {
     }
   },
   "auth": {
-    "loginTitle": "Entrar no Meza",
+    "loginTitle": "Entrar no Primos Books",
     "loginSubtitle": "Inicie sessão para aceder ao seu painel",
     "email": "Email",
     "password": "Palavra-passe",
