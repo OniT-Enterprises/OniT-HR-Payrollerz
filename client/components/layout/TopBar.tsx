@@ -39,6 +39,9 @@ import {
   ChevronRight,
   AlertCircle,
   CalendarDays,
+  Building2,
+  ChevronsUpDown,
+  Check,
 } from "lucide-react";
 import { useChatStore } from "@/stores/chatStore";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
@@ -288,13 +291,59 @@ function SetupBanner({ setupPercent, onNavigate, t }: SetupBannerProps) {
   );
 }
 
+// --- Business selector ---
+
+interface BusinessSelectorProps {
+  currentName: string;
+  availableTenants: Array<{ id: string; name: string }>;
+  onSwitch: (tid: string) => void;
+  currentTenantId: string;
+}
+
+function BusinessSelector({ currentName, availableTenants, onSwitch, currentTenantId }: BusinessSelectorProps) {
+  const hasMultiple = availableTenants.length > 1;
+
+  if (!hasMultiple) {
+    return (
+      <div className="flex items-center gap-2 min-w-0">
+        <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+        <span className="text-sm font-semibold truncate">{currentName}</span>
+      </div>
+    );
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" className="h-9 gap-2 px-3 min-w-0 max-w-[240px]">
+          <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+          <span className="text-sm font-semibold truncate">{currentName}</span>
+          <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start" className="w-56">
+        {availableTenants.map((tenant) => (
+          <DropdownMenuItem
+            key={tenant.id}
+            onClick={() => onSwitch(tenant.id)}
+            className="gap-2"
+          >
+            <Check className={`h-4 w-4 shrink-0 ${tenant.id === currentTenantId ? "opacity-100" : "opacity-0"}`} />
+            <span className="truncate">{tenant.name}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
 // --- Main component ---
 
 export default function TopBar() {
   const navigate = useNavigate();
   const { user, signOut, isSuperAdmin } = useAuth();
   const { isOnline, isConnected, retryConnection } = useFirebase();
-  const { hasModule, canManage } = useTenant();
+  const { hasModule, canManage, availableTenants, switchTenant, session } = useTenant();
   const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
   const { toggleSidebar } = useLayout();
@@ -336,7 +385,14 @@ export default function TopBar() {
             <Menu className="h-5 w-5" />
           </Button>
 
-          <div className="flex-1" />
+          <div className="flex-1 min-w-0">
+            <BusinessSelector
+              currentName={session?.config?.name || ""}
+              availableTenants={availableTenants}
+              onSwitch={(tid) => { void switchTenant(tid); }}
+              currentTenantId={tenantId}
+            />
+          </div>
 
           <div className="flex items-center gap-2">
             <LocaleSwitcher className="hidden sm:flex" />

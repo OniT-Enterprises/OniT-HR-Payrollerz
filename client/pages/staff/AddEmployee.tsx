@@ -691,7 +691,7 @@ export default function AddEmployee() {
         className="mx-auto max-w-screen-2xl px-6"
       />
 
-      <div className="mx-auto max-w-screen-2xl px-6 py-8 -mt-6">
+      <div className="mx-auto max-w-screen-2xl px-6 py-5 -mt-6">
         {showBulkTools && (
           <div className="mb-6 rounded-xl border border-border/50 bg-muted/30 p-4">
             <p className="mb-3 text-sm text-muted-foreground">

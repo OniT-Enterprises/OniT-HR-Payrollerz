@@ -293,7 +293,7 @@ export default function Offboarding() {
       <MainNavigation />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-5">
         <PageHeader
           title={t("hiring.offboarding.title")}
           subtitle={t("hiring.offboarding.subtitle")}

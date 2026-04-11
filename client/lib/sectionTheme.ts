@@ -123,3 +123,17 @@ export const navActiveIndicator: Record<SectionId, string> = {
   accounting: "bg-orange-500",
   reports: "bg-violet-500",
 };
+
+/**
+ * Tree-line border colors for sidebar navigation (30% opacity)
+ * Static classes so Tailwind can detect them at build time.
+ */
+export const navTreeLine: Record<SectionId, string> = {
+  dashboard: "border-primary/30",
+  people: "border-blue-500/30",
+  scheduling: "border-cyan-500/30",
+  payroll: "border-primary/30",
+  money: "border-indigo-500/30",
+  accounting: "border-orange-500/30",
+  reports: "border-violet-500/30",
+};

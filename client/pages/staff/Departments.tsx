@@ -308,7 +308,7 @@ export default function Departments() {
       <MainNavigation />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-5">
         <PageHeader
           title={t("departments.title")}
           subtitle={t("departments.subtitle")}

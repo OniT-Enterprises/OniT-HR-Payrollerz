@@ -34,18 +34,18 @@ export default function PageHeader({
   const accentBorder = iconColor.replace("text-", "border-");
 
   return (
-    <div className={`mb-6 ${className}`}>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-3 min-w-0">
+    <div className={`mb-4 ${className}`}>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 min-w-0">
           {Icon && (
-            <div className="p-2.5 rounded-xl bg-muted shrink-0">
-              <Icon className={`h-6 w-6 ${iconColor}`} />
+            <div className="p-1.5 rounded-lg bg-muted shrink-0">
+              <Icon className={`h-4.5 w-4.5 ${iconColor}`} />
             </div>
           )}
           <div className="min-w-0">
-            <h1 className="text-xl font-bold tracking-tight truncate">{title}</h1>
+            <h1 className="text-lg font-bold tracking-tight truncate">{title}</h1>
             {subtitle && (
-              <p className="text-sm text-muted-foreground mt-0.5 truncate">{subtitle}</p>
+              <p className="text-xs text-muted-foreground mt-0.5 truncate">{subtitle}</p>
             )}
           </div>
         </div>
@@ -56,7 +56,7 @@ export default function PageHeader({
         )}
       </div>
       {/* Module accent line */}
-      <div className={`mt-4 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`} />
+      <div className={`mt-3 h-0.5 rounded-full border-b-2 ${accentBorder} opacity-40`} />
     </div>
   );
 }

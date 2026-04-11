@@ -262,7 +262,7 @@ export default function CandidateSelection() {
       <MainNavigation />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-5">
         <PageHeader
           title={t("hiring.candidates.title")}
           subtitle={t("hiring.candidates.subtitle")}

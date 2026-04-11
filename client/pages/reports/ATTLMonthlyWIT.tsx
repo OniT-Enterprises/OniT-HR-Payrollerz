@@ -406,7 +406,7 @@ export default function ATTLMonthlyWIT() {
         <MainNavigation />
         {/* Hero Skeleton */}
         <div className="border-b bg-amber-50 dark:bg-amber-950/30">
-          <div className="mx-auto max-w-screen-2xl px-6 py-8">
+          <div className="mx-auto max-w-screen-2xl px-6 py-5">
             <Skeleton className="h-4 w-48 mb-4" />
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">

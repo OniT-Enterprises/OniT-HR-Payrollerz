@@ -22,7 +22,7 @@ import {
   filterModuleNavConfigByPermissions,
 } from "@/lib/moduleNav";
 import type { ModuleNavConfig } from "@/lib/moduleNav";
-import { type SectionId, navColors } from "@/lib/sectionTheme";
+import { type SectionId, navColors, navTreeLine } from "@/lib/sectionTheme";
 import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -124,8 +124,8 @@ function areSetsEqual<T>(left: Set<T>, right: Set<T>) {
 
 function getIndentClass(indent: number): string {
   if (indent === 0) return "pl-3";
-  if (indent === 1) return "pl-8";
-  return "pl-12";
+  if (indent === 1) return "pl-4";
+  return "pl-4";
 }
 
 // --- Custom hook: sidebar expansion state ---
@@ -229,8 +229,8 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
             className={`
               w-full flex items-center justify-center h-10 rounded-lg transition-all
               ${active
-                ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary"}`
-                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
+                ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
               }
             `}
           >
@@ -245,7 +245,6 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
   }
 
   const pl = getIndentClass(indent);
-  const activeBorderColor = iconColorClass ? iconColorClass.replace("text-", "border-") : "border-sidebar-primary";
 
   return (
     <button
@@ -253,10 +252,11 @@ function NavLink({ label, path, Icon, iconColorClass, indent = 0, labelKey, coll
       onMouseEnter={() => prefetchRoute(path)}
       onClick={() => onNavigate(path)}
       className={`
-        w-full flex items-center gap-3 h-9 ${pl} pr-3 rounded-lg text-sm transition-all relative
+        w-full flex items-center gap-3 h-9 ${pl} pr-3 text-sm transition-all relative
+        ${indent > 0 ? "rounded-r-lg" : "rounded-lg"}
         ${active
-          ? `bg-sidebar-accent text-sidebar-accent-foreground font-medium border-l-[3px] ${activeBorderColor}`
-          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground border-l-[3px] border-transparent"
+          ? "bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+          : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
         }
       `}
     >
@@ -288,7 +288,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
       <button
         onClick={() => onToggleSection(sectionKey)}
         className={`
-          w-full flex items-center gap-3 h-9 pl-8 pr-3 rounded-lg text-sm transition-colors
+          w-full flex items-center gap-3 h-9 pl-4 pr-3 rounded-r-lg text-sm transition-colors
           ${sectionActive
             ? "text-sidebar-foreground font-medium"
             : "text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
@@ -300,7 +300,7 @@ function SubSection({ mod, section, iconColor, sectionExpanded, onToggleSection,
         <ChevronRight className={`h-3 w-3 ml-auto shrink-0 transition-transform ${sectionExpanded ? "rotate-90" : ""}`} />
       </button>
       {sectionExpanded && (
-        <div className="space-y-0.5">
+        <div className={`relative ml-[2.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
           {section.subPages.map((page) => (
             <NavLink
               key={page.path}
@@ -380,7 +380,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
         <ChevronRight className={`h-3.5 w-3.5 ml-auto shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
       </button>
       {isExpanded && (
-        <div className="space-y-0.5">
+        <div className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (

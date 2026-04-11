@@ -530,7 +530,7 @@ export default function Interviews() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
           <div className="space-y-4">
             <Skeleton className="h-10 w-64" />
             <div className="grid grid-cols-4 gap-4">
@@ -551,7 +551,7 @@ export default function Interviews() {
       <MainNavigation />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-8">
+      <div className="mx-auto max-w-screen-2xl px-6 py-5">
         <PageHeader
           title={t("hiring.interviews.title")}
           subtitle={t("hiring.interviews.subtitle")}

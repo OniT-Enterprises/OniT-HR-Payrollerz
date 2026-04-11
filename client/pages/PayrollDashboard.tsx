@@ -406,7 +406,7 @@ export default function PayrollDashboard() {
         <ModuleSectionNav config={payrollNavConfig} />
         {/* Hero Section */}
         <div className="border-b bg-green-50 dark:bg-green-950/30">
-          <div className="mx-auto max-w-screen-2xl px-6 py-8">
+          <div className="mx-auto max-w-screen-2xl px-6 py-5">
             <Skeleton className="h-4 w-24 mb-4" />
             <div className="flex items-center gap-4">
               <Skeleton className="h-14 w-14 rounded-2xl" />
@@ -502,7 +502,7 @@ export default function PayrollDashboard() {
 
       {/* Hero Section */}
       <div className="border-b bg-green-50 dark:bg-green-950/30">
-        <div className="mx-auto max-w-screen-2xl px-6 py-8">
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
           <AutoBreadcrumb className="mb-4" />
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
