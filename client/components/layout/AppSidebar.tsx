@@ -433,7 +433,7 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: Sid
     <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
       <button onClick={() => onNavigate("/")} className="flex items-center">
         <img
-          src={isDark ? "/images/illustrations/primos-books-logo-light.png" : "/images/illustrations/primos-books-logo-dark.png"}
+          src={isDark ? "/images/illustrations/primos-books-logo-light.webp" : "/images/illustrations/primos-books-logo-dark.webp"}
           alt="Meza"
           className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
         />

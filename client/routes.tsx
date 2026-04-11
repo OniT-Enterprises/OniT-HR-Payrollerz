@@ -44,12 +44,12 @@ export function PageLoader() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="flex flex-col items-center gap-4">
         <img
-          src="/images/illustrations/primos-books-logo-dark.png"
+          src="/images/illustrations/primos-books-logo-dark.webp"
           alt="Primos Books"
           className="h-10 w-auto dark:hidden"
         />
         <img
-          src="/images/illustrations/primos-books-logo-light.png"
+          src="/images/illustrations/primos-books-logo-light.webp"
           alt="Primos Books"
           className="h-10 w-auto hidden dark:block"
         />

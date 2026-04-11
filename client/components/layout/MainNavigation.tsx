@@ -428,7 +428,7 @@ function HeaderBar({
       <div className="flex items-center gap-6">
         <button onClick={() => onNavigate("/")} className="flex items-center">
           <img
-            src={isDark ? "/images/illustrations/primos-books-logo-light.png" : "/images/illustrations/primos-books-logo-dark.png"}
+            src={isDark ? "/images/illustrations/primos-books-logo-light.webp" : "/images/illustrations/primos-books-logo-dark.webp"}
             alt="Meza"
             className="h-8 w-auto"
           />

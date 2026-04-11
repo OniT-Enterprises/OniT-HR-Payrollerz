@@ -156,7 +156,7 @@ export default function AdminSetup() {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
             <img
-              src="/images/illustrations/primos-books-logo-dark.png"
+              src="/images/illustrations/primos-books-logo-dark.webp"
               alt="Primos Books"
               className="h-10 w-auto"
             />
