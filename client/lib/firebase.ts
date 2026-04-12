@@ -1,12 +1,15 @@
 // Firebase SDK imports — Storage and Functions are lazy-loaded (only used by 2-3 files)
 import { initializeApp } from "firebase/app";
 import {
+  connectFirestoreEmulator,
   initializeFirestore,
   persistentLocalCache,
   persistentMultipleTabManager,
 } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { connectAuthEmulator, getAuth } from "firebase/auth";
+import { connectFunctionsEmulator } from "firebase/functions";
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "firebase/app-check";
+import { connectStorageEmulator } from "firebase/storage";
 
 /**
  * Firebase configuration loaded from environment variables.
@@ -39,6 +42,12 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
+const useEmulators = import.meta.env.VITE_USE_EMULATORS === "true";
+const emulatorHost = import.meta.env.VITE_FIREBASE_EMULATOR_HOST || "127.0.0.1";
+const authEmulatorPort = Number(import.meta.env.VITE_FIREBASE_AUTH_EMULATOR_PORT || 9100);
+const firestoreEmulatorPort = Number(import.meta.env.VITE_FIREBASE_FIRESTORE_EMULATOR_PORT || 8081);
+const storageEmulatorPort = Number(import.meta.env.VITE_FIREBASE_STORAGE_EMULATOR_PORT || 9199);
+const functionsEmulatorPort = Number(import.meta.env.VITE_FIREBASE_FUNCTIONS_EMULATOR_PORT || 5001);
 
 // Initialize Firestore with persistent cache for offline reads and faster repeat loads
 // Safari 15+ (2021) has stable IndexedDB; Firebase SDK v11 handles edge cases
@@ -49,6 +58,13 @@ export const db = initializeFirestore(app, {
 // Auth is always needed (blocking) — init eagerly
 export const auth = getAuth(app);
 
+if (useEmulators) {
+  connectAuthEmulator(auth, `http://${emulatorHost}:${authEmulatorPort}`, {
+    disableWarnings: true,
+  });
+  connectFirestoreEmulator(db, emulatorHost, firestoreEmulatorPort);
+}
+
 // Storage and Functions are rarely used (2-3 files) — lazy-init on first access.
 // Keeps vendor-firebase-storage (~33KB) and vendor-firebase-functions out of the critical path.
 let _storage: import("firebase/storage").FirebaseStorage | null = null;
@@ -58,6 +74,9 @@ export async function getStorageLazy() {
   if (!_storage) {
     const { getStorage } = await import("firebase/storage");
     _storage = getStorage(app);
+    if (useEmulators) {
+      connectStorageEmulator(_storage, emulatorHost, storageEmulatorPort);
+    }
   }
   return _storage;
 }
@@ -66,6 +85,9 @@ export async function getFunctionsLazy() {
   if (!_functions) {
     const { getFunctions } = await import("firebase/functions");
     _functions = getFunctions(app);
+    if (useEmulators) {
+      connectFunctionsEmulator(_functions, emulatorHost, functionsEmulatorPort);
+    }
   }
   return _functions;
 }

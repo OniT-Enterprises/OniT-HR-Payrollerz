@@ -720,6 +720,10 @@ export default function AllEmployees() {
     });
   };
 
+  const openCsvImportDialog = () => {
+    document.getElementById("csv-upload")?.click();
+  };
+
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -827,13 +831,23 @@ export default function AllEmployees() {
           icon={Users}
           iconColor="text-blue-500"
           actions={
-            <Button
-              onClick={() => navigate("/people/add")}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              {t("dashboard.addEmployee")}
-            </Button>
+            <>
+              <Button variant="outline" onClick={handleDownloadTemplate}>
+                <FileText className="h-4 w-4 mr-2" />
+                {t("employees.tooltips.downloadTemplate")}
+              </Button>
+              <Button variant="outline" onClick={openCsvImportDialog}>
+                <Upload className="h-4 w-4 mr-2" />
+                {t("employees.tooltips.importCsv")}
+              </Button>
+              <Button
+                onClick={() => navigate("/people/add")}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                {t("dashboard.addEmployee")}
+              </Button>
+            </>
           }
         />
         {/* Connection Status */}
@@ -958,14 +972,6 @@ export default function AllEmployees() {
                 <DropdownMenuItem onClick={handleExport}>
                   <Download className="h-4 w-4 mr-2" />
                   {t("employees.tooltips.exportCsv")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => document.getElementById("csv-upload")?.click()}>
-                  <Upload className="h-4 w-4 mr-2" />
-                  {t("employees.tooltips.importCsv")}
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={handleDownloadTemplate}>
-                  <FileText className="h-4 w-4 mr-2" />
-                  {t("employees.tooltips.downloadTemplate")}
                 </DropdownMenuItem>
                 {incompleteEmployees.length > 0 && (
                   <DropdownMenuItem onClick={() => setShowIncompleteProfiles(true)} className="text-amber-600">
