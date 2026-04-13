@@ -47,6 +47,10 @@ function isPathActive(pathname: string, path: string) {
   return pathname === path || pathname.startsWith(path + "/");
 }
 
+function isExactPath(pathname: string, path: string) {
+  return pathname === path;
+}
+
 export default function ModuleSectionNav(props: ModuleSectionNavProps) {
   const layoutCtx = useLayoutOptional();
   if (layoutCtx) return null;
@@ -71,6 +75,17 @@ function buildTabs(
     s.matchPaths.some((mp) => isPathActive(pathname, mp))
   );
   const tabs: NavTab[] = [];
+
+  if (visibleConfig.overview) {
+    tabs.push({
+      key: visibleConfig.overview.path,
+      label: visibleConfig.overview.label,
+      path: visibleConfig.overview.path,
+      icon: visibleConfig.overview.icon,
+      active: isExactPath(pathname, visibleConfig.overview.path),
+      isAnchor: true,
+    });
+  }
 
   for (const section of visibleConfig.sections) {
     const isSectionActive = section.id === activeSection?.id;

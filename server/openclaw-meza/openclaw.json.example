@@ -107,7 +107,7 @@
       "meza-hr": {
         "enabled": true,
         "config": {
-          "apiBaseUrl": "http://127.0.0.1:3201",
+          "apiBaseUrl": "http://localhost:3201",
           "apiKey": "REPLACE_WITH_MEZA_API_KEY",
           "defaultTenantId": "REPLACE_WITH_TENANT_ID"
         }

@@ -117,7 +117,7 @@ if echo "$CONTAINER_STATUS" | grep -q "Up"; then
   info "OpenClaw Meza deployed successfully!"
   echo ""
   echo "  Container: openclaw-meza"
-  echo "  Dashboard: http://127.0.0.1:18790 (via Nginx at /openclaw/)"
+  echo "  Dashboard: http://localhost:18790 (via Nginx at /openclaw/)"
   echo ""
   echo "  Next steps:"
   echo "  1. Edit .env with Anthropic API key (if not done):"

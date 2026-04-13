@@ -25,6 +25,7 @@ import type { ModuleNavConfig } from "@/lib/moduleNav";
 import { type SectionId, navColors, navTreeLine } from "@/lib/sectionTheme";
 import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CompanyBrand } from "./CompanyBrand";
 import {
   Tooltip,
   TooltipContent,
@@ -109,6 +110,9 @@ function isPathActive(pathname: string, path: string): boolean {
 }
 
 function isModuleActive(pathname: string, config: ModuleNavConfig): boolean {
+  if (config.overview?.path === pathname) {
+    return true;
+  }
   return config.sections.some((s) =>
     s.matchPaths.some((mp) => isPathActive(pathname, mp))
   );
@@ -344,7 +348,7 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
       <Tooltip key={mod.id}>
         <TooltipTrigger asChild>
           <button
-            onClick={() => onNavigate(mod.config.sections[0]?.path || "/")}
+            onClick={() => onNavigate(mod.config.overview?.path || mod.config.sections[0]?.path || "/")}
             className={`
               w-full flex items-center justify-center h-10 rounded-lg transition-colors
               ${moduleActive
@@ -381,6 +385,20 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
       </button>
       {isExpanded && (
         <div className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
+          {mod.config.overview && (
+            <NavLink
+              label={mod.config.overview.label}
+              path={mod.config.overview.path}
+              Icon={mod.config.overview.icon}
+              iconColorClass={iconColor}
+              indent={1}
+              labelKey={mod.config.overview.labelKey}
+              collapsed={collapsed}
+              pathname={pathname}
+              onNavigate={onNavigate}
+              t={t}
+            />
+          )}
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (
@@ -431,12 +449,8 @@ interface SidebarHeaderProps {
 function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: SidebarHeaderProps) {
   return (
     <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
-      <button onClick={() => onNavigate("/")} className="flex items-center">
-        <img
-          src={isDark ? "/images/illustrations/primos-books-logo-light.webp" : "/images/illustrations/primos-books-logo-dark.webp"}
-          alt="Meza"
-          className={collapsed ? "h-8 w-auto" : "h-10 w-auto"}
-        />
+      <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
+        <CompanyBrand isDark={isDark} variant="sidebar" collapsed={collapsed} />
       </button>
       {isMobile && (
         <button

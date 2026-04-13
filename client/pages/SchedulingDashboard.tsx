@@ -1,69 +1,57 @@
-/**
- * Scheduling Dashboard - Time & Leave Command Center
- * Answers: "Who's here today, and what needs attention?"
- * Structure: Hero → KPIs → Quick Nav
- */
-
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+} from "recharts";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
+import ModuleSectionNav from "@/components/ModuleSectionNav";
+import GuidancePanel from "@/components/GuidancePanel";
+import { SEO } from "@/components/SEO";
+import { timeLeaveNavConfig } from "@/lib/moduleNav";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import {
-  Clock,
+  ArrowRight,
   Calendar,
+  CalendarCheck,
   CalendarDays,
+  Clock,
+  HeartHandshake,
   UserCheck,
-  ChevronRight,
-  Heart,
-  Users,
 } from "lucide-react";
-import { sectionThemes } from "@/lib/sectionTheme";
-import { SEO } from "@/components/SEO";
-import GuidancePanel from "@/components/GuidancePanel";
-import { useI18n } from "@/i18n/I18nProvider";
-import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { timeLeaveNavConfig } from "@/lib/moduleNav";
-import MoreDetailsSection from "@/components/MoreDetailsSection";
-
-const _theme = sectionThemes.scheduling;
 
 function SchedulingDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <Skeleton className="h-4 w-32 mb-4" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-14 w-14 rounded-2xl" />
-            <div>
-              <Skeleton className="h-8 w-40 mb-2" />
-              <Skeleton className="h-5 w-64" />
-            </div>
+      <ModuleSectionNav config={timeLeaveNavConfig} />
+      <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="space-y-6 xl:col-span-8">
+            <Skeleton className="h-80 w-full rounded-3xl" />
+            <Skeleton className="h-72 w-full rounded-3xl" />
+          </div>
+          <div className="space-y-6 xl:col-span-4">
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-64 w-full rounded-3xl" />
           </div>
         </div>
-      </div>
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        <div className="grid gap-4 md:grid-cols-4 mb-6">
-          {[1, 2, 3, 4].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Skeleton className="h-7 w-10 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Skeleton className="h-60 w-full rounded-3xl" />
       </div>
     </div>
   );
@@ -71,209 +59,285 @@ function SchedulingDashboardSkeleton() {
 
 export default function SchedulingDashboard() {
   const navigate = useNavigate();
-  const { t: _t } = useI18n();
-  const { data: employeeSummary, isLoading: employeesLoading } = useActiveEmployeeSummary();
-  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats();
-  const loading = employeesLoading || leaveStatsLoading;
+  const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary();
+  const { data: leaveStats, isLoading: leaveLoading } = useLeaveStats();
 
-  const stats = useMemo(
-    () => ({
-      activeEmployees: employeeSummary?.active ?? 0,
-      pendingLeave: leaveStats?.pendingRequests ?? 0,
-      onLeaveToday: leaveStats?.employeesOnLeaveToday ?? 0,
-    }),
-    [employeeSummary?.active, leaveStats]
-  );
-
-  const attendanceRate = stats.activeEmployees > 0
-    ? Math.round(((stats.activeEmployees - stats.onLeaveToday) / stats.activeEmployees) * 100)
-    : 100;
-
-  if (loading) {
+  if (employeeLoading || leaveLoading) {
     return <SchedulingDashboardSkeleton />;
   }
 
+  const activeEmployees = employeeSummary?.active ?? 0;
+  const onLeaveToday = leaveStats?.employeesOnLeaveToday ?? 0;
+  const pendingLeave = leaveStats?.pendingRequests ?? 0;
+  const availableToday = Math.max(activeEmployees - onLeaveToday, 0);
+  const attendanceRate = activeEmployees > 0 ? Math.round((availableToday / activeEmployees) * 100) : 100;
+
+  const coverageBars = [
+    { name: "Available", value: availableToday, tone: "#06b6d4" },
+    { name: "On leave", value: onLeaveToday, tone: "#f59e0b" },
+    { name: "Pending leave", value: pendingLeave, tone: "#8b5cf6" },
+    { name: "Active team", value: activeEmployees, tone: "#10b981" },
+  ];
+
+  const briefLead =
+    pendingLeave > 0
+      ? `Time and leave is mostly stable, but approval decisions are still sitting in the workflow and could change staffing coverage in the coming days.`
+      : `Time and leave is in a healthy operating state, with coverage looking steady and no visible queue building in approvals.`;
+
   return (
     <div className="min-h-screen bg-background">
-      <SEO
-        title="Scheduling & Attendance"
-        description="Manage time tracking, attendance, leave requests, and shift schedules."
-        url="/time-leave"
-      />
+      <SEO title="Time & Leave Dashboard" description="Coverage, attendance, leave pressure, and scheduling priorities in one place." />
       <MainNavigation />
       <ModuleSectionNav config={timeLeaveNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-cyan-50 dark:bg-cyan-950/30">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-teal-500 shadow-lg shadow-cyan-500/25">
-                <Clock className="h-8 w-8 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  Time & Leave
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  Scheduling, attendance, and leave management
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        <GuidancePanel section="scheduling" />
-
-        <MoreDetailsSection className="mb-6">
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all"
-            onClick={() => navigate("/time-leave/attendance")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{attendanceRate}%</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Attendance Today
-                  </p>
+      <DashboardShell
+        section="scheduling"
+        title="Coverage and leave rhythm"
+        subtitle="A live read on who is available, where leave pressure is building, and which scheduling actions will keep the week running smoothly."
+        icon={Clock}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate("/time-leave/attendance")}>
+              Attendance
+            </Button>
+            <Button className="bg-cyan-600 text-white hover:bg-cyan-700" onClick={() => navigate("/time-leave/shifts")}>
+              <Calendar className="mr-2 h-4 w-4" />
+              Shift schedules
+            </Button>
+          </>
+        }
+        badges={
+          <>
+            <Badge variant="secondary">{attendanceRate}% coverage today</Badge>
+            <Badge variant="secondary">{pendingLeave} pending request{pendingLeave === 1 ? "" : "s"}</Badge>
+          </>
+        }
+        guidance={<GuidancePanel section="scheduling" />}
+        main={
+          <>
+            <DashboardPanel eyebrow="Signature view" title="Coverage map">
+              <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={coverageBars} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                      <Tooltip contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }} />
+                      <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                        {coverageBars.map((entry) => (
+                          <Cell key={entry.name} fill={entry.tone} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-cyan-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all"
-            onClick={() => navigate("/time-leave/leave")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.pendingLeave}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Pending Leave
-                  </p>
-                  {stats.pendingLeave > 0 && (
-                    <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                      Needs review
-                    </Badge>
-                  )}
-                </div>
-                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                  stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                }`}>
-                  <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all"
-            onClick={() => navigate("/time-leave/attendance")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.onLeaveToday}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    On Leave Today
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <CalendarDays className="h-5 w-5 text-cyan-600" />
+                <div className="space-y-3">
+                  {[
+                    {
+                      title: "Coverage today",
+                      value: `${attendanceRate}%`,
+                      note: `${availableToday} of ${activeEmployees} active staff appear available today.`,
+                    },
+                    {
+                      title: "Leave workload",
+                      value: pendingLeave,
+                      note: pendingLeave > 0 ? "Approvals are waiting and can still change the schedule." : "The leave approval queue is quiet.",
+                    },
+                    {
+                      title: "Leave in use",
+                      value: onLeaveToday,
+                      note: "People already out of coverage today because of approved leave.",
+                    },
+                  ].map((signal) => (
+                    <div key={signal.title} className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">{signal.title}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{signal.note}</p>
+                        </div>
+                        <p className="text-2xl font-bold tabular-nums">{signal.value}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </CardContent>
-          </Card>
+            </DashboardPanel>
 
-          <Card
-            className="cursor-pointer hover:shadow-md transition-all"
-            onClick={() => navigate("/time-leave/shifts")}
-          >
-            <CardContent className="pt-5 pb-5">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold">{stats.activeEmployees}</p>
-                  <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                    Active Staff
-                  </p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-cyan-100 dark:bg-cyan-900/30 flex items-center justify-center">
-                  <UserCheck className="h-5 w-5 text-cyan-600" />
-                </div>
+            <DashboardPanel eyebrow="Week focus" title="Scheduling priorities">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    title: "Attendance",
+                    value: attendanceRate,
+                    suffix: "%",
+                    description: "Quick read on available coverage for the current day.",
+                    path: "/time-leave/attendance",
+                    icon: CalendarCheck,
+                  },
+                  {
+                    title: "Leave queue",
+                    value: pendingLeave,
+                    suffix: "",
+                    description: "Requests still waiting on a human decision.",
+                    path: "/time-leave/leave",
+                    icon: CalendarDays,
+                  },
+                  {
+                    title: "Time tracking",
+                    value: activeEmployees,
+                    suffix: "",
+                    description: "Staff whose time records drive hours and shift confidence.",
+                    path: "/time-leave/time-tracking",
+                    icon: Clock,
+                  },
+                  {
+                    title: "Shift planning",
+                    value: availableToday,
+                    suffix: "",
+                    description: "People available today who can still be placed or moved.",
+                    path: "/time-leave/shifts",
+                    icon: UserCheck,
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.title}
+                    onClick={() => navigate(item.path)}
+                    className="rounded-2xl border border-border/60 bg-muted/25 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-background"
+                  >
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-2xl font-bold tabular-nums">
+                        {item.value}
+                        {item.suffix}
+                      </span>
+                    </div>
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                  </button>
+                ))}
               </div>
-            </CardContent>
-          </Card>
-        </div>
-        </MoreDetailsSection>
+            </DashboardPanel>
+          </>
+        }
+        rail={
+          <>
+            <DashboardMetricCard
+              label="Attendance rate"
+              value={`${attendanceRate}%`}
+              hint="Available team compared with active headcount"
+              icon={CalendarCheck}
+              toneClass="bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"
+              onClick={() => navigate("/time-leave/attendance")}
+            />
+            <DashboardMetricCard
+              label="On leave today"
+              value={onLeaveToday}
+              hint="Approved leave already affecting coverage"
+              icon={CalendarDays}
+              toneClass="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+              onClick={() => navigate("/time-leave/leave")}
+            />
+            <DashboardMetricCard
+              label="Pending leave"
+              value={pendingLeave}
+              hint="Requests still waiting for action"
+              icon={HeartHandshake}
+              toneClass="bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300"
+              onClick={() => navigate("/time-leave/leave")}
+            />
 
-        {/* Section tools */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {[
-            {
-              label: "Time Tracking",
-              desc: "Clock in/out records, hours worked, overtime. Import from fingerprint devices or enter manually.",
-              path: "/time-leave/time-tracking",
-              icon: Clock,
-              color: "from-cyan-500 to-teal-500",
-              bgHover: "hover:border-cyan-500/40",
-            },
-            {
-              label: "Attendance",
-              desc: "Daily attendance by employee. See who's present, late, or absent. Mark attendance and export reports.",
-              path: "/time-leave/attendance",
-              icon: Calendar,
-              color: "from-emerald-500 to-green-500",
-              bgHover: "hover:border-emerald-500/40",
-            },
-            {
-              label: "Leave Requests",
-              desc: "Review and approve leave. Track annual, sick, maternity, and other leave balances per employee.",
-              path: "/time-leave/leave",
-              icon: CalendarDays,
-              color: "from-amber-500 to-orange-500",
-              bgHover: "hover:border-amber-500/40",
-            },
-            {
-              label: "Shift Schedules",
-              desc: "Plan weekly rosters. Assign shifts by department, publish drafts, and use templates to save time.",
-              path: "/time-leave/shifts",
-              icon: UserCheck,
-              color: "from-violet-500 to-purple-500",
-              bgHover: "hover:border-violet-500/40",
-            },
-          ].map((link) => (
-            <Card
-              key={link.path}
-              className={`cursor-pointer transition-all ${link.bgHover} hover:shadow-md group`}
-              onClick={() => navigate(link.path)}
-            >
-              <CardContent className="flex items-start gap-4 pt-5 pb-5">
-                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${link.color} shrink-0`}>
-                  <link.icon className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{link.label}</p>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {link.desc}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+            <DashboardPanel eyebrow="Action rail" title="Best next moves">
+              <div className="space-y-3">
+                {[
+                  {
+                    title: "Review leave approvals",
+                    description: "Clear the queue before it starts to distort next week’s cover.",
+                    path: "/time-leave/leave",
+                    icon: CalendarDays,
+                  },
+                  {
+                    title: "Check attendance",
+                    description: "Compare today’s actual presence with what the roster expected.",
+                    path: "/time-leave/attendance",
+                    icon: CalendarCheck,
+                  },
+                  {
+                    title: "Adjust shifts",
+                    description: "Use availability to rebalance the schedule where needed.",
+                    path: "/time-leave/shifts",
+                    icon: Calendar,
+                  },
+                ].map((action) => (
+                  <button
+                    key={action.title}
+                    onClick={() => navigate(action.path)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-muted/25 px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-cyan-400/30 hover:bg-background"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300">
+                      <action.icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{action.title}</p>
+                      <p className="text-sm text-muted-foreground">{action.description}</p>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </DashboardPanel>
+          </>
+        }
+        brief={
+          <ModuleBrief
+            section="scheduling"
+            lead={briefLead}
+            columns={[
+              {
+                title: "What’s happening now",
+                items: [
+                  `${availableToday} people appear available today out of ${activeEmployees} active staff.`,
+                  `${onLeaveToday} people are already off on approved leave, and ${pendingLeave} request${pendingLeave === 1 ? "" : "s"} are still undecided.`,
+                ],
+              },
+              {
+                title: "Watch this week",
+                items: [
+                  pendingLeave > 0
+                    ? `Pending approvals are the main variable likely to move coverage this week.`
+                    : `Leave demand is calm, so the biggest focus is staying on top of actual attendance.`,
+                ],
+              },
+              {
+                title: "Actions required",
+                items: [
+                  pendingLeave > 0
+                    ? `Decide leave requests quickly so managers can plan confidently.`
+                    : `No urgent leave queue cleanup is required right now.`,
+                  `Use attendance and roster views together rather than in isolation so gaps show up early.`,
+                ],
+              },
+              {
+                title: "Week ahead",
+                items: [
+                  `Keep next week’s shift plan flexible where staffing is already thin.`,
+                  `Look for any pattern where approved leave and attendance drift are combining to squeeze the same teams repeatedly.`,
+                ],
+              },
+              {
+                title: "Interesting signals",
+                items: [
+                  `Today’s live coverage is tracking at ${attendanceRate}% of active headcount.`,
+                  availableToday >= onLeaveToday
+                    ? `Availability is still comfortably higher than current leave usage.`
+                    : `Leave and absence pressure are starting to bite into available capacity.`,
+                ],
+              },
+            ]}
+          />
+        }
+      />
     </div>
   );
 }

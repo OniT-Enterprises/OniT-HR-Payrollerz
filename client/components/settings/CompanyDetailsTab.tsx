@@ -2,7 +2,7 @@
  * Company Details Settings Tab
  * Legal name, business type, address, contact info
  */
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef, useState, type ChangeEvent } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,8 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
-import { Save, Loader2 } from 'lucide-react';
+import { fileUploadService } from '@/services/fileUploadService';
+import { Save, Loader2, ImagePlus, Trash2, Building2 } from 'lucide-react';
 import type { SettingsTabProps, CompanyDetailsFormData, CompanyDetails } from './types';
 import { companyDetailsFormSchema } from './types';
 
@@ -43,6 +44,11 @@ export function CompanyDetailsTab({
   initialData,
 }: CompanyDetailsTabProps) {
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreviewUrl, setLogoPreviewUrl] = useState<string | null>(initialData.logoUrl || null);
+  const [logoObjectUrl, setLogoObjectUrl] = useState<string | null>(null);
+  const [logoMarkedForRemoval, setLogoMarkedForRemoval] = useState(false);
 
   const form = useForm<CompanyDetailsFormData>({
     resolver: zodResolver(companyDetailsFormSchema),
@@ -60,11 +66,89 @@ export function CompanyDetailsTab({
     mode: 'onChange',
   });
 
+  useEffect(() => {
+    form.reset({
+      legalName: initialData.legalName || '',
+      tradingName: initialData.tradingName || '',
+      businessType: initialData.businessType || 'Lda',
+      tinNumber: initialData.tinNumber || '',
+      registeredAddress: initialData.registeredAddress || '',
+      city: initialData.city || 'Dili',
+      country: initialData.country || 'Timor-Leste',
+      phone: initialData.phone || '',
+      email: initialData.email || '',
+    });
+
+    setLogoObjectUrl(null);
+    setLogoFile(null);
+    setLogoMarkedForRemoval(false);
+    setLogoPreviewUrl(initialData.logoUrl || null);
+  }, [form, initialData]);
+
+  useEffect(() => {
+    return () => {
+      if (logoObjectUrl) {
+        URL.revokeObjectURL(logoObjectUrl);
+      }
+    };
+  }, [logoObjectUrl]);
+
+  const handleLogoSelect = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const validation = fileUploadService.validateImageFile(file);
+    if (!validation.valid) {
+      toast({
+        title: 'Invalid logo file',
+        description: validation.error || 'Please choose a valid image file.',
+        variant: 'destructive',
+      });
+      event.target.value = '';
+      return;
+    }
+
+    if (logoObjectUrl) {
+      URL.revokeObjectURL(logoObjectUrl);
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    setLogoObjectUrl(objectUrl);
+    setLogoFile(file);
+    setLogoMarkedForRemoval(false);
+    setLogoPreviewUrl(objectUrl);
+    event.target.value = '';
+  }, [logoObjectUrl, toast]);
+
+  const handleRemoveLogo = useCallback(() => {
+    if (logoObjectUrl) {
+      URL.revokeObjectURL(logoObjectUrl);
+      setLogoObjectUrl(null);
+    }
+
+    setLogoFile(null);
+    setLogoPreviewUrl(null);
+    setLogoMarkedForRemoval(Boolean(initialData.logoUrl));
+
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  }, [initialData.logoUrl, logoObjectUrl]);
+
   const onSave = useCallback(
     async (data: CompanyDetailsFormData) => {
       if (!tenantId) return;
       setSaving(true);
+      const previousLogoUrl = initialData.logoUrl || '';
+      let uploadedLogoUrl: string | null = null;
       try {
+        let nextLogoUrl = logoMarkedForRemoval ? '' : previousLogoUrl;
+
+        if (logoFile) {
+          uploadedLogoUrl = await fileUploadService.uploadCompanyLogo(logoFile, tenantId);
+          nextLogoUrl = uploadedLogoUrl;
+        }
+
         const companyDetails: CompanyDetails = {
           legalName: data.legalName,
           tradingName: data.tradingName || "",
@@ -75,14 +159,42 @@ export function CompanyDetailsTab({
           country: data.country,
           phone: data.phone || "",
           email: data.email || "",
+          logoUrl: nextLogoUrl || undefined,
         };
         await settingsService.updateCompanyDetails(tenantId, companyDetails);
+
+        if (logoMarkedForRemoval && previousLogoUrl && !logoFile) {
+          await fileUploadService.deleteFile(previousLogoUrl).catch((error) => {
+            console.error('Failed to delete previous company logo:', error);
+          });
+        }
+
+        if (uploadedLogoUrl && previousLogoUrl && previousLogoUrl !== uploadedLogoUrl) {
+          await fileUploadService.deleteFile(previousLogoUrl).catch((error) => {
+            console.error('Failed to delete replaced company logo:', error);
+          });
+        }
+
+        if (logoObjectUrl) {
+          URL.revokeObjectURL(logoObjectUrl);
+          setLogoObjectUrl(null);
+        }
+
+        setLogoFile(null);
+        setLogoMarkedForRemoval(false);
+        setLogoPreviewUrl(nextLogoUrl || null);
+
         toast({
           title: t('settings.notifications.savedTitle'),
           description: t('settings.notifications.companySaved'),
         });
         onReload();
       } catch {
+        if (uploadedLogoUrl) {
+          await fileUploadService.deleteFile(uploadedLogoUrl).catch((error) => {
+            console.error('Failed to clean up uploaded company logo after save error:', error);
+          });
+        }
         toast({
           title: t('settings.notifications.errorTitle'),
           description: t('settings.notifications.saveFailed'),
@@ -92,7 +204,7 @@ export function CompanyDetailsTab({
         setSaving(false);
       }
     },
-    [tenantId, setSaving, onReload, toast, t]
+    [tenantId, setSaving, initialData.logoUrl, logoMarkedForRemoval, logoFile, logoObjectUrl, onReload, toast, t]
   );
 
   return (
@@ -109,6 +221,55 @@ export function CompanyDetailsTab({
             variant: 'destructive',
           });
         })}>
+          <div className="space-y-3">
+            <Label>Company Logo</Label>
+            <div className="flex flex-col gap-4 rounded-xl border border-dashed border-border bg-muted/20 p-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background">
+                  {logoPreviewUrl ? (
+                    <img src={logoPreviewUrl} alt="Company logo preview" className="h-full w-full object-contain p-2" />
+                  ) : (
+                    <Building2 className="h-8 w-8 text-muted-foreground" />
+                  )}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-foreground">
+                    {logoFile ? logoFile.name : logoPreviewUrl ? 'Current company logo' : 'No logo uploaded yet'}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Upload a PNG, JPG, WebP, or SVG. If no logo is saved, the app will use the legal company name instead.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleLogoSelect}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <ImagePlus className="mr-2 h-4 w-4" />
+                  {logoPreviewUrl ? 'Replace Logo' : 'Upload Logo'}
+                </Button>
+                {(logoPreviewUrl || logoFile) && (
+                  <Button type="button" variant="ghost" onClick={handleRemoveLogo}>
+                    <Trash2 className="mr-2 h-4 w-4" />
+                    Remove
+                  </Button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <Label htmlFor="legalName">{t('settings.company.legalName')}</Label>

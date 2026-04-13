@@ -401,3 +401,55 @@
 .text-gradient {
   @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-violet-500;
 }
+
+/* Dashboard storytelling surfaces */
+.dashboard-grid-mask {
+  background-image:
+    linear-gradient(to right, hsl(var(--border) / 0.15) 1px, transparent 1px),
+    linear-gradient(to bottom, hsl(var(--border) / 0.12) 1px, transparent 1px);
+  background-size: 28px 28px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.8), transparent 85%);
+}
+
+.dashboard-orb {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(48px);
+  opacity: 0.65;
+  animation: dashboard-float 14s ease-in-out infinite;
+}
+
+.dashboard-panel-glow {
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard-panel-glow::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at top right, hsl(var(--primary) / 0.12), transparent 42%),
+    linear-gradient(180deg, hsl(var(--background) / 0.26), transparent 40%);
+}
+
+.dashboard-report-band {
+  background:
+    linear-gradient(180deg, hsl(var(--card)) 0%, hsl(var(--card)) 65%, hsl(var(--muted) / 0.4) 100%);
+}
+
+@keyframes dashboard-float {
+  0%, 100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(12px, -10px, 0) scale(1.06);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-orb {
+    animation: none;
+  }
+}

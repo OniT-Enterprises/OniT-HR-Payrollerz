@@ -29,7 +29,7 @@
     "format.fix": "prettier --write .",
     "typecheck": "tsc",
     "emul:rules": "firebase emulators:exec --config firebase.dev.json --only firestore 'vitest run -c tests/vitest.rules.config.ts'",
-    "emulators": "firebase emulators:start --config firebase.dev.json --only firestore,auth --import=./firebaseemulator_payroll/ --export-on-exit",
+    "emulators": "firebase emulators:start --config firebase.dev.json --only firestore,auth,storage --import=./firebaseemulator_payroll/ --export-on-exit",
     "emulators:ui": "firebase emulators:start --config firebase.dev.json --import=./firebaseemulator_payroll/ --export-on-exit",
     "reset:emulator": "node scripts/resetEmulator.js",
     "backfill:gl-ids": "node scripts/backfill-gl-account-ids.mjs",
@@ -58,6 +58,7 @@
     "react-day-picker": "^9.14.0",
     "react-helmet-async": "^2.0.5",
     "react-markdown": "^10.1.0",
+    "recharts": "^3.8.1",
     "remark-gfm": "^4.0.1",
     "zod": "^3.23.8",
     "zustand": "^5.0.11"

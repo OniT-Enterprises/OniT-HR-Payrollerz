@@ -66,7 +66,7 @@ Express REST API that serves two roles:
 | `API_KEY` | Shared secret for OpenClaw plugin auth |
 | `ALLOWED_TENANT_ID` | Single-tenant lock (`onit-enterprises`) |
 | `FIREBASE_SERVICE_ACCOUNT_PATH` | Path to service account JSON |
-| `OPENCLAW_WS_URL` | Gateway address (default: `ws://127.0.0.1:18790`) |
+| `OPENCLAW_WS_URL` | Gateway address (default: `ws://localhost:18790`) |
 | `OPENCLAW_PASSWORD` | Gateway auth token (same as `OPENCLAW_GATEWAY_TOKEN`) |
 
 #### API Routes
@@ -176,7 +176,7 @@ OpenClaw plugin providing 29 tools and 5 commands.
 
 ```json
 {
-  "apiBaseUrl": "http://127.0.0.1:3201",
+  "apiBaseUrl": "http://localhost:3201",
   "apiKey": "<meza-api-key>",
   "defaultTenantId": "onit-enterprises"
 }
@@ -233,7 +233,7 @@ In-app chat panel that lets authenticated users query HR data from the dashboard
    a. Validates Firebase token (authenticateFirebaseToken middleware)
    b. Classifies intent (read/write/confirm/cancel) via chatUtils.js
    c. Builds system prefix with user context + Tetun personality
-   d. POSTs to http://127.0.0.1:18790/v1/chat/completions
+   d. POSTs to http://localhost:18790/v1/chat/completions
       - Header: Authorization: Bearer <gateway-token>
       - Header: x-openclaw-agent-id: main
       - Header: x-openclaw-session-key: agent:main:{tid}:webchat-{uid}:{session}
@@ -346,7 +346,7 @@ npm run build && rsync -avz --delete dist/spa/ hetzner:/var/www/payroll.naroman.
 ```nginx
 # Meza API proxy
 location /api/ {
-    proxy_pass http://127.0.0.1:3201;
+    proxy_pass http://localhost:3201;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -360,7 +360,7 @@ location ^~ /openclaw/ {
     auth_basic "Meza Bot Dashboard";
     auth_basic_user_file /etc/nginx/.meza_openclaw_htpasswd;
 
-    proxy_pass http://127.0.0.1:18790/;
+    proxy_pass http://localhost:18790/;
     proxy_http_version 1.1;
     proxy_set_header Host $host;
     proxy_set_header X-Real-IP $remote_addr;
@@ -395,7 +395,7 @@ curl https://meza.naroman.tl/api/health
 curl -H "X-API-Key: KEY" https://meza.naroman.tl/api/tenants/onit-enterprises/employees/counts
 
 # 3. OpenClaw HTTP API directly (on server)
-ssh hetzner 'source /opt/openclaw-meza/.env && curl -s -X POST http://127.0.0.1:18790/v1/chat/completions \
+ssh hetzner 'source /opt/openclaw-meza/.env && curl -s -X POST http://localhost:18790/v1/chat/completions \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $OPENCLAW_GATEWAY_TOKEN" \
   -d "{\"model\":\"openclaw:main\",\"messages\":[{\"role\":\"user\",\"content\":\"How many employees?\"}],\"stream\":false}"'
@@ -443,7 +443,7 @@ Tenant ID mismatch. Verify `ALLOWED_TENANT_ID=onit-enterprises` in `/opt/meza-ap
 
 This happens if the Meza API is using the WebSocket protocol instead of the HTTP API. The `chat.send` WS method requires `operator.write` scope which password auth doesn't grant in OpenClaw v2026.2.15.
 
-**Fix:** Ensure `openClawChat()` in `index.js` uses `fetch()` to `http://127.0.0.1:18790/v1/chat/completions`, not WebSocket. Then restart: `pm2 restart meza-api`.
+**Fix:** Ensure `openClawChat()` in `index.js` uses `fetch()` to `http://localhost:18790/v1/chat/completions`, not WebSocket. Then restart: `pm2 restart meza-api`.
 
 ### "EACCES: permission denied, mkdir agents/main"
 
@@ -481,7 +481,7 @@ ssh hetzner 'pm2 status meza-api && pm2 logs meza-api --lines 20 --nostream'
 ### Nginx 502 errors
 
 ```bash
-ssh hetzner 'nginx -t && curl -s http://127.0.0.1:3201/api/health && curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:18790/'
+ssh hetzner 'nginx -t && curl -s http://localhost:3201/api/health && curl -s -o /dev/null -w "%{http_code}" http://localhost:18790/'
 ```
 
 ---

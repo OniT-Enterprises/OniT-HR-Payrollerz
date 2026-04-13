@@ -54,6 +54,7 @@ import { type SectionId, navColors, navActiveIndicator } from "@/lib/sectionThem
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
 import { useLayoutOptional } from "@/contexts/LayoutContext";
 import type { ModulePermission } from "@/types/tenant";
+import { CompanyBrand } from "./CompanyBrand";
 
 // 7-tab navigation — no dropdowns, click navigates to module hub
 const NAV_ITEMS: Array<{
@@ -426,12 +427,8 @@ function HeaderBar({
   return (
     <div className="flex h-14 items-center justify-between">
       <div className="flex items-center gap-6">
-        <button onClick={() => onNavigate("/")} className="flex items-center">
-          <img
-            src={isDark ? "/images/illustrations/primos-books-logo-light.webp" : "/images/illustrations/primos-books-logo-dark.webp"}
-            alt="Meza"
-            className="h-8 w-auto"
-          />
+        <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
+          <CompanyBrand isDark={isDark} variant="topbar" />
         </button>
         <DesktopNav items={visibleNavItems} pathname={pathname} onNavigate={onNavigate} t={t} />
       </div>
