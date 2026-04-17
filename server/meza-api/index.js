@@ -2820,6 +2820,345 @@ router.put('/leave/requests/:id/reject', async (req, res) => {
   }
 });
 
+// ── BOT WRITE ENDPOINTS (Phase 2) ─────────────────────────────────────────
+// Minimal-field creation endpoints exposed to the Meza HR bot plugin.
+
+/**
+ * POST /api/tenants/:tenantId/employees
+ * Body: { firstName, lastName, email, jobTitle, department, startDate, phone?, monthlySalary?, employeeId?, createdBy? }
+ */
+router.post('/employees', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      firstName, lastName, email, jobTitle, department, startDate,
+      phone = '', monthlySalary = 0, employeeId: empIdInput, createdBy = 'bot',
+    } = req.body || {};
+
+    if (!firstName || !lastName || !email || !jobTitle || !department || !startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'firstName, lastName, email, jobTitle, department, startDate are required',
+      });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate)) {
+      return res.status(400).json({ success: false, message: 'startDate must be YYYY-MM-DD' });
+    }
+
+    const employeeId = (empIdInput && String(empIdInput).trim()) || `TEMP-${Date.now().toString(36).toUpperCase()}`;
+
+    if (empIdInput && !employeeId.startsWith('TEMP')) {
+      const dupSnap = await tenantCol(tid, 'employees').where('jobDetails.employeeId', '==', employeeId).limit(1).get();
+      if (!dupSnap.empty) {
+        return res.status(409).json({ success: false, message: `Employee ID "${employeeId}" is already in use` });
+      }
+    }
+
+    const employee = {
+      status: 'active',
+      personalInfo: {
+        firstName, lastName, email, phone,
+        phoneApp: '', appEligible: true,
+        address: '', dateOfBirth: '',
+        socialSecurityNumber: '',
+        emergencyContactName: '', emergencyContactPhone: '',
+      },
+      jobDetails: {
+        employeeId, department, position: jobTitle,
+        hireDate: startDate,
+        employmentType: 'full-time', workLocation: '', manager: '',
+      },
+      compensation: {
+        monthlySalary: Number(monthlySalary) || 0,
+        annualLeaveDays: 12,
+        benefitsPackage: '',
+      },
+      documents: {
+        employeeIdCard: { number: '', expiryDate: '', required: true },
+        socialSecurityNumber: { number: '', expiryDate: '', required: true },
+        electoralCard: { number: '', expiryDate: '', required: false },
+      },
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'employees').add(employee);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'employee.create', module: 'employees',
+      description: `Created employee ${firstName} ${lastName} (${jobTitle}, ${department})`,
+      entityId: docRef.id, entityType: 'employee',
+    });
+
+    res.json({
+      success: true,
+      message: `Employee ${firstName} ${lastName} created`,
+      id: docRef.id,
+      employeeId,
+    });
+  } catch (error) {
+    console.error('[employees/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/leave/requests
+ * Body: { employeeId, startDate, endDate, leaveType, reason, requestedBy? }
+ */
+router.post('/leave/requests', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { employeeId, startDate, endDate, leaveType, reason, requestedBy = 'bot' } = req.body || {};
+
+    if (!employeeId || !startDate || !endDate || !leaveType) {
+      return res.status(400).json({
+        success: false,
+        message: 'employeeId, startDate, endDate, leaveType are required',
+      });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+      return res.status(400).json({ success: false, message: 'Dates must be YYYY-MM-DD' });
+    }
+    if (endDate < startDate) {
+      return res.status(400).json({ success: false, message: 'endDate must be on or after startDate' });
+    }
+
+    const empSnap = await tenantCol(tid, 'employees').doc(employeeId).get();
+    if (!empSnap.exists) {
+      return res.status(404).json({ success: false, message: `Employee ${employeeId} not found` });
+    }
+    const emp = empSnap.data();
+    const employeeName = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim() || employeeId;
+
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const duration = Math.round((new Date(endDate) - new Date(startDate)) / msPerDay) + 1;
+
+    const request = {
+      tenantId: tid,
+      employeeId,
+      employeeName,
+      department: emp.jobDetails?.department || '',
+      startDate,
+      endDate,
+      leaveType,
+      reason: reason || '',
+      duration,
+      status: 'pending',
+      requestDate: getTodayTL(),
+      requestedBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await db.collection('leave_requests').add(request);
+
+    await writeAuditLog(tid, {
+      userId: requestedBy, userEmail: requestedBy,
+      action: 'leave.create', module: 'leave',
+      description: `Requested ${leaveType} leave for ${employeeName}: ${startDate} → ${endDate} (${duration}d)`,
+      entityId: docRef.id, entityType: 'leave_request',
+    });
+
+    res.json({ success: true, message: 'Leave request created', id: docRef.id, duration });
+  } catch (error) {
+    console.error('[leave/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/attendance
+ * Upsert attendance for an employee on a date.
+ * Body: { employeeId, date, status?, clockIn?, clockOut?, notes?, recordedBy? }
+ */
+router.post('/attendance', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      employeeId, date, status = 'present',
+      clockIn = '', clockOut = '', notes = '', recordedBy = 'bot',
+    } = req.body || {};
+
+    if (!employeeId || !date) {
+      return res.status(400).json({ success: false, message: 'employeeId and date are required' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: 'date must be YYYY-MM-DD' });
+    }
+
+    const empSnap = await tenantCol(tid, 'employees').doc(employeeId).get();
+    if (!empSnap.exists) {
+      return res.status(404).json({ success: false, message: `Employee ${employeeId} not found` });
+    }
+    const emp = empSnap.data();
+    const employeeName = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim() || employeeId;
+
+    const existingSnap = await db.collection('attendance')
+      .where('tenantId', '==', tid)
+      .where('employeeId', '==', employeeId)
+      .where('date', '==', date)
+      .limit(1)
+      .get();
+
+    const record = {
+      tenantId: tid,
+      employeeId, employeeName,
+      department: emp.jobDetails?.department || '',
+      date,
+      clockIn, clockOut,
+      status,
+      source: 'bot',
+      notes,
+      recordedBy,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    let id;
+    let action;
+    if (!existingSnap.empty) {
+      id = existingSnap.docs[0].id;
+      await db.collection('attendance').doc(id).update(record);
+      action = 'attendance.update';
+    } else {
+      const docRef = await db.collection('attendance').add({
+        ...record,
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      });
+      id = docRef.id;
+      action = 'attendance.create';
+    }
+
+    await writeAuditLog(tid, {
+      userId: recordedBy, userEmail: recordedBy,
+      action, module: 'attendance',
+      description: `${action === 'attendance.create' ? 'Recorded' : 'Updated'} attendance for ${employeeName} on ${date} (${status})`,
+      entityId: id, entityType: 'attendance',
+    });
+
+    res.json({ success: true, message: 'Attendance recorded', id, action });
+  } catch (error) {
+    console.error('[attendance/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/invoices
+ * Body: { customerName, amount, dueDate, description?, invoiceDate?, currency?, createdBy? }
+ */
+router.post('/invoices', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      customerName, amount, dueDate,
+      description = '', invoiceDate = getTodayTL(),
+      currency = 'USD', createdBy = 'bot',
+    } = req.body || {};
+
+    if (!customerName || amount == null || !dueDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'customerName, amount, dueDate are required',
+      });
+    }
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return res.status(400).json({ success: false, message: 'amount must be a positive number' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+      return res.status(400).json({ success: false, message: 'dueDate must be YYYY-MM-DD' });
+    }
+
+    const invoice = {
+      customerName, customerId: '',
+      invoiceDate, dueDate,
+      currency,
+      subtotal: amt, tax: 0, total: amt,
+      amountPaid: 0, balance: amt,
+      status: 'draft',
+      description,
+      items: description ? [{ description, quantity: 1, unitPrice: amt, total: amt }] : [],
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'invoices').add(invoice);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'invoice.create', module: 'money',
+      description: `Created invoice for ${customerName}: $${amt.toFixed(2)} due ${dueDate}`,
+      entityId: docRef.id, entityType: 'invoice',
+    });
+
+    res.json({ success: true, message: 'Invoice created (draft)', id: docRef.id });
+  } catch (error) {
+    console.error('[invoices/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/bills
+ * Body: { vendorName, amount, dueDate, description?, billDate?, currency?, createdBy? }
+ */
+router.post('/bills', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      vendorName, amount, dueDate,
+      description = '', billDate = getTodayTL(),
+      currency = 'USD', createdBy = 'bot',
+    } = req.body || {};
+
+    if (!vendorName || amount == null || !dueDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'vendorName, amount, dueDate are required',
+      });
+    }
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return res.status(400).json({ success: false, message: 'amount must be a positive number' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)) {
+      return res.status(400).json({ success: false, message: 'dueDate must be YYYY-MM-DD' });
+    }
+
+    const bill = {
+      vendorName, vendorId: '',
+      billDate, dueDate,
+      currency,
+      subtotal: amt, tax: 0, total: amt,
+      amountPaid: 0, balance: amt,
+      status: 'open',
+      description,
+      items: description ? [{ description, quantity: 1, unitPrice: amt, total: amt }] : [],
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'bills').add(bill);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'bill.create', module: 'money',
+      description: `Created bill from ${vendorName}: $${amt.toFixed(2)} due ${dueDate}`,
+      entityId: docRef.id, entityType: 'bill',
+    });
+
+    res.json({ success: true, message: 'Bill created', id: docRef.id });
+  } catch (error) {
+    console.error('[bills/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ── VERIFICATION ENDPOINTS (Phase 3) ──────────────────────────────────────
 
 /**
@@ -3269,12 +3608,17 @@ Current tenantId: ${tenantId}. Operate only on this tenant.
 WRITE_CONFIRMATION_STATE: ${allowWrites ? 'confirmed' : 'not-confirmed'}.
 
 CAPABILITIES:
-- You can read all HR data: employees, departments, payroll, leave, attendance, interviews, jobs, invoices, bills, expenses.
+- Read: employees, departments, payroll, leave, attendance, interviews, jobs, invoices, bills, expenses, journals, trial balance, P&L, balance sheet.
+- Write (after confirmation): create employees, create leave requests, record attendance, create invoices, create bills, approve/reject leave, calculate/run/approve/reject/mark-paid payroll, create/post/void journal entries, manage fiscal periods.
 - Keep responses concise — this is a small chat panel.
 
+TENANT CONTEXT:
+- Always call tools with tenantId="${tenantId}". This ensures data is read/written for the correct company.
+
 WRITE SAFETY:
-- If WRITE_CONFIRMATION_STATE is "not-confirmed", do NOT call write tools. Read-only responses only.
+- If WRITE_CONFIRMATION_STATE is "not-confirmed", do NOT call write tools. Read-only responses only. If the user's request implies a write, describe what you would do and ask them to confirm.
 - If WRITE_CONFIRMATION_STATE is "confirmed", execute only the explicitly confirmed action.
+- Never call delete tools. Single-item changes only.
 
 PERSONALITY:
 - This app is for companies in Timor-Leste. Occasionally mix in Tetun words: Bondia (good morning), Botarde (good afternoon), Obrigadu/a (thank you), Diak (good/OK), Bele (can/sure), Maun/Mana (brother/sister).
@@ -3509,6 +3853,11 @@ function humanizeToolName(toolName) {
     get_bills: 'Fetching bills',
     get_expenses: 'Loading expenses',
     get_settings: 'Loading settings',
+    add_employee: 'Creating employee',
+    create_leave_request: 'Creating leave request',
+    record_attendance: 'Recording attendance',
+    create_invoice: 'Creating invoice',
+    create_bill: 'Creating bill',
   };
   if (map[toolName]) return map[toolName];
   // Fallback: convert snake_case to Title Case with "..."

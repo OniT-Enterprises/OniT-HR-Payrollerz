@@ -7,6 +7,7 @@ const CONFIRM_MESSAGE_PATTERN = /^(?:yes|yep|yeah|sure|ok(?:ay)?|confirm(?:ed)?|
 const CANCEL_MESSAGE_PATTERN = /^(?:no|cancel|stop|abort|never mind|nevermind|no thanks|do not proceed|don't proceed|no,?\s*cancel)\b[\s.!]*$/i;
 const WRITE_INTENT_PATTERN = /\b(?:create|make|add|update|change|edit|modify|delete|remove|approve|reject|terminate|hire|promote|demote|transfer|assign|run\s+payroll)\b/i;
 const READ_INTENT_PATTERN = /\b(?:show|list|get|find|search|view|check|status|report|summary|overview|how many|what|which|who|when|where|count)\b/i;
+const QUESTION_PATTERN = /^(?:how|what|which|who|when|where|why|whose|whom|is|are|was|were|can|could|should|would|do|does|did|may|might|will)\b/i;
 
 function sanitizeSessionKey(sessionKey, maxLen = 64) {
   if (typeof sessionKey !== 'string') return 'default';
@@ -32,6 +33,8 @@ function classifyChatIntent(message) {
   if (!text) return 'other';
   if (isConfirmMessage(text)) return 'confirm';
   if (isCancelMessage(text)) return 'cancel';
+  const isQuestion = QUESTION_PATTERN.test(text) || /\?\s*$/.test(text);
+  if (isQuestion) return 'read';
   if (WRITE_INTENT_PATTERN.test(text)) return 'write';
   if (READ_INTENT_PATTERN.test(text)) return 'read';
   return 'other';

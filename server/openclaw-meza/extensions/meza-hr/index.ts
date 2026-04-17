@@ -28,10 +28,12 @@ export default function register(api: OpenclawPluginApi) {
   async function callApi(endpoint: string, options?: {
     method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
     body?: Record<string, unknown>;
+    tenantId?: string;
   }) {
     const requestId = createRequestId();
     const method = options?.method || 'GET';
-    const url = `${apiBaseUrl}/api/tenants/${tenantId}${endpoint}`;
+    const tid = options?.tenantId || tenantId;
+    const url = `${apiBaseUrl}/api/tenants/${tid}${endpoint}`;
 
     let response: Response;
     try {
@@ -1991,5 +1993,210 @@ export default function register(api: OpenclawPluginApi) {
     },
   });
 
-  console.log("[meza-hr] Plugin loaded — 51 tools (32 read + 19 write/verify), 5 commands registered");
+  // ============================================================================
+  // BOT WRITE TOOLS (Phase 2) — create employees, leave, attendance, invoices, bills
+  // All accept an optional tenantId to support multi-tenant webchat.
+  // ============================================================================
+
+  api.registerTool({
+    name: "add_employee",
+    description:
+      "Create a new employee record with minimum required fields. The record is created in 'active' status and can be edited in the UI to fill additional details.",
+    parameters: Type.Object({
+      firstName: Type.String({ description: "First name" }),
+      lastName: Type.String({ description: "Last name" }),
+      email: Type.String({ description: "Work email address" }),
+      jobTitle: Type.String({ description: "Position / job title" }),
+      department: Type.String({ description: "Department name or ID" }),
+      startDate: Type.String({ description: "Hire date in YYYY-MM-DD format" }),
+      phone: Type.Optional(Type.String({ description: "Phone number" })),
+      monthlySalary: Type.Optional(Type.Number({ description: "Monthly gross salary in USD" })),
+      employeeId: Type.Optional(Type.String({ description: "National ID / Bilhete de Identidade number" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the manager creating this record" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID — pass the current tenant from the system context" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/employees`, {
+          method: "POST",
+          body: {
+            firstName: params.firstName,
+            lastName: params.lastName,
+            email: params.email,
+            jobTitle: params.jobTitle,
+            department: params.department,
+            startDate: params.startDate,
+            phone: params.phone,
+            monthlySalary: params.monthlySalary,
+            employeeId: params.employeeId,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Employee **${params.firstName} ${params.lastName}** created (${params.jobTitle}, ${params.department}). ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating employee", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_leave_request",
+    description:
+      "Create a leave request on behalf of an employee. Creates it in 'pending' status so a manager can approve or reject.",
+    parameters: Type.Object({
+      employeeId: Type.String({ description: "Employee document ID" }),
+      startDate: Type.String({ description: "Leave start date YYYY-MM-DD" }),
+      endDate: Type.String({ description: "Leave end date YYYY-MM-DD (inclusive)" }),
+      leaveType: Type.String({
+        description:
+          "Type: annual, sick, maternity, paternity, unpaid, compassionate, study, or other",
+      }),
+      reason: Type.Optional(Type.String({ description: "Reason / notes" })),
+      requestedBy: Type.Optional(Type.String({ description: "Who submitted the request (email)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/leave/requests`, {
+          method: "POST",
+          body: {
+            employeeId: params.employeeId,
+            startDate: params.startDate,
+            endDate: params.endDate,
+            leaveType: params.leaveType,
+            reason: params.reason,
+            requestedBy: params.requestedBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Leave request created (pending): ${params.leaveType} from ${params.startDate} to ${params.endDate} (${result.duration} day${result.duration === 1 ? '' : 's'}). ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating leave request", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "record_attendance",
+    description:
+      "Record or update an employee's attendance for a given day. If a record already exists for that employee/date it is updated.",
+    parameters: Type.Object({
+      employeeId: Type.String({ description: "Employee document ID" }),
+      date: Type.String({ description: "Date YYYY-MM-DD" }),
+      status: Type.Optional(
+        Type.String({ description: "present, absent, late, on-leave, half-day (default: present)" })
+      ),
+      clockIn: Type.Optional(Type.String({ description: "Clock-in time HH:MM (24h)" })),
+      clockOut: Type.Optional(Type.String({ description: "Clock-out time HH:MM (24h)" })),
+      notes: Type.Optional(Type.String({ description: "Notes" })),
+      recordedBy: Type.Optional(Type.String({ description: "Email of the manager recording this" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/attendance`, {
+          method: "POST",
+          body: {
+            employeeId: params.employeeId,
+            date: params.date,
+            status: params.status,
+            clockIn: params.clockIn,
+            clockOut: params.clockOut,
+            notes: params.notes,
+            recordedBy: params.recordedBy,
+          },
+          tenantId: params.tenantId,
+        });
+        const verb = result.action === 'attendance.create' ? 'Recorded' : 'Updated';
+        return textResult(
+          `${verb} attendance for employee ${params.employeeId} on ${params.date}: ${params.status || 'present'}`
+        );
+      } catch (error: any) {
+        return errorResult("recording attendance", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_invoice",
+    description:
+      "Create a draft customer invoice. The invoice is saved in draft status so it can be reviewed and sent from the Money module.",
+    parameters: Type.Object({
+      customerName: Type.String({ description: "Customer name" }),
+      amount: Type.Number({ description: "Total amount" }),
+      dueDate: Type.String({ description: "Due date YYYY-MM-DD" }),
+      description: Type.Optional(Type.String({ description: "Line item / invoice description" })),
+      invoiceDate: Type.Optional(Type.String({ description: "Invoice date YYYY-MM-DD (default: today)" })),
+      currency: Type.Optional(Type.String({ description: "ISO currency code (default: USD)" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/invoices`, {
+          method: "POST",
+          body: {
+            customerName: params.customerName,
+            amount: params.amount,
+            dueDate: params.dueDate,
+            description: params.description,
+            invoiceDate: params.invoiceDate,
+            currency: params.currency,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Invoice draft created for **${params.customerName}**: ${fmtMoney(params.amount)} due ${params.dueDate}. ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating invoice", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_bill",
+    description:
+      "Create a vendor bill. The bill is saved as open / unpaid.",
+    parameters: Type.Object({
+      vendorName: Type.String({ description: "Vendor / supplier name" }),
+      amount: Type.Number({ description: "Total amount" }),
+      dueDate: Type.String({ description: "Due date YYYY-MM-DD" }),
+      description: Type.Optional(Type.String({ description: "Bill description" })),
+      billDate: Type.Optional(Type.String({ description: "Bill date YYYY-MM-DD (default: today)" })),
+      currency: Type.Optional(Type.String({ description: "ISO currency code (default: USD)" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/bills`, {
+          method: "POST",
+          body: {
+            vendorName: params.vendorName,
+            amount: params.amount,
+            dueDate: params.dueDate,
+            description: params.description,
+            billDate: params.billDate,
+            currency: params.currency,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Bill created from **${params.vendorName}**: ${fmtMoney(params.amount)} due ${params.dueDate}. ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating bill", error);
+      }
+    },
+  });
+
+  console.log("[meza-hr] Plugin loaded — 56 tools (32 read + 24 write/verify), 5 commands registered");
 }
