@@ -85,9 +85,6 @@ export default defineConfig(({ mode }) => ({
           if (id.includes("node_modules/@react-pdf")) {
             return "vendor-react-pdf";
           }
-          if (id.includes("node_modules/@vladmandic/face-api")) {
-            return "vendor-face-api";
-          }
           // Firebase SDK split by product to keep the app shell smaller
           if (id.includes("node_modules/firebase") || id.includes("node_modules/@firebase")) {
             if (id.includes("firestore")) {

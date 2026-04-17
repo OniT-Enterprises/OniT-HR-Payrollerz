@@ -1,4 +1,4 @@
-import React, { useState, useMemo, lazy, Suspense } from "react";
+import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Dialog,
@@ -38,14 +38,11 @@ import {
   Globe,
   Users,
   Pencil,
-  ScanFace,
   AlertTriangle,
   Flag,
 } from "lucide-react";
 
 import { NATIONALITY_FLAGS } from "@/lib/constants";
-
-const FaceRegistration = lazy(() => import("@/components/attendance/FaceRegistration"));
 
 interface EmployeeProfileViewProps {
   employee: Employee | null;
@@ -549,10 +546,9 @@ interface ProfileHeaderProps {
   employee: Employee;
   onOpenChange: (open: boolean) => void;
   navigate: ReturnType<typeof useNavigate>;
-  onEnrollFace: () => void;
 }
 
-function ProfileHeader({ employee, onOpenChange, navigate, onEnrollFace }: ProfileHeaderProps) {
+function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps) {
   return (
     <DialogHeader>
       <DialogTitle className="flex items-center gap-3">
@@ -588,15 +584,6 @@ function ProfileHeader({ employee, onOpenChange, navigate, onEnrollFace }: Profi
             <Pencil className="h-4 w-4 mr-2" />
             Edit
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onEnrollFace}
-            className="text-cyan-600 border-cyan-200 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-800 dark:hover:bg-cyan-950"
-          >
-            <ScanFace className="h-4 w-4 mr-2" />
-            Enroll Face
-          </Button>
           <Badge className={getStatusColor(employee.status)}>
             {employee.status.charAt(0).toUpperCase() +
               employee.status.slice(1)}
@@ -615,7 +602,6 @@ export default function EmployeeProfileView({
   onOpenChange,
 }: EmployeeProfileViewProps) {
   const navigate = useNavigate();
-  const [showFaceRegistration, setShowFaceRegistration] = useState(false);
 
   const { data: allEmployees = [] } = useAllEmployees();
   const managerName = useMemo(() => {
@@ -644,7 +630,6 @@ export default function EmployeeProfileView({
           employee={employee}
           onOpenChange={onOpenChange}
           navigate={navigate}
-          onEnrollFace={() => setShowFaceRegistration(true)}
         />
 
         <ComplianceWarnings issues={issues} onOpenChange={onOpenChange} navigate={navigate} />
@@ -657,15 +642,6 @@ export default function EmployeeProfileView({
         </div>
       </DialogContent>
 
-      {showFaceRegistration && employee && (
-        <Suspense fallback={null}>
-          <FaceRegistration
-            employee={employee}
-            open={showFaceRegistration}
-            onOpenChange={setShowFaceRegistration}
-          />
-        </Suspense>
-      )}
     </Dialog>
   );
 }

@@ -70,8 +70,13 @@ export function groupRecordsByBank(
     BNCTL: [],
   };
 
+  const employeesById = new Map<string, Employee>();
+  for (const emp of employees) {
+    if (emp.id) employeesById.set(emp.id, emp);
+  }
+
   for (const record of records) {
-    const employee = employees.find(e => e.id === record.employeeId);
+    const employee = employeesById.get(record.employeeId);
     if (!employee) continue;
 
     // Get bank name from employee record and normalize

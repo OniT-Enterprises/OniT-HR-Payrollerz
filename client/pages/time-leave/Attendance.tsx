@@ -3,7 +3,7 @@
  * Track and manage employee attendance with fingerprint import support
  */
 
-import React, { useState, useMemo, lazy, Suspense } from "react";
+import React, { useState, useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -38,12 +38,10 @@ import {
   ChevronRight,
   FileUp,
   Loader2,
-  ScanFace,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { TimePicker } from "@/components/ui/time-picker";
 
-const FaceClockIn = lazy(() => import("@/components/attendance/FaceClockIn"));
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useDepartments } from "@/hooks/useDepartments";
 import {
@@ -74,7 +72,6 @@ export default function Attendance() {
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [showMarkDialog, setShowMarkDialog] = useState(false);
   const [showImportDialog, setShowImportDialog] = useState(false);
-  const [showFaceClockIn, setShowFaceClockIn] = useState(false);
 
   // Is today selected?
   const isToday = selectedDate === today;
@@ -368,28 +365,36 @@ export default function Attendance() {
         clockOut?: string;
       }[] = [];
 
+      // Build lookup maps once so CSV import is O(rows + employees), not O(rows * employees)
+      const employeesById = new Map<string, Employee>();
+      const employeesByJobId = new Map<string, Employee>();
+      const employeesByName = new Map<string, Employee>();
+      for (const emp of employees) {
+        if (emp.id) employeesById.set(emp.id, emp);
+        if (emp.jobDetails?.employeeId) employeesByJobId.set(emp.jobDetails.employeeId, emp);
+        const fullName = `${emp.personalInfo.firstName} ${emp.personalInfo.lastName}`.toLowerCase();
+        employeesByName.set(fullName, emp);
+      }
+
+      const employeeIdIdx = getHeaderIndex("employee_id", "employeeid");
+      const nameIdx = getHeaderIndex("name", "employee_name");
+      const dateIdx = getHeaderIndex("date");
+      const clockInIdx = getHeaderIndex("clock_in", "clockin", "check_in");
+      const clockOutIdx = getHeaderIndex("clock_out", "clockout", "check_out");
+
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(",").map(v => v.trim());
-
-        // Try to find employee by ID or name
-        const employeeIdIdx = getHeaderIndex("employee_id", "employeeid");
-        const nameIdx = getHeaderIndex("name", "employee_name");
-        const dateIdx = getHeaderIndex("date");
-        const clockInIdx = getHeaderIndex("clock_in", "clockin", "check_in");
-        const clockOutIdx = getHeaderIndex("clock_out", "clockout", "check_out");
 
         if (dateIdx === -1 || clockInIdx === -1) continue;
 
         // Find employee
         let employee: Employee | undefined;
         if (employeeIdIdx !== -1) {
-          employee = employees.find(e => e.id === values[employeeIdIdx] || e.jobDetails.employeeId === values[employeeIdIdx]);
+          const key = values[employeeIdIdx];
+          employee = employeesById.get(key) || employeesByJobId.get(key);
         }
         if (!employee && nameIdx !== -1) {
-          const name = values[nameIdx].toLowerCase();
-          employee = employees.find(e =>
-            `${e.personalInfo.firstName} ${e.personalInfo.lastName}`.toLowerCase() === name
-          );
+          employee = employeesByName.get(values[nameIdx].toLowerCase());
         }
 
         if (employee) {
@@ -487,15 +492,6 @@ export default function Attendance() {
           iconColor="text-cyan-500"
           actions={
             <>
-              {isToday && (
-                <Button
-                  variant="outline"
-                  onClick={() => setShowFaceClockIn(true)}
-                >
-                  <ScanFace className="h-4 w-4 mr-2" />
-                  {t("timeLeave.attendance.actions.faceClockIn")}
-                </Button>
-              )}
               <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 {t("timeLeave.attendance.actions.import")}
@@ -835,18 +831,6 @@ export default function Attendance() {
         )}
       </div>
 
-      {/* Face Clock-In Dialog (lazy loaded) */}
-      {showFaceClockIn && (
-        <Suspense fallback={null}>
-          <FaceClockIn
-            open={showFaceClockIn}
-            onOpenChange={setShowFaceClockIn}
-            onSuccess={() => {
-              queryClient.invalidateQueries({ queryKey: attendanceKeys.byDate(tenantId, selectedDate) });
-            }}
-          />
-        </Suspense>
-      )}
     </div>
   );
 }

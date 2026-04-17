@@ -201,18 +201,21 @@ function ErrorDetails({
       </div>
       <ScrollArea className="max-h-48">
         <div className="p-3 space-y-2">
-          {errors.map((err, idx) => {
-            const emp = employees.find((e) => e.employeeId === err.employeeId);
-            return (
-              <div
-                key={idx}
-                className="flex items-center justify-between text-sm"
-              >
-                <span className="font-medium">{emp?.employeeName || err.employeeId}</span>
-                <span className="text-red-600">{err.error}</span>
-              </div>
-            );
-          })}
+          {(() => {
+            const empById = new Map(employees.map((e) => [e.employeeId, e]));
+            return errors.map((err, idx) => {
+              const emp = empById.get(err.employeeId);
+              return (
+                <div
+                  key={idx}
+                  className="flex items-center justify-between text-sm"
+                >
+                  <span className="font-medium">{emp?.employeeName || err.employeeId}</span>
+                  <span className="text-red-600">{err.error}</span>
+                </div>
+              );
+            });
+          })()}
         </div>
       </ScrollArea>
     </div>

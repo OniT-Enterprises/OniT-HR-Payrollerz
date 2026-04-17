@@ -345,22 +345,25 @@ export default function Goals() {
         createdByName: user?.displayName || user?.email || "Manager",
         assignedTeams: [],
         linkedOKRs: [],
-        milestones: goalFormData.milestones
-          .filter((m) => m.title)
-          .map((m, index) => {
-            const assignee = employees.find((e) => e.id === m.assigneeId);
-            return {
-              id: `m_${Date.now()}_${index}`,
-              title: m.title,
-              description: m.description,
-              dueDate: m.dueDate,
-              status: "pending" as MilestoneStatus,
-              assigneeId: m.assigneeId,
-              assigneeName: assignee
-                ? `${assignee.personalInfo.firstName} ${assignee.personalInfo.lastName}`
-                : undefined,
-            };
-          }),
+        milestones: (() => {
+          const empById = new Map(employees.map((e) => [e.id, e]));
+          return goalFormData.milestones
+            .filter((m) => m.title)
+            .map((m, index) => {
+              const assignee = empById.get(m.assigneeId);
+              return {
+                id: `m_${Date.now()}_${index}`,
+                title: m.title,
+                description: m.description,
+                dueDate: m.dueDate,
+                status: "pending" as MilestoneStatus,
+                assigneeId: m.assigneeId,
+                assigneeName: assignee
+                  ? `${assignee.personalInfo.firstName} ${assignee.personalInfo.lastName}`
+                  : undefined,
+              };
+            });
+        })(),
       };
 
       if (selectedGoal) {
