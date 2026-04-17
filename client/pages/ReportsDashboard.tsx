@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import GuidancePanel from "@/components/GuidancePanel";
 import { SEO } from "@/components/SEO";
 import {
   filterModuleNavConfigByPermissions,
@@ -47,19 +46,19 @@ function ReportsDashboardSkeleton() {
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
       <div className="mx-auto max-w-screen-2xl space-y-6 px-6 py-6">
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-3xl" />
-            <Skeleton className="h-72 w-full rounded-3xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-72 w-full rounded-2xl" />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </div>
-        <Skeleton className="h-60 w-full rounded-3xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -115,52 +114,34 @@ const familyDescriptions: Record<string, string> = {
 
 const familyStyles = [
   {
-    shell: "from-violet-500/25 via-violet-500/10 to-transparent",
     icon: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
-    glow: "bg-violet-500/30",
     pill: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
     fill: "#8b5cf6",
-    span: "md:col-span-3 md:row-span-2",
   },
   {
-    shell: "from-sky-500/20 via-sky-500/8 to-transparent",
     icon: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
-    glow: "bg-sky-500/25",
     pill: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
     fill: "#0ea5e9",
-    span: "md:col-span-3",
   },
   {
-    shell: "from-emerald-500/18 via-emerald-500/6 to-transparent",
     icon: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-    glow: "bg-emerald-500/25",
     pill: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
     fill: "#10b981",
-    span: "md:col-span-2",
   },
   {
-    shell: "from-amber-500/18 via-amber-500/6 to-transparent",
     icon: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-    glow: "bg-amber-500/25",
     pill: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
     fill: "#f59e0b",
-    span: "md:col-span-2",
   },
   {
-    shell: "from-teal-500/18 via-teal-500/6 to-transparent",
     icon: "bg-teal-500/15 text-teal-700 dark:text-teal-300",
-    glow: "bg-teal-500/25",
     pill: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
     fill: "#14b8a6",
-    span: "md:col-span-2",
   },
   {
-    shell: "from-fuchsia-500/18 via-fuchsia-500/6 to-transparent",
     icon: "bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300",
-    glow: "bg-fuchsia-500/25",
     pill: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300",
     fill: "#d946ef",
-    span: "md:col-span-3",
   },
 ];
 
@@ -333,7 +314,6 @@ export default function ReportsDashboard() {
             <Badge variant="secondary">{totalLaunchPoints} launch points</Badge>
           </>
         }
-        guidance={<GuidancePanel section="reports" />}
         main={
           <>
             <DashboardPanel
@@ -351,9 +331,9 @@ export default function ReportsDashboard() {
                 )
               }
             >
-              <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
-                <div className="grid auto-rows-[124px] gap-4 md:grid-cols-6">
-                  {familyCards.map((family, index) => {
+              <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {familyCards.map((family) => {
                     const Icon = family.icon;
                     const highlightPayroll =
                       family.id === "payroll-reports" && (overdueCount > 0 || dueThisWeek > 0);
@@ -364,164 +344,93 @@ export default function ReportsDashboard() {
                         type="button"
                         onClick={() => navigate(family.path)}
                         className={cn(
-                          "group relative overflow-hidden rounded-[1.75rem] border border-border/70 bg-card p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl animate-fade-up",
-                          family.style.span,
+                          "group flex flex-col rounded-2xl border border-border/70 bg-card p-4 text-left transition-all hover:-translate-y-0.5 hover:border-border hover:shadow-md",
                           highlightPayroll ? "ring-1 ring-red-400/40" : "",
                         )}
-                        style={{ animationDelay: `${index * 90}ms` }}
                       >
-                        <div
-                          className={cn(
-                            "absolute inset-0 bg-gradient-to-br opacity-90 transition-opacity group-hover:opacity-100",
-                            family.style.shell,
-                          )}
-                        />
-                        <div
-                          className={cn(
-                            "absolute -right-6 -top-8 h-24 w-24 rounded-full blur-3xl transition-transform group-hover:scale-110",
-                            family.style.glow,
-                          )}
-                        />
-                        <div className="relative flex h-full flex-col justify-between">
-                          <div className="flex items-start justify-between gap-3">
-                            <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", family.style.icon)}>
-                              <Icon className="h-5 w-5" />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {highlightPayroll ? (
-                                <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse-subtle" />
-                              ) : null}
-                              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", family.style.pill)}>
-                                {family.routeCount} output{family.routeCount === 1 ? "" : "s"}
-                              </span>
-                            </div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className={cn("flex h-10 w-10 items-center justify-center rounded-xl", family.style.icon)}>
+                            <Icon className="h-5 w-5" />
                           </div>
+                          <span className={cn("rounded-full px-2.5 py-0.5 text-xs font-semibold", family.style.pill)}>
+                            {family.routeCount} output{family.routeCount === 1 ? "" : "s"}
+                          </span>
+                        </div>
 
-                          <div className="mt-4 space-y-3">
-                            <div>
-                              <h3 className="text-lg font-semibold tracking-tight">{family.title}</h3>
-                              <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
-                                {family.description}
-                              </p>
-                            </div>
+                        <div className="mt-3">
+                          <h3 className="text-base font-semibold tracking-tight">{family.title}</h3>
+                          <p className="mt-1 text-sm leading-5 text-muted-foreground line-clamp-2">
+                            {family.description}
+                          </p>
+                        </div>
 
-                            <div className="flex flex-wrap gap-2">
-                              {family.outputs.map((output) => (
-                                <span
-                                  key={`${family.id}-${output.path}`}
-                                  className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur-sm"
-                                >
-                                  {output.label}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          <div className="mt-5 flex items-center justify-between text-sm font-medium text-foreground/90">
-                            <span>Open this reporting lane</span>
-                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
-                          </div>
+                        <div className="mt-3 flex items-center text-xs font-medium text-muted-foreground">
+                          Open lane
+                          <ArrowRight className="ml-1 h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5" />
                         </div>
                       </button>
                     );
                   })}
                 </div>
 
-                <div className="rounded-[1.75rem] border border-border/70 bg-muted/25 p-5">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
+                <div className="space-y-3">
+                  <div className="rounded-2xl border border-border/70 bg-muted/25 p-4">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-violet-500" />
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Broadcast pulse
+                        Next live milestone
                       </p>
-                      <h3 className="mt-2 text-xl font-semibold tracking-tight">
-                        What the reporting room is telling us
-                      </h3>
                     </div>
-                    <Sparkles className="h-5 w-5 text-violet-500" />
-                  </div>
-
-                  <div className="mt-5 rounded-[1.5rem] border border-border/60 bg-background/80 p-5">
-                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                      Next live milestone
+                    <p className="mt-2 text-xl font-bold tracking-tight">
+                      {nextFiling ? getDueDescriptor(nextFiling) : "Clear runway"}
                     </p>
-                    <div className="mt-3 flex items-end gap-3">
-                      <p className="text-4xl font-bold tracking-tight">
-                        {nextFiling ? getDueDescriptor(nextFiling) : "Clear"}
-                      </p>
-                      <p className="pb-1 text-sm text-muted-foreground">
-                        {nextFiling ? getFilingLabel(nextFiling) : "No open filing pressure"}
-                      </p>
-                    </div>
-                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                    <p className="mt-1 text-sm text-muted-foreground">
                       {nextFiling
-                        ? `The next reporting checkpoint lands on ${formatShortDate(nextFiling.dueDate)}.`
-                        : "The filing runway is quiet right now, so attention can shift to custom outputs and better analytics coverage."}
+                        ? `${getFilingLabel(nextFiling)} · ${formatShortDate(nextFiling.dueDate)}`
+                        : "No open filing pressure."}
                     </p>
                   </div>
 
-                  <div className="mt-5 space-y-3">
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                            Coverage breadth
-                          </p>
-                          <p className="mt-1 text-2xl font-semibold tracking-tight">
-                            {familyCards.length} families
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-600 dark:text-violet-300">
-                          <FileText className="h-5 w-5" />
-                        </div>
+                  <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Coverage breadth
+                        </p>
+                        <p className="mt-1 text-xl font-semibold tracking-tight">
+                          {familyCards.length} families
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {totalLaunchPoints} distinct report entry points are available from this module.
-                      </p>
+                      <div className="rounded-xl bg-violet-500/10 p-2.5 text-violet-600 dark:text-violet-300">
+                        <FileText className="h-4 w-4" />
+                      </div>
                     </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {totalLaunchPoints} report entry points in this module.
+                    </p>
+                  </div>
 
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                            Compliance pressure
-                          </p>
-                          <p className="mt-1 text-2xl font-semibold tracking-tight">
-                            {openFilings.length}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-red-500/10 p-3 text-red-600 dark:text-red-300">
-                          <ShieldAlert className="h-5 w-5" />
-                        </div>
+                  <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                          Compliance pressure
+                        </p>
+                        <p className="mt-1 text-xl font-semibold tracking-tight">
+                          {openFilings.length}
+                        </p>
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {overdueCount > 0
-                          ? `${overdueCount} overdue and ${Math.max(openFilings.length - overdueCount, 0)} still on the runway.`
-                          : dueThisWeek > 0
-                            ? `${dueThisWeek} filing${dueThisWeek === 1 ? "" : "s"} is due in the next seven days.`
-                            : "No urgent reporting deadlines are currently competing for attention."}
-                      </p>
-                    </div>
-
-                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
-                      <div className="flex items-center justify-between gap-3">
-                        <div>
-                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                            Best expansion area
-                          </p>
-                          <p className="mt-1 text-xl font-semibold tracking-tight">
-                            {largestFamily?.title ?? "Reports"}
-                          </p>
-                        </div>
-                        <div className="rounded-2xl bg-teal-500/10 p-3 text-teal-600 dark:text-teal-300">
-                          <BarChart3 className="h-5 w-5" />
-                        </div>
+                      <div className="rounded-xl bg-red-500/10 p-2.5 text-red-600 dark:text-red-300">
+                        <ShieldAlert className="h-4 w-4" />
                       </div>
-                      <p className="mt-2 text-sm text-muted-foreground">
-                        {largestFamily
-                          ? `${largestFamily.routeCount} surface${largestFamily.routeCount === 1 ? "" : "s"} already exist here, making it the richest lane for sharper visuals and saved outputs.`
-                          : "The reporting map is ready for its first lane."}
-                      </p>
                     </div>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                      {overdueCount > 0
+                        ? `${overdueCount} overdue, ${Math.max(openFilings.length - overdueCount, 0)} on runway.`
+                        : dueThisWeek > 0
+                          ? `${dueThisWeek} due in the next 7 days.`
+                          : "No urgent deadlines."}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -530,7 +439,7 @@ export default function ReportsDashboard() {
             <DashboardPanel eyebrow="Live compliance" title="Submission horizon">
               {filingHorizon.length > 0 ? (
                 <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-                  <div className="rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                  <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
                     <div className="mb-4">
                       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                         Urgency runway
@@ -579,7 +488,7 @@ export default function ReportsDashboard() {
                         type="button"
                         onClick={() => navigate("/payroll/tax")}
                         className={cn(
-                          "w-full rounded-[1.35rem] border border-border/60 bg-background/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md",
+                          "w-full rounded-2xl border border-border/60 bg-background/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md",
                           item.isOverdue ? "ring-1 ring-red-400/35" : "",
                         )}
                       >
@@ -608,7 +517,7 @@ export default function ReportsDashboard() {
                   </div>
                 </div>
               ) : (
-                <div className="rounded-[1.5rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
+                <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-8 text-center">
                   <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
                     Quiet runway
                   </p>

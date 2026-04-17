@@ -17,7 +17,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import GuidancePanel from "@/components/GuidancePanel";
 import { SEO, seoConfig } from "@/components/SEO";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -39,12 +38,10 @@ import {
   Calculator,
   CalendarClock,
   CheckCircle2,
-  ClipboardCheck,
   FileSpreadsheet,
   FolderKanban,
   Play,
   ShieldAlert,
-  Users,
   Wallet,
 } from "lucide-react";
 
@@ -54,19 +51,19 @@ function PayrollDashboardSkeleton() {
       <MainNavigation />
       <ModuleSectionNav config={payrollNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-3xl" />
-            <Skeleton className="h-72 w-full rounded-3xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-72 w-full rounded-2xl" />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </div>
-        <Skeleton className="h-60 w-full rounded-3xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -276,7 +273,6 @@ export default function PayrollDashboard() {
             <Badge variant="secondary">{formatDateTL(summary.nextPayDate, { month: "long", day: "numeric" })}</Badge>
           </>
         }
-        guidance={<GuidancePanel section="payroll" />}
         main={
           <>
             <DashboardPanel
@@ -299,11 +295,11 @@ export default function PayrollDashboard() {
               contentClassName="pt-2"
             >
               <div className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-                <div className="rounded-[1.75rem] border border-border/60 bg-muted/30 p-5">
+                <div className="rounded-2xl border border-border/60 bg-muted/30 p-5">
                   <PaydayRing daysUntilPayday={summary.daysUntilPayday} status={summary.status} />
                 </div>
                 <div className="space-y-4">
-                  <div className="rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                  <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">Compensation mix</p>
                     <div className="mt-4 h-52">
                       <ResponsiveContainer width="100%" height="100%">
@@ -353,7 +349,7 @@ export default function PayrollDashboard() {
 
             <DashboardPanel eyebrow="Operational signal" title="Payroll readiness atlas">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                <div className="h-80 rounded-2xl border border-border/60 bg-muted/25 p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={summary.readiness} layout="vertical" margin={{ top: 8, right: 16, left: 16, bottom: 8 }}>
                       <CartesianGrid horizontal={false} stroke="hsl(var(--border) / 0.35)" />
@@ -402,7 +398,7 @@ export default function PayrollDashboard() {
             </DashboardPanel>
 
             <DashboardPanel eyebrow="Run history pulse" title="Recent payroll velocity">
-              <div className="h-72 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+              <div className="h-72 rounded-2xl border border-border/60 bg-muted/25 p-4">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={summary.recentRuns} margin={{ top: 12, right: 16, left: 8, bottom: 0 }}>
                     <defs>

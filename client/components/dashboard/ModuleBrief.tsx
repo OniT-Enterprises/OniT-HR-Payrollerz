@@ -20,7 +20,7 @@ export function ModuleBrief({ section, title = "Weekly Module Brief", lead, colu
   const theme = sectionThemes[section];
 
   return (
-    <Card className={cn("dashboard-report-band overflow-hidden border-border/70", theme.borderLeft)}>
+    <Card className="dashboard-report-band overflow-hidden border-border/70">
       <CardHeader className="border-b border-border/60 bg-background/80 backdrop-blur-sm">
         <div className="flex flex-col gap-2 lg:flex-row lg:items-end lg:justify-between">
           <div>

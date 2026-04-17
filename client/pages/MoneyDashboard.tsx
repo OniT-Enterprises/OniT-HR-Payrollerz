@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Bar,
@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import GuidancePanel from "@/components/GuidancePanel";
 import { SEO } from "@/components/SEO";
 import { moneyNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -35,7 +34,6 @@ import {
   FileText,
   Plus,
   Receipt,
-  Users,
   Wallet,
 } from "lucide-react";
 
@@ -45,19 +43,19 @@ function MoneyDashboardSkeleton() {
       <MainNavigation />
       <ModuleSectionNav config={moneyNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-3xl" />
-            <Skeleton className="h-72 w-full rounded-3xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-72 w-full rounded-2xl" />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </div>
-        <Skeleton className="h-60 w-full rounded-3xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -72,40 +70,54 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function CashPulseRing({
+function CashPressureSummary({
   overdueAmount,
   outstandingAmount,
+  collectedThisMonth,
 }: {
   overdueAmount: number;
   outstandingAmount: number;
+  collectedThisMonth: number;
 }) {
   const ratio = outstandingAmount > 0 ? Math.min(100, Math.round((overdueAmount / outstandingAmount) * 100)) : 0;
-  const tone = ratio >= 45 ? "rgb(239 68 68)" : ratio >= 20 ? "rgb(245 158 11)" : "rgb(99 102 241)";
+  const healthy = outstandingAmount - overdueAmount;
+  const toneClass = ratio >= 45 ? "text-red-600" : ratio >= 20 ? "text-amber-600" : "text-indigo-600";
+  const barTone = ratio >= 45 ? "bg-red-500" : ratio >= 20 ? "bg-amber-500" : "bg-indigo-500";
+
+  const rows = [
+    { label: "Collected this month", value: formatCurrency(collectedThisMonth), tone: "text-emerald-600" },
+    { label: "Outstanding", value: formatCurrency(outstandingAmount), tone: "text-indigo-600" },
+    { label: "Overdue", value: formatCurrency(overdueAmount), tone: toneClass },
+  ];
 
   return (
-    <div className="relative flex h-60 items-center justify-center">
-      <div
-        className={ratio >= 45 ? "animate-pulse-subtle" : ""}
-        style={{
-          width: 216,
-          height: 216,
-          borderRadius: "999px",
-          background: `conic-gradient(${tone} ${ratio}%, hsl(var(--muted)) ${ratio}% 100%)`,
-          padding: 14,
-          boxShadow: `0 20px 50px -24px ${tone}`,
-        }}
-      >
-        <div className="flex h-full w-full flex-col items-center justify-center rounded-full bg-card text-center">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-muted-foreground">
-            Overdue pressure
-          </p>
-          <p className="mt-3 text-5xl font-bold tracking-tight">{ratio}%</p>
-          <p className="mt-2 max-w-[9rem] text-sm text-muted-foreground">
-            of outstanding receivables are already overdue
-          </p>
-        </div>
+    <div className="flex h-full flex-col">
+      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+        Overdue pressure
+      </p>
+      <div className="mt-2 flex items-baseline gap-2">
+        <p className={`text-4xl font-bold tracking-tight ${toneClass}`}>{ratio}%</p>
+        <p className="text-sm text-muted-foreground">of outstanding is overdue</p>
       </div>
-      <div className="absolute inset-0 -z-10 rounded-full bg-indigo-500/10 blur-3xl" />
+
+      <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-muted">
+        <div className={`h-full ${barTone}`} style={{ width: `${ratio}%` }} />
+      </div>
+
+      <div className="mt-6 space-y-3">
+        {rows.map((row) => (
+          <div key={row.label} className="flex items-center justify-between gap-3">
+            <span className="text-sm text-muted-foreground">{row.label}</span>
+            <span className={`text-sm font-semibold tabular-nums ${row.tone}`}>{row.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {healthy > 0 ? (
+        <p className="mt-auto pt-4 text-xs text-muted-foreground">
+          {formatCurrency(healthy)} still on a normal aging runway.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -211,7 +223,6 @@ export default function MoneyDashboard() {
             <Badge variant="secondary">{formatCurrency(stats.totalOutstanding)} outstanding</Badge>
           </>
         }
-        guidance={<GuidancePanel section="money" />}
         main={
           <>
             <DashboardPanel
@@ -229,22 +240,24 @@ export default function MoneyDashboard() {
                 )
               }
             >
-              <div className="grid gap-6 lg:grid-cols-[1.05fr_0.95fr]">
-                <div className="rounded-[1.75rem] border border-border/60 bg-muted/30 p-5">
-                  <CashPulseRing overdueAmount={stats.overdueAmount} outstandingAmount={stats.totalOutstanding} />
+              <div className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+                <div className="rounded-2xl border border-border/60 bg-muted/30 p-5">
+                  <CashPressureSummary
+                    overdueAmount={stats.overdueAmount}
+                    outstandingAmount={stats.totalOutstanding}
+                    collectedThisMonth={stats.revenueThisMonth}
+                  />
                 </div>
-                <div className="rounded-[1.75rem] border border-border/60 bg-muted/25 p-4">
-                  <div className="mb-4 flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
-                        Five-point cash read
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        A single glance at the inflow and outflow tension in the system.
-                      </p>
-                    </div>
+                <div className="rounded-2xl border border-border/60 bg-muted/25 p-4">
+                  <div className="mb-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                      Cash inflow vs outflow
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Inflow and outflow tension across the system.
+                    </p>
                   </div>
-                  <div className="h-72">
+                  <div className="h-64">
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={cashMap} margin={{ top: 8, right: 8, left: 0, bottom: 0 }}>
                         <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
@@ -267,7 +280,7 @@ export default function MoneyDashboard() {
 
             <DashboardPanel eyebrow="Collections focus" title="Who still owes you">
               <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                <div className="h-80 rounded-2xl border border-border/60 bg-muted/25 p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={customerExposure} layout="vertical" margin={{ top: 8, right: 20, left: 10, bottom: 8 }}>
                       <CartesianGrid horizontal={false} stroke="hsl(var(--border) / 0.35)" />

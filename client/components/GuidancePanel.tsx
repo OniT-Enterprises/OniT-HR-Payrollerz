@@ -31,7 +31,7 @@ export default function GuidancePanel({ section }: GuidancePanelProps) {
   return (
     <div
       className={`
-        ${theme.borderLeft} rounded-lg px-5 py-4 mb-6
+        border border-border/60 rounded-lg px-5 py-4 mb-6
         ${theme.bgSubtle}
         animate-fade-up
       `}

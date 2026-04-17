@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -9,14 +9,12 @@ import {
   ResponsiveContainer,
   Tooltip,
   XAxis,
-  YAxis,
 } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import GuidancePanel from "@/components/GuidancePanel";
 import { SEO, seoConfig } from "@/components/SEO";
 import { peopleNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -49,19 +47,19 @@ function PeopleDashboardSkeleton() {
       <MainNavigation />
       <ModuleSectionNav config={peopleNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-3xl" />
-            <Skeleton className="h-72 w-full rounded-3xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-72 w-full rounded-2xl" />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </div>
-        <Skeleton className="h-60 w-full rounded-3xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -185,12 +183,11 @@ export default function PeopleDashboard() {
             <Badge variant="secondary">{issues} compliance issue{issues === 1 ? "" : "s"}</Badge>
           </>
         }
-        guidance={<GuidancePanel section="people" />}
         main={
           <>
             <DashboardPanel eyebrow="Signature view" title="Workforce spectrum">
               <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                <div className="h-80 rounded-2xl border border-border/60 bg-muted/25 p-4">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={workforceMap} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />

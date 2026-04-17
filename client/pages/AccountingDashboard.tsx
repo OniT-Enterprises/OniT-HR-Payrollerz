@@ -15,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import GuidancePanel from "@/components/GuidancePanel";
 import { SEO, seoConfig } from "@/components/SEO";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
@@ -45,19 +44,19 @@ function AccountingDashboardSkeleton() {
       <MainNavigation />
       <ModuleSectionNav config={accountingNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
-        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-40 w-full rounded-2xl" />
         <div className="grid gap-6 xl:grid-cols-12">
           <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-3xl" />
-            <Skeleton className="h-72 w-full rounded-3xl" />
+            <Skeleton className="h-80 w-full rounded-2xl" />
+            <Skeleton className="h-72 w-full rounded-2xl" />
           </div>
           <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-40 w-full rounded-3xl" />
-            <Skeleton className="h-64 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-40 w-full rounded-2xl" />
+            <Skeleton className="h-64 w-full rounded-2xl" />
           </div>
         </div>
-        <Skeleton className="h-60 w-full rounded-3xl" />
+        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -143,12 +142,11 @@ export default function AccountingDashboard() {
             <Badge variant="secondary">{lastPayrollDate}</Badge>
           </>
         }
-        guidance={<GuidancePanel section="accounting" />}
         main={
           <>
             <DashboardPanel eyebrow="Signature view" title="Payroll to ledger flow">
               <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                <div className="h-80 rounded-2xl border border-border/60 bg-muted/25 p-4">
                   {payrollFlow.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={payrollFlow} layout="vertical" margin={{ top: 8, right: 16, left: 10, bottom: 8 }}>
@@ -160,14 +158,14 @@ export default function AccountingDashboard() {
                           contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
                         />
                         <Bar dataKey="amount" radius={[12, 12, 12, 12]}>
-                          {payrollFlow.map((entry) => (
-                            <Cell key={entry.name} fill={entry.tone} />
+                          {payrollFlow.map((entry, index) => (
+                            <Cell key={`${entry.name}-${index}`} fill={entry.tone} />
                           ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
                   ) : (
-                    <div className="flex h-full items-center justify-center rounded-[1.25rem] border border-dashed border-border/70 bg-background/60 p-6 text-center text-sm text-muted-foreground">
+                    <div className="flex h-full items-center justify-center rounded-xl border border-dashed border-border/70 bg-background/60 p-6 text-center text-sm text-muted-foreground">
                       No posted payroll entry is available yet, so the payroll-to-ledger visual will appear after the next posted run.
                     </div>
                   )}
