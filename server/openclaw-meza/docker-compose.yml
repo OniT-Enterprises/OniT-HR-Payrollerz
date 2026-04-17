@@ -19,7 +19,7 @@ services:
 
     # --- Networking ---
     # Host networking so gateway binds to host loopback directly
-    # Dashboard at 127.0.0.1:18790 (access via SSH tunnel or Nginx)
+    # Dashboard at localhost:18790 (access via SSH tunnel or Nginx)
     network_mode: host
 
     # --- Writable tmpfs for temp files (noexec, nosuid) ---

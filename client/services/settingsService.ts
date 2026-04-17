@@ -27,6 +27,183 @@ import {
 
 const LEGACY_SETTINGS_COLLECTION = 'tenant_settings';
 
+function buildDefaultTenantSettings(tenantId: string): Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> {
+  return {
+    tenantId,
+    companyDetails: {
+      legalName: '',
+      registeredAddress: '',
+      city: '',
+      country: 'Timor-Leste',
+      tinNumber: '',
+      businessType: 'Lda',
+    },
+    companyStructure: {
+      businessSector: 'other',
+      workLocations: [],
+      departments: [],
+      employeeGrades: [
+        { grade: 'director', label: 'Director', isActive: true },
+        { grade: 'senior_management', label: 'Senior Management', isActive: true },
+        { grade: 'management', label: 'Management', isActive: true },
+        { grade: 'supervisor', label: 'Supervisor', isActive: true },
+        { grade: 'general_staff', label: 'General Staff', isActive: true },
+      ],
+    },
+    paymentStructure: {
+      paymentMethods: ['bank_transfer'],
+      primaryPaymentMethod: 'bank_transfer',
+      bankAccounts: [],
+      employmentTypes: ['open_ended', 'fixed_term'],
+      payrollFrequencies: ['monthly'],
+      payrollPeriods: [
+        {
+          frequency: 'monthly',
+          startDay: 1,
+          endDay: 31,
+          payDay: 25,
+          isActive: true,
+        },
+      ],
+    },
+    timeOffPolicies: TL_DEFAULT_LEAVE_POLICIES,
+    payrollConfig: TL_DEFAULT_PAYROLL_CONFIG,
+    hrAdminIds: [],
+    setupComplete: false,
+    setupProgress: {
+      companyDetails: false,
+      companyStructure: false,
+      paymentStructure: false,
+      timeOffPolicies: false,
+      payrollConfig: false,
+    },
+  };
+}
+
+function toDateValue(value: unknown): Date {
+  if (value instanceof Date) {
+    return value;
+  }
+
+  if (
+    value &&
+    typeof value === 'object' &&
+    'toDate' in value &&
+    typeof (value as { toDate: unknown }).toDate === 'function'
+  ) {
+    return (value as { toDate: () => Date }).toDate();
+  }
+
+  return new Date();
+}
+
+function normalizeTenantSettings(
+  tenantId: string,
+  raw: Partial<TenantSettings> | Record<string, unknown>,
+): TenantSettings {
+  const defaults = buildDefaultTenantSettings(tenantId);
+  const data = raw as Partial<TenantSettings>;
+
+  return {
+    id: tenantId,
+    tenantId,
+    companyDetails: {
+      ...defaults.companyDetails,
+      ...(data.companyDetails || {}),
+    },
+    companyStructure: {
+      ...defaults.companyStructure,
+      ...(data.companyStructure || {}),
+      workLocations: data.companyStructure?.workLocations || defaults.companyStructure.workLocations,
+      departments: data.companyStructure?.departments || defaults.companyStructure.departments,
+      employeeGrades: data.companyStructure?.employeeGrades || defaults.companyStructure.employeeGrades,
+    },
+    paymentStructure: {
+      ...defaults.paymentStructure,
+      ...(data.paymentStructure || {}),
+      paymentMethods: data.paymentStructure?.paymentMethods || defaults.paymentStructure.paymentMethods,
+      bankAccounts: data.paymentStructure?.bankAccounts || defaults.paymentStructure.bankAccounts,
+      employmentTypes: data.paymentStructure?.employmentTypes || defaults.paymentStructure.employmentTypes,
+      payrollFrequencies: data.paymentStructure?.payrollFrequencies || defaults.paymentStructure.payrollFrequencies,
+      payrollPeriods: data.paymentStructure?.payrollPeriods || defaults.paymentStructure.payrollPeriods,
+    },
+    timeOffPolicies: {
+      ...defaults.timeOffPolicies,
+      ...(data.timeOffPolicies || {}),
+      annualLeave: {
+        ...defaults.timeOffPolicies.annualLeave,
+        ...(data.timeOffPolicies?.annualLeave || {}),
+      },
+      sickLeave: {
+        ...defaults.timeOffPolicies.sickLeave,
+        ...(data.timeOffPolicies?.sickLeave || {}),
+      },
+      maternityLeave: {
+        ...defaults.timeOffPolicies.maternityLeave,
+        ...(data.timeOffPolicies?.maternityLeave || {}),
+      },
+      paternityLeave: {
+        ...defaults.timeOffPolicies.paternityLeave,
+        ...(data.timeOffPolicies?.paternityLeave || {}),
+      },
+      unpaidLeave: {
+        ...defaults.timeOffPolicies.unpaidLeave,
+        ...(data.timeOffPolicies?.unpaidLeave || {}),
+      },
+      customLeaveTypes: data.timeOffPolicies?.customLeaveTypes || defaults.timeOffPolicies.customLeaveTypes,
+    },
+    payrollConfig: {
+      ...defaults.payrollConfig,
+      ...(data.payrollConfig || {}),
+      tax: {
+        ...defaults.payrollConfig.tax,
+        ...(data.payrollConfig?.tax || {}),
+      },
+      socialSecurity: {
+        ...defaults.payrollConfig.socialSecurity,
+        ...(data.payrollConfig?.socialSecurity || {}),
+      },
+      overtimeRates: {
+        ...defaults.payrollConfig.overtimeRates,
+        ...(data.payrollConfig?.overtimeRates || {}),
+      },
+      subsidioAnual: {
+        ...defaults.payrollConfig.subsidioAnual,
+        ...(data.payrollConfig?.subsidioAnual || {}),
+      },
+    },
+    hrAdminIds: data.hrAdminIds || defaults.hrAdminIds,
+    openaiApiKey: data.openaiApiKey,
+    setupComplete: data.setupComplete ?? defaults.setupComplete,
+    setupProgress: {
+      ...defaults.setupProgress,
+      ...(data.setupProgress || {}),
+    },
+    createdAt: toDateValue(data.createdAt),
+    updatedAt: toDateValue(data.updatedAt),
+  };
+}
+
+function toFirestoreSettingsPayload(settings: TenantSettings): Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> {
+  const payload: Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> = {
+    tenantId: settings.tenantId,
+    companyDetails: settings.companyDetails,
+    companyStructure: settings.companyStructure,
+    paymentStructure: settings.paymentStructure,
+    timeOffPolicies: settings.timeOffPolicies,
+    payrollConfig: settings.payrollConfig,
+    hrAdminIds: settings.hrAdminIds,
+    setupComplete: settings.setupComplete,
+    setupProgress: settings.setupProgress,
+  };
+
+  if (typeof settings.openaiApiKey === 'string' && settings.openaiApiKey.length > 0) {
+    payload.openaiApiKey = settings.openaiApiKey;
+  }
+
+  return payload;
+}
+
 // ============================================
 // Tenant Settings
 // ============================================
@@ -42,12 +219,7 @@ export const settingsService = {
 
       if (docSnap.exists()) {
         const data = docSnap.data();
-        return {
-          ...data,
-          id: tenantId,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          updatedAt: data.updatedAt?.toDate() || new Date(),
-        } as TenantSettings;
+        return normalizeTenantSettings(tenantId, data);
       }
 
       // Legacy fallback (single-tenant -> multi-tenant migration)
@@ -55,24 +227,19 @@ export const settingsService = {
       const legacySnap = await getDoc(legacyRef);
       if (legacySnap.exists()) {
         const legacy = legacySnap.data();
+        const normalized = normalizeTenantSettings(tenantId, legacy);
 
         // Best-effort migration: copy legacy settings into tenant-scoped path.
         await setDoc(docRef, {
-          ...legacy,
-          tenantId,
+          ...toFirestoreSettingsPayload(normalized),
           migratedFromLegacy: true,
           migratedAt: serverTimestamp(),
         }, { merge: true });
 
-        return {
-          ...legacy,
-          id: tenantId,
-          createdAt: legacy.createdAt?.toDate?.() || new Date(),
-          updatedAt: legacy.updatedAt?.toDate?.() || new Date(),
-        } as TenantSettings;
+        return normalized;
       }
 
-      return null;
+      return await this.createSettings(tenantId);
     } catch (error) {
       console.error('Error getting settings:', error);
       throw error;
@@ -83,56 +250,7 @@ export const settingsService = {
    * Create initial settings for a new tenant
    */
   async createSettings(tenantId: string): Promise<TenantSettings> {
-    const defaultSettings: Omit<TenantSettings, 'id' | 'createdAt' | 'updatedAt'> = {
-      tenantId,
-      companyDetails: {
-        legalName: '',
-        registeredAddress: '',
-        city: '',
-        country: 'Timor-Leste',
-        tinNumber: '',
-        businessType: 'Lda',
-      },
-      companyStructure: {
-        businessSector: 'other',
-        workLocations: [],
-        departments: [],
-        employeeGrades: [
-          { grade: 'director', label: 'Director', isActive: true },
-          { grade: 'senior_management', label: 'Senior Management', isActive: true },
-          { grade: 'management', label: 'Management', isActive: true },
-          { grade: 'supervisor', label: 'Supervisor', isActive: true },
-          { grade: 'general_staff', label: 'General Staff', isActive: true },
-        ],
-      },
-      paymentStructure: {
-        paymentMethods: ['bank_transfer'],
-        primaryPaymentMethod: 'bank_transfer',
-        bankAccounts: [],
-        employmentTypes: ['open_ended', 'fixed_term'],
-        payrollFrequencies: ['monthly'],
-        payrollPeriods: [
-          {
-            frequency: 'monthly',
-            startDay: 1,
-            endDay: 31,
-            payDay: 25,
-            isActive: true,
-          },
-        ],
-      },
-      timeOffPolicies: TL_DEFAULT_LEAVE_POLICIES,
-      payrollConfig: TL_DEFAULT_PAYROLL_CONFIG,
-      hrAdminIds: [],
-      setupComplete: false,
-      setupProgress: {
-        companyDetails: false,
-        companyStructure: false,
-        paymentStructure: false,
-        timeOffPolicies: false,
-        payrollConfig: false,
-      },
-    };
+    const defaultSettings = buildDefaultTenantSettings(tenantId);
 
     try {
       const docRef = doc(db, paths.settings(tenantId));

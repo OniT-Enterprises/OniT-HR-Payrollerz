@@ -46,6 +46,7 @@ import {
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import KeyboardShortcutsDialog from "@/components/KeyboardShortcutsDialog";
 import { SEO, seoConfig } from "@/components/SEO";
+import { useLayoutOptional } from "@/contexts/LayoutContext";
 
 function getNextPayDate() {
   const now = new Date();
@@ -384,6 +385,9 @@ function DashboardSkeleton() {
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const layout = useLayoutOptional();
+  const setPageHeader = layout?.setPageHeader;
+  const clearPageHeader = layout?.clearPageHeader;
   const { user } = useAuth();
   const { session, hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
@@ -521,6 +525,21 @@ export default function Dashboard() {
   };
 
   const nextAction = getNextAction();
+
+  useEffect(() => {
+    if (!setPageHeader) return;
+
+    setPageHeader({
+      title: "Dashboard",
+      subtitle: "Command center and priorities for the business today",
+      icon: Calculator,
+      iconColor: "text-primary",
+    });
+
+    return () => {
+      clearPageHeader?.();
+    };
+  }, [setPageHeader, clearPageHeader]);
 
   if (loading) {
     return <DashboardSkeleton />;

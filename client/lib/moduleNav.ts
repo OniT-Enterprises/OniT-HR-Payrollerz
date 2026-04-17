@@ -16,6 +16,7 @@ import type { ComponentType } from "react";
 import type { SectionId } from "./sectionTheme";
 import type { ModulePermission } from "@/types/tenant";
 import {
+  LayoutDashboard,
   // People
   Users,
   Briefcase,
@@ -90,6 +91,7 @@ export interface ModuleSection {
 
 export interface ModuleNavConfig {
   moduleId: SectionId;
+  overview?: NavItem;
   sections: ModuleSection[];
 }
 
@@ -100,6 +102,12 @@ export interface ModuleNavConfig {
 
 export const peopleNavConfig: ModuleNavConfig = {
   moduleId: "people",
+  overview: {
+    label: "Overview",
+    path: "/people",
+    icon: LayoutDashboard,
+    requiredAnyModules: ["staff", "hiring", "performance"],
+  },
   sections: [
     {
       id: "employees",
@@ -171,6 +179,11 @@ export const peopleNavConfig: ModuleNavConfig = {
 
 export const timeLeaveNavConfig: ModuleNavConfig = {
   moduleId: "scheduling",
+  overview: {
+    label: "Overview",
+    path: "/time-leave",
+    icon: LayoutDashboard,
+  },
   sections: [
     {
       id: "attendance",
@@ -227,6 +240,11 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
 
 export const payrollNavConfig: ModuleNavConfig = {
   moduleId: "payroll",
+  overview: {
+    label: "Overview",
+    path: "/payroll",
+    icon: LayoutDashboard,
+  },
   sections: [
     {
       id: "run",
@@ -293,6 +311,11 @@ export const payrollNavConfig: ModuleNavConfig = {
 
 export const moneyNavConfig: ModuleNavConfig = {
   moduleId: "money",
+  overview: {
+    label: "Overview",
+    path: "/money",
+    icon: LayoutDashboard,
+  },
   sections: [
     {
       id: "invoices",
@@ -364,6 +387,11 @@ export const moneyNavConfig: ModuleNavConfig = {
 
 export const accountingNavConfig: ModuleNavConfig = {
   moduleId: "accounting",
+  overview: {
+    label: "Overview",
+    path: "/accounting",
+    icon: LayoutDashboard,
+  },
   sections: [
     {
       id: "chart",
@@ -433,6 +461,11 @@ export const accountingNavConfig: ModuleNavConfig = {
 
 export const reportsNavConfig: ModuleNavConfig = {
   moduleId: "reports",
+  overview: {
+    label: "Overview",
+    path: "/reports",
+    icon: LayoutDashboard,
+  },
   sections: [
     {
       id: "payroll-reports",
@@ -521,6 +554,10 @@ export function filterModuleNavConfigByPermissions(
 ): ModuleNavConfig {
   return {
     ...config,
+    overview:
+      config.overview && canViewNavEntry(config.overview, hasModule)
+        ? config.overview
+        : undefined,
     sections: config.sections
       .filter((section) => canViewNavEntry(section, hasModule))
       .map((section) => ({

@@ -46,8 +46,9 @@ export default defineConfig(({ mode }) => ({
     exclude: ['tests/rules/**', 'tests/functions/**', 'node_modules/**', 'dist/**'],
   },
   server: {
-    host: "::",
+    host: "localhost",
     port: 8080,
+    strictPort: true,
   },
   build: {
     outDir: "dist/spa",

@@ -2,12 +2,22 @@ import { getStorageLazy } from "@/lib/firebase";
 
 class FileUploadService {
   private static instance: FileUploadService;
+  private readonly storageTimeoutMs = 20000;
 
   static getInstance(): FileUploadService {
     if (!FileUploadService.instance) {
       FileUploadService.instance = new FileUploadService();
     }
     return FileUploadService.instance;
+  }
+
+  private async withTimeout<T>(promise: Promise<T>, action: string): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => {
+        setTimeout(() => reject(new Error(`${action} timed out. Check Firebase Storage.`)), this.storageTimeoutMs);
+      }),
+    ]);
   }
 
   /**
@@ -21,8 +31,8 @@ class FileUploadService {
       const storage = await getStorageLazy();
       const { ref, uploadBytes, getDownloadURL } = await import("firebase/storage");
       const storageRef = ref(storage, path);
-      const snapshot = await uploadBytes(storageRef, file);
-      const downloadURL = await getDownloadURL(snapshot.ref);
+      const snapshot = await this.withTimeout(uploadBytes(storageRef, file), "File upload");
+      const downloadURL = await this.withTimeout(getDownloadURL(snapshot.ref), "Storage URL lookup");
       return downloadURL;
     } catch (error) {
       console.error("Error uploading file:", error);
@@ -61,7 +71,7 @@ class FileUploadService {
       const storage = await getStorageLazy();
       const { ref, deleteObject } = await import("firebase/storage");
       const fileRef = ref(storage, url);
-      await deleteObject(fileRef);
+      await this.withTimeout(deleteObject(fileRef), "File delete");
     } catch (error) {
       console.error("Error deleting file:", error);
       throw new Error("Failed to delete file");
@@ -85,6 +95,22 @@ class FileUploadService {
   }
 
   /**
+   * Upload company logo for tenant branding
+   * @param file - The image file to upload
+   * @param tenantId - Tenant ID for storage isolation
+   * @returns Promise with download URL
+   */
+  async uploadCompanyLogo(file: File, tenantId: string): Promise<string> {
+    const timestamp = Date.now();
+    const rawExtension = file.name.split(".").pop()?.toLowerCase() || "png";
+    const safeExtension = rawExtension.replace(/[^a-z0-9]/g, "") || "png";
+    const fileName = `company-logo_${timestamp}.${safeExtension}`;
+    const path = `tenants/${tenantId}/branding/company-logo/${fileName}`;
+
+    return this.uploadFile(file, path);
+  }
+
+  /**
    * Validate receipt file (images and PDFs, max 10MB)
    */
   validateReceiptFile(file: File): { valid: boolean; error?: string } {
@@ -97,6 +123,23 @@ class FileUploadService {
 
     if (file.size > maxSize) {
       return { valid: false, error: 'File size must be under 10MB' };
+    }
+
+    return { valid: true };
+  }
+
+  /**
+   * Validate company logo image (images only, max 5MB)
+   */
+  validateImageFile(file: File): { valid: boolean; error?: string } {
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!file.type.startsWith("image/")) {
+      return { valid: false, error: "Please upload an image file (PNG, JPG, WebP, or SVG)" };
+    }
+
+    if (file.size > maxSize) {
+      return { valid: false, error: "Image size must be under 5MB" };
     }
 
     return { valid: true };

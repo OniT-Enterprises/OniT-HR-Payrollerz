@@ -327,11 +327,11 @@ function isProductionEnvironment(): boolean {
   if (import.meta.env.PROD) {
     return true;
   }
-  // Defense-in-depth: check hostname (localhost/127.0.0.1 are always dev)
+  // Defense-in-depth: local loopback hosts are always treated as a dev environment
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return false; // Always allow on localhost
+      return false; // Always allow on local loopback
     }
     if (PRODUCTION_HOSTNAMES.some(h => hostname.includes(h))) {
       return true;

@@ -3,7 +3,7 @@
  */
 
 import { useQuery } from '@tanstack/react-query';
-import { useTenantId } from '@/contexts/TenantContext';
+import { useTenant } from '@/contexts/TenantContext';
 import { settingsService } from '@/services/settingsService';
 
 export const settingsKeys = {
@@ -12,10 +12,16 @@ export const settingsKeys = {
 
 /** Fetch tenant settings */
 export function useSettings() {
-  const tenantId = useTenantId();
+  const { session, isImpersonating, impersonatedTenantId } = useTenant();
+  const tenantId = isImpersonating && impersonatedTenantId ? impersonatedTenantId : session?.tid;
+
   return useQuery({
-    queryKey: settingsKeys.all(tenantId),
-    queryFn: () => settingsService.getSettings(tenantId),
+    queryKey: tenantId ? settingsKeys.all(tenantId) : ['tenants', 'no-tenant', 'settings'],
+    queryFn: () => {
+      if (!tenantId) return null;
+      return settingsService.getSettings(tenantId);
+    },
+    enabled: Boolean(tenantId),
     staleTime: 10 * 60 * 1000, // Settings change rarely
     gcTime: 60 * 60 * 1000,
   });

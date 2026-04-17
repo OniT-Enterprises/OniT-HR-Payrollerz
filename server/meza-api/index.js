@@ -152,7 +152,7 @@ const chatLimiter = rateLimit({
 // OpenClaw Gateway Configuration
 // ============================================================================
 
-const OPENCLAW_WS_URL = process.env.OPENCLAW_WS_URL || 'ws://127.0.0.1:18790';
+const OPENCLAW_WS_URL = process.env.OPENCLAW_WS_URL || 'ws://localhost:18790';
 const OPENCLAW_HTTP_URL = OPENCLAW_WS_URL.replace(/^ws/, 'http');
 const OPENCLAW_PASSWORD = process.env.OPENCLAW_PASSWORD || '';
 if (OPENCLAW_PASSWORD) {
@@ -3704,7 +3704,7 @@ app.use((err, req, res, _next) => {
 // Start server
 // ============================================================================
 
-app.listen(PORT, '127.0.0.1', () => {
-  console.log(`[meza-api] Listening on 127.0.0.1:${PORT}`);
-  console.log(`[meza-api] Health check: http://127.0.0.1:${PORT}/api/health`);
+app.listen(PORT, 'localhost', () => {
+  console.log(`[meza-api] Listening on localhost:${PORT}`);
+  console.log(`[meza-api] Health check: http://localhost:${PORT}/api/health`);
 });

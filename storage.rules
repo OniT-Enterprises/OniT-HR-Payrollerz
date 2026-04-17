@@ -11,17 +11,20 @@ service firebase.storage {
       return request.auth != null;
     }
 
-    // Check if user belongs to this tenant (via custom claims fast-path)
+    function tenantMemberDoc(tenantId) {
+      return firestore.get(/databases/(default)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
+    }
+
+    // Check if user belongs to this tenant
     function isTenantMember(tenantId) {
       return isAuthenticated() &&
-        request.auth.token.tenants is map &&
-        tenantId in request.auth.token.tenants;
+        firestore.exists(/databases/(default)/documents/tenants/$(tenantId)/members/$(request.auth.uid));
     }
 
     // Check if user is admin (owner or hr-admin) for this tenant
     function isTenantAdmin(tenantId) {
       return isTenantMember(tenantId) &&
-        request.auth.token.tenants[tenantId] in ['owner', 'hr-admin'];
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin'];
     }
 
     // File size limit: 10 MB
@@ -35,6 +38,10 @@ service firebase.storage {
         request.resource.contentType == 'application/pdf' ||
         request.resource.contentType == 'application/msword' ||
         request.resource.contentType == 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    }
+
+    function isAllowedImageType() {
+      return request.resource.contentType.matches('image/.*');
     }
 
     // ============================================
@@ -57,6 +64,12 @@ service firebase.storage {
     match /tenants/{tenantId}/payslips/{payrollRunId}/{document} {
       allow read: if isTenantMember(tenantId);
       allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit();
+    }
+
+    // Tenant branding assets (company logos)
+    match /tenants/{tenantId}/branding/{allPaths=**} {
+      allow read: if isTenantMember(tenantId);
+      allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedImageType();
     }
 
     // Attendance photos (supervisor crew clock-in)

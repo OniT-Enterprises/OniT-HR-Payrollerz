@@ -3,7 +3,7 @@ import { Type } from "@sinclair/typebox";
 
 export default function register(api: OpenclawPluginApi) {
   const config = api.config.plugins?.entries?.["meza-hr"]?.config || {};
-  const apiBaseUrl = config.apiBaseUrl || "http://127.0.0.1:3201";
+  const apiBaseUrl = config.apiBaseUrl || "http://localhost:3201";
   const apiKey = config.apiKey;
   const tenantId = config.defaultTenantId;
 

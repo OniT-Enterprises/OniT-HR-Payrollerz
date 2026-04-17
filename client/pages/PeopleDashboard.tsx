@@ -1,81 +1,67 @@
-/**
- * People Hub - Overview page linking to Staff, Hiring, and Performance sections.
- * Answers: "Who works here, and what needs attention?"
- * Structure: Hero → KPIs → Section Cards
- */
-
 import React, { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent } from "@/components/ui/card";
+import { useQuery } from "@tanstack/react-query";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
+import GuidancePanel from "@/components/GuidancePanel";
+import { SEO, seoConfig } from "@/components/SEO";
 import { peopleNavConfig } from "@/lib/moduleNav";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
-import { useTenant } from "@/contexts/TenantContext";
+import { useGoalStats } from "@/hooks/usePerformance";
+import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { interviewService } from "@/services/interviewService";
+import { reviewService } from "@/services/reviewService";
+import { trainingService } from "@/services/trainingService";
+import { disciplinaryService } from "@/services/disciplinaryService";
 import {
-  Users,
-  UserPlus,
-  Briefcase,
-  Target,
-  ChevronRight,
-  Heart,
   AlertTriangle,
-  CheckCircle,
+  ArrowRight,
+  Briefcase,
+  GraduationCap,
+  HeartHandshake,
+  ShieldAlert,
+  Target,
+  UserPlus,
+  Users,
 } from "lucide-react";
-import { SEO, seoConfig } from "@/components/SEO";
-import GuidancePanel from "@/components/GuidancePanel";
-import { useI18n } from "@/i18n/I18nProvider";
-import MoreDetailsSection from "@/components/MoreDetailsSection";
 
 function PeopleDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <Skeleton className="h-4 w-32 mb-4" />
-          <div className="flex items-center gap-4">
-            <Skeleton className="h-14 w-14 rounded-2xl" />
-            <div>
-              <Skeleton className="h-8 w-32 mb-2" />
-              <Skeleton className="h-5 w-64" />
-            </div>
+      <ModuleSectionNav config={peopleNavConfig} />
+      <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="space-y-6 xl:col-span-8">
+            <Skeleton className="h-80 w-full rounded-3xl" />
+            <Skeleton className="h-72 w-full rounded-3xl" />
+          </div>
+          <div className="space-y-6 xl:col-span-4">
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-64 w-full rounded-3xl" />
           </div>
         </div>
-      </div>
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        <div className="grid gap-4 md:grid-cols-3 mb-6">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-5 pb-5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Skeleton className="h-7 w-10 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-5 pb-5">
-                <Skeleton className="h-10 w-10 rounded-xl mb-3" />
-                <Skeleton className="h-5 w-24 mb-2" />
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-4 w-3/4 mt-1" />
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        <Skeleton className="h-60 w-full rounded-3xl" />
       </div>
     </div>
   );
@@ -83,33 +69,93 @@ function PeopleDashboardSkeleton() {
 
 export default function PeopleDashboard() {
   const navigate = useNavigate();
-  const { t } = useI18n();
+  const tenantId = useTenantId();
   const { hasModule } = useTenant();
   const hasStaff = hasModule("staff");
   const hasHiring = hasModule("hiring");
   const hasPerformance = hasModule("performance");
   const hasTimeleave = hasModule("timeleave");
-  const { data: employeeSummary, isLoading: employeesLoading } = useActiveEmployeeSummary(hasStaff);
-  const { data: leaveStats, isLoading: leaveStatsLoading } = useLeaveStats(hasTimeleave);
-  const loading = employeesLoading || leaveStatsLoading;
 
-  const stats = useMemo(
-    () => ({
-      activeEmployees: employeeSummary?.active ?? 0,
-      pendingLeave: hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0,
-      onLeaveToday: hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0,
-    }),
-    [employeeSummary?.active, hasTimeleave, leaveStats]
-  );
+  const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary(hasStaff);
+  const { data: leaveStats, isLoading: leaveLoading } = useLeaveStats(hasTimeleave);
+  const { data: goalStats, isLoading: goalLoading } = useGoalStats(undefined);
+  const { data: interviewStats, isLoading: interviewLoading } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleDashboard", "interviews"],
+    queryFn: () => interviewService.getStats(tenantId),
+    enabled: hasHiring,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: reviewStats, isLoading: reviewLoading } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleDashboard", "reviews"],
+    queryFn: () => reviewService.getStats(tenantId),
+    enabled: hasPerformance,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: trainingStats, isLoading: trainingLoading } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleDashboard", "training"],
+    queryFn: () => trainingService.getTrainingStats(tenantId),
+    enabled: hasPerformance,
+    staleTime: 5 * 60 * 1000,
+  });
+  const { data: disciplinaryStats, isLoading: disciplinaryLoading } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleDashboard", "disciplinary"],
+    queryFn: () => disciplinaryService.getStats(tenantId),
+    enabled: hasPerformance,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const attentionCount = useMemo(
-    () => (hasStaff ? employeeSummary?.totalIssues ?? 0 : 0),
-    [employeeSummary?.totalIssues, hasStaff],
-  );
-
-  if (loading) {
+  if (
+    employeeLoading ||
+    leaveLoading ||
+    goalLoading ||
+    interviewLoading ||
+    reviewLoading ||
+    trainingLoading ||
+    disciplinaryLoading
+  ) {
     return <PeopleDashboardSkeleton />;
   }
+
+  const activeEmployees = employeeSummary?.active ?? 0;
+  const issues = employeeSummary?.totalIssues ?? 0;
+  const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
+  const interviewsScheduled = hasHiring ? interviewStats?.scheduled ?? 0 : 0;
+  const completedReviews = hasPerformance ? reviewStats?.completed ?? 0 : 0;
+  const trainingExpiring = hasPerformance ? trainingStats?.expiringSoon ?? 0 : 0;
+  const disciplinaryOpen = hasPerformance ? (disciplinaryStats?.open ?? 0) + (disciplinaryStats?.inReview ?? 0) : 0;
+  const goalsActive = hasPerformance ? goalStats?.active ?? 0 : 0;
+
+  const workforceMap = [
+    { name: "Active", value: activeEmployees, tone: "#2563eb" },
+    { name: "Leave", value: pendingLeave, tone: "#06b6d4" },
+    { name: "Interviews", value: interviewsScheduled, tone: "#8b5cf6" },
+    { name: "Goals", value: goalsActive, tone: "#10b981" },
+    { name: "Issues", value: issues, tone: "#f59e0b" },
+    { name: "Cases", value: disciplinaryOpen, tone: "#ef4444" },
+  ];
+
+  const talentSignals = [
+    {
+      title: "Hiring pipeline",
+      value: interviewsScheduled,
+      note: hasHiring ? "Interviews already sitting on the calendar." : "Hiring module is not active for this tenant.",
+    },
+    {
+      title: "Review completion",
+      value: completedReviews,
+      note: hasPerformance ? `${reviewStats?.averageRating ?? 0} average rating across completed reviews.` : "Performance module is not active.",
+    },
+    {
+      title: "Training watch",
+      value: trainingExpiring,
+      note: hasPerformance ? "Certificates expiring within the next 30 days." : "Training tracking is not active.",
+    },
+  ];
+
+  const briefLead =
+    issues > 0 || disciplinaryOpen > 0
+      ? `The people module is showing both growth and friction, with workforce activity moving forward while some compliance or employee-case pressure still needs attention.`
+      : `The people module is in a healthy operating state, with the main focus moving from cleanup toward growth, development, and hiring momentum.`;
 
   return (
     <div className="min-h-screen bg-background">
@@ -117,201 +163,236 @@ export default function PeopleDashboard() {
       <MainNavigation />
       <ModuleSectionNav config={peopleNavConfig} />
 
-      {/* Hero Section */}
-      <div className="border-b bg-blue-50 dark:bg-blue-950/30">
-        <div className="mx-auto max-w-screen-2xl px-6 py-5">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-500 shadow-lg shadow-blue-500/25">
-                <img src="/images/illustrations/icons/icon-people.webp" alt="" className="h-8 w-8" />
+      <DashboardShell
+        section="people"
+        title="People and talent cockpit"
+        subtitle="A joined-up read on staff strength, hiring momentum, performance progress, and the employee signals that deserve leadership attention this week."
+        icon={Users}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate("/people/employees")}>
+              Employee directory
+            </Button>
+            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate("/people/add")}>
+              <UserPlus className="mr-2 h-4 w-4" />
+              Add employee
+            </Button>
+          </>
+        }
+        badges={
+          <>
+            <Badge variant="secondary">{activeEmployees} active staff</Badge>
+            <Badge variant="secondary">{issues} compliance issue{issues === 1 ? "" : "s"}</Badge>
+          </>
+        }
+        guidance={<GuidancePanel section="people" />}
+        main={
+          <>
+            <DashboardPanel eyebrow="Signature view" title="Workforce spectrum">
+              <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+                <div className="h-80 rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={workforceMap} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
+                      <Tooltip contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }} />
+                      <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                        {workforceMap.map((entry) => (
+                          <Cell key={entry.name} fill={entry.tone} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                <div className="space-y-3">
+                  {talentSignals.map((signal) => (
+                    <div key={signal.title} className="rounded-2xl border border-border/60 bg-background/80 p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold">{signal.title}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{signal.note}</p>
+                        </div>
+                        <p className="text-2xl font-bold tabular-nums">{signal.value}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("people.dashboard.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("people.dashboard.subtitle")}
-                </p>
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="People temperature" title="Focus areas moving through the workforce">
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                {[
+                  {
+                    title: "Hiring",
+                    value: interviewsScheduled,
+                    description: "Scheduled interviews pushing the pipeline forward.",
+                    path: "/people/interviews",
+                    icon: Briefcase,
+                  },
+                  {
+                    title: "Performance",
+                    value: completedReviews,
+                    description: "Completed reviews already closed out this cycle.",
+                    path: "/people/reviews",
+                    icon: Target,
+                  },
+                  {
+                    title: "Training",
+                    value: trainingExpiring,
+                    description: "Certificates that will expire soon and may need renewal.",
+                    path: "/people/training",
+                    icon: GraduationCap,
+                  },
+                  {
+                    title: "Employee cases",
+                    value: disciplinaryOpen,
+                    description: "Open or in-review disciplinary matters still visible in HR.",
+                    path: "/people/disciplinary",
+                    icon: ShieldAlert,
+                  },
+                ].map((item) => (
+                  <button
+                    key={item.title}
+                    onClick={() => navigate(item.path)}
+                    className="rounded-2xl border border-border/60 bg-muted/25 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/30 hover:bg-background"
+                  >
+                    <div className="mb-4 flex items-center justify-between">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-2xl font-bold tabular-nums">{item.value}</span>
+                    </div>
+                    <p className="text-sm font-semibold">{item.title}</p>
+                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                  </button>
+                ))}
               </div>
-            </div>
-            {hasStaff && (
-              <Button
-                onClick={() => navigate("/people/add")}
-                size="lg"
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <UserPlus className="h-5 w-5 mr-2" />
-                {t("people.dashboard.actions.addEmployee")}
-              </Button>
-            )}
-          </div>
-        </div>
-      </div>
+            </DashboardPanel>
+          </>
+        }
+        rail={
+          <>
+            <DashboardMetricCard
+              label="Active employees"
+              value={activeEmployees}
+              hint="Current live workforce in the system"
+              icon={Users}
+              toneClass="bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"
+              onClick={() => navigate("/people/employees")}
+            />
+            <DashboardMetricCard
+              label="Compliance issues"
+              value={issues}
+              hint="Employee records still missing required information"
+              icon={AlertTriangle}
+              toneClass="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
+              onClick={() => navigate("/people/employees?filter=blocking-issues")}
+            />
+            <DashboardMetricCard
+              label="Pending leave"
+              value={pendingLeave}
+              hint="Requests that still need a decision"
+              icon={HeartHandshake}
+              toneClass="bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"
+              onClick={() => navigate("/time-leave/leave")}
+            />
 
-      <div className="p-6 mx-auto max-w-screen-2xl">
-        <GuidancePanel section="people" />
-
-        {(hasStaff || hasTimeleave) && (
-          <MoreDetailsSection className="mb-6">
-            <div className="grid gap-4 md:grid-cols-3">
-              {hasStaff && (
-                <Card
-                  className="cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => navigate("/people/employees")}
-                >
-                  <CardContent className="pt-5 pb-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-bold">{stats.activeEmployees}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                          {t("people.dashboard.stats.activeEmployees")}
-                        </p>
-                      </div>
-                      <div className="h-10 w-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                        <Users className="h-5 w-5 text-blue-600" />
-                      </div>
+            <DashboardPanel eyebrow="Action rail" title="Best next moves">
+              <div className="space-y-3">
+                {[
+                  {
+                    title: "Review employee issues",
+                    description: "Clear the records most likely to create HR or payroll friction.",
+                    path: "/people/employees?filter=blocking-issues",
+                    icon: AlertTriangle,
+                  },
+                  {
+                    title: "Check the interview queue",
+                    description: "Keep the hiring pipeline moving while candidates are warm.",
+                    path: "/people/interviews",
+                    icon: Briefcase,
+                  },
+                  {
+                    title: "Open performance reviews",
+                    description: "Push review completion and close the loop on feedback.",
+                    path: "/people/reviews",
+                    icon: Target,
+                  },
+                ].map((action) => (
+                  <button
+                    key={action.title}
+                    onClick={() => navigate(action.path)}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-muted/25 px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/30 hover:bg-background"
+                  >
+                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                      <action.icon className="h-4 w-4" />
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {hasTimeleave && (
-                <Card
-                  className="cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => navigate("/time-leave/leave")}
-                >
-                  <CardContent className="pt-5 pb-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-bold">{stats.pendingLeave}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                          {t("people.dashboard.stats.pendingLeave")}
-                        </p>
-                        {stats.pendingLeave > 0 && (
-                          <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                            {t("people.dashboard.badges.needsReview")}
-                          </Badge>
-                        )}
-                      </div>
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                        stats.pendingLeave > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-muted"
-                      }`}>
-                        <Heart className={`h-5 w-5 ${stats.pendingLeave > 0 ? "text-amber-600" : "text-muted-foreground"}`} />
-                      </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold">{action.title}</p>
+                      <p className="text-sm text-muted-foreground">{action.description}</p>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-
-              {hasStaff && (
-                <Card
-                  className="cursor-pointer hover:shadow-md transition-all"
-                  onClick={() => navigate("/people/employees")}
-                >
-                  <CardContent className="pt-5 pb-5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="text-2xl font-bold">{attentionCount}</p>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wide">
-                          {t("people.dashboard.stats.complianceIssues")}
-                        </p>
-                        {attentionCount > 0 ? (
-                          <Badge className="mt-1.5 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px]">
-                            {t("people.dashboard.badges.needsAttention")}
-                          </Badge>
-                        ) : (
-                          <span className="flex items-center gap-1 mt-1.5 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium">
-                            <CheckCircle className="h-3 w-3" /> {t("people.dashboard.badges.allClear")}
-                          </span>
-                        )}
-                      </div>
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center ${
-                        attentionCount > 0 ? "bg-amber-100 dark:bg-amber-900/30" : "bg-emerald-100 dark:bg-emerald-900/30"
-                      }`}>
-                        {attentionCount > 0 ? (
-                          <AlertTriangle className="h-5 w-5 text-amber-600" />
-                        ) : (
-                          <CheckCircle className="h-5 w-5 text-emerald-600" />
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          </MoreDetailsSection>
-        )}
-
-        {/* Section cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {hasStaff && (
-            <Card
-              className="cursor-pointer transition-all hover:border-blue-500/40 hover:shadow-md group"
-              onClick={() => navigate("/people/staff")}
-            >
-              <CardContent className="flex items-start gap-4 pt-5 pb-5">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-500 shrink-0">
-                  <Users className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{t("people.dashboard.sections.staff.title")}</p>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {t("people.dashboard.sections.staff.description")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {hasHiring && (
-            <Card
-              className="cursor-pointer transition-all hover:border-emerald-500/40 hover:shadow-md group"
-              onClick={() => navigate("/people/hiring")}
-            >
-              <CardContent className="flex items-start gap-4 pt-5 pb-5">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-emerald-500 to-green-500 shrink-0">
-                  <Briefcase className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{t("people.dashboard.sections.hiring.title")}</p>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {t("people.dashboard.sections.hiring.description")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {hasPerformance && (
-            <Card
-              className="cursor-pointer transition-all hover:border-violet-500/40 hover:shadow-md group"
-              onClick={() => navigate("/people/performance")}
-            >
-              <CardContent className="flex items-start gap-4 pt-5 pb-5">
-                <div className="p-2.5 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 shrink-0">
-                  <Target className="h-5 w-5 text-white" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <p className="font-semibold text-sm">{t("people.dashboard.sections.performance.title")}</p>
-                    <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-0.5 transition-transform" />
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                    {t("people.dashboard.sections.performance.description")}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </button>
+                ))}
+              </div>
+            </DashboardPanel>
+          </>
+        }
+        brief={
+          <ModuleBrief
+            section="people"
+            lead={briefLead}
+            columns={[
+              {
+                title: "What’s happening now",
+                items: [
+                  `${activeEmployees} employees are active in the platform right now.`,
+                  `${interviewsScheduled} interviews, ${completedReviews} completed reviews, and ${goalsActive} active goals are shaping the current people workload.`,
+                ],
+              },
+              {
+                title: "Watch this week",
+                items: [
+                  issues > 0
+                    ? `Compliance gaps in employee records can still ripple into payroll and reporting.`
+                    : `Employee records are mostly clean, reducing downstream HR risk.`,
+                  trainingExpiring > 0
+                    ? `${trainingExpiring} certification${trainingExpiring === 1 ? "" : "s"} are nearing expiry and may affect readiness or compliance.`
+                    : `No major certification expiry wave is building right now.`,
+                ],
+              },
+              {
+                title: "Actions required",
+                items: [
+                  pendingLeave > 0
+                    ? `Resolve pending leave requests so managers and payroll are working from the same picture.`
+                    : `Leave workflow is not currently creating pressure.`,
+                  disciplinaryOpen > 0
+                    ? `Keep open employee cases moving so they do not quietly stall in review.`
+                    : `No disciplinary backlog is dominating the HR queue.`,
+                ],
+              },
+              {
+                title: "Week ahead",
+                items: [
+                  `Use the next few days to close any hiring follow-through and convert interviews into clear decisions.`,
+                  `Keep performance momentum moving by pushing reviews, training renewals, and goal follow-up together rather than separately.`,
+                ],
+              },
+              {
+                title: "Interesting signals",
+                items: [
+                  reviewStats ? `Average review score across completed reviews is ${reviewStats.averageRating}.` : `Performance scoring data is still light.`,
+                  hasHiring
+                    ? `The hiring lane is currently carrying ${interviewsScheduled} scheduled interview${interviewsScheduled === 1 ? "" : "s"}.`
+                    : `Hiring is not active for this tenant, so the people load is more about retention and development.`,
+                ],
+              },
+            ]}
+          />
+        }
+      />
     </div>
   );
 }

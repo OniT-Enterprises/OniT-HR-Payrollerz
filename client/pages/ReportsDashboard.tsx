@@ -1,554 +1,834 @@
-/**
- * Reports Dashboard - Section Hub
- * Quick access to all report types with visual hierarchy
- * Payroll reports = most used, Employee = second, others = less frequent
- */
-
-import React, { useState } from "react";
+import React from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
-import { reportsNavConfig } from "@/lib/moduleNav";
-import AutoBreadcrumb from "@/components/AutoBreadcrumb";
-import {
-  Users,
-  DollarSign,
-  CalendarDays,
-  Building,
-  Building2,
-  FileSpreadsheet,
-  ChevronRight,
-  Clock,
-  FileText,
-  Settings2,
-  Landmark,
-  FolderKanban,
-  Wrench,
-} from "lucide-react";
-import { SEO, seoConfig } from "@/components/SEO";
-import { useI18n } from "@/i18n/I18nProvider";
 import GuidancePanel from "@/components/GuidancePanel";
+import { SEO } from "@/components/SEO";
+import {
+  filterModuleNavConfigByPermissions,
+  reportsNavConfig,
+} from "@/lib/moduleNav";
+import DashboardShell from "@/components/dashboard/DashboardShell";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useTenant } from "@/contexts/TenantContext";
 import { canUseDonorExport, canUseNgoReporting } from "@/lib/ngo/access";
+import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
+import { cn } from "@/lib/utils";
+import type { FilingDueDate } from "@/types/tax-filing";
+import {
+  ArrowRight,
+  BarChart3,
+  Clock3,
+  FileText,
+  FolderKanban,
+  ShieldAlert,
+  Sparkles,
+  Wrench,
+} from "lucide-react";
 
-// Skeleton removed — unused
-function _ReportsDashboardSkeleton() {
+function ReportsDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <MainNavigation />
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
-          <Skeleton className="h-4 w-24 mb-4" />
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-14 w-14 rounded-2xl" />
-              <div>
-                <Skeleton className="h-8 w-24 mb-2" />
-                <Skeleton className="h-5 w-48" />
-              </div>
-            </div>
-            <Skeleton className="h-9 w-24 rounded-md" />
+      <ModuleSectionNav config={reportsNavConfig} />
+      <div className="mx-auto max-w-screen-2xl space-y-6 px-6 py-6">
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <div className="grid gap-6 xl:grid-cols-12">
+          <div className="space-y-6 xl:col-span-8">
+            <Skeleton className="h-80 w-full rounded-3xl" />
+            <Skeleton className="h-72 w-full rounded-3xl" />
+          </div>
+          <div className="space-y-6 xl:col-span-4">
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-40 w-full rounded-3xl" />
+            <Skeleton className="h-64 w-full rounded-3xl" />
           </div>
         </div>
-      </div>
-
-      <div className="p-4 sm:p-6 mx-auto max-w-screen-2xl space-y-8">
-        {/* Recent Reports */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Skeleton className="h-4 w-4" />
-            <Skeleton className="h-4 w-28" />
-          </div>
-          <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Card key={i}>
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <Skeleton className="h-4 w-28 mb-1" />
-                      <Skeleton className="h-3 w-16" />
-                    </div>
-                    <Skeleton className="h-4 w-4" />
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <Skeleton className="h-4 w-32" />
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Primary Categories */}
-        <section>
-          <div className="grid gap-6 md:grid-cols-2">
-            {[1, 2].map((i) => (
-              <Card key={i}>
-                <CardHeader className="pb-4">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-12 w-12 rounded-lg" />
-                    <div>
-                      <Skeleton className="h-6 w-32 mb-1" />
-                      <Skeleton className="h-4 w-48" />
-                    </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((j) => (
-                      <div key={j} className="flex items-center justify-between py-2 px-3 rounded-lg">
-                        <Skeleton className="h-4 w-32" />
-                        <Skeleton className="h-4 w-4" />
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-
-        {/* More Categories Toggle */}
-        <div className="flex items-center gap-2">
-          <Skeleton className="h-4 w-4" />
-          <Skeleton className="h-4 w-36" />
-          <Skeleton className="h-5 w-6 rounded-full" />
-        </div>
-
-        {/* Divider */}
-        <div className="flex items-center gap-4 pt-4">
-          <div className="h-px flex-1 bg-border" />
-          <Skeleton className="h-4 w-36" />
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Scheduled Reports */}
-        <Card>
-          <CardHeader className="pb-3">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
-                <div>
-                  <Skeleton className="h-5 w-36 mb-1" />
-                  <Skeleton className="h-4 w-56" />
-                </div>
-              </div>
-              <Skeleton className="h-9 w-24 rounded-md" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="divide-y">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center justify-between py-3">
-                  <div className="flex items-center gap-3">
-                    <Skeleton className="h-2 w-2 rounded-full" />
-                    <div>
-                      <Skeleton className="h-4 w-40 mb-1" />
-                      <Skeleton className="h-3 w-24" />
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <Skeleton className="h-3 w-16 mb-1 ml-auto" />
-                    <Skeleton className="h-4 w-12 ml-auto" />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <Skeleton className="h-60 w-full rounded-3xl" />
       </div>
     </div>
   );
 }
 
+function formatShortDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+  }).format(new Date(value));
+}
+
+function getFilingLabel(item: FilingDueDate) {
+  if (item.type === "monthly_wit") {
+    return `WIT ${item.period}`;
+  }
+
+  if (item.type === "annual_wit") {
+    return `Annual WIT ${item.period}`;
+  }
+
+  if (item.task === "payment") {
+    return `INSS payment ${item.period}`;
+  }
+
+  return `INSS statement ${item.period}`;
+}
+
+function getDueDescriptor(item: FilingDueDate) {
+  if (item.isOverdue) {
+    return `${Math.abs(item.daysUntilDue)}d overdue`;
+  }
+
+  if (item.daysUntilDue === 0) {
+    return "Due today";
+  }
+
+  if (item.daysUntilDue === 1) {
+    return "Due tomorrow";
+  }
+
+  return `${item.daysUntilDue}d left`;
+}
+
+const familyDescriptions: Record<string, string> = {
+  "payroll-reports": "Payslips, tax views, year-to-date detail, and payroll summaries.",
+  "employee-reports": "Headcount, movement, workforce structure, and staff reporting.",
+  "attendance-reports": "Absence, overtime, punctuality, and time trend reporting.",
+  "department-reports": "Cost comparisons, allocation views, and org-level reporting.",
+  ngo: "Allocation packs and donor-facing exports for restricted funds.",
+  custom: "Builder surfaces, saved reports, and reporting setup controls.",
+};
+
+const familyStyles = [
+  {
+    shell: "from-violet-500/25 via-violet-500/10 to-transparent",
+    icon: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+    glow: "bg-violet-500/30",
+    pill: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+    fill: "#8b5cf6",
+    span: "md:col-span-3 md:row-span-2",
+  },
+  {
+    shell: "from-sky-500/20 via-sky-500/8 to-transparent",
+    icon: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+    glow: "bg-sky-500/25",
+    pill: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+    fill: "#0ea5e9",
+    span: "md:col-span-3",
+  },
+  {
+    shell: "from-emerald-500/18 via-emerald-500/6 to-transparent",
+    icon: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+    glow: "bg-emerald-500/25",
+    pill: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+    fill: "#10b981",
+    span: "md:col-span-2",
+  },
+  {
+    shell: "from-amber-500/18 via-amber-500/6 to-transparent",
+    icon: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+    glow: "bg-amber-500/25",
+    pill: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+    fill: "#f59e0b",
+    span: "md:col-span-2",
+  },
+  {
+    shell: "from-teal-500/18 via-teal-500/6 to-transparent",
+    icon: "bg-teal-500/15 text-teal-700 dark:text-teal-300",
+    glow: "bg-teal-500/25",
+    pill: "bg-teal-100 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300",
+    fill: "#14b8a6",
+    span: "md:col-span-2",
+  },
+  {
+    shell: "from-fuchsia-500/18 via-fuchsia-500/6 to-transparent",
+    icon: "bg-fuchsia-500/15 text-fuchsia-700 dark:text-fuchsia-300",
+    glow: "bg-fuchsia-500/25",
+    pill: "bg-fuchsia-100 text-fuchsia-700 dark:bg-fuchsia-950/40 dark:text-fuchsia-300",
+    fill: "#d946ef",
+    span: "md:col-span-3",
+  },
+];
+
 export default function ReportsDashboard() {
   const navigate = useNavigate();
-  const { t } = useI18n();
   const { session, hasModule, canManage } = useTenant();
-  const [showOtherCategories, setShowOtherCategories] = useState(false);
-  const ngoReportingEnabled = canUseNgoReporting(session, hasModule("reports"));
-  const donorExportEnabled = canUseDonorExport(
-    session,
-    hasModule("reports"),
-    canManage()
-  );
+  const hasReports = hasModule("reports");
+  const hasPayroll = hasModule("payroll");
+  const ngoReportingEnabled = canUseNgoReporting(session, hasReports);
+  const donorExportEnabled = canUseDonorExport(session, hasReports, canManage());
+  const { data: filingDueDates = [], isLoading } = useTaxFilingsDueSoon(3, hasPayroll);
 
-  // Primary categories (most used) - Payroll first, then Employee
-  const primaryCategories = [
-    {
-      id: "payroll",
-      title: t("reports.dashboard.categories.payroll.title"),
-      description: t("reports.dashboard.categories.payroll.description"),
-      icon: DollarSign,
-      path: "/reports/payroll",
-      primary: true,
-      examples: [
-        t("reports.dashboard.categories.payroll.examples.summary"),
-        t("reports.dashboard.categories.payroll.examples.tax"),
-        t("reports.dashboard.categories.payroll.examples.ytd"),
-      ],
-    },
-    {
-      id: "employee",
-      title: t("reports.dashboard.categories.employee.title"),
-      description: t("reports.dashboard.categories.employee.description"),
-      icon: Users,
-      path: "/reports/employees",
-      primary: true,
-      examples: [
-        t("reports.dashboard.categories.employee.examples.headcount"),
-        t("reports.dashboard.categories.employee.examples.newHires"),
-        t("reports.dashboard.categories.employee.examples.turnover"),
-      ],
-    },
+  if (isLoading) {
+    return <ReportsDashboardSkeleton />;
+  }
+
+  const filteredConfig = filterModuleNavConfigByPermissions(reportsNavConfig, hasModule);
+  const reportFamilies = filteredConfig.sections.flatMap((section) => {
+    if (section.id !== "ngo") {
+      return [section];
+    }
+
+    if (!ngoReportingEnabled) {
+      return [];
+    }
+
+    return [
+      {
+        ...section,
+        subPages: section.subPages.filter((page) =>
+          page.path === "/reports/donor-export" ? donorExportEnabled : true,
+        ),
+      },
+    ];
+  });
+
+  const familyCards = reportFamilies.map((section, index) => {
+    const style = familyStyles[index % familyStyles.length];
+    const outputs =
+      section.subPages.length > 0
+        ? section.subPages
+        : [{ label: section.label, path: section.path, icon: section.icon }];
+
+    return {
+      id: section.id,
+      title: section.label,
+      path: outputs[0]?.path ?? section.path,
+      description:
+        familyDescriptions[section.id] ??
+        "Operational reporting for this slice of the platform.",
+      routeCount: outputs.length,
+      outputs: outputs.slice(0, 3),
+      icon: section.icon,
+      style,
+    };
+  });
+
+  const totalLaunchPoints = familyCards.reduce((sum, family) => sum + family.routeCount, 0);
+  const openFilings = filingDueDates
+    .filter((item) => item.status !== "filed")
+    .sort((a, b) => a.daysUntilDue - b.daysUntilDue);
+  const overdueCount = openFilings.filter((item) => item.isOverdue).length;
+  const dueThisWeek = openFilings.filter(
+    (item) => item.daysUntilDue >= 0 && item.daysUntilDue <= 7,
+  ).length;
+  const nextFilings = openFilings.slice(0, 5);
+  const nextFiling = nextFilings[0] ?? null;
+  const customFamily = familyCards.find((family) => family.id === "custom");
+  const ngoFamily = familyCards.find((family) => family.id === "ngo");
+  const largestFamily = [...familyCards].sort((a, b) => b.routeCount - a.routeCount)[0];
+
+  const filingHorizon = nextFilings.map((item) => {
+    const urgency = item.isOverdue
+      ? 44 + Math.min(Math.abs(item.daysUntilDue), 7)
+      : Math.max(8, 32 - Math.min(item.daysUntilDue, 30));
+
+    return {
+      name: getFilingLabel(item),
+      urgency,
+      fill: item.isOverdue
+        ? "#ef4444"
+        : item.daysUntilDue <= 3
+          ? "#f59e0b"
+          : "#8b5cf6",
+      descriptor: getDueDescriptor(item),
+    };
+  });
+
+  const actionItems = [
+    ...(overdueCount > 0
+      ? [
+          {
+            title: `Clear ${overdueCount} overdue filing${overdueCount === 1 ? "" : "s"}`,
+            description: "Compliance items have already crossed their due date.",
+            path: "/payroll/tax",
+            icon: ShieldAlert,
+          },
+        ]
+      : []),
+    ...(dueThisWeek > 0
+      ? [
+          {
+            title: `Prepare ${dueThisWeek} filing${dueThisWeek === 1 ? "" : "s"} due this week`,
+            description: "Keep the reporting runway clear before the week closes.",
+            path: "/payroll/tax",
+            icon: Clock3,
+          },
+        ]
+      : []),
+    ...(customFamily
+      ? [
+          {
+            title: "Open the custom report workbench",
+            description: "Saved builders and report setup are ready for tuning.",
+            path: "/reports/custom",
+            icon: Wrench,
+          },
+        ]
+      : []),
+    ...(ngoFamily
+      ? [
+          {
+            title: "Refresh NGO and donor packs",
+            description: "Allocation-ready exports are available for restricted funding views.",
+            path: donorExportEnabled ? "/reports/donor-export" : "/reports/payroll-allocation",
+            icon: FolderKanban,
+          },
+        ]
+      : []),
   ];
 
-  // Secondary categories (less frequently used)
-  const secondaryCategories = [
-    {
-      id: "attendance",
-      title: t("reports.dashboard.categories.attendance.title"),
-      description: t("reports.dashboard.categories.attendance.description"),
-      icon: CalendarDays,
-      path: "/reports/attendance",
-      examples: [
-        t("reports.dashboard.categories.attendance.examples.summary"),
-        t("reports.dashboard.categories.attendance.examples.overtime"),
-        t("reports.dashboard.categories.attendance.examples.late"),
-      ],
-    },
-    {
-      id: "department",
-      title: t("reports.dashboard.categories.department.title"),
-      description: t("reports.dashboard.categories.department.description"),
-      icon: Building,
-      path: "/reports/departments",
-      examples: [
-        t("reports.dashboard.categories.department.examples.costs"),
-        t("reports.dashboard.categories.department.examples.budget"),
-        t("reports.dashboard.categories.department.examples.org"),
-      ],
-    },
-    {
-      id: "custom",
-      title: t("reports.dashboard.categories.custom.title"),
-      description: t("reports.dashboard.categories.custom.description"),
-      icon: FileSpreadsheet,
-      path: "/reports/custom",
-      examples: [
-        t("reports.dashboard.categories.custom.examples.builder"),
-        t("reports.dashboard.categories.custom.examples.saved"),
-        t("reports.dashboard.categories.custom.examples.scheduled"),
-      ],
-    },
-  ];
-
-  const ngoCategories = ngoReportingEnabled
-    ? [
-        {
-          id: "payroll-allocation",
-          title: t("reports.dashboard.ngo.allocationTitle"),
-          description: t("reports.dashboard.ngo.allocationDesc"),
-          path: "/reports/payroll-allocation",
-          icon: FolderKanban,
-        },
-        ...(donorExportEnabled
-          ? [{
-              id: "donor-export",
-              title: t("reports.dashboard.ngo.donorExportTitle"),
-              description: t("reports.dashboard.ngo.donorExportDesc"),
-              path: "/reports/donor-export",
-              icon: FileSpreadsheet,
-            }]
-          : []),
-      ]
-    : [];
+  const briefLead =
+    overdueCount > 0
+      ? "Reports is carrying active compliance risk, and the fastest win is to clear the overdue filing queue before attention shifts back to analytics and exports."
+      : dueThisWeek > 0
+        ? "Reports is in a healthy place overall, but there is a visible filing runway this week that should stay in focus."
+        : "Reports is in a calm operating state, with the emphasis shifting from deadlines to better reporting coverage, cleaner exports, and reusable report setups.";
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO {...seoConfig.reports} />
+      <SEO
+        title="Reports Dashboard"
+        description="Report families, compliance runway, custom reporting, and operational outputs in one place."
+      />
       <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
 
-      {/* Hero Section - Simplified */}
-      <div className="border-b bg-violet-50 dark:bg-violet-950/30">
-        <div className="mx-auto max-w-screen-2xl px-4 sm:px-6 py-8">
-          <AutoBreadcrumb className="mb-4" />
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-500 shadow-lg shadow-violet-500/25">
-                <img src="/images/illustrations/icons/icon-reports.webp" alt="" className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-foreground">
-                  {t("reports.dashboard.title")}
-                </h1>
-                <p className="text-muted-foreground mt-1">
-                  {t("reports.dashboard.subtitle")}
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" className="self-start" onClick={() => navigate("/reports/custom")}>
-              <Wrench className="h-4 w-4 mr-2" />
-              {t("reports.dashboard.categories.custom.title")}
+      <DashboardShell
+        section="reports"
+        title="Reporting control tower"
+        subtitle="A single canvas for report families, filing pressure, custom workbenches, and the output lanes that matter most in the week ahead."
+        icon={BarChart3}
+        actions={
+          <>
+            <Button variant="outline" onClick={() => navigate("/reports/setup")}>
+              Report setup
             </Button>
-          </div>
-        </div>
-      </div>
+            <Button
+              className="bg-violet-600 text-white hover:bg-violet-700"
+              onClick={() => navigate("/reports/custom")}
+            >
+              <Wrench className="mr-2 h-4 w-4" />
+              Custom reports
+            </Button>
+          </>
+        }
+        badges={
+          <>
+            <Badge variant="secondary">{familyCards.length} report families</Badge>
+            <Badge variant="secondary">{totalLaunchPoints} launch points</Badge>
+          </>
+        }
+        guidance={<GuidancePanel section="reports" />}
+        main={
+          <>
+            <DashboardPanel
+              eyebrow="Signature view"
+              title="Report portfolio map"
+              actions={
+                overdueCount > 0 ? (
+                  <Badge className="bg-red-100 text-red-700 dark:bg-red-950/30 dark:text-red-300">
+                    {overdueCount} overdue item{overdueCount === 1 ? "" : "s"}
+                  </Badge>
+                ) : (
+                  <Badge className="bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300">
+                    Control tower ready
+                  </Badge>
+                )
+              }
+            >
+              <div className="grid gap-6 xl:grid-cols-[1.12fr_0.88fr]">
+                <div className="grid auto-rows-[124px] gap-4 md:grid-cols-6">
+                  {familyCards.map((family, index) => {
+                    const Icon = family.icon;
+                    const highlightPayroll =
+                      family.id === "payroll-reports" && (overdueCount > 0 || dueThisWeek > 0);
 
-      <div className="p-4 sm:p-6 mx-auto max-w-screen-2xl space-y-8">
-        <GuidancePanel section="reports" />
-
-        <div className="flex items-center gap-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("reports.dashboard.generateReports")}</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Primary Categories - Payroll (largest) and Employee (second) */}
-        <section>
-          <div className="grid gap-6 md:grid-cols-2">
-            {primaryCategories.map((category, _index) => {
-              const CategoryIcon = category.icon;
-              const isPayroll = category.id === "payroll";
-              return (
-                <Card
-                  key={category.id}
-                  className={`cursor-pointer hover:shadow-md transition-all ${
-                    isPayroll ? "md:row-span-1" : ""
-                  }`}
-                  onClick={() => navigate(category.path)}
-                >
-                  <CardHeader className={isPayroll ? "pb-4" : "pb-3"}>
-                    <div className="flex items-center gap-3">
-                      <div className={`rounded-lg flex items-center justify-center ${
-                        isPayroll
-                          ? "h-12 w-12 bg-emerald-100 dark:bg-emerald-900/30"
-                          : "h-10 w-10 bg-blue-100 dark:bg-blue-900/30"
-                      }`}>
-                        <CategoryIcon className={`${
-                          isPayroll
-                            ? "h-6 w-6 text-emerald-600 dark:text-emerald-400"
-                            : "h-5 w-5 text-blue-600 dark:text-blue-400"
-                        }`} />
-                      </div>
-                      <div>
-                        <CardTitle className={isPayroll ? "text-xl" : "text-lg"}>
-                          {category.title}
-                          {isPayroll && (
-                            <span className="ml-2 text-xs font-normal text-emerald-600 dark:text-emerald-400">
-                              {t("reports.dashboard.mostUsed")}
-                            </span>
-                          )}
-                        </CardTitle>
-                        <CardDescription>{category.description}</CardDescription>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {category.examples.map((example, idx) => (
+                    return (
+                      <button
+                        key={family.id}
+                        type="button"
+                        onClick={() => navigate(family.path)}
+                        className={cn(
+                          "group relative overflow-hidden rounded-[1.75rem] border border-border/70 bg-card p-5 text-left transition-all hover:-translate-y-1 hover:shadow-xl animate-fade-up",
+                          family.style.span,
+                          highlightPayroll ? "ring-1 ring-red-400/40" : "",
+                        )}
+                        style={{ animationDelay: `${index * 90}ms` }}
+                      >
                         <div
-                          key={idx}
-                          className="flex items-center justify-between text-sm py-2 px-3 rounded-lg hover:bg-muted"
-                        >
-                          <span>{example}</span>
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          className={cn(
+                            "absolute inset-0 bg-gradient-to-br opacity-90 transition-opacity group-hover:opacity-100",
+                            family.style.shell,
+                          )}
+                        />
+                        <div
+                          className={cn(
+                            "absolute -right-6 -top-8 h-24 w-24 rounded-full blur-3xl transition-transform group-hover:scale-110",
+                            family.style.glow,
+                          )}
+                        />
+                        <div className="relative flex h-full flex-col justify-between">
+                          <div className="flex items-start justify-between gap-3">
+                            <div className={cn("flex h-11 w-11 items-center justify-center rounded-2xl", family.style.icon)}>
+                              <Icon className="h-5 w-5" />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {highlightPayroll ? (
+                                <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse-subtle" />
+                              ) : null}
+                              <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", family.style.pill)}>
+                                {family.routeCount} output{family.routeCount === 1 ? "" : "s"}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="mt-4 space-y-3">
+                            <div>
+                              <h3 className="text-lg font-semibold tracking-tight">{family.title}</h3>
+                              <p className="mt-1 max-w-sm text-sm leading-6 text-muted-foreground">
+                                {family.description}
+                              </p>
+                            </div>
+
+                            <div className="flex flex-wrap gap-2">
+                              {family.outputs.map((output) => (
+                                <span
+                                  key={`${family.id}-${output.path}`}
+                                  className="rounded-full border border-border/60 bg-background/80 px-2.5 py-1 text-xs text-muted-foreground backdrop-blur-sm"
+                                >
+                                  {output.label}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex items-center justify-between text-sm font-medium text-foreground/90">
+                            <span>Open this reporting lane</span>
+                            <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                          </div>
                         </div>
-                      ))}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="rounded-[1.75rem] border border-border/70 bg-muted/25 p-5">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Broadcast pulse
+                      </p>
+                      <h3 className="mt-2 text-xl font-semibold tracking-tight">
+                        What the reporting room is telling us
+                      </h3>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        </section>
+                    <Sparkles className="h-5 w-5 text-violet-500" />
+                  </div>
 
-        {/* Tax & Compliance Section - TL Government Reporting */}
-        <section>
-          <div className="flex items-center gap-2 mb-4">
-            <Landmark className="h-4 w-4 text-amber-600" />
-            <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">{t("reports.dashboard.taxCompliance")}</h2>
-          </div>
-          <Card className="transition-all">
-            <CardContent className="p-4">
-              <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                <div
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => navigate("/payroll/tax/monthly-wit")}
-                >
-                  <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  <div className="mt-5 rounded-[1.5rem] border border-border/60 bg-background/80 p-5">
+                    <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+                      Next live milestone
+                    </p>
+                    <div className="mt-3 flex items-end gap-3">
+                      <p className="text-4xl font-bold tracking-tight">
+                        {nextFiling ? getDueDescriptor(nextFiling) : "Clear"}
+                      </p>
+                      <p className="pb-1 text-sm text-muted-foreground">
+                        {nextFiling ? getFilingLabel(nextFiling) : "No open filing pressure"}
+                      </p>
+                    </div>
+                    <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                      {nextFiling
+                        ? `The next reporting checkpoint lands on ${formatShortDate(nextFiling.dueDate)}.`
+                        : "The filing runway is quiet right now, so attention can shift to custom outputs and better analytics coverage."}
+                    </p>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{t("reports.dashboard.monthlyWitReturn")}</p>
-                    <p className="text-xs text-muted-foreground">{t("reports.dashboard.witFilingDesc")}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-                <div
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 cursor-not-allowed opacity-60"
-                  title={t("reports.dashboard.comingSoon")}
-                >
-                  <div className="h-10 w-10 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{t("reports.dashboard.annualWitReturn")}</p>
-                    <p className="text-xs text-muted-foreground">{t("reports.dashboard.comingSoon")}</p>
-                  </div>
-                </div>
-                <div
-                  className="flex items-center gap-3 p-3 rounded-lg hover:bg-muted cursor-pointer transition-colors"
-                  onClick={() => navigate("/payroll/tax/inss-monthly")}
-                >
-                  <div className="h-10 w-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                    <FileText className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-sm">{t("reports.dashboard.inssContribution")}</p>
-                    <p className="text-xs text-muted-foreground">{t("reports.dashboard.inssSubmissionDesc")}</p>
-                  </div>
-                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </section>
 
-        {ngoCategories.length > 0 && (
-          <section>
-            <div className="flex items-center gap-2 mb-4">
-              <Building2 className="h-4 w-4 text-emerald-600" />
-              <h2 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-                {t("reports.dashboard.ngo.title")}
-              </h2>
-            </div>
-            <div className="grid gap-3 md:grid-cols-2">
-              {ngoCategories.map((category) => {
-                const CategoryIcon = category.icon;
-                return (
-                  <Card
-                    key={category.id}
-                    className="cursor-pointer hover:shadow-sm transition-all"
-                    onClick={() => navigate(category.path)}
-                  >
-                    <CardContent className="p-4">
+                  <div className="mt-5 space-y-3">
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
                       <div className="flex items-center justify-between gap-3">
-                        <div className="flex items-start gap-3">
-                          <div className="h-10 w-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                            <CategoryIcon className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-sm">{category.title}</p>
-                            <p className="text-xs text-muted-foreground mt-0.5">{category.description}</p>
-                          </div>
-                        </div>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </section>
-        )}
-
-        {/* Secondary Categories - Collapsible */}
-        <Collapsible open={showOtherCategories} onOpenChange={setShowOtherCategories}>
-          <CollapsibleTrigger className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors w-full">
-            <ChevronRight className={`h-4 w-4 transition-transform ${showOtherCategories ? "rotate-90" : ""}`} />
-            <span>{t("reports.dashboard.moreCategories")}</span>
-            <span className="text-xs bg-muted px-2 py-0.5 rounded-full">{secondaryCategories.length}</span>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="mt-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              {secondaryCategories.map((category) => {
-                const CategoryIcon = category.icon;
-                return (
-                  <Card
-                    key={category.id}
-                    className="cursor-pointer hover:shadow-sm transition-shadow border-l-2 border-l-muted-foreground/20 hover:border-l-violet-400"
-                    onClick={() => navigate(category.path)}
-                  >
-                    <CardHeader className="pb-2">
-                      <div className="flex items-center gap-2">
-                        <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center">
-                          <CategoryIcon className="h-4 w-4 text-muted-foreground" />
-                        </div>
                         <div>
-                          <CardTitle className="text-base">{category.title}</CardTitle>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Coverage breadth
+                          </p>
+                          <p className="mt-1 text-2xl font-semibold tracking-tight">
+                            {familyCards.length} families
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-600 dark:text-violet-300">
+                          <FileText className="h-5 w-5" />
                         </div>
                       </div>
-                    </CardHeader>
-                    <CardContent className="pt-0">
-                      <p className="text-xs text-muted-foreground mb-2">{category.description}</p>
-                      <div className="space-y-1">
-                        {category.examples.slice(0, 2).map((example, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center justify-between text-xs py-1 px-2 rounded hover:bg-muted"
-                          >
-                            <span className="text-muted-foreground">{example}</span>
-                            <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        ))}
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {totalLaunchPoints} distinct report entry points are available from this module.
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Compliance pressure
+                          </p>
+                          <p className="mt-1 text-2xl font-semibold tracking-tight">
+                            {openFilings.length}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-red-500/10 p-3 text-red-600 dark:text-red-300">
+                          <ShieldAlert className="h-5 w-5" />
+                        </div>
                       </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-          </CollapsibleContent>
-        </Collapsible>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {overdueCount > 0
+                          ? `${overdueCount} overdue and ${Math.max(openFilings.length - overdueCount, 0)} still on the runway.`
+                          : dueThisWeek > 0
+                            ? `${dueThisWeek} filing${dueThisWeek === 1 ? "" : "s"} is due in the next seven days.`
+                            : "No urgent reporting deadlines are currently competing for attention."}
+                      </p>
+                    </div>
 
-        {/* Divider - Automation Section */}
-        <div className="flex items-center gap-4 pt-4">
-          <div className="h-px flex-1 bg-border" />
-          <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{t("reports.dashboard.automatedReports")}</span>
-          <div className="h-px flex-1 bg-border" />
-        </div>
-
-        {/* Scheduled Reports - Automation */}
-        <section>
-          <Card>
-            <CardHeader className="pb-3">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center">
-                    <Clock className="h-5 w-5 text-violet-600 dark:text-violet-400" />
-                  </div>
-                  <div>
-                    <CardTitle className="text-lg">{t("reports.dashboard.scheduledReports")}</CardTitle>
-                    <CardDescription>{t("reports.dashboard.scheduledReportsDesc")}</CardDescription>
+                    <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                      <div className="flex items-center justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                            Best expansion area
+                          </p>
+                          <p className="mt-1 text-xl font-semibold tracking-tight">
+                            {largestFamily?.title ?? "Reports"}
+                          </p>
+                        </div>
+                        <div className="rounded-2xl bg-teal-500/10 p-3 text-teal-600 dark:text-teal-300">
+                          <BarChart3 className="h-5 w-5" />
+                        </div>
+                      </div>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        {largestFamily
+                          ? `${largestFamily.routeCount} surface${largestFamily.routeCount === 1 ? "" : "s"} already exist here, making it the richest lane for sharper visuals and saved outputs.`
+                          : "The reporting map is ready for its first lane."}
+                      </p>
+                    </div>
                   </div>
                 </div>
-                <Button variant="outline" size="sm" className="w-full sm:w-auto" onClick={() => navigate("/reports/custom")}>
-                  <Settings2 className="h-4 w-4 mr-2" />
-                  {t("reports.dashboard.manage")}
-                </Button>
               </div>
-            </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground text-center py-4">
-                {t("reports.dashboard.noScheduledReports")}
-              </p>
-            </CardContent>
-          </Card>
-        </section>
-      </div>
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="Live compliance" title="Submission horizon">
+              {filingHorizon.length > 0 ? (
+                <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
+                  <div className="rounded-[1.5rem] border border-border/60 bg-muted/25 p-4">
+                    <div className="mb-4">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                        Urgency runway
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Larger bars mean the filing is demanding attention sooner or is already overdue.
+                      </p>
+                    </div>
+
+                    <div className="h-72">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                          data={filingHorizon}
+                          layout="vertical"
+                          margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+                        >
+                          <CartesianGrid horizontal={false} stroke="hsl(var(--border) / 0.35)" />
+                          <XAxis type="number" hide />
+                          <YAxis
+                            dataKey="name"
+                            type="category"
+                            width={130}
+                            tickLine={false}
+                            axisLine={false}
+                            tick={{ fontSize: 12 }}
+                          />
+                          <Tooltip
+                            formatter={(_value, _name, payload) => payload?.payload?.descriptor ?? ""}
+                            labelFormatter={(label) => label}
+                            contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                          />
+                          <Bar dataKey="urgency" radius={[0, 12, 12, 0]}>
+                            {filingHorizon.map((entry) => (
+                              <Cell key={entry.name} fill={entry.fill} />
+                            ))}
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    {nextFilings.map((item) => (
+                      <button
+                        key={`${item.type}-${item.task ?? "default"}-${item.period}`}
+                        type="button"
+                        onClick={() => navigate("/payroll/tax")}
+                        className={cn(
+                          "w-full rounded-[1.35rem] border border-border/60 bg-background/80 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md",
+                          item.isOverdue ? "ring-1 ring-red-400/35" : "",
+                        )}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{getFilingLabel(item)}</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                              Due {formatShortDate(item.dueDate)} and currently {getDueDescriptor(item).toLowerCase()}.
+                            </p>
+                          </div>
+                          <span
+                            className={cn(
+                              "rounded-full px-2.5 py-1 text-xs font-semibold",
+                              item.isOverdue
+                                ? "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300"
+                                : item.daysUntilDue <= 3
+                                  ? "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300"
+                                  : "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+                            )}
+                          >
+                            {getDueDescriptor(item)}
+                          </span>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-[1.5rem] border border-dashed border-border/70 bg-muted/20 p-8 text-center">
+                  <p className="text-sm font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Quiet runway
+                  </p>
+                  <h3 className="mt-2 text-2xl font-semibold tracking-tight">
+                    No immediate filing pressure is visible
+                  </h3>
+                  <p className="mx-auto mt-3 max-w-2xl text-sm leading-6 text-muted-foreground">
+                    This is a good window to refine saved reports, tighten custom builders, and make the next round of exports easier to produce.
+                  </p>
+                </div>
+              )}
+            </DashboardPanel>
+          </>
+        }
+        rail={
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-1">
+              <DashboardMetricCard
+                label="Report Families"
+                value={familyCards.length}
+                hint="Payroll, people, attendance, department, donor, and custom lanes."
+                icon={BarChart3}
+                toneClass="bg-violet-500/10 text-violet-600 dark:text-violet-300"
+                onClick={() => navigate("/reports/payroll")}
+              />
+              <DashboardMetricCard
+                label="Launch Points"
+                value={totalLaunchPoints}
+                hint="Distinct report pages or builders reachable from this overview."
+                icon={FileText}
+                toneClass="bg-sky-500/10 text-sky-600 dark:text-sky-300"
+                onClick={() => navigate("/reports/custom")}
+              />
+              <DashboardMetricCard
+                label="Due This Week"
+                value={dueThisWeek}
+                hint="Filings that need to move before the current week closes."
+                icon={Clock3}
+                toneClass="bg-amber-500/10 text-amber-600 dark:text-amber-300"
+                onClick={() => navigate("/payroll/tax")}
+                badge={
+                  dueThisWeek > 0 ? (
+                    <Badge className="bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                      Active
+                    </Badge>
+                  ) : (
+                    <Badge variant="secondary">Quiet</Badge>
+                  )
+                }
+              />
+              <DashboardMetricCard
+                label="Overdue Filings"
+                value={overdueCount}
+                hint="Items already beyond due date and demanding immediate follow-up."
+                icon={ShieldAlert}
+                toneClass="bg-red-500/10 text-red-600 dark:text-red-300"
+                onClick={() => navigate("/payroll/tax")}
+                badge={
+                  overdueCount > 0 ? (
+                    <Badge className="bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                      Escalate
+                    </Badge>
+                  ) : (
+                    <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                      Clear
+                    </Badge>
+                  )
+                }
+              />
+            </div>
+
+            <DashboardPanel eyebrow="Action rail" title="Best next moves">
+              <div className="space-y-3">
+                {actionItems.length > 0 ? (
+                  actionItems.map((item) => {
+                    const Icon = item.icon;
+
+                    return (
+                      <button
+                        key={item.title}
+                        type="button"
+                        onClick={() => navigate(item.path)}
+                        className="flex w-full items-start gap-3 rounded-2xl border border-border/60 bg-background/70 p-4 text-left transition-all hover:-translate-y-0.5 hover:shadow-md"
+                      >
+                        <div className="rounded-2xl bg-violet-500/10 p-3 text-violet-600 dark:text-violet-300">
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-medium tracking-tight">{item.title}</p>
+                          <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                        </div>
+                        <ArrowRight className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />
+                      </button>
+                    );
+                  })
+                ) : (
+                  <div className="rounded-2xl border border-dashed border-border/70 bg-muted/20 p-5 text-sm leading-6 text-muted-foreground">
+                    The reporting rail is quiet right now. This is a good moment to tune templates and keep custom outputs sharp.
+                  </div>
+                )}
+              </div>
+            </DashboardPanel>
+
+            <DashboardPanel eyebrow="Watch list" title="Important signals">
+              <div className="space-y-3">
+                <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Richest reporting lane
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="font-medium">{largestFamily?.title ?? "Reports"}</p>
+                    <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-700 dark:bg-violet-950/40 dark:text-violet-300">
+                      {largestFamily?.routeCount ?? 0} surfaces
+                    </span>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    Custom workspace
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="font-medium">{customFamily ? "Builder and setup are ready" : "Not enabled"}</p>
+                    <div className="rounded-2xl bg-fuchsia-500/10 p-2 text-fuchsia-600 dark:text-fuchsia-300">
+                      <Wrench className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {customFamily
+                      ? `${customFamily.routeCount} entry point${customFamily.routeCount === 1 ? "" : "s"} support reusable outputs and setup.`
+                      : "Custom reporting is not currently visible in this tenant."}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-border/60 bg-background/70 p-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                    NGO and donor exports
+                  </p>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <p className="font-medium">
+                      {ngoFamily ? "Available in this workspace" : "Not currently exposed"}
+                    </p>
+                    <div className="rounded-2xl bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-300">
+                      <FolderKanban className="h-4 w-4" />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    {ngoFamily
+                      ? donorExportEnabled
+                        ? "Both payroll allocation and donor export surfaces are active."
+                        : "Payroll allocation is available, while donor export remains gated."
+                      : "The standard report families remain the focus here."}
+                  </p>
+                </div>
+              </div>
+            </DashboardPanel>
+          </>
+        }
+        brief={
+          <ModuleBrief
+            section="reports"
+            title="Weekly Reporting Brief"
+            lead={briefLead}
+            columns={[
+              {
+                title: "What's Happening Now",
+                items: [
+                  `${familyCards.length} report families are exposed from this module, covering ${totalLaunchPoints} distinct launch surfaces.`,
+                  largestFamily
+                    ? `${largestFamily.title} is currently the richest lane, with ${largestFamily.routeCount} output surface${largestFamily.routeCount === 1 ? "" : "s"} already in place.`
+                    : "The reporting portfolio is still light and ready to grow.",
+                ],
+              },
+              {
+                title: "Watch This Week",
+                items:
+                  nextFilings.length > 0
+                    ? nextFilings.slice(0, 2).map(
+                        (item) =>
+                          `${getFilingLabel(item)} is ${getDueDescriptor(item).toLowerCase()} and due ${formatShortDate(item.dueDate)}.`,
+                      )
+                    : ["No filing deadlines are immediately visible this week."],
+              },
+              {
+                title: "Actions Required",
+                items:
+                  actionItems.length > 0
+                    ? actionItems.slice(0, 2).map((item) => `${item.title}. ${item.description}`)
+                    : ["No urgent action is required. Use the window to improve saved outputs and reporting setup."],
+              },
+              {
+                title: "Week Ahead",
+                items: [
+                  nextFiling
+                    ? `The next checkpoint in the runway is ${getFilingLabel(nextFiling)} on ${formatShortDate(nextFiling.dueDate)}.`
+                    : "The next week looks open, which gives room for deeper custom reporting work.",
+                  customFamily
+                    ? "Custom reports and setup are positioned well for building reusable weekly or monthly packs."
+                    : "If custom reporting is enabled later, it can become the fastest path to better operational summaries.",
+                ],
+              },
+              {
+                title: "Interesting Signals",
+                items: [
+                  overdueCount > 0
+                    ? `${overdueCount} filing${overdueCount === 1 ? "" : "s"} is already overdue, so compliance pressure is the dominant signal.`
+                    : dueThisWeek > 0
+                      ? `${dueThisWeek} filing${dueThisWeek === 1 ? "" : "s"} is due in the next seven days, which keeps the module warm but manageable.`
+                      : "No visible filing stress is competing with report design and distribution work.",
+                  ngoFamily
+                    ? donorExportEnabled
+                      ? "Donor export is active, which means the reports module can serve both internal and external audiences."
+                      : "NGO allocation reporting is active, but donor export remains a future unlock."
+                    : "This workspace is currently centered on internal reporting lanes.",
+                ],
+              },
+            ]}
+          />
+        }
+      />
     </div>
   );
 }

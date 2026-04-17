@@ -84,6 +84,19 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             <p className="text-muted-foreground mb-6">
               An error occurred while rendering the application.
             </p>
+            {import.meta.env.DEV && this.state.error && (
+              <div className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-left">
+                <p className="text-sm font-semibold text-destructive mb-2">Development error details</p>
+                <p className="text-xs break-words text-foreground/90 mb-3">
+                  {this.state.error.message || "Unknown render error"}
+                </p>
+                {this.state.error.stack && (
+                  <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-5 text-muted-foreground">
+                    {this.state.error.stack}
+                  </pre>
+                )}
+              </div>
+            )}
             <button
               onClick={this.reset}
               className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium hover:bg-primary/90 transition-colors"
