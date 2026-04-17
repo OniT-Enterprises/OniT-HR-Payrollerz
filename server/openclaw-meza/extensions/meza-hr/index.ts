@@ -26,7 +26,7 @@ export default function register(api: OpenclawPluginApi) {
   }
 
   async function callApi(endpoint: string, options?: {
-    method?: 'GET' | 'POST' | 'PUT' | 'DELETE';
+    method?: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
     body?: Record<string, unknown>;
     tenantId?: string;
   }) {
@@ -100,6 +100,7 @@ export default function register(api: OpenclawPluginApi) {
       ),
       department: Type.Optional(Type.String({ description: "Filter by department ID" })),
       limit: Type.Optional(Type.Number({ description: "Max results (default 100)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -108,7 +109,7 @@ export default function register(api: OpenclawPluginApi) {
         if (params.department) qs.set("department", params.department);
         if (params.limit) qs.set("limit", String(params.limit));
 
-        const data = await callApi(`/employees?${qs}`);
+        const data = await callApi(`/employees?${qs}`, { tenantId: params.tenantId });
 
         if (!data.success || data.employees.length === 0) {
           return textResult("No employees found matching the criteria.");
@@ -141,10 +142,11 @@ export default function register(api: OpenclawPluginApi) {
     description: "Search employees by name, email, or employee ID.",
     parameters: Type.Object({
       query: Type.String({ description: "Search term (name, email, or employee ID)" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const data = await callApi(`/employees?search=${encodeURIComponent(params.query)}`);
+        const data = await callApi(`/employees?search=${encodeURIComponent(params.query)}`, { tenantId: params.tenantId });
 
         if (!data.success || data.employees.length === 0) {
           return textResult(`No employees found matching "${params.query}".`);
@@ -174,10 +176,11 @@ export default function register(api: OpenclawPluginApi) {
       "Get detailed information about a specific employee including personal info, job details, compensation, and documents.",
     parameters: Type.Object({
       employeeId: Type.String({ description: "The employee document ID" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const data = await callApi(`/employees/${params.employeeId}`);
+        const data = await callApi(`/employees/${params.employeeId}`, { tenantId: params.tenantId });
 
         if (!data.success) {
           return textResult("Employee not found.");
@@ -215,10 +218,12 @@ export default function register(api: OpenclawPluginApi) {
     name: "get_employee_counts",
     description:
       "Get a breakdown of employee counts by status (active, inactive, terminated, probation).",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/employees/counts");
+        const data = await callApi("/employees/counts", { tenantId: params.tenantId });
         const c = data.counts;
 
         const summary =
@@ -239,10 +244,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_employees_by_department",
     description: "Get active employees grouped by department with headcount per department.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/employees/by-department");
+        const data = await callApi("/employees/by-department", { tenantId: params.tenantId });
 
         if (!data.success || data.departments.length === 0) {
           return textResult("No department data available.");
@@ -272,10 +279,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_active_employees",
     description: "Get a list of all currently active employees.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/employees?status=active");
+        const data = await callApi("/employees?status=active", { tenantId: params.tenantId });
 
         if (!data.success || data.employees.length === 0) {
           return textResult("No active employees found.");
@@ -310,6 +319,7 @@ export default function register(api: OpenclawPluginApi) {
         Type.String({ description: "Filter by status: draft, processing, approved, paid" })
       ),
       limit: Type.Optional(Type.Number({ description: "Max results (default 12)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -317,7 +327,7 @@ export default function register(api: OpenclawPluginApi) {
         if (params.status) qs.set("status", params.status);
         if (params.limit) qs.set("limit", String(params.limit));
 
-        const data = await callApi(`/payroll/runs?${qs}`);
+        const data = await callApi(`/payroll/runs?${qs}`, { tenantId: params.tenantId });
 
         if (!data.success || data.runs.length === 0) {
           return textResult("No payroll runs found.");
@@ -354,10 +364,11 @@ export default function register(api: OpenclawPluginApi) {
       "Get details for a specific payroll run by period (YYYYMM format, e.g. 202602 for February 2026).",
     parameters: Type.Object({
       period: Type.String({ description: "Payroll period in YYYYMM format (e.g. 202602)" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const data = await callApi(`/payroll/runs/${params.period}`);
+        const data = await callApi(`/payroll/runs/${params.period}`, { tenantId: params.tenantId });
 
         if (!data.success) {
           return textResult(`No payroll run found for period ${params.period}.`);
@@ -390,10 +401,11 @@ export default function register(api: OpenclawPluginApi) {
     description: "Get all payslips for a specific payroll run period.",
     parameters: Type.Object({
       period: Type.String({ description: "Payroll period in YYYYMM format" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const data = await callApi(`/payroll/runs/${params.period}/payslips`);
+        const data = await callApi(`/payroll/runs/${params.period}/payslips`, { tenantId: params.tenantId });
 
         if (!data.success || data.payslips.length === 0) {
           return textResult(`No payslips found for period ${params.period}.`);
@@ -419,10 +431,12 @@ export default function register(api: OpenclawPluginApi) {
     name: "get_payroll_summary",
     description:
       "Get a high-level payroll summary including the latest run status and key financial totals.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/payroll/runs?limit=3");
+        const data = await callApi("/payroll/runs?limit=3", { tenantId: params.tenantId });
 
         if (!data.success || data.runs.length === 0) {
           return textResult("No payroll data available yet.");
@@ -456,10 +470,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_pending_leave_requests",
     description: "Get all pending leave requests that need approval.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/leave/pending");
+        const data = await callApi("/leave/pending", { tenantId: params.tenantId });
 
         if (!data.success || data.requests.length === 0) {
           return textResult("No pending leave requests.");
@@ -486,11 +502,12 @@ export default function register(api: OpenclawPluginApi) {
     description: "Get leave balances for all employees for the current year.",
     parameters: Type.Object({
       year: Type.Optional(Type.String({ description: "Year (default: current year)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const qs = params.year ? `?year=${params.year}` : "";
-        const data = await callApi(`/leave/balances${qs}`);
+        const data = await callApi(`/leave/balances${qs}`, { tenantId: params.tenantId });
 
         if (!data.success || data.balances.length === 0) {
           return textResult(`No leave balance data for ${data.year || "current year"}.`);
@@ -523,12 +540,14 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_leave_stats",
     description: "Get leave request statistics including counts by status.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
         const [pending, all] = await Promise.all([
-          callApi("/leave/pending"),
-          callApi("/leave/requests?limit=200"),
+          callApi("/leave/pending", { tenantId: params.tenantId }),
+          callApi("/leave/requests?limit=200", { tenantId: params.tenantId }),
         ]);
 
         const requests = all.requests || [];
@@ -568,10 +587,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_employees_on_leave_today",
     description: "Get a list of employees who are on approved leave today.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/leave/on-leave-today");
+        const data = await callApi("/leave/on-leave-today", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult(`No employees on leave today (${data.date}).`);
@@ -597,11 +618,13 @@ export default function register(api: OpenclawPluginApi) {
     description: "Get leave requests for a specific employee.",
     parameters: Type.Object({
       employeeId: Type.String({ description: "The employee ID" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const data = await callApi(
-          `/leave/requests?employeeId=${encodeURIComponent(params.employeeId)}`
+          `/leave/requests?employeeId=${encodeURIComponent(params.employeeId)}`,
+          { tenantId: params.tenantId }
         );
 
         if (!data.success || data.requests.length === 0) {
@@ -640,11 +663,12 @@ export default function register(api: OpenclawPluginApi) {
       date: Type.Optional(
         Type.String({ description: "Date in YYYY-MM-DD format (default: today)" })
       ),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const qs = params.date ? `?date=${params.date}` : "";
-        const data = await callApi(`/attendance/daily${qs}`);
+        const data = await callApi(`/attendance/daily${qs}`, { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult(`No attendance records for ${data.date}.`);
@@ -670,13 +694,15 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_attendance_summary",
     description: "Get a summary of today's attendance status.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
         const [attendance, empCounts, onLeave] = await Promise.all([
-          callApi("/attendance/daily"),
-          callApi("/employees/counts"),
-          callApi("/leave/on-leave-today"),
+          callApi("/attendance/daily", { tenantId: params.tenantId }),
+          callApi("/employees/counts", { tenantId: params.tenantId }),
+          callApi("/leave/on-leave-today", { tenantId: params.tenantId }),
         ]);
 
         const totalActive = empCounts.counts?.active || 0;
@@ -704,10 +730,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_open_jobs",
     description: "Get all open job positions that are currently accepting applications.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/jobs/open");
+        const data = await callApi("/jobs/open", { tenantId: params.tenantId });
 
         if (!data.success || data.jobs.length === 0) {
           return textResult("No open job positions.");
@@ -731,10 +759,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_today_interviews",
     description: "Get all interviews scheduled for today.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/interviews/today");
+        const data = await callApi("/interviews/today", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult(`No interviews scheduled for today (${data.date}).`);
@@ -761,10 +791,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_upcoming_interviews",
     description: "Get interviews scheduled for the next 7 days.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/interviews/upcoming");
+        const data = await callApi("/interviews/upcoming", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult(`No upcoming interviews in the next 7 days.`);
@@ -794,11 +826,12 @@ export default function register(api: OpenclawPluginApi) {
       status: Type.Optional(
         Type.String({ description: "Filter by job status: open, closed, draft" })
       ),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const qs = params.status ? `?status=${params.status}` : "";
-        const data = await callApi(`/jobs${qs}`);
+        const data = await callApi(`/jobs${qs}`, { tenantId: params.tenantId });
 
         if (!data.success || data.jobs.length === 0) {
           return textResult("No job postings found.");
@@ -826,10 +859,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_overdue_invoices",
     description: "Get all overdue invoices (accounts receivable) with total overdue amount.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/invoices/overdue");
+        const data = await callApi("/invoices/overdue", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult("No overdue invoices. All receivables are current.");
@@ -851,10 +886,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_overdue_bills",
     description: "Get all overdue bills (accounts payable) with total overdue amount.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/bills/overdue");
+        const data = await callApi("/bills/overdue", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult("No overdue bills. All payables are current.");
@@ -876,10 +913,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_expenses_this_month",
     description: "Get expenses for the current month grouped by category with totals.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/expenses/this-month");
+        const data = await callApi("/expenses/this-month", { tenantId: params.tenantId });
 
         if (!data.success || data.count === 0) {
           return textResult("No expenses recorded this month.");
@@ -909,10 +948,11 @@ export default function register(api: OpenclawPluginApi) {
       status: Type.String({
         description: "Invoice status: draft, sent, viewed, paid, partial, overdue, cancelled",
       }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const data = await callApi(`/invoices?status=${encodeURIComponent(params.status)}`);
+        const data = await callApi(`/invoices?status=${encodeURIComponent(params.status)}`, { tenantId: params.tenantId });
 
         if (!data.success || data.invoices.length === 0) {
           return textResult(`No invoices with status "${params.status}".`);
@@ -939,13 +979,15 @@ export default function register(api: OpenclawPluginApi) {
     name: "get_financial_summary",
     description:
       "Get a financial overview including overdue receivables, overdue payables, and monthly expenses.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
         const [invoices, bills, expenses] = await Promise.all([
-          callApi("/invoices/overdue"),
-          callApi("/bills/overdue"),
-          callApi("/expenses/this-month"),
+          callApi("/invoices/overdue", { tenantId: params.tenantId }),
+          callApi("/bills/overdue", { tenantId: params.tenantId }),
+          callApi("/expenses/this-month", { tenantId: params.tenantId }),
         ]);
 
         let summary = `**Financial Summary**\n\n`;
@@ -973,10 +1015,12 @@ export default function register(api: OpenclawPluginApi) {
     name: "get_company_overview",
     description:
       "Get a comprehensive company overview including employee headcount, pending leave, open recruitment, payroll status, and financial health. This is the best tool to get a quick snapshot of the entire organization.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/stats");
+        const data = await callApi("/stats", { tenantId: params.tenantId });
 
         if (!data.success) {
           return textResult("Failed to fetch company overview.");
@@ -1043,10 +1087,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "list_departments",
     description: "List all departments in the organization.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/departments");
+        const data = await callApi("/departments", { tenantId: params.tenantId });
 
         if (!data.success || data.departments.length === 0) {
           return textResult("No departments found.");
@@ -1070,10 +1116,12 @@ export default function register(api: OpenclawPluginApi) {
   api.registerTool({
     name: "get_department_headcount",
     description: "Get employee headcount by department.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const data = await callApi("/employees/by-department");
+        const data = await callApi("/employees/by-department", { tenantId: params.tenantId });
 
         if (!data.success || data.departments.length === 0) {
           return textResult("No department headcount data available.");
@@ -1109,12 +1157,14 @@ export default function register(api: OpenclawPluginApi) {
       payFrequency: Type.Optional(
         Type.String({ description: "monthly (default), biweekly, weekly" })
       ),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi("/payroll/calculate", {
           method: "POST",
           body: params,
+          tenantId: params.tenantId,
         });
 
         let text = `**Payroll Calculation — ${params.periodStart} to ${params.periodEnd}**\n\n`;
@@ -1163,6 +1213,7 @@ export default function register(api: OpenclawPluginApi) {
       payDate: Type.String({ description: "Pay date" }),
       payFrequency: Type.Optional(Type.String({ description: "monthly, biweekly, weekly" })),
       createdBy: Type.String({ description: "Email of the person authorizing" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -1175,6 +1226,7 @@ export default function register(api: OpenclawPluginApi) {
             payDate: params.payDate,
             payFrequency: params.payFrequency || "monthly",
           },
+          tenantId: params.tenantId,
         });
 
         if (!calc.records?.length) {
@@ -1220,6 +1272,7 @@ export default function register(api: OpenclawPluginApi) {
         const result = await callApi("/payroll/runs", {
           method: "POST",
           body: { payrollRun, records, createdBy: params.createdBy },
+          tenantId: params.tenantId,
         });
 
         let text = `Payroll run created (ID: ${result.runId})\n`;
@@ -1240,12 +1293,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       runId: Type.String({ description: "Payroll run ID" }),
       approvedBy: Type.String({ description: "Email of the approver (must differ from creator)" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         await callApi(`/payroll/runs/${params.runId}/approve`, {
           method: "PUT",
           body: { approvedBy: params.approvedBy },
+          tenantId: params.tenantId,
         });
         return textResult(`Payroll run ${params.runId} approved by ${params.approvedBy}.`);
       } catch (error: any) {
@@ -1261,12 +1316,14 @@ export default function register(api: OpenclawPluginApi) {
       runId: Type.String({ description: "Payroll run ID" }),
       rejectedBy: Type.String({ description: "Email of the person rejecting" }),
       reason: Type.String({ description: "Reason for rejection" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         await callApi(`/payroll/runs/${params.runId}/reject`, {
           method: "PUT",
           body: { rejectedBy: params.rejectedBy, reason: params.reason },
+          tenantId: params.tenantId,
         });
         return textResult(`Payroll run ${params.runId} rejected: ${params.reason}`);
       } catch (error: any) {
@@ -1280,12 +1337,14 @@ export default function register(api: OpenclawPluginApi) {
     description: "Mark an approved payroll run as paid.",
     parameters: Type.Object({
       runId: Type.String({ description: "Payroll run ID" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         await callApi(`/payroll/runs/${params.runId}/mark-paid`, {
           method: "PUT",
           body: {},
+          tenantId: params.tenantId,
         });
         return textResult(`Payroll run ${params.runId} marked as paid.`);
       } catch (error: any) {
@@ -1300,12 +1359,14 @@ export default function register(api: OpenclawPluginApi) {
       "Repair a stuck payroll run (status: writing_records). Checks how many records were written and either finalizes or deletes the run.",
     parameters: Type.Object({
       runId: Type.String({ description: "Payroll run ID that is stuck" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi(`/payroll/runs/${params.runId}/repair`, {
           method: "POST",
           body: {},
+          tenantId: params.tenantId,
         });
         return textResult(`Repair result: ${result.message}`);
       } catch (error: any) {
@@ -1324,11 +1385,12 @@ export default function register(api: OpenclawPluginApi) {
       "Get the trial balance report showing all account balances (debits and credits). Optionally specify an as-of date.",
     parameters: Type.Object({
       asOf: Type.Optional(Type.String({ description: "As-of date in YYYY-MM-DD format (defaults to today)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const qp = params.asOf ? `?asOf=${params.asOf}` : "";
-        const rows = await callApi(`/trial-balance${qp}`);
+        const rows = await callApi(`/trial-balance${qp}`, { tenantId: params.tenantId });
 
         if (!Array.isArray(rows) || rows.length === 0) {
           return textResult("No trial balance data found. The general ledger may be empty.");
@@ -1365,6 +1427,7 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       start: Type.Optional(Type.String({ description: "Period start date YYYY-MM-DD (defaults to 1st of current month)" })),
       end: Type.Optional(Type.String({ description: "Period end date YYYY-MM-DD (defaults to end of current month)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -1372,7 +1435,7 @@ export default function register(api: OpenclawPluginApi) {
         if (params.start) qp.push(`start=${params.start}`);
         if (params.end) qp.push(`end=${params.end}`);
         const qs = qp.length ? `?${qp.join("&")}` : "";
-        const result = await callApi(`/reports/pnl${qs}`);
+        const result = await callApi(`/reports/pnl${qs}`, { tenantId: params.tenantId });
 
         let text = `**Income Statement** (${result.periodStart} to ${result.periodEnd})\n\n`;
 
@@ -1404,11 +1467,12 @@ export default function register(api: OpenclawPluginApi) {
       "Get the balance sheet report showing assets, liabilities, and equity. Optionally specify an as-of date.",
     parameters: Type.Object({
       asOf: Type.Optional(Type.String({ description: "As-of date in YYYY-MM-DD format (defaults to today)" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const qp = params.asOf ? `?asOf=${params.asOf}` : "";
-        const result = await callApi(`/reports/balance-sheet${qp}`);
+        const result = await callApi(`/reports/balance-sheet${qp}`, { tenantId: params.tenantId });
 
         let text = `**Balance Sheet** (as of ${result.asOf})\n\n`;
 
@@ -1466,12 +1530,14 @@ export default function register(api: OpenclawPluginApi) {
         Type.String({ description: "'draft' (default) or 'posted'" })
       ),
       createdBy: Type.String({ description: "Email of creator" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi("/journal-entries", {
           method: "POST",
           body: { ...params, source: "manual" },
+          tenantId: params.tenantId,
         });
         return textResult(
           `Journal entry created: ${result.entryNumber} (${result.status})`
@@ -1489,12 +1555,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       entryId: Type.String({ description: "Journal entry ID" }),
       postedBy: Type.String({ description: "Email of person posting" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi(`/journal-entries/${params.entryId}/post`, {
           method: "PUT",
           body: { postedBy: params.postedBy },
+          tenantId: params.tenantId,
         });
         return textResult(`Journal entry ${result.entryNumber} posted.`);
       } catch (error: any) {
@@ -1511,12 +1579,14 @@ export default function register(api: OpenclawPluginApi) {
       entryId: Type.String({ description: "Journal entry ID" }),
       voidedBy: Type.String({ description: "Email of person voiding" }),
       reason: Type.String({ description: "Why this entry is being voided" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         await callApi(`/journal-entries/${params.entryId}/void`, {
           method: "PUT",
           body: { voidedBy: params.voidedBy, reason: params.reason },
+          tenantId: params.tenantId,
         });
         return textResult(
           `Journal entry ${params.entryId} voided. Reversing entries created.`
@@ -1537,12 +1607,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       year: Type.Number({ description: "The fiscal year (e.g., 2026)" }),
       createdBy: Type.Optional(Type.String({ description: "Email of creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi("/fiscal-years", {
           method: "POST",
           body: params,
+          tenantId: params.tenantId,
         });
         return textResult(
           `Fiscal year ${result.year} created with ${result.periodIds.length} periods.`
@@ -1560,12 +1632,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       periodId: Type.String({ description: "Fiscal period ID" }),
       closedBy: Type.String({ description: "Email of person closing" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi(`/fiscal-periods/${params.periodId}/close`, {
           method: "PUT",
           body: { closedBy: params.closedBy },
+          tenantId: params.tenantId,
         });
         return textResult(result.message);
       } catch (error: any) {
@@ -1581,12 +1655,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       periodId: Type.String({ description: "Fiscal period ID" }),
       reopenedBy: Type.String({ description: "Email of person reopening" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi(`/fiscal-periods/${params.periodId}/reopen`, {
           method: "PUT",
           body: { reopenedBy: params.reopenedBy },
+          tenantId: params.tenantId,
         });
         return textResult(result.message);
       } catch (error: any) {
@@ -1602,12 +1678,14 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       periodId: Type.String({ description: "Fiscal period ID" }),
       lockedBy: Type.String({ description: "Email of person locking" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         const result = await callApi(`/fiscal-periods/${params.periodId}/lock`, {
           method: "PUT",
           body: { lockedBy: params.lockedBy },
+          tenantId: params.tenantId,
         });
         return textResult(result.message);
       } catch (error: any) {
@@ -1632,6 +1710,7 @@ export default function register(api: OpenclawPluginApi) {
         })
       ),
       createdBy: Type.Optional(Type.String({ description: "Email of creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -1640,6 +1719,7 @@ export default function register(api: OpenclawPluginApi) {
           {
             method: "POST",
             body: { lines: params.lines, createdBy: params.createdBy },
+            tenantId: params.tenantId,
           }
         );
         return textResult(
@@ -1662,6 +1742,7 @@ export default function register(api: OpenclawPluginApi) {
       requestId: Type.String({ description: "Leave request ID" }),
       approvedBy: Type.String({ description: "Email/ID of the approver" }),
       approverName: Type.Optional(Type.String({ description: "Name of the approver" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -1671,6 +1752,7 @@ export default function register(api: OpenclawPluginApi) {
             approvedBy: params.approvedBy,
             approverName: params.approverName || params.approvedBy,
           },
+          tenantId: params.tenantId,
         });
         return textResult(`Leave request ${params.requestId} approved.`);
       } catch (error: any) {
@@ -1686,12 +1768,14 @@ export default function register(api: OpenclawPluginApi) {
       requestId: Type.String({ description: "Leave request ID" }),
       rejectedBy: Type.String({ description: "Email/ID of the person rejecting" }),
       reason: Type.String({ description: "Reason for rejection" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
         await callApi(`/leave/requests/${params.requestId}/reject`, {
           method: "PUT",
           body: { rejectedBy: params.rejectedBy, reason: params.reason },
+          tenantId: params.tenantId,
         });
         return textResult(
           `Leave request ${params.requestId} rejected: ${params.reason}`
@@ -1712,10 +1796,11 @@ export default function register(api: OpenclawPluginApi) {
       "Verify a payroll run: checks record count, totals match, tax math is correct. Use after run_payroll to self-audit.",
     parameters: Type.Object({
       runId: Type.String({ description: "Payroll run ID to verify" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
-        const result = await callApi(`/verify/payroll/${params.runId}`);
+        const result = await callApi(`/verify/payroll/${params.runId}`, { tenantId: params.tenantId });
 
         let text = `**Payroll Verification — ${params.runId}**\n`;
         text += `Status: ${result.status} | Records: ${result.recordCount}\n`;
@@ -1748,6 +1833,7 @@ export default function register(api: OpenclawPluginApi) {
     parameters: Type.Object({
       year: Type.Optional(Type.Number({ description: "Fiscal year to filter" })),
       period: Type.Optional(Type.Number({ description: "Fiscal period (1-12) to filter" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
     async execute(_id, params) {
       try {
@@ -1757,7 +1843,7 @@ export default function register(api: OpenclawPluginApi) {
         if (params.period) qp.push(`period=${params.period}`);
         if (qp.length) endpoint += `?${qp.join("&")}`;
 
-        const result = await callApi(endpoint);
+        const result = await callApi(endpoint, { tenantId: params.tenantId });
 
         let text = `**Trial Balance Verification**\n`;
         text += `Total Debit: ${fmtMoney(result.totalDebit)} | Total Credit: ${fmtMoney(result.totalCredit)}\n`;
@@ -1783,10 +1869,12 @@ export default function register(api: OpenclawPluginApi) {
     name: "check_compliance",
     description:
       "Run compliance checks: missing tax IDs, salaries below minimum wage, missing INSS numbers, missing bank details, missing fiscal year setup.",
-    parameters: Type.Object({}),
-    async execute() {
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
       try {
-        const result = await callApi("/verify/compliance");
+        const result = await callApi("/verify/compliance", { tenantId: params.tenantId });
 
         let text = `**Compliance Check**\n`;
         text += `Employees: ${result.summary.employees} | Errors: ${result.summary.errors} | Warnings: ${result.summary.warnings}\n\n`;
@@ -2198,5 +2286,321 @@ export default function register(api: OpenclawPluginApi) {
     },
   });
 
-  console.log("[meza-hr] Plugin loaded — 56 tools (32 read + 24 write/verify), 5 commands registered");
+  // ============================================================================
+  // BOT WRITE TOOLS (Phase 3) — employee lifecycle, hiring, expenses, dept, announcements
+  // ============================================================================
+
+  api.registerTool({
+    name: "update_employee",
+    description:
+      "Update an existing employee's status, salary, department, or position. Use for promotions, transfers, salary changes, suspensions, terminations, and reactivations. Status values: active, probation, inactive, terminated.",
+    parameters: Type.Object({
+      employeeId: Type.String({ description: "Employee document ID" }),
+      status: Type.Optional(Type.String({ description: "New status: active, probation, inactive, terminated" })),
+      monthlySalary: Type.Optional(Type.Number({ description: "New monthly salary (USD)" })),
+      department: Type.Optional(Type.String({ description: "New department" })),
+      position: Type.Optional(Type.String({ description: "New position / job title" })),
+      terminationReason: Type.Optional(Type.String({ description: "Reason (required when status=terminated)" })),
+      updatedBy: Type.Optional(Type.String({ description: "Email of the manager making the change" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/employees/${params.employeeId}`, {
+          method: "PATCH",
+          body: {
+            status: params.status,
+            monthlySalary: params.monthlySalary,
+            department: params.department,
+            position: params.position,
+            terminationReason: params.terminationReason,
+            updatedBy: params.updatedBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(result.message || `Employee ${params.employeeId} updated.`);
+      } catch (error: any) {
+        return errorResult("updating employee", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_job",
+    description: "Post a new job opening. Status is set to 'open'.",
+    parameters: Type.Object({
+      title: Type.String({ description: "Job title" }),
+      department: Type.String({ description: "Department" }),
+      description: Type.Optional(Type.String({ description: "Role description" })),
+      location: Type.Optional(Type.String({ description: "Work location" })),
+      salaryMin: Type.Optional(Type.Number({ description: "Minimum monthly salary" })),
+      salaryMax: Type.Optional(Type.Number({ description: "Maximum monthly salary" })),
+      employmentType: Type.Optional(Type.String({ description: "full-time, part-time, contract, intern (default: full-time)" })),
+      closingDate: Type.Optional(Type.String({ description: "Application closing date YYYY-MM-DD" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/jobs`, {
+          method: "POST",
+          body: {
+            title: params.title,
+            department: params.department,
+            description: params.description,
+            location: params.location,
+            salaryMin: params.salaryMin,
+            salaryMax: params.salaryMax,
+            employmentType: params.employmentType,
+            closingDate: params.closingDate,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Job posted: **${params.title}** (${params.department}). ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating job", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "close_job",
+    description: "Close a job posting (e.g. when filled or withdrawn).",
+    parameters: Type.Object({
+      jobId: Type.String({ description: "Job document ID" }),
+      reason: Type.Optional(Type.String({ description: "Reason (e.g. 'filled', 'withdrawn')" })),
+      updatedBy: Type.Optional(Type.String({ description: "Email of the closer" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        await callApi(`/jobs/${params.jobId}/close`, {
+          method: "PATCH",
+          body: { reason: params.reason, updatedBy: params.updatedBy },
+          tenantId: params.tenantId,
+        });
+        return textResult(`Job ${params.jobId} closed${params.reason ? `: ${params.reason}` : ''}.`);
+      } catch (error: any) {
+        return errorResult("closing job", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "update_candidate",
+    description:
+      "Move a candidate through the hiring pipeline or update notes. Status values: New, Under Review, Shortlisted, Rejected, Hired.",
+    parameters: Type.Object({
+      candidateId: Type.String({ description: "Candidate document ID" }),
+      status: Type.Optional(Type.String({ description: "New status: New, Under Review, Shortlisted, Rejected, Hired" })),
+      notes: Type.Optional(Type.String({ description: "Notes about the candidate" })),
+      updatedBy: Type.Optional(Type.String({ description: "Email of the updater" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/candidates/${params.candidateId}`, {
+          method: "PATCH",
+          body: { status: params.status, notes: params.notes, updatedBy: params.updatedBy },
+          tenantId: params.tenantId,
+        });
+        return textResult(result.message || `Candidate ${params.candidateId} updated.`);
+      } catch (error: any) {
+        return errorResult("updating candidate", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "schedule_interview",
+    description:
+      "Schedule a new interview for a candidate. Creates the interview in 'scheduled' status.",
+    parameters: Type.Object({
+      candidateName: Type.String({ description: "Candidate full name" }),
+      candidateEmail: Type.String({ description: "Candidate email" }),
+      position: Type.String({ description: "Position being interviewed for" }),
+      interviewDate: Type.String({ description: "Date YYYY-MM-DD" }),
+      interviewTime: Type.String({ description: "Time HH:MM (24h)" }),
+      duration: Type.Optional(Type.Number({ description: "Duration in minutes (default 60)" })),
+      interviewType: Type.Optional(Type.String({ description: "phone, video, in_person, panel (default: in_person)" })),
+      location: Type.Optional(Type.String({ description: "Location (if in-person)" })),
+      meetingLink: Type.Optional(Type.String({ description: "Meeting link (if video)" })),
+      interviewerNames: Type.Optional(Type.Array(Type.String(), { description: "Names of interviewers" })),
+      candidateId: Type.Optional(Type.String({ description: "Existing candidate ID if known" })),
+      jobId: Type.Optional(Type.String({ description: "Related job ID if known" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the scheduler" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/interviews`, {
+          method: "POST",
+          body: {
+            candidateName: params.candidateName,
+            candidateEmail: params.candidateEmail,
+            position: params.position,
+            interviewDate: params.interviewDate,
+            interviewTime: params.interviewTime,
+            duration: params.duration,
+            interviewType: params.interviewType,
+            location: params.location,
+            meetingLink: params.meetingLink,
+            interviewerNames: params.interviewerNames,
+            candidateId: params.candidateId,
+            jobId: params.jobId,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Interview scheduled with **${params.candidateName}** on ${params.interviewDate} at ${params.interviewTime}. ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("scheduling interview", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "update_interview_status",
+    description:
+      "Update an interview's status or decision. Status values: scheduled, completed, cancelled, no_show, rescheduled. Decision values: hire, reject, hold, next_round, pending.",
+    parameters: Type.Object({
+      interviewId: Type.String({ description: "Interview document ID" }),
+      status: Type.String({ description: "New status: scheduled, completed, cancelled, no_show, rescheduled" }),
+      decision: Type.Optional(Type.String({ description: "Hiring decision: hire, reject, hold, next_round, pending" })),
+      decisionNotes: Type.Optional(Type.String({ description: "Notes on the decision" })),
+      updatedBy: Type.Optional(Type.String({ description: "Email of the updater" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        await callApi(`/interviews/${params.interviewId}/status`, {
+          method: "PATCH",
+          body: {
+            status: params.status,
+            decision: params.decision,
+            decisionNotes: params.decisionNotes,
+            updatedBy: params.updatedBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Interview ${params.interviewId}: ${params.status}${params.decision ? ` (${params.decision})` : ''}`
+        );
+      } catch (error: any) {
+        return errorResult("updating interview", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_expense",
+    description:
+      "Record an expense. Creates the expense record only — the matching journal entry must still be posted via the UI or post_journal_entry tool for accounting completeness.",
+    parameters: Type.Object({
+      description: Type.String({ description: "What the expense was for" }),
+      amount: Type.Number({ description: "Amount (USD)" }),
+      category: Type.String({
+        description:
+          "Category: office_supplies, travel, meals, software, hardware, utilities, rent, marketing, professional_services, bank_fees, insurance, taxes, other",
+      }),
+      date: Type.Optional(Type.String({ description: "Date YYYY-MM-DD (default: today)" })),
+      paymentMethod: Type.Optional(Type.String({ description: "cash, bank_transfer, credit_card, debit_card, cheque (default: cash)" })),
+      vendorName: Type.Optional(Type.String({ description: "Vendor name" })),
+      vendorId: Type.Optional(Type.String({ description: "Vendor ID if known" })),
+      notes: Type.Optional(Type.String({ description: "Notes" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/expenses`, {
+          method: "POST",
+          body: {
+            description: params.description,
+            amount: params.amount,
+            category: params.category,
+            date: params.date,
+            paymentMethod: params.paymentMethod,
+            vendorName: params.vendorName,
+            vendorId: params.vendorId,
+            notes: params.notes,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Expense recorded: ${params.description} — ${fmtMoney(params.amount)} (${params.category}). ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("creating expense", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_department",
+    description: "Create a new department.",
+    parameters: Type.Object({
+      name: Type.String({ description: "Department name" }),
+      manager: Type.Optional(Type.String({ description: "Manager name or ID" })),
+      director: Type.Optional(Type.String({ description: "Director name or ID" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/departments`, {
+          method: "POST",
+          body: {
+            name: params.name,
+            manager: params.manager,
+            director: params.director,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(`Department **${params.name}** created. ID: ${result.id}`);
+      } catch (error: any) {
+        return errorResult("creating department", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "create_announcement",
+    description: "Post a company-wide announcement visible to all staff.",
+    parameters: Type.Object({
+      title: Type.String({ description: "Announcement title" }),
+      body: Type.String({ description: "Announcement body / message" }),
+      pinned: Type.Optional(Type.Boolean({ description: "Pin to top (default: false)" })),
+      createdBy: Type.Optional(Type.String({ description: "Email of the author" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const result = await callApi(`/announcements`, {
+          method: "POST",
+          body: {
+            title: params.title,
+            body: params.body,
+            pinned: params.pinned,
+            createdBy: params.createdBy,
+          },
+          tenantId: params.tenantId,
+        });
+        return textResult(
+          `Announcement posted: **${params.title}**${params.pinned ? ' (pinned)' : ''}. ID: ${result.id}`
+        );
+      } catch (error: any) {
+        return errorResult("posting announcement", error);
+      }
+    },
+  });
+
+  console.log("[meza-hr] Plugin loaded — 65 tools (32 read + 33 write/verify), 5 commands registered");
 }

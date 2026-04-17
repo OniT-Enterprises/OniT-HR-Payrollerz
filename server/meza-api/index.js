@@ -3159,6 +3159,464 @@ router.post('/bills', async (req, res) => {
   }
 });
 
+// ── BOT WRITE ENDPOINTS (Phase 3) ─────────────────────────────────────────
+// Employee status/salary updates, jobs/candidates/interviews lifecycle,
+// expenses, departments, and announcements.
+
+/**
+ * PATCH /api/tenants/:tenantId/employees/:id
+ * Body: { status?, monthlySalary?, department?, position?, terminationReason?, updatedBy? }
+ */
+router.patch('/employees/:id', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { id } = req.params;
+    const { status, monthlySalary, department, position, terminationReason, updatedBy = 'bot' } = req.body || {};
+
+    const ref = tenantCol(tid, 'employees').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ success: false, message: 'Employee not found' });
+    const current = snap.data();
+
+    const updates = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    const changes = [];
+
+    if (status && status !== current.status) {
+      const allowed = ['active', 'probation', 'inactive', 'terminated'];
+      if (!allowed.includes(status)) {
+        return res.status(400).json({ success: false, message: `status must be one of: ${allowed.join(', ')}` });
+      }
+      updates.status = status;
+      changes.push(`status ${current.status || 'active'} → ${status}`);
+      if (status === 'terminated') {
+        updates['jobDetails.terminationDate'] = getTodayTL();
+        if (terminationReason) updates['jobDetails.terminationReason'] = terminationReason;
+      }
+    }
+    if (monthlySalary != null) {
+      const salary = Number(monthlySalary);
+      if (!Number.isFinite(salary) || salary < 0) {
+        return res.status(400).json({ success: false, message: 'monthlySalary must be a non-negative number' });
+      }
+      updates['compensation.monthlySalary'] = salary;
+      changes.push(`salary → $${salary.toFixed(2)}`);
+    }
+    if (department) {
+      updates['jobDetails.department'] = department;
+      changes.push(`department → ${department}`);
+    }
+    if (position) {
+      updates['jobDetails.position'] = position;
+      changes.push(`position → ${position}`);
+    }
+
+    if (changes.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    await ref.update(updates);
+
+    const name = `${current.personalInfo?.firstName || ''} ${current.personalInfo?.lastName || ''}`.trim() || id;
+    const action = status === 'terminated' ? 'employee.terminate'
+      : status === 'active' && current.status === 'terminated' ? 'employee.reactivate'
+      : 'employee.update';
+
+    await writeAuditLog(tid, {
+      userId: updatedBy, userEmail: updatedBy,
+      action, module: 'employees',
+      description: `Updated ${name}: ${changes.join(', ')}`,
+      entityId: id, entityType: 'employee',
+    });
+
+    res.json({ success: true, message: `Employee updated: ${changes.join(', ')}`, id });
+  } catch (error) {
+    console.error('[employees/update]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/jobs
+ * Body: { title, department, description?, location?, salaryMin?, salaryMax?, employmentType?, closingDate?, createdBy? }
+ */
+router.post('/jobs', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      title, department, description = '', location = '',
+      salaryMin, salaryMax, employmentType = 'full-time',
+      closingDate, createdBy = 'bot',
+    } = req.body || {};
+
+    if (!title || !department) {
+      return res.status(400).json({ success: false, message: 'title and department are required' });
+    }
+
+    const job = {
+      title, department, description, location,
+      salaryMin: salaryMin != null ? Number(salaryMin) : null,
+      salaryMax: salaryMax != null ? Number(salaryMax) : null,
+      employmentType,
+      status: 'open',
+      postedDate: getTodayTL(),
+      closingDate: closingDate || '',
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'jobs').add(job);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'job.create', module: 'hiring',
+      description: `Posted job: ${title} (${department})`,
+      entityId: docRef.id, entityType: 'job',
+    });
+
+    res.json({ success: true, message: 'Job posted (open)', id: docRef.id });
+  } catch (error) {
+    console.error('[jobs/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * PATCH /api/tenants/:tenantId/jobs/:id/close
+ * Body: { reason?, updatedBy? }
+ */
+router.patch('/jobs/:id/close', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { id } = req.params;
+    const { reason = '', updatedBy = 'bot' } = req.body || {};
+
+    const ref = tenantCol(tid, 'jobs').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ success: false, message: 'Job not found' });
+
+    const current = snap.data();
+    if (current.status === 'closed') {
+      return res.status(400).json({ success: false, message: 'Job is already closed' });
+    }
+
+    await ref.update({
+      status: 'closed',
+      closingReason: reason,
+      closedAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    await writeAuditLog(tid, {
+      userId: updatedBy, userEmail: updatedBy,
+      action: 'job.close', module: 'hiring',
+      description: `Closed job "${current.title}"${reason ? `: ${reason}` : ''}`,
+      entityId: id, entityType: 'job',
+    });
+
+    res.json({ success: true, message: 'Job closed' });
+  } catch (error) {
+    console.error('[jobs/close]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * PATCH /api/tenants/:tenantId/candidates/:id
+ * Body: { status?, notes?, updatedBy? }
+ * status values: New, Under Review, Shortlisted, Rejected, Hired
+ */
+router.patch('/candidates/:id', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { id } = req.params;
+    const { status, notes, updatedBy = 'bot' } = req.body || {};
+
+    const ref = tenantCol(tid, 'candidates').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ success: false, message: 'Candidate not found' });
+    const current = snap.data();
+
+    const updates = { updatedAt: admin.firestore.FieldValue.serverTimestamp() };
+    const changes = [];
+
+    if (status && status !== current.status) {
+      const allowed = ['New', 'Under Review', 'Shortlisted', 'Rejected', 'Hired'];
+      if (!allowed.includes(status)) {
+        return res.status(400).json({ success: false, message: `status must be one of: ${allowed.join(', ')}` });
+      }
+      updates.status = status;
+      changes.push(`${current.status || 'New'} → ${status}`);
+    }
+    if (notes != null) {
+      updates.notes = notes;
+      changes.push('notes updated');
+    }
+
+    if (changes.length === 0) {
+      return res.status(400).json({ success: false, message: 'No fields to update' });
+    }
+
+    await ref.update(updates);
+
+    await writeAuditLog(tid, {
+      userId: updatedBy, userEmail: updatedBy,
+      action: 'candidate.update', module: 'hiring',
+      description: `Updated candidate ${current.name}: ${changes.join(', ')}`,
+      entityId: id, entityType: 'candidate',
+    });
+
+    res.json({ success: true, message: `Candidate updated: ${changes.join(', ')}` });
+  } catch (error) {
+    console.error('[candidates/update]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/interviews
+ * Body: { candidateName, candidateEmail, position, interviewDate, interviewTime, duration?, interviewType?, location?, meetingLink?, interviewerNames?, createdBy? }
+ */
+router.post('/interviews', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      candidateName, candidateEmail, position,
+      interviewDate, interviewTime, duration = 60,
+      interviewType = 'in_person',
+      location = '', meetingLink = '',
+      interviewerNames = [],
+      candidateId = '', jobId = '',
+      createdBy = 'bot',
+    } = req.body || {};
+
+    if (!candidateName || !candidateEmail || !position || !interviewDate || !interviewTime) {
+      return res.status(400).json({
+        success: false,
+        message: 'candidateName, candidateEmail, position, interviewDate, interviewTime are required',
+      });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(interviewDate)) {
+      return res.status(400).json({ success: false, message: 'interviewDate must be YYYY-MM-DD' });
+    }
+    if (!/^\d{2}:\d{2}$/.test(interviewTime)) {
+      return res.status(400).json({ success: false, message: 'interviewTime must be HH:MM (24h)' });
+    }
+
+    const interview = {
+      candidateId, candidateName, candidateEmail,
+      position, jobId,
+      interviewDate, interviewTime,
+      duration: Number(duration) || 60,
+      interviewType, location, meetingLink,
+      interviewerIds: [],
+      interviewerNames: Array.isArray(interviewerNames) ? interviewerNames : [interviewerNames].filter(Boolean),
+      preChecks: { hrReview: false, resumeChecked: false, backgroundCheck: false, referencesChecked: false },
+      invitationSent: false, reminderSent: false,
+      candidateConfirmed: false, followUpCall: false,
+      status: 'scheduled',
+      feedback: [],
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'interviews').add(interview);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'interview.create', module: 'hiring',
+      description: `Scheduled ${interviewType} interview with ${candidateName} on ${interviewDate} ${interviewTime}`,
+      entityId: docRef.id, entityType: 'interview',
+    });
+
+    res.json({ success: true, message: 'Interview scheduled', id: docRef.id });
+  } catch (error) {
+    console.error('[interviews/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * PATCH /api/tenants/:tenantId/interviews/:id/status
+ * Body: { status, decision?, decisionNotes?, updatedBy? }
+ */
+router.patch('/interviews/:id/status', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { id } = req.params;
+    const { status, decision, decisionNotes = '', updatedBy = 'bot' } = req.body || {};
+
+    if (!status) return res.status(400).json({ success: false, message: 'status is required' });
+    const allowed = ['scheduled', 'completed', 'cancelled', 'no_show', 'rescheduled'];
+    if (!allowed.includes(status)) {
+      return res.status(400).json({ success: false, message: `status must be one of: ${allowed.join(', ')}` });
+    }
+
+    const ref = tenantCol(tid, 'interviews').doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ success: false, message: 'Interview not found' });
+    const current = snap.data();
+
+    const updates = {
+      status,
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+    if (decision) updates.decision = decision;
+    if (decisionNotes) updates.decisionNotes = decisionNotes;
+
+    await ref.update(updates);
+
+    await writeAuditLog(tid, {
+      userId: updatedBy, userEmail: updatedBy,
+      action: 'interview.update', module: 'hiring',
+      description: `Interview with ${current.candidateName}: ${current.status} → ${status}${decision ? ` (${decision})` : ''}`,
+      entityId: id, entityType: 'interview',
+    });
+
+    res.json({ success: true, message: `Interview ${status}` });
+  } catch (error) {
+    console.error('[interviews/update]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/expenses
+ * Body: { description, amount, category, date?, paymentMethod?, vendorName?, notes?, createdBy? }
+ *
+ * Note: does NOT auto-post a journal entry. User must post the matching JE
+ * in the UI (or via post_journal_entry tool) for accounting completeness.
+ */
+router.post('/expenses', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const {
+      description, amount, category,
+      date = getTodayTL(),
+      paymentMethod = 'cash',
+      vendorName = '', vendorId = '',
+      notes = '', createdBy = 'bot',
+    } = req.body || {};
+
+    if (!description || amount == null || !category) {
+      return res.status(400).json({ success: false, message: 'description, amount, category are required' });
+    }
+    const amt = Number(amount);
+    if (!Number.isFinite(amt) || amt <= 0) {
+      return res.status(400).json({ success: false, message: 'amount must be a positive number' });
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      return res.status(400).json({ success: false, message: 'date must be YYYY-MM-DD' });
+    }
+
+    const expense = {
+      date, description, amount: amt,
+      category, paymentMethod,
+      vendorId, vendorName,
+      notes,
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'expenses').add(expense);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'expense.create', module: 'money',
+      description: `Created expense: ${description} — $${amt.toFixed(2)} (${category})`,
+      entityId: docRef.id, entityType: 'expense',
+    });
+
+    res.json({ success: true, message: 'Expense created (no journal posted — review in UI)', id: docRef.id });
+  } catch (error) {
+    console.error('[expenses/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/departments
+ * Body: { name, manager?, director?, createdBy? }
+ * Note: departments are stored in top-level collection with tenantId field.
+ */
+router.post('/departments', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { name, manager = '', director = '', createdBy = 'bot' } = req.body || {};
+
+    if (!name) return res.status(400).json({ success: false, message: 'name is required' });
+
+    const dupSnap = await db.collection('departments')
+      .where('tenantId', '==', tid)
+      .where('name', '==', name)
+      .limit(1)
+      .get();
+    if (!dupSnap.empty) {
+      return res.status(409).json({ success: false, message: `Department "${name}" already exists` });
+    }
+
+    const dept = {
+      tenantId: tid,
+      name, manager, director,
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await db.collection('departments').add(dept);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'department.create', module: 'settings',
+      description: `Created department: ${name}${manager ? ` (manager: ${manager})` : ''}`,
+      entityId: docRef.id, entityType: 'department',
+    });
+
+    res.json({ success: true, message: 'Department created', id: docRef.id });
+  } catch (error) {
+    console.error('[departments/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * POST /api/tenants/:tenantId/announcements
+ * Body: { title, body, pinned?, createdBy? }
+ */
+router.post('/announcements', async (req, res) => {
+  try {
+    const tid = req.tenantId;
+    const { title, body, pinned = false, createdBy = 'bot' } = req.body || {};
+
+    if (!title || !body) {
+      return res.status(400).json({ success: false, message: 'title and body are required' });
+    }
+
+    const announcement = {
+      title, body,
+      pinned: !!pinned,
+      createdBy,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+    };
+
+    const docRef = await tenantCol(tid, 'announcements').add(announcement);
+
+    await writeAuditLog(tid, {
+      userId: createdBy, userEmail: createdBy,
+      action: 'announcement.create', module: 'people',
+      description: `Posted announcement: ${title}`,
+      entityId: docRef.id, entityType: 'announcement',
+    });
+
+    res.json({ success: true, message: 'Announcement posted', id: docRef.id });
+  } catch (error) {
+    console.error('[announcements/create]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ── VERIFICATION ENDPOINTS (Phase 3) ──────────────────────────────────────
 
 /**
@@ -3609,7 +4067,7 @@ WRITE_CONFIRMATION_STATE: ${allowWrites ? 'confirmed' : 'not-confirmed'}.
 
 CAPABILITIES:
 - Read: employees, departments, payroll, leave, attendance, interviews, jobs, invoices, bills, expenses, journals, trial balance, P&L, balance sheet.
-- Write (after confirmation): create employees, create leave requests, record attendance, create invoices, create bills, approve/reject leave, calculate/run/approve/reject/mark-paid payroll, create/post/void journal entries, manage fiscal periods.
+- Write (after confirmation): create employees, update employees (status/salary/department/position), create leave requests, approve/reject leave, record attendance, create invoices, create bills, create expenses, create departments, post announcements, post jobs, close jobs, update candidates, schedule/update interviews, calculate/run/approve/reject/mark-paid payroll, create/post/void journal entries, manage fiscal periods.
 - Keep responses concise — this is a small chat panel.
 
 TENANT CONTEXT:
@@ -3858,6 +4316,15 @@ function humanizeToolName(toolName) {
     record_attendance: 'Recording attendance',
     create_invoice: 'Creating invoice',
     create_bill: 'Creating bill',
+    update_employee: 'Updating employee',
+    create_job: 'Posting job',
+    close_job: 'Closing job',
+    update_candidate: 'Updating candidate',
+    schedule_interview: 'Scheduling interview',
+    update_interview_status: 'Updating interview',
+    create_expense: 'Creating expense',
+    create_department: 'Creating department',
+    create_announcement: 'Posting announcement',
   };
   if (map[toolName]) return map[toolName];
   // Fallback: convert snake_case to Title Case with "..."
