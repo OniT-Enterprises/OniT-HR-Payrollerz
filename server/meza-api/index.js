@@ -4053,7 +4053,7 @@ app.use((err, req, res, _next) => {
 // Start server
 // ============================================================================
 
-app.listen(PORT, 'localhost', () => {
-  console.log(`[meza-api] Listening on localhost:${PORT}`);
-  console.log(`[meza-api] Health check: http://localhost:${PORT}/api/health`);
+app.listen(PORT, '127.0.0.1', () => {
+  console.log(`[meza-api] Listening on 127.0.0.1:${PORT}`);
+  console.log(`[meza-api] Health check: http://127.0.0.1:${PORT}/api/health`);
 });
