@@ -8,8 +8,6 @@ import {
   doc,
   getDocs,
   getDoc,
-  getAggregateFromServer,
-  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -25,7 +23,6 @@ import {
   DocumentSnapshot,
   Timestamp,
   documentId,
-  sum,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -259,18 +256,12 @@ class BillService {
   }
 
   async getOutstandingPayablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', 'in', UNPAID_BILL_STATUSES),
-        where('billDate', '<=', asOfDate),
-      ),
-      {
-        totalAmount: sum('balanceDue'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', 'in', UNPAID_BILL_STATUSES),
+      where('billDate', '<=', asOfDate),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().balanceDue) || 0), 0);
   }
 
   async getPaidBillAmountByDateRange(
@@ -278,34 +269,22 @@ class BillService {
     startDate: string,
     endDate: string
   ): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', '==', 'paid'),
-        where('paidAt', '>=', new Date(`${startDate}T00:00:00.000+09:00`)),
-        where('paidAt', '<=', new Date(`${endDate}T23:59:59.999+09:00`)),
-      ),
-      {
-        totalAmount: sum('amount'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', '==', 'paid'),
+      where('paidAt', '>=', new Date(`${startDate}T00:00:00.000+09:00`)),
+      where('paidAt', '<=', new Date(`${endDate}T23:59:59.999+09:00`)),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().amount) || 0), 0);
   }
 
   async getPaidBillAmountAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', '==', 'paid'),
-        where('paidAt', '<=', new Date(`${asOfDate}T23:59:59.999+09:00`)),
-      ),
-      {
-        totalAmount: sum('amount'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', '==', 'paid'),
+      where('paidAt', '<=', new Date(`${asOfDate}T23:59:59.999+09:00`)),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().amount) || 0), 0);
   }
 
   async getVATSummary(
@@ -895,14 +874,10 @@ class BillService {
    * Get total payables
    */
   async getTotalPayables(tenantId: string): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
+    const snapshot = await getDocs(
       query(this.collectionRef(tenantId), where('status', 'in', UNPAID_BILL_STATUSES)),
-      {
-        totalAmount: sum('balanceDue'),
-      }
     );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().balanceDue) || 0), 0);
   }
 
   /**
@@ -938,46 +913,42 @@ class BillService {
     const todayStr = getTodayTL();
     const nextWeekStr = formatDateISO(addDays(parseDateISO(todayStr), 7));
 
-    const aggregateBucket = async (bucketQuery: ReturnType<typeof query>) => {
-      const [countSnapshot, totalSnapshot] = await Promise.all([
-        getCountFromServer(bucketQuery),
-        getAggregateFromServer(bucketQuery, {
-          totalAmount: sum('balanceDue'),
-        }),
-      ]);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', 'in', UNPAID_BILL_STATUSES),
+    ));
 
-      return {
-        count: countSnapshot.data().count,
-        total: Number(totalSnapshot.data().totalAmount ?? 0),
-      };
-    };
+    let overdue = 0, overdueCount = 0;
+    let dueThisWeek = 0, dueThisWeekCount = 0;
+    let dueLater = 0, dueLaterCount = 0;
 
-    const [overdue, dueThisWeek, dueLater] = await Promise.all([
-      aggregateBucket(query(
-        this.collectionRef(tenantId),
-        where('status', 'in', UNPAID_BILL_STATUSES),
-        where('dueDate', '<', todayStr),
-      )),
-      aggregateBucket(query(
-        this.collectionRef(tenantId),
-        where('status', 'in', ['pending', 'partial']),
-        where('dueDate', '>=', todayStr),
-        where('dueDate', '<=', nextWeekStr),
-      )),
-      aggregateBucket(query(
-        this.collectionRef(tenantId),
-        where('status', 'in', UNPAID_BILL_STATUSES),
-        where('dueDate', '>', nextWeekStr),
-      )),
-    ]);
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const dueDate = data.dueDate;
+      const balanceDue = Number(data.balanceDue) || 0;
+      const status = data.status;
+
+      if (!dueDate) continue;
+
+      if (dueDate < todayStr) {
+        overdue = addMoney(overdue, balanceDue);
+        overdueCount++;
+      } else if (dueDate <= nextWeekStr && (status === 'pending' || status === 'partial')) {
+        dueThisWeek = addMoney(dueThisWeek, balanceDue);
+        dueThisWeekCount++;
+      } else if (dueDate > nextWeekStr) {
+        dueLater = addMoney(dueLater, balanceDue);
+        dueLaterCount++;
+      }
+    }
 
     return {
-      overdue: overdue.total,
-      overdueCount: overdue.count,
-      dueThisWeek: dueThisWeek.total,
-      dueThisWeekCount: dueThisWeek.count,
-      dueLater: dueLater.total,
-      dueLaterCount: dueLater.count,
+      overdue,
+      overdueCount,
+      dueThisWeek,
+      dueThisWeekCount,
+      dueLater,
+      dueLaterCount,
     };
   }
 

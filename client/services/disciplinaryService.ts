@@ -8,7 +8,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -436,61 +435,38 @@ class DisciplinaryService {
   async getStats(tenantId: string): Promise<DisciplinaryStats> {
     try {
       const collectionRef = collection(db, DISCIPLINARY_COLLECTION);
-      const baseQuery = query(collectionRef, where('tenantId', '==', tenantId));
+      const snapshot = await getDocs(query(collectionRef, where('tenantId', '==', tenantId)));
 
-      const [
-        totalSnapshot,
-        openSnapshot,
-        inReviewSnapshot,
-        closedSnapshot,
-        typeSnapshots,
-        severitySnapshots,
-      ] = await Promise.all([
-        getCountFromServer(baseQuery),
-        getCountFromServer(query(baseQuery, where('status', '==', 'open'))),
-        getCountFromServer(query(baseQuery, where('status', '==', 'in_review'))),
-        getCountFromServer(query(baseQuery, where('status', '==', 'closed'))),
-        Promise.all(
-          DISCIPLINARY_TYPES.map(({ id }) =>
-            getCountFromServer(query(baseQuery, where('type', '==', id)))
-          )
-        ),
-        Promise.all(
-          SEVERITY_LEVELS.map(({ id }) =>
-            getCountFromServer(query(baseQuery, where('severity', '==', id)))
-          )
-        ),
-      ]);
-
-      const byType = DISCIPLINARY_TYPES.reduce<Record<DisciplinaryType, number>>((acc, { id }, index) => {
-        acc[id] = typeSnapshots[index].data().count;
-        return acc;
-      }, {
+      const byType: Record<DisciplinaryType, number> = {
         warning: 0,
         suspension: 0,
         termination: 0,
         misconduct: 0,
         attendance: 0,
         performance: 0,
-      });
-
-      const bySeverity = SEVERITY_LEVELS.reduce<Record<SeverityLevel, number>>((acc, { id }, index) => {
-        acc[id] = severitySnapshots[index].data().count;
-        return acc;
-      }, {
+      };
+      const bySeverity: Record<SeverityLevel, number> = {
         low: 0,
         medium: 0,
         high: 0,
-      });
-
-      return {
-        totalRecords: totalSnapshot.data().count,
-        open: openSnapshot.data().count,
-        inReview: inReviewSnapshot.data().count,
-        closed: closedSnapshot.data().count,
-        byType,
-        bySeverity,
       };
+
+      let totalRecords = 0;
+      let open = 0;
+      let inReview = 0;
+      let closed = 0;
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        totalRecords++;
+        if (data.status === 'open') open++;
+        else if (data.status === 'in_review') inReview++;
+        else if (data.status === 'closed') closed++;
+        if (data.type && data.type in byType) byType[data.type as DisciplinaryType]++;
+        if (data.severity && data.severity in bySeverity) bySeverity[data.severity as SeverityLevel]++;
+      }
+
+      return { totalRecords, open, inReview, closed, byType, bySeverity };
     } catch (error) {
       console.error('Error getting disciplinary stats:', error);
       throw error;

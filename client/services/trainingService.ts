@@ -8,7 +8,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -447,29 +446,30 @@ class TrainingService {
       const expiringCutoffStr = expiringCutoff.toISOString().slice(0, 10);
       const collectionRef = collection(db, TRAINING_COLLECTION);
 
-      const [total, pending, inProgress, completed, expired, expiringSoon] = await Promise.all([
-        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId))),
-        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'pending'))),
-        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'in_progress'))),
-        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'completed'))),
-        getCountFromServer(query(collectionRef, where('tenantId', '==', tenantId), where('status', '==', 'expired'))),
-        getCountFromServer(query(
-          collectionRef,
-          where('tenantId', '==', tenantId),
-          where('status', '==', 'completed'),
-          where('expiryDate', '>=', today),
-          where('expiryDate', '<=', expiringCutoffStr)
-        )),
-      ]);
+      const snapshot = await getDocs(query(collectionRef, where('tenantId', '==', tenantId)));
 
-      return {
-        totalRecords: total.data().count,
-        pending: pending.data().count,
-        inProgress: inProgress.data().count,
-        completed: completed.data().count,
-        expired: expired.data().count,
-        expiringSoon: expiringSoon.data().count,
-      };
+      let totalRecords = 0;
+      let pending = 0;
+      let inProgress = 0;
+      let completed = 0;
+      let expired = 0;
+      let expiringSoon = 0;
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        totalRecords++;
+        if (data.status === 'pending') pending++;
+        else if (data.status === 'in_progress') inProgress++;
+        else if (data.status === 'completed') {
+          completed++;
+          if (data.expiryDate && data.expiryDate >= today && data.expiryDate <= expiringCutoffStr) {
+            expiringSoon++;
+          }
+        }
+        else if (data.status === 'expired') expired++;
+      }
+
+      return { totalRecords, pending, inProgress, completed, expired, expiringSoon };
     } catch (error) {
       console.error('Error getting training stats:', error);
       throw error;

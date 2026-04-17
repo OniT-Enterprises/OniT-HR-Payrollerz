@@ -6,8 +6,6 @@ services:
 
     # --- Security hardening ---
     # Rootfs stays read-only; writes go only to declared volumes/tmpfs.
-    # /home/node/.openclaw is a named volume so OpenClaw can atomic-rename
-    # openclaw.json for plugin/channel state persistence.
     read_only: true
     cap_drop:
       - ALL
@@ -31,15 +29,8 @@ services:
 
     # --- Persistent volumes ---
     volumes:
-      # Seed config: read-only at a side path; copied to the live path only
-      # on first run (see command below). Direct file bind-mount doesn't
-      # work because OpenClaw persists state via atomic rename, which fails
-      # with EBUSY over a bind-mounted file on Linux.
-      - ./openclaw.json:/etc/openclaw.json:ro
-      # Named volume for the parent dir so openclaw.json itself persists
-      # across container recreate (not just restart). Subdirectory volumes
-      # below nest on top and win for their specific paths.
-      - openclaw-meza-config:/home/node/.openclaw
+      # Config (read-only bind mount)
+      - ./openclaw.json:/home/node/.openclaw/openclaw.json:ro
       # Persistent state (credentials, WhatsApp session, agent state)
       - openclaw-meza-credentials:/home/node/.openclaw/credentials
       - openclaw-meza-state:/home/node/.openclaw/state
@@ -54,15 +45,8 @@ services:
     env_file:
       - .env
 
-    # --- Command: seed the live config only if it doesn't already exist
-    #     (preserves runtime state across restarts), then start the gateway.
-    #     The token is expanded by the in-container shell at runtime ($$),
-    #     not by compose at parse time — safe for tokens containing shell
-    #     metachars ($, ", `, \). ---
-    command:
-      - "sh"
-      - "-c"
-      - "[ -e /home/node/.openclaw/openclaw.json ] || cp /etc/openclaw.json /home/node/.openclaw/openclaw.json; exec openclaw gateway --port 18790 --auth password --password \"$$OPENCLAW_GATEWAY_TOKEN\""
+    # --- Command: password auth for dashboard access ---
+    command: ["openclaw", "gateway", "--port", "18790", "--auth", "password", "--password", "${OPENCLAW_GATEWAY_TOKEN}"]
 
     # --- Logging ---
     logging:
@@ -72,7 +56,6 @@ services:
         max-file: "3"
 
 volumes:
-  openclaw-meza-config:
   openclaw-meza-credentials:
   openclaw-meza-state:
   openclaw-meza-agents:

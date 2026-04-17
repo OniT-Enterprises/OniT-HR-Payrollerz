@@ -9,8 +9,6 @@ import {
   doc,
   getDocs,
   getDoc,
-  getAggregateFromServer,
-  getCountFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
@@ -25,7 +23,6 @@ import {
   QueryConstraint,
   DocumentSnapshot,
   Timestamp,
-  sum,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { paths } from '@/lib/paths';
@@ -333,18 +330,12 @@ class InvoiceService {
   }
 
   async getOutstandingReceivablesTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
-        where('issueDate', '<=', asOfDate),
-      ),
-      {
-        totalAmount: sum('balanceDue'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
+      where('issueDate', '<=', asOfDate),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().balanceDue) || 0), 0);
   }
 
   async getPaidInvoiceTotalByDateRange(
@@ -352,34 +343,22 @@ class InvoiceService {
     startDate: string,
     endDate: string
   ): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', '==', 'paid'),
-        where('paidAt', '>=', startOfTLDay(startDate)),
-        where('paidAt', '<=', endOfTLDay(endDate)),
-      ),
-      {
-        totalAmount: sum('total'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', '==', 'paid'),
+      where('paidAt', '>=', startOfTLDay(startDate)),
+      where('paidAt', '<=', endOfTLDay(endDate)),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().total) || 0), 0);
   }
 
   async getPaidInvoiceTotalAsOf(tenantId: string, asOfDate: string): Promise<number> {
-    const aggregateSnapshot = await getAggregateFromServer(
-      query(
-        this.collectionRef(tenantId),
-        where('status', '==', 'paid'),
-        where('paidAt', '<=', endOfTLDay(asOfDate)),
-      ),
-      {
-        totalAmount: sum('total'),
-      }
-    );
-
-    return Number(aggregateSnapshot.data().totalAmount ?? 0);
+    const snapshot = await getDocs(query(
+      this.collectionRef(tenantId),
+      where('status', '==', 'paid'),
+      where('paidAt', '<=', endOfTLDay(asOfDate)),
+    ));
+    return snapshot.docs.reduce((total, doc) => addMoney(total, Number(doc.data().total) || 0), 0);
   }
 
   async getVATSummary(
@@ -1156,51 +1135,72 @@ class InvoiceService {
     const lastMonthEnd = formatDateISO(new Date(now.getFullYear(), now.getMonth(), 0));
     const today = getTodayTL();
 
+    const thisMonthStartTs = startOfTLDay(thisMonthStart).getTime();
+    const thisMonthEndTs = endOfTLDay(thisMonthEnd).getTime();
+    const lastMonthStartTs = startOfTLDay(lastMonthStart).getTime();
+    const lastMonthEndTs = endOfTLDay(lastMonthEnd).getTime();
+
     const [
-      draftCountSnapshot,
-      outstandingCountSnapshot,
-      outstandingTotalSnapshot,
-      overdueCountSnapshot,
-      overdueAmountSnapshot,
-      totalRevenueSnapshot,
-      revenueThisMonth,
-      revenuePreviousMonth,
+      draftSnapshot,
+      outstandingSnapshot,
+      paidSnapshot,
     ] = await Promise.all([
-      getCountFromServer(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
-      getCountFromServer(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES))),
-      getAggregateFromServer(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES)), {
-        totalAmount: sum('balanceDue'),
-      }),
-      getCountFromServer(query(
-        this.collectionRef(tenantId),
-        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
-        where('dueDate', '<', today),
-      )),
-      getAggregateFromServer(query(
-        this.collectionRef(tenantId),
-        where('status', 'in', OUTSTANDING_INVOICE_STATUSES),
-        where('dueDate', '<', today),
-      ), {
-        totalAmount: sum('balanceDue'),
-      }),
-      getAggregateFromServer(query(this.collectionRef(tenantId), where('status', '==', 'paid')), {
-        totalAmount: sum('total'),
-      }),
-      this.getPaidInvoiceTotalByDateRange(tenantId, thisMonthStart, thisMonthEnd),
-      this.getPaidInvoiceTotalByDateRange(tenantId, lastMonthStart, lastMonthEnd),
+      getDocs(query(this.collectionRef(tenantId), where('status', '==', 'draft'))),
+      getDocs(query(this.collectionRef(tenantId), where('status', 'in', OUTSTANDING_INVOICE_STATUSES))),
+      getDocs(query(this.collectionRef(tenantId), where('status', '==', 'paid'))),
     ]);
 
-    const totalRevenue = Number(totalRevenueSnapshot.data().totalAmount ?? 0);
+    let totalOutstanding = 0;
+    let overdueAmount = 0;
+    let overdueCount = 0;
+
+    for (const doc of outstandingSnapshot.docs) {
+      const data = doc.data();
+      const balanceDue = Number(data.balanceDue) || 0;
+      totalOutstanding = addMoney(totalOutstanding, balanceDue);
+      if (data.dueDate && data.dueDate < today) {
+        overdueAmount = addMoney(overdueAmount, balanceDue);
+        overdueCount++;
+      }
+    }
+
+    let totalRevenue = 0;
+    let revenueThisMonth = 0;
+    let revenuePreviousMonth = 0;
+
+    for (const doc of paidSnapshot.docs) {
+      const data = doc.data();
+      const amount = Number(data.total) || 0;
+      totalRevenue = addMoney(totalRevenue, amount);
+
+      const paidAt = data.paidAt;
+      const paidTs =
+        paidAt instanceof Timestamp
+          ? paidAt.toMillis()
+          : paidAt instanceof Date
+            ? paidAt.getTime()
+            : typeof paidAt === 'string'
+              ? new Date(paidAt).getTime()
+              : NaN;
+
+      if (!Number.isNaN(paidTs)) {
+        if (paidTs >= thisMonthStartTs && paidTs <= thisMonthEndTs) {
+          revenueThisMonth = addMoney(revenueThisMonth, amount);
+        } else if (paidTs >= lastMonthStartTs && paidTs <= lastMonthEndTs) {
+          revenuePreviousMonth = addMoney(revenuePreviousMonth, amount);
+        }
+      }
+    }
 
     return {
       totalRevenue,
       revenueThisMonth,
       revenuePreviousMonth,
-      totalOutstanding: Number(outstandingTotalSnapshot.data().totalAmount ?? 0),
-      overdueAmount: Number(overdueAmountSnapshot.data().totalAmount ?? 0),
-      invoicesDraft: draftCountSnapshot.data().count,
-      invoicesSent: outstandingCountSnapshot.data().count,
-      invoicesOverdue: overdueCountSnapshot.data().count,
+      totalOutstanding,
+      overdueAmount,
+      invoicesDraft: draftSnapshot.size,
+      invoicesSent: outstandingSnapshot.size,
+      invoicesOverdue: overdueCount,
       totalExpenses: 0, // From expense service
       expensesThisMonth: 0, // From expense service
       profitThisMonth: revenueThisMonth,

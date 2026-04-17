@@ -507,7 +507,6 @@ class GoalsService {
       let q = query(
         collection(db, GOALS_COLLECTION),
         where('tenantId', '==', tenantId),
-        orderBy('createdAt', 'desc')
       );
 
       if (filters?.status) {
@@ -527,6 +526,12 @@ class GoalsService {
 
       querySnapshot.forEach((doc) => {
         goals.push(this.mapDocToGoal(doc.id, doc.data()));
+      });
+
+      goals.sort((a, b) => {
+        const aTs = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+        const bTs = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+        return bTs - aTs;
       });
 
       // Client-side year filter

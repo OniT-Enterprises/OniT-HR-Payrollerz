@@ -7,8 +7,6 @@ import {
   collection,
   doc,
   getDocs,
-  getCountFromServer,
-  getAggregateFromServer,
   updateDoc,
   deleteDoc,
   writeBatch,
@@ -16,7 +14,6 @@ import {
   orderBy,
   where,
   Timestamp,
-  sum,
   limit as firestoreLimit,
   QueryConstraint,
 } from 'firebase/firestore';
@@ -353,24 +350,33 @@ class BankReconciliationService {
   }> {
     const tenantId = this.ensureTenant();
     const collectionRef = getCollection(tenantId);
-    const [unmatchedSnapshot, matchedSnapshot, reconciledSnapshot, depositsSnapshot, withdrawalsSnapshot] = await Promise.all([
-      getCountFromServer(query(collectionRef, where('status', '==', 'unmatched'))),
-      getCountFromServer(query(collectionRef, where('status', '==', 'matched'))),
-      getCountFromServer(query(collectionRef, where('status', '==', 'reconciled'))),
-      getAggregateFromServer(query(collectionRef, where('amount', '>', 0)), {
-        totalAmount: sum('amount'),
-      }),
-      getAggregateFromServer(query(collectionRef, where('amount', '<', 0)), {
-        totalAmount: sum('amount'),
-      }),
-    ]);
+    const snapshot = await getDocs(query(collectionRef));
+
+    let unmatchedCount = 0;
+    let matchedCount = 0;
+    let reconciledCount = 0;
+    let totalDeposits = 0;
+    let totalWithdrawals = 0;
+
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      const status = data.status;
+      const amount = Number(data.amount) || 0;
+
+      if (status === 'unmatched') unmatchedCount++;
+      else if (status === 'matched') matchedCount++;
+      else if (status === 'reconciled') reconciledCount++;
+
+      if (amount > 0) totalDeposits += amount;
+      else if (amount < 0) totalWithdrawals += amount;
+    }
 
     return {
-      unmatchedCount: unmatchedSnapshot.data().count,
-      matchedCount: matchedSnapshot.data().count,
-      reconciledCount: reconciledSnapshot.data().count,
-      totalDeposits: Number(depositsSnapshot.data().totalAmount ?? 0),
-      totalWithdrawals: Math.abs(Number(withdrawalsSnapshot.data().totalAmount ?? 0)),
+      unmatchedCount,
+      matchedCount,
+      reconciledCount,
+      totalDeposits,
+      totalWithdrawals: Math.abs(totalWithdrawals),
     };
   }
 }

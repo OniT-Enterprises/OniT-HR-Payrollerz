@@ -10,15 +10,12 @@ import {
   updateDoc,
   getDoc,
   getDocs,
-  getAggregateFromServer,
-  getCountFromServer,
   query,
   where,
   orderBy,
   limit,
   startAfter,
   serverTimestamp,
-  sum,
   writeBatch,
   runTransaction,
   Transaction,
@@ -497,41 +494,33 @@ class JournalEntryService {
     totalDebit: number;
   }> {
     const baseQuery = query(this.collectionRef(tenantId), where('fiscalYear', '==', fiscalYear));
-    const postedQuery = query(
-      this.collectionRef(tenantId),
-      where('fiscalYear', '==', fiscalYear),
-      where('status', '==', 'posted'),
-    );
-    const draftsQuery = query(
-      this.collectionRef(tenantId),
-      where('fiscalYear', '==', fiscalYear),
-      where('status', '==', 'draft'),
-    );
+    const snapshot = await getDocs(baseQuery);
 
-    const [totalSnapshot, postedSnapshot, draftSnapshot, postedTotals] = await Promise.all([
-      getCountFromServer(baseQuery),
-      getCountFromServer(postedQuery),
-      getCountFromServer(draftsQuery),
-      getAggregateFromServer(postedQuery, {
-        totalDebit: sum('totalDebit'),
-      }),
-    ]);
+    let total = 0;
+    let posted = 0;
+    let drafts = 0;
+    let totalDebit = 0;
 
-    return {
-      total: totalSnapshot.data().count,
-      posted: postedSnapshot.data().count,
-      drafts: draftSnapshot.data().count,
-      totalDebit: Number(postedTotals.data().totalDebit ?? 0),
-    };
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      total++;
+      if (data.status === 'posted') {
+        posted++;
+        totalDebit = addMoney(totalDebit, Number(data.totalDebit) || 0);
+      } else if (data.status === 'draft') {
+        drafts++;
+      }
+    }
+
+    return { total, posted, drafts, totalDebit };
   }
 
   async getEntryCountByStatus(
     tenantId: string,
     status: JournalEntry['status'],
   ): Promise<number> {
-    const countQuery = query(this.collectionRef(tenantId), where('status', '==', status));
-    const snapshot = await getCountFromServer(countQuery);
-    return snapshot.data().count;
+    const snapshot = await getDocs(query(this.collectionRef(tenantId), where('status', '==', status)));
+    return snapshot.size;
   }
 
   async getLatestPayrollDashboardEntry(tenantId: string): Promise<JournalEntry | null> {
@@ -1761,18 +1750,19 @@ class GeneralLedgerService {
 
       let openingBalance = 0;
       if (options.startDate) {
-        const openingQuery = query(
+        const openingSnapshot = await getDocs(query(
           this.collectionRef(tenantId),
           where('accountCode', '==', options.accountCode),
           where('entryDate', '<', options.startDate),
-        );
-        const openingTotals = await getAggregateFromServer(openingQuery, {
-          totalDebit: sum('debit'),
-          totalCredit: sum('credit'),
-        });
+        ));
 
-        const openingDebit = Number(openingTotals.data().totalDebit ?? 0);
-        const openingCredit = Number(openingTotals.data().totalCredit ?? 0);
+        let openingDebit = 0;
+        let openingCredit = 0;
+        for (const doc of openingSnapshot.docs) {
+          const data = doc.data();
+          openingDebit = addMoney(openingDebit, Number(data.debit) || 0);
+          openingCredit = addMoney(openingCredit, Number(data.credit) || 0);
+        }
         openingBalance = isCreditNormal
           ? subtractMoney(openingCredit, openingDebit)
           : subtractMoney(openingDebit, openingCredit);
@@ -1901,13 +1891,15 @@ class TrialBalanceService {
       collection(db, paths.generalLedger(tenantId)),
       where('entryDate', '<=', asOfDate),
     );
-    const totals = await getAggregateFromServer(ledgerUpToDate, {
-      totalDebit: sum('debit'),
-      totalCredit: sum('credit'),
-    });
+    const snapshot = await getDocs(ledgerUpToDate);
 
-    const totalDebit = Number(totals.data().totalDebit ?? 0);
-    const totalCredit = Number(totals.data().totalCredit ?? 0);
+    let totalDebit = 0;
+    let totalCredit = 0;
+    for (const doc of snapshot.docs) {
+      const data = doc.data();
+      totalDebit = addMoney(totalDebit, Number(data.debit) || 0);
+      totalCredit = addMoney(totalCredit, Number(data.credit) || 0);
+    }
 
     if (totalDebit === 0 && totalCredit === 0) {
       return { isBalanced: true, source: 'empty' };

@@ -9,7 +9,6 @@ import {
   doc,
   getDoc,
   getDocs,
-  getCountFromServer,
   addDoc,
   updateDoc,
   query,
@@ -670,35 +669,33 @@ class LeaveService {
     try {
       const today = getTodayTL();
       const leaveRequestsRef = collection(db, LEAVE_REQUESTS_COLLECTION);
-      // The "on leave today" query uses inequality on 2 fields (startDate <= today AND
-      // endDate >= today) which can fail with 400 if the composite index isn't ready.
-      // Use getDocs with a single inequality + client-side filter as fallback.
-      const [totalRequests, pendingRequests, approvedRequests, rejectedRequests, onLeaveDocs] = await Promise.all([
-        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId))),
-        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'pending'))),
-        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'approved'))),
-        getCountFromServer(query(leaveRequestsRef, where('tenantId', '==', tenantId), where('status', '==', 'rejected'))),
-        getDocs(query(
-          leaveRequestsRef,
-          where('tenantId', '==', tenantId),
-          where('status', '==', 'approved'),
-          where('startDate', '<=', today),
-        )),
-      ]);
+      const snapshot = await getDocs(query(leaveRequestsRef, where('tenantId', '==', tenantId)));
 
-      // Client-side filter for endDate >= today
-      let employeesOnLeaveTodayCount = 0;
-      onLeaveDocs.forEach((doc) => {
+      let totalRequests = 0;
+      let pendingRequests = 0;
+      let approvedRequests = 0;
+      let rejectedRequests = 0;
+      let employeesOnLeaveToday = 0;
+
+      for (const doc of snapshot.docs) {
         const data = doc.data();
-        if (data.endDate >= today) employeesOnLeaveTodayCount++;
-      });
+        totalRequests++;
+        if (data.status === 'pending') pendingRequests++;
+        else if (data.status === 'approved') {
+          approvedRequests++;
+          if (data.startDate <= today && data.endDate >= today) {
+            employeesOnLeaveToday++;
+          }
+        }
+        else if (data.status === 'rejected') rejectedRequests++;
+      }
 
       return {
-        totalRequests: totalRequests.data().count,
-        pendingRequests: pendingRequests.data().count,
-        approvedRequests: approvedRequests.data().count,
-        rejectedRequests: rejectedRequests.data().count,
-        employeesOnLeaveToday: employeesOnLeaveTodayCount,
+        totalRequests,
+        pendingRequests,
+        approvedRequests,
+        rejectedRequests,
+        employeesOnLeaveToday,
       };
     } catch (error) {
       console.error('Error getting leave stats:', error);

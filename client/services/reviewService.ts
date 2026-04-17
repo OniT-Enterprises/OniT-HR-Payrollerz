@@ -8,13 +8,10 @@ import {
   doc,
   getDoc,
   getDocs,
-  getCountFromServer,
-  getAggregateFromServer,
   addDoc,
   updateDoc,
   deleteDoc,
   query,
-  sum,
   where,
   orderBy,
   limit,
@@ -470,57 +467,48 @@ class ReviewService {
    */
   async getStats(tenantId: string, year?: number): Promise<ReviewStats> {
     try {
-      const baseQuery = this.buildStatsBaseQuery(tenantId, year);
-      const completedQuery = query(baseQuery, where('status', '==', 'completed'));
+      const snapshot = await getDocs(this.buildStatsBaseQuery(tenantId, year));
 
-      const [
-        totalSnapshot,
-        draftSnapshot,
-        submittedSnapshot,
-        acknowledgedSnapshot,
-        completedSnapshot,
-        completedRatingsSnapshot,
-        typeSnapshots,
-      ] = await Promise.all([
-        getCountFromServer(baseQuery),
-        getCountFromServer(query(baseQuery, where('status', '==', 'draft'))),
-        getCountFromServer(query(baseQuery, where('status', '==', 'submitted'))),
-        getCountFromServer(query(baseQuery, where('status', '==', 'acknowledged'))),
-        getCountFromServer(completedQuery),
-        getAggregateFromServer(completedQuery, {
-          totalRating: sum('overallRating'),
-        }),
-        Promise.all(
-          REVIEW_TYPES.map(({ id }) =>
-            getCountFromServer(query(baseQuery, where('reviewType', '==', id)))
-          )
-        ),
-      ]);
-
-      const completed = completedSnapshot.data().count;
-      const totalRating = Number(completedRatingsSnapshot.data().totalRating ?? 0);
-
-      const byType = REVIEW_TYPES.reduce<Record<ReviewType, number>>((acc, { id }, index) => {
-        acc[id] = typeSnapshots[index].data().count;
-        return acc;
-      }, {
+      const byType: Record<ReviewType, number> = {
         annual: 0,
         mid_year: 0,
         quarterly: 0,
         probation: 0,
         project: 0,
         adhoc: 0,
-      });
+      };
+
+      let totalReviews = 0;
+      let draft = 0;
+      let submitted = 0;
+      let acknowledged = 0;
+      let completed = 0;
+      let totalRating = 0;
+
+      for (const doc of snapshot.docs) {
+        const data = doc.data();
+        totalReviews++;
+        if (data.status === 'draft') draft++;
+        else if (data.status === 'submitted') submitted++;
+        else if (data.status === 'acknowledged') acknowledged++;
+        else if (data.status === 'completed') {
+          completed++;
+          totalRating += Number(data.overallRating) || 0;
+        }
+        if (data.reviewType && data.reviewType in byType) {
+          byType[data.reviewType as ReviewType]++;
+        }
+      }
 
       const averageRating = completed > 0
         ? Math.round((totalRating / completed) * 10) / 10
         : 0;
 
       return {
-        totalReviews: totalSnapshot.data().count,
-        draft: draftSnapshot.data().count,
-        submitted: submittedSnapshot.data().count,
-        acknowledged: acknowledgedSnapshot.data().count,
+        totalReviews,
+        draft,
+        submitted,
+        acknowledged,
         completed,
         byType,
         averageRating,
