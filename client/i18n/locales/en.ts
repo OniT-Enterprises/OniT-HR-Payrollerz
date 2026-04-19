@@ -1573,7 +1573,7 @@ const messages = {
       "placeholders": {
         "jobTitle": "e.g., Senior Software Engineer",
         "department": "Select department",
-        "location": "e.g., San Francisco, CA",
+        "location": "e.g., Dili, Baucau",
         "employmentType": "Select type",
         "contractType": "Select contract type",
         "contractDuration": "e.g., 6 months, 1 year",

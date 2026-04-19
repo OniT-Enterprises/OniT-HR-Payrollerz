@@ -1568,7 +1568,7 @@ const messages = {
       "placeholders": {
         "jobTitle": "ex., Engenheiro de Software Sénior",
         "department": "Selecionar departamento",
-        "location": "ex., Díli",
+        "location": "ex., Díli, Baucau",
         "employmentType": "Selecionar tipo",
         "contractType": "Selecionar tipo de contrato",
         "contractDuration": "ex., 6 meses, 1 ano",

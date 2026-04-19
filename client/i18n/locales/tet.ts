@@ -1573,7 +1573,7 @@ const messages = {
       "placeholders": {
         "jobTitle": "ez.: Engenheiru Software Senior",
         "department": "Hili departamentu",
-        "location": "ez.: Dili",
+        "location": "ez.: Dili, Baucau",
         "employmentType": "Hili tipu",
         "contractType": "Hili tipu kontratu",
         "contractDuration": "ez.: 6 fulan, 1 tinan",
