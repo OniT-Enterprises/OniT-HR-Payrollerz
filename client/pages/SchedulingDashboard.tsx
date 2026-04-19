@@ -91,7 +91,7 @@ export default function SchedulingDashboard() {
 
       <DashboardShell
         section="scheduling"
-        title="Coverage and leave rhythm"
+        title="Time & Leave Dashboard"
         subtitle="A live read on who is available, where leave pressure is building, and which scheduling actions will keep the week running smoothly."
         icon={Clock}
         actions={

@@ -2405,7 +2405,7 @@ export const translations = {
   },
   "reports": {
     "dashboard": {
-      "title": "Reports",
+      "title": "Reports Dashboard",
       "subtitle": "Generate and export reports for all HR data",
       "categories": {
         "employee": {
@@ -3383,7 +3383,7 @@ export const translations = {
   },
   "people": {
     "dashboard": {
-      "title": "People",
+      "title": "People Dashboard",
       "subtitle": "Manage your team, hiring, time off, and performance",
       "actions": {
         "addEmployee": "Add Employee"
@@ -3595,7 +3595,7 @@ export const translations = {
   },
   "payroll": {
     "dashboard": {
-      "title": "Payroll",
+      "title": "Payroll Dashboard",
       "subtitle": "Process payroll, manage payments, and generate reports"
     },
     "quickbooks": {
@@ -4191,7 +4191,7 @@ export const translations = {
       }
     },
     "dashboard": {
-      "title": "Accounting",
+      "title": "Accounting Dashboard",
       "subtitle": "Financial management and reporting",
       "chartOfAccounts": "Chart of Accounts",
       "chartOfAccountsDesc": "Manage account structure",
@@ -4494,8 +4494,8 @@ export const translations = {
   },
   "money": {
     "dashboard": {
-      "title": "Money",
-      "seoTitle": "Money - Meza",
+      "title": "Money Dashboard",
+      "seoTitle": "Money Dashboard",
       "subtitle": "Track who owes you, what you need to pay, and what to do next",
       "createInvoice": "Create Invoice",
       "attentionNeeded": "Attention needed",

@@ -85,7 +85,7 @@ const sitemapData: SitemapSection[] = [
     bgColor: 'bg-emerald-100 dark:bg-emerald-900',
     pages: [
       {
-        name: 'People Hub',
+        name: 'People Dashboard',
         path: '/people',
         description: 'Central dashboard for all people management activities',
       },

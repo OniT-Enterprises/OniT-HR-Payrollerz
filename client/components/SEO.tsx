@@ -101,7 +101,7 @@ export const seoConfig = {
 
   // People Hub
   people: {
-    title: 'People Hub',
+    title: 'People Dashboard',
     description: 'Manage all aspects of your workforce from hiring to performance reviews.',
     keywords: 'employee management, HR hub, workforce management, people operations',
     url: '/people',
@@ -165,7 +165,7 @@ export const seoConfig = {
 
   // Scheduling & Attendance
   schedulingDashboard: {
-    title: 'Scheduling & Attendance',
+    title: 'Time & Leave Dashboard',
     description: 'Manage time tracking, attendance, leave requests, and shift schedules.',
     keywords: 'scheduling, attendance, time tracking, leave management, shift scheduling',
     url: '/time-leave',
@@ -315,7 +315,7 @@ export const seoConfig = {
 
   // Reports
   reports: {
-    title: 'Reports Hub',
+    title: 'Reports Dashboard',
     description: 'Access comprehensive HR, payroll, and analytics reports.',
     keywords: 'HR reports, analytics, workforce analytics, reporting',
     url: '/reports',

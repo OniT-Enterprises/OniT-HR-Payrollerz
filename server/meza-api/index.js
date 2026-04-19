@@ -3961,7 +3961,7 @@ async function openClawChat(message, sessionKey) {
 // Page context map — maps frontend routes to descriptions for the AI
 const PAGE_CONTEXT_MAP = {
   '/dashboard': { name: 'Dashboard', description: 'Overview with employee count, pending leave requests, upcoming birthdays, document compliance alerts, recent activity, and quick stats.' },
-  '/people': { name: 'People Hub', description: 'People module dashboard — summary of staff, hiring pipeline, time & leave, and performance.' },
+  '/people': { name: 'People Dashboard', description: 'People module dashboard — summary of staff, hiring pipeline, time & leave, and performance.' },
   '/people/employees': { name: 'All Employees', description: 'Employee directory listing all staff with status, department, position, and contact info.' },
   '/people/add': { name: 'Add/Edit Employee', description: 'Employee form for creating or editing employee details (personal info, employment, compensation, documents).' },
   '/settings/departments': { name: 'Departments', description: 'Department list showing all departments, headcount, and managers.' },
