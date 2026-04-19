@@ -30,7 +30,6 @@ import {
   getNextMonthlyAdjustedDeadline,
   getUrgencyFromDays,
 } from "@/lib/tax/compliance";
-import { canUseDonorExport } from "@/lib/ngo/access";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { settingsService } from "@/services/settingsService";
 import {
@@ -389,13 +388,12 @@ export default function Dashboard() {
   const setPageHeader = layout?.setPageHeader;
   const clearPageHeader = layout?.clearPageHeader;
   const { user } = useAuth();
-  const { session, hasModule, canManage } = useTenant();
+  const { hasModule, canManage } = useTenant();
   const tenantId = useTenantId();
   const { t } = useI18n();
   const hasStaff = hasModule("staff");
   const hasTimeleave = hasModule("timeleave");
   const hasPayroll = hasModule("payroll");
-  const hasReports = hasModule("reports");
   const shouldLoadEmployeeSummary = hasStaff || hasPayroll || hasTimeleave;
   const { data: employeeSummary, isLoading: employeeSummaryLoading } = useActiveEmployeeSummary(
     shouldLoadEmployeeSummary
@@ -408,7 +406,7 @@ export default function Dashboard() {
   const { data: filingDueDates = [], isLoading: dueDatesLoading } = useTaxFilingsDueSoon(2, hasPayroll);
   const { data: payrollRuns = [], isLoading: payrollRunsLoading } = usePayrollRuns({ limit: 10 }, hasPayroll);
   const canManageTenant = canManage();
-  const { data: setupProgress, isLoading: setupLoading } = useQuery({
+  const { isLoading: setupLoading } = useQuery({
     queryKey: ["tenants", tenantId, "setupProgress"],
     queryFn: () => settingsService.getSetupProgress(tenantId).catch(() => null),
     enabled: Boolean(tenantId && canManageTenant),
@@ -483,12 +481,6 @@ export default function Dashboard() {
   const nextPayDate = getNextPayDate();
   const nextPayDateKey = formatDateKey(nextPayDate);
   const firstName = user?.displayName?.split(" ")[0] || "";
-  const donorExportEnabled = canUseDonorExport(
-    session,
-    hasReports,
-    canManageTenant
-  );
-  const setupIncomplete = canManageTenant && setupProgress?.isComplete === false;
 
   // Payroll status
   const payrollPrepared = payrollRuns.some(
@@ -497,34 +489,6 @@ export default function Dashboard() {
       run.status !== "cancelled" &&
       run.status !== "rejected"
   );
-  const isPayrollUrgent = daysUntilPayday <= 7;
-
-  // Next recommended action logic
-  const getNextAction = () => {
-    if (setupIncomplete) {
-      return {
-        label: t("dashboard.finishSetup"),
-        path: "/setup",
-        urgent: true,
-      };
-    }
-    if (hasPayroll && isPayrollUrgent && !payrollPrepared) {
-      return { label: t("dashboard.preparePayroll"), path: "/payroll/run", urgent: true };
-    }
-    if (totalComplianceIssues > 0) {
-      return {
-        label: t("dashboard.fixBlockingIssues", { count: totalComplianceIssues }),
-        path: blockingIssues[0]?.path || "/people/employees?filter=blocking-issues",
-        urgent: true,
-      };
-    }
-    if (hasTimeleave && pendingLeave > 0) {
-      return { label: t("dashboard.reviewLeaveRequests", { count: pendingLeave }), path: "/time-leave/leave", urgent: false };
-    }
-    return null;
-  };
-
-  const nextAction = getNextAction();
 
   useEffect(() => {
     if (!setPageHeader) return;

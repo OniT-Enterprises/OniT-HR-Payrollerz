@@ -85,7 +85,7 @@ export default function Offboarding() {
 
   // Data via React Query
   const { data: activeCases = [], isLoading: activeCasesLoading } = useActiveCases();
-  const { data: completedCases = [], isLoading: completedCasesLoading } = useCompletedCases();
+  const { isLoading: completedCasesLoading } = useCompletedCases();
   const createOffboardingMutation = useCreateOffboardingCase();
   const updateChecklistMutation = useUpdateChecklistItem();
   const updateExitInterviewMutation = useUpdateExitInterviewField();
@@ -169,11 +169,6 @@ export default function Offboarding() {
   const departments = Array.from(
     new Set(employees.map((emp) => emp.jobDetails.department))
   ).sort();
-
-  // Calculate stats
-  const departuresLastYear = completedCases.filter(
-    (c) => c.createdAt && new Date(c.createdAt).getFullYear() === new Date().getFullYear()
-  ).length;
 
   const handleStartOffboarding = () => {
     if (!newOffboarding.employeeId || !newOffboarding.departureReason) {

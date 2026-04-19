@@ -95,7 +95,6 @@ function formatDate(d?: string): string | undefined {
   return parsed.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
 }
 
-// eslint-disable-next-line react-refresh/only-export-components
 const StaffCvDocument = ({ employee, companyName, issuedOn }: StaffCvDocProps) => {
   const { personalInfo, jobDetails, compensation, documents } = employee;
 
@@ -202,6 +201,7 @@ const StaffCvDocument = ({ employee, companyName, issuedOn }: StaffCvDocProps) =
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export async function downloadStaffCv(
   employee: Employee,
   companyName = "OniT HR",

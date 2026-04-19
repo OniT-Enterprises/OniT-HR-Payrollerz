@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * PDF Payslip Generator
  * Uses @react-pdf/renderer to create downloadable payslip documents
@@ -700,14 +701,6 @@ const formatMonth = (dateString: string, language: PayslipLocale): string => {
   });
 };
 
-// Format pay period
-const formatPayPeriod = (startDate: string, endDate: string): string => {
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-  const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric' };
-  return `${start.toLocaleDateString('en-GB', { ...options, timeZone: 'Asia/Dili' })} - ${end.toLocaleDateString('en-GB', { ...options, year: 'numeric', timeZone: 'Asia/Dili' })}`;
-};
-
 interface PayslipPDFProps {
   record: PayrollRecord;
   payrollRun: PayrollRun;
@@ -837,118 +830,6 @@ function HoursSummaryGrid({
           <Text style={styles.hoursValue}>{item.value.toFixed(2)} {s.hrs}</Text>
         </View>
       ))}
-    </View>
-  );
-}
-
-function EarningsColumn({
-  record,
-  s,
-}: {
-  record: PayrollRecord;
-  s: PayslipStrings;
-}) {
-  return (
-    <View style={styles.column}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{s.earnings}</Text>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { width: '50%' }]}>{s.description}</Text>
-            <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'center' }]}>{s.hours}</Text>
-            <Text style={[styles.tableHeaderText, { width: '15%', textAlign: 'right' }]}>{s.rate}</Text>
-            <Text style={[styles.tableHeaderText, { width: '20%', textAlign: 'right' }]}>{s.amount}</Text>
-          </View>
-          {record.earnings.map((earning, index) => (
-            <View key={index} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-              <Text style={[styles.tableCell, { width: '50%' }]}>{earning.description}</Text>
-              <Text style={[styles.tableCell, { width: '15%', textAlign: 'center' }]}>
-                {earning.hours?.toFixed(2) || '-'}
-              </Text>
-              <Text style={[styles.tableCell, { width: '15%', textAlign: 'right' }]}>
-                {earning.rate ? formatCurrency(earning.rate) : '-'}
-              </Text>
-              <Text style={[styles.tableCell, { width: '20%', textAlign: 'right' }]}>
-                {formatCurrency(earning.amount)}
-              </Text>
-            </View>
-          ))}
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{s.grossPay}</Text>
-            <Text style={styles.totalValue}>{formatCurrency(record.totalGrossPay)}</Text>
-          </View>
-        </View>
-      </View>
-    </View>
-  );
-}
-
-function DeductionsColumn({
-  record,
-  s,
-}: {
-  record: PayrollRecord;
-  s: PayslipStrings;
-}) {
-  const taxTypes = ['income_tax', 'inss_employee'];
-  const taxDeductions = record.deductions.filter(d => taxTypes.includes(d.type));
-  const preTaxDeductions = record.deductions.filter(d => d.isPreTax && !taxTypes.includes(d.type));
-  const postTaxDeductions = record.deductions.filter(d => !d.isPreTax && !taxTypes.includes(d.type));
-
-  return (
-    <View style={styles.column}>
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{s.deductions}</Text>
-        <View style={styles.table}>
-          <View style={styles.tableHeader}>
-            <Text style={[styles.tableHeaderText, { width: '70%' }]}>{s.description}</Text>
-            <Text style={[styles.tableHeaderText, { width: '30%', textAlign: 'right' }]}>{s.amount}</Text>
-          </View>
-
-          {/* Tax Deductions */}
-          {taxDeductions.map((deduction, index) => (
-            <View key={`tax-${index}`} style={index % 2 === 0 ? styles.tableRow : styles.tableRowAlt}>
-              <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
-              <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                {formatCurrency(deduction.amount)}
-              </Text>
-            </View>
-          ))}
-
-          {/* Pre-tax Deductions */}
-          {preTaxDeductions.length > 0 && (
-            <>
-              {preTaxDeductions.map((deduction, index) => (
-                <View key={`pre-${index}`} style={styles.tableRow}>
-                  <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description} {s.preTax}</Text>
-                  <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                    {formatCurrency(deduction.amount)}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
-
-          {/* Post-tax Deductions */}
-          {postTaxDeductions.length > 0 && (
-            <>
-              {postTaxDeductions.map((deduction, index) => (
-                <View key={`post-${index}`} style={styles.tableRowAlt}>
-                  <Text style={[styles.tableCell, { width: '70%' }]}>{deduction.description}</Text>
-                  <Text style={[styles.tableCell, { width: '30%', textAlign: 'right' }]}>
-                    {formatCurrency(deduction.amount)}
-                  </Text>
-                </View>
-              ))}
-            </>
-          )}
-
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>{s.totalDeductions}</Text>
-            <Text style={styles.totalValue}>{formatCurrency(record.totalDeductions)}</Text>
-          </View>
-        </View>
-      </View>
     </View>
   );
 }
@@ -1292,7 +1173,6 @@ function buildHourItems(record: PayrollRecord, s: PayslipStrings) {
 /**
  * PayslipDocument - The actual PDF document component
  */
-// eslint-disable-next-line react-refresh/only-export-components
 const PayslipDocument = ({
   record,
   payrollRun,

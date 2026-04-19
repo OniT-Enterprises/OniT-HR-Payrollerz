@@ -73,4 +73,5 @@ export function ChartTooltip({
 }
 
 /** Transparent bar hover cursor — kills Recharts' grey hover block. */
+// eslint-disable-next-line react-refresh/only-export-components
 export const chartHoverCursor = { fill: "hsl(var(--muted) / 0.35)", radius: 8 } as const;

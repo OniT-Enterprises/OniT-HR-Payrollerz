@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Invoice PDF Generator
  * Uses @react-pdf/renderer to create downloadable invoice documents
@@ -523,7 +524,6 @@ function PdfNotesAndTerms({ invoice }: { invoice: Invoice }) {
 /**
  * InvoiceDocument - The actual PDF document component
  */
-// eslint-disable-next-line react-refresh/only-export-components
 const InvoiceDocument = ({ invoice, settings }: InvoicePDFProps) => {
   const statusStyles = getStatusStyles(invoice.status);
 

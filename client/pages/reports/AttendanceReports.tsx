@@ -35,7 +35,7 @@ import {
 } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
-import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
+import { toDateStringTL } from "@/lib/dateUtils";
 import { exportToCSV } from "@/lib/csvExport";
 
 export default function AttendanceReports() {
@@ -55,8 +55,7 @@ export default function AttendanceReports() {
     };
   }, [dateRange]);
 
-  // Fetch employees with React Query hook
-  const { data: employees = [], isLoading: empsLoading } = useAllEmployees(500);
+  const { isLoading: empsLoading } = useAllEmployees(500);
 
   // Fetch attendance data with React Query
   const { data: attendanceRecords = [], isLoading: attendanceLoading } = useQuery({
@@ -83,29 +82,10 @@ export default function AttendanceReports() {
 
   // Calculate stats
   const totalRecords = attendanceRecords.length;
-  const presentRecords = useMemo(() => attendanceRecords.filter(
-    (r) => r.status === "present" || r.status === "late"
-  ), [attendanceRecords]);
-  const lateRecords = useMemo(() => attendanceRecords.filter((r) => r.status === "late"), [attendanceRecords]);
   const totalOvertimeHours = useMemo(() => attendanceRecords.reduce(
     (sum, r) => sum + (r.overtimeHours || 0),
     0
   ), [attendanceRecords]);
-  const totalLateMinutes = useMemo(() => attendanceRecords.reduce(
-    (sum, r) => sum + (r.lateMinutes || 0),
-    0
-  ), [attendanceRecords]);
-
-  // Get today's status
-  const todayOnLeave = useMemo(() => {
-    const today = getTodayTL();
-    return leaveRequests.filter(
-      (r) =>
-        r.status === "approved" &&
-        r.startDate <= today &&
-        r.endDate >= today
-    );
-  }, [leaveRequests]);
 
   // Attendance by status
   const statusBreakdown = useMemo(() => attendanceRecords.reduce((acc, r) => {
@@ -222,10 +202,6 @@ export default function AttendanceReports() {
       </div>
     );
   }
-
-  const attendanceRate = totalRecords > 0
-    ? ((presentRecords.length / totalRecords) * 100).toFixed(1)
-    : "0";
 
   return (
     <div className="min-h-screen bg-background">

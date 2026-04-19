@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 
-import { useTenant, useTenantId } from "@/contexts/TenantContext";
+import { useTenantId } from "@/contexts/TenantContext";
 
 import { useSettings, settingsKeys } from "@/hooks/useSettings";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -34,7 +34,6 @@ import {
 export default function Settings() {
   const navigate = useNavigate();
   const tenantId = useTenantId();
-  const { hasModule } = useTenant();
   const { t } = useI18n();
 
   const queryClient = useQueryClient();
