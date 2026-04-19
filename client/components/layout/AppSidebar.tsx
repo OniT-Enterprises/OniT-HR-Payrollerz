@@ -342,13 +342,14 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
   const moduleActive = isModuleActive(pathname, mod.config);
   const Icon = mod.icon;
   const iconColor = navColors[mod.id];
+  const dashboardPath = mod.config.overview?.path || mod.config.sections[0]?.path || "/";
 
   if (collapsed) {
     return (
       <Tooltip key={mod.id}>
         <TooltipTrigger asChild>
           <button
-            onClick={() => onNavigate(mod.config.overview?.path || mod.config.sections[0]?.path || "/")}
+            onClick={() => onNavigate(dashboardPath)}
             className={`
               w-full flex items-center justify-center h-10 rounded-lg transition-colors
               ${moduleActive
@@ -369,36 +370,32 @@ function ModuleSection({ mod, collapsed, pathname, isExpanded, expandedSections,
 
   return (
     <div key={mod.id} className="space-y-0.5">
-      <button
-        onClick={() => onToggleModule(mod.id)}
+      <div
         className={`
-          w-full flex items-center gap-3 h-10 pl-3 pr-3 rounded-lg text-sm font-medium transition-colors
+          w-full flex items-center h-10 rounded-lg text-sm font-medium transition-colors
           ${moduleActive
-            ? "text-sidebar-foreground"
+            ? "bg-sidebar-accent/70 text-sidebar-foreground"
             : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
           }
         `}
       >
-        <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
-        <span className="truncate">{t(mod.labelKey)}</span>
-        <ChevronRight className={`h-3.5 w-3.5 ml-auto shrink-0 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
-      </button>
+        <button
+          onClick={() => onNavigate(dashboardPath)}
+          className="flex min-w-0 flex-1 items-center gap-3 pl-3 pr-2 text-left"
+        >
+          <Icon className={`h-4 w-4 shrink-0 ${moduleActive ? iconColor : ""}`} />
+          <span className="truncate">{t(mod.labelKey)}</span>
+        </button>
+        <button
+          onClick={() => onToggleModule(mod.id)}
+          className="mr-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-sidebar-foreground/60 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+          aria-label={`Toggle ${t(mod.labelKey)} menu`}
+        >
+          <ChevronRight className={`h-3.5 w-3.5 transition-transform ${isExpanded ? "rotate-90" : ""}`} />
+        </button>
+      </div>
       {isExpanded && (
         <div className={`relative ml-[1.19rem] border-l ${navTreeLine[mod.id]} space-y-0.5`}>
-          {mod.config.overview && (
-            <NavLink
-              label={mod.config.overview.label}
-              path={mod.config.overview.path}
-              Icon={mod.config.overview.icon}
-              iconColorClass={iconColor}
-              indent={1}
-              labelKey={mod.config.overview.labelKey}
-              collapsed={collapsed}
-              pathname={pathname}
-              onNavigate={onNavigate}
-              t={t}
-            />
-          )}
           {mod.config.sections.map((section) => {
             if (section.subPages.length === 0) {
               return (

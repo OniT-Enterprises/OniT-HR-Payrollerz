@@ -190,6 +190,20 @@ service cloud.firestore {
     }
 
     // ============================================
+    // PLATFORM CONFIGURATION (superadmin only)
+    // ============================================
+    match /platform/{docId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
+    // SUPERADMIN APPROVAL REQUESTS
+    // ============================================
+    match /superAdminRequests/{requestId} {
+      allow read, write: if isSuperAdmin();
+    }
+
+    // ============================================
     // AUDIT LOGS (tenant-level compliance trail)
     // ============================================
     match /audit_logs/{entryId} {
@@ -1319,9 +1333,11 @@ service cloud.firestore {
     // ============================================
     match /mail/{emailId} {
       // Tenant admins can queue emails for their tenant
-      allow create: if isAuthenticated() &&
+      allow create: if isSuperAdmin() || (
+        isAuthenticated() &&
         request.resource.data.tenantId != null &&
-        isTenantAdmin(request.resource.data.tenantId);
+        isTenantAdmin(request.resource.data.tenantId)
+      );
 
       // Tenant admins can read email history for their tenant
       allow read: if isSuperAdmin() || (

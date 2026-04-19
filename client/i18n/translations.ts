@@ -4259,8 +4259,11 @@ export const translations = {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Admin Console",
       "tenants": "Tenants",
       "users": "Users",
+      "superAdmins": "Super Admins",
+      "packages": "Packages",
       "auditLog": "Audit Log",
       "backToApp": "Back to App",
       "adminConsole": "Admin Console",
@@ -4464,7 +4467,13 @@ export const translations = {
         "status": "Status",
         "plan": "Plan",
         "created": "Created",
+        "subscriptionPaidUntil": "Subscription Paid Until",
+        "subscriptionPaidUntilShort": "Paid until",
+        "monthlySubscription": "Monthly Subscription",
         "actions": "Actions"
+      },
+      "values": {
+        "legalNameMissing": "Legal name not set"
       },
       "actions": {
         "viewDetails": "View details",
@@ -8451,8 +8460,11 @@ export const translations = {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Konsola Admin",
       "tenants": "Tenante sira",
       "users": "Utilizadór sira",
+      "superAdmins": "Superadmin sira",
+      "packages": "Pakote sira",
       "auditLog": "Log Auditoría",
       "backToApp": "Fila ba Aplikasaun",
       "adminConsole": "Konsola Admin",
@@ -8656,7 +8668,13 @@ export const translations = {
         "status": "Estatutu",
         "plan": "Planu",
         "created": "Kria",
+        "subscriptionPaidUntil": "Subskrisaun Selu To'o",
+        "subscriptionPaidUntilShort": "Selu to'o",
+        "monthlySubscription": "Subskrisaun Fulan",
         "actions": "Asaun"
+      },
+      "values": {
+        "legalNameMissing": "Naran legal seidauk iha"
       },
       "actions": {
         "viewDetails": "Haree detalle",
@@ -15128,8 +15146,11 @@ pt: {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Consola de Administração",
       "tenants": "Inquilinos",
       "users": "Utilizadores",
+      "superAdmins": "Superadmins",
+      "packages": "Pacotes",
       "auditLog": "Registo de Auditoria",
       "backToApp": "Voltar à Aplicação",
       "adminConsole": "Consola de Administração",
@@ -15333,7 +15354,13 @@ pt: {
         "status": "Estado",
         "plan": "Plano",
         "created": "Criado",
+        "subscriptionPaidUntil": "Subscrição paga até",
+        "subscriptionPaidUntilShort": "Pago até",
+        "monthlySubscription": "Subscrição mensal",
         "actions": "Ações"
+      },
+      "values": {
+        "legalNameMissing": "Nome legal não definido"
       },
       "actions": {
         "viewDetails": "Ver detalhes",

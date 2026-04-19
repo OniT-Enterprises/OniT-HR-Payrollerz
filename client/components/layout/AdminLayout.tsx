@@ -36,15 +36,20 @@ interface AdminLayoutProps {
 
 function AdminNavLinks({ pathname, t }: { pathname: string; t: (key: string) => string }) {
   const adminNavItems = [
+    { path: "/admin", label: t("admin.layout.consoleHome"), icon: Shield },
     { path: "/admin/tenants", label: t("admin.layout.tenants"), icon: Building2 },
-    { path: "/admin/users", label: t("admin.layout.users"), icon: Users },
+    { path: "/admin/users", label: t("admin.layout.superAdmins"), icon: Users },
+    { path: "/admin/packages", label: t("admin.layout.packages"), icon: FileText },
     { path: "/admin/audit", label: t("admin.layout.auditLog"), icon: FileText },
   ];
 
   return (
     <nav className="flex items-center gap-1 ml-8">
       {adminNavItems.map((item) => {
-        const isActive = pathname.startsWith(item.path);
+        const isConsoleHome = item.path === "/admin";
+        const isActive = isConsoleHome
+          ? pathname === "/admin"
+          : pathname.startsWith(item.path);
         const Icon = item.icon;
         return (
           <Link
@@ -166,12 +171,16 @@ export function AdminLayout({ children }: AdminLayoutProps) {
             {t("admin.layout.backToApp")}
           </Button>
 
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20">
+          <button
+            type="button"
+            onClick={() => navigate("/admin")}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-amber-500/10 to-orange-500/10 border border-amber-500/20"
+          >
             <Shield className="h-4 w-4 text-amber-500" />
             <span className="text-sm font-semibold text-amber-600 dark:text-amber-400">
               {t("admin.layout.adminConsole")}
             </span>
-          </div>
+          </button>
 
           <AdminNavLinks pathname={location.pathname} t={t} />
 

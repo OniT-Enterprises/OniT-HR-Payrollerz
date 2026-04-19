@@ -4,13 +4,17 @@
  */
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { adminService } from '@/services/adminService';
+import { adminService, TenantProfileInput } from '@/services/adminService';
+import { PackagesConfig } from '@/types/admin';
 
 const adminKeys = {
+  console: () => ['admin', 'console'] as const,
   tenants: () => ['admin', 'tenants'] as const,
   tenant: (id: string) => ['admin', 'tenant', id] as const,
   tenantStats: (id: string) => ['admin', 'tenant', id, 'stats'] as const,
   users: () => ['admin', 'users'] as const,
+  packages: () => ['admin', 'packages'] as const,
+  superAdminRequests: () => ['admin', 'superAdminRequests'] as const,
   auditLog: () => ['admin', 'auditLog'] as const,
 };
 
@@ -30,6 +34,37 @@ export function useTenantDetail(id: string | undefined) {
     queryFn: () => adminService.getTenantById(id!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useCreateTenant() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      input,
+      createdBy,
+      actorEmail,
+    }: {
+      input: TenantProfileInput;
+      createdBy: string;
+      actorEmail: string;
+    }) => adminService.createTenant(input, createdBy, actorEmail),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
+  });
+}
+
+export function useUpdateTenantProfile() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tenantId, input }: { tenantId: string; input: TenantProfileInput }) =>
+      adminService.updateTenantProfile(tenantId, input),
+    onSuccess: (_, { tenantId }) => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenant(tenantId) });
+    },
   });
 }
 
@@ -77,6 +112,76 @@ export function useAllUsers(maxResults?: number) {
     queryKey: adminKeys.users(),
     queryFn: () => adminService.getAllUsers(maxResults),
     staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function usePackagesConfig() {
+  return useQuery({
+    queryKey: adminKeys.packages(),
+    queryFn: () => adminService.getPackagesConfig(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSavePackagesConfig() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      config,
+      actorUid,
+      actorEmail,
+    }: {
+      config: PackagesConfig;
+      actorUid: string;
+      actorEmail: string;
+    }) => adminService.savePackagesConfig(config, actorUid, actorEmail),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.packages() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.tenants() });
+    },
+  });
+}
+
+export function useSuperAdminRequests() {
+  return useQuery({
+    queryKey: adminKeys.superAdminRequests(),
+    queryFn: () => adminService.getSuperAdminRequests(),
+    staleTime: 30 * 1000,
+  });
+}
+
+export function useRequestSuperAdminChange() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      type: 'grant' | 'revoke';
+      targetEmail: string;
+      targetUid?: string;
+      targetDisplayName?: string;
+      requestedByUid: string;
+      requestedByEmail: string;
+      requestedByName?: string;
+    }) => adminService.requestSuperAdminChange(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.superAdminRequests() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
+  });
+}
+
+export function useApproveSuperAdminRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      requestId: string;
+      approverUid: string;
+      approverEmail: string;
+    }) => adminService.approveSuperAdminRequest(params),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: adminKeys.superAdminRequests() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.users() });
+      queryClient.invalidateQueries({ queryKey: adminKeys.auditLog() });
+    },
   });
 }
 
