@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -94,10 +94,11 @@ export default function Offboarding() {
 
   const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(null);
   const [showDialog, setShowDialog] = useState(false);
-  const [onboardingCase, setOnboardingCase] = useState<OnboardingCase | null>(null);
+  const queryClient = useQueryClient();
 
+  const onboardingQueryKey = ["onboarding", "byEmployee", tenantId, selectedCase?.employeeId ?? ""];
   const onboardingQuery = useQuery({
-    queryKey: ["onboarding", "byEmployee", tenantId, selectedCase?.employeeId ?? ""],
+    queryKey: onboardingQueryKey,
     queryFn: () =>
       selectedCase?.employeeId
         ? onboardingService.getCaseByEmployee(tenantId, selectedCase.employeeId)
@@ -106,19 +107,20 @@ export default function Offboarding() {
     staleTime: 5 * 60 * 1000,
   });
 
-  useEffect(() => {
-    setOnboardingCase(onboardingQuery.data ?? null);
-  }, [onboardingQuery.data]);
+  const onboardingCase = onboardingQuery.data ?? null;
 
   const toggleAssetReturned = async (assetId: string, returned: boolean) => {
     if (!onboardingCase?.id) return;
+    const previous = onboardingCase;
     const updatedEquipment = (onboardingCase.equipment || []).map((a) =>
       a.id === assetId
         ? { ...a, returned, returnedAt: returned ? new Date().toISOString() : undefined }
         : a,
     );
-    const previous = onboardingCase;
-    setOnboardingCase({ ...onboardingCase, equipment: updatedEquipment });
+    queryClient.setQueryData<OnboardingCase | null>(onboardingQueryKey, {
+      ...onboardingCase,
+      equipment: updatedEquipment,
+    });
     try {
       await onboardingService.updateCase(tenantId, onboardingCase.id, {
         equipment: updatedEquipment,
@@ -129,7 +131,7 @@ export default function Offboarding() {
         updateChecklist(selectedCase.id, "equipmentReturned", allReturned);
       }
     } catch (error) {
-      setOnboardingCase(previous);
+      queryClient.setQueryData<OnboardingCase | null>(onboardingQueryKey, previous);
       toast({
         title: "Could not update",
         description: error instanceof Error ? error.message : "Unknown error",

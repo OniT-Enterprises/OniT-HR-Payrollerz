@@ -68,6 +68,7 @@ export default function TenantDetail() {
 
   useEffect(() => {
     if (tenant) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormValue({
         name: tenant.name || "",
         tradingName: tenant.tradingName || "",

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -78,16 +78,16 @@ export default function JobApplicationsReview() {
     staleTime: 2 * 60 * 1000,
   });
 
-  useEffect(() => {
-    if (!selected) return;
+  const selectApplication = (app: JobApplication | null) => {
+    setSelected(app);
     setDocChecks(
-      selected.verificationChecklist ?? {
+      app?.verificationChecklist ?? {
         idVerified: false,
         contactVerified: false,
         eligibilityConfirmed: false,
       },
     );
-  }, [selected]);
+  };
 
   const verifyMutation = useMutation({
     mutationFn: async (app: JobApplication) => {
@@ -268,7 +268,7 @@ export default function JobApplicationsReview() {
               <Card
                 key={app.id}
                 className="border-border/50 hover:border-primary/40 transition-colors cursor-pointer"
-                onClick={() => setSelected(app)}
+                onClick={() => selectApplication(app)}
               >
                 <CardContent className="p-5">
                   <div className="flex items-start justify-between gap-4">
@@ -329,7 +329,7 @@ export default function JobApplicationsReview() {
       </div>
 
       {/* Review dialog */}
-      <Dialog open={!!selected} onOpenChange={(o) => !o && setSelected(null)}>
+      <Dialog open={!!selected} onOpenChange={(o) => !o && selectApplication(null)}>
         <DialogContent className="max-w-2xl">
           {selected && (
             <>
