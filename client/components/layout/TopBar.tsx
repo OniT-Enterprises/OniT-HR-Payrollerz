@@ -72,16 +72,12 @@ function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasSt
   const [notificationsReady, setNotificationsReady] = useState(false);
 
   useEffect(() => {
-    const id = typeof requestIdleCallback === "function"
-      ? requestIdleCallback(() => setNotificationsReady(true), { timeout: 3000 })
-      : (setTimeout(() => setNotificationsReady(true), 2000) as unknown as number);
-    return () => {
-      if (typeof cancelIdleCallback === "function") {
-        cancelIdleCallback(id);
-      } else {
-        clearTimeout(id);
-      }
-    };
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(() => setNotificationsReady(true), { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    }
+    const id = setTimeout(() => setNotificationsReady(true), 2000);
+    return () => clearTimeout(id);
   }, []);
 
   const { data: leaveStats } = useLeaveStats(hasTimeleave && notificationsReady);

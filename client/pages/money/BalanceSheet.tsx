@@ -134,7 +134,7 @@ export default function BalanceSheet() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="p-6 max-w-screen-2xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <Skeleton className="h-96 w-full" />
@@ -148,7 +148,7 @@ export default function BalanceSheet() {
       <SEO title="Balance Sheet - Meza" description="View your balance sheet" />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="p-6 max-w-screen-2xl mx-auto">
         <PageHeader
           title={t('money.balanceSheet.title') || 'Balance Sheet'}
           subtitle={t('money.balanceSheet.subtitle') || 'Financial position snapshot'}

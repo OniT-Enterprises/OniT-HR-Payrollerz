@@ -215,7 +215,7 @@ export default function VATReturnsPage() {
       <SEO title="VAT Returns - Meza" />
       <MainNavigation />
 
-      <div className="max-w-screen-lg mx-auto p-6 space-y-6">
+      <div className="max-w-screen-2xl mx-auto p-6 space-y-6">
         <PageHeader
           title="VAT Returns"
           subtitle="Build and file VAT returns for each period"

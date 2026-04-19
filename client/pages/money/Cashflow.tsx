@@ -148,7 +148,7 @@ export default function Cashflow() {
     return (
       <div className="min-h-screen bg-background">
         <MainNavigation />
-        <div className="p-6 max-w-screen-lg mx-auto">
+        <div className="p-6 max-w-screen-2xl mx-auto">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
           <Skeleton className="h-96 w-full" />
@@ -162,7 +162,7 @@ export default function Cashflow() {
       <SEO title="Cashflow - Meza" description="View your cash flow statement" />
       <MainNavigation />
 
-      <div className="p-6 max-w-screen-lg mx-auto">
+      <div className="p-6 max-w-screen-2xl mx-auto">
         <PageHeader
           title={t('money.cashflow.title') || 'Cash Flow'}
           subtitle={t('money.cashflow.subtitle') || 'Track money in and out'}
