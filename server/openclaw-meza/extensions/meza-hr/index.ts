@@ -729,7 +729,8 @@ export default function register(api: OpenclawPluginApi) {
 
   api.registerTool({
     name: "get_open_jobs",
-    description: "Get all open job positions that are currently accepting applications.",
+    description:
+      "Get all open job positions that are currently accepting applications. Includes contract type (Permanent/Fixed-Term), salary range, probation, and closing date when set.",
     parameters: Type.Object({
       tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
@@ -746,6 +747,17 @@ export default function register(api: OpenclawPluginApi) {
           summary += `• **${job.title || job.name}**\n`;
           if (job.department) summary += `  Department: ${job.department}\n`;
           if (job.location) summary += `  Location: ${job.location}\n`;
+          if (job.employmentType) summary += `  Type: ${job.employmentType}\n`;
+          if (job.contractType) {
+            const probation = job.probationPeriod || (job.probationDays ? `${job.probationDays} days` : "");
+            summary += `  Contract: ${job.contractType}${job.contractDuration ? ` (${job.contractDuration})` : ""}${probation ? ` — probation ${probation}` : ""}\n`;
+          }
+          if (job.salaryMin != null || job.salaryMax != null) {
+            const lo = job.salaryMin != null ? fmtMoney(job.salaryMin) : "?";
+            const hi = job.salaryMax != null ? fmtMoney(job.salaryMax) : "?";
+            summary += `  Salary: ${lo} – ${hi}/month\n`;
+          }
+          if (job.closingDate) summary += `  Closes: ${job.closingDate}\n`;
           if (job.applicantCount !== undefined) summary += `  Applicants: ${job.applicantCount}\n`;
         }
 
@@ -848,6 +860,186 @@ export default function register(api: OpenclawPluginApi) {
         return textResult(summary);
       } catch (error: any) {
         return errorResult("fetching job postings", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "get_job_private_details",
+    description:
+      "Get HR-only private details for a job posting — contract type, duration, and derived probation days (Timor-Leste Labour Code).",
+    parameters: Type.Object({
+      jobId: Type.String({ description: "Job document ID" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const data = await callApi(`/jobs/${params.jobId}/private`, { tenantId: params.tenantId });
+        if (!data.success || !data.details) {
+          return textResult(`No private details on file for job ${params.jobId}.`);
+        }
+        const d = data.details;
+        let text = `**Job Private Details** (${params.jobId})\n`;
+        if (d.contractType) text += `- Contract: ${d.contractType}\n`;
+        if (d.contractDuration) text += `- Duration: ${d.contractDuration}\n`;
+        if (d.contractDurationMonths != null) text += `- Duration (months): ${d.contractDurationMonths}\n`;
+        if (d.permanentProbation) text += `- Permanent probation choice: ${d.permanentProbation}\n`;
+        if (d.probationDays != null) text += `- Probation: ${d.probationDays} days\n`;
+        if (d.probationPeriod) text += `- Probation label: ${d.probationPeriod}\n`;
+        return textResult(text);
+      } catch (error: any) {
+        return errorResult("fetching job private details", error);
+      }
+    },
+  });
+
+  // ============================================================================
+  // JOB APPLICATIONS (Public Apply flow)
+  // ============================================================================
+
+  api.registerTool({
+    name: "get_pending_job_applications",
+    description:
+      "List public job applications that are pending HR verification. Candidates self-submit via /apply/:jobId; HR then verifies and converts them into candidate records.",
+    parameters: Type.Object({
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const data = await callApi("/job-applications/pending", { tenantId: params.tenantId });
+        if (!data.success || data.count === 0) {
+          return textResult("No pending job applications.");
+        }
+        let text = `**Pending Job Applications** (${data.count})\n\n`;
+        for (const app of data.applications) {
+          text += `• **${app.name}** → ${app.jobTitle || app.jobId}\n`;
+          if (app.email) text += `  Email: ${app.email}\n`;
+          if (app.phone) text += `  Phone: ${app.phone}\n`;
+          if (app.referredBy) text += `  Referred by: ${app.referredBy}\n`;
+          if (app.resumePath) text += `  Resume: attached\n`;
+          if (app.idDocumentPath) text += `  ID document: attached\n`;
+        }
+        return textResult(text);
+      } catch (error: any) {
+        return errorResult("fetching pending applications", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "list_job_applications",
+    description:
+      "List public job applications, optionally filtered by status (pending, verified, rejected) or jobId.",
+    parameters: Type.Object({
+      status: Type.Optional(Type.String({ description: "pending, verified, or rejected" })),
+      jobId: Type.Optional(Type.String({ description: "Filter to one job" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const qs = new URLSearchParams();
+        if (params.status) qs.set("status", params.status);
+        if (params.jobId) qs.set("jobId", params.jobId);
+        const suffix = qs.toString() ? `?${qs}` : "";
+        const data = await callApi(`/job-applications${suffix}`, { tenantId: params.tenantId });
+        if (!data.success || data.count === 0) {
+          return textResult("No job applications match those filters.");
+        }
+        let text = `**Job Applications** (${data.count})\n\n`;
+        for (const app of data.applications) {
+          const icon = app.status === "verified" ? "✔" : app.status === "rejected" ? "✖" : "•";
+          text += `${icon} **${app.name}** → ${app.jobTitle || app.jobId} — ${app.status}\n`;
+          if (app.email) text += `  ${app.email}\n`;
+        }
+        return textResult(text);
+      } catch (error: any) {
+        return errorResult("fetching job applications", error);
+      }
+    },
+  });
+
+  // ============================================================================
+  // ONBOARDING
+  // ============================================================================
+
+  api.registerTool({
+    name: "get_onboarding_cases",
+    description:
+      "List onboarding cases (new-hire checklists). Filter by status: in_progress, completed, cancelled.",
+    parameters: Type.Object({
+      status: Type.Optional(Type.String({ description: "in_progress, completed, cancelled" })),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const qs = params.status ? `?status=${params.status}` : "";
+        const data = await callApi(`/onboarding${qs}`, { tenantId: params.tenantId });
+        if (!data.success || data.count === 0) {
+          return textResult("No onboarding cases match.");
+        }
+        let text = `**Onboarding Cases** (${data.count})\n\n`;
+        for (const c of data.cases) {
+          const icon = c.status === "completed" ? "✔" : c.status === "cancelled" ? "✖" : "…";
+          text += `${icon} **${c.fullName || c.id}** — ${c.status}\n`;
+          if (c.managerName) text += `  Manager: ${c.managerName}\n`;
+          if (c.companyEmail) text += `  Company email: ${c.companyEmail}\n`;
+        }
+        return textResult(text);
+      } catch (error: any) {
+        return errorResult("fetching onboarding cases", error);
+      }
+    },
+  });
+
+  api.registerTool({
+    name: "get_onboarding_case",
+    description:
+      "Get the full onboarding case for a new hire — personal info, bank/tax, manager assignment, company email, equipment assignments, benefits, and policy acknowledgements.",
+    parameters: Type.Object({
+      caseId: Type.String({ description: "Onboarding case ID" }),
+      tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
+    }),
+    async execute(_id, params) {
+      try {
+        const data = await callApi(`/onboarding/${params.caseId}`, { tenantId: params.tenantId });
+        if (!data.success || !data.case) {
+          return textResult(`Onboarding case ${params.caseId} not found.`);
+        }
+        const c = data.case;
+        let text = `**Onboarding — ${c.fullName || c.id}** (${c.status})\n\n`;
+        if (c.managerName) text += `- Manager: ${c.managerName}\n`;
+        if (c.companyEmail) text += `- Company email: ${c.companyEmail}\n`;
+        if (c.bankAccountNumber) text += `- Bank account: on file\n`;
+        if (c.taxId) text += `- Tax ID: on file\n`;
+        if (Array.isArray(c.equipment) && c.equipment.length) {
+          text += `\n**Equipment (${c.equipment.length}):**\n`;
+          for (const eq of c.equipment) {
+            const label = eq.label || eq.type;
+            const make = [eq.make, eq.model].filter(Boolean).join(" ");
+            const tag = eq.assetTag ? ` [${eq.assetTag}]` : "";
+            text += `- ${label}${make ? ` — ${make}` : ""}${tag}${eq.returned ? " (returned)" : ""}\n`;
+          }
+        }
+        if (c.benefits) {
+          const b = c.benefits;
+          const benefitBits: string[] = [];
+          if (b.healthCardNumber) benefitBits.push(`Health card: ${b.healthCardNumber}`);
+          if (b.retirementPlanNumber) benefitBits.push(`Retirement: ${b.retirementPlanNumber}`);
+          if (b.lifeInsurancePolicy) benefitBits.push(`Life insurance: ${b.lifeInsurancePolicy}`);
+          if (b.leaveEntitlementDays != null) benefitBits.push(`Leave entitlement: ${b.leaveEntitlementDays} days`);
+          if (benefitBits.length) text += `\n**Benefits:**\n- ${benefitBits.join("\n- ")}\n`;
+        }
+        if (c.acknowledgements) {
+          const a = c.acknowledgements;
+          const done = Object.entries(a).filter(([, v]) => v).map(([k]) => k);
+          const pending = Object.entries(a).filter(([, v]) => !v).map(([k]) => k);
+          text += `\n**Acknowledgements:** ${done.length} done, ${pending.length} pending`;
+          if (pending.length) text += ` (pending: ${pending.join(", ")})`;
+          text += `\n`;
+        }
+        return textResult(text);
+      } catch (error: any) {
+        return errorResult("fetching onboarding case", error);
       }
     },
   });
@@ -2327,16 +2519,23 @@ export default function register(api: OpenclawPluginApi) {
 
   api.registerTool({
     name: "create_job",
-    description: "Post a new job opening. Status is set to 'open'.",
+    description:
+      "Post a new job opening (status='open'). For Timor-Leste contracts, supply contractType (Permanent or Fixed-Term). Probation defaults by law: Fixed-Term ≤ 6 months = 8 days, > 6 months = 15 days, Permanent = 30 days (90 days for managers/complex roles via permanentProbation).",
     parameters: Type.Object({
       title: Type.String({ description: "Job title" }),
       department: Type.String({ description: "Department" }),
       description: Type.Optional(Type.String({ description: "Role description" })),
       location: Type.Optional(Type.String({ description: "Work location" })),
-      salaryMin: Type.Optional(Type.Number({ description: "Minimum monthly salary" })),
-      salaryMax: Type.Optional(Type.Number({ description: "Maximum monthly salary" })),
+      salaryMin: Type.Optional(Type.Number({ description: "Minimum monthly salary (USD)" })),
+      salaryMax: Type.Optional(Type.Number({ description: "Maximum monthly salary (USD)" })),
       employmentType: Type.Optional(Type.String({ description: "full-time, part-time, contract, intern (default: full-time)" })),
       closingDate: Type.Optional(Type.String({ description: "Application closing date YYYY-MM-DD" })),
+      contractType: Type.Optional(Type.String({ description: "Permanent or Fixed-Term (TL Labour Code)" })),
+      contractDuration: Type.Optional(Type.String({ description: "Free-text duration (e.g. '12 months', '2 years')" })),
+      contractDurationMonths: Type.Optional(Type.Number({ description: "Contract duration in months (used to derive probation for Fixed-Term)" })),
+      permanentProbation: Type.Optional(Type.String({ description: "For Permanent: '30_days' (default) or '90_days' (managers/complex roles)" })),
+      probationDays: Type.Optional(Type.Number({ description: "Override derived probation days" })),
+      probationPeriod: Type.Optional(Type.String({ description: "Human-readable probation label (e.g. '15 days')" })),
       createdBy: Type.Optional(Type.String({ description: "Email of the creator" })),
       tenantId: Type.Optional(Type.String({ description: "Tenant ID" })),
     }),
@@ -2353,12 +2552,19 @@ export default function register(api: OpenclawPluginApi) {
             salaryMax: params.salaryMax,
             employmentType: params.employmentType,
             closingDate: params.closingDate,
+            contractType: params.contractType,
+            contractDuration: params.contractDuration,
+            contractDurationMonths: params.contractDurationMonths,
+            permanentProbation: params.permanentProbation,
+            probationDays: params.probationDays,
+            probationPeriod: params.probationPeriod,
             createdBy: params.createdBy,
           },
           tenantId: params.tenantId,
         });
+        const contractBit = params.contractType ? ` [${params.contractType}]` : "";
         return textResult(
-          `Job posted: **${params.title}** (${params.department}). ID: ${result.id}`
+          `Job posted: **${params.title}** (${params.department})${contractBit}. ID: ${result.id}`
         );
       } catch (error: any) {
         return errorResult("creating job", error);

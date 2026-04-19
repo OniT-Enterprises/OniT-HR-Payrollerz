@@ -764,6 +764,122 @@ router.get('/jobs/open', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/tenants/:tenantId/jobs/:id/private
+ * Returns jobPrivateDetails — probation, contract type, duration.
+ * Top-level collection `jobPrivateDetails` keyed by jobId.
+ */
+router.get('/jobs/:id/private', async (req, res) => {
+  try {
+    const snap = await db.collection('jobPrivateDetails').doc(req.params.id).get();
+    if (!snap.exists) {
+      return res.status(404).json({ success: false, message: 'No private details for job' });
+    }
+    const data = snap.data();
+    if (data.tenantId && data.tenantId !== req.tenantId) {
+      return res.status(404).json({ success: false, message: 'No private details for job' });
+    }
+    res.json({ success: true, details: { id: snap.id, ...data } });
+  } catch (error) {
+    console.error('[jobs/:id/private]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
+// JOB APPLICATIONS (Public Apply flow)
+// Top-level collection `jobApplications` with tenantId field.
+// ============================================================================
+
+/**
+ * GET /api/tenants/:tenantId/job-applications
+ * Query: status (pending|verified|rejected), jobId, limit
+ */
+router.get('/job-applications', async (req, res) => {
+  try {
+    const { status, jobId, limit: limitStr } = req.query;
+    const maxResults = Math.min(parseInt(limitStr) || 50, 200);
+
+    let query = db.collection('jobApplications').where('tenantId', '==', req.tenantId);
+    if (status) query = query.where('status', '==', status);
+    if (jobId) query = query.where('jobId', '==', jobId);
+    query = query.orderBy('createdAt', 'desc').limit(maxResults);
+
+    const snapshot = await query.get();
+    const applications = mapDocs(snapshot);
+    res.json({ success: true, count: applications.length, applications });
+  } catch (error) {
+    console.error('[job-applications]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/job-applications/pending
+ * Candidates awaiting admin verification.
+ */
+router.get('/job-applications/pending', async (req, res) => {
+  try {
+    const snapshot = await db.collection('jobApplications')
+      .where('tenantId', '==', req.tenantId)
+      .where('status', '==', 'pending')
+      .orderBy('createdAt', 'desc')
+      .get();
+    const applications = mapDocs(snapshot);
+    res.json({ success: true, count: applications.length, applications });
+  } catch (error) {
+    console.error('[job-applications/pending]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+// ============================================================================
+// ONBOARDING
+// Top-level collection `onboarding` with tenantId field. Persists new-hire
+// case data (equipment, benefits, acknowledgements) so Offboarding can reuse it.
+// ============================================================================
+
+/**
+ * GET /api/tenants/:tenantId/onboarding
+ * Query: status (in_progress|completed|cancelled), limit
+ */
+router.get('/onboarding', async (req, res) => {
+  try {
+    const { status, limit: limitStr } = req.query;
+    const maxResults = Math.min(parseInt(limitStr) || 50, 200);
+
+    let query = db.collection('onboarding').where('tenantId', '==', req.tenantId);
+    if (status) query = query.where('status', '==', status);
+    query = query.orderBy('createdAt', 'desc').limit(maxResults);
+
+    const snapshot = await query.get();
+    const cases = mapDocs(snapshot);
+    res.json({ success: true, count: cases.length, cases });
+  } catch (error) {
+    console.error('[onboarding]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+/**
+ * GET /api/tenants/:tenantId/onboarding/:id
+ * Full onboarding case — equipment, benefits, acknowledgements.
+ */
+router.get('/onboarding/:id', async (req, res) => {
+  try {
+    const snap = await db.collection('onboarding').doc(req.params.id).get();
+    if (!snap.exists) return res.status(404).json({ success: false, message: 'Onboarding case not found' });
+    const data = snap.data();
+    if (data.tenantId !== req.tenantId) {
+      return res.status(404).json({ success: false, message: 'Onboarding case not found' });
+    }
+    res.json({ success: true, case: { id: snap.id, ...data } });
+  } catch (error) {
+    console.error('[onboarding/:id]', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+});
+
 // ============================================================================
 // INVOICES
 // ============================================================================
@@ -3237,7 +3353,17 @@ router.patch('/employees/:id', async (req, res) => {
 
 /**
  * POST /api/tenants/:tenantId/jobs
- * Body: { title, department, description?, location?, salaryMin?, salaryMax?, employmentType?, closingDate?, createdBy? }
+ * Body: {
+ *   title, department, description?, location?, salaryMin?, salaryMax?,
+ *   employmentType?, closingDate?, createdBy?,
+ *   contractType?, contractDuration?, contractDurationMonths?,
+ *   permanentProbation?, probationDays?, probationPeriod?
+ * }
+ *
+ * TL Labour Code (derived probation):
+ *   Fixed-Term ≤ 6 months  → 8 days
+ *   Fixed-Term > 6 months  → 15 days
+ *   Permanent              → 30 days (90 for managers/complex roles)
  */
 router.post('/jobs', async (req, res) => {
   try {
@@ -3246,10 +3372,19 @@ router.post('/jobs', async (req, res) => {
       title, department, description = '', location = '',
       salaryMin, salaryMax, employmentType = 'full-time',
       closingDate, createdBy = 'bot',
+      contractType, contractDuration, contractDurationMonths,
+      permanentProbation, probationDays, probationPeriod,
     } = req.body || {};
 
     if (!title || !department) {
       return res.status(400).json({ success: false, message: 'title and department are required' });
+    }
+
+    if (contractType && !['Permanent', 'Fixed-Term'].includes(contractType)) {
+      return res.status(400).json({ success: false, message: "contractType must be 'Permanent' or 'Fixed-Term'" });
+    }
+    if (permanentProbation && !['30_days', '90_days'].includes(permanentProbation)) {
+      return res.status(400).json({ success: false, message: "permanentProbation must be '30_days' or '90_days'" });
     }
 
     const job = {
@@ -3261,6 +3396,12 @@ router.post('/jobs', async (req, res) => {
       postedDate: getTodayTL(),
       closingDate: closingDate || '',
       createdBy,
+      ...(contractType ? { contractType } : {}),
+      ...(contractDuration ? { contractDuration } : {}),
+      ...(contractDurationMonths != null ? { contractDurationMonths: Number(contractDurationMonths) } : {}),
+      ...(permanentProbation ? { permanentProbation } : {}),
+      ...(probationDays != null ? { probationDays: Number(probationDays) } : {}),
+      ...(probationPeriod ? { probationPeriod } : {}),
       createdAt: admin.firestore.FieldValue.serverTimestamp(),
       updatedAt: admin.firestore.FieldValue.serverTimestamp(),
     };
@@ -3857,6 +3998,9 @@ router.get('/verify/compliance', async (req, res) => {
 
     const TL_MINIMUM_WAGE = 115; // $115 USD
 
+    const THREE_YEARS_MS = 3 * 365 * 24 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+
     empSnap.docs.forEach((doc) => {
       const emp = doc.data();
       const name = `${emp.personalInfo?.firstName || ''} ${emp.personalInfo?.lastName || ''}`.trim() || doc.id;
@@ -3882,6 +4026,22 @@ router.get('/verify/compliance', async (req, res) => {
       // Check bank details
       if (!emp.bankDetails?.accountNumber && !emp.paymentInfo?.bankAccount) {
         issues.push({ severity: 'info', category: 'payment', employee: name, message: `${name}: No bank account on file (will need cash payment)` });
+      }
+
+      // Fixed-term past 3 years → converts to permanent by operation of TL law.
+      const employmentType = String(emp.jobDetails?.employmentType || '');
+      const looksFixedTerm = !!emp.jobDetails?.contractEndDate || /fixed|contract|temp/i.test(employmentType);
+      const hireDateRaw = emp.jobDetails?.hireDate;
+      if (looksFixedTerm && hireDateRaw) {
+        const hireMs = new Date(hireDateRaw).getTime();
+        if (!Number.isNaN(hireMs) && nowMs - hireMs >= THREE_YEARS_MS) {
+          issues.push({
+            severity: 'warning',
+            category: 'contract',
+            employee: name,
+            message: `${name}: Fixed-term contract past 3 years — convert to permanent (TL Labour Code)`,
+          });
+        }
       }
     });
 

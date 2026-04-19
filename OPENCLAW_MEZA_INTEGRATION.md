@@ -99,6 +99,11 @@ Express REST API that serves two roles:
 | `GET /api/tenants/:tid/interviews/upcoming` | Next 7 days |
 | `GET /api/tenants/:tid/jobs` | List jobs (query: status) |
 | `GET /api/tenants/:tid/jobs/open` | Open positions |
+| `GET /api/tenants/:tid/jobs/:id/private` | HR-only private details (contract type, probation) |
+| `GET /api/tenants/:tid/job-applications` | Public applications (query: status, jobId) |
+| `GET /api/tenants/:tid/job-applications/pending` | Applications awaiting verification |
+| `GET /api/tenants/:tid/onboarding` | List onboarding cases (query: status) |
+| `GET /api/tenants/:tid/onboarding/:id` | Onboarding case with equipment + benefits |
 | `GET /api/tenants/:tid/invoices` | List invoices (query: status, customerId) |
 | `GET /api/tenants/:tid/invoices/overdue` | Overdue invoices + total AR |
 | `GET /api/tenants/:tid/bills` | List bills (query: status, vendorId) |
@@ -147,9 +152,9 @@ Dockerized OpenClaw instance with the Meza HR plugin.
 
 ### 3. Meza HR Plugin (`server/openclaw-meza/extensions/meza-hr/`)
 
-OpenClaw plugin providing 29 tools and 5 commands.
+OpenClaw plugin providing HR read/write tools and 5 WhatsApp commands.
 
-#### Tools (29)
+#### Read tools
 
 | Category | Tools |
 |----------|-------|
@@ -157,10 +162,17 @@ OpenClaw plugin providing 29 tools and 5 commands.
 | Payroll (4) | `list_payroll_runs`, `get_payroll_run`, `get_payroll_payslips`, `get_payroll_summary` |
 | Leave (5) | `get_pending_leave_requests`, `get_leave_balances`, `get_leave_stats`, `get_employees_on_leave_today`, `get_employee_leave` |
 | Attendance (2) | `get_daily_attendance`, `get_attendance_summary` |
-| Recruitment (4) | `get_open_jobs`, `get_today_interviews`, `get_upcoming_interviews`, `get_candidates` |
+| Recruitment (7) | `get_open_jobs`, `get_today_interviews`, `get_upcoming_interviews`, `get_candidates`, `get_job_private_details`, `get_pending_job_applications`, `list_job_applications` |
+| Onboarding (2) | `get_onboarding_cases`, `get_onboarding_case` |
 | Finance (5) | `get_overdue_invoices`, `get_overdue_bills`, `get_expenses_this_month`, `get_invoices_by_status`, `get_financial_summary` |
+| Accounting (3) | `get_trial_balance`, `get_income_statement`, `get_balance_sheet` |
 | Overview (1) | `get_company_overview` |
 | Departments (2) | `list_departments`, `get_department_headcount` |
+| Compliance (1) | `check_compliance` (includes fixed-term > 3yr flag per TL Labour Code) |
+
+The `create_job` write tool accepts TL Labour Code probation fields: `contractType`
+(Permanent/Fixed-Term), `contractDurationMonths`, `permanentProbation`
+(`30_days`/`90_days`), and explicit `probationDays` / `probationPeriod` overrides.
 
 #### Commands (5 — WhatsApp auto-replies)
 
@@ -296,6 +308,14 @@ All under `tenants/onit-enterprises/`:
 | Expenses | `tenants/onit-enterprises/expenses` |
 | Chat audit | `tenants/onit-enterprises/chat_audit` |
 | Chat pending | `tenants/onit-enterprises/chat_pending` |
+
+Top-level collections (filtered by `tenantId` field):
+
+| Collection | Path |
+|-----------|------|
+| Job applications | `jobApplications` |
+| Job private details | `jobPrivateDetails` (keyed by jobId) |
+| Onboarding cases | `onboarding` |
 
 ---
 
