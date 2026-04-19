@@ -1,5 +1,6 @@
 import type { Employee } from "@/services/employeeService";
 import { buildEmployeeComplianceSnapshot } from "@/lib/employeeCompliance";
+import { hasExceededFixedTermLimit } from "@/lib/probation";
 
 interface ProfileCompletenessResult {
   completionPercentage: number;
@@ -113,7 +114,7 @@ export function getCompletionStatusColor(completeness: number): string {
 
 // ─── Payroll Compliance ─────────────────────────────────────────────────
 
-type ComplianceField = "inss" | "contract" | "department";
+type ComplianceField = "inss" | "contract" | "department" | "fixedTermOverLimit";
 type ComplianceSeverity = "error" | "warning";
 
 interface ComplianceIssue {
@@ -175,6 +176,21 @@ export function getComplianceIssues(employees: Employee[]): ComplianceIssue[] {
         issue: "No department assigned",
         action: "Assign",
         path: `/people/employees?id=${id}&edit=true`,
+      });
+    }
+
+    // Fixed-term contract past 3 years — converts to permanent by operation of TL law
+    const employmentType = emp.jobDetails?.employmentType || "";
+    const looksFixedTerm =
+      !!emp.jobDetails?.contractEndDate || /fixed|contract|temp/i.test(employmentType);
+    if (looksFixedTerm && hasExceededFixedTermLimit(emp.jobDetails?.hireDate)) {
+      issues.push({
+        employee: emp,
+        field: "fixedTermOverLimit",
+        severity: "warning",
+        issue: "Fixed-term over 3 years — convert to permanent",
+        action: "Convert",
+        path: `/people/employees?id=${id}`,
       });
     }
 

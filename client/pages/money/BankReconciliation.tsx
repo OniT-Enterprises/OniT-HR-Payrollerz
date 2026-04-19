@@ -4,6 +4,7 @@
  */
 
 import { useState, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -69,7 +70,35 @@ export default function BankReconciliation() {
   const { toast } = useToast();
   const { t } = useI18n();
   const tenantId = useTenantId();
+  const location = useLocation();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const isAccountingRoute = location.pathname.startsWith('/accounting/');
+  const accent = isAccountingRoute
+    ? {
+        iconColor: 'text-orange-500',
+        solidBtn: 'bg-orange-600 hover:bg-orange-700',
+        badgeSolid: 'bg-orange-500 text-white text-xs tabular-nums',
+        bar: 'bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200/50 dark:border-orange-800/50',
+        barText: 'text-sm font-medium text-orange-800 dark:text-orange-200',
+        outlineBtn: 'border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300',
+        iconBadgeGrad: 'bg-gradient-to-r from-orange-500/10 to-orange-600/10',
+        iconBadgeText: 'h-4 w-4 text-orange-600 dark:text-orange-400',
+        emptyGrad: 'bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/20 dark:to-orange-950/10',
+        emptyIcon: 'h-8 w-8 text-orange-400',
+      }
+    : {
+        iconColor: 'text-indigo-500',
+        solidBtn: 'bg-indigo-600 hover:bg-indigo-700',
+        badgeSolid: 'bg-indigo-500 text-white text-xs tabular-nums',
+        bar: 'bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50',
+        barText: 'text-sm font-medium text-indigo-800 dark:text-indigo-200',
+        outlineBtn: 'border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300',
+        iconBadgeGrad: 'bg-gradient-to-r from-indigo-500/10 to-indigo-600/10',
+        iconBadgeText: 'h-4 w-4 text-indigo-600 dark:text-indigo-400',
+        emptyGrad: 'bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-950/10',
+        emptyIcon: 'h-8 w-8 text-indigo-400',
+      };
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -362,12 +391,12 @@ export default function BankReconciliation() {
           title={t('money.bankRecon.title') || 'Bank Reconciliation'}
           subtitle={t('money.bankRecon.subtitle') || 'Import and match bank transactions'}
           icon={Building2}
-          iconColor="text-indigo-500"
+          iconColor={accent.iconColor}
           actions={
             <Button
               onClick={() => fileInputRef.current?.click()}
               disabled={importing}
-              className="bg-indigo-600 hover:bg-indigo-700"
+              className={accent.solidBtn}
             >
               {importing ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -389,21 +418,21 @@ export default function BankReconciliation() {
 
         {/* Actions Bar */}
         {selectedIds.size > 0 && (
-          <div className="flex items-center gap-3 mb-4 p-3 bg-indigo-50 dark:bg-indigo-950/20 rounded-lg border border-indigo-200/50 dark:border-indigo-800/50 animate-fade-up">
-            <Badge className="bg-indigo-500 text-white text-xs tabular-nums">
+          <div className={`flex items-center gap-3 mb-4 p-3 animate-fade-up ${accent.bar}`}>
+            <Badge className={accent.badgeSolid}>
               {selectedIds.size}
             </Badge>
-            <span className="text-sm font-medium text-indigo-800 dark:text-indigo-200">
+            <span className={accent.barText}>
               {selectedIds.size !== 1
                 ? (t('money.bankRecon.transactionPlural') || 'transactions')
                 : (t('money.bankRecon.transaction') || 'transaction')
               } {t('money.bankRecon.selected') || 'selected'}
             </span>
             <div className="flex-1" />
-            <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className="border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300">
+            <Button size="sm" variant="outline" onClick={() => setSelectedIds(new Set())} className={accent.outlineBtn}>
               {t('common.cancel') || 'Clear'}
             </Button>
-            <Button size="sm" onClick={handleReconcile} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+            <Button size="sm" onClick={handleReconcile} className={`${accent.solidBtn} text-white`}>
               <CheckCircle2 className="h-4 w-4 mr-2" />
               {t('money.bankRecon.markReconciled') || 'Mark Reconciled'}
             </Button>
@@ -415,8 +444,8 @@ export default function BankReconciliation() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-gradient-to-r from-indigo-500/10 to-indigo-600/10">
-                  <FileSpreadsheet className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+                <div className={`p-1.5 rounded-lg ${accent.iconBadgeGrad}`}>
+                  <FileSpreadsheet className={accent.iconBadgeText} />
                 </div>
                 {t('money.bankRecon.transactions') || 'Bank Transactions'}
                 {transactions.length > 0 && (
@@ -445,8 +474,8 @@ export default function BankReconciliation() {
           <CardContent>
             {filteredTransactions.length === 0 ? (
               <div className="text-center py-16">
-                <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-100 to-indigo-50 dark:from-indigo-900/20 dark:to-indigo-950/10 flex items-center justify-center mb-4">
-                  <FileSpreadsheet className="h-8 w-8 text-indigo-400" />
+                <div className={`mx-auto w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${accent.emptyGrad}`}>
+                  <FileSpreadsheet className={accent.emptyIcon} />
                 </div>
                 <p className="font-medium text-foreground mb-1">
                   {t('money.bankRecon.noTransactions') || 'No transactions yet'}
@@ -454,7 +483,7 @@ export default function BankReconciliation() {
                 <p className="text-sm text-muted-foreground mb-5">
                   {t('money.bankRecon.uploadCsvHint') || 'Upload a CSV export from your bank to get started'}
                 </p>
-                <Button onClick={() => fileInputRef.current?.click()} className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button onClick={() => fileInputRef.current?.click()} className={`${accent.solidBtn} text-white`}>
                   <Upload className="h-4 w-4 mr-2" />
                   {t('money.bankRecon.importFirst') || 'Import your first CSV'}
                 </Button>
