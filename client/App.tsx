@@ -60,7 +60,7 @@ function HomeRoute() {
   if (!hasTenants) {
     // Superadmin without tenants goes to admin dashboard
     if (isSuperAdmin) {
-      return <Navigate to="/admin/tenants" replace />;
+      return <Navigate to="/admin" replace />;
     }
     // Regular user without tenants needs setup
     return <Navigate to="/admin/setup" replace />;
@@ -68,7 +68,7 @@ function HomeRoute() {
 
   if (!session) {
     if (isSuperAdmin) {
-      return <Navigate to="/admin/tenants" replace />;
+      return <Navigate to="/admin" replace />;
     }
     return <Navigate to="/landing" replace />;
   }

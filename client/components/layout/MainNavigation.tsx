@@ -263,7 +263,7 @@ function UserMenu({ user, userInitials, isSuperAdmin, ngoReportingEnabled, donor
         )}
         {isSuperAdmin && (
           <>
-            <DropdownMenuItem onClick={() => onNavigate("/admin/tenants")} className="text-amber-600">
+            <DropdownMenuItem onClick={() => onNavigate("/admin")} className="text-amber-600">
               <Shield className="h-4 w-4 mr-2" />
               {t("common.adminConsole")}
             </DropdownMenuItem>
