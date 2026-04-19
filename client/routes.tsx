@@ -169,11 +169,13 @@ const VATSettings = lazy(() => import("@/pages/money/VATSettings"));
 const VATReturns = lazy(() => import("@/pages/money/VATReturns"));
 
 // Admin
+const AdminConsoleHome = lazy(() => import("@/pages/admin/AdminConsoleHome"));
 const SeedDatabase = lazy(() => import("@/pages/admin/SeedDatabase"));
 const TenantList = lazy(() => import("@/pages/admin/TenantList"));
 const TenantDetail = lazy(() => import("@/pages/admin/TenantDetail"));
 const CreateTenant = lazy(() => import("@/pages/admin/CreateTenant"));
 const UserList = lazy(() => import("@/pages/admin/UserList"));
+const PackagesPage = lazy(() => import("@/pages/admin/PackagesPage"));
 const AuditLog = lazy(() => import("@/pages/admin/AuditLog"));
 const AdminSetup = lazy(() => import("@/pages/admin/AdminSetup"));
 const DocumentAlerts = lazy(() => import("@/pages/admin/DocumentAlerts"));
@@ -1024,7 +1026,14 @@ export const adminRoutes = (
         </FeatureRoute>
       }
     />
-    <Route path="/admin" element={<Navigate to="/admin/tenants" replace />} />
+    <Route
+      path="/admin"
+      element={
+        <SuperadminRoute>
+          <AdminConsoleHome />
+        </SuperadminRoute>
+      }
+    />
     <Route
       path="/admin/tenants"
       element={
@@ -1065,6 +1074,14 @@ export const adminRoutes = (
       element={
         <SuperadminRoute>
           <UserList />
+        </SuperadminRoute>
+      }
+    />
+    <Route
+      path="/admin/packages"
+      element={
+        <SuperadminRoute>
+          <PackagesPage />
         </SuperadminRoute>
       }
     />

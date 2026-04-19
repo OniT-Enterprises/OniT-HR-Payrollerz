@@ -1,95 +1,67 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Building2, ChevronLeft, Loader2, CheckCircle } from "lucide-react";
-import { adminService } from "@/services/adminService";
-import { TenantPlan, PLAN_LIMITS } from "@/types/tenant";
+import { TenantProfileForm } from "@/components/admin/TenantProfileForm";
+import { TenantProfileInput } from "@/services/adminService";
+import { useCreateTenant } from "@/hooks/useAdmin";
 import { useAuth } from "@/contexts/AuthContext";
+import { Building2, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useI18n } from "@/i18n/I18nProvider";
+
+const initialValue: TenantProfileInput = {
+  name: "",
+  tradingName: "",
+  tinNumber: "",
+  address: "",
+  phone: "",
+  ownerEmail: "",
+  billingEmail: "",
+  currentEmployeeCount: 0,
+  plan: "free",
+};
 
 export default function CreateTenant() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
-  const { t } = useI18n();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({
-    name: "",
-    ownerEmail: "",
-    plan: "free" as TenantPlan,
-  });
+  const createTenantMutation = useCreateTenant();
+  const [formValue, setFormValue] = useState<TenantProfileInput>(initialValue);
 
-  const plans: { value: TenantPlan; label: string; description: string }[] = [
-    { value: "free", label: t("admin.createTenant.planFree"), description: t("admin.createTenant.planFreeDesc") },
-    { value: "starter", label: t("admin.createTenant.planStarter"), description: t("admin.createTenant.planStarterDesc") },
-    { value: "professional", label: t("admin.createTenant.planPro"), description: t("admin.createTenant.planProDesc") },
-    { value: "enterprise", label: t("admin.createTenant.planEnterprise"), description: t("admin.createTenant.planEnterpriseDesc") },
-  ];
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!user || !userProfile) {
-      toast.error("You must be logged in");
+    if (!user) {
+      toast.error("You must be signed in to create a tenant.");
       return;
     }
 
-    if (!formData.name.trim()) {
-      toast.error(t("admin.createTenant.nameRequired"));
-      return;
-    }
-
-    if (!formData.ownerEmail.trim()) {
-      toast.error(t("admin.createTenant.emailRequired"));
+    if (!formValue.name.trim() || !formValue.ownerEmail.trim()) {
+      toast.error("Organization name and owner email are required.");
       return;
     }
 
     try {
-      setLoading(true);
-
-      const tenantId = await adminService.createTenant(
-        formData.name,
-        formData.ownerEmail,
-        formData.plan,
-        user.uid,
-        user.email || userProfile?.email || ''
-      );
-
-      toast.success(t("admin.createTenant.success"));
+      const tenantId = await createTenantMutation.mutateAsync({
+        input: formValue,
+        createdBy: user.uid,
+        actorEmail: user.email || userProfile?.email || "",
+      });
+      toast.success("Tenant created");
       navigate(`/admin/tenants/${tenantId}`);
     } catch (error) {
-      console.error("Error creating tenant:", error);
-      toast.error(t("admin.createTenant.error"));
-    } finally {
-      setLoading(false);
+      console.error(error);
+      toast.error("We could not create that tenant yet.");
     }
   };
 
   return (
     <AdminLayout>
-      {/* Header */}
       <div className="border-b border-border/50">
         <div className="px-6 py-6 lg:px-8">
           <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/admin/tenants")}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/tenants")} className="gap-2">
               <ChevronLeft className="h-4 w-4" />
-              {t("admin.createTenant.back")}
+              Back to Tenants
             </Button>
           </div>
 
@@ -98,138 +70,27 @@ export default function CreateTenant() {
               <Building2 className="h-8 w-8 text-white" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">{t("admin.createTenant.title")}</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Create Tenant</h1>
               <p className="text-muted-foreground mt-1">
-                {t("admin.createTenant.subtitle")}
+                Create the tenant once, with the same core organization information used throughout the Admin Console.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="px-6 lg:px-8 py-6">
-        <div className="max-w-2xl">
-          <form onSubmit={handleSubmit}>
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="text-lg">{t("admin.createTenant.tenantDetails")}</CardTitle>
-                <CardDescription>
-                  {t("admin.createTenant.tenantDetailsDesc")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name">{t("admin.createTenant.orgName")}</Label>
-                  <Input
-                    id="name"
-                    placeholder={t("admin.createTenant.orgNamePlaceholder")}
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    disabled={loading}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t("admin.createTenant.orgNameHint")}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="ownerEmail">{t("admin.createTenant.ownerEmail")}</Label>
-                  <Input
-                    id="ownerEmail"
-                    type="email"
-                    placeholder={t("admin.createTenant.ownerEmailPlaceholder")}
-                    value={formData.ownerEmail}
-                    onChange={(e) => setFormData({ ...formData, ownerEmail: e.target.value })}
-                    disabled={loading}
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    {t("admin.createTenant.ownerEmailHint")}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="plan">{t("admin.createTenant.subscriptionPlan")}</Label>
-                  <Select
-                    value={formData.plan}
-                    onValueChange={(value: TenantPlan) =>
-                      setFormData({ ...formData, plan: value })
-                    }
-                    disabled={loading}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={t("admin.createTenant.selectPlan")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {plans.map((plan) => (
-                        <SelectItem key={plan.value} value={plan.value}>
-                          <div className="flex flex-col">
-                            <span className="font-medium">{plan.label}</span>
-                            <span className="text-xs text-muted-foreground">
-                              {plan.description}
-                            </span>
-                          </div>
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Plan Limits Preview */}
-                {formData.plan && (
-                  <div className="p-4 rounded-lg bg-muted/50 space-y-2">
-                    <p className="text-sm font-medium">{t("admin.createTenant.planLimits")}</p>
-                    <div className="grid grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <p className="text-muted-foreground">{t("admin.createTenant.maxEmployees")}</p>
-                        <p className="font-medium">
-                          {PLAN_LIMITS[formData.plan]?.maxEmployees?.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">{t("admin.createTenant.maxUsers")}</p>
-                        <p className="font-medium">
-                          {PLAN_LIMITS[formData.plan]?.maxUsers?.toLocaleString()}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-muted-foreground">{t("admin.createTenant.storage")}</p>
-                        <p className="font-medium">{PLAN_LIMITS[formData.plan]?.storageGB} GB</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => navigate("/admin/tenants")}
-                disabled={loading}
-              >
-                {t("admin.createTenant.cancel")}
-              </Button>
-              <Button
-                type="submit"
-                disabled={loading}
-                className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    {t("admin.createTenant.creating")}
-                  </>
-                ) : (
-                  <>
-                    <CheckCircle className="h-4 w-4" />
-                    {t("admin.createTenant.createBtn")}
-                  </>
-                )}
-              </Button>
-            </div>
-          </form>
+      <div className="px-6 py-6 lg:px-8">
+        <div className="max-w-4xl">
+          <TenantProfileForm
+            title="Tenant details"
+            description="Use the same core organization fields here that appear later on the tenant details page."
+            value={formValue}
+            onChange={setFormValue}
+            onSubmit={handleSubmit}
+            onCancel={() => navigate("/admin/tenants")}
+            loading={createTenantMutation.isPending}
+            submitLabel="Create Tenant"
+          />
         </div>
       </div>
     </AdminLayout>

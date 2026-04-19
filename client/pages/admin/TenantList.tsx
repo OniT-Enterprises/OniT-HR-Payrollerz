@@ -57,6 +57,13 @@ const planColors: Record<TenantPlan, string> = {
   enterprise: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
 };
 
+const planLabels: Record<TenantPlan, string> = {
+  free: "Free",
+  starter: "Starter",
+  professional: "Professional",
+  enterprise: "Enterprise",
+};
+
 export default function TenantList() {
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
@@ -111,6 +118,8 @@ export default function TenantList() {
   const filteredTenants = tenants.filter(
     (tenant) =>
       tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tenant.legalName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      tenant.tradingName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       tenant.slug?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -126,7 +135,18 @@ export default function TenantList() {
   };
 
   const getStatusLabel = (status: TenantStatus) => t(`admin.tenantList.status.${status}`);
-  const getPlanLabel = (plan: TenantPlan) => t(`admin.tenantList.plan.${plan}`);
+  const getPlanLabel = (plan: TenantPlan) => planLabels[plan] || "Custom";
+  const formatMonthlySubscription = (amount?: number): string => {
+    if (typeof amount !== "number" || Number.isNaN(amount)) {
+      return "-";
+    }
+
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
 
   return (
     <AdminLayout>
@@ -297,6 +317,9 @@ export default function TenantList() {
                             </div>
                             <div>
                               <p className="font-medium">{tenant.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {tenant.legalName || "Legal name not set"}
+                              </p>
                               <p className="text-sm text-muted-foreground">{tenant.slug}</p>
                             </div>
                           </div>
@@ -312,6 +335,12 @@ export default function TenantList() {
                             <Calendar className="h-3 w-3" />
                             <span>{formatDate(tenant.createdAt)}</span>
                           </div>
+                          <Badge variant="outline" className="text-xs">
+                            {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
+                          </Badge>
+                          <Badge variant="outline" className="text-xs">
+                            PaidUntil: {formatDate(tenant.subscriptionPaidUntil)}
+                          </Badge>
                         </div>
                         <div className="mt-4">
                           <DropdownMenu>
@@ -368,6 +397,8 @@ export default function TenantList() {
                       <TableHead>{t("admin.tenantList.table.status")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.plan")}</TableHead>
                       <TableHead>{t("admin.tenantList.table.created")}</TableHead>
+                      <TableHead>PaidUntil</TableHead>
+                      <TableHead>MonthlySubscription</TableHead>
                       <TableHead className="text-right">{t("admin.tenantList.table.actions")}</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -381,6 +412,9 @@ export default function TenantList() {
                             </div>
                             <div>
                               <p className="font-medium">{tenant.name}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {tenant.legalName || "Legal name not set"}
+                              </p>
                               <p className="text-sm text-muted-foreground">{tenant.slug}</p>
                             </div>
                           </div>
@@ -400,6 +434,16 @@ export default function TenantList() {
                             <Calendar className="h-3 w-3" />
                             {formatDate(tenant.createdAt)}
                           </div>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm text-muted-foreground">
+                            {formatDate(tenant.subscriptionPaidUntil)}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm font-medium">
+                            {formatMonthlySubscription(tenant.monthlySubscriptionAmount)}
+                          </span>
                         </TableCell>
                         <TableCell className="text-right">
                           <DropdownMenu>

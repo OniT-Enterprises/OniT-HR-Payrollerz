@@ -15,6 +15,13 @@ export interface TenantConfig {
   id: string;
   name: string;
   slug?: string;
+  legalName?: string;
+  tradingName?: string;
+  tinNumber?: string;
+  address?: string;
+  phone?: string;
+  ownerEmail?: string;
+  currentEmployeeCount?: number;
 
   // SaaS management fields
   status: TenantStatus;
@@ -23,6 +30,8 @@ export interface TenantConfig {
   // Billing information
   billingEmail?: string;
   stripeCustomerId?: string;
+  subscriptionPaidUntil?: FirestoreTimestamp;
+  monthlySubscriptionAmount?: number;
 
   // Plan limits
   limits?: {

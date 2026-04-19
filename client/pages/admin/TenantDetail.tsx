@@ -1,12 +1,11 @@
-import React from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { formatDateTL } from "@/lib/dateUtils";
 import { AdminLayout } from "@/components/layout/AdminLayout";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { TenantProfileForm } from "@/components/admin/TenantProfileForm";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,52 +17,82 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import {
-  Building2,
-  ChevronLeft,
-  UserCog,
-  Ban,
-  CheckCircle,
-  Loader2,
-  Users,
-  Calendar,
-  Mail,
-  Globe,
-  CreditCard,
-  Settings,
-  BarChart3,
-} from "lucide-react";
-import { useTenantDetail, useTenantStats, useSuspendTenant, useReactivateTenant } from "@/hooks/useAdmin";
-import { TenantStatus, TenantPlan } from "@/types/tenant";
-import { OptionalTimestamp } from "@/types/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTenant } from "@/contexts/TenantContext";
+import {
+  useReactivateTenant,
+  useSuspendTenant,
+  useTenantDetail,
+  useTenantStats,
+  useUpdateTenantProfile,
+} from "@/hooks/useAdmin";
+import { TenantProfileInput } from "@/services/adminService";
+import { OptionalTimestamp } from "@/types/firebase";
+import {
+  Ban,
+  Building2,
+  Calendar,
+  CheckCircle,
+  ChevronLeft,
+  CreditCard,
+  Loader2,
+  Pencil,
+  UserCog,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 
-const statusColors: Record<TenantStatus, string> = {
-  active: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
-  suspended: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
-  pending: "bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20",
-  cancelled: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
-};
-
-const planColors: Record<TenantPlan, string> = {
-  free: "bg-gray-500/10 text-gray-600 dark:text-gray-400 border-gray-500/20",
-  starter: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20",
-  professional: "bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/20",
-  enterprise: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-};
+function formatDateValue(value: OptionalTimestamp): string {
+  if (!value) return "-";
+  if (typeof value === "object" && "toDate" in value) {
+    return formatDateTL(value.toDate()) || "-";
+  }
+  if (value instanceof Date) {
+    return formatDateTL(value) || "-";
+  }
+  return "-";
+}
 
 export default function TenantDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { user, userProfile } = useAuth();
   const { startImpersonation } = useTenant();
-  const { data: tenant, isLoading: tenantLoading } = useTenantDetail(id);
+  const { data: tenant, isLoading } = useTenantDetail(id);
   const { data: stats = { memberCount: 0, employeeCount: 0 } } = useTenantStats(id);
+  const updateTenantMutation = useUpdateTenantProfile();
   const suspendMutation = useSuspendTenant();
   const reactivateMutation = useReactivateTenant();
-  const loading = tenantLoading;
+  const [isEditing, setIsEditing] = useState(false);
+  const [formValue, setFormValue] = useState<TenantProfileInput | null>(null);
+
+  useEffect(() => {
+    if (tenant) {
+      setFormValue({
+        name: tenant.name || "",
+        tradingName: tenant.tradingName || "",
+        tinNumber: tenant.tinNumber || "",
+        address: tenant.address || "",
+        phone: tenant.phone || "",
+        ownerEmail: tenant.ownerEmail || "",
+        billingEmail: tenant.billingEmail || "",
+        currentEmployeeCount: tenant.currentEmployeeCount ?? stats.employeeCount ?? 0,
+        plan: tenant.plan,
+      });
+    }
+  }, [stats.employeeCount, tenant]);
+
+  const featureBadges = useMemo(() => {
+    if (!tenant) return [];
+    return [
+      "People",
+      tenant.features?.timeleave !== false ? "Time & Leave" : null,
+      tenant.features?.payroll !== false ? "Payroll" : null,
+      tenant.features?.money !== false ? "Money" : null,
+      tenant.features?.accounting !== false ? "Accounting" : null,
+      tenant.features?.reports !== false ? "Reports" : null,
+    ].filter(Boolean) as string[];
+  }, [tenant]);
 
   const handleImpersonate = async () => {
     if (!tenant) return;
@@ -72,8 +101,9 @@ export default function TenantDetail() {
       await startImpersonation(tenant.id, tenant.name);
       toast.success(`Now viewing as ${tenant.name}`);
       navigate("/");
-    } catch (_error) {
-      toast.error("Failed to impersonate tenant");
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not start impersonation.");
     }
   };
 
@@ -87,9 +117,10 @@ export default function TenantDetail() {
         actorUid: user.uid,
         actorEmail: userProfile.email,
       });
-      toast.success(`${tenant.name} has been suspended`);
-    } catch (_error) {
-      toast.error("Failed to suspend tenant");
+      toast.success(`${tenant.name} suspended`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not suspend this tenant.");
     }
   };
 
@@ -102,27 +133,31 @@ export default function TenantDetail() {
         actorUid: user.uid,
         actorEmail: userProfile.email,
       });
-      toast.success(`${tenant.name} has been reactivated`);
-    } catch (_error) {
-      toast.error("Failed to reactivate tenant");
+      toast.success(`${tenant.name} reactivated`);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not reactivate this tenant.");
     }
   };
 
-  const formatDate = (date: OptionalTimestamp): string => {
-    if (!date) return "-";
-    if (typeof date === "object" && "toDate" in date) {
-      return formatDateTL(date.toDate()) || "-";
+  const handleSave = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!tenant || !formValue) return;
+
+    try {
+      await updateTenantMutation.mutateAsync({ tenantId: tenant.id, input: formValue });
+      toast.success("Tenant details updated");
+      setIsEditing(false);
+    } catch (error) {
+      console.error(error);
+      toast.error("Could not save tenant changes.");
     }
-    if (date instanceof Date) {
-      return formatDateTL(date) || "-";
-    }
-    return "-";
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <AdminLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex min-h-[60vh] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </AdminLayout>
@@ -132,11 +167,11 @@ export default function TenantDetail() {
   if (!tenant) {
     return (
       <AdminLayout>
-        <div className="text-center py-12">
-          <Building2 className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-          <p className="text-muted-foreground">Tenant not found</p>
-          <Button variant="link" onClick={() => navigate("/admin/tenants")} className="mt-2">
-            Back to tenants
+        <div className="px-6 py-12 lg:px-8 text-center">
+          <Building2 className="mx-auto h-12 w-12 text-muted-foreground/50" />
+          <p className="mt-4 text-muted-foreground">Tenant not found.</p>
+          <Button variant="link" onClick={() => navigate("/admin/tenants")}>
+            Back to Tenants
           </Button>
         </div>
       </AdminLayout>
@@ -145,45 +180,46 @@ export default function TenantDetail() {
 
   return (
     <AdminLayout>
-      {/* Header */}
       <div className="border-b border-border/50">
         <div className="px-6 py-6 lg:px-8">
           <div className="flex items-center gap-4 mb-4">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => navigate("/admin/tenants")}
-              className="gap-2"
-            >
+            <Button variant="ghost" size="sm" onClick={() => navigate("/admin/tenants")} className="gap-2">
               <ChevronLeft className="h-4 w-4" />
-              Back
+              Back to Tenants
             </Button>
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col gap-6 xl:flex-row xl:items-start xl:justify-between">
+            <div className="flex items-start gap-4">
               <div className="p-4 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 shadow-lg shadow-amber-500/25">
                 <Building2 className="h-8 w-8 text-white" />
               </div>
-              <div>
-                <div className="flex items-center gap-3">
-                  <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
-                  <Badge className={`border ${statusColors[tenant.status]}`}>
-                    {tenant.status}
-                  </Badge>
-                  <Badge className={`border ${planColors[tenant.plan]}`}>{tenant.plan}</Badge>
+              <div className="space-y-3">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
+                    <Badge variant="outline">{tenant.status}</Badge>
+                    <Badge variant="outline">{tenant.plan}</Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground mt-1">Tenant ID: {tenant.id}</p>
                 </div>
-                <p className="text-muted-foreground mt-1">ID: {tenant.id}</p>
+
+                <div className="flex flex-wrap gap-2">
+                  {featureBadges.map((feature) => (
+                    <Badge key={feature} className="bg-primary/10 text-primary border-primary/20">
+                      {feature}
+                    </Badge>
+                  ))}
+                </div>
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={handleImpersonate}
-                disabled={tenant.status !== "active"}
-                className="gap-2"
-              >
+            <div className="flex flex-wrap gap-3">
+              <Button variant="outline" onClick={() => setIsEditing((current) => !current)} className="gap-2">
+                <Pencil className="h-4 w-4" />
+                {isEditing ? "Cancel Edit" : "Edit"}
+              </Button>
+              <Button variant="outline" onClick={handleImpersonate} disabled={tenant.status !== "active"} className="gap-2">
                 <UserCog className="h-4 w-4" />
                 Impersonate
               </Button>
@@ -198,10 +234,9 @@ export default function TenantDetail() {
                   </AlertDialogTrigger>
                   <AlertDialogContent>
                     <AlertDialogHeader>
-                      <AlertDialogTitle>Suspend Tenant?</AlertDialogTitle>
+                      <AlertDialogTitle>Suspend {tenant.name}?</AlertDialogTitle>
                       <AlertDialogDescription>
-                        This will disable access for all users in {tenant.name}. They will not be
-                        able to log in until the tenant is reactivated.
+                        This will block tenant access until the organization is reactivated.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
@@ -213,10 +248,7 @@ export default function TenantDetail() {
                   </AlertDialogContent>
                 </AlertDialog>
               ) : (
-                <Button
-                  onClick={handleReactivate}
-                  className="gap-2 bg-emerald-600 hover:bg-emerald-700"
-                >
+                <Button onClick={handleReactivate} className="gap-2 bg-emerald-600 hover:bg-emerald-700">
                   <CheckCircle className="h-4 w-4" />
                   Reactivate
                 </Button>
@@ -226,40 +258,33 @@ export default function TenantDetail() {
         </div>
       </div>
 
-      {/* Content */}
-      <div className="px-6 lg:px-8 py-6">
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="overview" className="space-y-6">
-            {/* Stats */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card className="border-border/50">
-                <CardContent className="p-5">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Users</p>
-                      <p className="text-2xl font-bold">{stats.memberCount}</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-blue-500/10">
-                      <Users className="h-5 w-5 text-blue-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+      <div className="px-6 py-6 lg:px-8">
+        {isEditing && formValue ? (
+          <div className="max-w-4xl">
+            <TenantProfileForm
+              title="Tenant details"
+              description="Edit the same core fields used when the tenant was created."
+              value={formValue}
+              onChange={setFormValue}
+              onSubmit={handleSave}
+              onCancel={() => setIsEditing(false)}
+              loading={updateTenantMutation.isPending}
+              submitLabel="Save Changes"
+            />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <Card className="border-border/50">
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Employees</p>
-                      <p className="text-2xl font-bold">{stats.employeeCount}</p>
+                      <p className="text-2xl font-bold">
+                        {tenant.currentEmployeeCount ?? stats.employeeCount ?? 0}
+                      </p>
                     </div>
-                    <div className="p-2 rounded-lg bg-emerald-500/10">
-                      <Users className="h-5 w-5 text-emerald-500" />
-                    </div>
+                    <Users className="h-5 w-5 text-cyan-500" />
                   </div>
                 </CardContent>
               </Card>
@@ -267,12 +292,25 @@ export default function TenantDetail() {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm text-muted-foreground">Max Employees</p>
-                      <p className="text-2xl font-bold">{tenant.limits?.maxEmployees || "-"}</p>
+                      <p className="text-sm text-muted-foreground">Platform Users</p>
+                      <p className="text-2xl font-bold">{stats.memberCount}</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-violet-500/10">
-                      <BarChart3 className="h-5 w-5 text-violet-500" />
+                    <Users className="h-5 w-5 text-emerald-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card className="border-border/50">
+                <CardContent className="p-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Monthly Subscription</p>
+                      <p className="text-2xl font-bold">
+                        {typeof tenant.monthlySubscriptionAmount === "number"
+                          ? `$${tenant.monthlySubscriptionAmount.toFixed(2)}`
+                          : "-"}
+                      </p>
                     </div>
+                    <CreditCard className="h-5 w-5 text-violet-500" />
                   </div>
                 </CardContent>
               </Card>
@@ -281,178 +319,94 @@ export default function TenantDetail() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-muted-foreground">Created</p>
-                      <p className="text-lg font-bold">{formatDate(tenant.createdAt)}</p>
+                      <p className="text-lg font-bold">{formatDateValue(tenant.createdAt)}</p>
                     </div>
-                    <div className="p-2 rounded-lg bg-amber-500/10">
-                      <Calendar className="h-5 w-5 text-amber-500" />
-                    </div>
+                    <Calendar className="h-5 w-5 text-amber-500" />
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Details */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid gap-6 xl:grid-cols-2">
               <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Tenant Information</CardTitle>
+                  <CardTitle>Organization profile</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Building2 className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Slug</p>
-                      <p className="font-medium">{tenant.slug || "-"}</p>
-                    </div>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Organization Name</p>
+                    <p className="font-medium">{tenant.name || "-"}</p>
                   </div>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Billing Email</p>
-                      <p className="font-medium">{tenant.billingEmail || "-"}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Trading Name</p>
+                    <p className="font-medium">{tenant.tradingName || "-"}</p>
                   </div>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Stripe Customer ID</p>
-                      <p className="font-medium font-mono text-sm">
-                        {tenant.stripeCustomerId || "-"}
-                      </p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tin Number</p>
+                    <p className="font-medium">{tenant.tinNumber || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Phone Number</p>
+                    <p className="font-medium">{tenant.phone || "-"}</p>
+                  </div>
+                  <div className="sm:col-span-2">
+                    <p className="text-sm text-muted-foreground">Address</p>
+                    <p className="font-medium">{tenant.address || "-"}</p>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-lg">Configuration</CardTitle>
+                  <CardTitle>Subscription and contacts</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Globe className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Timezone</p>
-                      <p className="font-medium">{tenant.settings?.timezone || "Not set"}</p>
-                    </div>
+                <CardContent className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Owner Email</p>
+                    <p className="font-medium">{tenant.ownerEmail || "-"}</p>
                   </div>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <CreditCard className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Currency</p>
-                      <p className="font-medium">{tenant.settings?.currency || "Not set"}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Billing Email</p>
+                    <p className="font-medium">{tenant.billingEmail || "-"}</p>
                   </div>
-                  <Separator />
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-muted">
-                      <Settings className="h-4 w-4 text-muted-foreground" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-muted-foreground">Date Format</p>
-                      <p className="font-medium">{tenant.settings?.dateFormat || "Not set"}</p>
-                    </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Current Number of Employees</p>
+                    <p className="font-medium">{tenant.currentEmployeeCount ?? stats.employeeCount ?? 0}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Subscription Plan</p>
+                    <p className="font-medium">{tenant.plan}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">PaidUntil</p>
+                    <p className="font-medium">{formatDateValue(tenant.subscriptionPaidUntil)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-muted-foreground">Machine ID</p>
+                    <p className="font-medium">{tenant.id}</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Features */}
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Enabled Features</CardTitle>
-                <CardDescription>Features available to this tenant</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex flex-wrap gap-2">
-                  {tenant.features?.hiring && (
-                    <Badge className="bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                      Hiring
-                    </Badge>
-                  )}
-                  {tenant.features?.timeleave && (
-                    <Badge className="bg-cyan-500/10 text-cyan-600 border border-cyan-500/20">
-                      Time & Leave
-                    </Badge>
-                  )}
-                  {tenant.features?.performance && (
-                    <Badge className="bg-orange-500/10 text-orange-600 border border-orange-500/20">
-                      Performance
-                    </Badge>
-                  )}
-                  {tenant.features?.payroll && (
-                    <Badge className="bg-green-500/10 text-green-600 border border-green-500/20">
-                      Payroll
-                    </Badge>
-                  )}
-                  {tenant.features?.money && (
-                    <Badge className="bg-indigo-500/10 text-indigo-600 border border-indigo-500/20">
-                      Money
-                    </Badge>
-                  )}
-                  {tenant.features?.accounting && (
-                    <Badge className="bg-sky-500/10 text-sky-600 border border-sky-500/20">
-                      Accounting
-                    </Badge>
-                  )}
-                  {tenant.features?.reports && (
-                    <Badge className="bg-violet-500/10 text-violet-600 border border-violet-500/20">
-                      Reports
-                    </Badge>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Suspension Info */}
             {tenant.status === "suspended" && tenant.suspendedReason && (
               <Card className="border-red-500/20 bg-red-500/5">
                 <CardHeader>
-                  <CardTitle className="text-lg text-red-600">Suspension Details</CardTitle>
+                  <CardTitle className="text-red-600">Suspension details</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <p>
                     <span className="text-muted-foreground">Reason:</span> {tenant.suspendedReason}
                   </p>
                   <p>
-                    <span className="text-muted-foreground">Suspended:</span>{" "}
-                    {formatDate(tenant.suspendedAt)}
+                    <span className="text-muted-foreground">Suspended on:</span>{" "}
+                    {formatDateValue(tenant.suspendedAt)}
                   </p>
                 </CardContent>
               </Card>
             )}
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <Card className="border-border/50">
-              <CardHeader>
-                <CardTitle className="text-lg">Tenant Settings</CardTitle>
-                <CardDescription>
-                  Settings management coming soon. Use Firebase Console for now.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">
-                  Advanced settings like plan changes, feature toggles, and billing management will
-                  be available in a future update.
-                </p>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );

@@ -28,13 +28,13 @@ import { useTenant } from "@/contexts/TenantContext";
  * Full class names so Tailwind's purge can find them.
  */
 const activeStyles: Record<SectionId, string> = {
-  dashboard: "border-primary text-primary dark:text-primary",
-  people:    "border-blue-500 text-blue-600 dark:text-blue-400",
-  scheduling:"border-cyan-500 text-cyan-600 dark:text-cyan-400",
-  payroll:   "border-primary text-primary dark:text-primary",
-  money:     "border-indigo-500 text-indigo-600 dark:text-indigo-400",
-  accounting:"border-orange-500 text-orange-600 dark:text-orange-400",
-  reports:   "border-violet-500 text-violet-600 dark:text-violet-400",
+  dashboard: "border-primary/40 bg-primary/12 text-primary dark:border-primary/30 dark:bg-primary/15 dark:text-primary",
+  people:    "border-blue-500/40 bg-blue-500/12 text-blue-700 dark:border-blue-400/30 dark:bg-blue-500/15 dark:text-blue-300",
+  scheduling:"border-cyan-500/40 bg-cyan-500/12 text-cyan-700 dark:border-cyan-400/30 dark:bg-cyan-500/15 dark:text-cyan-300",
+  payroll:   "border-primary/40 bg-primary/12 text-primary dark:border-primary/30 dark:bg-primary/15 dark:text-primary",
+  money:     "border-indigo-500/40 bg-indigo-500/12 text-indigo-700 dark:border-indigo-400/30 dark:bg-indigo-500/15 dark:text-indigo-300",
+  accounting:"border-orange-500/40 bg-orange-500/12 text-orange-700 dark:border-orange-400/30 dark:bg-orange-500/15 dark:text-orange-300",
+  reports:   "border-violet-500/40 bg-violet-500/12 text-violet-700 dark:border-violet-400/30 dark:bg-violet-500/15 dark:text-violet-300",
 };
 
 interface ModuleSectionNavProps {
@@ -117,13 +117,12 @@ function NavTabButton({
     <button
       onClick={onClick}
       className={`
-        flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap
-        border-b-2 transition-colors
+        flex items-center gap-2 rounded-md border px-4 py-2.5 text-sm whitespace-nowrap transition-colors
         ${tab.active
-          ? `${activeClass} font-medium`
+          ? `${activeClass} font-semibold shadow-sm`
           : tab.isAnchor
-            ? "border-transparent text-muted-foreground hover:text-foreground hover:border-border font-medium"
-            : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+            ? "border-transparent text-muted-foreground hover:border-border hover:bg-accent/40 hover:text-foreground font-medium"
+            : "border-transparent text-muted-foreground hover:border-border hover:bg-accent/40 hover:text-foreground"
         }
       `}
     >
@@ -155,7 +154,7 @@ function ModuleSectionNavInner({ config, mode }: ModuleSectionNavProps) {
   return (
     <div className="border-b bg-background/80 backdrop-blur-sm sticky top-0 z-10">
       <div className="max-w-7xl mx-auto px-6">
-        <nav className="flex gap-1 -mb-px overflow-x-auto" aria-label={`${visibleConfig.moduleId} sections`}>
+        <nav className="flex gap-2 overflow-x-auto py-2" aria-label={`${visibleConfig.moduleId} sections`}>
           {tabs.map((tab) => (
             <NavTabButton key={tab.key} tab={tab} activeClass={activeClass} onClick={() => navigate(tab.path)} />
           ))}

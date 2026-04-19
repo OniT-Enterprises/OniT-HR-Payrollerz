@@ -103,7 +103,7 @@ export interface ModuleNavConfig {
 export const peopleNavConfig: ModuleNavConfig = {
   moduleId: "people",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/people",
     icon: LayoutDashboard,
     requiredAnyModules: ["staff", "hiring", "performance"],
@@ -180,7 +180,7 @@ export const peopleNavConfig: ModuleNavConfig = {
 export const timeLeaveNavConfig: ModuleNavConfig = {
   moduleId: "scheduling",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/time-leave",
     icon: LayoutDashboard,
   },
@@ -241,7 +241,7 @@ export const timeLeaveNavConfig: ModuleNavConfig = {
 export const payrollNavConfig: ModuleNavConfig = {
   moduleId: "payroll",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/payroll",
     icon: LayoutDashboard,
   },
@@ -281,7 +281,7 @@ export const payrollNavConfig: ModuleNavConfig = {
       path: "/payroll/tax",
       matchPaths: ["/payroll/tax", "/payroll/tax/monthly-wit", "/payroll/tax/inss-monthly", "/payroll/tax/inss-annual"],
       subPages: [
-        { label: "Overview", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
+        { label: "Dashboard", labelKey: "taxInss", path: "/payroll/tax", icon: FileSpreadsheet },
         { label: "Monthly WIT", labelKey: "monthlyWit", path: "/payroll/tax/monthly-wit", icon: FileSpreadsheet },
         { label: "Monthly INSS", labelKey: "monthlyInss", path: "/payroll/tax/inss-monthly", icon: FileText },
         { label: "Annual INSS", labelKey: "annualInss", path: "/payroll/tax/inss-annual", icon: CalendarRange },
@@ -312,7 +312,7 @@ export const payrollNavConfig: ModuleNavConfig = {
 export const moneyNavConfig: ModuleNavConfig = {
   moduleId: "money",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/money",
     icon: LayoutDashboard,
   },
@@ -388,7 +388,7 @@ export const moneyNavConfig: ModuleNavConfig = {
 export const accountingNavConfig: ModuleNavConfig = {
   moduleId: "accounting",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/accounting",
     icon: LayoutDashboard,
   },
@@ -462,7 +462,7 @@ export const accountingNavConfig: ModuleNavConfig = {
 export const reportsNavConfig: ModuleNavConfig = {
   moduleId: "reports",
   overview: {
-    label: "Overview",
+    label: "Dashboard",
     path: "/reports",
     icon: LayoutDashboard,
   },

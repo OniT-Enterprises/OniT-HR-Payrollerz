@@ -15,6 +15,9 @@ export const paths = {
   // Admin audit log (superadmin actions)
   adminAuditLog: () => 'adminAuditLog',
   adminAuditEntry: (entryId: string) => `adminAuditLog/${entryId}`,
+  superAdminRequests: () => 'superAdminRequests',
+  superAdminRequest: (requestId: string) => `superAdminRequests/${requestId}`,
+  packagesConfig: () => 'platform/packagesConfig',
   
   // Tenant-scoped paths
   tenant: (tid: string) => `tenants/${tid}`,
