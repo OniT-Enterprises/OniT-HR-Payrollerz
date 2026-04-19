@@ -1,38 +1,47 @@
 /**
- * Thin client wrapper around the hrChat Cloud Function.
- * Uses the existing OpenAI proxy — keeps API keys server-side.
+ * Client helpers for AI-assisted writing features.
+ * Routes through the Meza API's /ai/compose endpoint, which relays to the
+ * OpenClaw bot gateway — keeping all model credentials server-side and sharing
+ * the same infrastructure as the chat widget.
  */
 
-import { getFunctionsLazy } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 
-interface ChatMessage {
-  role: "system" | "user" | "assistant";
-  content: string;
-}
+const API_BASE = import.meta.env.VITE_MEZA_API_URL || "https://meza.naroman.tl";
 
-interface HRChatResponse {
-  success: boolean;
-  message: string;
-  action?: unknown;
-}
-
-export async function callHRChat(params: {
+async function callComposeEndpoint(params: {
   tenantId: string;
-  messages: ChatMessage[];
-  maxTokens?: number;
+  systemPrompt: string;
+  userPrompt: string;
+  purpose: string;
 }): Promise<string> {
-  const { httpsCallable } = await import("firebase/functions");
-  const hrChat = httpsCallable<
-    { tenantId: string; messages: ChatMessage[]; maxTokens?: number },
-    HRChatResponse
-  >(await getFunctionsLazy(), "hrChat");
+  const user = auth?.currentUser;
+  if (!user) throw new Error("You must be signed in to use AI features.");
+  const token = await user.getIdToken();
 
-  const result = await hrChat(params);
-  const data = result.data;
-  if (!data?.success) {
-    throw new Error("AI request failed");
+  const res = await fetch(`${API_BASE}/api/tenants/${params.tenantId}/ai/compose`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      systemPrompt: params.systemPrompt,
+      userPrompt: params.userPrompt,
+      purpose: params.purpose,
+    }),
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    throw new Error(body.message || `Compose request failed (HTTP ${res.status}).`);
   }
-  return data.message;
+
+  const data = await res.json();
+  if (!data?.success || typeof data.reply !== "string") {
+    throw new Error("AI returned an empty response.");
+  }
+  return data.reply.trim();
 }
 
 export async function polishJobDescription(params: {
@@ -43,10 +52,11 @@ export async function polishJobDescription(params: {
   location?: string;
 }): Promise<string> {
   const { tenantId, title, rough, department, location } = params;
+
   const systemPrompt = [
     "You polish job descriptions for Timor-Leste employers.",
-    "Return ONLY JSON of the form {\"message\": \"<polished description>\"}.",
-    "The description should have short paragraphs and bullet points.",
+    "Return the polished description as plain prose only — no preamble, no JSON wrapper, no code fences.",
+    "Use short paragraphs and bullet points.",
     "Include: role summary, key responsibilities, requirements, and nice-to-haves.",
     "Keep it professional, plain English, 150–300 words. No emojis.",
   ].join(" ");
@@ -62,13 +72,11 @@ export async function polishJobDescription(params: {
     .filter(Boolean)
     .join("\n");
 
-  return callHRChat({
+  return callComposeEndpoint({
     tenantId,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    maxTokens: 800,
+    systemPrompt,
+    userPrompt,
+    purpose: "polish-job-description",
   });
 }
 
@@ -79,9 +87,10 @@ export async function customizeHandbook(params: {
   baseHandbook: string;
 }): Promise<string> {
   const { tenantId, companyName, industry, baseHandbook } = params;
+
   const systemPrompt = [
     "You adapt a generic employee handbook for a specific Timor-Leste employer.",
-    "Return ONLY JSON of the form {\"message\": \"<customized handbook in markdown>\"}.",
+    "Return the customised handbook in markdown only — no preamble, no JSON wrapper, no code fences.",
     "Preserve the structure (sections & headings). Replace placeholders with the company name and industry-appropriate details.",
     "Keep the tone professional and friendly. Stay under 1500 words.",
   ].join(" ");
@@ -96,12 +105,10 @@ export async function customizeHandbook(params: {
     .filter(Boolean)
     .join("\n");
 
-  return callHRChat({
+  return callComposeEndpoint({
     tenantId,
-    messages: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
-    maxTokens: 2000,
+    systemPrompt,
+    userPrompt,
+    purpose: "customise-handbook",
   });
 }

@@ -232,7 +232,7 @@ export default function CreateJobLocal() {
         description:
           error instanceof Error
             ? error.message
-            : "Could not reach AI service. Check OpenAI key in Settings.",
+            : "Could not reach the Meza AI bot. Try again in a moment.",
         variant: "destructive",
       });
     } finally {
@@ -243,8 +243,8 @@ export default function CreateJobLocal() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6 lg:p-8">
-          <div className="max-w-5xl">
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
+          <div>
             <div className="relative overflow-hidden rounded-2xl border border-border/50 bg-card mb-8">
               <div className="p-8">
                 <div className="flex items-start gap-4">
@@ -287,7 +287,7 @@ export default function CreateJobLocal() {
   if (deptError) {
     return (
       <div className="min-h-screen bg-background">
-        <div className="p-6 lg:p-8 max-w-5xl">
+        <div className="mx-auto max-w-screen-2xl px-6 py-5">
           <Card className="border-destructive/50 bg-destructive/5">
             <CardContent className="pt-6">
               <p className="text-destructive">{t("hiring.createJob.errors.loadDepartments")}</p>
@@ -318,7 +318,7 @@ export default function CreateJobLocal() {
           iconColor="text-blue-500"
         />
 
-        <div className="mt-6 max-w-5xl">
+        <div className="mt-6">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Advert Basics — outward-facing only */}
             <Card className="border-border/50 animate-fade-up stagger-1">

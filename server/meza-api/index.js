@@ -4494,6 +4494,62 @@ app.post('/api/tenants/:tenantId/chat-stream', chatLimiter, authenticateFirebase
 });
 
 // ============================================================================
+// POST /api/tenants/:tenantId/ai/compose — one-shot text generation via OpenClaw
+// ============================================================================
+// Single-turn, no session memory, no tools. Used for "Write with AI" style
+// features (polish job description, customise handbook, etc.) where the
+// frontend wants a clean string back rather than an agent turn.
+
+app.post('/api/tenants/:tenantId/ai/compose', chatLimiter, authenticateFirebaseToken, async (req, res) => {
+  const requestId = genId();
+  const { tenantId } = req.params;
+
+  if (ALLOWED_TENANT_ID) {
+    const allowed = ALLOWED_TENANT_ID.split(',').map(s => s.trim());
+    if (!allowed.includes(tenantId)) {
+      return res.status(403).json({ success: false, message: 'Access denied for this tenant', requestId });
+    }
+  }
+
+  if (!OPENCLAW_PASSWORD) {
+    return res.status(503).json({ success: false, message: 'Compose unavailable — gateway not configured', requestId });
+  }
+
+  req.setTimeout(120000);
+
+  try {
+    const { systemPrompt, userPrompt, purpose } = req.body || {};
+    if (typeof systemPrompt !== 'string' || !systemPrompt.trim()) {
+      return res.status(400).json({ success: false, message: 'systemPrompt is required', requestId });
+    }
+    if (typeof userPrompt !== 'string' || !userPrompt.trim()) {
+      return res.status(400).json({ success: false, message: 'userPrompt is required', requestId });
+    }
+
+    const safePurpose = (purpose || 'compose').toString().replace(/[^a-zA-Z0-9_-]/g, '').slice(0, 40) || 'compose';
+    // Ephemeral session per request — keeps compose calls out of the user's chat history.
+    const sessionKey = `agent:main:${tenantId}:compose-${safePurpose}-${req.user.uid}-${requestId}`;
+
+    const message = [
+      '[COMPOSE MODE — respond with the finished text only, no preamble, no tool use]',
+      '',
+      systemPrompt.slice(0, 4000).trim(),
+      '',
+      '---',
+      '',
+      userPrompt.slice(0, 8000).trim(),
+    ].join('\n');
+
+    const { reply } = await openClawChat(message, sessionKey);
+
+    res.json({ success: true, reply, requestId });
+  } catch (error) {
+    console.error(`[${requestId}] Compose error:`, error.message);
+    res.status(502).json({ success: false, message: error.message || 'Compose failed', requestId });
+  }
+});
+
+// ============================================================================
 // Mount router (API-key-protected routes — AFTER chat endpoint so chat uses Firebase token auth instead)
 // ============================================================================
 
