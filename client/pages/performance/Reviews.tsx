@@ -39,7 +39,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   PerformanceReview,
@@ -385,7 +384,6 @@ export default function Reviews() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6">
           <div className="flex items-center gap-3 mb-6">
             <Skeleton className="h-8 w-8 rounded" />
@@ -413,7 +411,6 @@ export default function Reviews() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.reviews} />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader

@@ -13,8 +13,8 @@ import AppSidebar from "./AppSidebar";
 import TopBar from "./TopBar";
 
 // Routes that should NOT show the sidebar layout
-const PUBLIC_PATHS = ["/auth/", "/landing", "/features", "/unauthorized"];
-const ADMIN_PATHS = ["/admin/"];
+const PUBLIC_PATHS = ["/auth/", "/landing", "/features", "/unauthorized", "/apply/"];
+const ADMIN_PATHS = ["/admin"];
 
 interface AppLayoutProps {
   children: React.ReactNode;

@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -259,10 +258,9 @@ export default function CandidateSelection() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.candidates} />
-      <MainNavigation />
 
       {/* Main Content */}
-      <div className="mx-auto max-w-screen-2xl px-6 py-5">
+      <div className="max-w-screen-2xl px-6 py-5">
         <PageHeader
           title={t("hiring.candidates.title")}
           subtitle={t("hiring.candidates.subtitle")}
@@ -531,8 +529,8 @@ export default function CandidateSelection() {
         <Card className="border-border/50 animate-fade-up stagger-1">
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-                <Users className="h-5 w-5 text-emerald-600" />
+              <div className="p-2 rounded-lg bg-blue-500/10">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
               {t("hiring.candidates.list.title")}
             </CardTitle>

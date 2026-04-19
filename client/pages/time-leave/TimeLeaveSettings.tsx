@@ -6,7 +6,6 @@
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { TimeOffPoliciesTab } from "@/components/settings/TimeOffPoliciesTab";
 import { SEO } from "@/components/SEO";
@@ -43,7 +42,6 @@ export default function TimeLeaveSettings() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-6 py-6">
           <Skeleton className="h-8 w-48 mb-6" />
           <Skeleton className="h-96 w-full rounded-2xl" />
@@ -55,7 +53,6 @@ export default function TimeLeaveSettings() {
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Time & Leave Settings | Meza" description="Configure leave policies per Timor-Leste labor law" />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader

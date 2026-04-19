@@ -32,7 +32,12 @@ export interface Job {
   employmentType?: string;
   contractType?: string;
   contractDuration?: string;
+  contractDurationMonths?: number;
+  // Free-text legacy field; new code derives from contract type + months.
   probationPeriod?: string;
+  // For permanent roles, HR picks 30 or 90 days (complex/managerial).
+  permanentProbation?: "30_days" | "90_days";
+  probationDays?: number;
   status: JobStatus;
   postedDate?: string;
   closingDate?: string;

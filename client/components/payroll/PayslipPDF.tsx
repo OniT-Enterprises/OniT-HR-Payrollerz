@@ -18,7 +18,7 @@ import { PayrollRecord, PayrollRun } from '@/types/payroll';
 // Tetum translations for payslip labels so TL workers can read their payslips
 // ============================================================
 
-type PayslipLocale = 'en' | 'tet';
+type PayslipLocale = 'en' | 'tet' | 'pt';
 
 const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
   en: {
@@ -65,6 +65,30 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     perMonth: '/month',
     footer: 'This is a computer-generated document. No signature is required.',
     footerContact: 'For questions about your pay, please contact HR at',
+    // Combined line-items table
+    code: 'Code',
+    ref: 'Ref.',
+    earningsCol: 'Earnings',
+    deductionsCol: 'Deductions',
+    totalEarnings: 'Total Earnings',
+    // Header
+    monthOf: 'Month of',
+    payslipTitleRow: 'Salary Payment Receipt',
+    // Audit row at bottom
+    auditBaseSalary: 'Base Salary',
+    auditAbsences: 'Absences',
+    auditCommissions: 'Commissions',
+    auditAllowances: 'Allowances',
+    auditTaxableBase: 'Taxable Base',
+    auditTaxOfMonth: 'Tax of Month',
+    auditSocialSecurity: 'Social Security',
+    auditOtherDeductions: 'Other Deductions',
+    // Signature block
+    copyMark: 'COPY',
+    signatureDeclaration:
+      'I acknowledge receipt of the net amount itemised in this pay slip.',
+    signatureLabel: 'EMPLOYEE SIGNATURE',
+    signatureDate: 'Date:',
   },
   tet: {
     title: 'DEKLARASAUN RENDIMENTU',
@@ -110,6 +134,93 @@ const payslipStrings: Record<PayslipLocale, Record<string, string>> = {
     perMonth: '/fulan',
     footer: 'Dokumentu ne\'e halo husi komputador. La presiza asinatura.',
     footerContact: 'Se iha dúvida kona-ba ita-nia pagamentu, kontaktu RH iha',
+    code: 'Kódigu',
+    ref: 'Ref.',
+    earningsCol: 'Rendimentu',
+    deductionsCol: 'Dedusaun',
+    totalEarnings: 'Rendimentu Totál',
+    monthOf: 'Fulan',
+    payslipTitleRow: 'Resibu Pagamentu Saláriu',
+    auditBaseSalary: 'Saláriu Báziku',
+    auditAbsences: 'Falta',
+    auditCommissions: 'Komisaun',
+    auditAllowances: 'Subsídiu',
+    auditTaxableBase: 'Báze Impostu',
+    auditTaxOfMonth: 'Impostu Fulan',
+    auditSocialSecurity: 'Seguransa Sosiál',
+    auditOtherDeductions: 'Dedusaun Seluk',
+    copyMark: 'KÓPIA',
+    signatureDeclaration:
+      'Hau rekonese simu montante líkidu ne\'ebé deskrimina iha resibu ne\'e.',
+    signatureLabel: 'ASINATURA TRABALHADOR',
+    signatureDate: 'Data:',
+  },
+  pt: {
+    title: 'RECIBO DE VENCIMENTO',
+    payDate: 'Data de Pagamento:',
+    period: 'Período:',
+    employeeInfo: 'Informação do Trabalhador',
+    name: 'Nome:',
+    employeeId: 'Código Trabalhador:',
+    department: 'Departamento:',
+    position: 'Cargo:',
+    payInfo: 'Informação de Pagamento',
+    payFrequency: 'Frequência:',
+    hourlyRate: 'Valor Hora:',
+    overtimeRate: 'Valor Hora Extra:',
+    regular: 'REGULAR',
+    overtime: 'HORAS EXTRAS',
+    doubleTime: 'DOBRO',
+    holiday: 'FERIADO',
+    ptoUsed: 'FÉRIAS',
+    sickUsed: 'DOENÇA',
+    hrs: 'h',
+    earnings: 'Vencimentos',
+    description: 'Descrição',
+    hours: 'Horas',
+    rate: 'Taxa',
+    amount: 'Montante',
+    grossPay: 'Vencimento Bruto',
+    deductions: 'Descontos',
+    preTax: '(Pré-impostos)',
+    totalDeductions: 'Total de Descontos',
+    netPay: 'Valor Líquido',
+    ytdSummary: 'Resumo Ano Atual',
+    ytdGrossPay: 'Bruto Acumulado',
+    ytdNetPay: 'Líquido Acumulado',
+    ytdWIT: 'Imposto Acumulado',
+    ytdINSS: 'INSS Acumulado (Trabalhador)',
+    employerContributions: 'Contribuições do Empregador',
+    employerINSS: 'INSS Empregador (6%)',
+    totalEmployerCost: 'Custo Total do Empregador',
+    employerNote:
+      'As contribuições abaixo são pagas pelo empregador e não são descontadas do seu vencimento.',
+    subsidioAnualAccrual: 'Acumulação do 13.º Mês',
+    subsidioAnualNote:
+      'Acumulação mensal do Subsídio Anual (13.º mês), pago anualmente.',
+    perMonth: '/mês',
+    footer: 'Este documento é gerado por computador. Não requer assinatura.',
+    footerContact: 'Para dúvidas sobre o seu pagamento contacte RH em',
+    code: 'Cód.',
+    ref: 'Ref.',
+    earningsCol: 'Vencimentos',
+    deductionsCol: 'Descontos',
+    totalEarnings: 'Total de Vencimentos',
+    monthOf: 'Mês de',
+    payslipTitleRow: 'Recibo de Pagamento de Salário',
+    auditBaseSalary: 'Salário Base',
+    auditAbsences: 'Faltas',
+    auditCommissions: 'Comissões',
+    auditAllowances: 'Subsídios',
+    auditTaxableBase: 'Base Impostos',
+    auditTaxOfMonth: 'Imposto do Mês',
+    auditSocialSecurity: 'Seg. Social',
+    auditOtherDeductions: 'Descontos',
+    copyMark: 'CÓPIA',
+    signatureDeclaration:
+      'Declaro ter recebido a importância líquida discriminada neste recibo.',
+    signatureLabel: 'ASSINATURA DO FUNCIONÁRIO',
+    signatureDate: 'Data:',
   },
 };
 
@@ -388,7 +499,180 @@ const styles = StyleSheet.create({
     width: '30%',
     textAlign: 'right',
   },
+  // Copy watermark (top-right)
+  copyMark: {
+    position: 'absolute',
+    top: 20,
+    right: 40,
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#9ca3af',
+    letterSpacing: 2,
+  },
+  // "Mês de [Month Year]" prominent header box
+  monthBox: {
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    backgroundColor: '#e5e7eb',
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  monthLabel: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#374151',
+  },
+  monthValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginTop: 2,
+  },
+  // Title banner across the page
+  titleBanner: {
+    backgroundColor: '#1e40af',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    marginBottom: 10,
+  },
+  titleBannerText: {
+    color: '#ffffff',
+    fontSize: 12,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  // Combined line-items table
+  combinedHeader: {
+    flexDirection: 'row',
+    backgroundColor: '#f3f4f6',
+    padding: 5,
+    borderBottomWidth: 1,
+    borderBottomColor: '#d1d5db',
+    marginTop: 4,
+  },
+  combinedRow: {
+    flexDirection: 'row',
+    paddingVertical: 3,
+    paddingHorizontal: 5,
+    borderBottomWidth: 0.5,
+    borderBottomColor: '#f3f4f6',
+  },
+  combinedCell: {
+    fontSize: 9,
+    color: '#111827',
+  },
+  codeCol: { width: '10%' },
+  descCombinedCol: { width: '45%' },
+  refCol: { width: '10%', textAlign: 'right' as const },
+  earnCol: { width: '17.5%', textAlign: 'right' as const },
+  dedCol: { width: '17.5%', textAlign: 'right' as const },
+  combinedTotalRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    paddingHorizontal: 5,
+    backgroundColor: '#f3f4f6',
+    marginTop: 2,
+    borderTopWidth: 1,
+    borderTopColor: '#9ca3af',
+  },
+  // Bottom audit-trail row
+  auditSection: {
+    marginTop: 14,
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    paddingTop: 6,
+  },
+  auditHeaderRow: {
+    flexDirection: 'row',
+    paddingVertical: 3,
+  },
+  auditValueRow: {
+    flexDirection: 'row',
+    paddingVertical: 4,
+    backgroundColor: '#f9fafb',
+  },
+  auditCell: {
+    flex: 1,
+    fontSize: 8,
+    textAlign: 'center',
+    color: '#374151',
+  },
+  auditCellHeader: {
+    flex: 1,
+    fontSize: 7,
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+    textAlign: 'center',
+    color: '#6b7280',
+  },
+  // Signature block
+  signatureBlock: {
+    marginTop: 18,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 4,
+  },
+  signatureDeclaration: {
+    fontSize: 9,
+    color: '#374151',
+    marginBottom: 18,
+    fontStyle: 'italic',
+  },
+  signatureRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-end',
+    gap: 20,
+  },
+  signatureLineBox: {
+    flex: 1,
+    borderBottomWidth: 1,
+    borderBottomColor: '#111827',
+    paddingBottom: 2,
+    minHeight: 24,
+  },
+  signatureCaption: {
+    fontSize: 7,
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    marginTop: 4,
+    letterSpacing: 1,
+  },
+  signatureDateBox: {
+    minWidth: 120,
+  },
 });
+
+// TL payslip codes — short codes commonly used on TL Portuguese payslips.
+const EARNING_CODES: Record<string, string> = {
+  regular: 'SL_B',
+  overtime: 'C_O',
+  double_time: 'HD',
+  holiday: 'FER',
+  bonus: 'BON',
+  subsidio_anual: 'SB_A',
+  commission: 'COM',
+  tip: 'GOR',
+  reimbursement: 'REM',
+  allowance: 'SUB',
+  other: 'OUT',
+};
+
+const DEDUCTION_CODES: Record<string, string> = {
+  income_tax: 'IMP',
+  inss_employee: 'S_S',
+  inss_employer: 'S_S_E',
+  absence: 'F_L',
+  late_arrival: 'ATR',
+  loan_repayment: 'EMP',
+  advance_repayment: 'AD',
+  court_order: 'OJ',
+  health_insurance: 'HS',
+  life_insurance: 'LS',
+  other: 'OU_DS',
+};
 
 // Format currency for PDF
 const formatCurrency = (amount: number): string => {
@@ -399,6 +683,21 @@ const formatCurrency = (amount: number): string => {
 const formatDate = (dateString: string): string => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-GB', { year: 'numeric', month: 'long', day: 'numeric', timeZone: 'Asia/Dili' });
+};
+
+// Format month label — "February 2026" / "Fulan Fevereiru 2026" / "Fevereiro 2026"
+const formatMonth = (dateString: string, language: PayslipLocale): string => {
+  const date = new Date(dateString);
+  const localeMap: Record<PayslipLocale, string> = {
+    en: 'en-GB',
+    tet: 'pt-PT',
+    pt: 'pt-PT',
+  };
+  return date.toLocaleDateString(localeMap[language], {
+    month: 'long',
+    year: 'numeric',
+    timeZone: 'Asia/Dili',
+  });
 };
 
 // Format pay period
@@ -432,6 +731,8 @@ function PayslipHeader({
   companyEmail,
   payrollRun,
   s,
+  language,
+  isCopy,
 }: {
   companyName: string;
   companyAddress: string;
@@ -439,20 +740,31 @@ function PayslipHeader({
   companyEmail: string;
   payrollRun: PayrollRun;
   s: PayslipStrings;
+  language: PayslipLocale;
+  isCopy?: boolean;
 }) {
+  const monthLabel = formatMonth(payrollRun.payDate, language);
   return (
-    <View style={styles.header}>
-      <View>
-        <Text style={styles.companyName}>{companyName}</Text>
-        <Text style={styles.companyInfo}>{companyAddress}</Text>
-        <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
+    <>
+      {isCopy && <Text style={styles.copyMark}>{s.copyMark}</Text>}
+      <View style={styles.header}>
+        <View>
+          <Text style={styles.companyName}>{companyName}</Text>
+          <Text style={styles.companyInfo}>{companyAddress}</Text>
+          <Text style={styles.companyInfo}>{companyPhone} | {companyEmail}</Text>
+        </View>
+        <View style={styles.monthBox}>
+          <Text style={styles.monthLabel}>{s.monthOf}</Text>
+          <Text style={styles.monthValue}>{monthLabel}</Text>
+          <Text style={[styles.payslipSubtitle, { marginTop: 4 }]}>
+            {s.payDate} {formatDate(payrollRun.payDate)}
+          </Text>
+        </View>
       </View>
-      <View>
-        <Text style={styles.payslipTitle}>{s.title}</Text>
-        <Text style={styles.payslipSubtitle}>{s.payDate} {formatDate(payrollRun.payDate)}</Text>
-        <Text style={styles.payslipSubtitle}>{s.period} {formatPayPeriod(payrollRun.periodStart, payrollRun.periodEnd)}</Text>
+      <View style={styles.titleBanner}>
+        <Text style={styles.titleBannerText}>{s.payslipTitleRow}</Text>
       </View>
-    </View>
+    </>
   );
 }
 
@@ -783,6 +1095,187 @@ function PayslipFooter({
   );
 }
 
+/**
+ * CombinedLineItemsTable — TL-style single table with earnings + deductions
+ * flowing into their respective columns. Matches the example payslip layout
+ * where every line shows: Cód | Descrição | Ref | Vencimentos | Descontos.
+ */
+function CombinedLineItemsTable({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  type Row = {
+    code: string;
+    description: string;
+    ref?: string;
+    earning?: number;
+    deduction?: number;
+  };
+
+  const earnings: Row[] = record.earnings.map((e) => ({
+    code: EARNING_CODES[e.type] || 'OUT',
+    description: e.description,
+    ref: e.hours ? `${e.hours.toFixed(2)} ${s.hrs}` : undefined,
+    earning: e.amount,
+  }));
+
+  const deductions: Row[] = record.deductions.map((d) => ({
+    code: DEDUCTION_CODES[d.type] || 'OU_DS',
+    description: d.description,
+    deduction: d.amount,
+  }));
+
+  const rows: Row[] = [...earnings, ...deductions];
+
+  return (
+    <View style={{ marginTop: 4 }}>
+      <View style={styles.combinedHeader}>
+        <Text style={[styles.tableHeaderText, styles.codeCol]}>{s.code}</Text>
+        <Text style={[styles.tableHeaderText, styles.descCombinedCol]}>{s.description}</Text>
+        <Text style={[styles.tableHeaderText, styles.refCol]}>{s.ref}</Text>
+        <Text style={[styles.tableHeaderText, styles.earnCol]}>{s.earningsCol}</Text>
+        <Text style={[styles.tableHeaderText, styles.dedCol]}>{s.deductionsCol}</Text>
+      </View>
+      {rows.map((row, idx) => (
+        <View key={idx} style={styles.combinedRow}>
+          <Text style={[styles.combinedCell, styles.codeCol, { fontWeight: 'bold' }]}>
+            {row.code}
+          </Text>
+          <Text style={[styles.combinedCell, styles.descCombinedCol]}>{row.description}</Text>
+          <Text style={[styles.combinedCell, styles.refCol, { color: '#6b7280' }]}>
+            {row.ref || ''}
+          </Text>
+          <Text style={[styles.combinedCell, styles.earnCol]}>
+            {row.earning !== undefined ? formatCurrency(row.earning) : ''}
+          </Text>
+          <Text style={[styles.combinedCell, styles.dedCol]}>
+            {row.deduction !== undefined ? formatCurrency(row.deduction) : ''}
+          </Text>
+        </View>
+      ))}
+      <View style={styles.combinedTotalRow}>
+        <Text style={[styles.combinedCell, styles.codeCol]} />
+        <Text style={[styles.combinedCell, styles.descCombinedCol, { fontWeight: 'bold' }]}>
+          {s.totalEarnings} / {s.totalDeductions}
+        </Text>
+        <Text style={[styles.combinedCell, styles.refCol]} />
+        <Text style={[styles.combinedCell, styles.earnCol, { fontWeight: 'bold' }]}>
+          {formatCurrency(record.totalGrossPay)}
+        </Text>
+        <Text style={[styles.combinedCell, styles.dedCol, { fontWeight: 'bold' }]}>
+          {formatCurrency(record.totalDeductions)}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * AuditTrailRow — bottom summary strip expected by TL finance teams.
+ * Eight columns mirroring the example payslip.
+ */
+function AuditTrailRow({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  const sumEarningsByType = (types: string[]) =>
+    record.earnings
+      .filter((e) => types.includes(e.type))
+      .reduce((sum, e) => sum + e.amount, 0);
+
+  const sumDeductionsByType = (types: string[]) =>
+    record.deductions
+      .filter((d) => types.includes(d.type))
+      .reduce((sum, d) => sum + d.amount, 0);
+
+  const baseSalary = sumEarningsByType(['regular']);
+  const absences = sumDeductionsByType(['absence', 'late_arrival']);
+  const commissions = sumEarningsByType(['commission', 'tip']);
+  const allowances = sumEarningsByType(['allowance', 'reimbursement', 'bonus', 'subsidio_anual']);
+  const tax = sumDeductionsByType(['income_tax']);
+  const inss = sumDeductionsByType(['inss_employee']);
+  const otherDeductions = sumDeductionsByType([
+    'loan_repayment',
+    'advance_repayment',
+    'court_order',
+    'health_insurance',
+    'life_insurance',
+    'other',
+  ]);
+
+  // Taxable base = gross minus pre-tax deductions (approximation — inss_employee is deducted pre-tax in TL)
+  const taxableBase =
+    record.totalGrossPay -
+    record.deductions
+      .filter((d) => d.isPreTax && d.type !== 'income_tax')
+      .reduce((sum, d) => sum + d.amount, 0);
+
+  const cells: { label: string; value: number }[] = [
+    { label: s.auditBaseSalary, value: baseSalary },
+    { label: s.auditAbsences, value: absences },
+    { label: s.auditCommissions, value: commissions },
+    { label: s.auditAllowances, value: allowances },
+    { label: s.auditTaxableBase, value: taxableBase },
+    { label: s.auditTaxOfMonth, value: tax },
+    { label: s.auditSocialSecurity, value: inss },
+    { label: s.auditOtherDeductions, value: otherDeductions },
+  ];
+
+  return (
+    <View style={styles.auditSection}>
+      <View style={styles.auditHeaderRow}>
+        {cells.map((cell) => (
+          <Text key={cell.label} style={styles.auditCellHeader}>
+            {cell.label}
+          </Text>
+        ))}
+      </View>
+      <View style={styles.auditValueRow}>
+        {cells.map((cell) => (
+          <Text key={cell.label} style={styles.auditCell}>
+            {formatCurrency(cell.value)}
+          </Text>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+/**
+ * SignatureBlock — declaration + physical signature lines for employee + date.
+ */
+function SignatureBlock({
+  record,
+  s,
+}: {
+  record: PayrollRecord;
+  s: PayslipStrings;
+}) {
+  return (
+    <View style={styles.signatureBlock}>
+      <Text style={styles.signatureDeclaration}>{s.signatureDeclaration}</Text>
+      <View style={styles.signatureRow}>
+        <View style={{ flex: 1 }}>
+          <View style={styles.signatureLineBox} />
+          <Text style={styles.signatureCaption}>
+            {record.employeeName} — {s.signatureLabel}
+          </Text>
+        </View>
+        <View style={styles.signatureDateBox}>
+          <View style={styles.signatureLineBox} />
+          <Text style={styles.signatureCaption}>{s.signatureDate}</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 // --- Helpers ---
 
 function buildHourItems(record: PayrollRecord, s: PayslipStrings) {
@@ -822,17 +1315,18 @@ const PayslipDocument = ({
           companyEmail={companyEmail}
           payrollRun={payrollRun}
           s={s}
+          language={language}
+          isCopy
         />
         <EmployeePayInfoSection record={record} payrollRun={payrollRun} s={s} />
         <HoursSummaryGrid hourItems={hourItems} s={s} />
 
-        {/* Two Column Layout for Earnings/Deductions */}
-        <View style={styles.twoColumn}>
-          <EarningsColumn record={record} s={s} />
-          <DeductionsColumn record={record} s={s} />
-        </View>
+        {/* Combined TL-style earnings/deductions table */}
+        <CombinedLineItemsTable record={record} s={s} />
 
         <NetPaySummary record={record} s={s} />
+        <AuditTrailRow record={record} s={s} />
+        <SignatureBlock record={record} s={s} />
         <EmployerContributionsSection record={record} s={s} />
         <SubsidioAnualSection record={record} s={s} />
         <YtdSection record={record} s={s} />

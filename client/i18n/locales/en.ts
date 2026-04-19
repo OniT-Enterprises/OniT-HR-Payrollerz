@@ -83,6 +83,7 @@ const messages = {
     "hiring": "Hiring",
     "performance": "Performance",
     "jobs": "Jobs",
+    "applications": "Applications",
     "candidates": "Candidates",
     "interviews": "Interviews",
     "onboarding": "Onboarding",
@@ -4480,8 +4481,11 @@ const messages = {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Console Home",
       "tenants": "Tenants",
       "users": "Users",
+      "superAdmins": "Super Admins",
+      "packages": "Packages",
       "auditLog": "Audit Log",
       "backToApp": "Back to App",
       "adminConsole": "Admin Console",

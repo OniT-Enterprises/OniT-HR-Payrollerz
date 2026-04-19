@@ -13,13 +13,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO, seoConfig } from "@/components/SEO";
 import { peopleNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
+import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
 import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
@@ -44,7 +44,6 @@ import {
 function PeopleDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
       <ModuleSectionNav config={peopleNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -158,7 +157,6 @@ export default function PeopleDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.people} />
-      <MainNavigation />
       <ModuleSectionNav config={peopleNavConfig} />
 
       <DashboardShell
@@ -191,9 +189,9 @@ export default function PeopleDashboard() {
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={workforceMap} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                       <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
-                      <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
-                      <Tooltip contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }} />
-                      <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                      <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
+                      <Tooltip cursor={chartHoverCursor} content={<ChartTooltip valueLabel="staff" />} />
+                      <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={56}>
                         {workforceMap.map((entry) => (
                           <Cell key={entry.name} fill={entry.tone} />
                         ))}

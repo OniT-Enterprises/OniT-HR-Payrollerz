@@ -27,6 +27,30 @@ service firebase.storage {
         tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin'];
     }
 
+    function isTenantManagerOrAdmin(tenantId) {
+      return isTenantMember(tenantId) &&
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin', 'manager'];
+    }
+
+    function getTenantModules(tenantId) {
+      return isTenantMember(tenantId) ? tenantMemberDoc(tenantId).data.modules : [];
+    }
+
+    function hasTenantModule(tenantId, module) {
+      return isTenantMember(tenantId) && (
+        tenantMemberDoc(tenantId).data.role in ['owner', 'hr-admin'] ||
+        (getTenantModules(tenantId) is list && getTenantModules(tenantId).hasAny([module]))
+      );
+    }
+
+    function canAccessHiringRecords(tenantId) {
+      return hasTenantModule(tenantId, 'hiring');
+    }
+
+    function canAccessStaffRecords(tenantId) {
+      return isTenantManagerOrAdmin(tenantId) || hasTenantModule(tenantId, 'staff');
+    }
+
     // File size limit: 10 MB
     function isUnderSizeLimit() {
       return request.resource.size < 10 * 1024 * 1024;
@@ -44,6 +68,12 @@ service firebase.storage {
       return request.resource.contentType.matches('image/.*');
     }
 
+    function isOpenJob(tenantId, jobId) {
+      return firestore.exists(/databases/(default)/documents/jobs/$(jobId)) &&
+        firestore.get(/databases/(default)/documents/jobs/$(jobId)).data.tenantId == tenantId &&
+        firestore.get(/databases/(default)/documents/jobs/$(jobId)).data.status == 'open';
+    }
+
     // ============================================
     // TENANT-SCOPED RULES
     // ============================================
@@ -52,6 +82,23 @@ service firebase.storage {
     match /tenants/{tenantId}/employees/{employeeId}/documents/{document} {
       allow read: if isTenantMember(tenantId);
       allow write: if isTenantAdmin(tenantId) && isUnderSizeLimit() && isAllowedDocType();
+    }
+
+    // Onboarding documents captured by HR during onboarding.
+    match /tenants/{tenantId}/onboarding/{caseId}/documents/{document} {
+      allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
+      allow write: if (canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId)) &&
+        isUnderSizeLimit() &&
+        isAllowedDocType();
+    }
+
+    // Public candidate application uploads.
+    // Files are stored privately; only internal hiring/staff users can read them later.
+    match /public/jobApplications/{tenantId}/{jobId}/{allPaths=**} {
+      allow read: if canAccessHiringRecords(tenantId) || canAccessStaffRecords(tenantId);
+      allow write: if isOpenJob(tenantId, jobId) &&
+        isUnderSizeLimit() &&
+        isAllowedDocType();
     }
 
     // Expense receipts

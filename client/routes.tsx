@@ -41,22 +41,27 @@ export function PageLoader() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="flex flex-col items-center gap-4">
-        <img
-          src="/images/illustrations/primos-books-logo-dark.webp"
-          alt="Primos Books"
-          className="h-10 w-auto dark:hidden"
-        />
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden"
+      style={{ background: "#09090b" }}
+    >
+      <img
+        src="/images/illustrations/splash-loading.webp"
+        alt=""
+        aria-hidden
+        className="absolute inset-0 w-full h-full object-cover pointer-events-none"
+        style={{ opacity: 0.07 }}
+      />
+      <div className="flex flex-col items-center gap-5 relative">
         <img
           src="/images/illustrations/primos-books-logo-light.webp"
           alt="Primos Books"
-          className="h-10 w-auto hidden dark:block"
+          className="h-12 w-auto"
         />
-        <div className="animate-spin h-7 w-7 border-[3px] border-primary/20 border-t-primary rounded-full" />
+        <div className="animate-spin h-8 w-8 border-[3px] border-white/15 border-t-indigo-400 rounded-full" />
         <div className="text-center max-w-xs animate-in fade-in slide-in-from-bottom-2 duration-500">
-          <p className="text-sm italic text-muted-foreground">{phrase}</p>
-          <p className="text-xs text-muted-foreground/50 mt-1">{sub}</p>
+          <p className="text-base italic text-white/80">{phrase}</p>
+          <p className="text-xs text-white/35 mt-1.5">{sub}</p>
         </div>
       </div>
     </div>
@@ -64,12 +69,15 @@ export function PageLoader() {
 }
 
 // Essential routes - eagerly loaded (first paint)
+// Dashboard + Landing are the `/` destinations — loading them lazily causes a
+// Suspense pass to fire inside AppLayout right after tenant/auth resolve,
+// which looks like a second loader flicker in the main content area.
 import Login from "@/pages/auth/Login";
 import NotFound from "@/pages/NotFound";
+import Landing from "@/pages/Landing";
+import Dashboard from "@/pages/Dashboard";
 
 // Lazy loaded routes - code split by section
-const Landing = lazy(() => import("@/pages/Landing"));
-const Dashboard = lazy(() => import("@/pages/Dashboard"));
 const Sitemap = lazy(() => import("@/pages/Sitemap"));
 const Settings = lazy(() => import("@/pages/Settings"));
 const Signup = lazy(() => import("@/pages/auth/Signup"));
@@ -97,6 +105,8 @@ const CandidateSelection = lazy(() => import("@/pages/hiring/CandidateSelection"
 const Interviews = lazy(() => import("@/pages/hiring/Interviews"));
 const Onboarding = lazy(() => import("@/pages/hiring/Onboarding"));
 const Offboarding = lazy(() => import("@/pages/hiring/Offboarding"));
+const PublicApply = lazy(() => import("@/pages/hiring/PublicApply"));
+const JobApplicationsReview = lazy(() => import("@/pages/hiring/JobApplicationsReview"));
 
 // People - Time & Leave
 const TimeTracking = lazy(() => import("@/pages/time-leave/TimeTracking"));
@@ -191,6 +201,8 @@ export const authRoutes = (
   <>
     <Route path="/auth/login" element={<Login />} />
     <Route path="/auth/signup" element={<Signup />} />
+    {/* Public candidate apply page — no auth required */}
+    <Route path="/apply/:jobId" element={<PublicApply />} />
     <Route
       path="/dashboard"
       element={
@@ -323,6 +335,14 @@ export const peopleRoutes = (
       element={
         <FeatureRoute requiredModule="hiring">
           <CandidateSelection />
+        </FeatureRoute>
+      }
+    />
+    <Route
+      path="/people/applications"
+      element={
+        <FeatureRoute requiredModule="hiring">
+          <JobApplicationsReview />
         </FeatureRoute>
       }
     />

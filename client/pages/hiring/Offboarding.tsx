@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -31,7 +32,6 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
@@ -68,12 +68,19 @@ import {
   DEPARTURE_REASONS,
   getChecklistProgress,
 } from "@/services/offboardingService";
+import {
+  onboardingService,
+  type EquipmentAsset,
+  type OnboardingCase,
+} from "@/services/onboardingService";
+import { useTenantId } from "@/contexts/TenantContext";
 
 export default function Offboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { t } = useI18n();
   const { user } = useAuth();
+  const tenantId = useTenantId();
   const { data: employees = [], isLoading: employeesLoading } = useEmployeeDirectory({ status: 'active' });
 
   // Data via React Query
@@ -87,6 +94,49 @@ export default function Offboarding() {
 
   const [selectedCase, setSelectedCase] = useState<OffboardingCase | null>(null);
   const [showDialog, setShowDialog] = useState(false);
+  const [onboardingCase, setOnboardingCase] = useState<OnboardingCase | null>(null);
+
+  const onboardingQuery = useQuery({
+    queryKey: ["onboarding", "byEmployee", tenantId, selectedCase?.employeeId ?? ""],
+    queryFn: () =>
+      selectedCase?.employeeId
+        ? onboardingService.getCaseByEmployee(tenantId, selectedCase.employeeId)
+        : Promise.resolve(null),
+    enabled: !!tenantId && !!selectedCase?.employeeId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  useEffect(() => {
+    setOnboardingCase(onboardingQuery.data ?? null);
+  }, [onboardingQuery.data]);
+
+  const toggleAssetReturned = async (assetId: string, returned: boolean) => {
+    if (!onboardingCase?.id) return;
+    const updatedEquipment = (onboardingCase.equipment || []).map((a) =>
+      a.id === assetId
+        ? { ...a, returned, returnedAt: returned ? new Date().toISOString() : undefined }
+        : a,
+    );
+    const previous = onboardingCase;
+    setOnboardingCase({ ...onboardingCase, equipment: updatedEquipment });
+    try {
+      await onboardingService.updateCase(tenantId, onboardingCase.id, {
+        equipment: updatedEquipment,
+      });
+      const allReturned =
+        updatedEquipment.length > 0 && updatedEquipment.every((a) => a.returned);
+      if (selectedCase?.id && allReturned !== selectedCase.checklist.equipmentReturned) {
+        updateChecklist(selectedCase.id, "equipmentReturned", allReturned);
+      }
+    } catch (error) {
+      setOnboardingCase(previous);
+      toast({
+        title: "Could not update",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    }
+  };
 
   // New offboarding form data
   const [newOffboarding, setNewOffboarding] = useState({
@@ -279,8 +329,7 @@ export default function Offboarding() {
   if (loading || employeesLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
-        <div className="flex items-center justify-center h-[60vh]">
+          <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </div>
@@ -290,7 +339,6 @@ export default function Offboarding() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.offboarding} />
-      <MainNavigation />
 
       {/* Main Content */}
       <div className="mx-auto max-w-screen-2xl px-6 py-5">
@@ -482,8 +530,8 @@ export default function Offboarding() {
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-                      <Clock className="h-5 w-5 text-emerald-600" />
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Clock className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     {t("hiring.offboarding.ongoing.title")}
                   </CardTitle>
@@ -508,7 +556,7 @@ export default function Offboarding() {
                           key={case_.id}
                           className={`cursor-pointer transition-all duration-200 border-border/50 ${
                             selectedCase?.id === case_.id
-                              ? "ring-2 ring-emerald-500 shadow-lg"
+                              ? "ring-2 ring-blue-500 shadow-lg"
                               : "hover:bg-muted/30 hover:shadow-md"
                           }`}
                           onClick={() => setSelectedCase(case_)}
@@ -567,8 +615,8 @@ export default function Offboarding() {
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-3">
-                    <div className="p-2 rounded-lg bg-gradient-to-r from-emerald-500/10 to-teal-500/10">
-                      <CheckCircle className="h-5 w-5 text-emerald-600" />
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <CheckCircle className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                     </div>
                     {selectedCase
                       ? t("hiring.offboarding.checklist.titleWithName", { name: selectedCase.employeeName })
@@ -593,10 +641,10 @@ export default function Offboarding() {
                   ) : (
                     <div className="space-y-6">
                       {/* Progress Summary */}
-                      <div className="p-4 bg-gradient-to-r from-emerald-500/10 to-teal-500/10 rounded-xl border border-emerald-500/20">
+                      <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/20">
                         <div className="flex justify-between items-center mb-2">
                           <span className="font-medium">{t("hiring.offboarding.progress.overall")}</span>
-                          <span className="text-sm text-emerald-600 dark:text-emerald-400 font-semibold">
+                          <span className="text-sm text-blue-600 dark:text-blue-400 font-semibold">
                             {getChecklistProgress(selectedCase.checklist)}%
                           </span>
                         </div>
@@ -607,6 +655,78 @@ export default function Offboarding() {
                           />
                         </div>
                       </div>
+
+                      {/* Equipment issued at onboarding */}
+                      {onboardingCase && onboardingCase.equipment && onboardingCase.equipment.length > 0 && (
+                        <div className="space-y-3 rounded-lg border border-border/50 p-4 bg-muted/20">
+                          <div className="flex items-center justify-between">
+                            <h4 className="font-medium text-sm flex items-center gap-2">
+                              <Building className="h-4 w-4 text-muted-foreground" />
+                              Equipment issued at onboarding
+                            </h4>
+                            <Badge variant="outline" className="text-xs">
+                              {onboardingCase.equipment.filter((a) => a.returned).length}/
+                              {onboardingCase.equipment.length} returned
+                            </Badge>
+                          </div>
+                          <div className="space-y-2">
+                            {onboardingCase.equipment.map((asset: EquipmentAsset) => (
+                              <div
+                                key={asset.id}
+                                className={`flex items-start gap-3 p-3 rounded-lg border text-sm ${
+                                  asset.returned
+                                    ? "border-emerald-200 bg-emerald-50/50 dark:border-emerald-800 dark:bg-emerald-950/20"
+                                    : "border-border/50"
+                                }`}
+                              >
+                                <Checkbox
+                                  checked={!!asset.returned}
+                                  onCheckedChange={(v) =>
+                                    toggleAssetReturned(asset.id, v === true)
+                                  }
+                                  className="mt-0.5 data-[state=checked]:bg-emerald-500 data-[state=checked]:border-emerald-500"
+                                />
+                                <div className="flex-1 min-w-0">
+                                  <div className="font-medium capitalize">
+                                    {asset.type.replace("_", " ")}
+                                    {asset.make || asset.model ? (
+                                      <span className="text-muted-foreground font-normal">
+                                        {" "}— {[asset.make, asset.model].filter(Boolean).join(" ")}
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  {(asset.serialNumber || asset.assetTag) && (
+                                    <div className="text-xs text-muted-foreground mt-0.5">
+                                      {asset.serialNumber && <>S/N: {asset.serialNumber}</>}
+                                      {asset.serialNumber && asset.assetTag && " · "}
+                                      {asset.assetTag && <>Tag: {asset.assetTag}</>}
+                                    </div>
+                                  )}
+                                  {asset.notes && (
+                                    <div className="text-xs text-muted-foreground mt-0.5 italic">
+                                      {asset.notes}
+                                    </div>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                          {onboardingCase.companyEmail && (
+                            <div className="text-xs text-muted-foreground pt-1 border-t border-border/30 flex items-center gap-2">
+                              <Mail className="h-3 w-3" />
+                              Company email to deactivate:{" "}
+                              <span className="font-mono">{onboardingCase.companyEmail}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {onboardingCase === null && selectedCase?.employeeId && !onboardingQuery.isLoading && (
+                        <div className="rounded-lg border border-dashed border-border/50 p-4 text-xs text-muted-foreground">
+                          No onboarding record found for this employee — use the checklist below to
+                          track equipment return manually.
+                        </div>
+                      )}
 
                       {/* Checklist Items */}
                       <div className="space-y-4">

@@ -3,6 +3,7 @@
  * Business sector, work locations, departments
  */
 import { useState } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -24,6 +25,10 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
+import { departmentService, type Department } from '@/services/departmentService';
+import { departmentKeys } from '@/hooks/useDepartments';
+import { useAllEmployees } from '@/hooks/useEmployees';
+import { useNavigate } from 'react-router-dom';
 import {
   Save,
   Plus,
@@ -31,13 +36,15 @@ import {
   Loader2,
   MapPin,
   Briefcase,
+  Users,
+  Crown,
+  ExternalLink,
 } from 'lucide-react';
 import type {
   SettingsTabProps,
   CompanyStructure,
   BusinessSector,
   WorkLocation,
-  DepartmentConfig,
 } from './types';
 import { SECTOR_DEPARTMENT_PRESETS } from './types';
 
@@ -54,7 +61,39 @@ export function CompanyStructureTab({
   initialData,
 }: CompanyStructureTabProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [structure, setStructure] = useState<CompanyStructure>(initialData);
+  const [newDeptName, setNewDeptName] = useState('');
+  const [seedingPresets, setSeedingPresets] = useState(false);
+
+  // Real departments from the canonical `departments` Firestore collection.
+  const { data: departments = [], isLoading: deptsLoading } = useQuery({
+    queryKey: departmentKeys.list(tenantId, 200),
+    queryFn: () => departmentService.getAllDepartments(tenantId, 200),
+    enabled: !!tenantId,
+    staleTime: 60_000,
+  });
+
+  const { data: employees = [] } = useAllEmployees();
+
+  // Build minified org chart: one row per department with head + member count.
+  const orgSummary = departments
+    .map((dept) => {
+      const members = employees.filter(
+        (e) => e.status === 'active' && e.jobDetails.department === dept.name,
+      );
+      const head = members.find(
+        (e) =>
+          /head|lead|manager|director/i.test(e.jobDetails.position || '') ||
+          !e.jobDetails.manager,
+      );
+      return { dept, members, head };
+    })
+    .sort((a, b) => b.members.length - a.members.length);
+
+  const invalidateDepartments = () =>
+    queryClient.invalidateQueries({ queryKey: departmentKeys.all });
 
   const addWorkLocation = () => {
     const newLocation: WorkLocation = {
@@ -71,26 +110,71 @@ export function CompanyStructureTab({
     });
   };
 
-  const addDepartment = () => {
-    const newDept: DepartmentConfig = {
-      id: `dept_${Date.now()}`,
-      name: '',
-      isActive: true,
-    };
-    setStructure({
-      ...structure,
-      departments: [...structure.departments, newDept],
-    });
+  const addDepartment = async () => {
+    const name = newDeptName.trim();
+    if (!name || !tenantId) return;
+    try {
+      await departmentService.addDepartment(tenantId, { name });
+      setNewDeptName('');
+      await invalidateDepartments();
+      toast({
+        title: t('settings.notifications.savedTitle'),
+        description: `Department "${name}" added.`,
+      });
+    } catch (error) {
+      toast({
+        title: t('settings.notifications.errorTitle'),
+        description: error instanceof Error ? error.message : 'Could not add department',
+        variant: 'destructive',
+      });
+    }
   };
 
-  const loadSectorDepartments = (sector: BusinessSector) => {
+  const removeDepartment = async (dept: Department) => {
+    if (!dept.id || !tenantId) return;
+    try {
+      await departmentService.deleteDepartment(tenantId, dept.id);
+      await invalidateDepartments();
+      toast({
+        title: t('settings.notifications.savedTitle'),
+        description: `Department "${dept.name}" removed.`,
+      });
+    } catch (error) {
+      toast({
+        title: t('settings.notifications.errorTitle'),
+        description: error instanceof Error ? error.message : 'Could not remove department',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const loadSectorDepartments = async (sector: BusinessSector) => {
+    setStructure({ ...structure, businessSector: sector });
     const presets = SECTOR_DEPARTMENT_PRESETS[sector] || [];
-    const departments: DepartmentConfig[] = presets.map((name, index) => ({
-      id: `dept_${Date.now()}_${index}`,
-      name,
-      isActive: true,
-    }));
-    setStructure({ ...structure, businessSector: sector, departments });
+    if (presets.length === 0 || !tenantId) return;
+    // Only seed presets that don't already exist.
+    const existingNames = new Set(departments.map((d) => d.name.toLowerCase()));
+    const toCreate = presets.filter((name) => !existingNames.has(name.toLowerCase()));
+    if (toCreate.length === 0) return;
+    setSeedingPresets(true);
+    try {
+      await Promise.all(
+        toCreate.map((name) => departmentService.addDepartment(tenantId, { name })),
+      );
+      await invalidateDepartments();
+      toast({
+        title: t('settings.notifications.savedTitle'),
+        description: `Added ${toCreate.length} preset department${toCreate.length === 1 ? '' : 's'} for ${sector}.`,
+      });
+    } catch (error) {
+      toast({
+        title: t('settings.notifications.errorTitle'),
+        description: error instanceof Error ? error.message : 'Could not seed departments',
+        variant: 'destructive',
+      });
+    } finally {
+      setSeedingPresets(false);
+    }
   };
 
   const save = async () => {
@@ -232,20 +316,49 @@ export function CompanyStructureTab({
 
         <Separator />
 
-        {/* Departments */}
+        {/* Departments — wired to the real `departments` Firestore collection. */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="font-medium">{t('settings.structure.departments')}</h3>
               <p className="text-sm text-muted-foreground">{t('settings.structure.departmentsHint')}</p>
             </div>
-            <Button variant="outline" size="sm" onClick={addDepartment}>
+            <Badge variant="secondary">
+              {deptsLoading ? '…' : `${departments.length} department${departments.length === 1 ? '' : 's'}`}
+            </Badge>
+          </div>
+
+          {/* Add new department inline */}
+          <div className="flex items-center gap-2">
+            <Input
+              placeholder={t('settings.structure.departmentName')}
+              value={newDeptName}
+              onChange={(e) => setNewDeptName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  void addDepartment();
+                }
+              }}
+              className="flex-1"
+              disabled={seedingPresets}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void addDepartment()}
+              disabled={!newDeptName.trim() || seedingPresets}
+            >
               <Plus className="h-4 w-4 mr-2" />
               {t('settings.structure.addDepartment')}
             </Button>
           </div>
 
-          {structure.departments.length === 0 ? (
+          {deptsLoading ? (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              <Loader2 className="mx-auto h-5 w-5 animate-spin" />
+            </div>
+          ) : departments.length === 0 ? (
             <div className="text-center py-8 border-2 border-dashed rounded-lg">
               <Briefcase className="h-8 w-8 mx-auto text-muted-foreground mb-2" />
               <p className="text-muted-foreground">{t('settings.structure.noDepartments')}</p>
@@ -253,30 +366,71 @@ export function CompanyStructureTab({
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {structure.departments.map((dept, index) => (
+              {departments.map((dept) => (
                 <div key={dept.id} className="flex items-center gap-2 p-3 border rounded-lg">
-                  <Input
-                    placeholder={t('settings.structure.departmentName')}
-                    value={dept.name}
-                    onChange={(e) => {
-                      const updated = [...structure.departments];
-                      updated[index] = { ...dept, name: e.target.value };
-                      setStructure({ ...structure, departments: updated });
-                    }}
-                    className="flex-1"
-                  />
+                  <span className="flex-1 truncate text-sm font-medium">{dept.name}</span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    onClick={() => {
-                      setStructure({
-                        ...structure,
-                        departments: structure.departments.filter((d) => d.id !== dept.id),
-                      });
-                    }}
+                    onClick={() => void removeDepartment(dept)}
+                    aria-label={`Remove ${dept.name}`}
                   >
                     <Trash2 className="h-4 w-4 text-muted-foreground" />
                   </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Minified Org Chart */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-medium">Reporting structure</h3>
+              <p className="text-sm text-muted-foreground">
+                A quick read of who reports where. Open the full chart to rearrange.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate('/settings/org-chart')}
+            >
+              <ExternalLink className="h-4 w-4 mr-2" />
+              Open full chart
+            </Button>
+          </div>
+
+          {orgSummary.length === 0 ? (
+            <div className="rounded-lg border-2 border-dashed py-6 text-center text-sm text-muted-foreground">
+              Add departments and employees to see the reporting structure here.
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {orgSummary.map(({ dept, members, head }) => (
+                <div key={dept.id} className="rounded-lg border bg-muted/20 p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="truncate text-sm font-semibold">{dept.name}</p>
+                    <Badge variant="secondary" className="shrink-0 text-[11px]">
+                      <Users className="mr-1 h-3 w-3" />
+                      {members.length}
+                    </Badge>
+                  </div>
+                  <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                    {head ? (
+                      <>
+                        <Crown className="h-3 w-3 text-amber-500" />
+                        <span className="truncate">
+                          {head.personalInfo.firstName} {head.personalInfo.lastName}
+                        </span>
+                      </>
+                    ) : (
+                      <span className="italic">No head assigned</span>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>

@@ -20,7 +20,6 @@ import {
   Building2,
   CreditCard,
   Plug,
-  Globe,
   ChevronRight,
 } from "lucide-react";
 import {
@@ -45,13 +44,7 @@ export default function Settings() {
 
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("company");
-  const organizationLinks = hasModule("staff")
-    ? [
-        { label: "Departments", path: "/settings/departments", icon: Building, description: "Manage departments and teams" },
-        { label: "Org Chart", path: "/settings/org-chart", icon: Building2, description: "View reporting structure" },
-        { label: "Foreign Workers", path: "/settings/foreign-workers", icon: Globe, description: "Work permits and compliance" },
-      ]
-    : [];
+  const organizationLinks: { label: string; path: string; icon: typeof Building; description: string }[] = [];
 
   // onReload for child tabs — invalidate queries so React Query refetches
   const handleReload = () => {

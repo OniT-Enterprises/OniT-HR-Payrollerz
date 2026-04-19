@@ -13,12 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO, seoConfig } from "@/components/SEO";
 import { accountingNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useAccountingBalanceHealth, useAccountingDashboard } from "@/hooks/useAccounting";
@@ -41,7 +41,6 @@ import {
 function AccountingDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
       <ModuleSectionNav config={accountingNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -116,7 +115,6 @@ export default function AccountingDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.accounting} />
-      <MainNavigation />
       <ModuleSectionNav config={accountingNavConfig} />
 
       <DashboardShell
@@ -154,10 +152,14 @@ export default function AccountingDashboard() {
                         <XAxis type="number" hide />
                         <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} width={120} tick={{ fontSize: 12 }} />
                         <Tooltip
-                          formatter={(value) => formatCurrencyTL(Number(value ?? 0))}
-                          contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                          cursor={chartHoverCursor}
+                          content={
+                            <ChartTooltip
+                              formatValue={(v) => formatCurrencyTL(Number(v ?? 0))}
+                            />
+                          }
                         />
-                        <Bar dataKey="amount" radius={[12, 12, 12, 12]}>
+                        <Bar dataKey="amount" radius={[6, 6, 6, 6]} maxBarSize={22}>
                           {payrollFlow.map((entry, index) => (
                             <Cell key={`${entry.name}-${index}`} fill={entry.tone} />
                           ))}
@@ -229,16 +231,20 @@ export default function AccountingDashboard() {
                   <button
                     key={item.title}
                     onClick={() => navigate(item.path)}
-                    className="rounded-2xl border border-border/60 bg-muted/25 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-orange-400/30 hover:bg-background"
+                    className="group rounded-2xl border border-border/60 bg-muted/25 p-5 text-left transition-all hover:border-orange-400/40 hover:bg-background"
                   >
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
-                        <item.icon className="h-5 w-5" />
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
+                        <item.icon className="h-4 w-4" />
                       </div>
-                      <span className="text-2xl font-bold tabular-nums">{item.value}</span>
+                      <p className="text-sm font-semibold">{item.title}</p>
                     </div>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+                    <p className="mt-4 text-3xl font-bold tabular-nums leading-none">
+                      {item.value}
+                    </p>
+                    <p className="mt-2 text-sm leading-snug text-muted-foreground">
+                      {item.description}
+                    </p>
                   </button>
                 ))}
               </div>

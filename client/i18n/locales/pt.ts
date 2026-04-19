@@ -81,6 +81,7 @@ const messages = {
     "hiring": "Recrutamento",
     "performance": "Desempenho",
     "jobs": "Vagas",
+    "applications": "Candidaturas",
     "candidates": "Candidatos",
     "interviews": "Entrevistas",
     "onboarding": "Integração",
@@ -4475,8 +4476,11 @@ const messages = {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Início da Consola",
       "tenants": "Inquilinos",
       "users": "Utilizadores",
+      "superAdmins": "Super Administradores",
+      "packages": "Pacotes",
       "auditLog": "Registo de Auditoria",
       "backToApp": "Voltar à Aplicação",
       "adminConsole": "Consola de Administração",

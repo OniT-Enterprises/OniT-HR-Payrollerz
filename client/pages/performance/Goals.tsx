@@ -40,7 +40,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   type OKR,
@@ -424,7 +423,6 @@ export default function Goals() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             {[1, 2, 3, 4].map((i) => (
@@ -445,7 +443,6 @@ export default function Goals() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.goals} />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader
@@ -492,7 +489,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active OKRs</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-orange-500 to-amber-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg">
                       <Target className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -508,7 +505,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Active Goals</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-green-500 to-emerald-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg">
                       <CheckSquare className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -534,7 +531,7 @@ export default function Goals() {
                 <Card className="border-border/50 shadow-lg">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">Avg. Goal Progress</CardTitle>
-                    <div className="p-2 bg-gradient-to-br from-purple-500 to-violet-500 rounded-lg">
+                    <div className="p-2 bg-gradient-to-br from-sky-500 to-blue-500 rounded-lg">
                       <BarChart3 className="h-4 w-4 text-white" />
                     </div>
                   </CardHeader>
@@ -550,7 +547,7 @@ export default function Goals() {
                 <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       Recent OKRs
                     </CardTitle>
                   </CardHeader>
@@ -589,7 +586,7 @@ export default function Goals() {
                 <Card className="border-border/50">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <CheckSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       Recent Goals
                     </CardTitle>
                   </CardHeader>
@@ -636,7 +633,7 @@ export default function Goals() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <Target className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <Target className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       Objectives & Key Results ({selectedQuarter})
                     </CardTitle>
                     <CardDescription>
@@ -755,7 +752,7 @@ export default function Goals() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
-                      <CheckSquare className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                      <CheckSquare className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                       Strategic Goals
                     </CardTitle>
                     <CardDescription>

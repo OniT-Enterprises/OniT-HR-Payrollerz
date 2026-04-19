@@ -41,6 +41,34 @@ class FileUploadService {
   }
 
   /**
+   * Upload a file and return its storage path instead of a download URL.
+   * Useful for public uploads where only internal staff should resolve the file later.
+   */
+  async uploadFileAndReturnPath(file: File, path: string): Promise<string> {
+    try {
+      const storage = await getStorageLazy();
+      const { ref, uploadBytes } = await import("firebase/storage");
+      const storageRef = ref(storage, path);
+      await this.withTimeout(uploadBytes(storageRef, file), "File upload");
+      return path;
+    } catch (error) {
+      console.error("Error uploading file:", error);
+      throw new Error("Failed to upload file");
+    }
+  }
+
+  async getDownloadUrl(path: string): Promise<string> {
+    try {
+      const storage = await getStorageLazy();
+      const { ref, getDownloadURL } = await import("firebase/storage");
+      return this.withTimeout(getDownloadURL(ref(storage, path)), "Storage URL lookup");
+    } catch (error) {
+      console.error("Error getting file URL:", error);
+      throw new Error("Failed to fetch file");
+    }
+  }
+
+  /**
    * Upload employee document
    * @param file - The file to upload
    * @param tenantId - Tenant ID for storage isolation
@@ -140,6 +168,31 @@ class FileUploadService {
 
     if (file.size > maxSize) {
       return { valid: false, error: "Image size must be under 5MB" };
+    }
+
+    return { valid: true };
+  }
+
+  validateDocumentFile(
+    file: File,
+    allowedTypes: string[] = [
+      "image/jpeg",
+      "image/png",
+      "image/webp",
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    ],
+    maxSizeMb = 10,
+  ): { valid: boolean; error?: string } {
+    const maxSize = maxSizeMb * 1024 * 1024;
+
+    if (!allowedTypes.includes(file.type)) {
+      return { valid: false, error: "Please upload a supported document type" };
+    }
+
+    if (file.size > maxSize) {
+      return { valid: false, error: `File size must be under ${maxSizeMb}MB` };
     }
 
     return { valid: true };

@@ -40,7 +40,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
@@ -298,7 +297,6 @@ export default function Announcements() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-48 mb-2" />
           <Skeleton className="h-5 w-72 mb-8" />
@@ -315,7 +313,6 @@ export default function Announcements() {
   return (
     <div className="min-h-screen bg-background">
       <SEO title={`${t("announcements.title")} - Meza`} description={t("announcements.subtitle")} />
-      <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
         <PageHeader

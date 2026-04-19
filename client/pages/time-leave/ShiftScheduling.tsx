@@ -42,7 +42,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import MoreDetailsSection from "@/components/MoreDetailsSection";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -1209,7 +1208,6 @@ export default function ShiftScheduling() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6">
           <div className="mx-auto max-w-screen-2xl">
             {/* Header skeleton */}
@@ -1264,7 +1262,6 @@ export default function ShiftScheduling() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.schedules} />
-      <MainNavigation />
 
       <div className="p-6">
         <div className="mx-auto max-w-screen-2xl">

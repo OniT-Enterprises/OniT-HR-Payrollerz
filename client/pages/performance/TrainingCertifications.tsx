@@ -62,7 +62,6 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAllEmployees } from "@/hooks/useEmployees";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import {
   Filter,
@@ -417,7 +416,6 @@ export default function TrainingCertifications() {
   if (loading || employeesLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="flex items-center justify-center h-[60vh]">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
@@ -428,7 +426,6 @@ export default function TrainingCertifications() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.training} />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-6">
         <PageHeader
@@ -447,7 +444,7 @@ export default function TrainingCertifications() {
         <Card className="mb-6 border-border/50 shadow-lg">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Filter className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              <Filter className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               Filters
             </CardTitle>
           </CardHeader>
@@ -527,7 +524,7 @@ export default function TrainingCertifications() {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+                  <Award className="h-5 w-5 text-blue-600 dark:text-blue-400" />
                   Training Records
                 </CardTitle>
                 <CardDescription>

@@ -15,12 +15,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO, seoConfig } from "@/components/SEO";
 import { payrollNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
@@ -48,7 +48,6 @@ import {
 function PayrollDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
       <ModuleSectionNav config={payrollNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -248,7 +247,6 @@ export default function PayrollDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.payroll} />
-      <MainNavigation />
       <ModuleSectionNav config={payrollNavConfig} />
 
       <DashboardShell
@@ -307,10 +305,12 @@ export default function PayrollDashboard() {
                           <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.5)" />
                           <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                           <Tooltip
-                            formatter={(value) => formatCurrencyTL(Number(value ?? 0))}
-                            contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                            cursor={chartHoverCursor}
+                            content={
+                              <ChartTooltip formatValue={(v) => formatCurrencyTL(Number(v ?? 0))} />
+                            }
                           />
-                          <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                          <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={48}>
                             {summary.payrollMix.map((entry) => (
                               <Cell key={entry.name} fill={entry.tone} />
                             ))}
@@ -356,11 +356,15 @@ export default function PayrollDashboard() {
                       <XAxis type="number" domain={[0, 100]} hide />
                       <XAxis dataKey="label" />
                       <Tooltip
-                        formatter={(value) => `${Number(value ?? 0)}% ready`}
-                        labelFormatter={(label) => `${label}`}
-                        contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                        cursor={chartHoverCursor}
+                        content={
+                          <ChartTooltip
+                            useRowNameAsLabel
+                            formatValue={(v) => `${Number(v ?? 0)}% ready`}
+                          />
+                        }
                       />
-                      <Bar dataKey="score" radius={[12, 12, 12, 12]}>
+                      <Bar dataKey="score" radius={[6, 6, 6, 6]} maxBarSize={22}>
                         {summary.readiness.map((entry) => (
                           <Cell
                             key={entry.label}
@@ -414,8 +418,10 @@ export default function PayrollDashboard() {
                     <CartesianGrid stroke="hsl(var(--border) / 0.35)" vertical={false} />
                     <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                     <Tooltip
-                      formatter={(value) => formatCurrencyTL(Number(value ?? 0))}
-                      contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                      cursor={{ stroke: "hsl(var(--muted-foreground) / 0.3)", strokeWidth: 1 }}
+                      content={
+                        <ChartTooltip formatValue={(v) => formatCurrencyTL(Number(v ?? 0))} />
+                      }
                     />
                     <Area type="monotone" dataKey="gross" stroke="#6A9C29" fill="url(#payrollGross)" strokeWidth={3} />
                     <Area type="monotone" dataKey="net" stroke="#0ea5e9" fill="url(#payrollNet)" strokeWidth={2.5} />

@@ -408,20 +408,11 @@ export default function TopBar() {
           </Button>
 
           <div className="flex-1 min-w-0">
-            {pageHeader ? (
-              <TopBarPageLabel header={pageHeader} />
-            ) : (
-              <BusinessSelector
-                currentName={session?.config?.name || ""}
-                availableTenants={availableTenants}
-                onSwitch={(tid) => { void switchTenant(tid); }}
-                currentTenantId={tenantId}
-              />
-            )}
+            {pageHeader ? <TopBarPageLabel header={pageHeader} /> : null}
           </div>
 
           <div className="flex items-center gap-2">
-            {pageHeader && availableTenants.length > 1 && (
+            {availableTenants.length > 1 && (
               <div className="hidden lg:flex">
                 <BusinessSelector
                   currentName={session?.config?.name || ""}

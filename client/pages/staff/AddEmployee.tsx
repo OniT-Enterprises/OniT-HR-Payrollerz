@@ -42,7 +42,6 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { StepWizard, StepContent, type WizardStep } from "@/components/ui/StepWizard";
 import { collection, doc } from "firebase/firestore";
@@ -658,7 +657,6 @@ export default function AddEmployee() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6 mx-auto max-w-screen-2xl">
           <Skeleton className="h-8 w-64 mb-6" />
           <Skeleton className="h-20 w-full mb-6" />
@@ -671,7 +669,6 @@ export default function AddEmployee() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.addEmployee} />
-      <MainNavigation />
 
       <PageHeader
         title={isEditMode

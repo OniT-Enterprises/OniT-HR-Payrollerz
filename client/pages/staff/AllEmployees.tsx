@@ -19,7 +19,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { type Employee } from "@/services/employeeService";
 import { useSmartEmployees } from "@/hooks/useEmployees";
@@ -821,7 +820,6 @@ export default function AllEmployees() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.employees} />
-      <MainNavigation />
 
       {/* Main Content */}
       <div className="mx-auto max-w-screen-2xl px-6 py-5">

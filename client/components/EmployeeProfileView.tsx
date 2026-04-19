@@ -1,5 +1,6 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -16,10 +17,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { type Employee } from "@/services/employeeService";
+import { useToast } from "@/hooks/use-toast";
+import { useTenantId } from "@/contexts/TenantContext";
+import { employeeService, type Employee } from "@/services/employeeService";
 import { formatDateTL } from "@/lib/dateUtils";
 import { getComplianceIssues } from "@/lib/employeeUtils";
-import { useAllEmployees } from "@/hooks/useEmployees";
+import { hasExceededFixedTermLimit } from "@/lib/probation";
+import { employeeKeys, useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveBalance } from "@/hooks/useLeaveRequests";
 
 import {
@@ -131,6 +135,83 @@ function ComplianceWarnings({ issues, onOpenChange, navigate }: ComplianceWarnin
             {issue.issue}
           </button>
         ))}
+      </div>
+    </div>
+  );
+}
+
+function FixedTermConversionWarning({ employee }: { employee: Employee }) {
+  const tenantId = useTenantId();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isConverting, setIsConverting] = useState(false);
+  const [converted, setConverted] = useState(false);
+
+  useEffect(() => {
+    setConverted(false);
+  }, [employee.id]);
+
+  // Show only for fixed-term-looking contracts that have been active >= 3 years.
+  const isFixedTerm =
+    !!employee.jobDetails.contractEndDate ||
+    /fixed|contract|temp/i.test(employee.jobDetails.employmentType || "");
+  if (!isFixedTerm) return null;
+  if (!hasExceededFixedTermLimit(employee.jobDetails.hireDate)) return null;
+  if (converted) return null;
+
+  const handleConvert = async () => {
+    if (!employee.id) return;
+    setIsConverting(true);
+    try {
+      await employeeService.updateEmployee(tenantId, employee.id, {
+        jobDetails: {
+          ...employee.jobDetails,
+          employmentType: "Permanent",
+          contractEndDate: "",
+        },
+      });
+      await queryClient.invalidateQueries({ queryKey: employeeKeys.all(tenantId) });
+      setConverted(true);
+      toast({
+        title: "Contract converted",
+        description: "The employee record is now marked permanent and the fixed-term end date was cleared.",
+      });
+    } catch (error) {
+      toast({
+        title: "Could not convert contract",
+        description: error instanceof Error ? error.message : "Unknown error",
+        variant: "destructive",
+      });
+    } finally {
+      setIsConverting(false);
+    }
+  };
+
+  return (
+    <div className="mt-4 rounded-lg border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-950/30 px-4 py-3">
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex items-start gap-2">
+        <AlertTriangle className="h-4 w-4 text-orange-500 mt-0.5 shrink-0" />
+        <div className="text-sm">
+          <div className="font-medium text-orange-800 dark:text-orange-200">
+            Contract should be permanent
+          </div>
+          <p className="text-orange-700/90 dark:text-orange-300/90 mt-0.5">
+            Hired on {formatDateTL(employee.jobDetails.hireDate)} on a fixed-term contract. Under
+            the Timor-Leste Labour Code, continuous fixed-term employment past 3 years becomes
+            permanent by operation of law. Review and convert this contract.
+          </p>
+        </div>
+        </div>
+        <Button
+          type="button"
+          size="sm"
+          onClick={handleConvert}
+          disabled={isConverting}
+          className="bg-orange-600 hover:bg-orange-700 text-white shrink-0"
+        >
+          {isConverting ? "Converting…" : "Convert now"}
+        </Button>
       </div>
     </div>
   );
@@ -576,6 +657,17 @@ function ProfileHeader({ employee, onOpenChange, navigate }: ProfileHeaderProps)
           <Button
             variant="outline"
             size="sm"
+            onClick={async () => {
+              const { downloadStaffCv } = await import("@/components/staff/StaffCvPdf");
+              await downloadStaffCv(employee);
+            }}
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            CV PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => {
               onOpenChange(false);
               navigate(`/people/add?edit=${employee.id}`);
@@ -633,6 +725,8 @@ export default function EmployeeProfileView({
         />
 
         <ComplianceWarnings issues={issues} onOpenChange={onOpenChange} navigate={navigate} />
+
+        <FixedTermConversionWarning employee={employee} />
 
         <div className="grid lg:grid-cols-3 gap-6 mt-6">
           <PersonalInfoCard employee={employee} />

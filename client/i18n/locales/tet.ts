@@ -83,6 +83,7 @@ const messages = {
     "hiring": "Rekrutamentu",
     "performance": "Dezempénhu",
     "jobs": "Vaga",
+    "applications": "Aplikasaun",
     "candidates": "Kandidatu",
     "interviews": "Entrevista",
     "onboarding": "Onboarding",
@@ -3290,8 +3291,11 @@ const messages = {
   },
   "admin": {
     "layout": {
+      "consoleHome": "Pájina Prinsipál",
       "tenants": "Tenante sira",
       "users": "Utilizadór sira",
+      "superAdmins": "Super Admin sira",
+      "packages": "Pakote sira",
       "auditLog": "Log Auditoría",
       "backToApp": "Fila ba Aplikasaun",
       "adminConsole": "Konsola Admin",

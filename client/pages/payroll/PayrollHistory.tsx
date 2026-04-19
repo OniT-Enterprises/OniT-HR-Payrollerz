@@ -512,7 +512,10 @@ export default function PayrollHistory() {
   };
 
   // Download payslip PDF for an employee
-  const handleDownloadPayslip = async (record: PayrollRecord) => {
+  const handleDownloadPayslip = async (
+    record: PayrollRecord,
+    language: "en" | "tet" | "pt" = "en",
+  ) => {
     if (!selectedRun) return;
 
     try {
@@ -521,7 +524,7 @@ export default function PayrollHistory() {
         description: t("payrollHistory.toastGeneratingDesc", { name: record.employeeName }),
       });
 
-      await downloadPayslip(record, selectedRun);
+      await downloadPayslip(record, selectedRun, undefined, language);
 
       toast({
         title: t("payrollHistory.toastDownloaded"),
@@ -1415,14 +1418,34 @@ export default function PayrollHistory() {
                             {formatCurrency(record.netPay)}
                           </TableCell>
                           <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDownloadPayslip(record)}
-                              title="Download Payslip PDF"
-                            >
-                              <FileDown className="h-4 w-4 text-blue-600" />
-                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  title="Download Payslip PDF"
+                                >
+                                  <FileDown className="h-4 w-4 text-blue-600" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem
+                                  onClick={() => handleDownloadPayslip(record, "en")}
+                                >
+                                  English
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDownloadPayslip(record, "tet")}
+                                >
+                                  Tetun
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() => handleDownloadPayslip(record, "pt")}
+                                >
+                                  Português
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </TableCell>
                         </TableRow>
                       ))}

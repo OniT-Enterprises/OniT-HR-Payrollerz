@@ -283,51 +283,73 @@ service cloud.firestore {
       // ============================================
       match /employees/{employeeId} {
         allow read: if isSuperAdmin() ||
+          canAccessHiringRecords(tenantId) ||
           canAccessStaffRecords(tenantId) ||
           isSelfEmployee(tenantId, employeeId);
 
         allow create, delete: if isSuperAdmin() || isTenantAdmin(tenantId);
 
         allow update: if isSuperAdmin() || isTenantAdmin(tenantId) || (
-          isSelfEmployee(tenantId, employeeId) &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-            'personalInfo',
-            'phone',
-            'address',
-            'emergencyContactName',
-            'emergencyContactPhone',
-            'updatedAt',
-          ]) &&
-          (
-            !request.resource.data.diff(resource.data).affectedKeys().hasAny(['personalInfo']) ||
+            canAccessHiringRecords(tenantId) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'jobDetails',
+              'compliance',
+              'updatedAt',
+            ]) &&
+            request.resource.data.keys().hasAny(['jobDetails']) &&
+            request.resource.data.jobDetails is map &&
             (
-              request.resource.data.keys().hasAny(['personalInfo']) &&
-              request.resource.data.personalInfo is map &&
               (
+                resource.data.keys().hasAny(['jobDetails']) &&
+                resource.data.jobDetails is map &&
+                request.resource.data.jobDetails.diff(resource.data.jobDetails).affectedKeys()
+                  .hasOnly(['manager'])
+              ) ||
+              (
+                !resource.data.keys().hasAny(['jobDetails']) &&
+                request.resource.data.jobDetails.keys().hasOnly(['manager'])
+              )
+            )
+          ) || (
+            isSelfEmployee(tenantId, employeeId) &&
+            request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+              'personalInfo',
+              'phone',
+              'address',
+              'emergencyContactName',
+              'emergencyContactPhone',
+              'updatedAt',
+            ]) &&
+            (
+              !request.resource.data.diff(resource.data).affectedKeys().hasAny(['personalInfo']) ||
+              (
+                request.resource.data.keys().hasAny(['personalInfo']) &&
+                request.resource.data.personalInfo is map &&
                 (
-                  resource.data.keys().hasAny(['personalInfo']) &&
-                  resource.data.personalInfo is map &&
-                  request.resource.data.personalInfo.diff(resource.data.personalInfo).affectedKeys()
-                    .hasOnly([
+                  (
+                    resource.data.keys().hasAny(['personalInfo']) &&
+                    resource.data.personalInfo is map &&
+                    request.resource.data.personalInfo.diff(resource.data.personalInfo).affectedKeys()
+                      .hasOnly([
+                        'phone',
+                        'address',
+                        'emergencyContactName',
+                        'emergencyContactPhone',
+                      ])
+                  ) ||
+                  (
+                    !resource.data.keys().hasAny(['personalInfo']) &&
+                    request.resource.data.personalInfo.keys().hasOnly([
                       'phone',
                       'address',
                       'emergencyContactName',
                       'emergencyContactPhone',
                     ])
-                ) ||
-                (
-                  !resource.data.keys().hasAny(['personalInfo']) &&
-                  request.resource.data.personalInfo.keys().hasOnly([
-                    'phone',
-                    'address',
-                    'emergencyContactName',
-                    'emergencyContactPhone',
-                  ])
+                  )
                 )
               )
             )
-          )
-        );
+          );
       }
 
       // ============================================
@@ -844,22 +866,33 @@ service cloud.firestore {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+        (request.resource.data.tenantId != null && canAccessHiringRecords(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessHiringRecords(resource.data.tenantId)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
 
     match /jobs/{jobId} {
+      // Public can read jobs that are currently open (for the candidate apply page).
+      // Full tenant staff can read all jobs regardless of status.
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId)) ||
+        resource.data.status == 'open';
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+        (request.resource.data.tenantId != null && canAccessHiringRecords(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessHiringRecords(resource.data.tenantId)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
@@ -868,10 +901,30 @@ service cloud.firestore {
       allow read: if isSuperAdmin() ||
         (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
       allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && isTenantAdmin(request.resource.data.tenantId));
-      allow update, delete: if isSuperAdmin() || (
+        (request.resource.data.tenantId != null && canAccessHiringRecords(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessHiringRecords(resource.data.tenantId)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    match /jobPrivateDetails/{jobId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null && canAccessHiringRecords(request.resource.data.tenantId));
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        canAccessHiringRecords(resource.data.tenantId)
+      );
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
         isTenantAdmin(resource.data.tenantId)
       );
     }
@@ -1381,19 +1434,104 @@ service cloud.firestore {
     }
 
     // ============================================
-    // OFFBOARDING
+    // PUBLIC JOB APPLICATIONS
+    // Candidates submit via /apply/:jobId (unauthenticated).
+    // Create is public but heavily constrained. Read/update/delete is
+    // limited to tenant staff so PII is not exposed back to the world.
     // ============================================
-    match /offboarding/{docId} {
+    match /jobApplications/{docId} {
       allow read: if isSuperAdmin() ||
-        (resource.data.tenantId != null && canAccessStaffRecords(resource.data.tenantId));
+        (resource.data.tenantId != null && canAccessHiringRecords(resource.data.tenantId));
 
-      allow create: if isSuperAdmin() ||
-        (request.resource.data.tenantId != null && canAccessStaffRecords(request.resource.data.tenantId));
+      allow create: if
+        request.resource.data.keys().hasAll(['tenantId', 'jobId', 'jobTitle', 'name', 'email', 'phone', 'status']) &&
+        request.resource.data.keys().hasOnly([
+          'tenantId',
+          'jobId',
+          'jobTitle',
+          'name',
+          'email',
+          'phone',
+          'coverNote',
+          'linkedInUrl',
+          'referredBy',
+          'resumePath',
+          'idDocumentPath',
+          'status',
+          'createdAt',
+          'updatedAt',
+        ]) &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 200 &&
+        request.resource.data.email is string && request.resource.data.email.size() < 200 &&
+        request.resource.data.phone is string && request.resource.data.phone.size() < 80 &&
+        request.resource.data.tenantId is string && request.resource.data.tenantId.size() < 200 &&
+        request.resource.data.jobId is string && request.resource.data.jobId.size() < 200 &&
+        request.resource.data.jobTitle is string && request.resource.data.jobTitle.size() < 400 &&
+        (!request.resource.data.keys().hasAny(['coverNote']) || (request.resource.data.coverNote is string && request.resource.data.coverNote.size() < 5000)) &&
+        (!request.resource.data.keys().hasAny(['linkedInUrl']) || (request.resource.data.linkedInUrl is string && request.resource.data.linkedInUrl.size() < 500)) &&
+        (!request.resource.data.keys().hasAny(['referredBy']) || (request.resource.data.referredBy is string && request.resource.data.referredBy.size() < 200)) &&
+        (!request.resource.data.keys().hasAny(['resumePath']) || (request.resource.data.resumePath is string && request.resource.data.resumePath.size() < 1000)) &&
+        (!request.resource.data.keys().hasAny(['idDocumentPath']) || (request.resource.data.idDocumentPath is string && request.resource.data.idDocumentPath.size() < 1000));
 
       allow update: if isSuperAdmin() || (
         resource.data.tenantId != null &&
         request.resource.data.tenantId == resource.data.tenantId &&
-        canAccessStaffRecords(resource.data.tenantId)
+        canAccessHiringRecords(resource.data.tenantId)
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // ============================================
+    // ONBOARDING
+    // ============================================
+    match /onboarding/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null &&
+          (canAccessStaffRecords(resource.data.tenantId) ||
+           canAccessHiringRecords(resource.data.tenantId)));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null &&
+          (canAccessStaffRecords(request.resource.data.tenantId) ||
+           canAccessHiringRecords(request.resource.data.tenantId)));
+
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        (canAccessStaffRecords(resource.data.tenantId) ||
+         canAccessHiringRecords(resource.data.tenantId))
+      );
+
+      allow delete: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        isTenantAdmin(resource.data.tenantId)
+      );
+    }
+
+    // ============================================
+    // OFFBOARDING
+    // ============================================
+    match /offboarding/{docId} {
+      allow read: if isSuperAdmin() ||
+        (resource.data.tenantId != null &&
+          (canAccessStaffRecords(resource.data.tenantId) ||
+           canAccessHiringRecords(resource.data.tenantId)));
+
+      allow create: if isSuperAdmin() ||
+        (request.resource.data.tenantId != null &&
+          (canAccessStaffRecords(request.resource.data.tenantId) ||
+           canAccessHiringRecords(request.resource.data.tenantId)));
+
+      allow update: if isSuperAdmin() || (
+        resource.data.tenantId != null &&
+        request.resource.data.tenantId == resource.data.tenantId &&
+        (canAccessStaffRecords(resource.data.tenantId) ||
+         canAccessHiringRecords(resource.data.tenantId))
       );
 
       allow delete: if isSuperAdmin() || (

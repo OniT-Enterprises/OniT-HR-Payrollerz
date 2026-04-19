@@ -21,7 +21,6 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import {
@@ -342,7 +341,6 @@ export default function TimeTracking() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6">
           <div className="mx-auto max-w-screen-2xl">
             <div className="mb-6">
@@ -365,7 +363,6 @@ export default function TimeTracking() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.timeTracking} />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
         <PageHeader

@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { employeeService, type Employee } from "@/services/employeeService";
 import {
@@ -351,7 +350,6 @@ export default function OrganizationChart() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-8">
           {/* Header skeleton */}
           <div className="flex items-center justify-between mb-8">
@@ -421,7 +419,6 @@ export default function OrganizationChart() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.orgChart} />
-      <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 pt-6 pb-8">
         <PageHeader

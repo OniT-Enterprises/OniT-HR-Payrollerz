@@ -38,7 +38,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import { useI18n } from "@/i18n/I18nProvider";
 import { SEO, seoConfig } from "@/components/SEO";
@@ -529,7 +528,6 @@ export default function Interviews() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="mx-auto max-w-screen-2xl px-6 py-5">
           <div className="space-y-4">
             <Skeleton className="h-10 w-64" />
@@ -548,7 +546,6 @@ export default function Interviews() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.interviews} />
-      <MainNavigation />
 
       {/* Main Content */}
       <div className="mx-auto max-w-screen-2xl px-6 py-5">

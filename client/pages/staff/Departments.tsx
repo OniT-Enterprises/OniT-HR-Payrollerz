@@ -18,7 +18,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import MainNavigation from "@/components/layout/MainNavigation";
 import PageHeader from "@/components/layout/PageHeader";
 import type { Employee } from "@/services/employeeService";
 import {
@@ -239,7 +238,6 @@ export default function Departments() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <MainNavigation />
         <div className="p-6">
           {/* Header Skeleton */}
           <div className="flex justify-end mb-4">
@@ -305,7 +303,6 @@ export default function Departments() {
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.departments} />
-      <MainNavigation />
 
       {/* Main Content */}
       <div className="mx-auto max-w-screen-2xl px-6 py-5">

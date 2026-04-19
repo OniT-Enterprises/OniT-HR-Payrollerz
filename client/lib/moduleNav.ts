@@ -110,6 +110,23 @@ export const peopleNavConfig: ModuleNavConfig = {
   },
   sections: [
     {
+      id: "hiring",
+      label: "Hiring",
+      labelKey: "hiring",
+      icon: Briefcase,
+      path: "/people/jobs",
+      matchPaths: ["/people/hiring", "/people/jobs", "/people/candidates", "/people/applications", "/people/interviews", "/people/onboarding", "/people/offboarding"],
+      subPages: [
+        { label: "Jobs", labelKey: "jobs", path: "/people/jobs", icon: Briefcase },
+        { label: "Applications", labelKey: "applications", path: "/people/applications", icon: UserCheck },
+        { label: "Candidates", labelKey: "candidates", path: "/people/candidates", icon: UserCheck },
+        { label: "Interviews", labelKey: "interviews", path: "/people/interviews", icon: Calendar },
+        { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus },
+        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus },
+      ],
+      requiredModule: "hiring",
+    },
+    {
       id: "employees",
       label: "Employees",
       labelKey: "employees",
@@ -138,22 +155,6 @@ export const peopleNavConfig: ModuleNavConfig = {
       matchPaths: ["/people/grievances"],
       subPages: [],
       requiredModule: "staff",
-    },
-    {
-      id: "hiring",
-      label: "Hiring",
-      labelKey: "hiring",
-      icon: Briefcase,
-      path: "/people/jobs",
-      matchPaths: ["/people/hiring", "/people/jobs", "/people/candidates", "/people/interviews", "/people/onboarding", "/people/offboarding"],
-      subPages: [
-        { label: "Jobs", labelKey: "jobs", path: "/people/jobs", icon: Briefcase },
-        { label: "Candidates", labelKey: "candidates", path: "/people/candidates", icon: UserCheck },
-        { label: "Interviews", labelKey: "interviews", path: "/people/interviews", icon: Calendar },
-        { label: "Onboarding", labelKey: "onboarding", path: "/people/onboarding", icon: UserPlus },
-        { label: "Offboarding", labelKey: "offboarding", path: "/people/offboarding", icon: UserMinus },
-      ],
-      requiredModule: "hiring",
     },
     {
       id: "performance",

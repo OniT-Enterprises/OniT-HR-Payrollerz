@@ -13,12 +13,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
 import { moneyNavConfig } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useInvoiceStats, useInvoiceTopCustomers } from "@/hooks/useInvoices";
@@ -40,7 +40,6 @@ import {
 function MoneyDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
       <ModuleSectionNav config={moneyNavConfig} />
       <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -198,7 +197,6 @@ export default function MoneyDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <SEO title="Money Dashboard" description="Cash movement, receivables, payables, and operational finance in one place." />
-      <MainNavigation />
       <ModuleSectionNav config={moneyNavConfig} />
 
       <DashboardShell
@@ -263,10 +261,12 @@ export default function MoneyDashboard() {
                         <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
                         <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12 }} />
                         <Tooltip
-                          formatter={(value) => formatCurrency(Number(value ?? 0))}
-                          contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                          cursor={chartHoverCursor}
+                          content={
+                            <ChartTooltip formatValue={(v) => formatCurrency(Number(v ?? 0))} />
+                          }
                         />
-                        <Bar dataKey="value" radius={[12, 12, 0, 0]}>
+                        <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={48}>
                           {cashMap.map((entry) => (
                             <Cell key={entry.name} fill={entry.tone} />
                           ))}
@@ -287,12 +287,15 @@ export default function MoneyDashboard() {
                       <XAxis type="number" hide />
                       <YAxis type="category" dataKey="name" tickLine={false} axisLine={false} width={110} tick={{ fontSize: 12 }} />
                       <Tooltip
-                        formatter={(value, name) =>
-                          name === "outstanding" ? formatCurrency(Number(value ?? 0)) : `${value ?? 0}`
+                        cursor={chartHoverCursor}
+                        content={
+                          <ChartTooltip
+                            useRowNameAsLabel
+                            formatValue={(v) => formatCurrency(Number(v ?? 0))}
+                          />
                         }
-                        contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
                       />
-                      <Bar dataKey="outstanding" radius={[12, 12, 12, 12]} fill="#6366f1" />
+                      <Bar dataKey="outstanding" radius={[6, 6, 6, 6]} maxBarSize={22} fill="#6366f1" />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>

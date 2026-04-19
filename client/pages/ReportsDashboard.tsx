@@ -13,7 +13,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import MainNavigation from "@/components/layout/MainNavigation";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO } from "@/components/SEO";
 import {
@@ -22,6 +21,7 @@ import {
 } from "@/lib/moduleNav";
 import DashboardShell from "@/components/dashboard/DashboardShell";
 import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
 import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
 import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
 import { useTenant } from "@/contexts/TenantContext";
@@ -43,7 +43,6 @@ import {
 function ReportsDashboardSkeleton() {
   return (
     <div className="min-h-screen bg-background">
-      <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
       <div className="mx-auto max-w-screen-2xl space-y-6 px-6 py-6">
         <Skeleton className="h-40 w-full rounded-2xl" />
@@ -286,7 +285,6 @@ export default function ReportsDashboard() {
         title="Reports Dashboard"
         description="Report families, compliance runway, custom reporting, and operational outputs in one place."
       />
-      <MainNavigation />
       <ModuleSectionNav config={reportsNavConfig} />
 
       <DashboardShell
@@ -467,11 +465,10 @@ export default function ReportsDashboard() {
                             tick={{ fontSize: 12 }}
                           />
                           <Tooltip
-                            formatter={(_value, _name, payload) => payload?.payload?.descriptor ?? ""}
-                            labelFormatter={(label) => label}
-                            contentStyle={{ borderRadius: 16, borderColor: "hsl(var(--border))" }}
+                            cursor={chartHoverCursor}
+                            content={<ChartTooltip useRowNameAsLabel />}
                           />
-                          <Bar dataKey="urgency" radius={[0, 12, 12, 0]}>
+                          <Bar dataKey="urgency" radius={[0, 6, 6, 0]} maxBarSize={22}>
                             {filingHorizon.map((entry) => (
                               <Cell key={entry.name} fill={entry.fill} />
                             ))}
