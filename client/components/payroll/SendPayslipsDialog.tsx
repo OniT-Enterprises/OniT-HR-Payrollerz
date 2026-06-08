@@ -476,7 +476,7 @@ export function SendPayslipsDialog({
     };
 
     loadData();
-  }, [open, tenantId, records, toast]);
+  }, [open, tenantId, records, toast, t]);
 
   // Reset state when dialog closes
   useEffect(() => {
