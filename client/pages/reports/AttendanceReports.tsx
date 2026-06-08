@@ -373,24 +373,26 @@ export default function AttendanceReports() {
             <CardDescription>{t("reports.attendance.breakdown.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="space-y-3">
               {[
-                { key: "present", color: "bg-green-100 dark:bg-green-900" },
-                { key: "late", color: "bg-orange-100 dark:bg-orange-900" },
-                { key: "absent", color: "bg-red-100 dark:bg-red-900" },
-                { key: "half_day", color: "bg-yellow-100 dark:bg-yellow-900" },
-                { key: "leave", color: "bg-purple-100 dark:bg-purple-900" },
-              ].map(({ key, color }) => (
-                <div key={key} className={`text-center p-4 ${color} rounded-lg`}>
-                  <p className="text-2xl font-bold">{statusBreakdown[key] || 0}</p>
-                  <p className="text-sm text-muted-foreground">{getStatusLabel(key)}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {totalRecords > 0
-                      ? (((statusBreakdown[key] || 0) / totalRecords) * 100).toFixed(0)
-                      : 0}%
-                  </p>
-                </div>
-              ))}
+                { key: "present", tone: "bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300" },
+                { key: "late", tone: "bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300" },
+                { key: "absent", tone: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300" },
+                { key: "half_day", tone: "bg-yellow-50 text-yellow-700 dark:bg-yellow-950 dark:text-yellow-300" },
+                { key: "leave", tone: "bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300" },
+              ].map(({ key, tone }) => {
+                const count = statusBreakdown[key] || 0;
+                const pct = totalRecords > 0 ? (count / totalRecords) * 100 : 0;
+                return (
+                  <div key={key} className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm">
+                    <span className="text-muted-foreground">{getStatusLabel(key)}</span>
+                    <span className="flex items-center gap-2">
+                      <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(0)}%</span>
+                      <Badge variant="outline" className={`tabular-nums ${tone}`}>{count}</Badge>
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>

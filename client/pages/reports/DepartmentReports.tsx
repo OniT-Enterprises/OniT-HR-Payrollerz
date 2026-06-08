@@ -370,49 +370,28 @@ export default function DepartmentReports() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {departmentStats.slice(0, 6).map((s, idx) => {
-                const colors = [
-                  "bg-violet-100 dark:bg-violet-900",
-                  "bg-blue-100 dark:bg-blue-900",
-                  "bg-green-100 dark:bg-green-900",
-                  "bg-orange-100 dark:bg-orange-900",
-                  "bg-pink-100 dark:bg-pink-900",
-                  "bg-cyan-100 dark:bg-cyan-900",
-                ];
+            <div className="space-y-3">
+              {departmentStats.map((s) => {
+                const pct = totalEmployees > 0 ? (s.headcount / totalEmployees) * 100 : 0;
                 return (
                   <div
                     key={s.department.id}
-                    className={`text-center p-4 ${colors[idx % 6]} rounded-lg`}
+                    className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm"
                   >
-                    <p className="text-2xl font-bold">{s.headcount}</p>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {s.department.name}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {totalEmployees > 0
-                        ? ((s.headcount / totalEmployees) * 100).toFixed(0)
-                        : 0}
-                      %
-                    </p>
+                    <span className="flex min-w-0 items-center gap-2">
+                      <span
+                        className="h-2.5 w-2.5 shrink-0 rounded-full"
+                        style={{ backgroundColor: s.department.color || "#8b5cf6" }}
+                      />
+                      <span className="truncate text-muted-foreground">{s.department.name}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-2">
+                      <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(0)}%</span>
+                      <Badge variant="outline" className="tabular-nums">{s.headcount}</Badge>
+                    </span>
                   </div>
                 );
               })}
-              {departmentStats.length > 6 && (
-                <div className="text-center p-4 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                  <p className="text-2xl font-bold">
-                    {departmentStats
-                      .slice(6)
-                      .reduce((sum, s) => sum + s.headcount, 0)}
-                  </p>
-                  <p className="text-sm text-muted-foreground">{t("reports.department.distribution.others")}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {t("reports.department.distribution.moreDepartments", {
-                      count: String(departmentStats.length - 6),
-                    })}
-                  </p>
-                </div>
-              )}
             </div>
           </CardContent>
         </Card>
