@@ -248,6 +248,7 @@ const messages = {
     "botPromptPayroll": "Next payroll?",
     "botPromptLeave": "Who's on leave?",
     "botPlaceholder": "Ask PrimosBot anything...",
+    "allGood": "All good — nothing needs attention",
     "overdue": "overdue by",
     "taxOverdue": "Tax filings overdue",
     "overdueFilings": "filing(s) past deadline",
@@ -2611,6 +2612,38 @@ const messages = {
     }
   },
   "reports": {
+    "payrollRun": {
+      "subtitle": "Summary of what was actually paid in each payroll run.",
+      "selectRunPlaceholder": "Select a payroll run",
+      "noRuns": {
+        "title": "No payroll runs yet",
+        "description": "Run your first payroll to see paid summaries and per-employee breakdowns here.",
+        "action": "Go to Run Payroll"
+      },
+      "summary": {
+        "title": "Run summary",
+        "description": "Totals for the selected payroll run.",
+        "employees": "employees paid",
+        "gross": "Gross pay",
+        "wit": "Wage Income Tax (WIT)",
+        "inssEmployee": "INSS — employee (4%)",
+        "inssEmployer": "INSS — employer (6%)",
+        "otherDeductions": "Other deductions",
+        "net": "Net pay",
+        "employerCost": "Total employer cost"
+      },
+      "table": {
+        "title": "Per-employee breakdown",
+        "description": "What each employee was paid in this run.",
+        "employee": "Employee",
+        "department": "Department",
+        "gross": "Gross",
+        "other": "Other",
+        "net": "Net",
+        "totals": "Totals",
+        "empty": "This run has no employee records."
+      }
+    },
     "dashboard": {
       "title": "Reports",
       "subtitle": "Generate and export reports for all HR data",
@@ -2945,7 +2978,8 @@ const messages = {
       },
       "types": {
         "title": "Employment Type Breakdown",
-        "description": "Distribution by employment type"
+        "description": "Distribution by employment type",
+        "export": "Export contract types"
       },
       "recent": {
         "title": "Recent Employees",
@@ -5771,7 +5805,40 @@ const messages = {
     "toastDownloaded": "Payslip Downloaded",
     "toastDownloadedDesc": "Payslip for {{name}} has been downloaded.",
     "toastPayslipError": "Failed to generate payslip. Please try again.",
-    "status": "Status"
+    "status": "Status",
+    "payslipDialog": {
+      "title": "Send Payslips",
+      "description": "Email payslips to employees for {{period}}",
+      "loading": "Loading employee information...",
+      "preparing": "Preparing Payslips...",
+      "sending": "Sending Payslips...",
+      "progressCompleted": "{{current}} of {{total}} completed",
+      "pleaseWait": "Please wait, this may take a few minutes...",
+      "sent": "Sent",
+      "failed": "Failed",
+      "skipped": "Skipped",
+      "done": "Done",
+      "errorsTitle": "Errors ({{count}})",
+      "withEmail": "with email",
+      "withoutEmail": "without email",
+      "selectedCount": "{{count}} selected",
+      "colEmployee": "Employee",
+      "colEmail": "Email",
+      "colNetPay": "Net Pay",
+      "noEmail": "No email",
+      "cancel": "Cancel",
+      "sendToCount": "Send to {{count}} employee(s)",
+      "toastErrorTitle": "Error",
+      "toastLoadErrorDesc": "Failed to load employee information.",
+      "toastMissingInfoDesc": "Missing tenant or user information.",
+      "toastNoRecipientsTitle": "No Recipients",
+      "toastNoRecipientsDesc": "Please select at least one employee with an email address.",
+      "toastSentTitle": "Payslips Sent",
+      "toastSentDesc": "Successfully sent {{count}} payslip(s).",
+      "toastSentIssuesTitle": "Payslips Sent with Issues",
+      "toastSentIssuesDesc": "Sent: {{sent}}, Failed: {{failed}}, Skipped: {{skipped}}",
+      "toastSendErrorDesc": "Failed to send payslips. Please try again."
+    }
   },
   "bankTransfers": {
     "title": "Bank Transfers",

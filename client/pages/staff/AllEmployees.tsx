@@ -260,7 +260,12 @@ function DesktopEmployeeTable({
 }
 
 export default function AllEmployees() {
-  const [searchTerm, setSearchTerm] = useState("");
+  // Seed the search box from a ?search= param (e.g. the People hub search bar)
+  const [searchTerm, setSearchTerm] = useState(() =>
+    typeof window === "undefined"
+      ? ""
+      : new URLSearchParams(window.location.search).get("search") ?? "",
+  );
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
   const isSearching = debouncedSearchTerm.length > 0;
 

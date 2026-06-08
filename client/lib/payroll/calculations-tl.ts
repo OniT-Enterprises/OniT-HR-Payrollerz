@@ -708,10 +708,18 @@ export function calculateTLPayroll(input: TLPayrollInput): TLPayrollResult {
   }
 
   // ========== DEDUCTION CAP (CALC-3) ==========
-  // Timor-Leste Labour Law (Law 4/2012, Art. 42):
-  // - Non-statutory deductions are capped at 30% of monthly salary
-  // - Statutory deductions (e.g., WIT, INSS) and court orders are exempt
-  const VOLUNTARY_DEDUCTION_CAP_RATIO = 0.30; // 30%
+  // Timor-Leste Labour Law (Lei 4/2012), Artigo 42.º(3) — CONFIRMED from primary source:
+  //   "Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total
+  //    da remuneração recebida pelo trabalhador."
+  //   ("Deductions made may not exceed, per month, 30% of the total remuneration received.")
+  // => The cap is 30%. (NOT the 1/6 ≈ 16.67% once mis-cited from Portugal's Código do
+  //    Trabalho Art. 279, which does not apply to Timor-Leste.)
+  //
+  // OPEN INTERPRETATION: Art. 42(3) literally caps the TOTAL of "descontos efetuados"
+  // (statutory + voluntary). This code applies the 30% cap to VOLUNTARY deductions only and
+  // exempts statutory ones (WIT, INSS, court orders) — the lenient reading. A strict reading
+  // would also warn when TOTAL deductions exceed 30%. Confirm intended behaviour with HR/legal.
+  const VOLUNTARY_DEDUCTION_CAP_RATIO = 0.30; // 30% per Lei 4/2012 Art. 42(3)
 
   const _statutoryTotal = sumMoney(deductions.filter(d => d.isStatutory).map(d => d.amount));
   const voluntaryDeductions = deductions.filter(d => !d.isStatutory);

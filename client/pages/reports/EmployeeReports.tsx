@@ -40,8 +40,30 @@ export default function EmployeeReports() {
   const { t } = useI18n();
 
   const getDateRangeLabel = (value: string) => t(`reports.shared.ranges.${value}`);
-  const getEmploymentTypeLabel = (value: string) =>
-    value === "Unknown" ? t("common.unknown") : value.replace(/_/g, " ");
+  // Normalize free-text/enum employment types so casing/separator variants
+  // ("Full-time", "full-time", "full_time") collapse to one canonical key.
+  const normEmploymentType = (raw?: string) => {
+    const trimmed = (raw ?? "").trim();
+    if (!trimmed) return "unknown";
+    return trimmed.toLowerCase().replace(/[\s_-]+/g, "_");
+  };
+
+  const getEmploymentTypeLabel = (value: string) => {
+    if (value === "unknown") return t("common.unknown");
+    const labels: Record<string, string> = {
+      full_time: "Full-time",
+      part_time: "Part-time",
+      contract: "Contract",
+      contractor: "Contractor",
+      casual: "Casual",
+      intern: "Intern",
+      temporary: "Temporary",
+      open_ended: "Open-ended",
+      fixed_term: "Fixed-term",
+      agency: "Agency",
+    };
+    return labels[value] ?? value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
   const getStatusLabel = (value: string) =>
     value === "active" ? t("reports.employee.status.active") : t("reports.employee.status.inactive");
 
@@ -70,7 +92,7 @@ export default function EmployeeReports() {
 
   // Employment type breakdown
   const employmentTypes = useMemo(() => employees.reduce((acc, emp) => {
-    const type = emp.jobDetails?.employmentType || "Unknown";
+    const type = normEmploymentType(emp.jobDetails?.employmentType);
     acc[type] = (acc[type] || 0) + 1;
     return acc;
   }, {} as Record<string, number>), [employees]);
@@ -119,6 +141,21 @@ export default function EmployeeReports() {
     handleExportCSV(headcountData, "headcount_by_department", [
       { key: "department", label: t("reports.employee.csv.department") },
       { key: "headcount", label: t("reports.employee.csv.headcount") },
+      { key: "percentage", label: t("reports.employee.csv.percentage") },
+    ]);
+  };
+
+  const exportEmploymentTypes = () => {
+    const data = Object.entries(employmentTypes)
+      .sort((a, b) => (b[1] as number) - (a[1] as number))
+      .map(([type, count]) => ({
+        type: getEmploymentTypeLabel(type),
+        count: count as number,
+        percentage: employees.length > 0 ? (((count as number) / employees.length) * 100).toFixed(1) : "0.0",
+      }));
+    handleExportCSV(data, "employment_type_breakdown", [
+      { key: "type", label: t("reports.employee.csv.employmentType") },
+      { key: "count", label: t("reports.employee.csv.headcount") },
       { key: "percentage", label: t("reports.employee.csv.percentage") },
     ]);
   };
@@ -301,19 +338,26 @@ export default function EmployeeReports() {
             <CardDescription>{t("reports.employee.types.description")}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(employmentTypes).map(([type, count]) => (
-                <div key={type} className="text-center p-4 bg-muted/50 rounded-lg">
-                  <p className="text-2xl font-bold">{count as number}</p>
-                  <p className="text-sm text-muted-foreground capitalize">
-                    {getEmploymentTypeLabel(type)}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {(((count as number) / employees.length) * 100).toFixed(0)}%
-                  </p>
-                </div>
-              ))}
+            <div className="mb-4 space-y-3">
+              {Object.entries(employmentTypes)
+                .sort((a, b) => (b[1] as number) - (a[1] as number))
+                .map(([type, count]) => {
+                  const pct = employees.length > 0 ? ((count as number) / employees.length) * 100 : 0;
+                  return (
+                    <div key={type} className="flex items-center justify-between gap-3 border-b border-border/40 pb-2 text-sm">
+                      <span className="text-muted-foreground">{getEmploymentTypeLabel(type)}</span>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs tabular-nums text-muted-foreground">{pct.toFixed(0)}%</span>
+                        <Badge variant="outline" className="tabular-nums">{count as number}</Badge>
+                      </span>
+                    </div>
+                  );
+                })}
             </div>
+            <Button className="w-full" onClick={exportEmploymentTypes}>
+              <Download className="mr-2 h-4 w-4" />
+              {t("reports.employee.types.export")}
+            </Button>
           </CardContent>
         </Card>
 

@@ -54,8 +54,9 @@
 - **Status:** `[ ]` Pending — needs INSS guidance verification
 
 #### CALC-3: Deduction Cap
-- **Severity:** MEDIUM
-- **Status:** `[x]` DONE — Implemented 1/6 (~16.67%) cap on voluntary deductions per Portuguese Labour Code Art. 279 precedent (TL Law 4/2012 modeled on it). Statutory deductions (WIT, INSS, court orders) exempt. Proportional reduction with warning.
+- **Severity:** LOW (figure confirmed)
+- **Status:** `[x]` CONFIRMED at 30% — **Lei 4/2012, Artigo 42.º(3)** (primary source, Jornal da República / ILO NATLEX): *"Os descontos efetuados não podem exceder, por mês, 30 por cento do valor total da remuneração recebida pelo trabalhador."* The earlier "1/6 ≈ 16.67% / Art. 279" claim was **wrong** — Art. 279 is **Portugal's** Código do Trabalho, not Timor-Leste's. The code value (30%, Art. 42) is correct.
+- **Open nuance:** Art. 42(3) caps the *total* of deductions made; the app caps only *voluntary* deductions (exempting WIT/INSS/court orders, the lenient reading). Decide whether to also warn when total deductions exceed 30%.
 
 #### CALC-4: Negative Salary Rejection
 - **Status:** `[x]` Done
@@ -275,7 +276,7 @@
 |---|------|------|--------|
 | 8 | Add minimum wage warning in payroll | `RunPayroll.tsx` | `[x]` Done |
 | 9 | Add working hours limit warning | `RunPayroll.tsx` | `[x]` Done |
-| 10 | Add deduction cap (if required by law) | `calculations-tl.ts` | `[x]` Done — 1/6 cap per Portuguese Art. 279 |
+| 10 | Add deduction cap (if required by law) | `calculations-tl.ts` | `[x]` 30% CONFIRMED — Lei 4/2012 Art. 42(3) (primary source); the 1/6/Art.279 figure was Portugal's law, not TL |
 | 11 | Fix non-resident tax rate comments | `constants-tl.ts`, `calculations-tl.ts` | `[x]` Done — Verified 10% correct |
 
 ### Week 3 — Production Hardening

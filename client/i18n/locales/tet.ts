@@ -248,6 +248,7 @@ const messages = {
     "botPromptPayroll": "Saláriu tuirmai?",
     "botPromptLeave": "Sé mak lisensa?",
     "botPlaceholder": "Husu ba PrimosBot...",
+    "allGood": "Buat hotu di'ak — laiha buat ne'ebé presiza atensaun",
     "overdue": "atrazu ona",
     "taxOverdue": "Impostu atrazu",
     "overdueFilings": "filing(s) liu prazu",
@@ -3528,6 +3529,38 @@ const messages = {
     }
   },
   "reports": {
+    "payrollRun": {
+      "subtitle": "Rezumu kona-ba saláriu ne'ebé selu duni iha kada prosesu pagamentu.",
+      "selectRunPlaceholder": "Hili prosesu pagamentu",
+      "noRuns": {
+        "title": "Seidauk iha prosesu pagamentu",
+        "description": "Prosesa pagamentu dahuluk atu haree rezumu no detallu kada empregadu iha ne'e.",
+        "action": "Bá Prosesa Pagamentu"
+      },
+      "summary": {
+        "title": "Rezumu prosesu",
+        "description": "Totál ba prosesu pagamentu ne'ebé hili.",
+        "employees": "empregadu selu",
+        "gross": "Saláriu brutu",
+        "wit": "Impostu Rendimentu Saláriu (WIT)",
+        "inssEmployee": "INSS — empregadu (4%)",
+        "inssEmployer": "INSS — empregadór (6%)",
+        "otherDeductions": "Dedusaun seluk",
+        "net": "Saláriu líkidu",
+        "employerCost": "Kustu totál empregadór"
+      },
+      "table": {
+        "title": "Detallu kada empregadu",
+        "description": "Saída empregadu ida-idak simu iha prosesu ne'e.",
+        "employee": "Empregadu",
+        "department": "Departamentu",
+        "gross": "Brutu",
+        "other": "Seluk",
+        "net": "Líkidu",
+        "totals": "Totál",
+        "empty": "Prosesu ne'e laiha rejistu empregadu."
+      }
+    },
     "dashboard": {
       "title": "Relatoriu",
       "subtitle": "Kria no exporta relatoriu ba dadus HR hotu",
@@ -3862,7 +3895,8 @@ const messages = {
       },
       "types": {
         "title": "Fahe Tipu Servisu",
-        "description": "Distribuisaun tuir tipu servisu"
+        "description": "Distribuisaun tuir tipu servisu",
+        "export": "Exporta tipu kontratu"
       },
       "recent": {
         "title": "Empregadu Foun",
@@ -5771,7 +5805,40 @@ const messages = {
     "toastDownloaded": "Payslip Download tiha",
     "toastDownloadedDesc": "Payslip ba {{name}} download tiha.",
     "toastPayslipError": "La konsege kria payslip. Favór koko fali.",
-    "status": "Estatutu"
+    "status": "Estatutu",
+    "payslipDialog": {
+      "title": "Haruka Payslip",
+      "description": "Haruka payslip ba empregadu sira ba {{period}}",
+      "loading": "Karega informasaun empregadu...",
+      "preparing": "Prepara Payslip...",
+      "sending": "Haruka Payslip...",
+      "progressCompleted": "{{current}} husi {{total}} kompletu",
+      "pleaseWait": "Favór hein, ne'e bele lori minutu balun...",
+      "sent": "Haruka ona",
+      "failed": "Falla",
+      "skipped": "Salta",
+      "done": "Remata",
+      "errorsTitle": "Erru ({{count}})",
+      "withEmail": "ho email",
+      "withoutEmail": "la iha email",
+      "selectedCount": "{{count}} hili",
+      "colEmployee": "Empregadu",
+      "colEmail": "Email",
+      "colNetPay": "Saláriu Líkidu",
+      "noEmail": "La iha email",
+      "cancel": "Kansela",
+      "sendToCount": "Haruka ba empregadu {{count}}",
+      "toastErrorTitle": "Erru",
+      "toastLoadErrorDesc": "La konsege karega informasaun empregadu.",
+      "toastMissingInfoDesc": "La iha informasaun tenant ka uza-na'in.",
+      "toastNoRecipientsTitle": "La iha Simu-na'in",
+      "toastNoRecipientsDesc": "Favór hili pelu menus empregadu ida ho enderesu email.",
+      "toastSentTitle": "Payslip Haruka Ona",
+      "toastSentDesc": "Haruka ho susesu payslip {{count}}.",
+      "toastSentIssuesTitle": "Payslip Haruka ho Problema",
+      "toastSentIssuesDesc": "Haruka: {{sent}}, Falla: {{failed}}, Salta: {{skipped}}",
+      "toastSendErrorDesc": "La konsege haruka payslip. Favór koko fali."
+    }
   },
   "bankTransfers": {
     "title": "Transferensia Banku",

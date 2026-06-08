@@ -1,64 +1,47 @@
-import React from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-} from "recharts";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import ModuleSectionNav from "@/components/ModuleSectionNav";
 import { SEO, seoConfig } from "@/components/SEO";
 import { peopleNavConfig } from "@/lib/moduleNav";
-import DashboardShell from "@/components/dashboard/DashboardShell";
-import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
-import { DashboardMetricCard } from "@/components/dashboard/DashboardMetricCard";
-import { ChartTooltip, chartHoverCursor } from "@/components/dashboard/ChartTooltip";
-import { ModuleBrief } from "@/components/dashboard/ModuleBrief";
-import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
+import { useActiveEmployeeSummary, useAllEmployees } from "@/hooks/useEmployees";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
 import { useGoalStats } from "@/hooks/usePerformance";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { interviewService } from "@/services/interviewService";
-import { reviewService } from "@/services/reviewService";
 import { trainingService } from "@/services/trainingService";
 import { disciplinaryService } from "@/services/disciplinaryService";
 import {
   AlertTriangle,
-  ArrowRight,
   Briefcase,
+  CalendarClock,
+  CheckCircle2,
+  ChevronRight,
   GraduationCap,
-  HeartHandshake,
+  Search,
   ShieldAlert,
   Target,
   UserPlus,
   Users,
 } from "lucide-react";
 
-function PeopleDashboardSkeleton() {
+function PeopleHomeSkeleton() {
   return (
     <div className="min-h-screen bg-background">
       <ModuleSectionNav config={peopleNavConfig} />
-      <div className="mx-auto max-w-screen-2xl px-6 py-6 space-y-6">
+      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+        <Skeleton className="h-28 w-full rounded-2xl" />
+        <Skeleton className="h-12 w-full rounded-xl" />
         <Skeleton className="h-40 w-full rounded-2xl" />
-        <div className="grid gap-6 xl:grid-cols-12">
-          <div className="space-y-6 xl:col-span-8">
-            <Skeleton className="h-80 w-full rounded-2xl" />
-            <Skeleton className="h-72 w-full rounded-2xl" />
-          </div>
-          <div className="space-y-6 xl:col-span-4">
-            <Skeleton className="h-40 w-full rounded-2xl" />
-            <Skeleton className="h-40 w-full rounded-2xl" />
-            <Skeleton className="h-64 w-full rounded-2xl" />
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
         </div>
-        <Skeleton className="h-60 w-full rounded-2xl" />
       </div>
     </div>
   );
@@ -73,321 +56,253 @@ export default function PeopleDashboard() {
   const hasPerformance = hasModule("performance");
   const hasTimeleave = hasModule("timeleave");
 
+  const [searchTerm, setSearchTerm] = useState("");
+
   const { data: employeeSummary, isLoading: employeeLoading } = useActiveEmployeeSummary(hasStaff);
-  const { data: leaveStats, isLoading: leaveLoading } = useLeaveStats(hasTimeleave);
-  const { data: goalStats, isLoading: goalLoading } = useGoalStats(undefined);
-  const { data: interviewStats, isLoading: interviewLoading } = useQuery({
-    queryKey: ["tenants", tenantId, "peopleDashboard", "interviews"],
+  const { data: recentEmployees } = useAllEmployees(8, hasStaff);
+  const { data: leaveStats } = useLeaveStats(hasTimeleave);
+  const { data: goalStats } = useGoalStats(undefined);
+  const { data: interviewStats } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleHome", "interviews"],
     queryFn: () => interviewService.getStats(tenantId),
     enabled: hasHiring,
     staleTime: 5 * 60 * 1000,
   });
-  const { data: reviewStats, isLoading: reviewLoading } = useQuery({
-    queryKey: ["tenants", tenantId, "peopleDashboard", "reviews"],
-    queryFn: () => reviewService.getStats(tenantId),
-    enabled: hasPerformance,
-    staleTime: 5 * 60 * 1000,
-  });
-  const { data: trainingStats, isLoading: trainingLoading } = useQuery({
-    queryKey: ["tenants", tenantId, "peopleDashboard", "training"],
+  const { data: trainingStats } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleHome", "training"],
     queryFn: () => trainingService.getTrainingStats(tenantId),
     enabled: hasPerformance,
     staleTime: 5 * 60 * 1000,
   });
-  const { data: disciplinaryStats, isLoading: disciplinaryLoading } = useQuery({
-    queryKey: ["tenants", tenantId, "peopleDashboard", "disciplinary"],
+  const { data: disciplinaryStats } = useQuery({
+    queryKey: ["tenants", tenantId, "peopleHome", "disciplinary"],
     queryFn: () => disciplinaryService.getStats(tenantId),
     enabled: hasPerformance,
     staleTime: 5 * 60 * 1000,
   });
 
-  if (
-    employeeLoading ||
-    leaveLoading ||
-    goalLoading ||
-    interviewLoading ||
-    reviewLoading ||
-    trainingLoading ||
-    disciplinaryLoading
-  ) {
-    return <PeopleDashboardSkeleton />;
+  if (employeeLoading) {
+    return <PeopleHomeSkeleton />;
   }
 
   const activeEmployees = employeeSummary?.active ?? 0;
-  const issues = employeeSummary?.totalIssues ?? 0;
+  const blockingIssues = employeeSummary?.employeesWithBlockingIssues ?? 0;
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
   const interviewsScheduled = hasHiring ? interviewStats?.scheduled ?? 0 : 0;
-  const completedReviews = hasPerformance ? reviewStats?.completed ?? 0 : 0;
   const trainingExpiring = hasPerformance ? trainingStats?.expiringSoon ?? 0 : 0;
-  const disciplinaryOpen = hasPerformance ? (disciplinaryStats?.open ?? 0) + (disciplinaryStats?.inReview ?? 0) : 0;
+  const disciplinaryOpen = hasPerformance
+    ? (disciplinaryStats?.open ?? 0) + (disciplinaryStats?.inReview ?? 0)
+    : 0;
   const goalsActive = hasPerformance ? goalStats?.active ?? 0 : 0;
 
-  const workforceMap = [
-    { name: "Active", value: activeEmployees, tone: "#2563eb" },
-    { name: "Leave", value: pendingLeave, tone: "#06b6d4" },
-    { name: "Interviews", value: interviewsScheduled, tone: "#8b5cf6" },
-    { name: "Goals", value: goalsActive, tone: "#10b981" },
-    { name: "Issues", value: issues, tone: "#f59e0b" },
-    { name: "Cases", value: disciplinaryOpen, tone: "#ef4444" },
-  ];
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    const term = searchTerm.trim();
+    navigate(term ? `/people/employees?search=${encodeURIComponent(term)}` : "/people/employees");
+  };
 
-  const talentSignals = [
+  // Triage: only surface what actually needs a decision (count > 0 and module on)
+  const attention = [
     {
-      title: "Hiring pipeline",
-      value: interviewsScheduled,
-      note: hasHiring ? "Interviews already sitting on the calendar." : "Hiring module is not active for this tenant.",
+      show: hasTimeleave && pendingLeave > 0,
+      count: pendingLeave,
+      label: `leave request${pendingLeave === 1 ? "" : "s"} waiting for approval`,
+      path: "/time-leave/leave",
+      icon: CalendarClock,
+      tone: "text-cyan-600 bg-cyan-100 dark:bg-cyan-950/30 dark:text-cyan-300",
     },
     {
-      title: "Review completion",
-      value: completedReviews,
-      note: hasPerformance ? `${reviewStats?.averageRating ?? 0} average rating across completed reviews.` : "Performance module is not active.",
+      show: hasStaff && blockingIssues > 0,
+      count: blockingIssues,
+      label: `employee record${blockingIssues === 1 ? "" : "s"} missing required info`,
+      path: "/people/employees?filter=blocking-issues",
+      icon: AlertTriangle,
+      tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
     {
-      title: "Training watch",
-      value: trainingExpiring,
-      note: hasPerformance ? "Certificates expiring within the next 30 days." : "Training tracking is not active.",
+      show: hasPerformance && trainingExpiring > 0,
+      count: trainingExpiring,
+      label: `certificate${trainingExpiring === 1 ? "" : "s"} expiring within 30 days`,
+      path: "/people/training",
+      icon: GraduationCap,
+      tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
     },
-  ];
+    {
+      show: hasHiring && interviewsScheduled > 0,
+      count: interviewsScheduled,
+      label: `interview${interviewsScheduled === 1 ? "" : "s"} scheduled`,
+      path: "/people/interviews",
+      icon: Briefcase,
+      tone: "text-blue-600 bg-blue-100 dark:bg-blue-950/30 dark:text-blue-300",
+    },
+    {
+      show: hasPerformance && disciplinaryOpen > 0,
+      count: disciplinaryOpen,
+      label: `open employee case${disciplinaryOpen === 1 ? "" : "s"}`,
+      path: "/people/disciplinary",
+      icon: ShieldAlert,
+      tone: "text-red-600 bg-red-100 dark:bg-red-950/30 dark:text-red-300",
+    },
+  ].filter((item) => item.show);
 
-  const briefLead =
-    issues > 0 || disciplinaryOpen > 0
-      ? `The people module is showing both growth and friction, with workforce activity moving forward while some compliance or employee-case pressure still needs attention.`
-      : `The people module is in a healthy operating state, with the main focus moving from cleanup toward growth, development, and hiring momentum.`;
+  const hubCards = [
+    {
+      show: hasStaff,
+      title: "Staff",
+      meta: `${activeEmployees} active`,
+      path: "/people/employees",
+      icon: Users,
+    },
+    {
+      show: hasHiring,
+      title: "Hiring",
+      meta: `${interviewsScheduled} interview${interviewsScheduled === 1 ? "" : "s"} scheduled`,
+      path: "/people/jobs",
+      icon: Briefcase,
+    },
+    {
+      show: hasTimeleave,
+      title: "Time & Leave",
+      meta: `${pendingLeave} pending request${pendingLeave === 1 ? "" : "s"}`,
+      path: "/time-leave",
+      icon: CalendarClock,
+    },
+    {
+      show: hasPerformance,
+      title: "Performance",
+      meta: `${goalsActive} active goal${goalsActive === 1 ? "" : "s"}`,
+      path: "/people/reviews",
+      icon: Target,
+    },
+  ].filter((card) => card.show);
+
+  const recent = (recentEmployees ?? []).slice(0, 6);
 
   return (
     <div className="min-h-screen bg-background">
       <SEO {...seoConfig.people} />
       <ModuleSectionNav config={peopleNavConfig} />
 
-      <DashboardShell
-        section="people"
-        title="People and talent cockpit"
-        subtitle="A joined-up read on staff strength, hiring momentum, performance progress, and the employee signals that deserve leadership attention this week."
-        icon={Users}
-        actions={
-          <>
-            <Button variant="outline" onClick={() => navigate("/people/employees")}>
-              Employee directory
-            </Button>
-            <Button className="bg-blue-600 text-white hover:bg-blue-700" onClick={() => navigate("/people/add")}>
+      <div className="mx-auto max-w-screen-xl px-6 py-8 space-y-8">
+        {/* Header + search */}
+        <div className="space-y-5">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">People</h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {hasStaff
+                  ? `${activeEmployees} active staff. Find anyone, or jump to what needs you.`
+                  : "Find anyone, or jump to what needs you."}
+              </p>
+            </div>
+            <Button
+              className="bg-blue-600 text-white hover:bg-blue-700"
+              onClick={() => navigate("/people/add")}
+            >
               <UserPlus className="mr-2 h-4 w-4" />
               Add employee
             </Button>
-          </>
-        }
-        badges={
-          <>
-            <Badge variant="secondary">{activeEmployees} active staff</Badge>
-            <Badge variant="secondary">{issues} compliance issue{issues === 1 ? "" : "s"}</Badge>
-          </>
-        }
-        main={
-          <>
-            <DashboardPanel eyebrow="Signature view" title="Workforce spectrum">
-              <div className="grid gap-6 lg:grid-cols-[1.08fr_0.92fr]">
-                <div className="h-80 rounded-2xl border border-border/60 bg-muted/25 p-4">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={workforceMap} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                      <CartesianGrid vertical={false} stroke="hsl(var(--border) / 0.35)" />
-                      <XAxis dataKey="name" tickLine={false} axisLine={false} tick={{ fontSize: 12, fill: "hsl(var(--muted-foreground))" }} />
-                      <Tooltip cursor={chartHoverCursor} content={<ChartTooltip valueLabel="staff" />} />
-                      <Bar dataKey="value" radius={[8, 8, 0, 0]} maxBarSize={56}>
-                        {workforceMap.map((entry) => (
-                          <Cell key={entry.name} fill={entry.tone} />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-                <div className="space-y-3">
-                  {talentSignals.map((signal) => (
-                    <div key={signal.title} className="rounded-2xl border border-border/60 bg-background/80 p-4">
-                      <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="text-sm font-semibold">{signal.title}</p>
-                          <p className="mt-1 text-sm text-muted-foreground">{signal.note}</p>
-                        </div>
-                        <p className="text-2xl font-bold tabular-nums">{signal.value}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </DashboardPanel>
+          </div>
 
-            <DashboardPanel eyebrow="People temperature" title="Focus areas moving through the workforce">
-              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {[
-                  {
-                    title: "Hiring",
-                    value: interviewsScheduled,
-                    description: "Scheduled interviews pushing the pipeline forward.",
-                    path: "/people/interviews",
-                    icon: Briefcase,
-                  },
-                  {
-                    title: "Performance",
-                    value: completedReviews,
-                    description: "Completed reviews already closed out this cycle.",
-                    path: "/people/reviews",
-                    icon: Target,
-                  },
-                  {
-                    title: "Training",
-                    value: trainingExpiring,
-                    description: "Certificates that will expire soon and may need renewal.",
-                    path: "/people/training",
-                    icon: GraduationCap,
-                  },
-                  {
-                    title: "Employee cases",
-                    value: disciplinaryOpen,
-                    description: "Open or in-review disciplinary matters still visible in HR.",
-                    path: "/people/disciplinary",
-                    icon: ShieldAlert,
-                  },
-                ].map((item) => (
-                  <button
-                    key={item.title}
-                    onClick={() => navigate(item.path)}
-                    className="rounded-2xl border border-border/60 bg-muted/25 p-4 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/30 hover:bg-background"
-                  >
-                    <div className="mb-4 flex items-center justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
-                        <item.icon className="h-5 w-5" />
-                      </div>
-                      <span className="text-2xl font-bold tabular-nums">{item.value}</span>
-                    </div>
-                    <p className="text-sm font-semibold">{item.title}</p>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
-                  </button>
-                ))}
-              </div>
-            </DashboardPanel>
-          </>
-        }
-        rail={
-          <>
-            <DashboardMetricCard
-              label="Active employees"
-              value={activeEmployees}
-              hint="Current live workforce in the system"
-              icon={Users}
-              toneClass="bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300"
-              onClick={() => navigate("/people/employees")}
+          <form onSubmit={handleSearch} className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Find anyone — name, role, or ID number…"
+              className="h-12 rounded-xl pl-12 text-base"
+              aria-label="Search employees"
             />
-            <DashboardMetricCard
-              label="Compliance issues"
-              value={issues}
-              hint="Employee records still missing required information"
-              icon={AlertTriangle}
-              toneClass="bg-amber-100 text-amber-700 dark:bg-amber-950/30 dark:text-amber-300"
-              onClick={() => navigate("/people/employees?filter=blocking-issues")}
-            />
-            <DashboardMetricCard
-              label="Pending leave"
-              value={pendingLeave}
-              hint="Requests that still need a decision"
-              icon={HeartHandshake}
-              toneClass="bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300"
-              onClick={() => navigate("/time-leave/leave")}
-            />
+          </form>
+        </div>
 
-            <DashboardPanel eyebrow="Action rail" title="Best next moves">
-              <div className="space-y-3">
-                {[
-                  {
-                    title: "Review employee issues",
-                    description: "Clear the records most likely to create HR or payroll friction.",
-                    path: "/people/employees?filter=blocking-issues",
-                    icon: AlertTriangle,
-                  },
-                  {
-                    title: "Check the interview queue",
-                    description: "Keep the hiring pipeline moving while candidates are warm.",
-                    path: "/people/interviews",
-                    icon: Briefcase,
-                  },
-                  {
-                    title: "Open performance reviews",
-                    description: "Push review completion and close the loop on feedback.",
-                    path: "/people/reviews",
-                    icon: Target,
-                  },
-                ].map((action) => (
+        {/* Needs attention */}
+        <section>
+          <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Needs your attention
+          </h2>
+          {attention.length > 0 ? (
+            <div className="overflow-hidden rounded-2xl border border-border/60 bg-card">
+              {attention.map((item, idx) => (
+                <button
+                  key={item.path}
+                  onClick={() => navigate(item.path)}
+                  className={`flex w-full items-center gap-4 px-4 py-3.5 text-left transition-colors hover:bg-muted/50 ${
+                    idx !== attention.length - 1 ? "border-b border-border/60" : ""
+                  }`}
+                >
+                  <span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${item.tone}`}>
+                    <item.icon className="h-4 w-4" />
+                  </span>
+                  <span className="flex-1 text-sm">
+                    <span className="font-semibold tabular-nums">{item.count}</span>{" "}
+                    <span className="text-foreground/90">{item.label}</span>
+                  </span>
+                  <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="flex items-center gap-3 rounded-2xl border border-border/60 bg-card px-4 py-5 text-sm text-muted-foreground">
+              <CheckCircle2 className="h-5 w-5 text-blue-600" />
+              You&apos;re all caught up — nothing needs attention right now.
+            </div>
+          )}
+        </section>
+
+        {/* Module hub */}
+        {hubCards.length > 0 && (
+          <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {hubCards.map((card) => (
+              <button
+                key={card.path}
+                onClick={() => navigate(card.path)}
+                className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/40"
+              >
+                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                  <card.icon className="h-5 w-5" />
+                </span>
+                <div>
+                  <p className="text-base font-semibold">{card.title}</p>
+                  <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>
+                </div>
+              </button>
+            ))}
+          </section>
+        )}
+
+        {/* Recently added */}
+        {hasStaff && recent.length > 0 && (
+          <section>
+            <h2 className="mb-3 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Recently added
+            </h2>
+            <div className="flex flex-wrap gap-3">
+              {recent.map((emp) => {
+                const name = `${emp.personalInfo?.firstName ?? ""} ${emp.personalInfo?.lastName ?? ""}`.trim();
+                const initials =
+                  `${emp.personalInfo?.firstName?.[0] ?? ""}${emp.personalInfo?.lastName?.[0] ?? ""}`.toUpperCase() ||
+                  "?";
+                return (
                   <button
-                    key={action.title}
-                    onClick={() => navigate(action.path)}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-border/60 bg-muted/25 px-4 py-3 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/30 hover:bg-background"
+                    key={emp.id}
+                    onClick={() => navigate(`/people/employees?id=${emp.id}`)}
+                    className="flex items-center gap-3 rounded-full border border-border/60 bg-card py-1.5 pl-1.5 pr-4 transition-colors hover:bg-muted/50"
                   >
-                    <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
-                      <action.icon className="h-4 w-4" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold">{action.title}</p>
-                      <p className="text-sm text-muted-foreground">{action.description}</p>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                    <Avatar className="h-8 w-8">
+                      {emp.photoUrl ? <AvatarImage src={emp.photoUrl} alt={name} /> : null}
+                      <AvatarFallback className="bg-blue-100 text-xs font-medium text-blue-700 dark:bg-blue-950/30 dark:text-blue-300">
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <span className="text-sm font-medium">{name || "Unnamed"}</span>
                   </button>
-                ))}
-              </div>
-            </DashboardPanel>
-          </>
-        }
-        brief={
-          <ModuleBrief
-            section="people"
-            lead={briefLead}
-            columns={[
-              {
-                title: "What’s happening now",
-                items: [
-                  `${activeEmployees} employees are active in the platform right now.`,
-                  `${interviewsScheduled} interviews, ${completedReviews} completed reviews, and ${goalsActive} active goals are shaping the current people workload.`,
-                ],
-              },
-              {
-                title: "Watch this week",
-                items: [
-                  issues > 0
-                    ? `Compliance gaps in employee records can still ripple into payroll and reporting.`
-                    : `Employee records are mostly clean, reducing downstream HR risk.`,
-                  trainingExpiring > 0
-                    ? `${trainingExpiring} certification${trainingExpiring === 1 ? "" : "s"} are nearing expiry and may affect readiness or compliance.`
-                    : `No major certification expiry wave is building right now.`,
-                ],
-              },
-              {
-                title: "Actions required",
-                items: [
-                  pendingLeave > 0
-                    ? `Resolve pending leave requests so managers and payroll are working from the same picture.`
-                    : `Leave workflow is not currently creating pressure.`,
-                  disciplinaryOpen > 0
-                    ? `Keep open employee cases moving so they do not quietly stall in review.`
-                    : `No disciplinary backlog is dominating the HR queue.`,
-                ],
-              },
-              {
-                title: "Week ahead",
-                items: [
-                  `Use the next few days to close any hiring follow-through and convert interviews into clear decisions.`,
-                  `Keep performance momentum moving by pushing reviews, training renewals, and goal follow-up together rather than separately.`,
-                ],
-              },
-              {
-                title: "Interesting signals",
-                items: [
-                  reviewStats ? `Average review score across completed reviews is ${reviewStats.averageRating}.` : `Performance scoring data is still light.`,
-                  hasHiring
-                    ? `The hiring lane is currently carrying ${interviewsScheduled} scheduled interview${interviewsScheduled === 1 ? "" : "s"}.`
-                    : `Hiring is not active for this tenant, so the people load is more about retention and development.`,
-                ],
-              },
-            ]}
-          />
-        }
-      />
+                );
+              })}
+            </div>
+          </section>
+        )}
+      </div>
     </div>
   );
 }

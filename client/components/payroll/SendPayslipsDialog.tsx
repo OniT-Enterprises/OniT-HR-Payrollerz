@@ -28,6 +28,7 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { useTenant } from "@/contexts/TenantContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { useI18n } from "@/i18n/I18nProvider";
 import { formatDateTL } from "@/lib/dateUtils";
 import {
   Mail,
@@ -76,10 +77,11 @@ interface EmployeeStats {
 // --- Sub-components ---
 
 function LoadingContent() {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <Loader2 className="h-8 w-8 animate-spin text-green-600 mb-4" />
-      <p className="text-muted-foreground">Loading employee information...</p>
+      <p className="text-muted-foreground">{t("payrollHistory.payslipDialog.loading")}</p>
     </div>
   );
 }
@@ -91,16 +93,22 @@ function SendingProgressContent({
   status: "preparing" | "sending";
   progress: { current: number; total: number };
 }) {
+  const { t } = useI18n();
   return (
     <div className="flex flex-col items-center justify-center py-12">
       <div className="relative mb-6">
         <Send className="h-12 w-12 text-green-600 animate-pulse" />
       </div>
       <h3 className="text-lg font-semibold mb-2">
-        {status === "preparing" ? "Preparing Payslips..." : "Sending Payslips..."}
+        {status === "preparing"
+          ? t("payrollHistory.payslipDialog.preparing")
+          : t("payrollHistory.payslipDialog.sending")}
       </h3>
       <p className="text-muted-foreground mb-4">
-        {progress.current} of {progress.total} completed
+        {t("payrollHistory.payslipDialog.progressCompleted", {
+          current: progress.current,
+          total: progress.total,
+        })}
       </p>
       <div className="w-full max-w-md">
         <Progress
@@ -109,7 +117,7 @@ function SendingProgressContent({
         />
       </div>
       <p className="text-sm text-muted-foreground mt-2">
-        Please wait, this may take a few minutes...
+        {t("payrollHistory.payslipDialog.pleaseWait")}
       </p>
     </div>
   );
@@ -124,6 +132,7 @@ function SendResultsContent({
   employees: EmployeeEmailInfo[];
   onClose: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-6">
       {/* Summary cards */}
@@ -131,21 +140,21 @@ function SendResultsContent({
         <ResultCard
           icon={<CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />}
           count={result.sent}
-          label="Sent"
+          label={t("payrollHistory.payslipDialog.sent")}
           bgClass="bg-green-50 dark:bg-green-950/30"
           textClass="text-green-600"
         />
         <ResultCard
           icon={<XCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />}
           count={result.failed}
-          label="Failed"
+          label={t("payrollHistory.payslipDialog.failed")}
           bgClass="bg-red-50 dark:bg-red-950/30"
           textClass="text-red-600"
         />
         <ResultCard
           icon={<AlertCircle className="h-8 w-8 text-yellow-600 mx-auto mb-2" />}
           count={result.skipped}
-          label="Skipped"
+          label={t("payrollHistory.payslipDialog.skipped")}
           bgClass="bg-yellow-50 dark:bg-yellow-950/30"
           textClass="text-yellow-600"
         />
@@ -157,7 +166,7 @@ function SendResultsContent({
       )}
 
       <div className="flex justify-end">
-        <Button onClick={onClose}>Done</Button>
+        <Button onClick={onClose}>{t("payrollHistory.payslipDialog.done")}</Button>
       </div>
     </div>
   );
@@ -192,11 +201,12 @@ function ErrorDetails({
   errors: SendPayslipsResult["errors"];
   employees: EmployeeEmailInfo[];
 }) {
+  const { t } = useI18n();
   return (
     <div className="border rounded-lg">
       <div className="p-3 bg-red-50 dark:bg-red-950/30 border-b">
         <h4 className="font-medium text-red-800 dark:text-red-200">
-          Errors ({errors.length})
+          {t("payrollHistory.payslipDialog.errorsTitle", { count: errors.length })}
         </h4>
       </div>
       <ScrollArea className="max-h-48">
@@ -233,6 +243,7 @@ function EmployeeSelectionContent({
   onToggleEmployee: (employeeId: string) => void;
   onToggleSelectAll: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <div className="space-y-4">
       {/* Stats summary */}
@@ -241,21 +252,21 @@ function EmployeeSelectionContent({
           <div className="flex items-center gap-2">
             <Users className="h-5 w-5 text-muted-foreground" />
             <span className="text-sm">
-              <strong>{stats.withEmail}</strong> with email
+              <strong>{stats.withEmail}</strong> {t("payrollHistory.payslipDialog.withEmail")}
             </span>
           </div>
           {stats.withoutEmail > 0 && (
             <div className="flex items-center gap-2">
               <MailX className="h-5 w-5 text-yellow-600" />
               <span className="text-sm text-yellow-600">
-                <strong>{stats.withoutEmail}</strong> without email
+                <strong>{stats.withoutEmail}</strong> {t("payrollHistory.payslipDialog.withoutEmail")}
               </span>
             </div>
           )}
         </div>
         <div>
           <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950/50 dark:text-green-400">
-            {stats.selected} selected
+            {t("payrollHistory.payslipDialog.selectedCount", { count: stats.selected })}
           </Badge>
         </div>
       </div>
@@ -274,9 +285,9 @@ function EmployeeSelectionContent({
                   onCheckedChange={onToggleSelectAll}
                 />
               </TableHead>
-              <TableHead>Employee</TableHead>
-              <TableHead>Email</TableHead>
-              <TableHead className="text-right">Net Pay</TableHead>
+              <TableHead>{t("payrollHistory.payslipDialog.colEmployee")}</TableHead>
+              <TableHead>{t("payrollHistory.payslipDialog.colEmail")}</TableHead>
+              <TableHead className="text-right">{t("payrollHistory.payslipDialog.colNetPay")}</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -301,6 +312,7 @@ function EmployeeRow({
   emp: EmployeeEmailInfo;
   onToggle: (employeeId: string) => void;
 }) {
+  const { t } = useI18n();
   return (
     <TableRow className={!emp.email ? "opacity-60" : ""}>
       <TableCell>
@@ -324,7 +336,7 @@ function EmployeeRow({
         ) : (
           <span className="text-sm text-yellow-600 flex items-center gap-1">
             <MailX className="h-3 w-3" />
-            No email
+            {t("payrollHistory.payslipDialog.noEmail")}
           </span>
         )}
       </TableCell>
@@ -395,6 +407,7 @@ export function SendPayslipsDialog({
   records,
 }: SendPayslipsDialogProps) {
   const { toast } = useToast();
+  const { t } = useI18n();
   const { session } = useTenant();
   const { user } = useAuth();
   const tenantId = session?.tid;
@@ -453,8 +466,8 @@ export function SendPayslipsDialog({
       } catch (error) {
         console.error("Error loading employee data:", error);
         toast({
-          title: "Error",
-          description: "Failed to load employee information.",
+          title: t("payrollHistory.payslipDialog.toastErrorTitle"),
+          description: t("payrollHistory.payslipDialog.toastLoadErrorDesc"),
           variant: "destructive",
         });
       } finally {
@@ -513,8 +526,8 @@ export function SendPayslipsDialog({
   const handleSendPayslips = async () => {
     if (!tenantId || !user?.uid) {
       toast({
-        title: "Error",
-        description: "Missing tenant or user information.",
+        title: t("payrollHistory.payslipDialog.toastErrorTitle"),
+        description: t("payrollHistory.payslipDialog.toastMissingInfoDesc"),
         variant: "destructive",
       });
       return;
@@ -523,8 +536,8 @@ export function SendPayslipsDialog({
     const selectedEmployees = employees.filter((e) => e.selected && e.email);
     if (selectedEmployees.length === 0) {
       toast({
-        title: "No Recipients",
-        description: "Please select at least one employee with an email address.",
+        title: t("payrollHistory.payslipDialog.toastNoRecipientsTitle"),
+        description: t("payrollHistory.payslipDialog.toastNoRecipientsDesc"),
         variant: "destructive",
       });
       return;
@@ -545,21 +558,25 @@ export function SendPayslipsDialog({
       // Show summary toast
       if (sendResult.failed === 0 && sendResult.skipped === 0) {
         toast({
-          title: "Payslips Sent",
-          description: `Successfully sent ${sendResult.sent} payslip${sendResult.sent !== 1 ? "s" : ""}.`,
+          title: t("payrollHistory.payslipDialog.toastSentTitle"),
+          description: t("payrollHistory.payslipDialog.toastSentDesc", { count: sendResult.sent }),
         });
       } else {
         toast({
-          title: "Payslips Sent with Issues",
-          description: `Sent: ${sendResult.sent}, Failed: ${sendResult.failed}, Skipped: ${sendResult.skipped}`,
+          title: t("payrollHistory.payslipDialog.toastSentIssuesTitle"),
+          description: t("payrollHistory.payslipDialog.toastSentIssuesDesc", {
+            sent: sendResult.sent,
+            failed: sendResult.failed,
+            skipped: sendResult.skipped,
+          }),
           variant: "destructive",
         });
       }
     } catch (error) {
       console.error("Error sending payslips:", error);
       toast({
-        title: "Error",
-        description: "Failed to send payslips. Please try again.",
+        title: t("payrollHistory.payslipDialog.toastErrorTitle"),
+        description: t("payrollHistory.payslipDialog.toastSendErrorDesc"),
         variant: "destructive",
       });
       setStatus("idle");
@@ -599,13 +616,14 @@ export function SendPayslipsDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Mail className="h-5 w-5 text-green-600" />
-            Send Payslips
+            {t("payrollHistory.payslipDialog.title")}
           </DialogTitle>
           <DialogDescription>
-            Email payslips to employees for{" "}
-            {formatDateTL(payrollRun.periodStart, {
-              month: "long",
-              year: "numeric",
+            {t("payrollHistory.payslipDialog.description", {
+              period: formatDateTL(payrollRun.periodStart, {
+                month: "long",
+                year: "numeric",
+              }),
             })}
           </DialogDescription>
         </DialogHeader>
@@ -615,7 +633,7 @@ export function SendPayslipsDialog({
         {status === "idle" && !loading && (
           <DialogFooter>
             <Button variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {t("payrollHistory.payslipDialog.cancel")}
             </Button>
             <Button
               onClick={handleSendPayslips}
@@ -623,7 +641,7 @@ export function SendPayslipsDialog({
               className="bg-gradient-to-r from-green-500 to-emerald-500 text-white hover:from-green-600 hover:to-emerald-600"
             >
               <Send className="h-4 w-4 mr-2" />
-              Send to {stats.selected} Employee{stats.selected !== 1 ? "s" : ""}
+              {t("payrollHistory.payslipDialog.sendToCount", { count: stats.selected })}
             </Button>
           </DialogFooter>
         )}

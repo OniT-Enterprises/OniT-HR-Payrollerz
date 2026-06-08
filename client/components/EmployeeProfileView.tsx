@@ -166,7 +166,8 @@ function FixedTermConversionWarning({ employee }: { employee: Employee }) {
       await employeeService.updateEmployee(tenantId, employee.id, {
         jobDetails: {
           ...employee.jobDetails,
-          employmentType: "Permanent",
+          // "Permanent" = full-time with no contract end date (canonical form value)
+          employmentType: "Full-time",
           contractEndDate: "",
         },
       });

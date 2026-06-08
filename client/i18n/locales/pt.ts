@@ -12,6 +12,7 @@ const messages = {
     "amount": "Montante",
     "back": "Voltar",
     "cancel": "Cancelar",
+    "collapse": "Recolher",
     "city": "Cidade",
     "date": "Data",
     "delete": "Eliminar",
@@ -34,6 +35,7 @@ const messages = {
     "loaded": "carregado",
     "loading": "A carregar...",
     "more": "Mais",
+    "notifications": "Notificações",
     "moreActions": "Mais ações",
     "of": "de",
     "basicMode": "Modo Básico",
@@ -246,6 +248,10 @@ const messages = {
     "botPromptPayroll": "Próxima folha?",
     "botPromptLeave": "Quem está de licença?",
     "botPlaceholder": "Perguntar ao PrimosBot...",
+    "allGood": "Tudo em ordem — nada precisa de atenção",
+    "overdue": "em atraso há",
+    "taxOverdue": "Declarações fiscais em atraso",
+    "overdueFilings": "declaração(ões) fora do prazo",
     "runPayroll": "Processar Folha",
     "addEmployee": "Adicionar Funcionário",
     "generateReport": "Gerar Relatório",
@@ -2606,6 +2612,38 @@ const messages = {
     }
   },
   "reports": {
+    "payrollRun": {
+      "subtitle": "Resumo do que foi efetivamente pago em cada processamento de salários.",
+      "selectRunPlaceholder": "Selecione um processamento",
+      "noRuns": {
+        "title": "Ainda não há processamentos",
+        "description": "Processe o primeiro salário para ver resumos pagos e detalhe por funcionário aqui.",
+        "action": "Ir para Processar Salários"
+      },
+      "summary": {
+        "title": "Resumo do processamento",
+        "description": "Totais do processamento selecionado.",
+        "employees": "funcionários pagos",
+        "gross": "Salário bruto",
+        "wit": "Imposto sobre Rendimentos do Trabalho (WIT)",
+        "inssEmployee": "INSS — trabalhador (4%)",
+        "inssEmployer": "INSS — empregador (6%)",
+        "otherDeductions": "Outras deduções",
+        "net": "Salário líquido",
+        "employerCost": "Custo total do empregador"
+      },
+      "table": {
+        "title": "Detalhe por funcionário",
+        "description": "Quanto cada funcionário recebeu neste processamento.",
+        "employee": "Funcionário",
+        "department": "Departamento",
+        "gross": "Bruto",
+        "other": "Outras",
+        "net": "Líquido",
+        "totals": "Totais",
+        "empty": "Este processamento não tem registos de funcionários."
+      }
+    },
     "dashboard": {
       "title": "Relatórios",
       "subtitle": "Gerar e exportar relatórios para todos os dados de RH",
@@ -2940,7 +2978,8 @@ const messages = {
       },
       "types": {
         "title": "Distribuição por Tipo de Emprego",
-        "description": "Distribuição por tipo de vínculo"
+        "description": "Distribuição por tipo de vínculo",
+        "export": "Exportar tipos de contrato"
       },
       "recent": {
         "title": "Funcionários Recentes",
@@ -5766,7 +5805,40 @@ const messages = {
     "toastDownloaded": "Recibo Descarregado",
     "toastDownloadedDesc": "Recibo de {{name}} foi descarregado.",
     "toastPayslipError": "Falha ao gerar recibo. Por favor tente novamente.",
-    "status": "Estado"
+    "status": "Estado",
+    "payslipDialog": {
+      "title": "Enviar Recibos",
+      "description": "Enviar recibos por email aos funcionários referentes a {{period}}",
+      "loading": "A carregar informação dos funcionários...",
+      "preparing": "A preparar recibos...",
+      "sending": "A enviar recibos...",
+      "progressCompleted": "{{current}} de {{total}} concluídos",
+      "pleaseWait": "Por favor aguarde, isto pode demorar alguns minutos...",
+      "sent": "Enviados",
+      "failed": "Falhados",
+      "skipped": "Ignorados",
+      "done": "Concluído",
+      "errorsTitle": "Erros ({{count}})",
+      "withEmail": "com email",
+      "withoutEmail": "sem email",
+      "selectedCount": "{{count}} selecionados",
+      "colEmployee": "Funcionário",
+      "colEmail": "Email",
+      "colNetPay": "Salário Líquido",
+      "noEmail": "Sem email",
+      "cancel": "Cancelar",
+      "sendToCount": "Enviar a {{count}} funcionário(s)",
+      "toastErrorTitle": "Erro",
+      "toastLoadErrorDesc": "Falha ao carregar a informação dos funcionários.",
+      "toastMissingInfoDesc": "Informação de inquilino ou utilizador em falta.",
+      "toastNoRecipientsTitle": "Sem Destinatários",
+      "toastNoRecipientsDesc": "Por favor selecione pelo menos um funcionário com endereço de email.",
+      "toastSentTitle": "Recibos Enviados",
+      "toastSentDesc": "Enviados com sucesso {{count}} recibo(s).",
+      "toastSentIssuesTitle": "Recibos Enviados com Problemas",
+      "toastSentIssuesDesc": "Enviados: {{sent}}, Falhados: {{failed}}, Ignorados: {{skipped}}",
+      "toastSendErrorDesc": "Falha ao enviar recibos. Por favor tente novamente."
+    }
   },
   "bankTransfers": {
     "title": "Transferências Bancárias",
