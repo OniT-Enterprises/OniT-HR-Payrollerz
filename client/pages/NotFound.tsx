@@ -22,9 +22,9 @@ const NotFound = () => {
       <SEO {...seoConfig.notFound} />
       <div className="text-center px-6 max-w-md">
         <img
-          src="/images/illustrations/meza-404.webp"
-          alt="Lost desk character at a crossroads"
-          className="w-64 h-64 mx-auto mb-8 drop-shadow-2xl"
+          src="/images/illustrations/xefe-404.webp"
+          alt="XefeBot looking lost with a map"
+          className="w-64 h-64 mx-auto mb-8 object-contain drop-shadow-2xl"
         />
         <h1 className="text-5xl font-bold tracking-tight text-foreground mb-3">
           {t("notFound.title")}
