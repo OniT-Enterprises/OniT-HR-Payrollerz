@@ -27,7 +27,7 @@ export function FeatureRoute({
 }: FeatureRouteProps) {
   const location = useLocation();
   const { user, loading: authLoading, authResolved } = useAuth();
-  const { session, loading: tenantLoading, hasModule, canManage } = useTenant();
+  const { session, loading: tenantLoading, tenantResolved, hasModule, canManage } = useTenant();
 
   // Routes that set an explicit fallbackPath keep the old silent redirect;
   // otherwise denied users land on /unauthorized so they know why.
@@ -41,6 +41,12 @@ export function FeatureRoute({
 
   if (!user) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
+  // Session may still be restoring on a cold deep-link even when loading=false
+  // (partial cache). Wait rather than bounce to the fallback.
+  if (!session && !tenantResolved) {
+    return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
   if (!session) {

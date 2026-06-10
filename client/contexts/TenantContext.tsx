@@ -30,6 +30,10 @@ interface TenantContextType {
   // Current session
   session: TenantSession | null;
   loading: boolean;
+  /** True once the initial tenant-session restore has finished. Guards must
+   *  not treat session===null as final until this flips true (a partial cache
+   *  can leave loading=false with session still null on a cold deep-link). */
+  tenantResolved: boolean;
   error: string | null;
 
   // Available tenants for current user
@@ -149,6 +153,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
 
   const [session, setSession] = useState<TenantSession | null>(cachedTenant?.session ?? null);
   const [loading, setLoading] = useState(cachedTenant ? false : true);
+  const [tenantResolved, setTenantResolved] = useState<boolean>(Boolean(cachedTenant?.session));
   const [error, setError] = useState<string | null>(null);
   const [availableTenants, setAvailableTenants] = useState<
     Array<{ id: string; name: string; role: TenantRole }>
@@ -536,6 +541,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setImpersonatedTenantId(null);
         setImpersonatedTenantName(null);
         setLoading(false);
+        setTenantResolved(true);
         localStorage.removeItem(TENANT_CACHE_KEY);
         return;
       }
@@ -562,6 +568,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
               setImpersonatedTenantName(savedImpersonatingName || savedImpersonatingId);
               // Don't cache impersonation sessions
               setLoading(false);
+              setTenantResolved(true);
               return;
             }
           } catch {
@@ -603,6 +610,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
         setError(`Tenant error: ${error}`);
       } finally {
         setLoading(false);
+        setTenantResolved(true);
       }
     };
 
@@ -628,6 +636,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
   const value: TenantContextType = {
     session,
     loading,
+    tenantResolved,
     error,
     availableTenants,
     isImpersonating,
