@@ -32,6 +32,26 @@ const SUBJECTS = {
   money:       'A single invoice document with a round dollar-sign badge. Dominant color: indigo.',
   accounting:  'A balance scale in perfect balance next to a closed ledger book. Dominant color: orange.',
   reports:     'A bar chart with bars rising and an upward trend arrow. Dominant color: violet.',
+
+  // Time & Leave sub-features (cyan)
+  'tl-attendance':   'A daily attendance check-in sheet with a big green checkmark and a small clock. Dominant color: cyan.',
+  'tl-leave':        'A calendar page with a palm leaf and a sun, signifying time off / vacation. Dominant color: cyan.',
+  'tl-timetracking': 'A stopwatch / timer showing motion ticks. Dominant color: cyan.',
+  'tl-shifts':       'A weekly shift roster grid with a few colored time blocks. Dominant color: cyan.',
+
+  // Payroll sub-features (green)
+  'pr-history':  'A small stack of past payslip documents with a clock / rewind arrow. Dominant color: leaf green (#6A9C29).',
+  'pr-bank':     'A bank building with a money-transfer arrow and a coin. Dominant color: leaf green (#6A9C29).',
+  'pr-tax':      'A tax form document with a percent sign and an official stamp. Dominant color: leaf green (#6A9C29).',
+
+  // Money sub-features (indigo)
+  'mn-bills':    'A utility bill / statement with a red "DUE" stamp and a coin. Dominant color: indigo.',
+  'mn-expenses': 'An open wallet with banknotes and a small paper receipt. Dominant color: indigo.',
+
+  // Accounting sub-features (orange)
+  'ac-chart':    'An open accounting ledger book showing a neat list of account rows. Dominant color: orange.',
+  'ac-journal':  'A ledger book with a fountain pen writing an entry. Dominant color: orange.',
+  'ac-balance':  'A financial balance-sheet report document with two columns and a small building icon. Dominant color: orange.',
 };
 
 const which = process.argv.slice(2);

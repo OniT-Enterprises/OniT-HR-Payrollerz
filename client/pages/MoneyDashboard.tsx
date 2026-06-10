@@ -85,6 +85,7 @@ export default function MoneyDashboard() {
       show: payablesSummary.dueThisWeekCount > 0,
       text: `${payablesSummary.dueThisWeekCount} bill${payablesSummary.dueThisWeekCount === 1 ? "" : "s"} due this week — ${formatCurrency(payablesSummary.dueThisWeek)}`,
       path: "/money/bills",
+      art: "/images/illustrations/xefe-card-mn-bills.webp",
       icon: Clock3,
       tone: AMBER,
     },
@@ -95,6 +96,7 @@ export default function MoneyDashboard() {
       title: "Invoices",
       meta: `${formatCurrency(stats.totalOutstanding)} outstanding`,
       path: "/money/invoices",
+      art: "/images/illustrations/xefe-card-money.webp",
       icon: FileText,
     },
     {
@@ -110,12 +112,14 @@ export default function MoneyDashboard() {
       title: "Expenses",
       meta: "Track spending",
       path: "/money/expenses",
+      art: "/images/illustrations/xefe-card-mn-expenses.webp",
       icon: Wallet,
     },
     {
       title: "Financial Reports",
       meta: "P&L · cashflow · VAT",
       path: "/money/financials/profit-loss",
+      art: "/images/illustrations/xefe-card-reports.webp",
       icon: TrendingUp,
     },
   ];
@@ -188,9 +192,13 @@ export default function MoneyDashboard() {
               onClick={() => navigate(card.path)}
               className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-indigo-400/40"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-indigo-100 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-300">
-                <card.icon className="h-5 w-5" />
-              </span>
+              <img
+                src={card.art}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
+              />
               <div>
                 <p className="text-base font-semibold">{card.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>

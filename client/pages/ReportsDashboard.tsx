@@ -86,12 +86,21 @@ export default function ReportsDashboard() {
     ];
   });
 
+  const familyArt: Record<string, string> = {
+    "payroll-reports": "/images/illustrations/xefe-card-payroll.webp",
+    "employee-reports": "/images/illustrations/xefe-card-people.webp",
+    "attendance-reports": "/images/illustrations/xefe-card-tl-attendance.webp",
+    "department-reports": "/images/illustrations/xefe-card-people.webp",
+    "ngo": "/images/illustrations/xefe-card-reports.webp",
+    "custom": "/images/illustrations/xefe-card-reports.webp",
+  };
   const familyCards = reportFamilies.map((section) => {
     const outputs = section.subPages.length > 0 ? section.subPages : [{ path: section.path }];
     const count = outputs.length;
     return {
       id: section.id,
       title: section.label,
+      art: familyArt[section.id] ?? "/images/illustrations/xefe-card-reports.webp",
       path: outputs[0]?.path ?? section.path,
       description: familyDescriptions[section.id] ?? `${count} report${count === 1 ? "" : "s"} in this lane.`,
       icon: section.icon,
@@ -193,9 +202,13 @@ export default function ReportsDashboard() {
                 onClick={() => navigate(card.path)}
                 className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-violet-400/40"
               >
-                <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-violet-100 text-violet-700 dark:bg-violet-950/30 dark:text-violet-300">
-                  <card.icon className="h-5 w-5" />
-                </span>
+                <img
+                  src={card.art}
+                  alt=""
+                  aria-hidden
+                  loading="lazy"
+                  className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
+                />
                 <div>
                   <p className="text-base font-semibold">{card.title}</p>
                   <p className="mt-0.5 text-sm text-muted-foreground line-clamp-2">{card.description}</p>

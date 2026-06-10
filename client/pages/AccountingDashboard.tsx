@@ -59,6 +59,7 @@ export default function AccountingDashboard() {
       show: dashboardData.pendingEntries > 0,
       text: `${dashboardData.pendingEntries} draft journal entr${dashboardData.pendingEntries === 1 ? "y" : "ies"} to review`,
       path: "/accounting/journal",
+      art: "/images/illustrations/xefe-card-ac-journal.webp",
       icon: FileSpreadsheet,
       tone: AMBER,
     },
@@ -66,6 +67,7 @@ export default function AccountingDashboard() {
       show: !balanceHealth.trialBalanced,
       text: "Trial balance is out of balance",
       path: "/accounting/statements/trial-balance",
+      art: "/images/illustrations/xefe-card-accounting.webp",
       icon: Scale,
       tone: RED,
     },
@@ -83,6 +85,7 @@ export default function AccountingDashboard() {
       title: "Chart of Accounts",
       meta: "Ledger structure",
       path: "/accounting/chart",
+      art: "/images/illustrations/xefe-card-ac-chart.webp",
       icon: BookOpen,
     },
     {
@@ -101,6 +104,7 @@ export default function AccountingDashboard() {
       title: "Balance Sheet",
       meta: dashboardData.payrollPosted ? "Live" : "Pending payroll",
       path: "/accounting/statements/balance-sheet",
+      art: "/images/illustrations/xefe-card-ac-balance.webp",
       icon: Building2,
     },
   ];
@@ -175,9 +179,13 @@ export default function AccountingDashboard() {
               onClick={() => navigate(card.path)}
               className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-orange-400/40"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-100 text-orange-700 dark:bg-orange-950/30 dark:text-orange-300">
-                <card.icon className="h-5 w-5" />
-              </span>
+              <img
+                src={card.art}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
+              />
               <div>
                 <p className="text-base font-semibold">{card.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>

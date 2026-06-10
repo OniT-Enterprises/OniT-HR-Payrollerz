@@ -65,6 +65,7 @@ export default function SchedulingDashboard() {
       count: pendingLeave,
       label: `leave request${pendingLeave === 1 ? "" : "s"} waiting for approval`,
       path: "/time-leave/leave",
+      art: "/images/illustrations/xefe-card-tl-leave.webp",
       icon: CalendarDays,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
     },
@@ -73,6 +74,7 @@ export default function SchedulingDashboard() {
       count: lateToday,
       label: `late arrival${lateToday === 1 ? "" : "s"} today`,
       path: "/time-leave/attendance",
+      art: "/images/illustrations/xefe-card-tl-attendance.webp",
       icon: Clock,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
@@ -103,12 +105,14 @@ export default function SchedulingDashboard() {
       title: "Time Tracking",
       meta: "Clock-ins & hours",
       path: "/time-leave/time-tracking",
+      art: "/images/illustrations/xefe-card-tl-timetracking.webp",
       icon: Clock,
     },
     {
       title: "Shifts",
       meta: "Plan weekly rosters",
       path: "/time-leave/shifts",
+      art: "/images/illustrations/xefe-card-tl-shifts.webp",
       icon: Calendar,
     },
   ];
@@ -185,9 +189,13 @@ export default function SchedulingDashboard() {
               onClick={() => navigate(card.path)}
               className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-cyan-400/40"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300">
-                <card.icon className="h-5 w-5" />
-              </span>
+              <img
+                src={card.art}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
+              />
               <div>
                 <p className="text-base font-semibold">{card.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>

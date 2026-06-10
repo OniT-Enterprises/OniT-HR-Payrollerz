@@ -146,24 +146,28 @@ export default function PayrollDashboard() {
       title: "Run payroll",
       meta: `${activeEmployees} staff in cycle`,
       path: "/payroll/run",
+      art: "/images/illustrations/xefe-card-payroll.webp",
       icon: Play,
     },
     {
       title: "History",
       meta: payrollRuns.length > 0 ? `${payrollRuns.length} recent run${payrollRuns.length === 1 ? "" : "s"}` : "No runs yet",
       path: "/payroll/history",
+      art: "/images/illustrations/xefe-card-pr-history.webp",
       icon: History,
     },
     {
       title: "Bank transfers",
       meta: readyToPay > 0 ? `${readyToPay} ready to pay` : "Export & pay",
       path: "/payroll/payments",
+      art: "/images/illustrations/xefe-card-pr-bank.webp",
       icon: Banknote,
     },
     {
       title: "Tax & INSS",
       meta: `WIT in ${witDays}d · INSS in ${inssDays}d`,
       path: "/payroll/tax",
+      art: "/images/illustrations/xefe-card-pr-tax.webp",
       icon: FileSpreadsheet,
     },
   ];
@@ -238,9 +242,13 @@ export default function PayrollDashboard() {
               onClick={() => navigate(card.path)}
               className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-primary/40"
             >
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <card.icon className="h-5 w-5" />
-              </span>
+              <img
+                src={card.art}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                className="h-16 w-16 object-contain transition-transform duration-300 group-hover:scale-105"
+              />
               <div>
                 <p className="text-base font-semibold">{card.title}</p>
                 <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>
