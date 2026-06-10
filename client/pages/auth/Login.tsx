@@ -66,8 +66,8 @@ export default function Login() {
         <div className="flex justify-center mb-10">
           <Link to="/landing">
             <img
-              src="/images/illustrations/primos-books-logo-light.webp"
-              alt="Primos Books"
+              src="/images/illustrations/xefe-logo-light.webp"
+              alt="Xefe"
               className="h-12 w-auto"
             />
           </Link>

@@ -211,7 +211,7 @@ export default function Customers() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Customers - Primos Books" description="Manage your customers for invoicing" />
+      <SEO title="Customers - Xefe" description="Manage your customers for invoicing" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

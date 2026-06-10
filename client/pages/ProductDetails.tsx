@@ -577,7 +577,7 @@ export default function ProductDetails() {
   return (
     <div className="min-h-screen bg-[#0a0a0b] text-white">
       <SEO
-        title="Primos Books - Complete Platform Overview"
+        title="Xefe - Complete Platform Overview"
         description="Comprehensive HR and Payroll system built for Timor-Leste. Full details on features, modules, and TL-specific capabilities."
       />
 
@@ -588,8 +588,8 @@ export default function ProductDetails() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/illustrations/primos-books-logo-light.webp"
-                alt="Primos Books"
+                src="/images/illustrations/xefe-logo-light.webp"
+                alt="Xefe"
                 className="h-9 w-auto"
               />
             </Link>
@@ -664,7 +664,7 @@ export default function ProductDetails() {
           <h1 className="text-4xl lg:text-6xl font-black mb-6">
             Everything You Need to Know
             <span className="block bg-gradient-to-r from-emerald-400 via-yellow-400 to-amber-300 bg-clip-text text-transparent">
-              About Primos Books
+              About Xefe
             </span>
           </h1>
 
@@ -867,7 +867,7 @@ export default function ProductDetails() {
           <div className="space-y-8">
             <div>
               <h2 className="text-2xl font-bold text-white mb-2">Benefits by Stakeholder</h2>
-              <p className="text-zinc-400 mb-8">How Primos Books helps everyone in your organization</p>
+              <p className="text-zinc-400 mb-8">How Xefe helps everyone in your organization</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
@@ -930,7 +930,7 @@ export default function ProductDetails() {
             Ready to Get Started?
           </h2>
           <p className="text-zinc-400 mb-8">
-            Join businesses across Timor-Leste using Primos Books for compliant HR and Payroll.
+            Join businesses across Timor-Leste using Xefe for compliant HR and Payroll.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button size="lg" asChild className="bg-gradient-to-r from-emerald-600 to-amber-500 hover:from-emerald-500 hover:to-amber-400">
@@ -954,8 +954,8 @@ export default function ProductDetails() {
         <div className="max-w-7xl mx-auto px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
             <img
-              src="/images/illustrations/primos-books-logo-light.webp"
-              alt="Primos Books"
+              src="/images/illustrations/xefe-logo-light.webp"
+              alt="Xefe"
               className="h-7 w-auto"
             />
             <span className="text-zinc-600 text-sm">Dili, Timor-Leste</span>

@@ -22,10 +22,10 @@ export function CompanyBrand({ isDark, variant, collapsed = false }: CompanyBran
   const { data: settings } = useSettings();
   const legalName = settings?.companyDetails?.legalName?.trim() ?? "";
   const logoUrl = settings?.companyDetails?.logoUrl?.trim() ?? "";
-  const fallbackName = legalName || "Primos Books";
+  const fallbackName = legalName || "Xefe";
   const defaultLogo = isDark
-    ? "/images/illustrations/primos-books-logo-light.webp"
-    : "/images/illustrations/primos-books-logo-dark.webp";
+    ? "/images/illustrations/xefe-logo-light.webp"
+    : "/images/illustrations/xefe-logo-dark.webp";
 
   if (logoUrl) {
     return (
@@ -68,7 +68,7 @@ export function CompanyBrand({ isDark, variant, collapsed = false }: CompanyBran
   return (
     <img
       src={defaultLogo}
-      alt="Primos Books"
+      alt="Xefe"
       className={
         variant === "sidebar"
           ? collapsed

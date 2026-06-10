@@ -929,12 +929,12 @@ class AdminService {
 
         await queuePlatformEmail({
           to: [request.targetEmail],
-          subject: "Your Primos Books superadmin access is waiting",
+          subject: "Your Xefe superadmin access is waiting",
           html: `
             <div style="font-family: Arial, sans-serif; max-width: 640px; margin: 0 auto;">
               <h2>Superadmin access is ready</h2>
               <p>An existing superadmin approved access for <strong>${request.targetEmail}</strong>.</p>
-              <p>Please sign in to Primos Books with this email address, then ask an existing superadmin to complete the activation from the Super Admins page.</p>
+              <p>Please sign in to Xefe with this email address, then ask an existing superadmin to complete the activation from the Super Admins page.</p>
             </div>
           `,
           createdBy: params.approverUid,

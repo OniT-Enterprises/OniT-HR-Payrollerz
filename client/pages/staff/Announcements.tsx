@@ -312,7 +312,7 @@ export default function Announcements() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title={`${t("announcements.title")} - Primos Books`} description={t("announcements.subtitle")} />
+      <SEO title={`${t("announcements.title")} - Xefe`} description={t("announcements.subtitle")} />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
         <PageHeader

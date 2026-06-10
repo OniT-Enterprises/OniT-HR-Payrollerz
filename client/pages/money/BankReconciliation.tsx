@@ -376,7 +376,7 @@ export default function BankReconciliation() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Bank Reconciliation - Primos Books" description="Reconcile bank transactions" />
+      <SEO title="Bank Reconciliation - Xefe" description="Reconcile bank transactions" />
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">

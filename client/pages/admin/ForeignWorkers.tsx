@@ -345,7 +345,7 @@ export default function ForeignWorkers() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={`${t("admin.foreignWorkers.title")} | Primos Books`}
+        title={`${t("admin.foreignWorkers.title")} | Xefe`}
         description={t("admin.foreignWorkers.pageDesc")}
       />
       <MainNavigation />

@@ -234,7 +234,7 @@ export default function Invoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Invoices - Primos Books" description="Manage your invoices" />
+      <SEO title="Invoices - Xefe" description="Manage your invoices" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

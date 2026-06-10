@@ -120,7 +120,7 @@ export default function Payments() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Payments - Primos Books" description="View payment history" />
+      <SEO title="Payments - Xefe" description="View payment history" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

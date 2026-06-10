@@ -399,7 +399,7 @@ const WITReturnDocument = ({
           {generatedDate.toLocaleTimeString("en-GB", { timeZone: "Asia/Dili" })}
         </Text>
         <Text style={styles.footerText}>
-          Primos Books - ATTL Monthly WIT Return
+          Xefe - ATTL Monthly WIT Return
         </Text>
       </View>
     </Page>

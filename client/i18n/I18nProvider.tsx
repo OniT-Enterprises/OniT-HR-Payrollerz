@@ -133,7 +133,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
   if (!translationBundle.en) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-6 text-sm text-muted-foreground">
-        Loading Primos Books...
+        Loading Xefe...
       </div>
     );
   }

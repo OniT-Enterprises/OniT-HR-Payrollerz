@@ -60,7 +60,7 @@ function formatDateKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
 }
 
-function PrimosBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
+function XefeBotInline({ t, firstName }: { t: (key: string) => string; firstName: string }) {
   const { setOpen, setPendingQuery } = useChatStore();
   const [input, setInput] = useState("");
   const greeting = new Date().getHours() < 12 ? "Bondia" : new Date().getHours() < 18 ? "Botardi" : "Bonite";
@@ -160,7 +160,7 @@ const BOT_QUIPS = [
   "Please don't close the tab, I live here.",
 ];
 
-function PrimosBotAvatar() {
+function XefeBotAvatar() {
   const [wobble, setWobble] = useState(false);
   const [quip, setQuip] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -180,11 +180,11 @@ function PrimosBotAvatar() {
         type="button"
         onClick={handleClick}
         className="focus:outline-none"
-        aria-label="Poke PrimosBot"
+        aria-label="Poke XefeBot"
       >
         <img
-          src="/images/illustrations/primosbot.webp"
-          alt="PrimosBot"
+          src="/images/illustrations/xefebot.webp"
+          alt="XefeBot"
           className={`h-20 w-20 object-contain cursor-pointer transition-transform hover:scale-105 ${wobble ? "animate-wiggle" : ""}`}
         />
       </button>
@@ -515,12 +515,12 @@ export default function Dashboard() {
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl pb-12">
-        {/* ── PrimosBot greeting card ── */}
+        {/* ── XefeBot greeting card ── */}
         <div className="relative mb-8 rounded-2xl bg-card border border-border p-5 overflow-hidden">
           <GreetingParticles />
           <div className="relative flex items-start gap-4">
-            <PrimosBotAvatar />
-            <PrimosBotInline t={t} firstName={firstName} />
+            <XefeBotAvatar />
+            <XefeBotInline t={t} firstName={firstName} />
           </div>
         </div>
 

@@ -32,13 +32,13 @@ export default function LegalPage({ kind }: { kind: "privacy" | "terms" }) {
         <div className="flex items-center justify-between mb-8">
           <Link to="/" className="flex items-center gap-3">
             <img
-              src="/images/illustrations/primos-books-logo-dark.webp"
-              alt="Primos Books"
+              src="/images/illustrations/xefe-logo-dark.webp"
+              alt="Xefe"
               className="h-8 w-auto dark:hidden"
             />
             <img
-              src="/images/illustrations/primos-books-logo-light.webp"
-              alt="Primos Books"
+              src="/images/illustrations/xefe-logo-light.webp"
+              alt="Xefe"
               className="h-8 w-auto hidden dark:block"
             />
           </Link>

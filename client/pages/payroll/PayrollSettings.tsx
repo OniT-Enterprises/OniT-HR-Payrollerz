@@ -41,7 +41,7 @@ export default function PayrollSettings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Payroll Settings | Primos Books" description="Configure payroll tax rates, benefits, and deductions" />
+      <SEO title="Payroll Settings | Xefe" description="Configure payroll tax rates, benefits, and deductions" />
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">

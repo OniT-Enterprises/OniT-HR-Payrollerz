@@ -159,7 +159,7 @@ export default function Cashflow() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Cashflow - Primos Books" description="View your cash flow statement" />
+      <SEO title="Cashflow - Xefe" description="View your cash flow statement" />
       <MainNavigation />
 
       <div className="p-6 max-w-screen-2xl mx-auto">

@@ -155,7 +155,7 @@ export default function ARAgingReport() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="A/R Aging - Primos Books" description="Accounts receivable aging report" />
+      <SEO title="A/R Aging - Xefe" description="Accounts receivable aging report" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

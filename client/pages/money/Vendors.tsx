@@ -212,7 +212,7 @@ export default function Vendors() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Vendors - Primos Books" description="Manage your vendors and suppliers" />
+      <SEO title="Vendors - Xefe" description="Manage your vendors and suppliers" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

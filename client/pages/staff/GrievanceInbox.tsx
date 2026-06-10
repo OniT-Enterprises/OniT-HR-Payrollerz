@@ -302,7 +302,7 @@ export default function GrievanceInbox() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title="Grievance Inbox - Primos Books"
+        title="Grievance Inbox - Xefe"
         description="Anonymous employee grievance management"
       />
 

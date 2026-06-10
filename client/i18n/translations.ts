@@ -10,13 +10,13 @@ export const translations = {
       "privacy": {
         "title": "Privacy Policy",
         "updated": "Last updated: 10 June 2026",
-        "intro": "Primos Books is an HR and payroll service operated in Timor-Leste. This page explains what information the service stores and how it is used.",
+        "intro": "Xefe is an HR and payroll service operated in Timor-Leste. This page explains what information the service stores and how it is used.",
         "s1Title": "Information we store",
         "s1Body": "Account details such as your name and email, and the records your employer enters to run their business — employee profiles, identity document numbers, salaries, attendance, leave, and payroll history. If you apply for a job through a public application link, we store the application you submit, including your CV.",
         "s2Title": "How it is used",
         "s2Body": "Only to provide the service — calculating payroll, tracking leave and attendance, and producing payslips and reports. We do not sell your information or share it with advertisers.",
         "s3Title": "Who can see it",
-        "s3Body": "Your employer's authorised administrators control their company's records. Primos Books staff access company data only for support and maintenance, and that access is recorded in an audit log.",
+        "s3Body": "Your employer's authorised administrators control their company's records. Xefe staff access company data only for support and maintenance, and that access is recorded in an audit log.",
         "s4Title": "Where it is stored",
         "s4Body": "Data is stored with Google Firebase and protected with encryption in transit and at rest, plus per-company access rules.",
         "s5Title": "How long we keep it",
@@ -29,11 +29,11 @@ export const translations = {
       "terms": {
         "title": "Terms of Service",
         "updated": "Last updated: 10 June 2026",
-        "intro": "These terms apply when you create an account or use Primos Books.",
+        "intro": "These terms apply when you create an account or use Xefe.",
         "s1Title": "The service",
-        "s1Body": "Primos Books provides HR, payroll, and accounting tools for businesses in Timor-Leste, including WIT and INSS calculations based on the rates you configure.",
+        "s1Body": "Xefe provides HR, payroll, and accounting tools for businesses in Timor-Leste, including WIT and INSS calculations based on the rates you configure.",
         "s2Title": "Your responsibilities",
-        "s2Body": "You are responsible for the accuracy of the information you enter, for having the right to store your employees' information, and for checking payroll amounts before paying staff or filing with the authorities. Primos Books is a tool — it is not legal or tax advice.",
+        "s2Body": "You are responsible for the accuracy of the information you enter, for having the right to store your employees' information, and for checking payroll amounts before paying staff or filing with the authorities. Xefe is a tool — it is not legal or tax advice.",
         "s3Title": "Your data",
         "s3Body": "Your company's data belongs to you. You can export it at any time and ask us to delete your account.",
         "s4Title": "Acceptable use",
@@ -286,7 +286,7 @@ export const translations = {
       "todoBlockingDesc": "{{count}} employee(s) need missing documents or details.",
       "todoAddEmployeeDesc": "Add a new team member to your organization.",
       "botBriefing": "briefing",
-      "botGreeting": "I'm PrimosBot — ask me about your team, payroll, leave, or anything else.",
+      "botGreeting": "I'm XefeBot — ask me about your team, payroll, leave, or anything else.",
       "botGreeting2": "Need a quick answer? I can look up staff, payroll, or leave data for you.",
       "botGreeting3": "I'm here to help — try asking about your team or upcoming deadlines.",
       "botGreeting4": "Your AI assistant is ready. Ask me anything about your organization.",
@@ -296,7 +296,7 @@ export const translations = {
       "botPromptStaff": "How many staff?",
       "botPromptPayroll": "Next payroll?",
       "botPromptLeave": "Who's on leave?",
-      "botPlaceholder": "Ask PrimosBot anything...",
+      "botPlaceholder": "Ask XefeBot anything...",
       "allGood": "All good — nothing needs attention",
       "pendingPayrollTitle": "Payroll awaiting approval",
       "untilPayday": "until payday",
@@ -463,7 +463,7 @@ export const translations = {
       }
     },
     "auth": {
-      "loginTitle": "Sign in to Primos Books",
+      "loginTitle": "Sign in to Xefe",
       "loginSubtitle": "Sign in to access your dashboard",
       "email": "Email",
       "password": "Password",
@@ -645,7 +645,7 @@ export const translations = {
       "performance": {
         "badge": "Built for TL Internet",
         "title": "Fast Even on Slow Connections",
-        "description": "Primos Books caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
+        "description": "Xefe caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
         "features": {
           "cache": "Smart local caching — works instantly on repeat visits",
           "lazy": "Heavy features load only when needed",
@@ -731,11 +731,11 @@ export const translations = {
       "cta": {
         "title": "Ready to Start?",
         "titleAccent": "Start Today",
-        "description": "Join Timor-Leste businesses already using Primos Books for compliant, effortless HR & Payroll.",
+        "description": "Join Timor-Leste businesses already using Xefe for compliant, effortless HR & Payroll.",
         "primary": "Start Free Trial"
       },
       "footer": {
-        "brand": "Primos Books",
+        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "privacy": "Privacy",
@@ -787,7 +787,7 @@ export const translations = {
           "desc": "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours."
         },
         "solution": {
-          "title": "Primos Books solves this",
+          "title": "Xefe solves this",
           "desc": "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface."
         }
       },
@@ -906,7 +906,7 @@ export const translations = {
           "ana": {
             "name": "Ana",
             "role": "Café Owner",
-            "desc": "Runs a café with 5 staff. Uses Primos Books for payroll, Kaixa for daily sales. Staff use Ekipa."
+            "desc": "Runs a café with 5 staff. Uses Xefe for payroll, Kaixa for daily sales. Staff use Ekipa."
           },
           "tomas": {
             "name": "Tomas",
@@ -919,7 +919,7 @@ export const translations = {
         "badge": "Employee App",
         "title": "Ekipa",
         "titleAccent": "Your Team's Mobile Companion",
-        "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Primos Books customers.",
+        "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Xefe customers.",
         "tagline": "\"Ekipa\" — Tetum for team",
         "features": {
           "payslips": {
@@ -947,8 +947,8 @@ export const translations = {
             "desc": "View personal details, job info, documents, and attendance history. Fewer questions for HR."
           }
         },
-        "cta": "Included with Primos Books",
-        "ctaNote": "Android · Free for all Primos Books employees",
+        "cta": "Included with Xefe",
+        "ctaNote": "Android · Free for all Xefe employees",
         "shipped": {
           "badge": "Live Now",
           "title": "What's Shipped",
@@ -982,7 +982,7 @@ export const translations = {
         "badge": "Based in Dili",
         "title": "Local support,",
         "titleAccent": "iha Tetun no English",
-        "description": "We're not a foreign company with offshore support. Primos Books is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
+        "description": "We're not a foreign company with offshore support. Xefe is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
         "items": {
           "whatsapp": "WhatsApp support in Tetun & English",
           "training": "On-site training available in Dili",
@@ -998,7 +998,7 @@ export const translations = {
         "badge": "Real Accounting",
         "title": "Accounting that actually",
         "titleAccent": "understands TL",
-        "description": "Keep QuickBooks for inventory if you want — Primos Books handles the TL compliance side.",
+        "description": "Keep QuickBooks for inventory if you want — Xefe handles the TL compliance side.",
         "features": {
           "doubleEntry": {
             "title": "True Double-Entry",
@@ -1778,7 +1778,7 @@ export const translations = {
         "preBoarding": {
           "title": "Pre-Boarding",
           "description": "Welcome to the team! Let's get you started with the onboarding process.",
-          "welcome": "Welcome to Primos Books! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
+          "welcome": "Welcome to Xefe! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
           "expectTitle": "What to Expect",
           "expect": {
             "items": {
@@ -3933,10 +3933,10 @@ export const translations = {
           "description": "Configure account mappings for QuickBooks integration",
           "defaultFormat": "Default Export Format",
           "accountMappings": "Account Mappings",
-          "accountMappingsDesc": "Map Primos Books payroll accounts to your QuickBooks chart of accounts",
+          "accountMappingsDesc": "Map Xefe payroll accounts to your QuickBooks chart of accounts",
           "expenses": "Expenses",
           "liabilities": "Liabilities",
-          "onitAccount": "Primos Books Account",
+          "onitAccount": "Xefe Account",
           "qbAccount": "QuickBooks Account",
           "resetDefaults": "Reset to Defaults",
           "save": "Save Changes",
@@ -4051,12 +4051,12 @@ export const translations = {
         "complete": "Complete"
       },
       "welcome": "Welcome! Let's set up your account",
-      "welcomeDesc": "Complete these steps to get started with Primos Books",
+      "welcomeDesc": "Complete these steps to get started with Xefe",
       "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
       "progressTitle": "Setup progress",
       "progressHint": "Complete each step once. You can adjust everything later in Settings.",
       "savedAutomaticallyTitle": "Finished steps are saved automatically",
-      "savedAutomaticallyDesc": "You can leave and come back later. Primos Books will resume where you stopped.",
+      "savedAutomaticallyDesc": "You can leave and come back later. Xefe will resume where you stopped.",
       "stepOf": "Step {{current}} of {{total}}",
       "requiredFields": "Required Fields",
       "companyNameTinRequired": "Company name and TIN are required.",
@@ -4077,7 +4077,7 @@ export const translations = {
       "tinPlaceholder": "Tax Identification Number",
       "teamSize": "Approximate Team Size",
       "selectTeamSize": "Select team size",
-      "teamSizeHint": "This helps Primos Books choose better defaults for small or larger teams.",
+      "teamSizeHint": "This helps Xefe choose better defaults for small or larger teams.",
       "address": "Address",
       "addressPlaceholder": "Street address",
       "city": "City",
@@ -4543,7 +4543,7 @@ export const translations = {
         "moneyLink": "Money",
         "payrollLink": "Payroll",
         "accountantGateInstead": "instead.",
-        "accountantGateNote": "Most businesses never need to change anything here — Primos Books keeps this in sync automatically.",
+        "accountantGateNote": "Most businesses never need to change anything here — Xefe keeps this in sync automatically.",
         "thisMonth": "This Month",
         "payrollEntries": "Payroll Entries",
         "posted": "Posted",
@@ -4814,7 +4814,7 @@ export const translations = {
     "money": {
       "dashboard": {
         "title": "Money",
-        "seoTitle": "Money - Primos Books",
+        "seoTitle": "Money - Xefe",
         "subtitle": "Track who owes you, what you need to pay, and what to do next",
         "createInvoice": "Create Invoice",
         "attentionNeeded": "Attention needed",
@@ -6013,7 +6013,7 @@ export const translations = {
     },
     "guidance": {
       "hideGuidance": "Hide guidance",
-      "dashboardTitle": "Welcome to Primos Books.",
+      "dashboardTitle": "Welcome to Xefe.",
       "dashboardBody": "This is your home base — a quick snapshot of what’s happening across your company today. Check payroll status, review compliance, and jump into any module from here.",
       "peopleTitle": "Welcome to your People hub.",
       "peopleBody": "This is where you manage everyone who works for your company — employees, contracts, departments, and teams. Start by adding your first employee using the button above. From there you can track leave, run payroll, and keep everything organized. Each section below expands to show more tools.",
@@ -6037,13 +6037,13 @@ export const translations = {
       "privacy": {
         "title": "Polítika Privasidade",
         "updated": "Atualiza ikus: 10 Juñu 2026",
-        "intro": "Primos Books mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
+        "intro": "Xefe mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
         "s1Title": "Informasaun ne'ebé ami rai",
         "s1Body": "Detallu konta hanesan naran no email, no rejistu sira ne'ebé Ita-nia empregadór hatama atu jere sira-nia negósiu — perfil funsionáriu, númeru dokumentu identidade, saláriu, prezensa, lisensa, no istória folla pagamentu. Se Ita aplika ba serbisu liu husi link públiku, ami rai aplikasaun ne'ebé Ita haruka, inklui Ita-nia CV.",
         "s2Title": "Oinsá ami uza",
         "s2Body": "De'it atu fornese servisu — kalkula folla pagamentu, akompaña lisensa no prezensa, no prodús payslip no relatóriu. Ami la fa'an Ita-nia informasaun no la fahe ho ema halo publisidade.",
         "s3Title": "Sé mak bele haree",
-        "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Primos Books asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
+        "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Xefe asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
         "s4Title": "Iha ne'ebé mak rai",
         "s4Body": "Dadus rai iha Google Firebase no proteje ho enkriptasaun, ho regra asesu ba kada empreza.",
         "s5Title": "Kleur oinsá ami rai",
@@ -6056,11 +6056,11 @@ export const translations = {
       "terms": {
         "title": "Termu Servisu",
         "updated": "Atualiza ikus: 10 Juñu 2026",
-        "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Primos Books.",
+        "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Xefe.",
         "s1Title": "Servisu",
-        "s1Body": "Primos Books fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
+        "s1Body": "Xefe fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
         "s2Title": "Ita-nia responsabilidade",
-        "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Primos Books mak ferramenta ida — la'ós konsellu legál ka fiskál.",
+        "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Xefe mak ferramenta ida — la'ós konsellu legál ka fiskál.",
         "s3Title": "Ita-nia dadus",
         "s3Body": "Ita-nia empreza nia dadus pertense ba Ita. Ita bele esporta kualkér tempu no husu ami atu hamoos Ita-nia konta.",
         "s4Title": "Uzu aseitável",
@@ -6313,7 +6313,7 @@ export const translations = {
       "todoBlockingDesc": "Empregadu {{count}} presiza dokumentu ka dadus.",
       "todoAddEmployeeDesc": "Tau membru foun ba ita-nia organizasaun.",
       "botBriefing": "rezumu",
-      "botGreeting": "Ha'u PrimosBot — husu kona-ba ekipa, saláriu, lisensa, ka buat seluk.",
+      "botGreeting": "Ha'u XefeBot — husu kona-ba ekipa, saláriu, lisensa, ka buat seluk.",
       "botGreeting2": "Presiza resposta lalais? Ha'u bele buka dadus funsionáriu, saláriu, ka lisensa.",
       "botGreeting3": "Ha'u iha ne'e atu ajuda — husu kona-ba ita-nia ekipa ka prazu sira.",
       "botGreeting4": "Ita-nia asistente prontu ona. Husu buat ida kona-ba organizasaun.",
@@ -6323,7 +6323,7 @@ export const translations = {
       "botPromptStaff": "Empregadu hira?",
       "botPromptPayroll": "Saláriu tuirmai?",
       "botPromptLeave": "Sé mak lisensa?",
-      "botPlaceholder": "Husu ba PrimosBot...",
+      "botPlaceholder": "Husu ba XefeBot...",
       "allGood": "Buat hotu di'ak — laiha buat ne'ebé presiza atensaun",
       "pendingPayrollTitle": "Payroll hein aprovasaun",
       "untilPayday": "to'o loron selu",
@@ -6490,7 +6490,7 @@ export const translations = {
       }
     },
     "auth": {
-      "loginTitle": "Tama ba Primos Books",
+      "loginTitle": "Tama ba Xefe",
       "loginSubtitle": "Tama atu asesu painael",
       "email": "Email",
       "password": "Password",
@@ -6672,7 +6672,7 @@ export const translations = {
       "performance": {
         "badge": "Hadia ba Internet TL",
         "title": "Lalais Maski Ligasaun Neineik",
-        "description": "Primos Books rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
+        "description": "Xefe rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
         "features": {
           "cache": "Cache lokal intelijente — servisu lalais iha vizita tuir mai",
           "lazy": "Fitur boot karga de'it bainhira presiza",
@@ -6758,11 +6758,11 @@ export const translations = {
       "cta": {
         "title": "Prontu atu hahu?",
         "titleAccent": "Hahu ohin",
-        "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Primos Books ba RH no Folha.",
+        "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Xefe ba RH no Folha.",
         "primary": "Hahu teste gratis"
       },
       "footer": {
-        "brand": "Primos Books",
+        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "privacy": "Privasidade",
@@ -6814,7 +6814,7 @@ export const translations = {
           "desc": "Lansu kontabil manual ba WIT fulan-fulan. Laiha relatoriu SEFOPE. Laiha Tetun. Hadia ba merkadu seluk."
         },
         "solution": {
-          "title": "Primos Books rezolve ida nee",
+          "title": "Xefe rezolve ida nee",
           "desc": "WIT/INSS automatik. Transferensia banku ba BNU/BNCTL. Relatoriu ba SEFOPE. Interface Tetun."
         }
       },
@@ -6933,7 +6933,7 @@ export const translations = {
           "ana": {
             "name": "Ana",
             "role": "Dona Kafé",
-            "desc": "Hala'o kafé ho staf 5. Uza Primos Books ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
+            "desc": "Hala'o kafé ho staf 5. Uza Xefe ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
           },
           "tomas": {
             "name": "Tomas",
@@ -6946,7 +6946,7 @@ export const translations = {
         "badge": "App Empregadu",
         "title": "Ekipa",
         "titleAccent": "Kompanheiru Movel Ita-nia Ekipa",
-        "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Primos Books.",
+        "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Xefe.",
         "tagline": "\"Ekipa\" — Tetun ba ekipa",
         "features": {
           "payslips": {
@@ -6974,8 +6974,8 @@ export const translations = {
             "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensa. Pergunta menus ba RH."
           }
         },
-        "cta": "Inklui ho Primos Books",
-        "ctaNote": "Android · Grátis ba empregadu Primos Books hotu",
+        "cta": "Inklui ho Xefe",
+        "ctaNote": "Android · Grátis ba empregadu Xefe hotu",
         "shipped": {
           "badge": "Ativu Ona",
           "title": "Saida mak Prontu",
@@ -7009,7 +7009,7 @@ export const translations = {
         "badge": "Baze iha Dili",
         "title": "Suporte lokal,",
         "titleAccent": "iha Tetun no Ingles",
-        "description": "Ami laos empresa estranjeiru ho suporte offshore. Primos Books hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
+        "description": "Ami laos empresa estranjeiru ho suporte offshore. Xefe hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
         "items": {
           "whatsapp": "Suporte WhatsApp iha Tetun no Ingles",
           "training": "Treinamentu iha fatin disponível iha Dili",
@@ -7025,7 +7025,7 @@ export const translations = {
         "badge": "Kontabilidade Real",
         "title": "Kontabilidade ne'ebe",
         "titleAccent": "komprende TL",
-        "description": "Uza QuickBooks ba inventáriu se hakarak — Primos Books rezolve konformidade TL.",
+        "description": "Uza QuickBooks ba inventáriu se hakarak — Xefe rezolve konformidade TL.",
         "features": {
           "doubleEntry": {
             "title": "Double-Entry Loos",
@@ -7715,7 +7715,7 @@ export const translations = {
         "preBoarding": {
           "title": "Pre-Integrasaun",
           "description": "Bem-vindu! Vamos hahu prosesu integrasaun.",
-          "welcome": "Bem-vindu ba Primos Books! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
+          "welcome": "Bem-vindu ba Xefe! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
           "expectTitle": "Sa ida ita esperta",
           "expect": {
             "items": {
@@ -8737,10 +8737,10 @@ export const translations = {
           "description": "Konfigura mapeamentu konta ba integrasaun QuickBooks",
           "defaultFormat": "Formatu Exportasaun Padraun",
           "accountMappings": "Mapeamentu Konta",
-          "accountMappingsDesc": "Mapeia konta Primos Books ba planu konta QuickBooks",
+          "accountMappingsDesc": "Mapeia konta Xefe ba planu konta QuickBooks",
           "expenses": "Despeza",
           "liabilities": "Pasivu",
-          "onitAccount": "Konta Primos Books",
+          "onitAccount": "Konta Xefe",
           "qbAccount": "Konta QuickBooks",
           "resetDefaults": "Reset ba Padraun",
           "save": "Rai Mudansa",
@@ -8855,12 +8855,12 @@ export const translations = {
         "complete": "Kompletu"
       },
       "welcome": "Bemvindu! Atu konfigura ita-nia konta",
-      "welcomeDesc": "Kompleta pasu sira hodi hahú ho Primos Books",
+      "welcomeDesc": "Kompleta pasu sira hodi hahú ho Xefe",
       "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
       "progressTitle": "Progresu setup",
       "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
       "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
-      "savedAutomaticallyDesc": "Bele sai no fila depois. Primos Books sei kontinua iha fatin ne'ebé ita husik.",
+      "savedAutomaticallyDesc": "Bele sai no fila depois. Xefe sei kontinua iha fatin ne'ebé ita husik.",
       "stepOf": "Pasu {{current}} husi {{total}}",
       "requiredFields": "Kampu Obrigatóriu",
       "companyNameTinRequired": "Naran empreza no TIN presiza.",
@@ -8881,7 +8881,7 @@ export const translations = {
       "tinPlaceholder": "Numeru Identifikasaun Impostu",
       "teamSize": "Medida Ekipa Aproximadu",
       "selectTeamSize": "Hili medida ekipa",
-      "teamSizeHint": "Ida ne'e ajuda Primos Books hili padraun di'ak liu ba ekipa ki'ik ka boot.",
+      "teamSizeHint": "Ida ne'e ajuda Xefe hili padraun di'ak liu ba ekipa ki'ik ka boot.",
       "address": "Enderesu",
       "addressPlaceholder": "Enderesu dalan",
       "city": "Sidade",
@@ -9347,7 +9347,7 @@ export const translations = {
         "moneyLink": "Osan",
         "payrollLink": "Saláriu",
         "accountantGateInstead": "alternativa.",
-        "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Primos Books mantén ida-ne'e automátiku.",
+        "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Xefe mantén ida-ne'e automátiku.",
         "thisMonth": "Fulan Ida-ne'e",
         "payrollEntries": "Entrada Saláriu",
         "posted": "Publika",
@@ -10841,7 +10841,7 @@ export const translations = {
     "money": {
       "dashboard": {
         "title": "Osan",
-        "seoTitle": "Osan - Primos Books",
+        "seoTitle": "Osan - Xefe",
         "subtitle": "Akompaña sé maka deve ita, saida maka ita presiza selu, no saida maka atu halo tuir mai",
         "createInvoice": "Kria Fatura",
         "attentionNeeded": "Presiza atensaun",
@@ -12040,7 +12040,7 @@ export const translations = {
     },
     "guidance": {
       "hideGuidance": "Subar orientasaun",
-      "dashboardTitle": "Bemvindu ba Primos Books.",
+      "dashboardTitle": "Bemvindu ba Xefe.",
       "dashboardBody": "Ida ne’e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne’e.",
       "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
       "peopleBody": "Ida ne’e mak fatin atu jeréncia ema hotu ne’ebé serbisu iha ita-nia empreza — empregádu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregádu primeiru ho botãu iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",
@@ -12064,13 +12064,13 @@ export const translations = {
       "privacy": {
         "title": "Política de Privacidade",
         "updated": "Última atualização: 10 de junho de 2026",
-        "intro": "O Primos Books é um serviço de RH e folha de pagamento operado em Timor-Leste. Esta página explica que informações o serviço guarda e como são usadas.",
+        "intro": "O Xefe é um serviço de RH e folha de pagamento operado em Timor-Leste. Esta página explica que informações o serviço guarda e como são usadas.",
         "s1Title": "Informações que guardamos",
         "s1Body": "Dados da conta, como nome e email, e os registos que o seu empregador introduz para gerir o negócio — perfis de funcionários, números de documentos de identidade, salários, assiduidade, licenças e histórico de folhas de pagamento. Se se candidatar a um emprego através de um link público, guardamos a candidatura que submeter, incluindo o seu CV.",
         "s2Title": "Como são usadas",
         "s2Body": "Apenas para prestar o serviço — calcular folhas de pagamento, acompanhar licenças e assiduidade, e produzir recibos e relatórios. Não vendemos as suas informações nem as partilhamos com anunciantes.",
         "s3Title": "Quem pode ver",
-        "s3Body": "Os administradores autorizados do seu empregador controlam os registos da empresa. A equipa do Primos Books só acede aos dados para suporte e manutenção, e esse acesso fica registado num registo de auditoria.",
+        "s3Body": "Os administradores autorizados do seu empregador controlam os registos da empresa. A equipa do Xefe só acede aos dados para suporte e manutenção, e esse acesso fica registado num registo de auditoria.",
         "s4Title": "Onde são guardadas",
         "s4Body": "Os dados são guardados no Google Firebase e protegidos com encriptação em trânsito e em repouso, além de regras de acesso por empresa.",
         "s5Title": "Por quanto tempo as guardamos",
@@ -12083,11 +12083,11 @@ export const translations = {
       "terms": {
         "title": "Termos de Serviço",
         "updated": "Última atualização: 10 de junho de 2026",
-        "intro": "Estes termos aplicam-se quando cria uma conta ou usa o Primos Books.",
+        "intro": "Estes termos aplicam-se quando cria uma conta ou usa o Xefe.",
         "s1Title": "O serviço",
-        "s1Body": "O Primos Books fornece ferramentas de RH, folha de pagamento e contabilidade para empresas em Timor-Leste, incluindo cálculos de WIT e INSS com base nas taxas que configurar.",
+        "s1Body": "O Xefe fornece ferramentas de RH, folha de pagamento e contabilidade para empresas em Timor-Leste, incluindo cálculos de WIT e INSS com base nas taxas que configurar.",
         "s2Title": "As suas responsabilidades",
-        "s2Body": "É responsável pela exatidão das informações que introduz, por ter o direito de guardar as informações dos seus funcionários e por verificar os valores da folha antes de pagar ou declarar às autoridades. O Primos Books é uma ferramenta — não é aconselhamento jurídico ou fiscal.",
+        "s2Body": "É responsável pela exatidão das informações que introduz, por ter o direito de guardar as informações dos seus funcionários e por verificar os valores da folha antes de pagar ou declarar às autoridades. O Xefe é uma ferramenta — não é aconselhamento jurídico ou fiscal.",
         "s3Title": "Os seus dados",
         "s3Body": "Os dados da sua empresa pertencem-lhe. Pode exportá-los a qualquer momento e pedir a eliminação da sua conta.",
         "s4Title": "Uso aceitável",
@@ -12340,7 +12340,7 @@ export const translations = {
       "todoBlockingDesc": "{{count}} funcionário(s) precisam de documentos ou dados.",
       "todoAddEmployeeDesc": "Adicione um novo membro à sua organização.",
       "botBriefing": "resumo",
-      "botGreeting": "Sou o PrimosBot — pergunte sobre a equipa, folha, licenças ou qualquer coisa.",
+      "botGreeting": "Sou o XefeBot — pergunte sobre a equipa, folha, licenças ou qualquer coisa.",
       "botGreeting2": "Precisa de uma resposta rápida? Posso consultar dados de funcionários, folha ou licenças.",
       "botGreeting3": "Estou aqui para ajudar — pergunte sobre a sua equipa ou prazos futuros.",
       "botGreeting4": "O seu assistente está pronto. Pergunte o que quiser sobre a organização.",
@@ -12350,7 +12350,7 @@ export const translations = {
       "botPromptStaff": "Quantos funcionários?",
       "botPromptPayroll": "Próxima folha?",
       "botPromptLeave": "Quem está de licença?",
-      "botPlaceholder": "Perguntar ao PrimosBot...",
+      "botPlaceholder": "Perguntar ao XefeBot...",
       "allGood": "Tudo em ordem — nada precisa de atenção",
       "pendingPayrollTitle": "Folha de pagamento a aguardar aprovação",
       "untilPayday": "até ao dia de pagamento",
@@ -12517,7 +12517,7 @@ export const translations = {
       }
     },
     "auth": {
-      "loginTitle": "Entrar no Primos Books",
+      "loginTitle": "Entrar no Xefe",
       "loginSubtitle": "Inicie sessão para aceder ao seu painel",
       "email": "Email",
       "password": "Palavra-passe",
@@ -12699,7 +12699,7 @@ export const translations = {
       "performance": {
         "badge": "Feito para Internet de TL",
         "title": "Rápido Mesmo em Conexões Lentas",
-        "description": "O Primos Books faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
+        "description": "O Xefe faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
         "features": {
           "cache": "Cache local inteligente — funciona instantaneamente em visitas repetidas",
           "lazy": "Funcionalidades pesadas carregam apenas quando necessário",
@@ -12785,11 +12785,11 @@ export const translations = {
       "cta": {
         "title": "Pronto para Começar?",
         "titleAccent": "Comece Hoje",
-        "description": "Junte-se às empresas de Timor-Leste que já usam o Primos Books para RH e Folha de Pagamento conformes e sem esforço.",
+        "description": "Junte-se às empresas de Timor-Leste que já usam o Xefe para RH e Folha de Pagamento conformes e sem esforço.",
         "primary": "Iniciar Teste Grátis"
       },
       "footer": {
-        "brand": "Primos Books",
+        "brand": "Xefe",
         "location": "Timor-Leste",
         "links": {
           "privacy": "Privacidade",
@@ -12841,7 +12841,7 @@ export const translations = {
           "desc": "Lançamentos manuais de IRT todos os meses. Sem relatórios SEFOPE. Sem Tétum. Feito para mercados que não são os seus."
         },
         "solution": {
-          "title": "O Primos Books resolve isto",
+          "title": "O Xefe resolve isto",
           "desc": "IRT/INSS automático. Transferências bancárias para BNU/BNCTL. Relatórios para SEFOPE. Interface em Tétum."
         }
       },
@@ -12960,7 +12960,7 @@ export const translations = {
           "ana": {
             "name": "Ana",
             "role": "Dona de Café",
-            "desc": "Gere um café com 5 funcionários. Usa o Primos Books para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Ekipa."
+            "desc": "Gere um café com 5 funcionários. Usa o Xefe para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Ekipa."
           },
           "tomas": {
             "name": "Tomás",
@@ -12973,7 +12973,7 @@ export const translations = {
         "badge": "Aplicação para Funcionários",
         "title": "Ekipa",
         "titleAccent": "O Companheiro Móvel da Sua Equipa",
-        "description": "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Primos Books.",
+        "description": "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Xefe.",
         "tagline": "\"Ekipa\" — Tétum para equipa",
         "features": {
           "payslips": {
@@ -13001,8 +13001,8 @@ export const translations = {
             "desc": "Veja dados pessoais, informação de emprego, documentos e histórico de assiduidade. Menos perguntas para o RH."
           }
         },
-        "cta": "Incluído com o Primos Books",
-        "ctaNote": "Android · Grátis para todos os funcionários Primos Books",
+        "cta": "Incluído com o Xefe",
+        "ctaNote": "Android · Grátis para todos os funcionários Xefe",
         "shipped": {
           "badge": "Disponível Agora",
           "title": "O que Está Disponível",
@@ -13036,7 +13036,7 @@ export const translations = {
         "badge": "Baseado em Díli",
         "title": "Suporte local,",
         "titleAccent": "em Tétum e Inglês",
-        "description": "Não somos uma empresa estrangeira com suporte offshore. O Primos Books é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
+        "description": "Não somos uma empresa estrangeira com suporte offshore. O Xefe é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
         "items": {
           "whatsapp": "Suporte por WhatsApp em Tétum e Inglês",
           "training": "Formação presencial disponível em Díli",
@@ -13052,7 +13052,7 @@ export const translations = {
         "badge": "Contabilidade Real",
         "title": "Contabilidade que realmente",
         "titleAccent": "compreende TL",
-        "description": "Mantenha o QuickBooks para inventário se quiser — o Primos Books trata da conformidade de TL.",
+        "description": "Mantenha o QuickBooks para inventário se quiser — o Xefe trata da conformidade de TL.",
         "features": {
           "doubleEntry": {
             "title": "Dupla Entrada Verdadeira",
@@ -13832,7 +13832,7 @@ export const translations = {
         "preBoarding": {
           "title": "Pré-Integração",
           "description": "Bem-vindo à equipa! Vamos começar o processo de integração.",
-          "welcome": "Bem-vindo ao Primos Books! Estamos entusiasmados por tê-lo na nossa equipa. Este processo de integração irá ajudá-lo a familiarizar-se com as políticas, procedimentos e sistemas da empresa.",
+          "welcome": "Bem-vindo ao Xefe! Estamos entusiasmados por tê-lo na nossa equipa. Este processo de integração irá ajudá-lo a familiarizar-se com as políticas, procedimentos e sistemas da empresa.",
           "expectTitle": "O Que Esperar",
           "expect": {
             "items": {
@@ -15987,10 +15987,10 @@ export const translations = {
           "description": "Configurar mapeamentos de contas para integração QuickBooks",
           "defaultFormat": "Formato de Exportação Padrão",
           "accountMappings": "Mapeamentos de Contas",
-          "accountMappingsDesc": "Mapear contas da folha do Primos Books para o seu plano de contas do QuickBooks",
+          "accountMappingsDesc": "Mapear contas da folha do Xefe para o seu plano de contas do QuickBooks",
           "expenses": "Despesas",
           "liabilities": "Passivos",
-          "onitAccount": "Conta Primos Books",
+          "onitAccount": "Conta Xefe",
           "qbAccount": "Conta QuickBooks",
           "resetDefaults": "Repor Padrões",
           "save": "Guardar Alterações",
@@ -16105,12 +16105,12 @@ export const translations = {
         "complete": "Completo"
       },
       "welcome": "Bem-vindo! Vamos configurar a sua conta",
-      "welcomeDesc": "Complete estes passos para começar a usar o Primos Books",
+      "welcomeDesc": "Complete estes passos para começar a usar o Xefe",
       "companyIntro": "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
       "progressTitle": "Progresso da configuração",
       "progressHint": "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
       "savedAutomaticallyTitle": "Os passos concluídos ficam guardados automaticamente",
-      "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Primos Books retoma onde parou.",
+      "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Xefe retoma onde parou.",
       "stepOf": "Passo {{current}} de {{total}}",
       "requiredFields": "Campos Obrigatórios",
       "companyNameTinRequired": "Nome da empresa e NIF são obrigatórios.",
@@ -16131,7 +16131,7 @@ export const translations = {
       "tinPlaceholder": "Número de Identificação Fiscal",
       "teamSize": "Dimensão Aproximada da Equipa",
       "selectTeamSize": "Selecionar dimensão da equipa",
-      "teamSizeHint": "Isto ajuda o Primos Books a escolher melhores padrões para equipas pequenas ou maiores.",
+      "teamSizeHint": "Isto ajuda o Xefe a escolher melhores padrões para equipas pequenas ou maiores.",
       "address": "Morada",
       "addressPlaceholder": "Rua",
       "city": "Cidade",
@@ -16597,7 +16597,7 @@ export const translations = {
         "moneyLink": "Dinheiro",
         "payrollLink": "Folha de Pagamento",
         "accountantGateInstead": "em vez disso.",
-        "accountantGateNote": "A maioria das empresas nunca precisa de alterar nada aqui — o Primos Books mantém isto sincronizado automaticamente.",
+        "accountantGateNote": "A maioria das empresas nunca precisa de alterar nada aqui — o Xefe mantém isto sincronizado automaticamente.",
         "thisMonth": "Este Mês",
         "payrollEntries": "Lançamentos da Folha",
         "posted": "Lançados",
@@ -16868,7 +16868,7 @@ export const translations = {
     "money": {
       "dashboard": {
         "title": "Dinheiro",
-        "seoTitle": "Dinheiro - Primos Books",
+        "seoTitle": "Dinheiro - Xefe",
         "subtitle": "Acompanhe quem lhe deve, o que precisa pagar e o que fazer a seguir",
         "createInvoice": "Criar Fatura",
         "attentionNeeded": "Atenção necessária",
@@ -18067,7 +18067,7 @@ export const translations = {
     },
     "guidance": {
       "hideGuidance": "Ocultar orientação",
-      "dashboardTitle": "Bem-vindo ao Primos Books.",
+      "dashboardTitle": "Bem-vindo ao Xefe.",
       "dashboardBody": "Esta é a sua base — uma visão rápida do que está a acontecer na sua empresa hoje. Verifique o estado da folha, reveja a conformidade e entre em qualquer módulo a partir daqui.",
       "peopleTitle": "Bem-vindo ao seu hub de Pessoas.",
       "peopleBody": "É aqui que gere todos os que trabalham para a sua empresa — funcionários, contratos, departamentos e equipas. Comece adicionando o seu primeiro funcionário usando o botão acima. A partir daí pode acompanhar licenças, processar folha e manter tudo organizado. Cada secção abaixo expande para mostrar mais ferramentas.",

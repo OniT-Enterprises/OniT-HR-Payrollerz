@@ -45,14 +45,14 @@ const splashMessages: [string, string][] = [
   // Feature callouts
   ["Payroll. People. Accounting.", "Everything your business needs, in one place."],
   ["Built for Timor-Leste", "INSS, WIT, subsidio anual \u2014 all handled."],
-  ["Your back office, simplified", "From hire to retire, Primos Books has you covered."],
+  ["Your back office, simplified", "From hire to retire, Xefe has you covered."],
   ["Run payroll in minutes", "Not hours. Not headaches. Minutes."],
   ["Real-time financials", "Journal entries, trial balance, always up to date."],
   ["Track your team", "Attendance, leave, performance \u2014 all in one place."],
   // Fun personality
   ["Spreadsheets are so last decade", "Welcome to the future of HR."],
   ["Fueling the businesses of Timor-Leste", "One payroll at a time."],
-  ["Where HR meets simplicity", "Primos Books \u2014 your digital back office."],
+  ["Where HR meets simplicity", "Xefe \u2014 your digital back office."],
 ];
 
 // Loading fallback component
@@ -76,8 +76,8 @@ export function PageLoader() {
       />
       <div className="flex flex-col items-center gap-5 relative">
         <img
-          src="/images/illustrations/primos-books-logo-light.webp"
-          alt="Primos Books"
+          src="/images/illustrations/xefe-logo-light.webp"
+          alt="Xefe"
           className="h-12 w-auto"
         />
         <div className="animate-spin h-8 w-8 border-[3px] border-white/15 border-t-indigo-400 rounded-full" />

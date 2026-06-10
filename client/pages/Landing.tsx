@@ -140,8 +140,8 @@ export default function Landing() {
             {/* Logo */}
             <Link to="/" className="flex items-center gap-3 group">
               <img
-                src="/images/illustrations/primos-books-logo-light.webp"
-                alt="Primos Books"
+                src="/images/illustrations/xefe-logo-light.webp"
+                alt="Xefe"
                 className="h-9 w-auto"
               />
             </Link>
@@ -274,7 +274,7 @@ export default function Landing() {
             <div className="relative flex justify-center">
               <img
                 src="/images/illustrations/hero-dashboard.webp"
-                alt="Primos Books HR dashboard command center"
+                alt="Xefe HR dashboard command center"
                 className="w-full max-w-3xl drop-shadow-2xl"
               />
             </div>
@@ -1304,8 +1304,8 @@ export default function Landing() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex items-center gap-3">
               <img
-                src="/images/illustrations/primos-books-logo-light.webp"
-                alt="Primos Books"
+                src="/images/illustrations/xefe-logo-light.webp"
+                alt="Xefe"
                 className="h-7 w-auto"
               />
               <span className="text-zinc-600 text-sm">

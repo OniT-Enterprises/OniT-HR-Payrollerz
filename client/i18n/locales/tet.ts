@@ -6,13 +6,13 @@ const messages = {
     "privacy": {
       "title": "Polítika Privasidade",
       "updated": "Atualiza ikus: 10 Juñu 2026",
-      "intro": "Primos Books mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
+      "intro": "Xefe mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
       "s1Title": "Informasaun ne'ebé ami rai",
       "s1Body": "Detallu konta hanesan naran no email, no rejistu sira ne'ebé Ita-nia empregadór hatama atu jere sira-nia negósiu — perfil funsionáriu, númeru dokumentu identidade, saláriu, prezensa, lisensa, no istória folla pagamentu. Se Ita aplika ba serbisu liu husi link públiku, ami rai aplikasaun ne'ebé Ita haruka, inklui Ita-nia CV.",
       "s2Title": "Oinsá ami uza",
       "s2Body": "De'it atu fornese servisu — kalkula folla pagamentu, akompaña lisensa no prezensa, no prodús payslip no relatóriu. Ami la fa'an Ita-nia informasaun no la fahe ho ema halo publisidade.",
       "s3Title": "Sé mak bele haree",
-      "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Primos Books asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
+      "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Xefe asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
       "s4Title": "Iha ne'ebé mak rai",
       "s4Body": "Dadus rai iha Google Firebase no proteje ho enkriptasaun, ho regra asesu ba kada empreza.",
       "s5Title": "Kleur oinsá ami rai",
@@ -25,11 +25,11 @@ const messages = {
     "terms": {
       "title": "Termu Servisu",
       "updated": "Atualiza ikus: 10 Juñu 2026",
-      "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Primos Books.",
+      "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Xefe.",
       "s1Title": "Servisu",
-      "s1Body": "Primos Books fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
+      "s1Body": "Xefe fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
       "s2Title": "Ita-nia responsabilidade",
-      "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Primos Books mak ferramenta ida — la'ós konsellu legál ka fiskál.",
+      "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Xefe mak ferramenta ida — la'ós konsellu legál ka fiskál.",
       "s3Title": "Ita-nia dadus",
       "s3Body": "Ita-nia empreza nia dadus pertense ba Ita. Ita bele esporta kualkér tempu no husu ami atu hamoos Ita-nia konta.",
       "s4Title": "Uzu aseitável",
@@ -282,7 +282,7 @@ const messages = {
     "todoBlockingDesc": "Empregadu {{count}} presiza dokumentu ka dadus.",
     "todoAddEmployeeDesc": "Tau membru foun ba ita-nia organizasaun.",
     "botBriefing": "rezumu",
-    "botGreeting": "Ha'u PrimosBot — husu kona-ba ekipa, saláriu, lisensa, ka buat seluk.",
+    "botGreeting": "Ha'u XefeBot — husu kona-ba ekipa, saláriu, lisensa, ka buat seluk.",
     "botGreeting2": "Presiza resposta lalais? Ha'u bele buka dadus funsionáriu, saláriu, ka lisensa.",
     "botGreeting3": "Ha'u iha ne'e atu ajuda — husu kona-ba ita-nia ekipa ka prazu sira.",
     "botGreeting4": "Ita-nia asistente prontu ona. Husu buat ida kona-ba organizasaun.",
@@ -292,7 +292,7 @@ const messages = {
     "botPromptStaff": "Empregadu hira?",
     "botPromptPayroll": "Saláriu tuirmai?",
     "botPromptLeave": "Sé mak lisensa?",
-    "botPlaceholder": "Husu ba PrimosBot...",
+    "botPlaceholder": "Husu ba XefeBot...",
     "allGood": "Buat hotu di'ak — laiha buat ne'ebé presiza atensaun",
     "pendingPayrollTitle": "Payroll hein aprovasaun",
     "untilPayday": "to'o loron selu",
@@ -459,7 +459,7 @@ const messages = {
     }
   },
   "auth": {
-    "loginTitle": "Tama ba Primos Books",
+    "loginTitle": "Tama ba Xefe",
     "loginSubtitle": "Tama atu asesu painael",
     "email": "Email",
     "password": "Password",
@@ -641,7 +641,7 @@ const messages = {
     "performance": {
       "badge": "Hadia ba Internet TL",
       "title": "Lalais Maski Ligasaun Neineik",
-      "description": "Primos Books rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
+      "description": "Xefe rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
       "features": {
         "cache": "Cache lokal intelijente — servisu lalais iha vizita tuir mai",
         "lazy": "Fitur boot karga de'it bainhira presiza",
@@ -727,11 +727,11 @@ const messages = {
     "cta": {
       "title": "Prontu atu hahu?",
       "titleAccent": "Hahu ohin",
-      "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Primos Books ba RH no Folha.",
+      "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Xefe ba RH no Folha.",
       "primary": "Hahu teste gratis"
     },
     "footer": {
-      "brand": "Primos Books",
+      "brand": "Xefe",
       "location": "Timor-Leste",
       "links": {
         "privacy": "Privasidade",
@@ -783,7 +783,7 @@ const messages = {
         "desc": "Lansu kontabil manual ba WIT fulan-fulan. Laiha relatoriu SEFOPE. Laiha Tetun. Hadia ba merkadu seluk."
       },
       "solution": {
-        "title": "Primos Books rezolve ida nee",
+        "title": "Xefe rezolve ida nee",
         "desc": "WIT/INSS automatik. Transferensia banku ba BNU/BNCTL. Relatoriu ba SEFOPE. Interface Tetun."
       }
     },
@@ -902,7 +902,7 @@ const messages = {
         "ana": {
           "name": "Ana",
           "role": "Dona Kafé",
-          "desc": "Hala'o kafé ho staf 5. Uza Primos Books ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
+          "desc": "Hala'o kafé ho staf 5. Uza Xefe ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
         },
         "tomas": {
           "name": "Tomas",
@@ -915,7 +915,7 @@ const messages = {
       "badge": "App Empregadu",
       "title": "Ekipa",
       "titleAccent": "Kompanheiru Movel Ita-nia Ekipa",
-      "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Primos Books.",
+      "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Xefe.",
       "tagline": "\"Ekipa\" — Tetun ba ekipa",
       "features": {
         "payslips": {
@@ -943,8 +943,8 @@ const messages = {
           "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensa. Pergunta menus ba RH."
         }
       },
-      "cta": "Inklui ho Primos Books",
-      "ctaNote": "Android · Grátis ba empregadu Primos Books hotu",
+      "cta": "Inklui ho Xefe",
+      "ctaNote": "Android · Grátis ba empregadu Xefe hotu",
       "shipped": {
         "badge": "Ativu Ona",
         "title": "Saida mak Prontu",
@@ -978,7 +978,7 @@ const messages = {
       "badge": "Baze iha Dili",
       "title": "Suporte lokal,",
       "titleAccent": "iha Tetun no Ingles",
-      "description": "Ami laos empresa estranjeiru ho suporte offshore. Primos Books hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
+      "description": "Ami laos empresa estranjeiru ho suporte offshore. Xefe hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
       "items": {
         "whatsapp": "Suporte WhatsApp iha Tetun no Ingles",
         "training": "Treinamentu iha fatin disponível iha Dili",
@@ -994,7 +994,7 @@ const messages = {
       "badge": "Kontabilidade Real",
       "title": "Kontabilidade ne'ebe",
       "titleAccent": "komprende TL",
-      "description": "Uza QuickBooks ba inventáriu se hakarak — Primos Books rezolve konformidade TL.",
+      "description": "Uza QuickBooks ba inventáriu se hakarak — Xefe rezolve konformidade TL.",
       "features": {
         "doubleEntry": {
           "title": "Double-Entry Loos",
@@ -1684,7 +1684,7 @@ const messages = {
       "preBoarding": {
         "title": "Pre-Integrasaun",
         "description": "Bem-vindu! Vamos hahu prosesu integrasaun.",
-        "welcome": "Bem-vindu ba Primos Books! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
+        "welcome": "Bem-vindu ba Xefe! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
         "expectTitle": "Sa ida ita esperta",
         "expect": {
           "items": {
@@ -2706,10 +2706,10 @@ const messages = {
         "description": "Konfigura mapeamentu konta ba integrasaun QuickBooks",
         "defaultFormat": "Formatu Exportasaun Padraun",
         "accountMappings": "Mapeamentu Konta",
-        "accountMappingsDesc": "Mapeia konta Primos Books ba planu konta QuickBooks",
+        "accountMappingsDesc": "Mapeia konta Xefe ba planu konta QuickBooks",
         "expenses": "Despeza",
         "liabilities": "Pasivu",
-        "onitAccount": "Konta Primos Books",
+        "onitAccount": "Konta Xefe",
         "qbAccount": "Konta QuickBooks",
         "resetDefaults": "Reset ba Padraun",
         "save": "Rai Mudansa",
@@ -2824,12 +2824,12 @@ const messages = {
       "complete": "Kompletu"
     },
     "welcome": "Bemvindu! Atu konfigura ita-nia konta",
-    "welcomeDesc": "Kompleta pasu sira hodi hahú ho Primos Books",
+    "welcomeDesc": "Kompleta pasu sira hodi hahú ho Xefe",
     "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
     "progressTitle": "Progresu setup",
     "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
     "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
-    "savedAutomaticallyDesc": "Bele sai no fila depois. Primos Books sei kontinua iha fatin ne'ebé ita husik.",
+    "savedAutomaticallyDesc": "Bele sai no fila depois. Xefe sei kontinua iha fatin ne'ebé ita husik.",
     "stepOf": "Pasu {{current}} husi {{total}}",
     "requiredFields": "Kampu Obrigatóriu",
     "companyNameTinRequired": "Naran empreza no TIN presiza.",
@@ -2850,7 +2850,7 @@ const messages = {
     "tinPlaceholder": "Numeru Identifikasaun Impostu",
     "teamSize": "Medida Ekipa Aproximadu",
     "selectTeamSize": "Hili medida ekipa",
-    "teamSizeHint": "Ida ne'e ajuda Primos Books hili padraun di'ak liu ba ekipa ki'ik ka boot.",
+    "teamSizeHint": "Ida ne'e ajuda Xefe hili padraun di'ak liu ba ekipa ki'ik ka boot.",
     "address": "Enderesu",
     "addressPlaceholder": "Enderesu dalan",
     "city": "Sidade",
@@ -3316,7 +3316,7 @@ const messages = {
       "moneyLink": "Osan",
       "payrollLink": "Saláriu",
       "accountantGateInstead": "alternativa.",
-      "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Primos Books mantén ida-ne'e automátiku.",
+      "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Xefe mantén ida-ne'e automátiku.",
       "thisMonth": "Fulan Ida-ne'e",
       "payrollEntries": "Entrada Saláriu",
       "posted": "Publika",
@@ -4810,7 +4810,7 @@ const messages = {
   "money": {
     "dashboard": {
       "title": "Osan",
-      "seoTitle": "Osan - Primos Books",
+      "seoTitle": "Osan - Xefe",
       "subtitle": "Akompaña sé maka deve ita, saida maka ita presiza selu, no saida maka atu halo tuir mai",
       "createInvoice": "Kria Fatura",
       "attentionNeeded": "Presiza atensaun",
@@ -6009,7 +6009,7 @@ const messages = {
   },
   "guidance": {
     "hideGuidance": "Subar orientasaun",
-    "dashboardTitle": "Bemvindu ba Primos Books.",
+    "dashboardTitle": "Bemvindu ba Xefe.",
     "dashboardBody": "Ida ne’e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne’e.",
     "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
     "peopleBody": "Ida ne’e mak fatin atu jeréncia ema hotu ne’ebé serbisu iha ita-nia empreza — empregádu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregádu primeiru ho botãu iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",

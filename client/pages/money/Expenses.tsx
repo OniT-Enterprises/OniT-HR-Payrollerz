@@ -371,7 +371,7 @@ export default function Expenses() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Expenses - Primos Books" description="Track and manage business expenses" />
+      <SEO title="Expenses - Xefe" description="Track and manage business expenses" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

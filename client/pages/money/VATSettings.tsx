@@ -152,7 +152,7 @@ export default function VATSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="VAT Settings - Primos Books" />
+      <SEO title="VAT Settings - Xefe" />
       <MainNavigation />
       <div className="max-w-screen-lg mx-auto p-6 space-y-6">
         <PageHeader

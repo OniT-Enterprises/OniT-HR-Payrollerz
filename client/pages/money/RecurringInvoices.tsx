@@ -173,7 +173,7 @@ export default function RecurringInvoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Recurring Invoices - Primos Books" description="Manage recurring invoice templates" />
+      <SEO title="Recurring Invoices - Xefe" description="Manage recurring invoice templates" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

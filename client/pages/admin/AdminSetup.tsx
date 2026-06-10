@@ -30,7 +30,7 @@ export default function AdminSetup() {
   useEffect(() => clearRedirectTimeout, [clearRedirectTimeout]);
 
   // Company/Tenant info
-  const [companyName, setCompanyName] = useState("Primos Demo Company");
+  const [companyName, setCompanyName] = useState("Xefe Demo Company");
   const [companySlug, setCompanySlug] = useState("meza-demo");
 
   // Check if bootstrap has already occurred
@@ -156,8 +156,8 @@ export default function AdminSetup() {
         <div className="flex justify-center mb-8">
           <div className="flex items-center gap-3">
             <img
-              src="/images/illustrations/primos-books-logo-dark.webp"
-              alt="Primos Books"
+              src="/images/illustrations/xefe-logo-dark.webp"
+              alt="Xefe"
               className="h-10 w-auto"
             />
             <span className="text-xs text-muted-foreground">Admin Setup</span>

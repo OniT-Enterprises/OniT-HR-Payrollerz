@@ -166,7 +166,7 @@ export default function ProfitLoss() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Profit & Loss - Primos Books" description="View your profit and loss statement" />
+      <SEO title="Profit & Loss - Xefe" description="View your profit and loss statement" />
       <MainNavigation />
 
       <div className="p-6 max-w-screen-2xl mx-auto">

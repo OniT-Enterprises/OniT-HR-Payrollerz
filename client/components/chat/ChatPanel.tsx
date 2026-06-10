@@ -221,7 +221,7 @@ function ChatHeader({
         <div className="h-7 w-7 rounded-full bg-primary/10 flex items-center justify-center">
           <Bot className="h-4 w-4 text-primary" />
         </div>
-        <span className="font-semibold text-sm text-foreground">PrimosBot</span>
+        <span className="font-semibold text-sm text-foreground">XefeBot</span>
       </div>
       <div className="flex items-center gap-1">
         {headerExtra}
@@ -253,7 +253,7 @@ function EmptyState({ onSend }: { onSend: (text: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
       <Bot className="h-10 w-10 text-muted-foreground/50 mb-3" />
-      <p className="text-sm font-medium text-foreground mb-2">PrimosBot</p>
+      <p className="text-sm font-medium text-foreground mb-2">XefeBot</p>
       <p className="text-xs text-muted-foreground leading-relaxed mb-4">
         Ask me about employees, payroll, leave, interviews, or finances.
       </p>
@@ -610,7 +610,7 @@ function useChatPanel(tenantId: string) {
     [isLoading, tenantId, sessionKey, currentRoute, addMessage, updateLastMessage, setLoading]
   );
 
-  // Auto-send pending query from dashboard PrimosBot widget
+  // Auto-send pending query from dashboard XefeBot widget
   useEffect(() => {
     if (pendingQuery && !isLoading) {
       setPendingQuery(null);

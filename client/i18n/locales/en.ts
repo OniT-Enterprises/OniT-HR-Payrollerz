@@ -6,13 +6,13 @@ const messages = {
     "privacy": {
       "title": "Privacy Policy",
       "updated": "Last updated: 10 June 2026",
-      "intro": "Primos Books is an HR and payroll service operated in Timor-Leste. This page explains what information the service stores and how it is used.",
+      "intro": "Xefe is an HR and payroll service operated in Timor-Leste. This page explains what information the service stores and how it is used.",
       "s1Title": "Information we store",
       "s1Body": "Account details such as your name and email, and the records your employer enters to run their business — employee profiles, identity document numbers, salaries, attendance, leave, and payroll history. If you apply for a job through a public application link, we store the application you submit, including your CV.",
       "s2Title": "How it is used",
       "s2Body": "Only to provide the service — calculating payroll, tracking leave and attendance, and producing payslips and reports. We do not sell your information or share it with advertisers.",
       "s3Title": "Who can see it",
-      "s3Body": "Your employer's authorised administrators control their company's records. Primos Books staff access company data only for support and maintenance, and that access is recorded in an audit log.",
+      "s3Body": "Your employer's authorised administrators control their company's records. Xefe staff access company data only for support and maintenance, and that access is recorded in an audit log.",
       "s4Title": "Where it is stored",
       "s4Body": "Data is stored with Google Firebase and protected with encryption in transit and at rest, plus per-company access rules.",
       "s5Title": "How long we keep it",
@@ -25,11 +25,11 @@ const messages = {
     "terms": {
       "title": "Terms of Service",
       "updated": "Last updated: 10 June 2026",
-      "intro": "These terms apply when you create an account or use Primos Books.",
+      "intro": "These terms apply when you create an account or use Xefe.",
       "s1Title": "The service",
-      "s1Body": "Primos Books provides HR, payroll, and accounting tools for businesses in Timor-Leste, including WIT and INSS calculations based on the rates you configure.",
+      "s1Body": "Xefe provides HR, payroll, and accounting tools for businesses in Timor-Leste, including WIT and INSS calculations based on the rates you configure.",
       "s2Title": "Your responsibilities",
-      "s2Body": "You are responsible for the accuracy of the information you enter, for having the right to store your employees' information, and for checking payroll amounts before paying staff or filing with the authorities. Primos Books is a tool — it is not legal or tax advice.",
+      "s2Body": "You are responsible for the accuracy of the information you enter, for having the right to store your employees' information, and for checking payroll amounts before paying staff or filing with the authorities. Xefe is a tool — it is not legal or tax advice.",
       "s3Title": "Your data",
       "s3Body": "Your company's data belongs to you. You can export it at any time and ask us to delete your account.",
       "s4Title": "Acceptable use",
@@ -282,7 +282,7 @@ const messages = {
     "todoBlockingDesc": "{{count}} employee(s) need missing documents or details.",
     "todoAddEmployeeDesc": "Add a new team member to your organization.",
     "botBriefing": "briefing",
-    "botGreeting": "I'm PrimosBot — ask me about your team, payroll, leave, or anything else.",
+    "botGreeting": "I'm XefeBot — ask me about your team, payroll, leave, or anything else.",
     "botGreeting2": "Need a quick answer? I can look up staff, payroll, or leave data for you.",
     "botGreeting3": "I'm here to help — try asking about your team or upcoming deadlines.",
     "botGreeting4": "Your AI assistant is ready. Ask me anything about your organization.",
@@ -292,7 +292,7 @@ const messages = {
     "botPromptStaff": "How many staff?",
     "botPromptPayroll": "Next payroll?",
     "botPromptLeave": "Who's on leave?",
-    "botPlaceholder": "Ask PrimosBot anything...",
+    "botPlaceholder": "Ask XefeBot anything...",
     "allGood": "All good — nothing needs attention",
     "pendingPayrollTitle": "Payroll awaiting approval",
     "untilPayday": "until payday",
@@ -459,7 +459,7 @@ const messages = {
     }
   },
   "auth": {
-    "loginTitle": "Sign in to Primos Books",
+    "loginTitle": "Sign in to Xefe",
     "loginSubtitle": "Sign in to access your dashboard",
     "email": "Email",
     "password": "Password",
@@ -641,7 +641,7 @@ const messages = {
     "performance": {
       "badge": "Built for TL Internet",
       "title": "Fast Even on Slow Connections",
-      "description": "Primos Books caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
+      "description": "Xefe caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
       "features": {
         "cache": "Smart local caching — works instantly on repeat visits",
         "lazy": "Heavy features load only when needed",
@@ -727,11 +727,11 @@ const messages = {
     "cta": {
       "title": "Ready to Start?",
       "titleAccent": "Start Today",
-      "description": "Join Timor-Leste businesses already using Primos Books for compliant, effortless HR & Payroll.",
+      "description": "Join Timor-Leste businesses already using Xefe for compliant, effortless HR & Payroll.",
       "primary": "Start Free Trial"
     },
     "footer": {
-      "brand": "Primos Books",
+      "brand": "Xefe",
       "location": "Timor-Leste",
       "links": {
         "privacy": "Privacy",
@@ -783,7 +783,7 @@ const messages = {
         "desc": "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours."
       },
       "solution": {
-        "title": "Primos Books solves this",
+        "title": "Xefe solves this",
         "desc": "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface."
       }
     },
@@ -902,7 +902,7 @@ const messages = {
         "ana": {
           "name": "Ana",
           "role": "Café Owner",
-          "desc": "Runs a café with 5 staff. Uses Primos Books for payroll, Kaixa for daily sales. Staff use Ekipa."
+          "desc": "Runs a café with 5 staff. Uses Xefe for payroll, Kaixa for daily sales. Staff use Ekipa."
         },
         "tomas": {
           "name": "Tomas",
@@ -915,7 +915,7 @@ const messages = {
       "badge": "Employee App",
       "title": "Ekipa",
       "titleAccent": "Your Team's Mobile Companion",
-      "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Primos Books customers.",
+      "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Xefe customers.",
       "tagline": "\"Ekipa\" — Tetum for team",
       "features": {
         "payslips": {
@@ -943,8 +943,8 @@ const messages = {
           "desc": "View personal details, job info, documents, and attendance history. Fewer questions for HR."
         }
       },
-      "cta": "Included with Primos Books",
-      "ctaNote": "Android · Free for all Primos Books employees",
+      "cta": "Included with Xefe",
+      "ctaNote": "Android · Free for all Xefe employees",
       "shipped": {
         "badge": "Live Now",
         "title": "What's Shipped",
@@ -978,7 +978,7 @@ const messages = {
       "badge": "Based in Dili",
       "title": "Local support,",
       "titleAccent": "iha Tetun no English",
-      "description": "We're not a foreign company with offshore support. Primos Books is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
+      "description": "We're not a foreign company with offshore support. Xefe is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
       "items": {
         "whatsapp": "WhatsApp support in Tetun & English",
         "training": "On-site training available in Dili",
@@ -994,7 +994,7 @@ const messages = {
       "badge": "Real Accounting",
       "title": "Accounting that actually",
       "titleAccent": "understands TL",
-      "description": "Keep QuickBooks for inventory if you want — Primos Books handles the TL compliance side.",
+      "description": "Keep QuickBooks for inventory if you want — Xefe handles the TL compliance side.",
       "features": {
         "doubleEntry": {
           "title": "True Double-Entry",
@@ -1774,7 +1774,7 @@ const messages = {
       "preBoarding": {
         "title": "Pre-Boarding",
         "description": "Welcome to the team! Let's get you started with the onboarding process.",
-        "welcome": "Welcome to Primos Books! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
+        "welcome": "Welcome to Xefe! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
         "expectTitle": "What to Expect",
         "expect": {
           "items": {
@@ -3929,10 +3929,10 @@ const messages = {
         "description": "Configure account mappings for QuickBooks integration",
         "defaultFormat": "Default Export Format",
         "accountMappings": "Account Mappings",
-        "accountMappingsDesc": "Map Primos Books payroll accounts to your QuickBooks chart of accounts",
+        "accountMappingsDesc": "Map Xefe payroll accounts to your QuickBooks chart of accounts",
         "expenses": "Expenses",
         "liabilities": "Liabilities",
-        "onitAccount": "Primos Books Account",
+        "onitAccount": "Xefe Account",
         "qbAccount": "QuickBooks Account",
         "resetDefaults": "Reset to Defaults",
         "save": "Save Changes",
@@ -4047,12 +4047,12 @@ const messages = {
       "complete": "Complete"
     },
     "welcome": "Welcome! Let's set up your account",
-    "welcomeDesc": "Complete these steps to get started with Primos Books",
+    "welcomeDesc": "Complete these steps to get started with Xefe",
     "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
     "progressTitle": "Setup progress",
     "progressHint": "Complete each step once. You can adjust everything later in Settings.",
     "savedAutomaticallyTitle": "Finished steps are saved automatically",
-    "savedAutomaticallyDesc": "You can leave and come back later. Primos Books will resume where you stopped.",
+    "savedAutomaticallyDesc": "You can leave and come back later. Xefe will resume where you stopped.",
     "stepOf": "Step {{current}} of {{total}}",
     "requiredFields": "Required Fields",
     "companyNameTinRequired": "Company name and TIN are required.",
@@ -4073,7 +4073,7 @@ const messages = {
     "tinPlaceholder": "Tax Identification Number",
     "teamSize": "Approximate Team Size",
     "selectTeamSize": "Select team size",
-    "teamSizeHint": "This helps Primos Books choose better defaults for small or larger teams.",
+    "teamSizeHint": "This helps Xefe choose better defaults for small or larger teams.",
     "address": "Address",
     "addressPlaceholder": "Street address",
     "city": "City",
@@ -4539,7 +4539,7 @@ const messages = {
       "moneyLink": "Money",
       "payrollLink": "Payroll",
       "accountantGateInstead": "instead.",
-      "accountantGateNote": "Most businesses never need to change anything here — Primos Books keeps this in sync automatically.",
+      "accountantGateNote": "Most businesses never need to change anything here — Xefe keeps this in sync automatically.",
       "thisMonth": "This Month",
       "payrollEntries": "Payroll Entries",
       "posted": "Posted",
@@ -4810,7 +4810,7 @@ const messages = {
   "money": {
     "dashboard": {
       "title": "Money",
-      "seoTitle": "Money - Primos Books",
+      "seoTitle": "Money - Xefe",
       "subtitle": "Track who owes you, what you need to pay, and what to do next",
       "createInvoice": "Create Invoice",
       "attentionNeeded": "Attention needed",
@@ -6009,7 +6009,7 @@ const messages = {
   },
   "guidance": {
     "hideGuidance": "Hide guidance",
-    "dashboardTitle": "Welcome to Primos Books.",
+    "dashboardTitle": "Welcome to Xefe.",
     "dashboardBody": "This is your home base — a quick snapshot of what’s happening across your company today. Check payroll status, review compliance, and jump into any module from here.",
     "peopleTitle": "Welcome to your People hub.",
     "peopleBody": "This is where you manage everyone who works for your company — employees, contracts, departments, and teams. Start by adding your first employee using the button above. From there you can track leave, run payroll, and keep everything organized. Each section below expands to show more tools.",
