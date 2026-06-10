@@ -983,7 +983,7 @@ export default function PayrollHistory() {
                 <CardContent>
                   {filteredRuns.length === 0 ? (
                     <div className="text-center py-12">
-                      <img src="/images/illustrations/empty-payroll.webp" alt="" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
+                      <img src="/images/illustrations/xefe-spot-payroll.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
                       <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
                       <Button onClick={() => navigate("/payroll/run")}>
                         {t("payrollHistory.runFirstPayroll")}
@@ -1179,7 +1179,13 @@ export default function PayrollHistory() {
       <Dialog open={Boolean(nextStepsRun)} onOpenChange={(open) => !open && setNextStepsRun(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <img
+              src="/images/illustrations/xefe-success.webp"
+              alt=""
+              aria-hidden
+              className="mx-auto mb-1 h-24 w-auto object-contain"
+            />
+            <DialogTitle className="flex items-center justify-center gap-2 text-center">
               <CheckCircle className="h-5 w-5 text-emerald-600" />
               {t("payrollHistory.nextStepsTitle")}
             </DialogTitle>

@@ -176,7 +176,7 @@ export default function PayrollReports() {
           </div>
         ) : sortedRuns.length === 0 ? (
           <div className="py-16 text-center">
-            <FileText className="mx-auto mb-4 h-16 w-16 text-muted-foreground/40" />
+            <img src="/images/illustrations/xefe-spot-reports.webp" alt="" className="mx-auto mb-4 h-28 w-auto object-contain drop-shadow-lg" />
             <h3 className="mb-2 text-lg font-semibold">{t("reports.payrollRun.noRuns.title")}</h3>
             <p className="mb-6 text-muted-foreground">{t("reports.payrollRun.noRuns.description")}</p>
             <Button onClick={() => navigate("/payroll/run")}>

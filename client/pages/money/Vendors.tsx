@@ -246,7 +246,7 @@ export default function Vendors() {
         {filteredVendors.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/empty-invoices.webp" alt="No vendors yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />
+              <img src="/images/illustrations/xefe-empty.webp" alt="No vendors yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm
                   ? t('money.vendors.noResults') || 'No vendors found'
