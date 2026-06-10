@@ -4,7 +4,9 @@
 - **Frontend work**: Check `STYLE_GUIDE.md` for design patterns and colors before UI changes.
 - **Roadmap**: See `docs/IMPLEMENTATION_ROADMAP.md` for feature plans and TL legal requirements.
 - **Code quality**: See `docs/CODE_REVIEW_JAN2026.md` for technical debt and pending items.
+- **Launch ops**: See `docs/LAUNCH_OPS_TODO.md` for remaining manual/console items (backups, Sentry, icons) and deploy notes.
 - **Bot integration**: See `OPENCLAW_MEZA_INTEGRATION.md` for the Meza AI assistant (WhatsApp + web dashboard).
+- **Branding**: User-facing name is **Primos Books** (Ekipa = employee app, PrimosBot = assistant). Internal infra keeps meza-* names.
 
 ## Project Overview
 OniT HR/Payroll System - React/TypeScript app for HR operations (hiring, staff, time tracking, performance, payroll, reporting) targeting Timor-Leste market.
