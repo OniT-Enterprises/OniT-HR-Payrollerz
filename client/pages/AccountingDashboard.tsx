@@ -59,7 +59,6 @@ export default function AccountingDashboard() {
       show: dashboardData.pendingEntries > 0,
       text: `${dashboardData.pendingEntries} draft journal entr${dashboardData.pendingEntries === 1 ? "y" : "ies"} to review`,
       path: "/accounting/journal",
-      art: "/images/illustrations/xefe-card-ac-journal.webp",
       icon: FileSpreadsheet,
       tone: AMBER,
     },
@@ -67,7 +66,6 @@ export default function AccountingDashboard() {
       show: !balanceHealth.trialBalanced,
       text: "Trial balance is out of balance",
       path: "/accounting/statements/trial-balance",
-      art: "/images/illustrations/xefe-card-accounting.webp",
       icon: Scale,
       tone: RED,
     },
@@ -83,28 +81,30 @@ export default function AccountingDashboard() {
   const hubCards = [
     {
       title: "Chart of Accounts",
+      art: "/images/illustrations/xefe-card-ac-chart.webp",
       meta: "Ledger structure",
       path: "/accounting/chart",
-      art: "/images/illustrations/xefe-card-ac-chart.webp",
       icon: BookOpen,
     },
     {
       title: "Journal Entries",
+      art: "/images/illustrations/xefe-card-ac-journal.webp",
       meta: `${dashboardData.pendingEntries} pending`,
       path: "/accounting/journal",
       icon: FileSpreadsheet,
     },
     {
       title: "Trial Balance",
+      art: "/images/illustrations/xefe-card-accounting.webp",
       meta: balanceHealth.trialBalanced ? "Balanced" : "Out of balance",
       path: "/accounting/statements/trial-balance",
       icon: Scale,
     },
     {
       title: "Balance Sheet",
+      art: "/images/illustrations/xefe-card-ac-balance.webp",
       meta: dashboardData.payrollPosted ? "Live" : "Pending payroll",
       path: "/accounting/statements/balance-sheet",
-      art: "/images/illustrations/xefe-card-ac-balance.webp",
       icon: Building2,
     },
   ];

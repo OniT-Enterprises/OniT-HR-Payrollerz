@@ -65,7 +65,6 @@ export default function SchedulingDashboard() {
       count: pendingLeave,
       label: `leave request${pendingLeave === 1 ? "" : "s"} waiting for approval`,
       path: "/time-leave/leave",
-      art: "/images/illustrations/xefe-card-tl-leave.webp",
       icon: CalendarDays,
       tone: "text-violet-600 bg-violet-100 dark:bg-violet-950/30 dark:text-violet-300",
     },
@@ -74,7 +73,6 @@ export default function SchedulingDashboard() {
       count: lateToday,
       label: `late arrival${lateToday === 1 ? "" : "s"} today`,
       path: "/time-leave/attendance",
-      art: "/images/illustrations/xefe-card-tl-attendance.webp",
       icon: Clock,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
@@ -91,28 +89,30 @@ export default function SchedulingDashboard() {
   const hubCards = [
     {
       title: "Attendance",
+      art: "/images/illustrations/xefe-card-tl-attendance.webp",
       meta: `${coverageRate}% available today`,
       path: "/time-leave/attendance",
       icon: CalendarCheck,
     },
     {
       title: "Leave",
+      art: "/images/illustrations/xefe-card-tl-leave.webp",
       meta: `${pendingLeave} pending · ${onLeaveToday} on leave`,
       path: "/time-leave/leave",
       icon: CalendarDays,
     },
     {
       title: "Time Tracking",
+      art: "/images/illustrations/xefe-card-tl-timetracking.webp",
       meta: "Clock-ins & hours",
       path: "/time-leave/time-tracking",
-      art: "/images/illustrations/xefe-card-tl-timetracking.webp",
       icon: Clock,
     },
     {
       title: "Shifts",
+      art: "/images/illustrations/xefe-card-tl-shifts.webp",
       meta: "Plan weekly rosters",
       path: "/time-leave/shifts",
-      art: "/images/illustrations/xefe-card-tl-shifts.webp",
       icon: Calendar,
     },
   ];

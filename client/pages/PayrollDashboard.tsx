@@ -144,30 +144,30 @@ export default function PayrollDashboard() {
   const hubCards = [
     {
       title: "Run payroll",
+      art: "/images/illustrations/xefe-card-payroll.webp",
       meta: `${activeEmployees} staff in cycle`,
       path: "/payroll/run",
-      art: "/images/illustrations/xefe-card-payroll.webp",
       icon: Play,
     },
     {
       title: "History",
+      art: "/images/illustrations/xefe-card-pr-history.webp",
       meta: payrollRuns.length > 0 ? `${payrollRuns.length} recent run${payrollRuns.length === 1 ? "" : "s"}` : "No runs yet",
       path: "/payroll/history",
-      art: "/images/illustrations/xefe-card-pr-history.webp",
       icon: History,
     },
     {
       title: "Bank transfers",
+      art: "/images/illustrations/xefe-card-pr-bank.webp",
       meta: readyToPay > 0 ? `${readyToPay} ready to pay` : "Export & pay",
       path: "/payroll/payments",
-      art: "/images/illustrations/xefe-card-pr-bank.webp",
       icon: Banknote,
     },
     {
       title: "Tax & INSS",
+      art: "/images/illustrations/xefe-card-pr-tax.webp",
       meta: `WIT in ${witDays}d · INSS in ${inssDays}d`,
       path: "/payroll/tax",
-      art: "/images/illustrations/xefe-card-pr-tax.webp",
       icon: FileSpreadsheet,
     },
   ];

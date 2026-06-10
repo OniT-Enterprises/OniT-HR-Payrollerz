@@ -85,7 +85,6 @@ export default function MoneyDashboard() {
       show: payablesSummary.dueThisWeekCount > 0,
       text: `${payablesSummary.dueThisWeekCount} bill${payablesSummary.dueThisWeekCount === 1 ? "" : "s"} due this week — ${formatCurrency(payablesSummary.dueThisWeek)}`,
       path: "/money/bills",
-      art: "/images/illustrations/xefe-card-mn-bills.webp",
       icon: Clock3,
       tone: AMBER,
     },
@@ -94,13 +93,14 @@ export default function MoneyDashboard() {
   const hubCards = [
     {
       title: "Invoices",
+      art: "/images/illustrations/xefe-card-money.webp",
       meta: `${formatCurrency(stats.totalOutstanding)} outstanding`,
       path: "/money/invoices",
-      art: "/images/illustrations/xefe-card-money.webp",
       icon: FileText,
     },
     {
       title: "Bills",
+      art: "/images/illustrations/xefe-card-mn-bills.webp",
       meta:
         payablesSummary.overdueCount > 0
           ? `${payablesSummary.overdueCount} overdue`
@@ -110,16 +110,16 @@ export default function MoneyDashboard() {
     },
     {
       title: "Expenses",
+      art: "/images/illustrations/xefe-card-mn-expenses.webp",
       meta: "Track spending",
       path: "/money/expenses",
-      art: "/images/illustrations/xefe-card-mn-expenses.webp",
       icon: Wallet,
     },
     {
       title: "Financial Reports",
+      art: "/images/illustrations/xefe-card-reports.webp",
       meta: "P&L · cashflow · VAT",
       path: "/money/financials/profit-loss",
-      art: "/images/illustrations/xefe-card-reports.webp",
       icon: TrendingUp,
     },
   ];
