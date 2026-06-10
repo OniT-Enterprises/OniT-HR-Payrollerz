@@ -9,6 +9,28 @@ import { Route, Navigate } from "react-router-dom";
 import { SuperadminRoute } from "@/components/auth/SuperadminRoute";
 import { FeatureRoute } from "@/components/auth/FeatureRoute";
 
+// After a deploy, hashed chunk filenames change; users holding a stale
+// index.html hit a failed dynamic import and land on a dead page. Reload once
+// (at most once per minute, to avoid loops) to pick up the fresh index.html.
+function lazyWithRetry<T extends React.ComponentType<unknown>>(
+  importFn: () => Promise<{ default: T }>,
+) {
+  return lazy(async () => {
+    try {
+      return await importFn();
+    } catch (error) {
+      const KEY = "meza-chunk-reload-at";
+      const last = Number(sessionStorage.getItem(KEY) || 0);
+      if (Date.now() - last > 60_000) {
+        sessionStorage.setItem(KEY, String(Date.now()));
+        window.location.reload();
+        await new Promise(() => {}); // page is reloading; never resolve
+      }
+      throw error;
+    }
+  });
+}
+
 const splashMessages: [string, string][] = [
   // Tetun — conversational, people know these
   ["\u201CBainaka\u201D", "Welcome \u2014 let\u2019s get to work"],
@@ -17,20 +39,20 @@ const splashMessages: [string, string][] = [
   ["\u201CLao ba oin\u201D", "Moving forward, always"],
   ["\u201CDi\u2019ak loron ida\u201D", "Have a good day"],
   ["\u201CProntu ona\u201D", "All set \u2014 almost there"],
-  ["\u201CMeza prontu\u201D", "Your desk is ready"],
+  ["\u201CAmi prontu\u201D", "We\u2019re ready when you are"],
   ["\u201CHakarak di\u2019ak liu tan\u201D", "Always striving for better"],
   ["\u201CIta nia forsa maka ita nia ema\u201D", "Our strength is our people"],
   // Feature callouts
-  ["Payroll. People. Accounting.", "Everything your business needs, one Meza."],
+  ["Payroll. People. Accounting.", "Everything your business needs, in one place."],
   ["Built for Timor-Leste", "INSS, WIT, subsidio anual \u2014 all handled."],
-  ["Your back office, simplified", "From hire to retire, Meza has you covered."],
+  ["Your back office, simplified", "From hire to retire, Primos Books has you covered."],
   ["Run payroll in minutes", "Not hours. Not headaches. Minutes."],
   ["Real-time financials", "Journal entries, trial balance, always up to date."],
   ["Track your team", "Attendance, leave, performance \u2014 all in one place."],
   // Fun personality
   ["Spreadsheets are so last decade", "Welcome to the future of HR."],
   ["Fueling the businesses of Timor-Leste", "One payroll at a time."],
-  ["Where HR meets simplicity", "Meza \u2014 Tetum for \u201Cdesk.\u201D Your digital one."],
+  ["Where HR meets simplicity", "Primos Books \u2014 your digital back office."],
 ];
 
 // Loading fallback component
@@ -78,118 +100,118 @@ import Landing from "@/pages/Landing";
 import Dashboard from "@/pages/Dashboard";
 
 // Lazy loaded routes - code split by section
-const Sitemap = lazy(() => import("@/pages/Sitemap"));
-const Settings = lazy(() => import("@/pages/Settings"));
-const Signup = lazy(() => import("@/pages/auth/Signup"));
-const ProductDetails = lazy(() => import("@/pages/ProductDetails"));
-const Unauthorized = lazy(() => import("@/pages/Unauthorized"));
+const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
+const Settings = lazyWithRetry(() => import("@/pages/Settings"));
+const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
+const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
+const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
 // Section Dashboards (kept for /*/overview routes but not default landing)
-const PeopleDashboard = lazy(() => import("@/pages/PeopleDashboard"));
-const SchedulingDashboard = lazy(() => import("@/pages/SchedulingDashboard"));
-const PayrollDashboard = lazy(() => import("@/pages/PayrollDashboard"));
-const AccountingDashboard = lazy(() => import("@/pages/AccountingDashboard"));
-const ReportsDashboard = lazy(() => import("@/pages/ReportsDashboard"));
+const PeopleDashboard = lazyWithRetry(() => import("@/pages/PeopleDashboard"));
+const SchedulingDashboard = lazyWithRetry(() => import("@/pages/SchedulingDashboard"));
+const PayrollDashboard = lazyWithRetry(() => import("@/pages/PayrollDashboard"));
+const AccountingDashboard = lazyWithRetry(() => import("@/pages/AccountingDashboard"));
+const ReportsDashboard = lazyWithRetry(() => import("@/pages/ReportsDashboard"));
 
 // People - Staff
-const AllEmployees = lazy(() => import("@/pages/staff/AllEmployees"));
-const AddEmployee = lazy(() => import("@/pages/staff/AddEmployee"));
-const Departments = lazy(() => import("@/pages/staff/Departments"));
-const OrganizationChart = lazy(() => import("@/pages/staff/OrganizationChart"));
-const Announcements = lazy(() => import("@/pages/staff/Announcements"));
-const GrievanceInbox = lazy(() => import("@/pages/staff/GrievanceInbox"));
+const AllEmployees = lazyWithRetry(() => import("@/pages/staff/AllEmployees"));
+const AddEmployee = lazyWithRetry(() => import("@/pages/staff/AddEmployee"));
+const Departments = lazyWithRetry(() => import("@/pages/staff/Departments"));
+const OrganizationChart = lazyWithRetry(() => import("@/pages/staff/OrganizationChart"));
+const Announcements = lazyWithRetry(() => import("@/pages/staff/Announcements"));
+const GrievanceInbox = lazyWithRetry(() => import("@/pages/staff/GrievanceInbox"));
 
 // People - Hiring
-const CreateJobLocal = lazy(() => import("@/pages/hiring/CreateJobLocal"));
-const CandidateSelection = lazy(() => import("@/pages/hiring/CandidateSelection"));
-const Interviews = lazy(() => import("@/pages/hiring/Interviews"));
-const Onboarding = lazy(() => import("@/pages/hiring/Onboarding"));
-const Offboarding = lazy(() => import("@/pages/hiring/Offboarding"));
-const PublicApply = lazy(() => import("@/pages/hiring/PublicApply"));
-const JobApplicationsReview = lazy(() => import("@/pages/hiring/JobApplicationsReview"));
+const CreateJobLocal = lazyWithRetry(() => import("@/pages/hiring/CreateJobLocal"));
+const CandidateSelection = lazyWithRetry(() => import("@/pages/hiring/CandidateSelection"));
+const Interviews = lazyWithRetry(() => import("@/pages/hiring/Interviews"));
+const Onboarding = lazyWithRetry(() => import("@/pages/hiring/Onboarding"));
+const Offboarding = lazyWithRetry(() => import("@/pages/hiring/Offboarding"));
+const PublicApply = lazyWithRetry(() => import("@/pages/hiring/PublicApply"));
+const JobApplicationsReview = lazyWithRetry(() => import("@/pages/hiring/JobApplicationsReview"));
 
 // People - Time & Leave
-const TimeTracking = lazy(() => import("@/pages/time-leave/TimeTracking"));
-const Attendance = lazy(() => import("@/pages/time-leave/Attendance"));
-const LeaveRequests = lazy(() => import("@/pages/time-leave/LeaveRequests"));
-const ShiftScheduling = lazy(() => import("@/pages/time-leave/ShiftScheduling"));
-const TimeLeaveSettings = lazy(() => import("@/pages/time-leave/TimeLeaveSettings"));
+const TimeTracking = lazyWithRetry(() => import("@/pages/time-leave/TimeTracking"));
+const Attendance = lazyWithRetry(() => import("@/pages/time-leave/Attendance"));
+const LeaveRequests = lazyWithRetry(() => import("@/pages/time-leave/LeaveRequests"));
+const ShiftScheduling = lazyWithRetry(() => import("@/pages/time-leave/ShiftScheduling"));
+const TimeLeaveSettings = lazyWithRetry(() => import("@/pages/time-leave/TimeLeaveSettings"));
 
 // People - Performance
-const Reviews = lazy(() => import("@/pages/performance/Reviews"));
-const Goals = lazy(() => import("@/pages/performance/Goals"));
-const TrainingCertifications = lazy(() => import("@/pages/performance/TrainingCertifications"));
-const Disciplinary = lazy(() => import("@/pages/performance/Disciplinary"));
+const Reviews = lazyWithRetry(() => import("@/pages/performance/Reviews"));
+const Goals = lazyWithRetry(() => import("@/pages/performance/Goals"));
+const TrainingCertifications = lazyWithRetry(() => import("@/pages/performance/TrainingCertifications"));
+const Disciplinary = lazyWithRetry(() => import("@/pages/performance/Disciplinary"));
 
 // Payroll
-const RunPayrollWizard = lazy(() => import("@/pages/payroll/RunPayrollWizard"));
-const PayrollHistory = lazy(() => import("@/pages/payroll/PayrollHistory"));
-const TaxReports = lazy(() => import("@/pages/payroll/TaxReports"));
-const BankTransfers = lazy(() => import("@/pages/payroll/BankTransfers"));
-const BenefitsEnrollment = lazy(() => import("@/pages/payroll/BenefitsEnrollment"));
-const DeductionsAdvances = lazy(() => import("@/pages/payroll/DeductionsAdvances"));
-const PayrollSettings = lazy(() => import("@/pages/payroll/PayrollSettings"));
+const RunPayrollWizard = lazyWithRetry(() => import("@/pages/payroll/RunPayrollWizard"));
+const PayrollHistory = lazyWithRetry(() => import("@/pages/payroll/PayrollHistory"));
+const TaxReports = lazyWithRetry(() => import("@/pages/payroll/TaxReports"));
+const BankTransfers = lazyWithRetry(() => import("@/pages/payroll/BankTransfers"));
+const BenefitsEnrollment = lazyWithRetry(() => import("@/pages/payroll/BenefitsEnrollment"));
+const DeductionsAdvances = lazyWithRetry(() => import("@/pages/payroll/DeductionsAdvances"));
+const PayrollSettings = lazyWithRetry(() => import("@/pages/payroll/PayrollSettings"));
 
 // Money (Invoicing)
-const MoneyDashboard = lazy(() => import("@/pages/MoneyDashboard"));
-const Customers = lazy(() => import("@/pages/money/Customers"));
-const Invoices = lazy(() => import("@/pages/money/Invoices"));
-const InvoiceForm = lazy(() => import("@/pages/money/InvoiceForm"));
-const InvoiceSettings = lazy(() => import("@/pages/money/InvoiceSettings"));
-const RecurringInvoices = lazy(() => import("@/pages/money/RecurringInvoices"));
-const RecurringInvoiceForm = lazy(() => import("@/pages/money/RecurringInvoiceForm"));
-const Payments = lazy(() => import("@/pages/money/Payments"));
-const Vendors = lazy(() => import("@/pages/money/Vendors"));
-const Expenses = lazy(() => import("@/pages/money/Expenses"));
-const Bills = lazy(() => import("@/pages/money/Bills"));
-const BillForm = lazy(() => import("@/pages/money/BillForm"));
-const ProfitLoss = lazy(() => import("@/pages/money/ProfitLoss"));
-const BalanceSheet = lazy(() => import("@/pages/money/BalanceSheet"));
-const Cashflow = lazy(() => import("@/pages/money/Cashflow"));
-const ARAgingReport = lazy(() => import("@/pages/money/ARAgingReport"));
-const APAgingReport = lazy(() => import("@/pages/money/APAgingReport"));
-const BankReconciliation = lazy(() => import("@/pages/money/BankReconciliation"));
+const MoneyDashboard = lazyWithRetry(() => import("@/pages/MoneyDashboard"));
+const Customers = lazyWithRetry(() => import("@/pages/money/Customers"));
+const Invoices = lazyWithRetry(() => import("@/pages/money/Invoices"));
+const InvoiceForm = lazyWithRetry(() => import("@/pages/money/InvoiceForm"));
+const InvoiceSettings = lazyWithRetry(() => import("@/pages/money/InvoiceSettings"));
+const RecurringInvoices = lazyWithRetry(() => import("@/pages/money/RecurringInvoices"));
+const RecurringInvoiceForm = lazyWithRetry(() => import("@/pages/money/RecurringInvoiceForm"));
+const Payments = lazyWithRetry(() => import("@/pages/money/Payments"));
+const Vendors = lazyWithRetry(() => import("@/pages/money/Vendors"));
+const Expenses = lazyWithRetry(() => import("@/pages/money/Expenses"));
+const Bills = lazyWithRetry(() => import("@/pages/money/Bills"));
+const BillForm = lazyWithRetry(() => import("@/pages/money/BillForm"));
+const ProfitLoss = lazyWithRetry(() => import("@/pages/money/ProfitLoss"));
+const BalanceSheet = lazyWithRetry(() => import("@/pages/money/BalanceSheet"));
+const Cashflow = lazyWithRetry(() => import("@/pages/money/Cashflow"));
+const ARAgingReport = lazyWithRetry(() => import("@/pages/money/ARAgingReport"));
+const APAgingReport = lazyWithRetry(() => import("@/pages/money/APAgingReport"));
+const BankReconciliation = lazyWithRetry(() => import("@/pages/money/BankReconciliation"));
 
 // Accounting
-const ChartOfAccounts = lazy(() => import("@/pages/accounting/ChartOfAccounts"));
-const JournalEntries = lazy(() => import("@/pages/accounting/JournalEntries"));
-const GeneralLedger = lazy(() => import("@/pages/accounting/GeneralLedger"));
-const TrialBalance = lazy(() => import("@/pages/accounting/TrialBalance"));
-const IncomeStatement = lazy(() => import("@/pages/accounting/IncomeStatement"));
-const AccountingBalanceSheet = lazy(() => import("@/pages/accounting/BalanceSheet"));
-const FiscalPeriods = lazy(() => import("@/pages/accounting/FiscalPeriods"));
-const AccountingAuditTrail = lazy(() => import("@/pages/accounting/AuditTrail"));
+const ChartOfAccounts = lazyWithRetry(() => import("@/pages/accounting/ChartOfAccounts"));
+const JournalEntries = lazyWithRetry(() => import("@/pages/accounting/JournalEntries"));
+const GeneralLedger = lazyWithRetry(() => import("@/pages/accounting/GeneralLedger"));
+const TrialBalance = lazyWithRetry(() => import("@/pages/accounting/TrialBalance"));
+const IncomeStatement = lazyWithRetry(() => import("@/pages/accounting/IncomeStatement"));
+const AccountingBalanceSheet = lazyWithRetry(() => import("@/pages/accounting/BalanceSheet"));
+const FiscalPeriods = lazyWithRetry(() => import("@/pages/accounting/FiscalPeriods"));
+const AccountingAuditTrail = lazyWithRetry(() => import("@/pages/accounting/AuditTrail"));
 
 // Reports
-const PayrollReports = lazy(() => import("@/pages/reports/PayrollReports"));
-const EmployeeReports = lazy(() => import("@/pages/reports/EmployeeReports"));
-const AttendanceReports = lazy(() => import("@/pages/reports/AttendanceReports"));
-const CustomReports = lazy(() => import("@/pages/reports/CustomReports"));
-const DepartmentReports = lazy(() => import("@/pages/reports/DepartmentReports"));
-const SetupReports = lazy(() => import("@/pages/reports/SetupReports"));
-const ATTLMonthlyWIT = lazy(() => import("@/pages/reports/ATTLMonthlyWIT"));
-const INSSMonthly = lazy(() => import("@/pages/reports/INSSMonthly"));
-const INSSAnnual = lazy(() => import("@/pages/reports/INSSAnnual"));
-const PayrollAllocationReport = lazy(() => import("@/pages/reports/PayrollAllocationReport"));
-const DonorExportPack = lazy(() => import("@/pages/reports/DonorExportPack"));
+const PayrollReports = lazyWithRetry(() => import("@/pages/reports/PayrollReports"));
+const EmployeeReports = lazyWithRetry(() => import("@/pages/reports/EmployeeReports"));
+const AttendanceReports = lazyWithRetry(() => import("@/pages/reports/AttendanceReports"));
+const CustomReports = lazyWithRetry(() => import("@/pages/reports/CustomReports"));
+const DepartmentReports = lazyWithRetry(() => import("@/pages/reports/DepartmentReports"));
+const SetupReports = lazyWithRetry(() => import("@/pages/reports/SetupReports"));
+const ATTLMonthlyWIT = lazyWithRetry(() => import("@/pages/reports/ATTLMonthlyWIT"));
+const INSSMonthly = lazyWithRetry(() => import("@/pages/reports/INSSMonthly"));
+const INSSAnnual = lazyWithRetry(() => import("@/pages/reports/INSSAnnual"));
+const PayrollAllocationReport = lazyWithRetry(() => import("@/pages/reports/PayrollAllocationReport"));
+const DonorExportPack = lazyWithRetry(() => import("@/pages/reports/DonorExportPack"));
 
 // Settings
-const SetupWizard = lazy(() => import("@/pages/settings/SetupWizard"));
-const VATSettings = lazy(() => import("@/pages/money/VATSettings"));
-const VATReturns = lazy(() => import("@/pages/money/VATReturns"));
+const SetupWizard = lazyWithRetry(() => import("@/pages/settings/SetupWizard"));
+const VATSettings = lazyWithRetry(() => import("@/pages/money/VATSettings"));
+const VATReturns = lazyWithRetry(() => import("@/pages/money/VATReturns"));
 
 // Admin
-const AdminConsoleHome = lazy(() => import("@/pages/admin/AdminConsoleHome"));
-const SeedDatabase = lazy(() => import("@/pages/admin/SeedDatabase"));
-const TenantList = lazy(() => import("@/pages/admin/TenantList"));
-const TenantDetail = lazy(() => import("@/pages/admin/TenantDetail"));
-const CreateTenant = lazy(() => import("@/pages/admin/CreateTenant"));
-const UserList = lazy(() => import("@/pages/admin/UserList"));
-const PackagesPage = lazy(() => import("@/pages/admin/PackagesPage"));
-const AuditLog = lazy(() => import("@/pages/admin/AuditLog"));
-const AdminSetup = lazy(() => import("@/pages/admin/AdminSetup"));
-const DocumentAlerts = lazy(() => import("@/pages/admin/DocumentAlerts"));
-const ForeignWorkers = lazy(() => import("@/pages/admin/ForeignWorkers"));
+const AdminConsoleHome = lazyWithRetry(() => import("@/pages/admin/AdminConsoleHome"));
+const SeedDatabase = lazyWithRetry(() => import("@/pages/admin/SeedDatabase"));
+const TenantList = lazyWithRetry(() => import("@/pages/admin/TenantList"));
+const TenantDetail = lazyWithRetry(() => import("@/pages/admin/TenantDetail"));
+const CreateTenant = lazyWithRetry(() => import("@/pages/admin/CreateTenant"));
+const UserList = lazyWithRetry(() => import("@/pages/admin/UserList"));
+const PackagesPage = lazyWithRetry(() => import("@/pages/admin/PackagesPage"));
+const AuditLog = lazyWithRetry(() => import("@/pages/admin/AuditLog"));
+const AdminSetup = lazyWithRetry(() => import("@/pages/admin/AdminSetup"));
+const DocumentAlerts = lazyWithRetry(() => import("@/pages/admin/DocumentAlerts"));
+const ForeignWorkers = lazyWithRetry(() => import("@/pages/admin/ForeignWorkers"));
 
 // Export components for use in HomeRoute
 export { Dashboard, Landing };

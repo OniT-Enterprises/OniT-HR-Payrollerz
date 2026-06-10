@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -53,6 +54,7 @@ interface DepartmentGroup {
 }
 
 export default function OrganizationChart() {
+  const navigate = useNavigate();
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [_departments, setDepartments] = useState<Department[]>([]);
   const [executives, setExecutives] = useState<OrgPerson[]>([]);
@@ -573,7 +575,7 @@ export default function OrganizationChart() {
                 {t("orgChart.emptyDesc")}
               </p>
               <Button
-                onClick={() => (window.location.href = "/staff/add")}
+                onClick={() => navigate("/people/add")}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <User className="mr-2 h-4 w-4" />

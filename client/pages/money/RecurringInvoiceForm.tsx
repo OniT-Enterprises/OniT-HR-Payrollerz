@@ -268,7 +268,7 @@ export default function RecurringInvoiceForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isEditMode ? `${t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice'} - Meza` : `${t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice'} - Meza`}
+        title={isEditMode ? `${t('money.recurringInvoiceForm.editTitle') || 'Edit Recurring Invoice'} - Primos Books` : `${t('money.recurringInvoiceForm.newTitle') || 'New Recurring Invoice'} - Primos Books`}
         description={t('money.recurringInvoiceForm.autoGenerate') || 'Set up a recurring invoice template'}
       />
       <MainNavigation />

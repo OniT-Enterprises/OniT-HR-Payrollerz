@@ -20,8 +20,10 @@ import { connectStorageEmulator } from "firebase/storage";
  * Note: Firebase API keys are safe to expose client-side since access
  * is controlled by Firestore Security Rules, not the API key itself.
  */
-function getRequiredEnv(key: string): string {
-  const value = import.meta.env[key];
+// IMPORTANT: env vars must be read with static property access
+// (import.meta.env.VITE_X). A dynamic lookup like import.meta.env[key] makes
+// Vite embed the ENTIRE env object — every VITE_* secret — in the public bundle.
+function getRequiredEnv(key: string, value: string | undefined): string {
   if (!value) {
     throw new Error(
       `Missing required environment variable: ${key}\n` +
@@ -32,12 +34,12 @@ function getRequiredEnv(key: string): string {
 }
 
 const firebaseConfig = {
-  apiKey: getRequiredEnv('VITE_FIREBASE_API_KEY'),
-  authDomain: getRequiredEnv('VITE_FIREBASE_AUTH_DOMAIN'),
-  projectId: getRequiredEnv('VITE_FIREBASE_PROJECT_ID'),
-  storageBucket: getRequiredEnv('VITE_FIREBASE_STORAGE_BUCKET'),
-  messagingSenderId: getRequiredEnv('VITE_FIREBASE_MESSAGING_SENDER_ID'),
-  appId: getRequiredEnv('VITE_FIREBASE_APP_ID'),
+  apiKey: getRequiredEnv('VITE_FIREBASE_API_KEY', import.meta.env.VITE_FIREBASE_API_KEY),
+  authDomain: getRequiredEnv('VITE_FIREBASE_AUTH_DOMAIN', import.meta.env.VITE_FIREBASE_AUTH_DOMAIN),
+  projectId: getRequiredEnv('VITE_FIREBASE_PROJECT_ID', import.meta.env.VITE_FIREBASE_PROJECT_ID),
+  storageBucket: getRequiredEnv('VITE_FIREBASE_STORAGE_BUCKET', import.meta.env.VITE_FIREBASE_STORAGE_BUCKET),
+  messagingSenderId: getRequiredEnv('VITE_FIREBASE_MESSAGING_SENDER_ID', import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID),
+  appId: getRequiredEnv('VITE_FIREBASE_APP_ID', import.meta.env.VITE_FIREBASE_APP_ID),
 };
 
 // Initialize Firebase

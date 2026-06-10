@@ -212,7 +212,7 @@ export default function VATReturnsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="VAT Returns - Meza" />
+      <SEO title="VAT Returns - Primos Books" />
       <MainNavigation />
 
       <div className="max-w-screen-2xl mx-auto p-6 space-y-6">

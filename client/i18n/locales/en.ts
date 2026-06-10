@@ -249,6 +249,8 @@ const messages = {
     "botPromptLeave": "Who's on leave?",
     "botPlaceholder": "Ask PrimosBot anything...",
     "allGood": "All good — nothing needs attention",
+    "pendingPayrollTitle": "Payroll awaiting approval",
+    "pendingPayrollDesc": "run(s) need review",
     "overdue": "overdue by",
     "taxOverdue": "Tax filings overdue",
     "overdueFilings": "filing(s) past deadline",
@@ -589,7 +591,7 @@ const messages = {
     "performance": {
       "badge": "Built for TL Internet",
       "title": "Fast Even on Slow Connections",
-      "description": "Meza caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
+      "description": "Primos Books caches data locally so the app stays fast — even when your internet doesn't. Heavy features load on demand, keeping the initial startup lightweight.",
       "features": {
         "cache": "Smart local caching — works instantly on repeat visits",
         "lazy": "Heavy features load only when needed",
@@ -675,11 +677,11 @@ const messages = {
     "cta": {
       "title": "Ready to Start?",
       "titleAccent": "Start Today",
-      "description": "Join Timor-Leste businesses already using Meza for compliant, effortless HR & Payroll.",
+      "description": "Join Timor-Leste businesses already using Primos Books for compliant, effortless HR & Payroll.",
       "primary": "Start Free Trial"
     },
     "footer": {
-      "brand": "Meza",
+      "brand": "Primos Books",
       "location": "Timor-Leste",
       "links": {
         "privacy": "Privacy",
@@ -731,7 +733,7 @@ const messages = {
         "desc": "Manual journal entries for WIT every month. No SEFOPE reports. No Tetum. Built for markets that aren't yours."
       },
       "solution": {
-        "title": "Meza solves this",
+        "title": "Primos Books solves this",
         "desc": "Automatic WIT/INSS. Bank transfers to BNU/BNCTL. Reports for SEFOPE. Tetun interface."
       }
     },
@@ -850,7 +852,7 @@ const messages = {
         "ana": {
           "name": "Ana",
           "role": "Café Owner",
-          "desc": "Runs a café with 5 staff. Uses Meza for payroll, Kaixa for daily sales. Staff use Meza Go."
+          "desc": "Runs a café with 5 staff. Uses Primos Books for payroll, Kaixa for daily sales. Staff use Ekipa."
         },
         "tomas": {
           "name": "Tomas",
@@ -863,7 +865,7 @@ const messages = {
       "badge": "Employee App",
       "title": "Ekipa",
       "titleAccent": "Your Team's Mobile Companion",
-      "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Meza customers.",
+      "description": "Give every employee their own app. Payslips, leave requests, clock-in — all from their phone. Built for Primos Books customers.",
       "tagline": "\"Ekipa\" — Tetum for team",
       "features": {
         "payslips": {
@@ -891,8 +893,8 @@ const messages = {
           "desc": "View personal details, job info, documents, and attendance history. Fewer questions for HR."
         }
       },
-      "cta": "Included with Meza",
-      "ctaNote": "Android · Free for all Meza employees",
+      "cta": "Included with Primos Books",
+      "ctaNote": "Android · Free for all Primos Books employees",
       "shipped": {
         "badge": "Live Now",
         "title": "What's Shipped",
@@ -926,7 +928,7 @@ const messages = {
       "badge": "Based in Dili",
       "title": "Local support,",
       "titleAccent": "iha Tetun no English",
-      "description": "We're not a foreign company with offshore support. Meza is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
+      "description": "We're not a foreign company with offshore support. Primos Books is built in Timor-Leste, for Timor-Leste. Get help from people who understand local business practices.",
       "items": {
         "whatsapp": "WhatsApp support in Tetun & English",
         "training": "On-site training available in Dili",
@@ -942,7 +944,7 @@ const messages = {
       "badge": "Real Accounting",
       "title": "Accounting that actually",
       "titleAccent": "understands TL",
-      "description": "Keep QuickBooks for inventory if you want — Meza handles the TL compliance side.",
+      "description": "Keep QuickBooks for inventory if you want — Primos Books handles the TL compliance side.",
       "features": {
         "doubleEntry": {
           "title": "True Double-Entry",
@@ -1123,6 +1125,10 @@ const messages = {
       "sundayHolidayRate": "Sunday/Holiday Rate",
       "thirteenthMonth": "Subsidio Anual (13th Month)",
       "enable13th": "Enable 13th month payment",
+      "approvalSection": "Payroll approval",
+      "selfApprovalLabel": "Allow self-approval (solo operator)",
+      "selfApprovalDesc": "The person who creates a payroll run can also approve it. Use only if your business has a single payroll admin — with this off, a second admin must approve every run (safer).",
+      "selfApprovalOwnerOnly": "Only the account owner can change this.",
       "paymentDeadline": "Payment Deadline",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Format: MM-DD (e.g., 12-20 for December 20)",
@@ -1718,7 +1724,7 @@ const messages = {
       "preBoarding": {
         "title": "Pre-Boarding",
         "description": "Welcome to the team! Let's get you started with the onboarding process.",
-        "welcome": "Welcome to Meza! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
+        "welcome": "Welcome to Primos Books! We're excited to have you join our team. This onboarding process will help you get familiar with our company policies, procedures, and systems.",
         "expectTitle": "What to Expect",
         "expect": {
           "items": {
@@ -3873,10 +3879,10 @@ const messages = {
         "description": "Configure account mappings for QuickBooks integration",
         "defaultFormat": "Default Export Format",
         "accountMappings": "Account Mappings",
-        "accountMappingsDesc": "Map Meza payroll accounts to your QuickBooks chart of accounts",
+        "accountMappingsDesc": "Map Primos Books payroll accounts to your QuickBooks chart of accounts",
         "expenses": "Expenses",
         "liabilities": "Liabilities",
-        "onitAccount": "Meza Account",
+        "onitAccount": "Primos Books Account",
         "qbAccount": "QuickBooks Account",
         "resetDefaults": "Reset to Defaults",
         "save": "Save Changes",
@@ -3991,12 +3997,12 @@ const messages = {
       "complete": "Complete"
     },
     "welcome": "Welcome! Let's set up your account",
-    "welcomeDesc": "Complete these steps to get started with Meza",
+    "welcomeDesc": "Complete these steps to get started with Primos Books",
     "companyIntro": "These details appear on payslips, bank files, and tax reports. Keep it simple for now; you can change them later.",
     "progressTitle": "Setup progress",
     "progressHint": "Complete each step once. You can adjust everything later in Settings.",
     "savedAutomaticallyTitle": "Finished steps are saved automatically",
-    "savedAutomaticallyDesc": "You can leave and come back later. Meza will resume where you stopped.",
+    "savedAutomaticallyDesc": "You can leave and come back later. Primos Books will resume where you stopped.",
     "stepOf": "Step {{current}} of {{total}}",
     "requiredFields": "Required Fields",
     "companyNameTinRequired": "Company name and TIN are required.",
@@ -4017,7 +4023,7 @@ const messages = {
     "tinPlaceholder": "Tax Identification Number",
     "teamSize": "Approximate Team Size",
     "selectTeamSize": "Select team size",
-    "teamSizeHint": "This helps Meza choose better defaults for small or larger teams.",
+    "teamSizeHint": "This helps Primos Books choose better defaults for small or larger teams.",
     "address": "Address",
     "addressPlaceholder": "Street address",
     "city": "City",
@@ -4483,7 +4489,7 @@ const messages = {
       "moneyLink": "Money",
       "payrollLink": "Payroll",
       "accountantGateInstead": "instead.",
-      "accountantGateNote": "Most businesses never need to change anything here — Meza keeps this in sync automatically.",
+      "accountantGateNote": "Most businesses never need to change anything here — Primos Books keeps this in sync automatically.",
       "thisMonth": "This Month",
       "payrollEntries": "Payroll Entries",
       "posted": "Posted",
@@ -4754,7 +4760,7 @@ const messages = {
   "money": {
     "dashboard": {
       "title": "Money",
-      "seoTitle": "Money - Meza",
+      "seoTitle": "Money - Primos Books",
       "subtitle": "Track who owes you, what you need to pay, and what to do next",
       "createInvoice": "Create Invoice",
       "attentionNeeded": "Attention needed",
@@ -5596,6 +5602,7 @@ const messages = {
     "thisActionWill": "This action will:",
     "submitForReview": "Submit payroll for second-person review",
     "differentAdminApprove": "A different admin must approve before processing",
+    "selfApprovalNext": "You can approve this run yourself (self-approval is on)",
     "journalEntriesCreated": "Journal entries created upon approval",
     "back": "Back",
     "submitting": "Submitting...",
@@ -5620,6 +5627,8 @@ const messages = {
     "toastOverrideShort": "Override reason too short",
     "toastOverrideShortDesc": "Please provide at least 10 characters explaining why you are proceeding without full compliance.",
     "toastSyncedAttendance": "Attendance synced for {{count}} employee(s).",
+    "toastSyncedAttendanceWithLeave": "Attendance synced for {{count}} employee(s). Approved leave credited for {{leaveCount}} — paid leave is not deducted.",
+    "toastSyncLeaveLookupFailed": "Could not load approved leave, so the sync was cancelled — otherwise employees on paid leave would be underpaid. Check your connection and try again.",
     "toastSyncAttendanceNoData": "No attendance records found for this period.",
     "toastLoadFailed": "Failed to load employees. Please refresh the page.",
     "monthlyDesc": "Once per month",
@@ -5741,6 +5750,13 @@ const messages = {
     "approve": "Approve",
     "reject": "Reject",
     "twoPersonRule": "Two-person rule: another admin must approve",
+    "selfApproveWarning": "You created this payroll run. Double-check the amounts before approving — no second person will review it.",
+    "nextStepsTitle": "Payroll approved — what's next?",
+    "nextStepsDesc": "Your staff are not paid yet. These are the usual next steps.",
+    "nextStepsPayslips": "Send payslips to employees",
+    "nextStepsBankTransfer": "Prepare the bank transfer",
+    "nextStepsTax": "Check WIT & INSS filings",
+    "nextStepsLater": "I'll do this later",
     "payrollRunsTitle": "Payroll Runs",
     "showingRuns": "Showing {{count}} payroll runs",
     "noRunsFound": "No payroll runs found",
@@ -5943,7 +5959,7 @@ const messages = {
   },
   "guidance": {
     "hideGuidance": "Hide guidance",
-    "dashboardTitle": "Welcome to Meza.",
+    "dashboardTitle": "Welcome to Primos Books.",
     "dashboardBody": "This is your home base — a quick snapshot of what’s happening across your company today. Check payroll status, review compliance, and jump into any module from here.",
     "peopleTitle": "Welcome to your People hub.",
     "peopleBody": "This is where you manage everyone who works for your company — employees, contracts, departments, and teams. Start by adding your first employee using the button above. From there you can track leave, run payroll, and keep everything organized. Each section below expands to show more tools.",

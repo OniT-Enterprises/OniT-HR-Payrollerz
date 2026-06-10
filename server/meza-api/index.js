@@ -91,12 +91,19 @@ app.use(limiter);
 const API_KEY = process.env.API_KEY;
 const ALLOWED_TENANT_ID = process.env.ALLOWED_TENANT_ID;
 
+// Constant-time comparison so response timing can't be used to guess the key
+function safeKeyCompare(provided, expected) {
+  const a = crypto.createHash('sha256').update(String(provided)).digest();
+  const b = crypto.createHash('sha256').update(String(expected)).digest();
+  return crypto.timingSafeEqual(a, b);
+}
+
 function requireApiKey(req, res, next) {
   const key = req.headers['x-api-key'];
   if (!API_KEY) {
     return res.status(500).json({ success: false, message: 'API key not configured on server' });
   }
-  if (!key || key !== API_KEY) {
+  if (!key || !safeKeyCompare(key, API_KEY)) {
     return res.status(401).json({ success: false, message: 'Invalid or missing API key' });
   }
   next();

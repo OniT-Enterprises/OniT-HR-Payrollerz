@@ -10,10 +10,11 @@ const NotFound = () => {
   const { t } = useI18n();
 
   useEffect(() => {
-    console.error(
-      "404 Error: User attempted to access non-existent route:",
-      location.pathname,
-    );
+    // Dev-only: mistyped URLs are expected in production and would just spam
+    // the console / error tracking.
+    if (import.meta.env.DEV) {
+      console.warn("404: no route for", location.pathname);
+    }
   }, [location.pathname]);
 
   return (

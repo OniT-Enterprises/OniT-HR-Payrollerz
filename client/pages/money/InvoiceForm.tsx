@@ -412,7 +412,7 @@ export default function InvoiceForm() {
   if (invoice && !canEdit && !isEditMode) {
     return (
       <div className="min-h-screen bg-background">
-        <SEO title={`Invoice ${invoice.invoiceNumber} - Meza`} />
+        <SEO title={`Invoice ${invoice.invoiceNumber} - Primos Books`} />
         <MainNavigation />
 
         <div className="p-6 max-w-screen-lg mx-auto">
@@ -682,7 +682,7 @@ export default function InvoiceForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isNew ? 'New Invoice - Meza' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Meza`}
+        title={isNew ? 'New Invoice - Primos Books' : `Edit ${invoice?.invoiceNumber || 'Invoice'} - Primos Books`}
       />
       <MainNavigation />
 

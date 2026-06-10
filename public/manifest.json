@@ -1,6 +1,6 @@
 {
-  "name": "Meza",
-  "short_name": "Meza",
+  "name": "Primos Books",
+  "short_name": "Primos",
   "description": "Comprehensive HR management system for hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.",
   "start_url": "/",
   "display": "standalone",

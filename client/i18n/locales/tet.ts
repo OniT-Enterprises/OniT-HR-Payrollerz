@@ -249,6 +249,8 @@ const messages = {
     "botPromptLeave": "Sé mak lisensa?",
     "botPlaceholder": "Husu ba PrimosBot...",
     "allGood": "Buat hotu di'ak — laiha buat ne'ebé presiza atensaun",
+    "pendingPayrollTitle": "Payroll hein aprovasaun",
+    "pendingPayrollDesc": "payroll presiza revizaun",
     "overdue": "atrazu ona",
     "taxOverdue": "Impostu atrazu",
     "overdueFilings": "filing(s) liu prazu",
@@ -589,7 +591,7 @@ const messages = {
     "performance": {
       "badge": "Hadia ba Internet TL",
       "title": "Lalais Maski Ligasaun Neineik",
-      "description": "Meza rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
+      "description": "Primos Books rai dadus lokálmente nune'e app bele lalais — maski internet la lalais. Fitur boot sira karga de'it bainhira presiza, nune'e startup inisiál leve.",
       "features": {
         "cache": "Cache lokal intelijente — servisu lalais iha vizita tuir mai",
         "lazy": "Fitur boot karga de'it bainhira presiza",
@@ -675,11 +677,11 @@ const messages = {
     "cta": {
       "title": "Prontu atu hahu?",
       "titleAccent": "Hahu ohin",
-      "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Meza ba RH no Folha.",
+      "description": "Tama hamutuk ho empresa Timor-Leste ne'ebe uza Primos Books ba RH no Folha.",
       "primary": "Hahu teste gratis"
     },
     "footer": {
-      "brand": "Meza",
+      "brand": "Primos Books",
       "location": "Timor-Leste",
       "links": {
         "privacy": "Privasidade",
@@ -731,7 +733,7 @@ const messages = {
         "desc": "Lansu kontabil manual ba WIT fulan-fulan. Laiha relatoriu SEFOPE. Laiha Tetun. Hadia ba merkadu seluk."
       },
       "solution": {
-        "title": "Meza rezolve ida nee",
+        "title": "Primos Books rezolve ida nee",
         "desc": "WIT/INSS automatik. Transferensia banku ba BNU/BNCTL. Relatoriu ba SEFOPE. Interface Tetun."
       }
     },
@@ -850,7 +852,7 @@ const messages = {
         "ana": {
           "name": "Ana",
           "role": "Dona Kafé",
-          "desc": "Hala'o kafé ho staf 5. Uza Meza ba folha, Kaixa ba venda loron-loron. Staf uza Meza Go."
+          "desc": "Hala'o kafé ho staf 5. Uza Primos Books ba folha, Kaixa ba venda loron-loron. Staf uza Ekipa."
         },
         "tomas": {
           "name": "Tomas",
@@ -863,7 +865,7 @@ const messages = {
       "badge": "App Empregadu",
       "title": "Ekipa",
       "titleAccent": "Kompanheiru Movel Ita-nia Ekipa",
-      "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Meza.",
+      "description": "Fó empregadu hotu-hotu sira-nia app rasik. Payslip, pedidu lisensa, clock-in — hotu husi telefone. Harii ba kliente Primos Books.",
       "tagline": "\"Ekipa\" — Tetun ba ekipa",
       "features": {
         "payslips": {
@@ -891,8 +893,8 @@ const messages = {
           "desc": "Haree detallu pesoál, informasaun servisu, dokumentu, no istória prezensa. Pergunta menus ba RH."
         }
       },
-      "cta": "Inklui ho Meza",
-      "ctaNote": "Android · Grátis ba empregadu Meza hotu",
+      "cta": "Inklui ho Primos Books",
+      "ctaNote": "Android · Grátis ba empregadu Primos Books hotu",
       "shipped": {
         "badge": "Ativu Ona",
         "title": "Saida mak Prontu",
@@ -926,7 +928,7 @@ const messages = {
       "badge": "Baze iha Dili",
       "title": "Suporte lokal,",
       "titleAccent": "iha Tetun no Ingles",
-      "description": "Ami laos empresa estranjeiru ho suporte offshore. Meza hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
+      "description": "Ami laos empresa estranjeiru ho suporte offshore. Primos Books hadia iha Timor-Leste, ba Timor-Leste. Hetan ajuda husi ema ne'ebe komprende pratika negósiu lokal.",
       "items": {
         "whatsapp": "Suporte WhatsApp iha Tetun no Ingles",
         "training": "Treinamentu iha fatin disponível iha Dili",
@@ -942,7 +944,7 @@ const messages = {
       "badge": "Kontabilidade Real",
       "title": "Kontabilidade ne'ebe",
       "titleAccent": "komprende TL",
-      "description": "Uza QuickBooks ba inventáriu se hakarak — Meza rezolve konformidade TL.",
+      "description": "Uza QuickBooks ba inventáriu se hakarak — Primos Books rezolve konformidade TL.",
       "features": {
         "doubleEntry": {
           "title": "Double-Entry Loos",
@@ -1123,6 +1125,10 @@ const messages = {
       "sundayHolidayRate": "Taxa Domingu/Feriadu",
       "thirteenthMonth": "Subsidiu Anual (13 Mes)",
       "enable13th": "Ativa pagamentu 13 mes",
+      "approvalSection": "Aprovasaun payroll",
+      "selfApprovalLabel": "Permite aprovasaun rasik (admin ida de’it)",
+      "selfApprovalDesc": "Ema ne’ebé kria payroll mós bele aprova. Uza de’it se Ita-nia negósiu iha admin payroll ida de’it — se taka, admin seluk tenke aprova kada payroll (seguru liu).",
+      "selfApprovalOwnerOnly": "Na’in konta de’it mak bele muda ida-ne’e.",
       "paymentDeadline": "Prazu Pagamentu",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Formatu: MM-DD (ez.: 12-20 ba 20 Desembru)",
@@ -1628,7 +1634,7 @@ const messages = {
       "preBoarding": {
         "title": "Pre-Integrasaun",
         "description": "Bem-vindu! Vamos hahu prosesu integrasaun.",
-        "welcome": "Bem-vindu ba Meza! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
+        "welcome": "Bem-vindu ba Primos Books! Ita hakarak simu ita. Prosesu ida ne'e ajuda ita hatene politika, prosedimentu no sistema.",
         "expectTitle": "Sa ida ita esperta",
         "expect": {
           "items": {
@@ -2650,10 +2656,10 @@ const messages = {
         "description": "Konfigura mapeamentu konta ba integrasaun QuickBooks",
         "defaultFormat": "Formatu Exportasaun Padraun",
         "accountMappings": "Mapeamentu Konta",
-        "accountMappingsDesc": "Mapeia konta Meza ba planu konta QuickBooks",
+        "accountMappingsDesc": "Mapeia konta Primos Books ba planu konta QuickBooks",
         "expenses": "Despeza",
         "liabilities": "Pasivu",
-        "onitAccount": "Konta Meza",
+        "onitAccount": "Konta Primos Books",
         "qbAccount": "Konta QuickBooks",
         "resetDefaults": "Reset ba Padraun",
         "save": "Rai Mudansa",
@@ -2768,12 +2774,12 @@ const messages = {
       "complete": "Kompletu"
     },
     "welcome": "Bemvindu! Atu konfigura ita-nia konta",
-    "welcomeDesc": "Kompleta pasu sira hodi hahú ho Meza",
+    "welcomeDesc": "Kompleta pasu sira hodi hahú ho Primos Books",
     "companyIntro": "Detallu sira ne'e mosu iha payslip, ficheiru banku, no relatoriu impostu. Agora halo simples deit; depois bele muda.",
     "progressTitle": "Progresu setup",
     "progressHint": "Kompleta kada pasu dala ida. Depois bele muda hotu iha Konfigurasaun.",
     "savedAutomaticallyTitle": "Pasu sira ne'ebé kompleta sei rai automatikamente",
-    "savedAutomaticallyDesc": "Bele sai no fila depois. Meza sei kontinua iha fatin ne'ebé ita husik.",
+    "savedAutomaticallyDesc": "Bele sai no fila depois. Primos Books sei kontinua iha fatin ne'ebé ita husik.",
     "stepOf": "Pasu {{current}} husi {{total}}",
     "requiredFields": "Kampu Obrigatóriu",
     "companyNameTinRequired": "Naran empreza no TIN presiza.",
@@ -2794,7 +2800,7 @@ const messages = {
     "tinPlaceholder": "Numeru Identifikasaun Impostu",
     "teamSize": "Medida Ekipa Aproximadu",
     "selectTeamSize": "Hili medida ekipa",
-    "teamSizeHint": "Ida ne'e ajuda Meza hili padraun di'ak liu ba ekipa ki'ik ka boot.",
+    "teamSizeHint": "Ida ne'e ajuda Primos Books hili padraun di'ak liu ba ekipa ki'ik ka boot.",
     "address": "Enderesu",
     "addressPlaceholder": "Enderesu dalan",
     "city": "Sidade",
@@ -3260,7 +3266,7 @@ const messages = {
       "moneyLink": "Osan",
       "payrollLink": "Saláriu",
       "accountantGateInstead": "alternativa.",
-      "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Meza mantén ida-ne'e automátiku.",
+      "accountantGateNote": "Empreza barak nunka presiza muda buat ida iha ne'e — Primos Books mantén ida-ne'e automátiku.",
       "thisMonth": "Fulan Ida-ne'e",
       "payrollEntries": "Entrada Saláriu",
       "posted": "Publika",
@@ -4754,7 +4760,7 @@ const messages = {
   "money": {
     "dashboard": {
       "title": "Osan",
-      "seoTitle": "Osan - Meza",
+      "seoTitle": "Osan - Primos Books",
       "subtitle": "Akompaña sé maka deve ita, saida maka ita presiza selu, no saida maka atu halo tuir mai",
       "createInvoice": "Kria Fatura",
       "attentionNeeded": "Presiza atensaun",
@@ -5596,6 +5602,7 @@ const messages = {
     "thisActionWill": "Asaun ida-ne'e sei:",
     "submitForReview": "Submete saláriu ba revizaun ema rua",
     "differentAdminApprove": "Admin seluk tenke aprova molok prosesa",
+    "selfApprovalNext": "Ita rasik bele aprova payroll ida-ne’e (aprovasaun rasik ativu)",
     "journalEntriesCreated": "Entrada jornál kria bainhira aprova",
     "back": "Fila",
     "submitting": "Submete hela...",
@@ -5620,6 +5627,8 @@ const messages = {
     "toastOverrideShort": "Razaun anulasaun badak liu",
     "toastOverrideShortDesc": "Favór fó pelumenus karakter 10 esplika tanba saida ita kontinua sein konformidade tomak.",
     "toastSyncedAttendance": "Dadus attendance sinkroniza ba trabalhador {{count}}.",
+    "toastSyncedAttendanceWithLeave": "Dadus attendance sinkroniza ba trabalhador {{count}}. Lisensa aprovada kredita ba ema {{leaveCount}} — lisensa selu nian la kona desconto.",
+    "toastSyncLeaveLookupFailed": "La bele karga lisensa aprovada, entaun sinkronizasaun kansela — se lae, trabalhador iha lisensa selu nian sei simu osan menus. Xeke koneksaun no koko fali.",
     "toastSyncAttendanceNoData": "Laiha rejistu attendance ba períodu ida-ne'e.",
     "toastLoadFailed": "La konsege karrega trabalhador. Favór atualiza pájina.",
     "monthlyDesc": "Dala ida fulan ida",
@@ -5741,6 +5750,13 @@ const messages = {
     "approve": "Aprova",
     "reject": "Rejeita",
     "twoPersonRule": "Regra ema rua: admin seluk tenke aprova",
+    "selfApproveWarning": "Ita mak kria payroll ida-ne’e. Xeke didi’ak montante sira molok aprova — laiha ema seluk sei reviza.",
+    "nextStepsTitle": "Payroll aprova ona — saida mak tuir mai?",
+    "nextStepsDesc": "Ita-nia funsionáriu sira seidauk simu osan. Pasu sira-ne’e mak bain-bain tuir mai.",
+    "nextStepsPayslips": "Haruka payslip ba funsionáriu sira",
+    "nextStepsBankTransfer": "Prepara transferênsia banku",
+    "nextStepsTax": "Xeke deklarasaun WIT no INSS",
+    "nextStepsLater": "Ha’u sei halo ida-ne’e ikus mai",
     "payrollRunsTitle": "Saláriu Hala'o tiha",
     "showingRuns": "Hatudu {{count}} saláriu hala'o",
     "noRunsFound": "Laiha saláriu hala'o",
@@ -5943,7 +5959,7 @@ const messages = {
   },
   "guidance": {
     "hideGuidance": "Subar orientasaun",
-    "dashboardTitle": "Bemvindu ba Meza.",
+    "dashboardTitle": "Bemvindu ba Primos Books.",
     "dashboardBody": "Ida ne’e ita-nia baze prinsipál — vizaun gerál badak kona-ba saida mak akontese iha ita-nia empreza ohin loron. Verifika estatútu folha pagamentu, reviza konformidade, no tama ba módulu hotu husi ne’e.",
     "peopleTitle": "Bemvindu ba ita-nia hub Ema.",
     "peopleBody": "Ida ne’e mak fatin atu jeréncia ema hotu ne’ebé serbisu iha ita-nia empreza — empregádu, kontratu, departamentu, no ekipa. Hahú liu husi aumenta ita-nia empregádu primeiru ho botãu iha leten. Husi ne’ebá ita bele akompanha lisensa, halo folha pagamentu, no mantein organizádu. Seksaun ida-idak iha kraik bele expande atu hatudu instrumentu barak liu.",

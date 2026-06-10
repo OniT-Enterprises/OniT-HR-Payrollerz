@@ -274,7 +274,7 @@ export default function Landing() {
             <div className="relative flex justify-center">
               <img
                 src="/images/illustrations/hero-dashboard.webp"
-                alt="Meza HR dashboard command center"
+                alt="Primos Books HR dashboard command center"
                 className="w-full max-w-3xl drop-shadow-2xl"
               />
             </div>

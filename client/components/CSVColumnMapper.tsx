@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -581,6 +582,7 @@ function applyParsedCSV(s: CSVStateSetters, result: { columns: CSVColumn[]; data
 // --- Custom hook for CSV parsing and mapping state ---
 
 function useCSVMapper(csvFile: File | null) {
+  const { toast } = useToast();
   const [csvColumns, setCsvColumns] = useState<CSVColumn[]>([]);
   const [csvData, setCsvData] = useState<Record<string, string>[]>([]);
   const [mappings, setMappings] = useState<ColumnMapping[]>([]);
@@ -601,12 +603,16 @@ function useCSVMapper(csvFile: File | null) {
       })
       .catch((error) => {
         if (cancelled) return;
-        console.error("Error parsing CSV:", error);
-        alert("Error parsing CSV file. Please check the file format.");
+        if (import.meta.env.DEV) console.error("Error parsing CSV:", error);
+        toast({
+          title: "Could not read CSV file",
+          description: "Please check the file format and try again.",
+          variant: "destructive",
+        });
       });
 
     return () => { cancelled = true; };
-  }, [csvFile, setters]);
+  }, [csvFile, setters, toast]);
 
   const handleDragEnd = useCallback((result: DropResult) => {
     handleColumnDragEnd(result, csvColumns, setUnmappedColumns, setMappings);
@@ -639,6 +645,7 @@ export default function CSVColumnMapper({
   onMappingComplete,
   onCancel,
 }: CSVColumnMapperProps) {
+  const { toast } = useToast();
   const {
     csvColumns, csvData, mappings, unmappedColumns, step, setStep,
     handleDragEnd, removeMapping, resetMappings,
@@ -647,11 +654,15 @@ export default function CSVColumnMapper({
   const handleComplete = useCallback(() => {
     const status = getRequiredFieldsStatus(mappings);
     if (!status.complete) {
-      alert(`Please map all required fields. ${status.mapped}/${status.total} required fields mapped.`);
+      toast({
+        title: "Required fields missing",
+        description: `Please map all required fields. ${status.mapped}/${status.total} required fields mapped.`,
+        variant: "destructive",
+      });
       return;
     }
     onMappingComplete(mappings, csvData);
-  }, [mappings, csvData, onMappingComplete]);
+  }, [mappings, csvData, onMappingComplete, toast]);
 
   if (step === "upload") {
     return (

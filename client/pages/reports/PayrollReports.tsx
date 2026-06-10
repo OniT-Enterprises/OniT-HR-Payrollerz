@@ -54,7 +54,7 @@ const STATUS_BADGE: Record<string, string> = {
 export default function PayrollReports() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { data: runs = [], isLoading: runsLoading } = usePayrollRuns({ limit: 24 });
+  const { data: runs = [], isLoading: runsLoading, error: runsError, refetch: refetchRuns } = usePayrollRuns({ limit: 24 });
 
   const sortedRuns = useMemo(
     () => [...runs].sort((a, b) => (b.payDate ?? "").localeCompare(a.payDate ?? "")),
@@ -166,7 +166,15 @@ export default function PayrollReports() {
           iconColor="text-primary"
         />
 
-        {sortedRuns.length === 0 ? (
+        {runsError ? (
+          <div className="py-16 text-center">
+            <h3 className="mb-2 text-lg font-semibold">{t("common.connectionIssueTitle")}</h3>
+            <p className="mb-6 text-muted-foreground">{t("common.connectionIssueDesc")}</p>
+            <Button variant="outline" onClick={() => refetchRuns()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        ) : sortedRuns.length === 0 ? (
           <div className="py-16 text-center">
             <FileText className="mx-auto mb-4 h-16 w-16 text-muted-foreground/40" />
             <h3 className="mb-2 text-lg font-semibold">{t("reports.payrollRun.noRuns.title")}</h3>

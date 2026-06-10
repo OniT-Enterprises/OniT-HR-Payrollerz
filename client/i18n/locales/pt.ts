@@ -249,6 +249,8 @@ const messages = {
     "botPromptLeave": "Quem está de licença?",
     "botPlaceholder": "Perguntar ao PrimosBot...",
     "allGood": "Tudo em ordem — nada precisa de atenção",
+    "pendingPayrollTitle": "Folha de pagamento a aguardar aprovação",
+    "pendingPayrollDesc": "folha(s) precisam de revisão",
     "overdue": "em atraso há",
     "taxOverdue": "Declarações fiscais em atraso",
     "overdueFilings": "declaração(ões) fora do prazo",
@@ -589,7 +591,7 @@ const messages = {
     "performance": {
       "badge": "Feito para Internet de TL",
       "title": "Rápido Mesmo em Conexões Lentas",
-      "description": "O Meza faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
+      "description": "O Primos Books faz cache local dos dados para que a aplicação continue rápida — mesmo quando a sua internet não está. Funcionalidades pesadas carregam a pedido, mantendo o arranque inicial leve.",
       "features": {
         "cache": "Cache local inteligente — funciona instantaneamente em visitas repetidas",
         "lazy": "Funcionalidades pesadas carregam apenas quando necessário",
@@ -675,11 +677,11 @@ const messages = {
     "cta": {
       "title": "Pronto para Começar?",
       "titleAccent": "Comece Hoje",
-      "description": "Junte-se às empresas de Timor-Leste que já usam o Meza para RH e Folha de Pagamento conformes e sem esforço.",
+      "description": "Junte-se às empresas de Timor-Leste que já usam o Primos Books para RH e Folha de Pagamento conformes e sem esforço.",
       "primary": "Iniciar Teste Grátis"
     },
     "footer": {
-      "brand": "Meza",
+      "brand": "Primos Books",
       "location": "Timor-Leste",
       "links": {
         "privacy": "Privacidade",
@@ -731,7 +733,7 @@ const messages = {
         "desc": "Lançamentos manuais de IRT todos os meses. Sem relatórios SEFOPE. Sem Tétum. Feito para mercados que não são os seus."
       },
       "solution": {
-        "title": "O Meza resolve isto",
+        "title": "O Primos Books resolve isto",
         "desc": "IRT/INSS automático. Transferências bancárias para BNU/BNCTL. Relatórios para SEFOPE. Interface em Tétum."
       }
     },
@@ -850,7 +852,7 @@ const messages = {
         "ana": {
           "name": "Ana",
           "role": "Dona de Café",
-          "desc": "Gere um café com 5 funcionários. Usa o Meza para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Meza Go."
+          "desc": "Gere um café com 5 funcionários. Usa o Primos Books para folha de pagamento, Kaixa para vendas diárias. Funcionários usam o Ekipa."
         },
         "tomas": {
           "name": "Tomás",
@@ -863,7 +865,7 @@ const messages = {
       "badge": "Aplicação para Funcionários",
       "title": "Ekipa",
       "titleAccent": "O Companheiro Móvel da Sua Equipa",
-      "description": "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Meza.",
+      "description": "Dê a cada funcionário a sua própria aplicação. Recibos de vencimento, pedidos de licença, registo de ponto — tudo a partir do telefone. Feito para clientes Primos Books.",
       "tagline": "\"Ekipa\" — Tétum para equipa",
       "features": {
         "payslips": {
@@ -891,8 +893,8 @@ const messages = {
           "desc": "Veja dados pessoais, informação de emprego, documentos e histórico de assiduidade. Menos perguntas para o RH."
         }
       },
-      "cta": "Incluído com o Meza",
-      "ctaNote": "Android · Grátis para todos os funcionários Meza",
+      "cta": "Incluído com o Primos Books",
+      "ctaNote": "Android · Grátis para todos os funcionários Primos Books",
       "shipped": {
         "badge": "Disponível Agora",
         "title": "O que Está Disponível",
@@ -926,7 +928,7 @@ const messages = {
       "badge": "Baseado em Díli",
       "title": "Suporte local,",
       "titleAccent": "em Tétum e Inglês",
-      "description": "Não somos uma empresa estrangeira com suporte offshore. O Meza é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
+      "description": "Não somos uma empresa estrangeira com suporte offshore. O Primos Books é construído em Timor-Leste, para Timor-Leste. Obtenha ajuda de pessoas que compreendem as práticas empresariais locais.",
       "items": {
         "whatsapp": "Suporte por WhatsApp em Tétum e Inglês",
         "training": "Formação presencial disponível em Díli",
@@ -942,7 +944,7 @@ const messages = {
       "badge": "Contabilidade Real",
       "title": "Contabilidade que realmente",
       "titleAccent": "compreende TL",
-      "description": "Mantenha o QuickBooks para inventário se quiser — o Meza trata da conformidade de TL.",
+      "description": "Mantenha o QuickBooks para inventário se quiser — o Primos Books trata da conformidade de TL.",
       "features": {
         "doubleEntry": {
           "title": "Dupla Entrada Verdadeira",
@@ -1123,6 +1125,10 @@ const messages = {
       "sundayHolidayRate": "Taxa Domingo/Feriado",
       "thirteenthMonth": "Subsídio Anual (13.º Mês)",
       "enable13th": "Ativar pagamento do 13.º mês",
+      "approvalSection": "Aprovação da folha de pagamento",
+      "selfApprovalLabel": "Permitir autoaprovação (operador único)",
+      "selfApprovalDesc": "Quem cria a folha de pagamento também pode aprová-la. Use apenas se a sua empresa tiver um único administrador de folha — desativado, um segundo administrador deve aprovar cada folha (mais seguro).",
+      "selfApprovalOwnerOnly": "Apenas o proprietário da conta pode alterar isto.",
       "paymentDeadline": "Prazo de Pagamento",
       "paymentDeadlinePlaceholder": "MM-DD",
       "paymentDeadlineHint": "Formato: MM-DD (ex., 12-20 para 20 de Dezembro)",
@@ -1718,7 +1724,7 @@ const messages = {
       "preBoarding": {
         "title": "Pré-Integração",
         "description": "Bem-vindo à equipa! Vamos começar o processo de integração.",
-        "welcome": "Bem-vindo ao Meza! Estamos entusiasmados por tê-lo na nossa equipa. Este processo de integração irá ajudá-lo a familiarizar-se com as políticas, procedimentos e sistemas da empresa.",
+        "welcome": "Bem-vindo ao Primos Books! Estamos entusiasmados por tê-lo na nossa equipa. Este processo de integração irá ajudá-lo a familiarizar-se com as políticas, procedimentos e sistemas da empresa.",
         "expectTitle": "O Que Esperar",
         "expect": {
           "items": {
@@ -3873,10 +3879,10 @@ const messages = {
         "description": "Configurar mapeamentos de contas para integração QuickBooks",
         "defaultFormat": "Formato de Exportação Padrão",
         "accountMappings": "Mapeamentos de Contas",
-        "accountMappingsDesc": "Mapear contas da folha do Meza para o seu plano de contas do QuickBooks",
+        "accountMappingsDesc": "Mapear contas da folha do Primos Books para o seu plano de contas do QuickBooks",
         "expenses": "Despesas",
         "liabilities": "Passivos",
-        "onitAccount": "Conta Meza",
+        "onitAccount": "Conta Primos Books",
         "qbAccount": "Conta QuickBooks",
         "resetDefaults": "Repor Padrões",
         "save": "Guardar Alterações",
@@ -3991,12 +3997,12 @@ const messages = {
       "complete": "Completo"
     },
     "welcome": "Bem-vindo! Vamos configurar a sua conta",
-    "welcomeDesc": "Complete estes passos para começar a usar o Meza",
+    "welcomeDesc": "Complete estes passos para começar a usar o Primos Books",
     "companyIntro": "Estes dados aparecem em recibos, ficheiros bancários e relatórios fiscais. Mantenha isto simples por agora; pode alterar mais tarde.",
     "progressTitle": "Progresso da configuração",
     "progressHint": "Complete cada passo uma vez. Depois pode ajustar tudo nas Definições.",
     "savedAutomaticallyTitle": "Os passos concluídos ficam guardados automaticamente",
-    "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Meza retoma onde parou.",
+    "savedAutomaticallyDesc": "Pode sair e voltar mais tarde. A Primos Books retoma onde parou.",
     "stepOf": "Passo {{current}} de {{total}}",
     "requiredFields": "Campos Obrigatórios",
     "companyNameTinRequired": "Nome da empresa e NIF são obrigatórios.",
@@ -4017,7 +4023,7 @@ const messages = {
     "tinPlaceholder": "Número de Identificação Fiscal",
     "teamSize": "Dimensão Aproximada da Equipa",
     "selectTeamSize": "Selecionar dimensão da equipa",
-    "teamSizeHint": "Isto ajuda o Meza a escolher melhores padrões para equipas pequenas ou maiores.",
+    "teamSizeHint": "Isto ajuda o Primos Books a escolher melhores padrões para equipas pequenas ou maiores.",
     "address": "Morada",
     "addressPlaceholder": "Rua",
     "city": "Cidade",
@@ -4483,7 +4489,7 @@ const messages = {
       "moneyLink": "Dinheiro",
       "payrollLink": "Folha de Pagamento",
       "accountantGateInstead": "em vez disso.",
-      "accountantGateNote": "A maioria das empresas nunca precisa de alterar nada aqui — o Meza mantém isto sincronizado automaticamente.",
+      "accountantGateNote": "A maioria das empresas nunca precisa de alterar nada aqui — o Primos Books mantém isto sincronizado automaticamente.",
       "thisMonth": "Este Mês",
       "payrollEntries": "Lançamentos da Folha",
       "posted": "Lançados",
@@ -4754,7 +4760,7 @@ const messages = {
   "money": {
     "dashboard": {
       "title": "Dinheiro",
-      "seoTitle": "Dinheiro - Meza",
+      "seoTitle": "Dinheiro - Primos Books",
       "subtitle": "Acompanhe quem lhe deve, o que precisa pagar e o que fazer a seguir",
       "createInvoice": "Criar Fatura",
       "attentionNeeded": "Atenção necessária",
@@ -5596,6 +5602,7 @@ const messages = {
     "thisActionWill": "Esta ação irá:",
     "submitForReview": "Submeter folha para revisão por segunda pessoa",
     "differentAdminApprove": "Um administrador diferente deve aprovar antes do processamento",
+    "selfApprovalNext": "Pode aprovar esta folha você mesmo (autoaprovação ativa)",
     "journalEntriesCreated": "Lançamentos contabilísticos criados após aprovação",
     "back": "Voltar",
     "submitting": "A submeter...",
@@ -5620,6 +5627,8 @@ const messages = {
     "toastOverrideShort": "Motivo de substituição muito curto",
     "toastOverrideShortDesc": "Por favor forneça pelo menos 10 caracteres explicando porque prossegue sem conformidade total.",
     "toastSyncedAttendance": "Assiduidade sincronizada para {{count}} funcionário(s).",
+    "toastSyncedAttendanceWithLeave": "Assiduidade sincronizada para {{count}} funcionário(s). Licença aprovada creditada a {{leaveCount}} — a licença paga não é descontada.",
+    "toastSyncLeaveLookupFailed": "Não foi possível carregar as licenças aprovadas, por isso a sincronização foi cancelada — caso contrário, funcionários de licença paga receberiam menos. Verifique a ligação e tente novamente.",
     "toastSyncAttendanceNoData": "Nenhum registo de assiduidade encontrado para este período.",
     "toastLoadFailed": "Falha ao carregar funcionários. Por favor atualize a página.",
     "monthlyDesc": "Uma vez por mês",
@@ -5741,6 +5750,13 @@ const messages = {
     "approve": "Aprovar",
     "reject": "Rejeitar",
     "twoPersonRule": "Regra de duas pessoas: outro administrador deve aprovar",
+    "selfApproveWarning": "Foi você quem criou esta folha de pagamento. Verifique bem os valores antes de aprovar — mais ninguém irá revê-la.",
+    "nextStepsTitle": "Folha aprovada — o que se segue?",
+    "nextStepsDesc": "Os seus funcionários ainda não foram pagos. Estes são os próximos passos habituais.",
+    "nextStepsPayslips": "Enviar recibos de vencimento aos funcionários",
+    "nextStepsBankTransfer": "Preparar a transferência bancária",
+    "nextStepsTax": "Verificar declarações WIT e INSS",
+    "nextStepsLater": "Farei isto mais tarde",
     "payrollRunsTitle": "Processamentos de Folha",
     "showingRuns": "A mostrar {{count}} processamentos",
     "noRunsFound": "Nenhum processamento encontrado",
@@ -5943,7 +5959,7 @@ const messages = {
   },
   "guidance": {
     "hideGuidance": "Ocultar orientação",
-    "dashboardTitle": "Bem-vindo ao Meza.",
+    "dashboardTitle": "Bem-vindo ao Primos Books.",
     "dashboardBody": "Esta é a sua base — uma visão rápida do que está a acontecer na sua empresa hoje. Verifique o estado da folha, reveja a conformidade e entre em qualquer módulo a partir daqui.",
     "peopleTitle": "Bem-vindo ao seu hub de Pessoas.",
     "peopleBody": "É aqui que gere todos os que trabalham para a sua empresa — funcionários, contratos, departamentos e equipas. Comece adicionando o seu primeiro funcionário usando o botão acima. A partir daí pode acompanhar licenças, processar folha e manter tudo organizado. Cada secção abaixo expande para mostrar mais ferramentas.",

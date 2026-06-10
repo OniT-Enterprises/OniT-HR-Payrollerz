@@ -94,6 +94,8 @@ const downloadPayslip = async (...args: Parameters<typeof import("@/components/p
 let _payslipPreloaded = false;
 import { QuickBooksExportDialog } from "@/components/payroll/QuickBooksExportDialog";
 import { SendPayslipsDialog } from "@/components/payroll/SendPayslipsDialog";
+import { useQuery } from "@tanstack/react-query";
+import { settingsService } from "@/services/settingsService";
 import type { PayrollRun, PayrollRecord, PayrollStatus } from "@/types/payroll";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useTenantId } from "@/contexts/TenantContext";
@@ -113,7 +115,16 @@ export default function PayrollHistory() {
   const { t } = useI18n();
 
   // React Query: payroll runs
-  const { data: payrollRuns = [], isLoading: loading } = usePayrollRuns();
+  const { data: payrollRuns = [], isLoading: loading, error: runsError, refetch: refetchRuns } = usePayrollRuns();
+
+  // Tenant payroll settings — solo-operator self-approval mode
+  const { data: tenantSettings } = useQuery({
+    queryKey: ["tenants", tenantId, "settings"],
+    queryFn: () => settingsService.getSettings(tenantId),
+    enabled: Boolean(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const selfApprovalAllowed = tenantSettings?.payrollConfig?.allowSelfApproval === true;
 
   // React Query: mutations
   const approveMutation = useApprovePayrollRun();
@@ -139,6 +150,8 @@ export default function PayrollHistory() {
   // Approval/Rejection
   const [approveRun, setApproveRun] = useState<PayrollRun | null>(null);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
+  // Post-approval guidance ("what's next" dialog)
+  const [nextStepsRun, setNextStepsRun] = useState<PayrollRun | null>(null);
   const { data: employees = [], isLoading: loadingEmployees } = useEmployeeDirectory({}, showApproveDialog);
   const [approveRunRecords, setApproveRunRecords] = useState<PayrollRecord[]>([]);
   const [loadingApproveAllocationCheck, setLoadingApproveAllocationCheck] = useState(false);
@@ -347,6 +360,7 @@ export default function PayrollHistory() {
         id: approveRun.id,
         approvedBy: user.uid,
         audit: { tenantId, userId: user.uid, userEmail: user.email || "" },
+        allowSelfApproval: selfApprovalAllowed,
       });
 
       // Create accounting journal entry
@@ -386,6 +400,7 @@ export default function PayrollHistory() {
       });
 
       setShowApproveDialog(false);
+      setNextStepsRun(approveRun);
       setApproveRun(null);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t("payrollHistory.toastApprovalFailedDesc");
@@ -750,6 +765,18 @@ export default function PayrollHistory() {
             </Card>
           )}
 
+          {runsError && !loading && (
+            <Card className="border-destructive/40 mb-4">
+              <CardContent className="py-6 text-center">
+                <p className="font-medium mb-1">{t("common.connectionIssueTitle")}</p>
+                <p className="text-muted-foreground mb-4">{t("common.connectionIssueDesc")}</p>
+                <Button variant="outline" onClick={() => refetchRuns()}>
+                  {t("common.retry")}
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
           {/* View Selector */}
           <div className="flex items-center gap-3 mb-4">
             <Select value={activeTab} onValueChange={setActiveTab}>
@@ -789,6 +816,7 @@ export default function PayrollHistory() {
                     <div className="md:hidden divide-y divide-border/50">
                       {pendingRuns.map((run) => {
                         const isSameUser = run.createdBy === user?.uid;
+                        const approveBlocked = isSameUser && !selfApprovalAllowed;
                         return (
                           <div key={run.id} className="p-4 bg-amber-50/50 dark:bg-amber-950/10">
                             <div className="flex items-start justify-between gap-2 mb-2">
@@ -817,7 +845,7 @@ export default function PayrollHistory() {
                               </Button>
                               <Button
                                 size="sm"
-                                disabled={isSameUser}
+                                disabled={approveBlocked}
                                 onClick={() => { setApproveRun(run); setShowApproveDialog(true); }}
                                 className="bg-green-600 hover:bg-green-700 text-white"
                               >
@@ -834,6 +862,11 @@ export default function PayrollHistory() {
                                 {t("payrollHistory.reject")}
                               </Button>
                             </div>
+                            {approveBlocked && (
+                              <p className="text-xs text-muted-foreground mt-2">
+                                {t("payrollHistory.twoPersonRule")}
+                              </p>
+                            )}
                           </div>
                         );
                       })}
@@ -855,6 +888,7 @@ export default function PayrollHistory() {
                         <TableBody>
                           {pendingRuns.map((run) => {
                             const isSameUser = run.createdBy === user?.uid;
+                            const approveBlocked = isSameUser && !selfApprovalAllowed;
                             return (
                               <TableRow key={run.id} className="bg-amber-50/50 dark:bg-amber-950/10">
                                 <TableCell className="whitespace-nowrap">
@@ -894,13 +928,13 @@ export default function PayrollHistory() {
                                     </Button>
                                     <Button
                                       size="sm"
-                                      disabled={isSameUser}
+                                      disabled={approveBlocked}
                                       onClick={() => {
                                         setApproveRun(run);
                                         setShowApproveDialog(true);
                                       }}
                                       className="bg-green-600 hover:bg-green-700 text-white"
-                                      title={isSameUser ? t("payrollHistory.twoPersonRule") : t("payrollHistory.approve")}
+                                      title={approveBlocked ? t("payrollHistory.twoPersonRule") : t("payrollHistory.approve")}
                                     >
                                       <CheckCircle className="h-4 w-4 mr-1" />
                                       {t("payrollHistory.approve")}
@@ -919,7 +953,7 @@ export default function PayrollHistory() {
                                       <XCircle className="h-4 w-4" />
                                     </Button>
                                   </div>
-                                  {isSameUser && (
+                                  {approveBlocked && (
                                     <p className="text-xs text-muted-foreground mt-1 text-right">
                                       {t("payrollHistory.twoPersonRule")}
                                     </p>
@@ -1141,6 +1175,52 @@ export default function PayrollHistory() {
       )}
 
       {/* Approve Confirmation Dialog */}
+      {/* Post-approval "what's next" guidance */}
+      <Dialog open={Boolean(nextStepsRun)} onOpenChange={(open) => !open && setNextStepsRun(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              {t("payrollHistory.nextStepsTitle")}
+            </DialogTitle>
+            <DialogDescription>{t("payrollHistory.nextStepsDesc")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => {
+                const run = nextStepsRun;
+                setNextStepsRun(null);
+                if (run) handleSendPayslips(run);
+              }}
+            >
+              <Mail className="h-4 w-4 mr-2" />
+              {t("payrollHistory.nextStepsPayslips")}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => navigate("/payroll/payments")}
+            >
+              <FileDown className="h-4 w-4 mr-2" />
+              {t("payrollHistory.nextStepsBankTransfer")}
+            </Button>
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              onClick={() => navigate("/payroll/tax")}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              {t("payrollHistory.nextStepsTax")}
+            </Button>
+          </div>
+          <Button variant="ghost" onClick={() => setNextStepsRun(null)}>
+            {t("payrollHistory.nextStepsLater")}
+          </Button>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -1178,6 +1258,14 @@ export default function PayrollHistory() {
                   <li>- {t("payrollHistory.approveCreateJournalEntries")}</li>
                   <li>- {t("payrollHistory.approveGeneratePayslips")}</li>
                 </ul>
+                {selfApprovalAllowed && approveRun?.createdBy === user?.uid && (
+                  <div className="flex items-start gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800">
+                    <AlertTriangle className="h-4 w-4 mt-0.5 text-amber-600 shrink-0" />
+                    <span className="text-sm text-amber-700 dark:text-amber-300">
+                      {t("payrollHistory.selfApproveWarning")}
+                    </span>
+                  </div>
+                )}
                 {loadingApproveAllocationCheck ? (
                   <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Loader2 className="h-4 w-4 animate-spin" />

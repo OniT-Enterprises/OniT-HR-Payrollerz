@@ -1,6 +1,6 @@
 /**
  * Sitemap Page
- * A comprehensive overview of all pages in the Meza system
+ * A comprehensive overview of all pages in the Primos Books system
  * with descriptions and easy navigation
  */
 
@@ -44,7 +44,7 @@ interface SitemapSection {
 const sitemapData: SitemapSection[] = [
   {
     title: 'Dashboard',
-    description: 'Your central command center for Meza',
+    description: 'Your central command center for Primos Books',
     icon: Home,
     color: 'text-blue-600',
     bgColor: 'bg-blue-100 dark:bg-blue-900',
@@ -610,7 +610,7 @@ export default function Sitemap() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Sitemap - Meza" description="Complete navigation guide for Meza system" />
+      <SEO title="Sitemap - Primos Books" description="Complete navigation guide for Primos Books" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
@@ -623,7 +623,7 @@ export default function Sitemap() {
             <div>
               <h1 className="text-3xl font-bold">Sitemap</h1>
               <p className="text-muted-foreground">
-                Complete navigation guide for Meza
+                Complete navigation guide for Primos Books
               </p>
             </div>
           </div>
@@ -701,7 +701,7 @@ export default function Sitemap() {
         {/* Footer */}
         <div className="mt-12 text-center text-sm text-muted-foreground">
           <p>
-            Meza System - Built for Timor-Leste businesses
+            Primos Books - Built for Timor-Leste businesses
           </p>
           <p className="mt-1">
             Compliant with ATTL tax regulations, INSS social security, and TL labor law

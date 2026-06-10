@@ -52,7 +52,7 @@ export default function TimeLeaveSettings() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Time & Leave Settings | Meza" description="Configure leave policies per Timor-Leste labor law" />
+      <SEO title="Time & Leave Settings | Primos Books" description="Configure leave policies per Timor-Leste labor law" />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader

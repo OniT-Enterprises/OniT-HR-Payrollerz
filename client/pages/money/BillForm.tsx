@@ -294,7 +294,7 @@ export default function BillForm() {
     return (
       <div className="min-h-screen bg-background">
         <SEO
-          title={`Bill - ${bill.vendorName} - Meza`}
+          title={`Bill - ${bill.vendorName} - Primos Books`}
           description="View bill details"
         />
         <MainNavigation />
@@ -519,7 +519,7 @@ export default function BillForm() {
   return (
     <div className="min-h-screen bg-background">
       <SEO
-        title={isNew ? 'New Bill - Meza' : 'Edit Bill - Meza'}
+        title={isNew ? 'New Bill - Primos Books' : 'Edit Bill - Primos Books'}
         description={isNew ? 'Create a new bill' : 'Edit bill'}
       />
       <MainNavigation />

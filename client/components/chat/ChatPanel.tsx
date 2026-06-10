@@ -253,7 +253,7 @@ function EmptyState({ onSend }: { onSend: (text: string) => void }) {
   return (
     <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
       <Bot className="h-10 w-10 text-muted-foreground/50 mb-3" />
-      <p className="text-sm font-medium text-foreground mb-2">Meza HR Assistant</p>
+      <p className="text-sm font-medium text-foreground mb-2">PrimosBot</p>
       <p className="text-xs text-muted-foreground leading-relaxed mb-4">
         Ask me about employees, payroll, leave, interviews, or finances.
       </p>

@@ -131,6 +131,15 @@ service cloud.firestore {
         getTenantEmployeeId(tenantId) == employeeId;
     }
 
+    // Solo-operator mode: tenant settings can opt in to letting the creator of a
+    // payroll run approve it themselves (default is the two-person rule).
+    // exists() guard first — a failed get() would deny the whole update.
+    function allowsSelfApproval(tenantId) {
+      return exists(/databases/$(database)/documents/tenants/$(tenantId)/settings/config) &&
+        get(/databases/$(database)/documents/tenants/$(tenantId)/settings/config)
+          .data.get('payrollConfig', {}).get('allowSelfApproval', false) == true;
+    }
+
     // ============================================
     // USER PROFILES (Global, not tenant-scoped)
     // ============================================
@@ -457,11 +466,13 @@ service cloud.firestore {
         allow read: if isSuperAdmin() || canAccessPayrollRecords(tenantId);
         allow create: if isSuperAdmin() || isTenantAdmin(tenantId);
         // Prevent createdBy tampering + two-person approval rule
+        // (unless tenant opted in to solo self-approval)
         allow update: if isSuperAdmin() || (
           isTenantAdmin(tenantId) &&
           request.resource.data.createdBy == resource.data.createdBy &&
           (request.resource.data.status != 'approved' ||
-           request.resource.data.approvedBy != resource.data.createdBy)
+           request.resource.data.approvedBy != resource.data.createdBy ||
+           allowsSelfApproval(tenantId))
         );
         allow delete: if isSuperAdmin() || isTenantAdmin(tenantId);
 
@@ -1137,9 +1148,11 @@ service cloud.firestore {
         request.resource.data.tenantId == resource.data.tenantId &&
         isTenantAdmin(resource.data.tenantId) &&
         // Prevent createdBy tampering + two-person approval rule
+        // (unless tenant opted in to solo self-approval)
         request.resource.data.createdBy == resource.data.createdBy &&
         (request.resource.data.status != 'approved' ||
-         request.resource.data.approvedBy != resource.data.createdBy)
+         request.resource.data.approvedBy != resource.data.createdBy ||
+         allowsSelfApproval(resource.data.tenantId))
       );
       allow delete: if isSuperAdmin() || (
         resource.data.tenantId != null &&
@@ -1178,8 +1191,10 @@ service cloud.firestore {
         // Prevent createdBy tampering - field is immutable after creation
         request.resource.data.createdBy == resource.data.createdBy &&
         // Two-person rule: approver must differ from creator
+        // (unless tenant opted in to solo self-approval)
         (request.resource.data.status != 'approved' ||
-         request.resource.data.approvedBy != resource.data.createdBy)
+         request.resource.data.approvedBy != resource.data.createdBy ||
+         allowsSelfApproval(resource.data.tenantId))
       );
 
       allow delete: if isSuperAdmin() || (

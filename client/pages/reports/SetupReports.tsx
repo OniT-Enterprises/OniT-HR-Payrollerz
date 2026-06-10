@@ -254,7 +254,7 @@ export default function SetupReports() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title={`${t("reports.setup.title")} | Meza`} description={t("reports.setup.subtitle")} />
+      <SEO title={`${t("reports.setup.title")} | Primos Books`} description={t("reports.setup.subtitle")} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader

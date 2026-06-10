@@ -156,7 +156,7 @@ export default function Bills() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Bills - Meza" description="Manage your bills and accounts payable" />
+      <SEO title="Bills - Primos Books" description="Manage your bills and accounts payable" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

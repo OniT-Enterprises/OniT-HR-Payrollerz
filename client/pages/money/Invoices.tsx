@@ -97,7 +97,7 @@ export default function Invoices() {
     import('@/components/money/InvoicePDF');
   }, []);
 
-  const { invoices, totalLoaded, isLoading: loading, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(isSearching);
+  const { invoices, totalLoaded, isLoading: loading, error: queryError, refetch: loadInvoices, fetchNextPage, hasNextPage, isFetchingNextPage } = useSmartInvoices(isSearching);
   const { data: invoiceSettings = {} } = useInvoiceSettings();
 
   const filteredInvoices = invoices.filter((invoice) => {
@@ -234,7 +234,7 @@ export default function Invoices() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Invoices - Meza" description="Manage your invoices" />
+      <SEO title="Invoices - Primos Books" description="Manage your invoices" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">
@@ -320,7 +320,19 @@ export default function Invoices() {
         </MoreDetailsSection>
 
         {/* Invoice List */}
-        {filteredInvoices.length === 0 ? (
+        {queryError && !loading ? (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="font-medium mb-1">{t('common.connectionIssueTitle') || 'Connection problem'}</p>
+              <p className="text-muted-foreground mb-4">
+                {t('common.connectionIssueDesc') || 'Your signal is weak. Keep this page open and try again when the internet stabilizes.'}
+              </p>
+              <Button onClick={() => loadInvoices()} variant="outline">
+                {t('common.retry') || 'Retry'}
+              </Button>
+            </CardContent>
+          </Card>
+        ) : filteredInvoices.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
               <img src="/images/illustrations/empty-invoices.webp" alt="No invoices yet" className="w-32 h-32 mx-auto mb-4 drop-shadow-lg" />

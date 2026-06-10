@@ -200,6 +200,9 @@ export interface PayrollConfig {
     payByDate: string; // "12-20" for December 20
     proRataForNewEmployees: boolean;
   };
+  // Solo-operator mode: lets the creator of a payroll run approve it themselves.
+  // Default false = safer two-person approval (creator != approver).
+  allowSelfApproval?: boolean;
 }
 
 // ============================================
@@ -276,6 +279,7 @@ export const TL_DEFAULT_PAYROLL_CONFIG: PayrollConfig = {
     payByDate: '12-20',
     proRataForNewEmployees: true,
   },
+  allowSelfApproval: false,
 };
 
 export const TL_DEFAULT_LEAVE_POLICIES: TimeOffPolicies = {

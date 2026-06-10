@@ -35,10 +35,12 @@ import type { PayrollRun, PayrollRecord } from "@/types/payroll";
 import { sumMoney } from "@/lib/currency";
 import { getTodayTL, toDateStringTL } from "@/lib/dateUtils";
 import type { Employee } from "@/services/employeeService";
+import { leaveService, calculateWorkingDays, TL_LEAVE_TYPES } from "@/services/leaveService";
 import { getComplianceIssues } from "@/lib/employeeUtils";
 
 import {
   calculateProRataHours,
+  computeLeaveCredits,
   type EmployeePayrollData,
   getPayPeriodsInPayMonth,
 } from "@/lib/payroll/run-payroll-helpers";
@@ -350,7 +352,41 @@ export function usePayrollCalculator({
     }
 
     const summaryByEmployee = new Map(summaryRows.map((row) => [row.employeeId, row]));
+
+    // Approved leave overlapping the pay period. Without this, paid leave days
+    // (zero recorded hours) would be docked as unpaid absence. Paid leave types
+    // reduce absence hours; sick leave feeds sickDays so the TL 100%/50% sick
+    // pay rules apply; unpaid leave stays as absence.
+    let leaveByEmployee: ReturnType<typeof computeLeaveCredits>;
+    try {
+      const approvedLeave = await leaveService.getEmployeesOnLeave(tenantId, periodStart, periodEnd);
+      leaveByEmployee = computeLeaveCredits(
+        approvedLeave,
+        periodStart,
+        periodEnd,
+        TL_WORKING_HOURS.standardDailyHours,
+        // Unknown/custom types default to paid: wrongly docking pay is worse
+        // than paying a day — admins can still adjust the row manually.
+        (leaveType) => {
+          const typeInfo = TL_LEAVE_TYPES.find((lt) => lt.id === leaveType);
+          return typeInfo ? typeInfo.isPaid : true;
+        },
+        calculateWorkingDays,
+      );
+    } catch (error) {
+      // Abort rather than sync without leave data — that would silently dock
+      // pay for employees on approved paid leave.
+      console.error("Failed to load approved leave for payroll sync:", error);
+      toast({
+        title: t("runPayroll.syncAttendance"),
+        description: t("runPayroll.toastSyncLeaveLookupFailed"),
+        variant: "destructive",
+      });
+      return;
+    }
+
     let syncedCount = 0;
+    let leaveCreditedCount = 0;
 
     setEmployeePayrollData((prev) =>
       prev.map((data) => {
@@ -361,7 +397,13 @@ export function usePayrollCalculator({
         const regularHours = Number(summary.regularHours.toFixed(2));
         const overtimeHours = Number(summary.overtimeHours.toFixed(2));
         const expectedRegularHours = data.originalValues.regularHours;
-        const absenceHours = Number(Math.max(0, expectedRegularHours - regularHours).toFixed(2));
+        const credit = leaveByEmployee.get(employeeId);
+        const paidLeaveHours = credit?.paidLeaveHours ?? 0;
+        const sickDays = credit?.sickDays ?? 0;
+        if (paidLeaveHours > 0 || sickDays > 0) leaveCreditedCount += 1;
+        const absenceHours = Number(
+          Math.max(0, expectedRegularHours - regularHours - paidLeaveHours).toFixed(2)
+        );
         const lateArrivalMinutes = Math.max(0, Math.round(summary.lateMinutes));
 
         const updated: EmployeePayrollData = {
@@ -370,6 +412,7 @@ export function usePayrollCalculator({
           overtimeHours,
           absenceHours,
           lateArrivalMinutes,
+          sickDays,
         };
 
         const isEdited = checkIsEdited(updated);
@@ -381,9 +424,15 @@ export function usePayrollCalculator({
 
     toast({
       title: t("runPayroll.syncAttendance"),
-      description: t("runPayroll.toastSyncedAttendance", { count: String(syncedCount) }),
+      description:
+        leaveCreditedCount > 0
+          ? t("runPayroll.toastSyncedAttendanceWithLeave", {
+              count: String(syncedCount),
+              leaveCount: String(leaveCreditedCount),
+            })
+          : t("runPayroll.toastSyncedAttendance", { count: String(syncedCount) }),
     });
-  }, [periodStart, periodEnd, toast, t, refetchAttendanceSummary, attendanceSummary, calculateForEmployee]);
+  }, [periodStart, periodEnd, tenantId, toast, t, refetchAttendanceSummary, attendanceSummary, calculateForEmployee]);
 
   // ─── Compliance issues ──────────────────────────────────────────
 

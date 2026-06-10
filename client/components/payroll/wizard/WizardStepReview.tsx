@@ -43,6 +43,7 @@ interface WizardStepReviewProps {
   onSubmit: () => void;
   saving: boolean;
   processing: boolean;
+  selfApprovalAllowed?: boolean;
 }
 
 export function WizardStepReview({
@@ -57,6 +58,7 @@ export function WizardStepReview({
   onSubmit,
   saving,
   processing,
+  selfApprovalAllowed = false,
 }: WizardStepReviewProps) {
   const { t } = useI18n();
   const isSubmitting = saving || processing;
@@ -97,6 +99,22 @@ export function WizardStepReview({
         <div className="p-4 rounded-xl bg-muted/50 border border-border/30">
           <p className="text-xs text-muted-foreground">{t("runPayroll.payDateLabel")}</p>
           <p className="text-xl font-bold mt-1">{payDate ? formatPayDate(payDate) : "—"}</p>
+        </div>
+      </div>
+
+      {/* Tax & INSS breakdown — what must be remitted to the government */}
+      <div className="p-4 rounded-xl bg-muted/30 border border-border/30 text-sm space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">{t("runPayroll.incomeTaxRate")}</span>
+          <span className="tabular-nums font-medium">{formatCurrencyTL(totals.incomeTax)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">{t("runPayroll.inssEmployeeLabel")}</span>
+          <span className="tabular-nums font-medium">{formatCurrencyTL(totals.inssEmployee)}</span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="text-muted-foreground">{t("runPayroll.inssEmployerLabel")}</span>
+          <span className="tabular-nums font-medium">{formatCurrencyTL(totals.inssEmployer)}</span>
         </div>
       </div>
 
@@ -144,7 +162,9 @@ export function WizardStepReview({
           </li>
           <li className="flex items-start gap-2.5">
             <FileText className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground/70" />
-            {t("runPayroll.differentAdminApprove")}
+            {selfApprovalAllowed
+              ? t("runPayroll.selfApprovalNext")
+              : t("runPayroll.differentAdminApprove")}
           </li>
           <li className="flex items-start gap-2.5">
             <Calculator className="h-4 w-4 mt-0.5 flex-shrink-0 text-muted-foreground/70" />

@@ -361,7 +361,7 @@ export default function Departments() {
                 {t("departments.emptyDesc")}
               </p>
               <Button
-                onClick={() => (window.location.href = "/staff/add")}
+                onClick={() => navigate("/people/add")}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <User className="mr-2 h-4 w-4" />

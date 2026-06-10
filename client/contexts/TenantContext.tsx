@@ -10,6 +10,7 @@ import { User } from "firebase/auth";
 import {
   doc,
   getDoc,
+  Timestamp,
 } from "firebase/firestore";
 import { db, auth } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
@@ -369,6 +370,18 @@ export function TenantProvider({ children }: TenantProviderProps) {
         // Session-only: expires when browser closes (no Firestore write — prevents cross-device lock-in)
         sessionStorage.setItem("impersonatingTenantId", tenantId);
         sessionStorage.setItem("impersonatingTenantName", tenantName);
+
+        // Audit trail: superadmin access to tenant data must be accountable
+        const { adminService } = await import("@/services/adminService");
+        await adminService.logAdminAction({
+          action: "impersonation_started",
+          actorUid: user.uid,
+          actorEmail: user.email || "",
+          targetType: "tenant",
+          targetId: tenantId,
+          targetName: tenantName,
+          timestamp: Timestamp.now(),
+        });
       }
     } catch (error: unknown) {
       console.error("Failed to start impersonation:", error);
@@ -387,6 +400,9 @@ export function TenantProvider({ children }: TenantProviderProps) {
     try {
       setLoading(true);
 
+      const endedTenantId = impersonatedTenantId;
+      const endedTenantName = impersonatedTenantName;
+
       // Clear local state
       setIsImpersonating(false);
       setImpersonatedTenantId(null);
@@ -396,6 +412,19 @@ export function TenantProvider({ children }: TenantProviderProps) {
       // Clear sessionStorage
       sessionStorage.removeItem("impersonatingTenantId");
       sessionStorage.removeItem("impersonatingTenantName");
+
+      if (endedTenantId) {
+        const { adminService } = await import("@/services/adminService");
+        await adminService.logAdminAction({
+          action: "impersonation_ended",
+          actorUid: user.uid,
+          actorEmail: user.email || "",
+          targetType: "tenant",
+          targetId: endedTenantId,
+          targetName: endedTenantName || undefined,
+          timestamp: Timestamp.now(),
+        });
+      }
 
       // Reload user's actual tenants
       const tenants = await loadAvailableTenants(user);
@@ -418,7 +447,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     } finally {
       setLoading(false);
     }
-  }, [user, loadAvailableTenants, loadTenantSession]);
+  }, [user, loadAvailableTenants, loadTenantSession, impersonatedTenantId, impersonatedTenantName]);
 
   // Switch to a different tenant
   // Guard against re-entrancy: stopImpersonation loads tenants which could

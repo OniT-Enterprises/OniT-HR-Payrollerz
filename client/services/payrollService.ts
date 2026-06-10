@@ -284,7 +284,8 @@ class PayrollRunService {
   async approvePayrollRun(
     id: string,
     approvedBy: string,
-    audit?: AuditContext
+    audit?: AuditContext,
+    options?: { allowSelfApproval?: boolean }
   ): Promise<boolean> {
     const payroll = await this.getPayrollRunById(id);
     if (!payroll) {
@@ -297,8 +298,10 @@ class PayrollRunService {
       throw new Error(`Payroll run must be draft/processing before approval (current: ${payroll.status})`);
     }
 
-    // Two-person rule: approver must differ from creator
-    if (payroll.createdBy === approvedBy) {
+    // Two-person rule: approver must differ from creator, unless the tenant
+    // opted in to solo self-approval (also enforced in firestore.rules)
+    const isSelfApproval = payroll.createdBy === approvedBy;
+    if (isSelfApproval && !options?.allowSelfApproval) {
       throw new Error('Payroll cannot be approved by the same person who created it');
     }
 
@@ -324,6 +327,7 @@ class PayrollRunService {
             totalGross: payroll.totalGrossPay,
             totalNet: payroll.totalNetPay,
             employeeCount: payroll.employeeCount,
+            selfApproved: isSelfApproval,
           },
         }).catch(err => console.error('Audit log failed:', err));
       }

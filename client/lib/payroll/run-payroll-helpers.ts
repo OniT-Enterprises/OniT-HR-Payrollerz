@@ -125,3 +125,58 @@ export function calculateProRataHours(
   // Round to 2 decimal places
   return Math.round((defaultHours * daysWorked / totalDays) * 100) / 100;
 }
+
+// ─── Leave credits for attendance sync ────────────────────────────
+//
+// Approved leave days record zero attendance hours, so a naive
+// expected-minus-recorded absence calculation would dock pay for paid leave.
+// This classifies approved leave overlapping the pay period:
+//  - paid, non-sick types  → hours credited against absence
+//  - sick                  → day count for TL sick-pay rules (100%/50%)
+//  - unpaid types          → left in absence (deducted), by design
+
+export interface LeaveCreditInput {
+  employeeId: string;
+  leaveType: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string;
+  halfDay?: boolean;
+}
+
+export interface LeaveCredit {
+  paidLeaveHours: number;
+  sickDays: number;
+}
+
+export function computeLeaveCredits(
+  approvedLeave: LeaveCreditInput[],
+  periodStart: string,
+  periodEnd: string,
+  standardDailyHours: number,
+  isPaidLeaveType: (leaveType: string) => boolean,
+  workingDaysBetween: (start: string, end: string) => number,
+): Map<string, LeaveCredit> {
+  const credits = new Map<string, LeaveCredit>();
+
+  for (const req of approvedLeave) {
+    if (!req.employeeId) continue;
+    const overlapStart = req.startDate > periodStart ? req.startDate : periodStart;
+    const overlapEnd = req.endDate < periodEnd ? req.endDate : periodEnd;
+    if (overlapStart > overlapEnd) continue;
+
+    const days = req.halfDay ? 0.5 : workingDaysBetween(overlapStart, overlapEnd);
+    if (days <= 0) continue;
+
+    const credit = credits.get(req.employeeId) ?? { paidLeaveHours: 0, sickDays: 0 };
+    if (req.leaveType === 'sick') {
+      credit.sickDays += days;
+    } else if (isPaidLeaveType(req.leaveType)) {
+      credit.paidLeaveHours += days * standardDailyHours;
+    } else {
+      continue; // unpaid leave: no credit entry — stays as absence deduction
+    }
+    credits.set(req.employeeId, credit);
+  }
+
+  return credits;
+}

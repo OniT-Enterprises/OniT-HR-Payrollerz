@@ -212,7 +212,7 @@ export default function DepartmentReports() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title={`${t("reports.department.title")} | Meza`} description={t("reports.department.subtitle")} />
+      <SEO title={`${t("reports.department.title")} | Primos Books`} description={t("reports.department.subtitle")} />
       <MainNavigation />
       <div className="mx-auto max-w-screen-2xl px-6 py-6">
         <PageHeader

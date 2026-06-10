@@ -30,7 +30,7 @@ export default function AdminSetup() {
   useEffect(() => clearRedirectTimeout, [clearRedirectTimeout]);
 
   // Company/Tenant info
-  const [companyName, setCompanyName] = useState("Meza Demo Company");
+  const [companyName, setCompanyName] = useState("Primos Demo Company");
   const [companySlug, setCompanySlug] = useState("meza-demo");
 
   // Check if bootstrap has already occurred

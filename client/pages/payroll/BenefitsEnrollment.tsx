@@ -401,7 +401,7 @@ export default function EmployeeAllowances() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Employee Allowances - Meza" description="Manage employee allowances for transport, housing, meals, and more" />
+      <SEO title="Employee Allowances - Primos Books" description="Manage employee allowances for transport, housing, meals, and more" />
       <MainNavigation />
 
       <div className="mx-auto max-w-screen-2xl px-6 py-6">

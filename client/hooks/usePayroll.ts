@@ -100,8 +100,8 @@ export function useApprovePayrollRun() {
   const tenantId = useTenantId();
 
   return useMutation({
-    mutationFn: ({ id, approvedBy, audit }: { id: string; approvedBy: string; audit?: AuditContext }) =>
-      payrollService.runs.approvePayrollRun(id, approvedBy, audit),
+    mutationFn: ({ id, approvedBy, audit, allowSelfApproval }: { id: string; approvedBy: string; audit?: AuditContext; allowSelfApproval?: boolean }) =>
+      payrollService.runs.approvePayrollRun(id, approvedBy, audit, { allowSelfApproval }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: payrollRunKeys.all(tenantId) });
     },

@@ -329,6 +329,18 @@ class OffboardingService {
         ...updates,
         updatedAt: serverTimestamp(),
       });
+
+      // When offboarding finishes, terminate the employee record so they stop
+      // appearing in active lists and the next payroll run. Best-effort: a
+      // permissions failure here must not roll back the case completion.
+      if (updates.status === 'completed' && existing.status !== 'completed' && existing.employeeId) {
+        const { employeeService } = await import('./employeeService');
+        await employeeService
+          .updateEmployee(tenantId, existing.employeeId, { status: 'terminated' })
+          .catch((err) => {
+            console.error('Offboarding completed but employee could not be marked terminated:', err);
+          });
+      }
     } catch (error) {
       console.error('Error updating offboarding case:', error);
       throw error;

@@ -155,7 +155,7 @@ export default function APAgingReport() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="A/P Aging - Meza" description="Accounts payable aging report" />
+      <SEO title="A/P Aging - Primos Books" description="Accounts payable aging report" />
       <MainNavigation />
 
       <div className="p-6 mx-auto max-w-screen-2xl">

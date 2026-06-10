@@ -21,6 +21,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useTenantId } from "@/contexts/TenantContext";
 import { useEmployeeDirectory } from "@/hooks/useEmployees";
 import { useCreatePayrollRunWithRecords } from "@/hooks/usePayroll";
+import { useQuery } from "@tanstack/react-query";
+import { settingsService } from "@/services/settingsService";
 import { usePayrollCalculator } from "@/hooks/usePayrollCalculator";
 import { PayrollLoadingSkeleton } from "@/components/payroll";
 import {
@@ -60,6 +62,15 @@ export default function RunPayrollWizard() {
     useEmployeeDirectory({ status: "active" });
 
   const createPayrollMutation = useCreatePayrollRunWithRecords();
+
+  // Solo-operator mode changes the "what happens next" copy on the review step
+  const { data: tenantSettings } = useQuery({
+    queryKey: ["tenants", tenantId, "settings"],
+    queryFn: () => settingsService.getSettings(tenantId),
+    enabled: Boolean(tenantId),
+    staleTime: 5 * 60 * 1000,
+  });
+  const selfApprovalAllowed = tenantSettings?.payrollConfig?.allowSelfApproval === true;
 
   const calc = usePayrollCalculator({
     activeEmployees,
@@ -302,6 +313,7 @@ export default function RunPayrollWizard() {
               onSubmit={handleSubmit}
               saving={createPayrollMutation.isPending}
               processing={createPayrollMutation.isPending}
+              selfApprovalAllowed={selfApprovalAllowed}
             />
           </StepContent>
         </StepWizard>

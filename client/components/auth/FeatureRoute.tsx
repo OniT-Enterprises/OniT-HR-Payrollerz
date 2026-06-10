@@ -23,11 +23,15 @@ export function FeatureRoute({
   requiredAllModules,
   requireManage = false,
   requireNgoReporting = false,
-  fallbackPath = "/dashboard",
+  fallbackPath,
 }: FeatureRouteProps) {
   const location = useLocation();
   const { user, loading: authLoading } = useAuth();
   const { session, loading: tenantLoading, hasModule, canManage } = useTenant();
+
+  // Routes that set an explicit fallbackPath keep the old silent redirect;
+  // otherwise denied users land on /unauthorized so they know why.
+  const deniedPath = fallbackPath ?? "/unauthorized";
 
   if (authLoading || tenantLoading) {
     return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
@@ -38,27 +42,28 @@ export function FeatureRoute({
   }
 
   if (!session) {
-    return <Navigate to={fallbackPath} replace />;
+    // No tenant session is a setup problem, not a permission problem
+    return <Navigate to={fallbackPath ?? "/dashboard"} replace />;
   }
 
   if (requiredModule && !hasModule(requiredModule)) {
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={deniedPath} replace />;
   }
 
   if (requiredAnyModules?.length && !requiredAnyModules.some((module) => hasModule(module))) {
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={deniedPath} replace />;
   }
 
   if (requiredAllModules?.length && requiredAllModules.some((module) => !hasModule(module))) {
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={deniedPath} replace />;
   }
 
   if (requireManage && !canManage()) {
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={deniedPath} replace />;
   }
 
   if (requireNgoReporting && !canUseNgoReporting(session, hasModule("reports"))) {
-    return <Navigate to={fallbackPath} replace />;
+    return <Navigate to={deniedPath} replace />;
   }
 
   return <>{children}</>;

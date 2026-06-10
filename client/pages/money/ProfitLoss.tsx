@@ -4,6 +4,7 @@
  */
 
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import MainNavigation from '@/components/layout/MainNavigation';
 import PageHeader from '@/components/layout/PageHeader';
@@ -59,6 +60,7 @@ const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
 };
 
 export default function ProfitLoss() {
+  const navigate = useNavigate();
   const { t } = useI18n();
   const tenantId = useTenantId();
   const [period, setPeriod] = useState<string>('this_month');
@@ -164,7 +166,7 @@ export default function ProfitLoss() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Profit & Loss - Meza" description="View your profit and loss statement" />
+      <SEO title="Profit & Loss - Primos Books" description="View your profit and loss statement" />
       <MainNavigation />
 
       <div className="p-6 max-w-screen-2xl mx-auto">
@@ -331,7 +333,7 @@ export default function ProfitLoss() {
         {/* Quick Links */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
           <Card className="cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors"
-                onClick={() => window.location.href = '/money/invoices'}>
+                onClick={() => navigate('/money/invoices')}>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -346,7 +348,7 @@ export default function ProfitLoss() {
           </Card>
 
           <Card className="cursor-pointer hover:border-indigo-300 dark:hover:border-indigo-800 transition-colors"
-                onClick={() => window.location.href = '/money/expenses'}>
+                onClick={() => navigate('/money/expenses')}>
             <CardContent className="py-4">
               <div className="flex items-center justify-between">
                 <div>

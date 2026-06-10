@@ -137,7 +137,7 @@ export default function InvoiceSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <SEO title="Invoice Settings - Meza" description="Configure invoice settings" />
+      <SEO title="Invoice Settings - Primos Books" description="Configure invoice settings" />
       <MainNavigation />
 
       <div className="p-6 max-w-screen-lg mx-auto">

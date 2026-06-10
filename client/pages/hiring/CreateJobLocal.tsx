@@ -232,7 +232,7 @@ export default function CreateJobLocal() {
         description:
           error instanceof Error
             ? error.message
-            : "Could not reach the Meza AI bot. Try again in a moment.",
+            : "Could not reach PrimosBot. Try again in a moment.",
         variant: "destructive",
       });
     } finally {

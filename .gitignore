@@ -203,3 +203,9 @@ openclaw.json
 
 # Working directory (source PNGs, scratch files)
 working/
+
+# Old SQLite prototype artifact and local tooling output
+payroll.db
+.playwright-mcp/
+ref-employees.png
+firestore-debug.log

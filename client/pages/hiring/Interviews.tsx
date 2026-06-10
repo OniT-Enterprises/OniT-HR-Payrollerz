@@ -74,6 +74,7 @@ import {
   formatInterviewDateTime,
 } from "@/services/interviewService";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import {
   Calendar,
   Clock,
@@ -149,6 +150,7 @@ export default function Interviews() {
   const markFollowUpMutation = useMarkFollowUpCall();
   const addFeedbackMutation = useAddFeedback();
   const makeDecisionMutation = useMakeDecision();
+  const navigate = useNavigate();
 
   // Derived saving state from any active mutation
   const saving =
@@ -444,7 +446,25 @@ export default function Interviews() {
     makeDecisionMutation.mutate(
       { id: interview.id, decision },
       {
-        onSuccess: () => toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`),
+        onSuccess: () => {
+          if (decision === "hire") {
+            // Hand the user straight into onboarding so they don't re-enter data
+            toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`, {
+              duration: 10000,
+              action: {
+                label: "Start onboarding",
+                onClick: () =>
+                  navigate(
+                    interview.candidateId
+                      ? `/people/onboarding?candidateId=${interview.candidateId}`
+                      : "/people/onboarding",
+                  ),
+              },
+            });
+          } else {
+            toast.success(`Decision recorded: ${getDecisionDisplay(decision).name}`);
+          }
+        },
         onError: () => toast.error("Failed to record decision"),
       }
     );

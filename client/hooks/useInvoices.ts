@@ -154,6 +154,7 @@ export function useSmartInvoices(isSearching: boolean) {
     invoices: isSearching ? (allQuery.data ?? []) : paginatedQuery.invoices,
     totalLoaded: isSearching ? (allQuery.data?.length ?? 0) : paginatedQuery.totalLoaded,
     isLoading: isSearching ? allQuery.isLoading : paginatedQuery.isLoading,
+    error: isSearching ? allQuery.error : paginatedQuery.error,
     refetch: isSearching ? allQuery.refetch : paginatedQuery.refetch,
     fetchNextPage: paginatedQuery.fetchNextPage,
     hasNextPage: isSearching ? false : (paginatedQuery.hasNextPage ?? false),

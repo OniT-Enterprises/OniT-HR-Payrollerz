@@ -17,6 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { settingsService } from '@/services/settingsService';
+import { useTenant } from '@/contexts/TenantContext';
 
 import {
   DollarSign,
@@ -26,6 +27,7 @@ import {
   Calendar,
   Save,
   Loader2,
+  ShieldCheck,
 } from 'lucide-react';
 import type { SettingsTabProps, PayrollConfig } from './types';
 
@@ -42,6 +44,8 @@ export function PayrollConfigTab({
   initialData,
 }: PayrollConfigTabProps) {
   const { toast } = useToast();
+  const { session } = useTenant();
+  const isOwner = session?.role === 'owner';
   const [payrollConfig, setPayrollConfig] = useState<PayrollConfig>(initialData);
 
   const save = async () => {
@@ -394,6 +398,39 @@ export function PayrollConfigTab({
               </div>
             </div>
           )}
+        </div>
+
+        <Separator />
+
+        {/* Approval policy (solo-operator mode) */}
+        <div className="space-y-4">
+          <h3 className="font-medium flex items-center gap-2">
+            <ShieldCheck className="h-5 w-5" />
+            {t('settings.payroll.approvalSection')}
+          </h3>
+          <div className="flex items-start gap-4">
+            <Switch
+              checked={payrollConfig.allowSelfApproval === true}
+              disabled={!isOwner}
+              onCheckedChange={(checked) =>
+                setPayrollConfig({
+                  ...payrollConfig,
+                  allowSelfApproval: checked,
+                })
+              }
+            />
+            <div className="space-y-1">
+              <Label>{t('settings.payroll.selfApprovalLabel')}</Label>
+              <p className="text-xs text-muted-foreground">
+                {t('settings.payroll.selfApprovalDesc')}
+              </p>
+              {!isOwner && (
+                <p className="text-xs text-muted-foreground italic">
+                  {t('settings.payroll.selfApprovalOwnerOnly')}
+                </p>
+              )}
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">

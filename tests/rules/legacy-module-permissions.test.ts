@@ -119,8 +119,24 @@ describe('Legacy Root Collection Permissions', () => {
   it('blocks non-hiring users from reading legacy hiring data', async () => {
     const basicDb = testEnv.authenticatedContext('basic-user').firestore();
 
-    await assertFails(getDoc(doc(basicDb, 'jobs/job-a-1')));
+    // Open jobs are intentionally world-readable (public /apply/:jobId page),
+    // so seed a non-open job to verify the module gate.
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'jobs/job-a-closed'), {
+        tenantId: 'tenant-a',
+        title: 'Closed role',
+        status: 'closed',
+        createdAt: new Date(),
+      });
+    });
+
+    await assertFails(getDoc(doc(basicDb, 'jobs/job-a-closed')));
     await assertFails(getDoc(doc(basicDb, 'interviews/interview-a-1')));
+  });
+
+  it('allows anyone to read open jobs (public apply page)', async () => {
+    const basicDb = testEnv.authenticatedContext('basic-user').firestore();
+    await assertSucceeds(getDoc(doc(basicDb, 'jobs/job-a-1')));
   });
 
   it('allows performance module users to read performance records while blocking unrelated members', async () => {

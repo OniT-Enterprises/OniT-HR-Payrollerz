@@ -34,6 +34,7 @@ import {
   WifiOff,
   RotateCcw,
   AlertTriangle,
+  ShieldCheck,
   Bot,
   Bell,
   ChevronRight,
@@ -45,6 +46,7 @@ import {
 } from "lucide-react";
 import { useChatStore } from "@/stores/chatStore";
 import { useLeaveStats } from "@/hooks/useLeaveRequests";
+import { usePayrollRuns } from "@/hooks/usePayroll";
 import { useTaxFilingsDueSoon } from "@/hooks/useTaxFiling";
 import { useActiveEmployeeSummary } from "@/hooks/useEmployees";
 
@@ -64,6 +66,7 @@ interface NotificationCounts {
   pendingLeave: number;
   blockingIssues: number;
   overdueTaxes: number;
+  pendingPayroll: number;
   total: number;
 }
 
@@ -83,13 +86,15 @@ function useNotificationCounts(hasPayroll: boolean, hasTimeleave: boolean, hasSt
   const { data: leaveStats } = useLeaveStats(hasTimeleave && notificationsReady);
   const { data: filingsDue = [] } = useTaxFilingsDueSoon(2, hasPayroll && notificationsReady);
   const { data: employeeSummary } = useActiveEmployeeSummary(hasStaff && notificationsReady);
+  const { data: processingRuns = [] } = usePayrollRuns({ status: "processing", limit: 10 }, hasPayroll && notificationsReady);
 
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
   const blockingIssues = hasStaff ? employeeSummary?.employeesWithIssues ?? 0 : 0;
   const overdueTaxes = filingsDue.filter((f) => f.isOverdue).length;
-  const total = (overdueTaxes > 0 ? 1 : 0) + (blockingIssues > 0 ? 1 : 0) + (pendingLeave > 0 ? 1 : 0);
+  const pendingPayroll = hasPayroll ? processingRuns.length : 0;
+  const total = (overdueTaxes > 0 ? 1 : 0) + (blockingIssues > 0 ? 1 : 0) + (pendingLeave > 0 ? 1 : 0) + (pendingPayroll > 0 ? 1 : 0);
 
-  return { pendingLeave, blockingIssues, overdueTaxes, total };
+  return { pendingLeave, blockingIssues, overdueTaxes, pendingPayroll, total };
 }
 
 // --- Sub-components ---
@@ -101,7 +106,7 @@ interface NotificationsDropdownProps {
 }
 
 function NotificationsDropdown({ counts, onNavigate, t }: NotificationsDropdownProps) {
-  const { pendingLeave, blockingIssues, overdueTaxes, total } = counts;
+  const { pendingLeave, blockingIssues, overdueTaxes, pendingPayroll, total } = counts;
 
   return (
     <DropdownMenu>
@@ -126,6 +131,16 @@ function NotificationsDropdown({ counts, onNavigate, t }: NotificationsDropdownP
           </div>
         ) : (
           <>
+            {pendingPayroll > 0 && (
+              <DropdownMenuItem onClick={() => onNavigate("/payroll/history")} className="gap-3 py-2.5">
+                <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{t("dashboard.pendingPayrollTitle") || "Payroll awaiting approval"}</p>
+                  <p className="text-xs text-muted-foreground">{pendingPayroll} {t("dashboard.pendingPayrollDesc") || "run(s) need review"}</p>
+                </div>
+                <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+              </DropdownMenuItem>
+            )}
             {overdueTaxes > 0 && (
               <DropdownMenuItem onClick={() => onNavigate("/payroll/tax")} className="gap-3 py-2.5">
                 <AlertCircle className="h-4 w-4 text-red-500 shrink-0" />

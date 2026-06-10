@@ -12,9 +12,9 @@ interface SEOProps {
 
 const BASE_URL = 'https://onit-hr-payroll.web.app';
 const DEFAULT_IMAGE = `${BASE_URL}/og-image.png`;
-const SITE_NAME = 'Meza';
+const SITE_NAME = 'Primos Books';
 
-const DEFAULT_DESCRIPTION = 'Streamline your HR operations with Meza. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';
+const DEFAULT_DESCRIPTION = 'Streamline your HR operations with Primos Books. Comprehensive HR management including hiring, employee management, time tracking, performance reviews, payroll processing, and reporting.';
 
 export function SEO({
   title,
@@ -71,7 +71,7 @@ export const seoConfig = {
   // Landing & Auth
   landing: {
     title: 'Modern HR Management System',
-    description: 'Transform your HR operations with Meza. All-in-one solution for hiring, employee management, time tracking, payroll, and more.',
+    description: 'Transform your HR operations with Primos Books. All-in-one solution for hiring, employee management, time tracking, payroll, and more.',
     keywords: 'HR software, payroll system, human resources, employee management, HRIS, HR platform',
     url: '/',
   },
@@ -354,7 +354,7 @@ export const seoConfig = {
   // Settings
   settings: {
     title: 'Settings',
-    description: 'Configure your Meza preferences and account settings.',
+    description: 'Configure your Primos Books preferences and account settings.',
     url: '/settings',
     noIndex: true,
   },
