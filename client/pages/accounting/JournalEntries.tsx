@@ -1,5 +1,4 @@
 import React, { useState, useMemo } from "react";
-import { serverTimestamp } from "firebase/firestore";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -355,7 +354,9 @@ export default function JournalEntries() {
       };
 
       if (!asDraft) {
-        entry.postedAt = serverTimestamp();
+        // postedAt is owned by the service (serverTimestamp), so the server
+        // clock is authoritative and no FieldValue sentinel travels through
+        // client state. We only attribute who posted it.
         entry.postedBy = entry.createdBy;
       }
 
