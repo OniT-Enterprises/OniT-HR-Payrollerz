@@ -423,16 +423,14 @@ export default function TopBar() {
           </div>
 
           <div className="flex items-center gap-2">
-            {availableTenants.length > 1 && (
-              <div className="hidden lg:flex">
-                <BusinessSelector
-                  currentName={session?.config?.name || ""}
-                  availableTenants={availableTenants}
-                  onSwitch={(tid) => { void switchTenant(tid); }}
-                  currentTenantId={tenantId}
-                />
-              </div>
-            )}
+            <div className="hidden md:flex">
+              <BusinessSelector
+                currentName={session?.config?.name || ""}
+                availableTenants={availableTenants}
+                onSwitch={(tid) => { void switchTenant(tid); }}
+                currentTenantId={tenantId}
+              />
+            </div>
             <LocaleSwitcher className="hidden sm:flex" />
             <NotificationsDropdown counts={notifCounts} onNavigate={handleNavigate} t={t} />
 

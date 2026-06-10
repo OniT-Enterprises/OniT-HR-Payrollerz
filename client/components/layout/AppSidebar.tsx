@@ -25,7 +25,6 @@ import type { ModuleNavConfig } from "@/lib/moduleNav";
 import { type SectionId, navColors, navTreeLine } from "@/lib/sectionTheme";
 import { prefetchRoute } from "@/lib/prefetch";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { CompanyBrand } from "./CompanyBrand";
 import {
   Tooltip,
   TooltipContent,
@@ -447,7 +446,19 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: Sid
   return (
     <div className={`flex items-center ${collapsed ? "justify-center" : "px-4"} h-14 shrink-0 border-b border-sidebar-border`}>
       <button onClick={() => onNavigate("/")} className="flex min-w-0 items-center" title="Go to dashboard">
-        <CompanyBrand isDark={isDark} variant="sidebar" collapsed={collapsed} />
+        {collapsed ? (
+          <img
+            src={isDark ? "/images/illustrations/xefe-mark-light.webp" : "/images/illustrations/xefe-mark-dark.webp"}
+            alt="Xefe"
+            className="h-8 w-auto"
+          />
+        ) : (
+          <img
+            src={isDark ? "/images/illustrations/xefe-logo-light.webp" : "/images/illustrations/xefe-logo-dark.webp"}
+            alt="Xefe"
+            className="h-9 w-auto"
+          />
+        )}
       </button>
       {isMobile && (
         <button
