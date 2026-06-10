@@ -49,14 +49,14 @@ lawyer-reviewed. Two actions:
 
 ## Cosmetic / later
 
-### 6. App icon assets still show the old Meza mark
-All *text* is rebranded to Primos Books, but image assets need re-export:
-`public/favicon.ico`, `favicon-16x16.png`, `favicon-32x32.png`,
-`apple-touch-icon.png`, `icon-96x96.png` (+ any other sizes in `public/manifest.json`).
+### 6. ~~App icon assets~~ — DONE June 10: rebranded to Xefe (gold kaibauk crescent + x
+monogram); all favicon/PWA icon sizes generated and the manifest's previously-missing
+icon files now exist. Remaining art task: a proper XefeBot mascot (current xefebot.webp
+is the old book character).
 
 ### 7. WhatsApp bot identity
 `server/openclaw-meza` still presents as "Meza" to WhatsApp users. Rebrand to
-PrimosBot = config/persona change in `openclaw.json` + `./deploy.sh`.
+**XefeBot** = config/persona change in `openclaw.json` + `./deploy.sh`.
 
 ### 8. OpenAI key rotation (optional)
 The key in `.env.local` leaked into **local** builds only — verified the live CI-built
