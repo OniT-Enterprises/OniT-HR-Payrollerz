@@ -47,6 +47,13 @@ jobs:
           projectId: onit-hr-payroll
           channelId: live
 
+      - name: Deploy Firestore rules & indexes
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > /tmp/firebase-sa.json
+          GOOGLE_APPLICATION_CREDENTIALS=/tmp/firebase-sa.json \
+            npx firebase-tools deploy --only firestore:rules,firestore:indexes --project onit-hr-payroll --non-interactive
+          rm -f /tmp/firebase-sa.json
+
       - name: Deploy to Hetzner (payroll.naroman.tl)
         uses: easingthemes/ssh-deploy@main
         with:
