@@ -152,7 +152,7 @@ export default function PeopleDashboard() {
       meta: `${activeEmployees} active`,
       path: "/people/employees",
       icon: Users,
-      art: "/images/illustrations/xefe-spot-people.webp",
+      tone: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
     },
     {
       show: hasHiring,
@@ -160,7 +160,7 @@ export default function PeopleDashboard() {
       meta: `${interviewsScheduled} interview${interviewsScheduled === 1 ? "" : "s"} scheduled`,
       path: "/people/jobs",
       icon: Briefcase,
-      art: "/images/illustrations/xefe-spot-hiring.webp",
+      tone: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
     },
     {
       show: hasTimeleave,
@@ -168,7 +168,7 @@ export default function PeopleDashboard() {
       meta: `${pendingLeave} pending request${pendingLeave === 1 ? "" : "s"}`,
       path: "/time-leave",
       icon: CalendarClock,
-      art: "/images/illustrations/xefe-spot-timeleave.webp",
+      tone: "bg-cyan-100 text-cyan-700 dark:bg-cyan-950/30 dark:text-cyan-300",
     },
     {
       show: hasPerformance,
@@ -176,7 +176,7 @@ export default function PeopleDashboard() {
       meta: `${goalsActive} active goal${goalsActive === 1 ? "" : "s"}`,
       path: "/people/reviews",
       icon: Target,
-      art: "/images/illustrations/xefe-spot-performance.webp",
+      tone: "bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-300",
     },
   ].filter((card) => card.show);
 
@@ -263,15 +263,9 @@ export default function PeopleDashboard() {
                 onClick={() => navigate(card.path)}
                 className="group flex flex-col gap-3 rounded-2xl border border-border/60 bg-card p-5 text-left transition-all hover:-translate-y-0.5 hover:border-blue-400/40"
               >
-                <div className="flex h-20 items-center justify-center">
-                  <img
-                    src={card.art}
-                    alt=""
-                    aria-hidden
-                    loading="lazy"
-                    className="h-20 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
-                  />
-                </div>
+                <span className={`flex h-11 w-11 items-center justify-center rounded-2xl ${card.tone}`}>
+                  <card.icon className="h-5 w-5" />
+                </span>
                 <div>
                   <p className="text-base font-semibold">{card.title}</p>
                   <p className="mt-0.5 text-sm text-muted-foreground">{card.meta}</p>
