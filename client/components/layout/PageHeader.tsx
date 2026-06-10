@@ -1,12 +1,12 @@
 /**
- * PageHeader — Slim page header replacing the fat hero sections.
- * One compact row: title + optional subtitle + action buttons on the right.
- * No breadcrumbs (sidebar shows location), no gradient icon badges.
+ * PageHeader — Slim page header rendered at the top of the content area.
+ * One compact row: icon + title + optional subtitle on the left, action
+ * buttons on the right. The business name (not the page title) lives in the
+ * top bar; every page's title sits here, on the same row as its primary action.
  */
 
-import React, { useEffect } from "react";
+import React from "react";
 import type { ComponentType } from "react";
-import { useLayoutOptional } from "@/contexts/LayoutContext";
 
 interface PageHeaderProps {
   /** Page title */
@@ -23,17 +23,6 @@ interface PageHeaderProps {
   className?: string;
 }
 
-function flattenSubtitleText(value: React.ReactNode): string {
-  if (value == null || typeof value === "boolean") return "";
-  if (typeof value === "string" || typeof value === "number") return String(value);
-  if (Array.isArray(value)) return value.map(flattenSubtitleText).join("");
-  if (React.isValidElement(value)) {
-    const element = value as React.ReactElement<{ children?: React.ReactNode }>;
-    return flattenSubtitleText(element.props.children);
-  }
-  return "";
-}
-
 export default function PageHeader({
   title,
   subtitle,
@@ -42,40 +31,6 @@ export default function PageHeader({
   actions,
   className = "",
 }: PageHeaderProps) {
-  const layout = useLayoutOptional();
-  const setPageHeader = layout?.setPageHeader;
-  const clearPageHeader = layout?.clearPageHeader;
-  const subtitleText = flattenSubtitleText(subtitle).replace(/\s+/g, " ").trim() || undefined;
-
-  useEffect(() => {
-    if (!setPageHeader) return;
-
-    setPageHeader({
-      title,
-      subtitle: subtitleText,
-      icon: Icon,
-      iconColor,
-    });
-
-    return () => {
-      clearPageHeader?.();
-    };
-  }, [setPageHeader, clearPageHeader, title, subtitleText, Icon, iconColor]);
-
-  if (layout) {
-    if (!actions) {
-      return null;
-    }
-
-    return (
-      <div className={`mb-4 flex justify-end ${className}`}>
-        <div className="flex flex-wrap items-center gap-2 shrink-0 animate-in slide-in-from-right-8 fade-in duration-500">
-          {actions}
-        </div>
-      </div>
-    );
-  }
-
   // Derive accent border color from iconColor (e.g. "text-blue-500" -> "border-blue-500")
   const accentBorder = iconColor.replace("text-", "border-");
 

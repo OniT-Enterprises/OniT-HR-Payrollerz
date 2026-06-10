@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useFirebase } from "@/contexts/FirebaseContext";
 import { useTenant, useTenantId } from "@/contexts/TenantContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import { useLayout, type LayoutPageHeader } from "@/contexts/LayoutContext";
+import { useLayout } from "@/contexts/LayoutContext";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { settingsService } from "@/services/settingsService";
@@ -348,28 +348,6 @@ function BusinessSelector({ currentName, availableTenants, onSwitch, currentTena
   );
 }
 
-function TopBarPageLabel({ header }: { header: LayoutPageHeader }) {
-  const Icon = header.icon;
-
-  return (
-    <div className="flex min-w-0 items-center gap-2.5">
-      {Icon && (
-        <div className="shrink-0 rounded-lg bg-muted p-1.5">
-          <Icon className={`h-4 w-4 ${header.iconColor || "text-muted-foreground"}`} />
-        </div>
-      )}
-      <div className="min-w-0">
-        <p className="truncate text-sm font-semibold leading-tight">{header.title}</p>
-        {header.subtitle && (
-          <div className="mt-0.5 truncate text-xs leading-tight text-muted-foreground">
-            {header.subtitle}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
 // --- Main component ---
 
 export default function TopBar() {
@@ -379,7 +357,7 @@ export default function TopBar() {
   const { hasModule, canManage, availableTenants, switchTenant, session } = useTenant();
   const tenantId = useTenantId();
   const { isDark, toggleTheme } = useTheme();
-  const { toggleSidebar, pageHeader } = useLayout();
+  const { toggleSidebar } = useLayout();
   const { setOpen: setChatOpen } = useChatStore();
   const { t } = useI18n();
   const canManageTenant = canManage();
@@ -419,18 +397,15 @@ export default function TopBar() {
           </Button>
 
           <div className="flex-1 min-w-0">
-            {pageHeader ? <TopBarPageLabel header={pageHeader} /> : null}
+            <BusinessSelector
+              currentName={session?.config?.name || ""}
+              availableTenants={availableTenants}
+              onSwitch={(tid) => { void switchTenant(tid); }}
+              currentTenantId={tenantId}
+            />
           </div>
 
           <div className="flex items-center gap-2">
-            <div className="hidden md:flex">
-              <BusinessSelector
-                currentName={session?.config?.name || ""}
-                availableTenants={availableTenants}
-                onSwitch={(tid) => { void switchTenant(tid); }}
-                currentTenantId={tenantId}
-              />
-            </div>
             <LocaleSwitcher className="hidden sm:flex" />
             <NotificationsDropdown counts={notifCounts} onNavigate={handleNavigate} t={t} />
 
