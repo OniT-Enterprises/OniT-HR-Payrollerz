@@ -65,9 +65,9 @@ bundle never contained it. Rotating at platform.openai.com is good hygiene, not 
 
 ### 9. Domain naming (decision)
 The public URL is still `meza.naroman.tl` (payroll.naroman.tl 301s to it) while the
-product is now Primos Books. `primosboot.com` is configured on the same server. If the
-domain changes: new nginx site + certbot, update CORS allowlist in
-`server/meza-api/index.js`, CI deploy target, and Firebase authorized domains.
+product is now **Xefe** — consider registering `xefe.tl` and migrating. If the domain
+changes: new nginx site + certbot, update CORS allowlist in `server/meza-api/index.js`,
+CI deploy target, and Firebase authorized domains.
 
 ## Notes for whoever does this (or future Claude sessions)
 
