@@ -1182,7 +1182,7 @@ export default function AllEmployees() {
                     </>
                   ) : (
                     <>
-                      <img src="/images/illustrations/xefe-spot-people.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
+                      <img src="/images/illustrations/xefe-card-people.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
                       <h3 className="text-lg font-semibold mb-2">
                         {t("employees.empty.noEmployeesTitle")}
                       </h3>

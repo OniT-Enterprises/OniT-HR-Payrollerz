@@ -983,7 +983,7 @@ export default function PayrollHistory() {
                 <CardContent>
                   {filteredRuns.length === 0 ? (
                     <div className="text-center py-12">
-                      <img src="/images/illustrations/xefe-spot-payroll.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
+                      <img src="/images/illustrations/xefe-card-payroll.webp" alt="" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
                       <p className="text-muted-foreground mb-4">{t("payrollHistory.noRunsFound")}</p>
                       <Button onClick={() => navigate("/payroll/run")}>
                         {t("payrollHistory.runFirstPayroll")}

@@ -466,7 +466,7 @@ export default function Expenses() {
         {filteredExpenses.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/xefe-spot-payroll.webp" alt="No expenses yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
+              <img src="/images/illustrations/xefe-card-money.webp" alt="No expenses yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm || categoryFilter !== 'all'
                   ? t('money.expenses.noResults') || 'No expenses found'

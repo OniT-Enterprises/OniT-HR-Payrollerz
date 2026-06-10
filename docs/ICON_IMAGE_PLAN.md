@@ -26,14 +26,20 @@ XefeBot on every surface.
 payroll green to signal they're payroll artifacts; analytics reports use violet.)
 
 ## Status
-- ✅ Page-header badges + hub-card badges already tinted per section.
-- ✅ XefeBot pulled OFF the People hub cards (was 4 bots on one page).
-- ✅ Bot retained only on: empty states, success dialog, 404, dashboard
-  assistant (`xefebot.webp`).
-- ⏳ **Pending art:** themed NON-bot object illustrations for the module hub
-  cards (below). Until generated, hub cards show the tinted Lucide icon badge.
+- ✅ Page-header badges tinted per section (Lucide, stay icons).
+- ✅ **8 themed object illustrations generated** via `scripts/gen-illustrations.mjs`
+  (OpenAI `gpt-image-2`, medium) and wired: People hub cards (people/hiring/
+  timeleave/performance) + module empty states (money/payroll/accounting/
+  reports/people). Files: `xefe-card-*.webp`.
+- ✅ XefeBot now reserved for emotional/identity moments only:
+  `xefe-empty.webp` (bills/customers/vendors empty), `xefe-success.webp`
+  (post-approval dialog), `xefe-404.webp`, `xefebot.webp` (assistant).
+- Pipeline note: `gpt-image-2` does NOT support `background: transparent`.
+  The script generates on a flat white background and chroma-keys it out by
+  floodfilling transparent from the 4 corners (interior whites survive because
+  the dark outlines disconnect them), then trims → 512 → webp.
 
-## Generation spec — themed object illustrations (NO bot)
+## Generation spec — themed object illustrations (NO bot) — DONE, kept for re-runs
 Same flat-kawaii style as the XefeBot set (thick clean outlines, soft shading,
 transparent background, soft glow, reads on dark `#0a0a0b`), but **the subject
 is the object, not the bot.** One per hub card, dominant color = section color.

@@ -335,7 +335,7 @@ export default function Invoices() {
         ) : filteredInvoices.length === 0 ? (
           <Card>
             <CardContent className="py-12 text-center">
-              <img src="/images/illustrations/xefe-spot-money.webp" alt="No invoices yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
+              <img src="/images/illustrations/xefe-card-money.webp" alt="No invoices yet" className="h-28 w-auto mx-auto mb-4 object-contain drop-shadow-lg" />
               <p className="text-muted-foreground mb-4">
                 {searchTerm || statusFilter !== 'all'
                   ? t('money.invoices.noResults') || 'No invoices found'
