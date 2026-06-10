@@ -54,7 +54,11 @@ const functionsEmulatorPort = Number(import.meta.env.VITE_FIREBASE_FUNCTIONS_EMU
 // Initialize Firestore with persistent cache for offline reads and faster repeat loads
 // Safari 15+ (2021) has stable IndexedDB; Firebase SDK v11 handles edge cases
 export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  // Forms routinely spread optional fields (notes?: string) into writes.
+  // Without this, a single undefined makes addDoc/updateDoc throw — e.g.
+  // "Mark Attendance" failed whenever the optional break fields were empty.
+  ignoreUndefinedProperties: true,
 });
 
 // Auth is always needed (blocking) — init eagerly
