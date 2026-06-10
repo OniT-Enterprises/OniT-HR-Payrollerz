@@ -3,6 +3,51 @@
 
 export const translations = {
   "en": {
+    "legal": {
+      "backHome": "Back to home",
+      "signupAgreePre": "By creating an account, you agree to the",
+      "signupAgreeAnd": "and the",
+      "privacy": {
+        "title": "Privacy Policy",
+        "updated": "Last updated: 10 June 2026",
+        "intro": "Primos Books is an HR and payroll service operated in Timor-Leste. This page explains what information the service stores and how it is used.",
+        "s1Title": "Information we store",
+        "s1Body": "Account details such as your name and email, and the records your employer enters to run their business — employee profiles, identity document numbers, salaries, attendance, leave, and payroll history. If you apply for a job through a public application link, we store the application you submit, including your CV.",
+        "s2Title": "How it is used",
+        "s2Body": "Only to provide the service — calculating payroll, tracking leave and attendance, and producing payslips and reports. We do not sell your information or share it with advertisers.",
+        "s3Title": "Who can see it",
+        "s3Body": "Your employer's authorised administrators control their company's records. Primos Books staff access company data only for support and maintenance, and that access is recorded in an audit log.",
+        "s4Title": "Where it is stored",
+        "s4Body": "Data is stored with Google Firebase and protected with encryption in transit and at rest, plus per-company access rules.",
+        "s5Title": "How long we keep it",
+        "s5Body": "Records are kept while your employer's account is active. Payroll records may be kept longer where Timor-Leste law requires it. Employers can ask us to delete their company account and its data.",
+        "s6Title": "Your rights",
+        "s6Body": "If you are an employee, ask your employer's administrator to view or correct your information — your employer controls those records. Job applicants can contact the company they applied to.",
+        "s7Title": "Questions",
+        "s7Body": "Contact us at info@naroman.tl."
+      },
+      "terms": {
+        "title": "Terms of Service",
+        "updated": "Last updated: 10 June 2026",
+        "intro": "These terms apply when you create an account or use Primos Books.",
+        "s1Title": "The service",
+        "s1Body": "Primos Books provides HR, payroll, and accounting tools for businesses in Timor-Leste, including WIT and INSS calculations based on the rates you configure.",
+        "s2Title": "Your responsibilities",
+        "s2Body": "You are responsible for the accuracy of the information you enter, for having the right to store your employees' information, and for checking payroll amounts before paying staff or filing with the authorities. Primos Books is a tool — it is not legal or tax advice.",
+        "s3Title": "Your data",
+        "s3Body": "Your company's data belongs to you. You can export it at any time and ask us to delete your account.",
+        "s4Title": "Acceptable use",
+        "s4Body": "Do not use the service for unlawful purposes, try to access other companies' data, or interfere with the operation of the service.",
+        "s5Title": "Availability",
+        "s5Body": "We work hard to keep the service available and your data safe, but the service is provided “as is” without warranties, and we are not liable for indirect losses such as lost profits.",
+        "s6Title": "Changes to these terms",
+        "s6Body": "We may update these terms from time to time. Significant changes will be announced in the app, and continuing to use the service means you accept them.",
+        "s7Title": "Governing law",
+        "s7Body": "These terms are governed by the laws of Timor-Leste.",
+        "s8Title": "Contact",
+        "s8Body": "info@naroman.tl"
+      }
+    },
     "common": {
       "greetingMorning": "Good morning",
       "greetingAfternoon": "Good afternoon",
@@ -5980,6 +6025,51 @@ export const translations = {
     }
   },
   "tet": {
+    "legal": {
+      "backHome": "Fila ba inísiu",
+      "signupAgreePre": "Hodi kria konta, Ita konkorda ho",
+      "signupAgreeAnd": "no",
+      "privacy": {
+        "title": "Polítika Privasidade",
+        "updated": "Atualiza ikus: 10 Juñu 2026",
+        "intro": "Primos Books mak servisu RH no folla pagamentu ida ne'ebé opera iha Timor-Leste. Pájina ida-ne'e esplika informasaun saida mak servisu rai no oinsá ami uza.",
+        "s1Title": "Informasaun ne'ebé ami rai",
+        "s1Body": "Detallu konta hanesan naran no email, no rejistu sira ne'ebé Ita-nia empregadór hatama atu jere sira-nia negósiu — perfil funsionáriu, númeru dokumentu identidade, saláriu, prezensa, lisensa, no istória folla pagamentu. Se Ita aplika ba serbisu liu husi link públiku, ami rai aplikasaun ne'ebé Ita haruka, inklui Ita-nia CV.",
+        "s2Title": "Oinsá ami uza",
+        "s2Body": "De'it atu fornese servisu — kalkula folla pagamentu, akompaña lisensa no prezensa, no prodús payslip no relatóriu. Ami la fa'an Ita-nia informasaun no la fahe ho ema halo publisidade.",
+        "s3Title": "Sé mak bele haree",
+        "s3Body": "Administradór autorizadu husi Ita-nia empregadór mak kontrola empreza nia rejistu. Ekipa Primos Books asesu dadus de'it ba suporte no manutensaun, no asesu ne'e rejista iha log auditoria.",
+        "s4Title": "Iha ne'ebé mak rai",
+        "s4Body": "Dadus rai iha Google Firebase no proteje ho enkriptasaun, ho regra asesu ba kada empreza.",
+        "s5Title": "Kleur oinsá ami rai",
+        "s5Body": "Rejistu sira rai nafatin enkuantu konta empregadór nian sei ativu. Rejistu folla pagamentu bele rai kleur liu bainhira lei Timor-Leste ezije. Empregadór bele husu atu hamoos sira-nia konta empreza no dadus.",
+        "s6Title": "Ita-nia direitu",
+        "s6Body": "Se Ita mak funsionáriu, husu ba Ita-nia empregadór nia administradór atu haree ka hadia Ita-nia informasaun — empregadór mak kontrola rejistu sira-ne'e. Kandidatu ba serbisu bele kontaktu empreza ne'ebé sira aplika ba.",
+        "s7Title": "Pergunta",
+        "s7Body": "Kontaktu ami iha info@naroman.tl."
+      },
+      "terms": {
+        "title": "Termu Servisu",
+        "updated": "Atualiza ikus: 10 Juñu 2026",
+        "intro": "Termu sira-ne'e aplika bainhira Ita kria konta ka uza Primos Books.",
+        "s1Title": "Servisu",
+        "s1Body": "Primos Books fornese ferramenta RH, folla pagamentu, no kontabilidade ba empreza sira iha Timor-Leste, inklui kálkulu WIT no INSS bazeia ba taxa ne'ebé Ita konfigura.",
+        "s2Title": "Ita-nia responsabilidade",
+        "s2Body": "Ita responsável ba informasaun loos ne'ebé Ita hatama, ba direitu atu rai Ita-nia funsionáriu sira-nia informasaun, no atu xeke montante folla molok selu staf ka deklara ba autoridade. Primos Books mak ferramenta ida — la'ós konsellu legál ka fiskál.",
+        "s3Title": "Ita-nia dadus",
+        "s3Body": "Ita-nia empreza nia dadus pertense ba Ita. Ita bele esporta kualkér tempu no husu ami atu hamoos Ita-nia konta.",
+        "s4Title": "Uzu aseitável",
+        "s4Body": "Labele uza servisu ba buat ilegál, labele koko asesu dadus empreza seluk nian, no labele estraga servisu nia funsionamentu.",
+        "s5Title": "Disponibilidade",
+        "s5Body": "Ami serbisu makaas atu mantén servisu disponível no Ita-nia dadus seguru, maibé servisu fornese “hanesan ne'e” laiha garantia, no ami la responsável ba perda indireta hanesan lukru lakon.",
+        "s6Title": "Mudansa ba termu sira-ne'e",
+        "s6Body": "Ami bele atualiza termu sira-ne'e. Mudansa boot sei anunsia iha app; kontinua uza servisu signifika Ita simu.",
+        "s7Title": "Lei aplikável",
+        "s7Body": "Termu sira-ne'e tuir lei Timor-Leste nian.",
+        "s8Title": "Kontaktu",
+        "s8Body": "info@naroman.tl"
+      }
+    },
     "common": {
       "greetingMorning": "Bondia",
       "greetingAfternoon": "Botardi",
@@ -11957,6 +12047,51 @@ export const translations = {
     }
   },
   "pt": {
+    "legal": {
+      "backHome": "Voltar ao início",
+      "signupAgreePre": "Ao criar uma conta, concorda com os",
+      "signupAgreeAnd": "e a",
+      "privacy": {
+        "title": "Política de Privacidade",
+        "updated": "Última atualização: 10 de junho de 2026",
+        "intro": "O Primos Books é um serviço de RH e folha de pagamento operado em Timor-Leste. Esta página explica que informações o serviço guarda e como são usadas.",
+        "s1Title": "Informações que guardamos",
+        "s1Body": "Dados da conta, como nome e email, e os registos que o seu empregador introduz para gerir o negócio — perfis de funcionários, números de documentos de identidade, salários, assiduidade, licenças e histórico de folhas de pagamento. Se se candidatar a um emprego através de um link público, guardamos a candidatura que submeter, incluindo o seu CV.",
+        "s2Title": "Como são usadas",
+        "s2Body": "Apenas para prestar o serviço — calcular folhas de pagamento, acompanhar licenças e assiduidade, e produzir recibos e relatórios. Não vendemos as suas informações nem as partilhamos com anunciantes.",
+        "s3Title": "Quem pode ver",
+        "s3Body": "Os administradores autorizados do seu empregador controlam os registos da empresa. A equipa do Primos Books só acede aos dados para suporte e manutenção, e esse acesso fica registado num registo de auditoria.",
+        "s4Title": "Onde são guardadas",
+        "s4Body": "Os dados são guardados no Google Firebase e protegidos com encriptação em trânsito e em repouso, além de regras de acesso por empresa.",
+        "s5Title": "Por quanto tempo as guardamos",
+        "s5Body": "Os registos são mantidos enquanto a conta do empregador estiver ativa. Os registos de folha de pagamento podem ser mantidos por mais tempo quando a lei de Timor-Leste o exigir. Os empregadores podem pedir a eliminação da conta da empresa e dos seus dados.",
+        "s6Title": "Os seus direitos",
+        "s6Body": "Se é funcionário, peça ao administrador do seu empregador para ver ou corrigir as suas informações — é o empregador que controla esses registos. Os candidatos a emprego podem contactar a empresa à qual se candidataram.",
+        "s7Title": "Dúvidas",
+        "s7Body": "Contacte-nos em info@naroman.tl."
+      },
+      "terms": {
+        "title": "Termos de Serviço",
+        "updated": "Última atualização: 10 de junho de 2026",
+        "intro": "Estes termos aplicam-se quando cria uma conta ou usa o Primos Books.",
+        "s1Title": "O serviço",
+        "s1Body": "O Primos Books fornece ferramentas de RH, folha de pagamento e contabilidade para empresas em Timor-Leste, incluindo cálculos de WIT e INSS com base nas taxas que configurar.",
+        "s2Title": "As suas responsabilidades",
+        "s2Body": "É responsável pela exatidão das informações que introduz, por ter o direito de guardar as informações dos seus funcionários e por verificar os valores da folha antes de pagar ou declarar às autoridades. O Primos Books é uma ferramenta — não é aconselhamento jurídico ou fiscal.",
+        "s3Title": "Os seus dados",
+        "s3Body": "Os dados da sua empresa pertencem-lhe. Pode exportá-los a qualquer momento e pedir a eliminação da sua conta.",
+        "s4Title": "Uso aceitável",
+        "s4Body": "Não use o serviço para fins ilegais, não tente aceder aos dados de outras empresas e não interfira com o funcionamento do serviço.",
+        "s5Title": "Disponibilidade",
+        "s5Body": "Trabalhamos para manter o serviço disponível e os seus dados seguros, mas o serviço é fornecido “tal como está”, sem garantias, e não somos responsáveis por perdas indiretas, como lucros cessantes.",
+        "s6Title": "Alterações a estes termos",
+        "s6Body": "Podemos atualizar estes termos. Alterações significativas serão anunciadas na aplicação; continuar a usar o serviço significa que as aceita.",
+        "s7Title": "Lei aplicável",
+        "s7Body": "Estes termos regem-se pelas leis de Timor-Leste.",
+        "s8Title": "Contacto",
+        "s8Body": "info@naroman.tl"
+      }
+    },
     "common": {
       "greetingMorning": "Bom dia",
       "greetingAfternoon": "Boa tarde",

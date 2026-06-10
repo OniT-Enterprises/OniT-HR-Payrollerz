@@ -391,7 +391,15 @@ export default function Signup() {
             </Button>
 
             <p className="text-xs text-center text-muted-foreground">
-              {t("auth.signup.terms")}
+              {t("legal.signupAgreePre")}{" "}
+              <Link to="/terms" className="underline underline-offset-2 hover:text-foreground">
+                {t("legal.terms.title")}
+              </Link>{" "}
+              {t("legal.signupAgreeAnd")}{" "}
+              <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                {t("legal.privacy.title")}
+              </Link>
+              .
             </p>
           </CardFooter>
         </Card>

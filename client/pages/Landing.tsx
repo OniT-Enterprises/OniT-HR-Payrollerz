@@ -1313,12 +1313,12 @@ export default function Landing() {
               </span>
             </div>
             <div className="flex items-center gap-8 text-sm text-zinc-500">
-              <a href="#" className="hover:text-white transition-colors">
+              <Link to="/privacy" className="hover:text-white transition-colors">
                 {t("landing.footer.links.privacy")}
-              </a>
-              <a href="#" className="hover:text-white transition-colors">
+              </Link>
+              <Link to="/terms" className="hover:text-white transition-colors">
                 {t("landing.footer.links.terms")}
-              </a>
+              </Link>
               <a href="#" className="hover:text-white transition-colors">
                 {t("landing.footer.links.support")}
               </a>

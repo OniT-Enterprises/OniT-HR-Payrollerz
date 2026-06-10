@@ -12,8 +12,8 @@ import { FeatureRoute } from "@/components/auth/FeatureRoute";
 // After a deploy, hashed chunk filenames change; users holding a stale
 // index.html hit a failed dynamic import and land on a dead page. Reload once
 // (at most once per minute, to avoid loops) to pick up the fresh index.html.
-function lazyWithRetry<T extends React.ComponentType<unknown>>(
-  importFn: () => Promise<{ default: T }>,
+function lazyWithRetry<P extends object>(
+  importFn: () => Promise<{ default: React.ComponentType<P> }>,
 ) {
   return lazy(async () => {
     try {
@@ -128,6 +128,7 @@ const Interviews = lazyWithRetry(() => import("@/pages/hiring/Interviews"));
 const Onboarding = lazyWithRetry(() => import("@/pages/hiring/Onboarding"));
 const Offboarding = lazyWithRetry(() => import("@/pages/hiring/Offboarding"));
 const PublicApply = lazyWithRetry(() => import("@/pages/hiring/PublicApply"));
+const LegalPage = lazyWithRetry(() => import("@/pages/legal/LegalPage"));
 const JobApplicationsReview = lazyWithRetry(() => import("@/pages/hiring/JobApplicationsReview"));
 
 // People - Time & Leave
@@ -225,6 +226,8 @@ export const authRoutes = (
     <Route path="/auth/signup" element={<Signup />} />
     {/* Public candidate apply page — no auth required */}
     <Route path="/apply/:jobId" element={<PublicApply />} />
+    <Route path="/privacy" element={<LegalPage kind="privacy" />} />
+    <Route path="/terms" element={<LegalPage kind="terms" />} />
     <Route
       path="/dashboard"
       element={

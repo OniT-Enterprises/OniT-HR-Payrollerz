@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -410,6 +410,13 @@ export default function PublicApply() {
                   </>
                 )}
               </Button>
+              <p className="text-xs text-center text-muted-foreground">
+                Your application is shared only with this employer. See our{" "}
+                <Link to="/privacy" className="underline underline-offset-2 hover:text-foreground">
+                  Privacy Policy
+                </Link>
+                .
+              </p>
               <p className="text-xs text-muted-foreground text-center">
                 By submitting you agree your details and uploaded documents will be reviewed by the hiring team.
               </p>
