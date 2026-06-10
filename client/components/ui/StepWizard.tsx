@@ -7,6 +7,7 @@ import React from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/i18n/I18nProvider";
 import { Check, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 export interface WizardStep {
@@ -50,6 +51,7 @@ export function StepWizard({
   className,
   contentClassName,
 }: StepWizardProps) {
+  const { t } = useI18n();
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
   const currentStepData = steps[currentStep];
@@ -177,7 +179,7 @@ export function StepWizard({
           <div>
             {onCancel && (
               <Button type="button" variant="ghost" onClick={onCancel}>
-                Cancel
+                {t("common.cancel")}
               </Button>
             )}
           </div>
@@ -193,7 +195,7 @@ export function StepWizard({
               disabled={isFirstStep || isSubmitting}
             >
               <ChevronLeft className="h-4 w-4 mr-1" />
-              Back
+              {t("common.back")}
             </Button>
 
             <Button
@@ -204,13 +206,13 @@ export function StepWizard({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Saving...
+                  {t("common.saving")}
                 </>
               ) : isLastStep ? (
                 submitLabel
               ) : (
                 <>
-                  Next
+                  {t("common.next")}
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </>
               )}

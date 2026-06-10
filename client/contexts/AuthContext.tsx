@@ -10,6 +10,9 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  /** True once Firebase has fired its first auth-state callback. Until then,
+   *  user=null just means "still restoring" — guards must not redirect to login. */
+  authResolved: boolean;
   isSuperAdmin: boolean;
   signIn: (email: string, password: string) => Promise<User | null>;
   signUp: (
@@ -80,6 +83,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(cached?.profile ?? null);
   const [loading, setLoading] = useState(cached ? false : true);
+  const [authResolved, setAuthResolved] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(cached?.isSuperAdmin ?? false);
 
   // Fetch user profile from Firestore (does NOT auto-create)
@@ -139,6 +143,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUserProfile(null);
         setIsSuperAdmin(false);
         setLoading(false);
+        setAuthResolved(true);
         return () => {};
       }
 
@@ -181,6 +186,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
           setIsSuperAdmin(false);
         } finally {
           setLoading(false);
+          setAuthResolved(true);
         }
       });
 
@@ -193,6 +199,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUserProfile(null);
       setIsSuperAdmin(false);
       setLoading(false);
+      setAuthResolved(true);
 
       return () => {};
     }
@@ -225,6 +232,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     user,
     userProfile,
     loading,
+    authResolved,
     isSuperAdmin,
     signIn,
     signUp,

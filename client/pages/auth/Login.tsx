@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { useI18n } from "@/i18n/I18nProvider";
@@ -15,8 +15,18 @@ export default function Login() {
   const [error, setError] = useState("");
   const { t } = useI18n();
 
-  const { signIn } = useAuth();
+  const { signIn, user, authResolved } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
+
+  // Already signed in (e.g. a deep link landed here while Firebase was still
+  // restoring the session) — continue to the page the user actually wanted.
+  useEffect(() => {
+    if (authResolved && user) {
+      navigate(from, { replace: true });
+    }
+  }, [authResolved, user, from, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,7 +35,7 @@ export default function Login() {
 
     try {
       await signIn(email, password);
-      navigate("/");
+      navigate(from, { replace: true });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : t("auth.errors.signInFailed");
       setError(message);

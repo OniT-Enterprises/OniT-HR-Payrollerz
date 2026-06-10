@@ -494,8 +494,8 @@ export default function Dashboard() {
     if (!setPageHeader) return;
 
     setPageHeader({
-      title: "Dashboard",
-      subtitle: "Command center and priorities for the business today",
+      title: t("common.dashboard"),
+      subtitle: t("dashboard.headerSubtitle"),
       icon: Calculator,
       iconColor: "text-primary",
     });
@@ -503,7 +503,7 @@ export default function Dashboard() {
     return () => {
       clearPageHeader?.();
     };
-  }, [setPageHeader, clearPageHeader]);
+  }, [setPageHeader, clearPageHeader, t]);
 
   if (loading) {
     return <DashboardSkeleton />;
@@ -539,7 +539,7 @@ export default function Dashboard() {
                   }
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}<span className="text-sm font-normal text-muted-foreground ml-1">{t("dashboard.days")}</span></p>
-                <p className="text-xs text-muted-foreground mt-0.5">{formatCurrencyTL(totalPayroll)}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.untilPayday")} · {formatCurrencyTL(totalPayroll)}</p>
               </button>
             )}
             {hasStaff && (
@@ -548,7 +548,7 @@ export default function Dashboard() {
                   <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                     <Users className="h-4 w-4 text-blue-500" />
                   </div>
-                  {totalComplianceIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{totalComplianceIssues} issues</span>}
+                  {totalComplianceIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.issuesBadge", { count: totalComplianceIssues })}</span>}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{activeEmployeeCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
@@ -560,7 +560,7 @@ export default function Dashboard() {
                   <div className="h-8 w-8 rounded-lg bg-cyan-500/10 flex items-center justify-center">
                     <CalendarDays className="h-4 w-4 text-cyan-500" />
                   </div>
-                  {pendingLeave > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{pendingLeave} pending</span>}
+                  {pendingLeave > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.pendingBadge", { count: pendingLeave })}</span>}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{onLeaveToday}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.onLeaveToday")}</p>
@@ -583,7 +583,11 @@ export default function Dashboard() {
                         d.status === 'ok' ? 'text-emerald-600 dark:text-emerald-400'
                           : d.status === 'warning' ? 'text-amber-600 dark:text-amber-400'
                           : 'text-red-600 dark:text-red-400'
-                      }`}>{d.days}d</span>
+                      }`}>
+                        {d.days < 0
+                          ? t("dashboard.overdueBy", { days: Math.abs(d.days) })
+                          : `${d.days}d`}
+                      </span>
                     </div>
                   ))}
                 </div>

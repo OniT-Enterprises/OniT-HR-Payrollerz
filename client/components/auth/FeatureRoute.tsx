@@ -26,14 +26,16 @@ export function FeatureRoute({
   fallbackPath,
 }: FeatureRouteProps) {
   const location = useLocation();
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, authResolved } = useAuth();
   const { session, loading: tenantLoading, hasModule, canManage } = useTenant();
 
   // Routes that set an explicit fallbackPath keep the old silent redirect;
   // otherwise denied users land on /unauthorized so they know why.
   const deniedPath = fallbackPath ?? "/unauthorized";
 
-  if (authLoading || tenantLoading) {
+  // A cold page load can have loading=false (cached profile) while Firebase is
+  // still restoring the session — don't bounce to login until auth resolves.
+  if (authLoading || tenantLoading || (!user && !authResolved)) {
     return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 

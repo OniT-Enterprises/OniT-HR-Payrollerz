@@ -21,11 +21,12 @@ interface SuperadminRouteProps {
  * ```
  */
 export function SuperadminRoute({ children }: SuperadminRouteProps) {
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, loading, isSuperAdmin, authResolved } = useAuth();
   const location = useLocation();
 
-  // Show loading skeleton while checking auth
-  if (loading) {
+  // Show loading skeleton while checking auth (or while Firebase is still
+  // restoring the session on a cold page load)
+  if (loading || (!user && !authResolved)) {
     return <PageSkeleton type="table" showHeader={false} statCards={0} showNavigation={false} />;
   }
 
