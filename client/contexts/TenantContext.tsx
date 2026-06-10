@@ -146,7 +146,7 @@ function writeTenantCache(session: TenantSession | null, availableTenants: Array
 }
 
 export function TenantProvider({ children }: TenantProviderProps) {
-  const { user, isSuperAdmin, userProfile } = useAuth();
+  const { user, isSuperAdmin, userProfile, authResolved } = useAuth();
 
   // Restore cached state for instant returning-user loads
   const cachedTenant = readTenantCache();
@@ -534,6 +534,15 @@ export function TenantProvider({ children }: TenantProviderProps) {
   // Initialize tenant session
   useEffect(() => {
     const initializeTenant = async () => {
+      // Never touch tenant state while Firebase auth is still restoring. On a
+      // cold load `user` is briefly null (AuthProvider doesn't seed user from
+      // cache), and nulling session here causes a transient
+      // (session=null, tenantResolved=true) that bounces gated deep-links to
+      // the dashboard. Wait for auth to settle first.
+      if (!authResolved) {
+        return;
+      }
+
       if (!user) {
         setSession(null);
         setAvailableTenants([]);
@@ -615,7 +624,7 @@ export function TenantProvider({ children }: TenantProviderProps) {
     };
 
     void initializeTenant();
-  }, [user, isSuperAdmin, loadAvailableTenants, loadTenantSession]);
+  }, [authResolved, user, isSuperAdmin, loadAvailableTenants, loadTenantSession]);
 
   // Permission helpers
   const hasModule = (module: ModulePermission): boolean => {
