@@ -20,7 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import PageHeader from "@/components/layout/PageHeader";
-import { type Employee } from "@/services/employeeService";
+import { employeeService, type Employee } from "@/services/employeeService";
 import { useSmartEmployees } from "@/hooks/useEmployees";
 import { useDebounce } from "@/hooks/useDebounce";
 import EmployeeProfileView from "@/components/EmployeeProfileView";
@@ -67,13 +67,31 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { getFunctionsLazy } from "@/lib/firebase";
 import { useTenantId, useTenant } from "@/contexts/TenantContext";
 
 // Compliance filter types for URL params
-type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues";
+type ComplianceFilter = "all" | "missing-contract" | "missing-inss" | "missing-bank" | "blocking-issues" | "issues";
+
+/** Duplicate key: same non-TEMP employee ID or same normalized full name */
+function duplicateKeysFor(emp: Pick<Employee, "personalInfo" | "jobDetails">): string[] {
+  const keys: string[] = [];
+  const name = `${emp.personalInfo?.firstName ?? ""} ${emp.personalInfo?.lastName ?? ""}`.trim().toLowerCase();
+  if (name) keys.push(`name:${name}`);
+  const empId = emp.jobDetails?.employeeId;
+  if (empId && !empId.startsWith("TEMP")) keys.push(`id:${empId.toLowerCase()}`);
+  return keys;
+}
 
 const ROW_HEIGHT = 57; // px per table row
 const VIRTUALIZE_THRESHOLD = 100; // only virtualize when > 100 rows
@@ -91,6 +109,7 @@ function DesktopEmployeeTable({
   onEditEmployee,
   onCreateEkipaAccount,
   onDeleteEmployee,
+  duplicateIds,
   t,
 }: {
   employees: Employee[];
@@ -101,6 +120,7 @@ function DesktopEmployeeTable({
   onEditEmployee: (emp: Employee) => void;
   onCreateEkipaAccount: (emp: Employee) => void;
   onDeleteEmployee: (emp: Employee) => void;
+  duplicateIds: Set<string>;
   t: (key: string) => string;
 }) {
   const parentRef = useRef<HTMLDivElement>(null);
@@ -136,10 +156,21 @@ function DesktopEmployeeTable({
           <div className="min-w-0">
             <p className="font-medium truncate">
               {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+              {duplicateIds.has(employee.id ?? "") && (
+                <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
+                  {t("employees.possibleDuplicate")}
+                </Badge>
+              )}
             </p>
-            <p className="text-xs text-muted-foreground">
-              {employee.jobDetails.employeeId}
-            </p>
+            {employee.jobDetails.employeeId?.startsWith("TEMP") ? (
+              <Badge variant="outline" className="mt-0.5 text-[10px] font-normal text-muted-foreground">
+                {t("employees.noIdYet")}
+              </Badge>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                {employee.jobDetails.employeeId}
+              </p>
+            )}
           </div>
         </div>
       </td>
@@ -163,31 +194,52 @@ function DesktopEmployeeTable({
         </Badge>
       </td>
       {showSalary && (
-        <td className="px-4 py-3">
+        <td className="px-4 py-3 text-right">
           <span className="font-medium tabular-nums">
             {formatSalary(
               employee.compensation.monthlySalary ||
                 Math.round((employee.compensation.annualSalary ?? 0) / 12) || 0
             )}
           </span>
+          <span className="text-xs text-muted-foreground">{t("employees.perMonth")}</span>
         </td>
       )}
       <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.viewProfile")} onClick={(e) => { e.stopPropagation(); onViewEmployee(employee); }}>
-            <Eye className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.editEmployee")} onClick={(e) => { e.stopPropagation(); onEditEmployee(employee); }}>
-            <Edit className="h-4 w-4" />
-          </Button>
-          {employee.personalInfo?.email && employee.status === 'active' && (
-            <Button variant="ghost" size="icon" className="h-8 w-8" title={t("employees.tooltips.createEkipaAccount")} onClick={(e) => { e.stopPropagation(); onCreateEkipaAccount(employee); }}>
-              <Smartphone className="h-4 w-4" />
-            </Button>
-          )}
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-red-600" title={t("employees.tooltips.offboardEmployee")} onClick={(e) => { e.stopPropagation(); onDeleteEmployee(employee); }}>
-            <UserMinus className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center justify-end">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-muted-foreground"
+                aria-label={t("common.moreActions")}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => onViewEmployee(employee)}>
+                <Eye className="h-4 w-4 mr-2" />
+                {t("employees.tooltips.viewProfile")}
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onEditEmployee(employee)}>
+                <Edit className="h-4 w-4 mr-2" />
+                {t("employees.tooltips.editEmployee")}
+              </DropdownMenuItem>
+              {employee.personalInfo?.email && employee.status === 'active' && (
+                <DropdownMenuItem onClick={() => onCreateEkipaAccount(employee)}>
+                  <Smartphone className="h-4 w-4 mr-2" />
+                  {t("employees.tooltips.createEkipaAccount")}
+                </DropdownMenuItem>
+              )}
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => onDeleteEmployee(employee)} className="text-red-600 focus:text-red-600">
+                <UserMinus className="h-4 w-4 mr-2" />
+                {t("employees.tooltips.offboardEmployee")}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </td>
     </tr>
@@ -204,7 +256,7 @@ function DesktopEmployeeTable({
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
               <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
-              {showSalary && <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
+              {showSalary && <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
               <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
             </tr>
           </thead>
@@ -226,7 +278,7 @@ function DesktopEmployeeTable({
             <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.department")}</th>
             <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.position")}</th>
             <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.status")}</th>
-            {showSalary && <th className="text-left px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
+            {showSalary && <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.salary")}</th>}
             <th className="text-right px-4 py-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">{t("employees.table.actions")}</th>
           </tr>
         </thead>
@@ -291,6 +343,8 @@ export default function AllEmployees() {
   );
   const [showProfileView, setShowProfileView] = useState(false);
   const [showIncompleteProfiles, setShowIncompleteProfiles] = useState(false);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [ekipaTarget, setEkipaTarget] = useState<Employee | null>(null);
   const [ekipaCreating, setEkipaCreating] = useState(false);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -327,7 +381,7 @@ export default function AllEmployees() {
   // Read URL params for compliance filtering (from Dashboard/PayrollHub links)
   useEffect(() => {
     const filterParam = searchParams.get("filter") as ComplianceFilter | null;
-    if (filterParam && ["missing-contract", "missing-inss", "missing-bank", "blocking-issues"].includes(filterParam)) {
+    if (filterParam && ["missing-contract", "missing-inss", "missing-bank", "blocking-issues", "issues"].includes(filterParam)) {
       setComplianceFilter(filterParam);
       // Show the filter banner when coming from a link
       setShowFilters(true);
@@ -415,6 +469,7 @@ export default function AllEmployees() {
         const hasContract = !!employee.documents?.workContract?.fileUrl;
         const hasINSS = !!employee.documents?.socialSecurityNumber?.number;
         const hasBankAccount = !!employee.bankDetails?.accountNumber;
+        const hasDepartment = !!employee.jobDetails?.department;
 
         switch (complianceFilter) {
           case "missing-contract":
@@ -428,6 +483,9 @@ export default function AllEmployees() {
             break;
           case "blocking-issues":
             matchesCompliance = !hasContract || !hasINSS;
+            break;
+          case "issues":
+            matchesCompliance = !hasContract || !hasINSS || !hasDepartment;
             break;
         }
       }
@@ -458,6 +516,24 @@ export default function AllEmployees() {
     minSalary,
     maxSalary,
   ]);
+
+  // Records sharing a non-TEMP employee ID or a full name with another record
+  const duplicateIds = useMemo(() => {
+    const byKey = new Map<string, Set<string>>();
+    employees.forEach((emp) => {
+      if (!emp.id) return;
+      duplicateKeysFor(emp).forEach((key) => {
+        const set = byKey.get(key) ?? new Set<string>();
+        set.add(emp.id!);
+        byKey.set(key, set);
+      });
+    });
+    const ids = new Set<string>();
+    byKey.forEach((docIds) => {
+      if (docIds.size > 1) docIds.forEach((id) => ids.add(id));
+    });
+    return ids;
+  }, [employees]);
 
   // Clear all filters
   const clearFilters = () => {
@@ -724,8 +800,57 @@ export default function AllEmployees() {
     });
   };
 
-  const openCsvImportDialog = () => {
-    document.getElementById("csv-upload")?.click();
+  /** Build an Employee from a template-ordered CSV row (see handleDownloadTemplate) */
+  const employeeFromCsvRow = (values: string[]): Omit<Employee, "id"> => {
+    const v = (i: number) => values[i]?.trim() ?? "";
+    const address = [v(12), v(13), v(14), v(15)].filter(Boolean).join(", ");
+    const emptyDoc = { number: "", expiryDate: "", required: false };
+    return {
+      personalInfo: {
+        firstName: v(1),
+        lastName: v(2),
+        email: v(3),
+        phone: v(4),
+        phoneApp: "",
+        appEligible: false,
+        address,
+        dateOfBirth: v(18),
+        socialSecurityNumber: "",
+        emergencyContactName: v(16),
+        emergencyContactPhone: v(17),
+      },
+      jobDetails: {
+        employeeId: v(0) || `TEMP${Date.now()}${Math.floor(Math.random() * 1000)}`,
+        department: v(5),
+        position: v(6),
+        hireDate: v(7) || getTodayTL(),
+        employmentType: v(8) || "Full-time",
+        workLocation: v(9) || "Office",
+        manager: "",
+      },
+      compensation: {
+        monthlySalary: parseInt(v(10), 10) || 0,
+        annualLeaveDays: 25,
+        benefitsPackage: v(11) || "standard",
+        payFrequency: "monthly",
+        isResident: true,
+      },
+      documents: {
+        bilheteIdentidade: { ...emptyDoc, required: true },
+        employeeIdCard: { ...emptyDoc, required: true },
+        socialSecurityNumber: { ...emptyDoc, required: true },
+        electoralCard: { ...emptyDoc },
+        idCard: { ...emptyDoc },
+        passport: { ...emptyDoc },
+        workContract: { fileUrl: "", uploadDate: new Date().toISOString() },
+        nationality: "",
+        workingVisaResidency: { number: "", expiryDate: "", fileUrl: "" },
+      },
+      isForeignWorker: false,
+      bankName: "",
+      bankAccountNumber: "",
+      status: (v(19) || "active") as Employee["status"],
+    };
   };
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -733,57 +858,62 @@ export default function AllEmployees() {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
+      setImporting(true);
       try {
         const csvText = e.target?.result as string;
-        const lines = csvText.split("\n");
+        const lines = csvText.split(/\r?\n/);
         const headers = lines[0].split(",").map((h) => h.trim());
         const dataLines = lines.slice(1).filter((line) => line.trim());
 
+        // Keys of everyone already in the directory + rows already accepted from this file
+        const seenKeys = new Set<string>(employees.flatMap((emp) => duplicateKeysFor(emp)));
+
         let successCount = 0;
+        let duplicateCount = 0;
         let errorCount = 0;
 
-        dataLines.forEach((line, index) => {
+        for (const [index, line] of dataLines.entries()) {
           try {
-            const values = line.split(",").map((v) => v.trim());
-            if (values.length < headers.length) {
+            const values = line.split(",").map((val) => val.trim().replace(/^"|"$/g, ""));
+            if (values.length < Math.min(headers.length, 3) || !values[1] || !values[2]) {
               errorCount++;
-              return;
+              continue;
             }
-
-            // Basic validation - you would typically process this data
-            // and add it to your employee service
-            const _employeeData = {
-              employeeId: values[0],
-              firstName: values[1],
-              lastName: values[2],
-              email: values[3],
-              // ... other fields
-            };
-
-            // Here you would call employeeService.addEmployee(employeeData)
-            // For now, just count as success
+            const newEmployee = employeeFromCsvRow(values);
+            const keys = duplicateKeysFor(newEmployee);
+            if (keys.some((key) => seenKeys.has(key))) {
+              duplicateCount++;
+              continue;
+            }
+            await employeeService.addEmployee(tenantId, newEmployee);
+            keys.forEach((key) => seenKeys.add(key));
             successCount++;
           } catch (error) {
             errorCount++;
-            console.error(`Error processing row ${index + 2}:`, error);
+            console.error(`Error importing row ${index + 2}:`, error);
           }
-        });
+        }
 
         toast({
           title: t("employees.csvImportCompleteTitle"),
           description: t("employees.csvImportCompleteDesc", {
             success: successCount,
+            duplicates: duplicateCount,
             errors: errorCount,
           }),
           variant: errorCount > 0 ? "destructive" : "default",
         });
+        if (successCount > 0) loadEmployees();
+        setShowImportDialog(false);
       } catch {
         toast({
           title: t("employees.importErrorTitle"),
           description: t("employees.importErrorDesc"),
           variant: "destructive",
         });
+      } finally {
+        setImporting(false);
       }
     };
 
@@ -835,18 +965,11 @@ export default function AllEmployees() {
           iconColor="text-blue-500"
           actions={
             <>
-              <Button variant="outline" onClick={handleDownloadTemplate}>
-                <FileText className="h-4 w-4 mr-2" />
-                {t("employees.tooltips.downloadTemplate")}
-              </Button>
-              <Button variant="outline" onClick={openCsvImportDialog}>
+              <Button variant="outline" onClick={() => setShowImportDialog(true)}>
                 <Upload className="h-4 w-4 mr-2" />
                 {t("employees.tooltips.importCsv")}
               </Button>
-              <Button
-                onClick={() => navigate("/people/add")}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
+              <Button onClick={() => navigate("/people/add")}>
                 <Plus className="h-4 w-4 mr-2" />
                 {t("dashboard.addEmployee")}
               </Button>
@@ -886,6 +1009,7 @@ export default function AllEmployees() {
                 {complianceFilter === "missing-inss" && t("employees.compliance.missingInss")}
                 {complianceFilter === "missing-bank" && t("employees.compliance.missingBank")}
                 {complianceFilter === "blocking-issues" && t("employees.compliance.blockingIssues")}
+                {complianceFilter === "issues" && t("employees.compliance.issues")}
               </span>
               <Badge variant="secondary" className="text-xs">{filteredEmployees.length}</Badge>
             </div>
@@ -986,15 +1110,42 @@ export default function AllEmployees() {
             </DropdownMenu>
           </div>
 
-          {/* Hidden file input for CSV import */}
-          <input
-            id="csv-upload"
-            type="file"
-            accept=".csv"
-            style={{ display: "none" }}
-            onChange={handleImportCSV}
-          />
         </div>
+
+        {/* CSV import dialog: template download + file upload in one place */}
+        <Dialog open={showImportDialog} onOpenChange={(open) => !importing && setShowImportDialog(open)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{t("employees.importDialog.title")}</DialogTitle>
+              <DialogDescription>{t("employees.importDialog.description")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-5">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t("employees.importDialog.step1")}</p>
+                <Button variant="outline" onClick={handleDownloadTemplate} className="w-full">
+                  <FileText className="h-4 w-4 mr-2" />
+                  {t("employees.importDialog.downloadTemplate")}
+                </Button>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">{t("employees.importDialog.step2")}</p>
+                {importing ? (
+                  <div className="flex items-center gap-2 py-2 text-sm text-muted-foreground">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    {t("employees.importDialog.importing")}
+                  </div>
+                ) : (
+                  <Input
+                    type="file"
+                    accept=".csv"
+                    aria-label={t("employees.importDialog.chooseFile")}
+                    onChange={handleImportCSV}
+                  />
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Active filter chips — show what's active, tap to remove */}
         {hasActiveFilters && (
@@ -1096,6 +1247,11 @@ export default function AllEmployees() {
                       {t("employees.directory.searchLimitReached")}
                     </span>
                   )}
+                  {duplicateIds.size > 0 && (
+                    <span className="block mt-1 text-amber-600 dark:text-amber-400 font-medium">
+                      {t("employees.directory.duplicatesFound", { count: duplicateIds.size })}
+                    </span>
+                  )}
                 </CardDescription>
               </div>
             </div>
@@ -1121,6 +1277,11 @@ export default function AllEmployees() {
                       <div className="flex items-center justify-between gap-2">
                         <p className="font-medium truncate">
                           {employee.personalInfo.firstName} {employee.personalInfo.lastName}
+                          {duplicateIds.has(employee.id ?? "") && (
+                            <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
+                              {t("employees.possibleDuplicate")}
+                            </Badge>
+                          )}
                         </p>
                         <Badge
                           className={
@@ -1138,9 +1299,15 @@ export default function AllEmployees() {
                         {employee.jobDetails.position}
                         {employee.jobDetails.department && ` · ${employee.jobDetails.department}`}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {employee.jobDetails.employeeId}
-                      </p>
+                      {employee.jobDetails.employeeId?.startsWith("TEMP") ? (
+                        <Badge variant="outline" className="mt-0.5 text-[10px] font-normal text-muted-foreground">
+                          {t("employees.noIdYet")}
+                        </Badge>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">
+                          {employee.jobDetails.employeeId}
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1157,6 +1324,7 @@ export default function AllEmployees() {
               onEditEmployee={handleEditEmployee}
               onCreateEkipaAccount={handleCreateEkipaAccount}
               onDeleteEmployee={handleDeleteEmployee}
+              duplicateIds={duplicateIds}
               t={t}
             />
 

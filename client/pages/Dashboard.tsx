@@ -471,9 +471,10 @@ export default function Dashboard() {
     };
   };
 
-  // Compliance issues — shared utility, single source of truth
+  // Compliance issues — shared utility, single source of truth.
+  // Count employees (not raw issues) so every surface reports the same number.
   const blockingIssues = hasStaff ? getComplianceIssues(issuePreviewEmployees).slice(0, 6) : [];
-  const totalComplianceIssues = hasStaff ? (employeeSummary?.totalIssues ?? 0) : 0;
+  const employeesWithIssues = hasStaff ? (employeeSummary?.employeesWithIssues ?? 0) : 0;
   const activeEmployeeCount = employeeSummary?.active ?? 0;
 
   const daysUntilPayday = getDaysUntilPayday();
@@ -538,7 +539,7 @@ export default function Dashboard() {
                     : <AlertCircle className="h-4 w-4 text-amber-500" />
                   }
                 </div>
-                <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}<span className="text-sm font-normal text-muted-foreground ml-1">{t("dashboard.days")}</span></p>
+                <p className="text-2xl font-bold tabular-nums">{daysUntilPayday}{" "}<span className="text-sm font-normal text-muted-foreground">{t("dashboard.days")}</span></p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.untilPayday")} · {formatCurrencyTL(totalPayroll)}</p>
               </button>
             )}
@@ -548,7 +549,7 @@ export default function Dashboard() {
                   <div className="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                     <Users className="h-4 w-4 text-blue-500" />
                   </div>
-                  {totalComplianceIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.issuesBadge", { count: totalComplianceIssues })}</span>}
+                  {employeesWithIssues > 0 && <span className="text-[10px] font-semibold text-amber-600 dark:text-amber-400">{t("dashboard.issuesBadge", { count: employeesWithIssues })}</span>}
                 </div>
                 <p className="text-2xl font-bold tabular-nums">{activeEmployeeCount}</p>
                 <p className="text-xs text-muted-foreground mt-0.5">{t("dashboard.activeEmployees")}</p>
@@ -573,11 +574,11 @@ export default function Dashboard() {
                 </div>
                 <div className="space-y-2">
                   {[
-                    { label: "WIT", ...compliance.wit },
-                    { label: "INSS", ...compliance.inss },
-                    { label: "13th", ...compliance.subsidio },
+                    { label: "WIT", fullName: t("dashboard.witFull"), ...compliance.wit },
+                    { label: "INSS", fullName: t("dashboard.inssFull"), ...compliance.inss },
+                    { label: "13th", fullName: t("dashboard.thirteenthFull"), ...compliance.subsidio },
                   ].map((d) => (
-                    <div key={d.label} className="flex items-center justify-between text-xs">
+                    <div key={d.label} className="flex items-center justify-between text-xs" title={d.fullName}>
                       <span className="text-muted-foreground">{d.label}</span>
                       <span className={`font-semibold tabular-nums ${
                         d.status === 'ok' ? 'text-emerald-600 dark:text-emerald-400'
@@ -586,7 +587,7 @@ export default function Dashboard() {
                       }`}>
                         {d.days < 0
                           ? t("dashboard.overdueBy", { days: Math.abs(d.days) })
-                          : `${d.days}d`}
+                          : t("dashboard.dueIn", { days: d.days })}
                       </span>
                     </div>
                   ))}
@@ -624,14 +625,14 @@ export default function Dashboard() {
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </button>
             )}
-            {blockingIssues.length > 0 && (
-              <button onClick={() => navigate(blockingIssues[0].path)} className="w-full flex items-center gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 hover:shadow-sm transition-all text-left">
+            {(employeesWithIssues > 0 || blockingIssues.length > 0) && (
+              <button onClick={() => navigate("/people/employees?filter=issues")} className="w-full flex items-center gap-4 p-4 rounded-xl border border-amber-200 bg-amber-50 dark:border-amber-900/40 dark:bg-amber-950/20 hover:shadow-sm transition-all text-left">
                 <div className="h-9 w-9 rounded-lg bg-amber-500/15 flex items-center justify-center shrink-0">
                   <AlertCircle className="h-4 w-4 text-amber-600" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium">{t("dashboard.todoBlockingTitle")}</p>
-                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: blockingIssues.length })}</p>
+                  <p className="text-xs text-muted-foreground">{t("dashboard.todoBlockingDesc", { count: employeesWithIssues || blockingIssues.length })}</p>
                 </div>
                 <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
               </button>

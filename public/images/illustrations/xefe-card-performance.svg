@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Flat hub-card style: thick navy outlines, flat cyan/blue fills (matches xefe-card-people/hiring/timeleave) -->
+  <g stroke="#0d1330" stroke-width="14" stroke-linejoin="round" stroke-linecap="round">
+    <!-- target rings -->
+    <circle cx="232" cy="300" r="176" fill="#2bc6f0"/>
+    <circle cx="232" cy="300" r="122" fill="#ffffff"/>
+    <circle cx="232" cy="300" r="70" fill="#2470e8"/>
+
+    <!-- dart shaft -->
+    <path d="M286 246 L404 128" fill="none" stroke-width="20"/>
+    <!-- dart tip, apex on the bullseye centre -->
+    <path d="M232 300 L298.5 267.5 L264.5 233.5 Z" fill="#0d1330" stroke-width="8"/>
+    <!-- dart flights -->
+    <path d="M404 128 L386 70 L344 112 Z" fill="#2bc6f0"/>
+    <path d="M404 128 L462 146 L420 188 Z" fill="#ffffff"/>
+  </g>
+  <!-- motion sparks -->
+  <g stroke="#0d1330" stroke-width="12" stroke-linecap="round">
+    <path d="M84 124 L112 152" />
+    <path d="M60 200 L96 208" />
+    <path d="M144 80 L158 116" />
+  </g>
+</svg>

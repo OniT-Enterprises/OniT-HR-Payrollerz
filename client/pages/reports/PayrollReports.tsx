@@ -87,11 +87,25 @@ export default function PayrollReports() {
     const period = run.periodStart
       ? formatDateTL(parseDateISO(run.periodStart), { month: "long", year: "numeric" })
       : "—";
-    const paid = run.payDate
+    const payDate = run.payDate
       ? formatDateTL(parseDateISO(run.payDate), { day: "numeric", month: "short" })
       : "—";
-    return `${period} · paid ${paid}`;
+    // Only claim "paid" when the run actually is — otherwise it contradicts the status chip
+    const datePart = run.status === "paid"
+      ? t("reports.payrollRun.paidOn", { date: payDate })
+      : t("reports.payrollRun.paysOn", { date: payDate });
+    return `${period} · ${datePart}`;
   };
+
+  // Same employee appearing in multiple records inflates the run's totals
+  const duplicateEmployeeNumbers = useMemo(() => {
+    const counts = new Map<string, number>();
+    records.forEach((r) => {
+      const key = r.employeeNumber || r.employeeName;
+      if (key) counts.set(key, (counts.get(key) ?? 0) + 1);
+    });
+    return new Set([...counts.entries()].filter(([, n]) => n > 1).map(([key]) => key));
+  }, [records]);
 
   const exportCSV = () => {
     if (!activeRun || records.length === 0) return;
@@ -266,6 +280,11 @@ export default function PayrollReports() {
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
+                    {duplicateEmployeeNumbers.size > 0 && (
+                      <div className="mb-3 flex items-start gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800 dark:border-amber-900/40 dark:bg-amber-950/20 dark:text-amber-300">
+                        <span>{t("reports.payrollRun.duplicatesWarning", { count: duplicateEmployeeNumbers.size })}</span>
+                      </div>
+                    )}
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="border-b">
@@ -284,7 +303,14 @@ export default function PayrollReports() {
                           .map((r) => (
                             <tr key={r.id ?? r.employeeId} className="border-b hover:bg-muted/50">
                               <td className="p-3">
-                                <div className="font-medium">{r.employeeName}</div>
+                                <div className="font-medium">
+                                  {r.employeeName}
+                                  {duplicateEmployeeNumbers.has(r.employeeNumber || r.employeeName) && (
+                                    <Badge className="ml-2 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-medium align-middle">
+                                      {t("reports.payrollRun.duplicateBadge")}
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="text-xs text-muted-foreground">{r.employeeNumber}</div>
                               </td>
                               <td className="p-3">{r.department}</td>

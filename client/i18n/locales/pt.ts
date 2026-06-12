@@ -82,6 +82,13 @@ const messages = {
     "more": "Mais",
     "notifications": "Notificações",
     "moreActions": "Mais ações",
+    "openMenu": "Abrir menu",
+    "closeMenu": "Fechar menu",
+    "accountMenu": "Menu de conta",
+    "switchToLight": "Mudar para tema claro",
+    "switchToDark": "Mudar para tema escuro",
+    "expandSidebar": "Expandir barra lateral",
+    "collapseSidebar": "Recolher barra lateral",
     "of": "de",
     "basicMode": "Modo Básico",
     "adminConsole": "Consola Admin",
@@ -297,9 +304,13 @@ const messages = {
     "pendingPayrollTitle": "Folha de pagamento a aguardar aprovação",
     "untilPayday": "até ao dia de pagamento",
     "headerSubtitle": "Centro de comando e prioridades do negócio para hoje",
-    "issuesBadge": "{{count}} problemas",
+    "issuesBadge": "{{count}} com problemas",
     "pendingBadge": "{{count}} pendentes",
     "overdueBy": "{{days}}d em atraso",
+    "dueIn": "vence em {{days}}d",
+    "witFull": "Imposto sobre Rendimento Salarial (WIT) — declaração mensal",
+    "inssFull": "Segurança social INSS — pagamento mensal",
+    "thirteenthFull": "Subsídio de Natal (13.º mês)",
     "pendingPayrollDesc": "folha(s) precisam de revisão",
     "overdue": "em atraso há",
     "taxOverdue": "Declarações fiscais em atraso",
@@ -1229,8 +1240,20 @@ const messages = {
     "exportCompleteDesc": "Exportados {{count}} funcionários para CSV",
     "templateDownloadedTitle": "Modelo Descarregado",
     "templateDownloadedDesc": "Modelo CSV de funcionários descarregado com sucesso",
-    "csvImportCompleteTitle": "Importação CSV Concluída",
-    "csvImportCompleteDesc": "Pré-visualização: {{success}} funcionários seriam importados, {{errors}} erros encontrados. (Funcionalidade de importação ainda não completamente implementada)",
+    "csvImportCompleteTitle": "Importação concluída",
+    "csvImportCompleteDesc": "{{success}} importados · {{duplicates}} duplicado(s) ignorados · {{errors}} erro(s)",
+    "importDialog": {
+      "title": "Importar funcionários de CSV",
+      "description": "Linhas que correspondam a um funcionário existente (mesmo ID ou mesmo nome completo) são ignoradas automaticamente, por isso reimportar um ficheiro nunca cria duplicados.",
+      "step1": "1. Descarregue o modelo e preencha uma linha por funcionário",
+      "step2": "2. Carregue o ficheiro preenchido",
+      "downloadTemplate": "Descarregar modelo CSV",
+      "chooseFile": "Escolher ficheiro CSV",
+      "importing": "A importar…"
+    },
+    "noIdYet": "Ainda sem ID",
+    "perMonth": "/mês",
+    "possibleDuplicate": "Possível duplicado",
     "importErrorTitle": "Erro de Importação",
     "importErrorDesc": "Falha ao analisar ficheiro CSV. Por favor verifique o formato.",
     "filterPanelTitle": "Filtrar Funcionários",
@@ -1317,6 +1340,7 @@ const messages = {
       "missingInss": "A mostrar funcionários sem número INSS",
       "missingBank": "A mostrar funcionários sem dados bancários",
       "blockingIssues": "A mostrar funcionários com problemas bloqueantes na folha",
+      "issues": "A mostrar funcionários com informação obrigatória em falta",
       "found": "({{count}} encontrados)",
       "clearFilter": "Limpar filtro"
     },
@@ -1358,7 +1382,8 @@ const messages = {
     "directory": {
       "title": "Diretório de Funcionários",
       "countSummary": "{{shown}} de {{total}} funcionários",
-      "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico."
+      "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico.",
+      "duplicatesFound": "{{count}} possível(eis) registo(s) duplicado(s) — o mesmo nome ou ID aparece mais de uma vez"
     },
     "table": {
       "employee": "Funcionário",
@@ -2698,7 +2723,11 @@ const messages = {
         "net": "Líquido",
         "totals": "Totais",
         "empty": "Este processamento não tem registos de funcionários."
-      }
+      },
+      "paidOn": "pago {{date}}",
+      "paysOn": "data de pagamento {{date}}",
+      "duplicatesWarning": "{{count}} funcionário(s) aparecem mais de uma vez neste processamento — os totais podem contá-los em dobro. Reveja registos duplicados.",
+      "duplicateBadge": "Duplicado?"
     },
     "dashboard": {
       "title": "Relatórios",

@@ -148,7 +148,6 @@ export default function ReportsDashboard() {
               Report setup
             </Button>
             <Button
-              className="bg-violet-600 text-white hover:bg-violet-700"
               onClick={() => navigate("/reports/custom")}
             >
               <Wrench className="mr-2 h-4 w-4" />

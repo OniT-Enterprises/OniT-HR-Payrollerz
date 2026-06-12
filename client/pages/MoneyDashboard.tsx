@@ -144,7 +144,6 @@ export default function MoneyDashboard() {
               View bills
             </Button>
             <Button
-              className="bg-indigo-600 text-white hover:bg-indigo-700"
               onClick={() => navigate("/money/invoices/new")}
             >
               <Plus className="mr-2 h-4 w-4" />

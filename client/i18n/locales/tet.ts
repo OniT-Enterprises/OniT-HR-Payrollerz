@@ -82,6 +82,13 @@ const messages = {
     "more": "Tan",
     "notifications": "Notifikasaun",
     "moreActions": "Asaun tan",
+    "openMenu": "Loke menu",
+    "closeMenu": "Taka menu",
+    "accountMenu": "Menu konta",
+    "switchToLight": "Muda ba tema naroman",
+    "switchToDark": "Muda ba tema nakukun",
+    "expandSidebar": "Habelar sidebar",
+    "collapseSidebar": "Halo sidebar ki'ik",
     "of": "hosi",
     "basicMode": "Modu Básiku",
     "adminConsole": "Konsola Admin",
@@ -297,9 +304,13 @@ const messages = {
     "pendingPayrollTitle": "Payroll hein aprovasaun",
     "untilPayday": "to'o loron selu",
     "headerSubtitle": "Sentru komandu no prioridade ba negósiu ohin loron",
-    "issuesBadge": "problema {{count}}",
+    "issuesBadge": "{{count}} ho problema",
     "pendingBadge": "{{count}} hein",
     "overdueBy": "atraza loron {{days}}",
+    "dueIn": "falta loron {{days}}",
+    "witFull": "Impostu rendimentu saláriu (WIT) — deklarasaun mensál",
+    "inssFull": "Seguransa sosiál INSS — pagamentu mensál",
+    "thirteenthFull": "Saláriu fulan-13 (subsídiu Natál)",
     "pendingPayrollDesc": "payroll presiza revizaun",
     "overdue": "atrazu ona",
     "taxOverdue": "Impostu atrazu",
@@ -1229,10 +1240,22 @@ const messages = {
     "exportCompleteDesc": "Exporta {{count}} empregadu ba CSV",
     "templateDownloadedTitle": "Modelo Download",
     "templateDownloadedDesc": "Modelo CSV empregadu hetan download ho diak",
-    "csvImportCompleteTitle": "Importa CSV Konklui",
-    "csvImportCompleteDesc": "Preview: {{success}} empregadu sei importa, {{errors}} erru hetan. (Importa seidauk implementa)",
+    "csvImportCompleteTitle": "Importa kompletu",
+    "csvImportCompleteDesc": "{{success}} importa ona · {{duplicates}} duplikadu salta · {{errors}} erru",
     "importErrorTitle": "Erru Importa",
     "importErrorDesc": "La bele le CSV. Favor hare formatu.",
+    "importDialog": {
+      "title": "Importa empregadu hosi CSV",
+      "description": "Liña ne'ebé hanesan empregadu eziste ona (ID hanesan ka naran kompletu hanesan) sei salta automátikamente, nune'e importa fila-fali la kria duplikadu.",
+      "step1": "1. Download modelo no prienxe liña ida ba empregadu ida",
+      "step2": "2. Upload arkivu ne'ebé prienxe tiha ona",
+      "downloadTemplate": "Download modelo CSV",
+      "chooseFile": "Hili arkivu CSV",
+      "importing": "Importa hela…"
+    },
+    "noIdYet": "Seidauk iha ID",
+    "perMonth": "/fulan",
+    "possibleDuplicate": "Posível duplikadu",
     "buttons": {
       "clearFilters": "Hamos Filtru",
       "clearAllFilters": "Hamos Hotu",
@@ -1327,6 +1350,7 @@ const messages = {
       "missingInss": "Hatudu empregadu la iha numeru INSS",
       "missingBank": "Hatudu empregadu la iha detallu banku",
       "blockingIssues": "Hatudu empregadu ho problema blokeia payroll",
+      "issues": "Hatudu empregadu ne'ebé falta informasaun obrigatóriu",
       "found": "({{count}} hetan)",
       "clearFilter": "Hamos filtru"
     },
@@ -1358,7 +1382,8 @@ const messages = {
     "directory": {
       "title": "Diretóriu Empregadu",
       "countSummary": "{{shown}} hosi {{total}} empregadu",
-      "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu."
+      "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu.",
+      "duplicatesFound": "Rejistu {{count}} karik duplikadu — naran ka ID hanesan mosu liu dala ida"
     },
     "table": {
       "employee": "Empregadu",
@@ -3615,7 +3640,11 @@ const messages = {
         "net": "Líkidu",
         "totals": "Totál",
         "empty": "Prosesu ne'e laiha rejistu empregadu."
-      }
+      },
+      "paidOn": "selu ona {{date}}",
+      "paysOn": "loron selu {{date}}",
+      "duplicatesWarning": "Empregadu {{count}} mosu liu dala ida iha prosesu ne'e — totál bele konta dala rua. Revize rejistu empregadu duplikadu.",
+      "duplicateBadge": "Duplikadu?"
     },
     "dashboard": {
       "title": "Relatoriu",

@@ -131,7 +131,6 @@ export default function AccountingDashboard() {
               New entry
             </Button>
             <Button
-              className="bg-orange-600 text-white hover:bg-orange-700"
               onClick={() => navigate("/accounting/journal?filter=payroll")}
             >
               <Eye className="mr-2 h-4 w-4" />

@@ -464,6 +464,7 @@ function SidebarHeader({ collapsed, isDark, isMobile, onNavigate, onClose }: Sid
         <button
           onClick={onClose}
           className="ml-auto p-2 rounded-lg text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+          aria-label="Close menu"
         >
           <X className="h-5 w-5" />
         </button>
@@ -502,6 +503,7 @@ function SidebarFooter({ collapsed, isMobile, onNavigate, onToggleCollapsed, pat
               <button
                 onClick={onToggleCollapsed}
                 className="h-9 w-9 flex items-center justify-center rounded-lg text-sidebar-foreground/40 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground transition-colors shrink-0"
+                aria-label={collapsed ? t("common.expandSidebar") : t("common.collapseSidebar")}
               >
                 <PanelLeftClose className={`h-4 w-4 transition-transform ${collapsed ? "rotate-180" : ""}`} />
               </button>

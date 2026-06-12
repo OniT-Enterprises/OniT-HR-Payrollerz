@@ -86,6 +86,13 @@ export const translations = {
       "more": "More",
       "notifications": "Notifications",
       "moreActions": "More actions",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "accountMenu": "Account menu",
+      "switchToLight": "Switch to light theme",
+      "switchToDark": "Switch to dark theme",
+      "expandSidebar": "Expand sidebar",
+      "collapseSidebar": "Collapse sidebar",
       "of": "of",
       "basicMode": "Basic mode",
       "adminConsole": "Admin Console",
@@ -301,9 +308,13 @@ export const translations = {
       "pendingPayrollTitle": "Payroll awaiting approval",
       "untilPayday": "until payday",
       "headerSubtitle": "Command center and priorities for the business today",
-      "issuesBadge": "{{count}} issues",
+      "issuesBadge": "{{count}} with issues",
       "pendingBadge": "{{count}} pending",
       "overdueBy": "{{days}}d overdue",
+      "dueIn": "due in {{days}}d",
+      "witFull": "Wage Income Tax — monthly filing",
+      "inssFull": "INSS social security — monthly payment",
+      "thirteenthFull": "13th-month salary (subsídio de Natal)",
       "pendingPayrollDesc": "run(s) need review",
       "overdue": "overdue by",
       "taxOverdue": "Tax filings overdue",
@@ -1233,10 +1244,22 @@ export const translations = {
       "exportCompleteDesc": "Exported {{count}} employees to CSV",
       "templateDownloadedTitle": "Template Downloaded",
       "templateDownloadedDesc": "Employee CSV template has been downloaded successfully",
-      "csvImportCompleteTitle": "CSV Import Complete",
-      "csvImportCompleteDesc": "Preview: {{success}} employees would be imported, {{errors}} errors found. (Import functionality not fully implemented yet)",
+      "csvImportCompleteTitle": "Import complete",
+      "csvImportCompleteDesc": "{{success}} imported · {{duplicates}} duplicate(s) skipped · {{errors}} error(s)",
       "importErrorTitle": "Import Error",
       "importErrorDesc": "Failed to parse CSV file. Please check the format.",
+      "importDialog": {
+        "title": "Import employees from CSV",
+        "description": "Rows matching an existing employee (same ID or same full name) are skipped automatically, so re-importing a file never creates duplicates.",
+        "step1": "1. Download the template and fill in one row per employee",
+        "step2": "2. Upload the completed file",
+        "downloadTemplate": "Download CSV template",
+        "chooseFile": "Choose CSV file",
+        "importing": "Importing…"
+      },
+      "noIdYet": "No ID yet",
+      "perMonth": "/mo",
+      "possibleDuplicate": "Possible duplicate",
       "filterPanelTitle": "Filter Employees",
       "filterPanelDesc": "Use filters to narrow down the employee list",
       "filterLabels": {
@@ -1321,6 +1344,7 @@ export const translations = {
         "missingInss": "Showing employees missing INSS number",
         "missingBank": "Showing employees missing bank details",
         "blockingIssues": "Showing employees with payroll-blocking issues",
+        "issues": "Showing employees with missing required info",
         "found": "({{count}} found)",
         "clearFilter": "Clear filter"
       },
@@ -1362,7 +1386,8 @@ export const translations = {
       "directory": {
         "title": "Employee Directory",
         "countSummary": "{{shown}} of {{total}} employees",
-        "searchLimitReached": "Search results may be incomplete. Try a more specific search term."
+        "searchLimitReached": "Search results may be incomplete. Try a more specific search term.",
+        "duplicatesFound": "{{count}} possible duplicate record(s) — same name or ID appears more than once"
       },
       "table": {
         "employee": "Employee",
@@ -2702,7 +2727,11 @@ export const translations = {
           "net": "Net",
           "totals": "Totals",
           "empty": "This run has no employee records."
-        }
+        },
+        "paidOn": "paid {{date}}",
+        "paysOn": "pay date {{date}}",
+        "duplicatesWarning": "{{count}} employee(s) appear more than once in this run — totals may double-count them. Review for duplicate employee records.",
+        "duplicateBadge": "Duplicate?"
       },
       "dashboard": {
         "title": "Reports",
@@ -6113,6 +6142,13 @@ export const translations = {
       "more": "Tan",
       "notifications": "Notifikasaun",
       "moreActions": "Asaun tan",
+      "openMenu": "Loke menu",
+      "closeMenu": "Taka menu",
+      "accountMenu": "Menu konta",
+      "switchToLight": "Muda ba tema naroman",
+      "switchToDark": "Muda ba tema nakukun",
+      "expandSidebar": "Habelar sidebar",
+      "collapseSidebar": "Halo sidebar ki'ik",
       "of": "hosi",
       "basicMode": "Modu Básiku",
       "adminConsole": "Konsola Admin",
@@ -6328,9 +6364,13 @@ export const translations = {
       "pendingPayrollTitle": "Payroll hein aprovasaun",
       "untilPayday": "to'o loron selu",
       "headerSubtitle": "Sentru komandu no prioridade ba negósiu ohin loron",
-      "issuesBadge": "problema {{count}}",
+      "issuesBadge": "{{count}} ho problema",
       "pendingBadge": "{{count}} hein",
       "overdueBy": "atraza loron {{days}}",
+      "dueIn": "falta loron {{days}}",
+      "witFull": "Impostu rendimentu saláriu (WIT) — deklarasaun mensál",
+      "inssFull": "Seguransa sosiál INSS — pagamentu mensál",
+      "thirteenthFull": "Saláriu fulan-13 (subsídiu Natál)",
       "pendingPayrollDesc": "payroll presiza revizaun",
       "overdue": "atrazu ona",
       "taxOverdue": "Impostu atrazu",
@@ -7260,10 +7300,22 @@ export const translations = {
       "exportCompleteDesc": "Exporta {{count}} empregadu ba CSV",
       "templateDownloadedTitle": "Modelo Download",
       "templateDownloadedDesc": "Modelo CSV empregadu hetan download ho diak",
-      "csvImportCompleteTitle": "Importa CSV Konklui",
-      "csvImportCompleteDesc": "Preview: {{success}} empregadu sei importa, {{errors}} erru hetan. (Importa seidauk implementa)",
+      "csvImportCompleteTitle": "Importa kompletu",
+      "csvImportCompleteDesc": "{{success}} importa ona · {{duplicates}} duplikadu salta · {{errors}} erru",
       "importErrorTitle": "Erru Importa",
       "importErrorDesc": "La bele le CSV. Favor hare formatu.",
+      "importDialog": {
+        "title": "Importa empregadu hosi CSV",
+        "description": "Liña ne'ebé hanesan empregadu eziste ona (ID hanesan ka naran kompletu hanesan) sei salta automátikamente, nune'e importa fila-fali la kria duplikadu.",
+        "step1": "1. Download modelo no prienxe liña ida ba empregadu ida",
+        "step2": "2. Upload arkivu ne'ebé prienxe tiha ona",
+        "downloadTemplate": "Download modelo CSV",
+        "chooseFile": "Hili arkivu CSV",
+        "importing": "Importa hela…"
+      },
+      "noIdYet": "Seidauk iha ID",
+      "perMonth": "/fulan",
+      "possibleDuplicate": "Posível duplikadu",
       "buttons": {
         "clearFilters": "Hamos Filtru",
         "clearAllFilters": "Hamos Hotu",
@@ -7358,6 +7410,7 @@ export const translations = {
         "missingInss": "Hatudu empregadu la iha numeru INSS",
         "missingBank": "Hatudu empregadu la iha detallu banku",
         "blockingIssues": "Hatudu empregadu ho problema blokeia payroll",
+        "issues": "Hatudu empregadu ne'ebé falta informasaun obrigatóriu",
         "found": "({{count}} hetan)",
         "clearFilter": "Hamos filtru"
       },
@@ -7389,7 +7442,8 @@ export const translations = {
       "directory": {
         "title": "Diretóriu Empregadu",
         "countSummary": "{{shown}} hosi {{total}} empregadu",
-        "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu."
+        "searchLimitReached": "Rezultadu buka bele la kompletu. Kokri termu ida espesífiku liu.",
+        "duplicatesFound": "Rejistu {{count}} karik duplikadu — naran ka ID hanesan mosu liu dala ida"
       },
       "table": {
         "employee": "Empregadu",
@@ -9646,7 +9700,11 @@ export const translations = {
           "net": "Líkidu",
           "totals": "Totál",
           "empty": "Prosesu ne'e laiha rejistu empregadu."
-        }
+        },
+        "paidOn": "selu ona {{date}}",
+        "paysOn": "loron selu {{date}}",
+        "duplicatesWarning": "Empregadu {{count}} mosu liu dala ida iha prosesu ne'e — totál bele konta dala rua. Revize rejistu empregadu duplikadu.",
+        "duplicateBadge": "Duplikadu?"
       },
       "dashboard": {
         "title": "Relatoriu",
@@ -12140,6 +12198,13 @@ export const translations = {
       "more": "Mais",
       "notifications": "Notificações",
       "moreActions": "Mais ações",
+      "openMenu": "Abrir menu",
+      "closeMenu": "Fechar menu",
+      "accountMenu": "Menu de conta",
+      "switchToLight": "Mudar para tema claro",
+      "switchToDark": "Mudar para tema escuro",
+      "expandSidebar": "Expandir barra lateral",
+      "collapseSidebar": "Recolher barra lateral",
       "of": "de",
       "basicMode": "Modo Básico",
       "adminConsole": "Consola Admin",
@@ -12355,9 +12420,13 @@ export const translations = {
       "pendingPayrollTitle": "Folha de pagamento a aguardar aprovação",
       "untilPayday": "até ao dia de pagamento",
       "headerSubtitle": "Centro de comando e prioridades do negócio para hoje",
-      "issuesBadge": "{{count}} problemas",
+      "issuesBadge": "{{count}} com problemas",
       "pendingBadge": "{{count}} pendentes",
       "overdueBy": "{{days}}d em atraso",
+      "dueIn": "vence em {{days}}d",
+      "witFull": "Imposto sobre Rendimento Salarial (WIT) — declaração mensal",
+      "inssFull": "Segurança social INSS — pagamento mensal",
+      "thirteenthFull": "Subsídio de Natal (13.º mês)",
       "pendingPayrollDesc": "folha(s) precisam de revisão",
       "overdue": "em atraso há",
       "taxOverdue": "Declarações fiscais em atraso",
@@ -13287,8 +13356,20 @@ export const translations = {
       "exportCompleteDesc": "Exportados {{count}} funcionários para CSV",
       "templateDownloadedTitle": "Modelo Descarregado",
       "templateDownloadedDesc": "Modelo CSV de funcionários descarregado com sucesso",
-      "csvImportCompleteTitle": "Importação CSV Concluída",
-      "csvImportCompleteDesc": "Pré-visualização: {{success}} funcionários seriam importados, {{errors}} erros encontrados. (Funcionalidade de importação ainda não completamente implementada)",
+      "csvImportCompleteTitle": "Importação concluída",
+      "csvImportCompleteDesc": "{{success}} importados · {{duplicates}} duplicado(s) ignorados · {{errors}} erro(s)",
+      "importDialog": {
+        "title": "Importar funcionários de CSV",
+        "description": "Linhas que correspondam a um funcionário existente (mesmo ID ou mesmo nome completo) são ignoradas automaticamente, por isso reimportar um ficheiro nunca cria duplicados.",
+        "step1": "1. Descarregue o modelo e preencha uma linha por funcionário",
+        "step2": "2. Carregue o ficheiro preenchido",
+        "downloadTemplate": "Descarregar modelo CSV",
+        "chooseFile": "Escolher ficheiro CSV",
+        "importing": "A importar…"
+      },
+      "noIdYet": "Ainda sem ID",
+      "perMonth": "/mês",
+      "possibleDuplicate": "Possível duplicado",
       "importErrorTitle": "Erro de Importação",
       "importErrorDesc": "Falha ao analisar ficheiro CSV. Por favor verifique o formato.",
       "filterPanelTitle": "Filtrar Funcionários",
@@ -13375,6 +13456,7 @@ export const translations = {
         "missingInss": "A mostrar funcionários sem número INSS",
         "missingBank": "A mostrar funcionários sem dados bancários",
         "blockingIssues": "A mostrar funcionários com problemas bloqueantes na folha",
+        "issues": "A mostrar funcionários com informação obrigatória em falta",
         "found": "({{count}} encontrados)",
         "clearFilter": "Limpar filtro"
       },
@@ -13416,7 +13498,8 @@ export const translations = {
       "directory": {
         "title": "Diretório de Funcionários",
         "countSummary": "{{shown}} de {{total}} funcionários",
-        "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico."
+        "searchLimitReached": "Os resultados da pesquisa podem estar incompletos. Tente um termo mais específico.",
+        "duplicatesFound": "{{count}} possível(eis) registo(s) duplicado(s) — o mesmo nome ou ID aparece mais de uma vez"
       },
       "table": {
         "employee": "Funcionário",
@@ -14756,7 +14839,11 @@ export const translations = {
           "net": "Líquido",
           "totals": "Totais",
           "empty": "Este processamento não tem registos de funcionários."
-        }
+        },
+        "paidOn": "pago {{date}}",
+        "paysOn": "data de pagamento {{date}}",
+        "duplicatesWarning": "{{count}} funcionário(s) aparecem mais de uma vez neste processamento — os totais podem contá-los em dobro. Reveja registos duplicados.",
+        "duplicateBadge": "Duplicado?"
       },
       "dashboard": {
         "title": "Relatórios",

@@ -453,6 +453,7 @@ function HeaderBar({
           size="icon"
           onClick={onToggleTheme}
           className="h-9 w-9 text-muted-foreground hover:text-foreground"
+          aria-label={isDark ? t("common.switchToLight") : t("common.switchToDark")}
         >
           {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         </Button>
@@ -468,6 +469,7 @@ function HeaderBar({
           size="icon"
           className="md:hidden h-9 w-9"
           onClick={onToggleMobile}
+          aria-label={mobileMenuOpen ? t("common.closeMenu") : t("common.openMenu")}
         >
           {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
         </Button>

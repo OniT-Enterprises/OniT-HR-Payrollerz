@@ -86,8 +86,9 @@ export default function PeopleDashboard() {
   }
 
   const activeEmployees = employeeSummary?.active ?? 0;
-  const blockingIssues = employeeSummary?.employeesWithBlockingIssues ?? 0;
+  const employeesWithIssues = employeeSummary?.employeesWithIssues ?? 0;
   const pendingLeave = hasTimeleave ? leaveStats?.pendingRequests ?? 0 : 0;
+  const onLeaveToday = hasTimeleave ? leaveStats?.employeesOnLeaveToday ?? 0 : 0;
   const interviewsScheduled = hasHiring ? interviewStats?.scheduled ?? 0 : 0;
   const trainingExpiring = hasPerformance ? trainingStats?.expiringSoon ?? 0 : 0;
   const disciplinaryOpen = hasPerformance
@@ -112,10 +113,10 @@ export default function PeopleDashboard() {
       tone: "text-cyan-600 bg-cyan-100 dark:bg-cyan-950/30 dark:text-cyan-300",
     },
     {
-      show: hasStaff && blockingIssues > 0,
-      count: blockingIssues,
-      label: `employee record${blockingIssues === 1 ? "" : "s"} missing required info`,
-      path: "/people/employees?filter=blocking-issues",
+      show: hasStaff && employeesWithIssues > 0,
+      count: employeesWithIssues,
+      label: `employee${employeesWithIssues === 1 ? "" : "s"} missing required info`,
+      path: "/people/employees?filter=issues",
       icon: AlertTriangle,
       tone: "text-amber-600 bg-amber-100 dark:bg-amber-950/30 dark:text-amber-300",
     },
@@ -163,9 +164,11 @@ export default function PeopleDashboard() {
       art: "/images/illustrations/xefe-card-hiring.webp",
     },
     {
+      // Pending requests already surface in the attention strip above —
+      // show a complementary fact here instead of repeating it.
       show: hasTimeleave,
       title: "Time & Leave",
-      meta: `${pendingLeave} pending request${pendingLeave === 1 ? "" : "s"}`,
+      meta: `${onLeaveToday} on leave today`,
       path: "/time-leave",
       icon: CalendarClock,
       art: "/images/illustrations/xefe-card-timeleave.webp",
@@ -199,10 +202,7 @@ export default function PeopleDashboard() {
                   : "Find anyone, or jump to what needs you."}
               </p>
             </div>
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              onClick={() => navigate("/people/add")}
-            >
+            <Button onClick={() => navigate("/people/add")}>
               <UserPlus className="mr-2 h-4 w-4" />
               Add employee
             </Button>

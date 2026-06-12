@@ -111,10 +111,10 @@ function NotificationsDropdown({ counts, onNavigate, t }: NotificationsDropdownP
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative">
+        <Button variant="ghost" size="icon" className="h-9 w-9 text-muted-foreground hover:text-foreground relative" aria-label={t("common.notifications")}>
           <Bell className="h-4 w-4" />
           {total > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
+            <span aria-hidden className="absolute -top-0.5 -right-0.5 h-4 w-4 rounded-full bg-red-500 text-[10px] font-bold text-white flex items-center justify-center">
               {total}
             </span>
           )}
@@ -191,7 +191,7 @@ function TopBarUserMenu({ user, userInitials, isSuperAdmin, onNavigate, onSignOu
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0">
+        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0" aria-label={t("common.accountMenu")}>
           <Avatar className="h-8 w-8">
             <AvatarFallback className="bg-primary text-white text-sm font-semibold">
               {userInitials}
@@ -392,6 +392,7 @@ export default function TopBar() {
             size="icon"
             onClick={toggleSidebar}
             className="md:hidden h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
+            aria-label={t("common.openMenu")}
           >
             <Menu className="h-5 w-5" />
           </Button>
@@ -424,6 +425,7 @@ export default function TopBar() {
               size="icon"
               onClick={toggleTheme}
               className="h-9 w-9 text-muted-foreground hover:text-foreground"
+              aria-label={isDark ? t("common.switchToLight") : t("common.switchToDark")}
             >
               {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>

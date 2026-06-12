@@ -96,7 +96,7 @@ export default function PayrollDashboard() {
       content: (
         <>
           <span className="font-semibold tabular-nums">{blockedEmployees}</span>{" "}
-          employee record{blockedEmployees === 1 ? "" : "s"} with blocking issues
+          employee{blockedEmployees === 1 ? "" : "s"} missing info that blocks payroll
         </>
       ),
       path: "/people/employees?filter=blocking-issues",
@@ -193,10 +193,7 @@ export default function PayrollDashboard() {
               <History className="mr-2 h-4 w-4" />
               History
             </Button>
-            <Button
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-              onClick={() => navigate("/payroll/run")}
-            >
+            <Button onClick={() => navigate("/payroll/run")}>
               <Play className="mr-2 h-4 w-4" />
               Run payroll
             </Button>

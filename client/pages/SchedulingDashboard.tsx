@@ -95,9 +95,10 @@ export default function SchedulingDashboard() {
       icon: CalendarCheck,
     },
     {
+      // Pending requests already surface in the attention strip above.
       title: "Leave",
       art: "/images/illustrations/xefe-card-tl-leave.webp",
-      meta: `${pendingLeave} pending · ${onLeaveToday} on leave`,
+      meta: `${onLeaveToday} on leave today`,
       path: "/time-leave/leave",
       icon: CalendarDays,
     },
@@ -137,10 +138,7 @@ export default function SchedulingDashboard() {
             <Button variant="outline" onClick={() => navigate("/time-leave/attendance")}>
               Attendance
             </Button>
-            <Button
-              className="bg-cyan-600 text-white hover:bg-cyan-700"
-              onClick={() => navigate("/time-leave/shifts")}
-            >
+            <Button onClick={() => navigate("/time-leave/shifts")}>
               <Calendar className="mr-2 h-4 w-4" />
               Shift schedules
             </Button>

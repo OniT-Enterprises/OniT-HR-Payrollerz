@@ -82,6 +82,13 @@ const messages = {
     "more": "More",
     "notifications": "Notifications",
     "moreActions": "More actions",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "accountMenu": "Account menu",
+    "switchToLight": "Switch to light theme",
+    "switchToDark": "Switch to dark theme",
+    "expandSidebar": "Expand sidebar",
+    "collapseSidebar": "Collapse sidebar",
     "of": "of",
     "basicMode": "Basic mode",
     "adminConsole": "Admin Console",
@@ -297,9 +304,13 @@ const messages = {
     "pendingPayrollTitle": "Payroll awaiting approval",
     "untilPayday": "until payday",
     "headerSubtitle": "Command center and priorities for the business today",
-    "issuesBadge": "{{count}} issues",
+    "issuesBadge": "{{count}} with issues",
     "pendingBadge": "{{count}} pending",
     "overdueBy": "{{days}}d overdue",
+    "dueIn": "due in {{days}}d",
+    "witFull": "Wage Income Tax — monthly filing",
+    "inssFull": "INSS social security — monthly payment",
+    "thirteenthFull": "13th-month salary (subsídio de Natal)",
     "pendingPayrollDesc": "run(s) need review",
     "overdue": "overdue by",
     "taxOverdue": "Tax filings overdue",
@@ -1229,10 +1240,22 @@ const messages = {
     "exportCompleteDesc": "Exported {{count}} employees to CSV",
     "templateDownloadedTitle": "Template Downloaded",
     "templateDownloadedDesc": "Employee CSV template has been downloaded successfully",
-    "csvImportCompleteTitle": "CSV Import Complete",
-    "csvImportCompleteDesc": "Preview: {{success}} employees would be imported, {{errors}} errors found. (Import functionality not fully implemented yet)",
+    "csvImportCompleteTitle": "Import complete",
+    "csvImportCompleteDesc": "{{success}} imported · {{duplicates}} duplicate(s) skipped · {{errors}} error(s)",
     "importErrorTitle": "Import Error",
     "importErrorDesc": "Failed to parse CSV file. Please check the format.",
+    "importDialog": {
+      "title": "Import employees from CSV",
+      "description": "Rows matching an existing employee (same ID or same full name) are skipped automatically, so re-importing a file never creates duplicates.",
+      "step1": "1. Download the template and fill in one row per employee",
+      "step2": "2. Upload the completed file",
+      "downloadTemplate": "Download CSV template",
+      "chooseFile": "Choose CSV file",
+      "importing": "Importing…"
+    },
+    "noIdYet": "No ID yet",
+    "perMonth": "/mo",
+    "possibleDuplicate": "Possible duplicate",
     "filterPanelTitle": "Filter Employees",
     "filterPanelDesc": "Use filters to narrow down the employee list",
     "filterLabels": {
@@ -1317,6 +1340,7 @@ const messages = {
       "missingInss": "Showing employees missing INSS number",
       "missingBank": "Showing employees missing bank details",
       "blockingIssues": "Showing employees with payroll-blocking issues",
+      "issues": "Showing employees with missing required info",
       "found": "({{count}} found)",
       "clearFilter": "Clear filter"
     },
@@ -1358,7 +1382,8 @@ const messages = {
     "directory": {
       "title": "Employee Directory",
       "countSummary": "{{shown}} of {{total}} employees",
-      "searchLimitReached": "Search results may be incomplete. Try a more specific search term."
+      "searchLimitReached": "Search results may be incomplete. Try a more specific search term.",
+      "duplicatesFound": "{{count}} possible duplicate record(s) — same name or ID appears more than once"
     },
     "table": {
       "employee": "Employee",
@@ -2698,7 +2723,11 @@ const messages = {
         "net": "Net",
         "totals": "Totals",
         "empty": "This run has no employee records."
-      }
+      },
+      "paidOn": "paid {{date}}",
+      "paysOn": "pay date {{date}}",
+      "duplicatesWarning": "{{count}} employee(s) appear more than once in this run — totals may double-count them. Review for duplicate employee records.",
+      "duplicateBadge": "Duplicate?"
     },
     "dashboard": {
       "title": "Reports",
