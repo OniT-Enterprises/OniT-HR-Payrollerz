@@ -37,10 +37,12 @@ import {
 
 // Smart home route - shows landing for guests, appropriate dashboard for users
 function HomeRoute() {
-  const { user, userProfile, loading, isSuperAdmin } = useAuth();
-  const { session, loading: tenantLoading } = useTenant();
+  const { user, userProfile, loading, authResolved, isSuperAdmin } = useAuth();
+  const { session, loading: tenantLoading, tenantResolved } = useTenant();
 
-  if (loading || tenantLoading) {
+  // A cold load / fresh sign-in can have loading=false (cached) while Firebase
+  // is still restoring the session — don't decide anything until auth resolves.
+  if (loading || tenantLoading || (!user && !authResolved)) {
     return <PageLoader />;
   }
 
@@ -65,6 +67,14 @@ function HomeRoute() {
     }
     // Regular user without tenants needs to create their organization
     return <Navigate to="/auth/onboarding" replace />;
+  }
+
+  // The tenant session can still be resolving even with tenantLoading=false
+  // (partial cache, or a fresh signup/sign-in where the membership load hasn't
+  // finished yet). Wait for it to resolve rather than bouncing to landing —
+  // this is what caused "signed in but got kicked back to the home page".
+  if (!session && !tenantResolved) {
+    return <PageLoader />;
   }
 
   if (!session) {
