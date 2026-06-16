@@ -49,9 +49,10 @@ function HomeRoute() {
     return <Landing />;
   }
 
-  // User without a user profile - needs to complete setup
+  // User without a user profile - needs to create their organization.
+  // Superadmins (token claim, no profile doc) go to the admin dashboard.
   if (user && !userProfile) {
-    return <Navigate to="/admin/setup" replace />;
+    return <Navigate to={isSuperAdmin ? "/admin" : "/auth/onboarding"} replace />;
   }
 
   // Check if user has any tenants
@@ -62,8 +63,8 @@ function HomeRoute() {
     if (isSuperAdmin) {
       return <Navigate to="/admin" replace />;
     }
-    // Regular user without tenants needs setup
-    return <Navigate to="/admin/setup" replace />;
+    // Regular user without tenants needs to create their organization
+    return <Navigate to="/auth/onboarding" replace />;
   }
 
   if (!session) {

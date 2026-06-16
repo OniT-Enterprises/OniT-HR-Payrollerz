@@ -15,6 +15,7 @@ interface AuthContextType {
   authResolved: boolean;
   isSuperAdmin: boolean;
   signIn: (email: string, password: string) => Promise<User | null>;
+  signInWithGoogle: () => Promise<User | null>;
   signUp: (
     email: string,
     password: string,
@@ -210,6 +211,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
     return user;
   };
 
+  const signInWithGoogle = async () => {
+    const user = await authService.signInWithGoogle();
+    return user;
+  };
+
   const signUp = async (
     email: string,
     password: string,
@@ -235,6 +241,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     authResolved,
     isSuperAdmin,
     signIn,
+    signInWithGoogle,
     signUp,
     signOut,
     resetPassword,

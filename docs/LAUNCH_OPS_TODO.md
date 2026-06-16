@@ -7,6 +7,21 @@ Everything below is console/asset work that code can't do.
 
 ## High priority (do before marketing the launch)
 
+### 0. Enable Google sign-in provider — ~3 min, REQUIRED for Google login to work
+The "Continue with Google" buttons (login + signup) and the `/auth/onboarding`
+self-serve org flow are wired in code, but the provider must be enabled in the
+console before they work:
+
+- Firebase Console → **Authentication → Sign-in method** → add **Google**, enable, save
+  (set the public-facing project name + support email it prompts for)
+- **Authentication → Settings → Authorized domains** → confirm `payroll.naroman.tl`
+  (and any other production hostnames) are listed; `localhost` is there by default
+- **Authentication → Settings → User account linking** → keep the default
+  **"One account per email address"** so invited users (created email-first by
+  `addTenantMember`) link to their Google identity instead of getting a duplicate uid
+- Behaviour once enabled: existing/invited users sign straight in; a brand-new Google
+  user (no profile) is routed to `/auth/onboarding` to create their company
+
 ### 1. Firestore backups + point-in-time recovery — ~5 min, biggest risk reducer
 The only remaining single-point-of-failure: there is (as far as we could verify) no
 backup schedule. For a payroll product, data loss is the worst-case scenario.

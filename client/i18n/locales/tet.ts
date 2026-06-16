@@ -478,9 +478,16 @@ const messages = {
     "passwordPlaceholder": "Hatama password",
     "signingIn": "Tama hela...",
     "signIn": "Tama",
+    "continueWithGoogle": "Kontinua ho Google",
+    "orDivider": "ka",
     "forgotPassword": "Haluha password?",
     "noAccount": "Laiha konta?",
     "signUp": "Rejistu",
+    "onboarding": {
+      "title": "Kria Ita-nia Organizasaun",
+      "subtitle": "Konfigura Ita-nia kompanhia atu komesa uza Xefe",
+      "createButton": "Kria Organizasaun"
+    },
     "demoCredentials": "Kredensial demonstrasaun:",
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
@@ -491,6 +498,7 @@ const messages = {
       "nameRequired": "Favor hatama ita-nia naran",
       "companyNameRequired": "Favor hatama naran kompanhia",
       "signupFailed": "La konsege kria konta. Favór koko fali.",
+      "googleSignInFailed": "Tama ho Google la konsege. Favór koko fali.",
       "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
       "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
       "invalidEmail": "Enderesu email invállidu."

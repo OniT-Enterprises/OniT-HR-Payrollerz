@@ -478,9 +478,16 @@ const messages = {
     "passwordPlaceholder": "Enter your password",
     "signingIn": "Signing in...",
     "signIn": "Sign In",
+    "continueWithGoogle": "Continue with Google",
+    "orDivider": "or",
     "forgotPassword": "Forgot password?",
     "noAccount": "Don't have an account?",
     "signUp": "Sign up",
+    "onboarding": {
+      "title": "Create your organization",
+      "subtitle": "Set up your company to start using Xefe",
+      "createButton": "Create organization"
+    },
     "demoCredentials": "Demo Credentials:",
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Password: {{password}}",
@@ -491,6 +498,7 @@ const messages = {
       "nameRequired": "Please enter your name",
       "companyNameRequired": "Please enter your company name",
       "signupFailed": "Failed to create account. Please try again.",
+      "googleSignInFailed": "Google sign-in failed. Please try again.",
       "accountExists": "An account with this email already exists. Please log in instead.",
       "weakPassword": "Password is too weak. Please use a stronger password.",
       "invalidEmail": "Invalid email address."

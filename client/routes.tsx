@@ -103,6 +103,7 @@ import Dashboard from "@/pages/Dashboard";
 const Sitemap = lazyWithRetry(() => import("@/pages/Sitemap"));
 const Settings = lazyWithRetry(() => import("@/pages/Settings"));
 const Signup = lazyWithRetry(() => import("@/pages/auth/Signup"));
+const AuthOnboarding = lazyWithRetry(() => import("@/pages/auth/Onboarding"));
 const ProductDetails = lazyWithRetry(() => import("@/pages/ProductDetails"));
 const Unauthorized = lazyWithRetry(() => import("@/pages/Unauthorized"));
 
@@ -224,6 +225,7 @@ export const authRoutes = (
   <>
     <Route path="/auth/login" element={<Login />} />
     <Route path="/auth/signup" element={<Signup />} />
+    <Route path="/auth/onboarding" element={<AuthOnboarding />} />
     {/* Public candidate apply page — no auth required */}
     <Route path="/apply/:jobId" element={<PublicApply />} />
     <Route path="/privacy" element={<LegalPage kind="privacy" />} />

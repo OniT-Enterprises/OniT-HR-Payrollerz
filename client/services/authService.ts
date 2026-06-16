@@ -1,6 +1,8 @@
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  signInWithPopup,
+  GoogleAuthProvider,
   signOut,
   onAuthStateChanged,
   User,
@@ -51,6 +53,19 @@ class AuthService {
       return result.user;
     } catch (error) {
       console.error("Error signing up:", error);
+      throw error;
+    }
+  }
+
+  async signInWithGoogle(): Promise<User | null> {
+    try {
+      const provider = new GoogleAuthProvider();
+      // Always let the user pick which Google account to use.
+      provider.setCustomParameters({ prompt: "select_account" });
+      const result = await signInWithPopup(auth, provider);
+      return result.user;
+    } catch (error) {
+      console.error("Error signing in with Google:", error);
       throw error;
     }
   }

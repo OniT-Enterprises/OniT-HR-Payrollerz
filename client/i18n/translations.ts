@@ -482,9 +482,16 @@ export const translations = {
       "passwordPlaceholder": "Enter your password",
       "signingIn": "Signing in...",
       "signIn": "Sign In",
+      "continueWithGoogle": "Continue with Google",
+      "orDivider": "or",
       "forgotPassword": "Forgot password?",
       "noAccount": "Don't have an account?",
       "signUp": "Sign up",
+      "onboarding": {
+        "title": "Create your organization",
+        "subtitle": "Set up your company to start using Xefe",
+        "createButton": "Create organization"
+      },
       "demoCredentials": "Demo Credentials:",
       "demoEmail": "Email: {{email}}",
       "demoPassword": "Password: {{password}}",
@@ -495,6 +502,7 @@ export const translations = {
         "nameRequired": "Please enter your name",
         "companyNameRequired": "Please enter your company name",
         "signupFailed": "Failed to create account. Please try again.",
+        "googleSignInFailed": "Google sign-in failed. Please try again.",
         "accountExists": "An account with this email already exists. Please log in instead.",
         "weakPassword": "Password is too weak. Please use a stronger password.",
         "invalidEmail": "Invalid email address."
@@ -6538,9 +6546,16 @@ export const translations = {
       "passwordPlaceholder": "Hatama password",
       "signingIn": "Tama hela...",
       "signIn": "Tama",
+      "continueWithGoogle": "Kontinua ho Google",
+      "orDivider": "ka",
       "forgotPassword": "Haluha password?",
       "noAccount": "Laiha konta?",
       "signUp": "Rejistu",
+      "onboarding": {
+        "title": "Kria Ita-nia Organizasaun",
+        "subtitle": "Konfigura Ita-nia kompanhia atu komesa uza Xefe",
+        "createButton": "Kria Organizasaun"
+      },
       "demoCredentials": "Kredensial demonstrasaun:",
       "demoEmail": "Email: {{email}}",
       "demoPassword": "Password: {{password}}",
@@ -6551,6 +6566,7 @@ export const translations = {
         "nameRequired": "Favor hatama ita-nia naran",
         "companyNameRequired": "Favor hatama naran kompanhia",
         "signupFailed": "La konsege kria konta. Favór koko fali.",
+        "googleSignInFailed": "Tama ho Google la konsege. Favór koko fali.",
         "accountExists": "Konta ho email ida ne'e iha ona. Favor tama fali.",
         "weakPassword": "Password fraku liu. Favor uza password maka'as liu.",
         "invalidEmail": "Enderesu email invállidu."
@@ -12594,9 +12610,16 @@ export const translations = {
       "passwordPlaceholder": "Introduza a sua palavra-passe",
       "signingIn": "A iniciar sessão...",
       "signIn": "Entrar",
+      "continueWithGoogle": "Continuar com o Google",
+      "orDivider": "ou",
       "forgotPassword": "Esqueceu a palavra-passe?",
       "noAccount": "Não tem conta?",
       "signUp": "Registar-se",
+      "onboarding": {
+        "title": "Crie a sua organização",
+        "subtitle": "Configure a sua empresa para começar a usar o Xefe",
+        "createButton": "Criar organização"
+      },
       "demoCredentials": "Credenciais de Demonstração:",
       "demoEmail": "Email: {{email}}",
       "demoPassword": "Palavra-passe: {{password}}",
@@ -12607,6 +12630,7 @@ export const translations = {
         "nameRequired": "Introduza o seu nome",
         "companyNameRequired": "Introduza o nome da empresa",
         "signupFailed": "Falha ao criar conta. Tente novamente.",
+        "googleSignInFailed": "Falha ao iniciar sessão com o Google. Tente novamente.",
         "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
         "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
         "invalidEmail": "Endereço de email inválido."

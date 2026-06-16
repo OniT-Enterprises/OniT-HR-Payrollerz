@@ -7,20 +7,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
-import { doc, setDoc, serverTimestamp } from "firebase/firestore";
-import { auth, db } from "@/lib/firebase";
-import { paths } from "@/lib/paths";
-import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
+import { auth } from "@/lib/firebase";
+import { provisionOrganization } from "@/services/provisionOrg";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { useAuth } from "@/contexts/AuthContext";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function Signup() {
   const navigate = useNavigate();
   const { t } = useI18n();
-  const { refreshUserProfile } = useAuth();
+  const { refreshUserProfile, signInWithGoogle } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [step, setStep] = useState<"account" | "organization">("account");
 
@@ -88,74 +88,17 @@ export default function Signup() {
       // 2. Update user profile with display name
       await updateProfile(user, { displayName: displayName.trim() });
 
-      // 3. Generate tenant ID
-      const tenantId = companySlug || `tenant_${Date.now()}`;
-
-      // 4. Create user profile document
-      await setDoc(doc(db, paths.user(user.uid)), {
-        uid: user.uid,
-        email: user.email,
+      // 3. Provision tenant + owner membership + user profile
+      await provisionOrganization({
+        user,
         displayName: displayName.trim(),
-        isSuperAdmin: false,
-        tenantIds: [tenantId],
-        tenantAccess: {
-          [tenantId]: {
-            name: companyName.trim(),
-            role: "owner",
-          },
-        },
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-      });
-
-      // 5. Create tenant document
-      const plan: TenantPlan = "free";
-      await setDoc(doc(db, paths.tenant(tenantId)), {
-        id: tenantId,
-        name: companyName.trim(),
-        slug: companySlug || tenantId,
-        status: "active",
-        plan,
-        limits: PLAN_LIMITS[plan],
-        createdBy: user.uid,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
-        branding: {},
-        features: {
-          hiring: true,
-          timeleave: true,
-          performance: true,
-          payroll: true,
-          money: true,
-          accounting: true,
-          reports: true,
-        },
-        settings: {
-          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-          currency: "USD",
-          dateFormat: "YYYY-MM-DD",
-        },
-      });
-
-      // 6. Create owner membership
-      await setDoc(doc(db, paths.member(tenantId, user.uid)), {
-        uid: user.uid,
-        email: user.email,
-        displayName: displayName.trim(),
-        role: "owner",
-        modules: ["hiring", "staff", "timeleave", "performance", "payroll", "money", "accounting", "reports"],
-        joinedAt: serverTimestamp(),
-        lastActiveAt: serverTimestamp(),
-        permissions: {
-          admin: true,
-          write: true,
-          read: true,
-        },
+        companyName,
+        companySlug,
       });
 
       await refreshUserProfile();
 
-      // 7. Navigate to dashboard
+      // 4. Navigate to dashboard
       navigate("/");
     } catch (err: unknown) {
       console.error("Signup error:", err);
@@ -172,6 +115,31 @@ export default function Signup() {
       }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError(null);
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      // New Google users have no tenant yet → HomeRoute sends them to
+      // onboarding to create their company. Returning users go to the app.
+      navigate("/");
+    } catch (err: unknown) {
+      const code =
+        err && typeof err === "object" && "code" in err
+          ? (err as { code?: string }).code
+          : undefined;
+      if (
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
+      setError(t("auth.errors.googleSignInFailed"));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -239,7 +207,24 @@ export default function Signup() {
             )}
 
             {step === "account" ? (
-              <form onSubmit={handleAccountSubmit} className="space-y-4">
+              <>
+                <GoogleSignInButton
+                  onClick={handleGoogle}
+                  loading={googleLoading}
+                  disabled={loading}
+                  label={t("auth.continueWithGoogle")}
+                />
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-border" />
+                  </div>
+                  <div className="relative flex justify-center">
+                    <span className="bg-card px-3 text-xs uppercase tracking-wide text-muted-foreground">
+                      {t("auth.orDivider")}
+                    </span>
+                  </div>
+                </div>
+                <form onSubmit={handleAccountSubmit} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="displayName">{t("auth.signup.fullName")}</Label>
                   <div className="relative">
@@ -309,7 +294,8 @@ export default function Signup() {
                   {t("auth.signup.continue")}
                   <ArrowRight className="h-4 w-4" />
                 </Button>
-              </form>
+                </form>
+              </>
             ) : (
               <form onSubmit={handleSignup} className="space-y-4">
                 <div className="space-y-2">

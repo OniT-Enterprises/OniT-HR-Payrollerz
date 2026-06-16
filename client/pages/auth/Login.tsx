@@ -6,16 +6,18 @@ import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
 import { SEO, seoConfig } from "@/components/SEO";
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState("");
   const { t } = useI18n();
 
-  const { signIn, user, authResolved } = useAuth();
+  const { signIn, signInWithGoogle, user, authResolved } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname || "/";
@@ -41,6 +43,32 @@ export default function Login() {
       setError(message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGoogle = async () => {
+    setError("");
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      // New users (no profile) are routed to onboarding by HomeRoute/guards;
+      // returning users land on the page they wanted.
+      navigate(from, { replace: true });
+    } catch (error: unknown) {
+      const code =
+        error && typeof error === "object" && "code" in error
+          ? (error as { code?: string }).code
+          : undefined;
+      // User dismissing the popup isn't an error worth surfacing.
+      if (
+        code === "auth/popup-closed-by-user" ||
+        code === "auth/cancelled-popup-request"
+      ) {
+        return;
+      }
+      setError(t("auth.errors.googleSignInFailed"));
+    } finally {
+      setGoogleLoading(false);
     }
   };
 
@@ -82,6 +110,26 @@ export default function Login() {
             <p className="text-sm text-zinc-500 mt-2">
               {t("auth.loginSubtitle")}
             </p>
+          </div>
+
+          <div className="mb-5">
+            <GoogleSignInButton
+              onClick={handleGoogle}
+              loading={googleLoading}
+              disabled={loading}
+              label={t("auth.continueWithGoogle")}
+            />
+          </div>
+
+          <div className="relative mb-5">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10" />
+            </div>
+            <div className="relative flex justify-center">
+              <span className="bg-[#0a0a0b] px-3 text-xs uppercase tracking-wide text-zinc-500">
+                {t("auth.orDivider")}
+              </span>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

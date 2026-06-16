@@ -478,9 +478,16 @@ const messages = {
     "passwordPlaceholder": "Introduza a sua palavra-passe",
     "signingIn": "A iniciar sessão...",
     "signIn": "Entrar",
+    "continueWithGoogle": "Continuar com o Google",
+    "orDivider": "ou",
     "forgotPassword": "Esqueceu a palavra-passe?",
     "noAccount": "Não tem conta?",
     "signUp": "Registar-se",
+    "onboarding": {
+      "title": "Crie a sua organização",
+      "subtitle": "Configure a sua empresa para começar a usar o Xefe",
+      "createButton": "Criar organização"
+    },
     "demoCredentials": "Credenciais de Demonstração:",
     "demoEmail": "Email: {{email}}",
     "demoPassword": "Palavra-passe: {{password}}",
@@ -491,6 +498,7 @@ const messages = {
       "nameRequired": "Introduza o seu nome",
       "companyNameRequired": "Introduza o nome da empresa",
       "signupFailed": "Falha ao criar conta. Tente novamente.",
+      "googleSignInFailed": "Falha ao iniciar sessão com o Google. Tente novamente.",
       "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",
       "weakPassword": "A palavra-passe é demasiado fraca. Use uma mais forte.",
       "invalidEmail": "Endereço de email inválido."
