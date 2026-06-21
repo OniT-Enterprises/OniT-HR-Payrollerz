@@ -11,6 +11,7 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
+import { omitUndefinedValues } from '@/lib/firestorePayload';
 import { paths } from '@/lib/paths';
 import { auditLogService } from './auditLogService';
 import type { AuditContext } from './employeeService';
@@ -283,7 +284,7 @@ export const settingsService = {
     try {
       const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
-        companyDetails,
+        companyDetails: omitUndefinedValues(companyDetails),
         'setupProgress.companyDetails': true,
         updatedAt: serverTimestamp(),
       });
@@ -316,7 +317,7 @@ export const settingsService = {
     try {
       const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
-        companyStructure,
+        companyStructure: omitUndefinedValues(companyStructure),
         'setupProgress.companyStructure': true,
         updatedAt: serverTimestamp(),
       });
@@ -336,7 +337,7 @@ export const settingsService = {
     try {
       const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
-        paymentStructure,
+        paymentStructure: omitUndefinedValues(paymentStructure),
         'setupProgress.paymentStructure': true,
         updatedAt: serverTimestamp(),
       });
@@ -356,7 +357,7 @@ export const settingsService = {
     try {
       const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
-        timeOffPolicies,
+        timeOffPolicies: omitUndefinedValues(timeOffPolicies),
         'setupProgress.timeOffPolicies': true,
         updatedAt: serverTimestamp(),
       });
@@ -377,7 +378,7 @@ export const settingsService = {
     try {
       const docRef = doc(db, paths.settings(tenantId));
       await updateDoc(docRef, {
-        payrollConfig,
+        payrollConfig: omitUndefinedValues(payrollConfig),
         'setupProgress.payrollConfig': true,
         updatedAt: serverTimestamp(),
       });
