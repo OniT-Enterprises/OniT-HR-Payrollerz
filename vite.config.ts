@@ -21,7 +21,10 @@ function modulePreloadPlugin(): Plugin {
       ];
       const links: string[] = [];
       for (const [fileName, chunk] of Object.entries(ctx.bundle)) {
-        if (chunk.type === "chunk" && CRITICAL_CHUNKS.some(c => fileName.includes(c))) {
+        // Match on the exact chunk name — a substring test on the file name
+        // made "vendor-react" also preload vendor-react-pdf (252 kB gzip of
+        // PDF renderer) on every page.
+        if (chunk.type === "chunk" && CRITICAL_CHUNKS.includes(chunk.name)) {
           links.push(`<link rel="modulepreload" crossorigin href="/${fileName}" />`);
         }
       }
@@ -60,6 +63,14 @@ export default defineConfig(({ mode }) => ({
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Rollup emits the shared CJS interop helpers as a virtual module;
+          // without a pin they land inside whichever chunk it visits first
+          // (vendor-exceljs), which then gets statically imported by the entry
+          // and modulepreloaded on every cold load — 270 kB gzip of ExcelJS
+          // just to render the landing page.
+          if (id.includes("commonjsHelpers")) {
+            return "vendor-helpers";
+          }
           if (id.includes("client/i18n/translations.ts")) {
             return "translations";
           }
