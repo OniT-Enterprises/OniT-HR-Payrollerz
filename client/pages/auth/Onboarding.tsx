@@ -13,7 +13,7 @@ import {
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, User as UserIcon, ArrowRight } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
-import { provisionOrganization } from "@/services/provisionOrg";
+import { provisionOrganization, SlugTakenError } from "@/services/provisionOrg";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
 
@@ -93,7 +93,11 @@ export default function Onboarding() {
       navigate("/", { replace: true });
     } catch (err: unknown) {
       console.error("Onboarding error:", err);
-      setError(err instanceof Error ? err.message : t("auth.errors.signupFailed"));
+      if (err instanceof SlugTakenError) {
+        setError(t("auth.errors.companySlugTaken"));
+      } else {
+        setError(err instanceof Error ? err.message : t("auth.errors.signupFailed"));
+      }
     } finally {
       setLoading(false);
     }

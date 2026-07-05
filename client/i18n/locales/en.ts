@@ -497,6 +497,7 @@ const messages = {
       "passwordsDoNotMatch": "Passwords do not match",
       "nameRequired": "Please enter your name",
       "companyNameRequired": "Please enter your company name",
+      "companySlugTaken": "That company URL is already taken. Please choose a different one.",
       "signupFailed": "Failed to create account. Please try again.",
       "googleSignInFailed": "Google sign-in failed. Please try again.",
       "accountExists": "An account with this email already exists. Please log in instead.",

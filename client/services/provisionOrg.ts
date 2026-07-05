@@ -1,8 +1,17 @@
 import { doc, getDoc, setDoc, serverTimestamp } from "firebase/firestore";
+import { FirebaseError } from "firebase/app";
 import type { User } from "firebase/auth";
 import { db } from "@/lib/firebase";
 import { paths } from "@/lib/paths";
 import { PLAN_LIMITS, TenantPlan } from "@/types/tenant";
+
+/** Thrown when the chosen company slug already belongs to another tenant. */
+export class SlugTakenError extends Error {
+  constructor(public readonly slug: string) {
+    super(`Company URL "${slug}" is already taken`);
+    this.name = "SlugTakenError";
+  }
+}
 
 const OWNER_MODULES = [
   "hiring",
@@ -32,6 +41,13 @@ export interface ProvisionOrgParams {
  * The user profile is written with merge semantics so a user who already has a
  * profile (e.g. an invited member who has no tenant of their own yet) keeps
  * their existing tenant access instead of having it overwritten.
+ *
+ * Write order matters: tenant → member → user profile. Non-members can't read
+ * other tenants, so the rejected create IS the slug-availability check (rules
+ * treat a write to an existing tenant as an update only its owner may make).
+ * The profile is written last so a collision leaves no ghost tenantAccess
+ * entry — which would lock the user out of onboarding and point TenantContext
+ * at a tenant they can't read.
  */
 export async function provisionOrganization({
   user,
@@ -41,9 +57,60 @@ export async function provisionOrganization({
 }: ProvisionOrgParams): Promise<string> {
   const name = companyName.trim();
   const slug = (companySlug || "").trim();
-  const tenantId = slug || `tenant_${Date.now()}`;
+  const tenantId =
+    slug || `tenant_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const resolvedName =
     (displayName || "").trim() || user.displayName || user.email || null;
+
+  const plan: TenantPlan = "free";
+  try {
+    await setDoc(doc(db, paths.tenant(tenantId)), {
+      id: tenantId,
+      name,
+      slug: slug || tenantId,
+      status: "active",
+      plan,
+      limits: PLAN_LIMITS[plan],
+      createdBy: user.uid,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+      branding: {},
+      features: {
+        hiring: true,
+        timeleave: true,
+        performance: true,
+        payroll: true,
+        money: true,
+        accounting: true,
+        reports: true,
+      },
+      settings: {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        currency: "USD",
+        dateFormat: "YYYY-MM-DD",
+      },
+    });
+  } catch (err) {
+    if (err instanceof FirebaseError && err.code === "permission-denied") {
+      throw new SlugTakenError(tenantId);
+    }
+    throw err;
+  }
+
+  await setDoc(doc(db, paths.member(tenantId, user.uid)), {
+    uid: user.uid,
+    email: user.email,
+    displayName: resolvedName,
+    role: "owner",
+    modules: [...OWNER_MODULES],
+    joinedAt: serverTimestamp(),
+    lastActiveAt: serverTimestamp(),
+    permissions: {
+      admin: true,
+      write: true,
+      read: true,
+    },
+  });
 
   // Merge into any existing user profile (don't clobber prior tenant access).
   const userRef = doc(db, paths.user(user.uid));
@@ -76,49 +143,6 @@ export async function provisionOrganization({
     },
     { merge: true },
   );
-
-  const plan: TenantPlan = "free";
-  await setDoc(doc(db, paths.tenant(tenantId)), {
-    id: tenantId,
-    name,
-    slug: slug || tenantId,
-    status: "active",
-    plan,
-    limits: PLAN_LIMITS[plan],
-    createdBy: user.uid,
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-    branding: {},
-    features: {
-      hiring: true,
-      timeleave: true,
-      performance: true,
-      payroll: true,
-      money: true,
-      accounting: true,
-      reports: true,
-    },
-    settings: {
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-      currency: "USD",
-      dateFormat: "YYYY-MM-DD",
-    },
-  });
-
-  await setDoc(doc(db, paths.member(tenantId, user.uid)), {
-    uid: user.uid,
-    email: user.email,
-    displayName: resolvedName,
-    role: "owner",
-    modules: [...OWNER_MODULES],
-    joinedAt: serverTimestamp(),
-    lastActiveAt: serverTimestamp(),
-    permissions: {
-      admin: true,
-      write: true,
-      read: true,
-    },
-  });
 
   return tenantId;
 }

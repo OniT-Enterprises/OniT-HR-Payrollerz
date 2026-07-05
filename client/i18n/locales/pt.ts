@@ -497,6 +497,7 @@ const messages = {
       "passwordsDoNotMatch": "As palavras-passe não coincidem",
       "nameRequired": "Introduza o seu nome",
       "companyNameRequired": "Introduza o nome da empresa",
+      "companySlugTaken": "Esse endereço de empresa já está em uso. Escolha outro.",
       "signupFailed": "Falha ao criar conta. Tente novamente.",
       "googleSignInFailed": "Falha ao iniciar sessão com o Google. Tente novamente.",
       "accountExists": "Já existe uma conta com este email. Inicie sessão em vez disso.",

@@ -8,7 +8,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Loader2, Building2, Mail, Lock, User, ArrowRight, CheckCircle2 } from "lucide-react";
 import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { provisionOrganization } from "@/services/provisionOrg";
+import { provisionOrganization, SlugTakenError } from "@/services/provisionOrg";
 import { SEO, seoConfig } from "@/components/SEO";
 import { useI18n } from "@/i18n/I18nProvider";
 import LocaleSwitcher from "@/components/LocaleSwitcher";
@@ -81,9 +81,14 @@ export default function Signup() {
     }
 
     try {
-      // 1. Create Firebase Auth account
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
+      // 1. Create Firebase Auth account — unless a previous attempt already
+      // created it and only the org provisioning failed (e.g. slug taken):
+      // the user is still signed in, so reuse that account for the retry.
+      let user = auth.currentUser;
+      if (!user || user.email?.toLowerCase() !== email.toLowerCase()) {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        user = userCredential.user;
+      }
 
       // 2. Update user profile with display name
       await updateProfile(user, { displayName: displayName.trim() });
@@ -104,7 +109,9 @@ export default function Signup() {
       console.error("Signup error:", err);
       const errCode = err instanceof Error ? (err as { code?: string }).code : undefined;
       const errMessage = err instanceof Error ? err.message : t("auth.errors.signupFailed");
-      if (errCode === "auth/email-already-in-use") {
+      if (err instanceof SlugTakenError) {
+        setError(t("auth.errors.companySlugTaken"));
+      } else if (errCode === "auth/email-already-in-use") {
         setError(t("auth.errors.accountExists"));
       } else if (errCode === "auth/weak-password") {
         setError(t("auth.errors.weakPassword"));
