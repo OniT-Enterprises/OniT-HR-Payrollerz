@@ -275,7 +275,9 @@ export default function Landing() {
               <img
                 src="/images/illustrations/hero-dashboard.webp"
                 alt="Xefe HR dashboard command center"
-                className="w-full max-w-3xl drop-shadow-2xl"
+                width={1532}
+                height={1024}
+                className="w-full max-w-3xl h-auto drop-shadow-2xl"
               />
             </div>
           </div>
@@ -418,7 +420,9 @@ export default function Landing() {
                   <img
                     src="/images/telkomcel-logo.png"
                     alt="Telkomcel"
-                    className="h-4 w-auto opacity-60 mt-1"
+                    width={509}
+                    height={119}
+                    className="h-4 w-auto object-contain opacity-60 mt-1"
                   />
                 </div>
               </div>
@@ -439,11 +443,11 @@ export default function Landing() {
               {/* Coming Soon */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-white/[0.02] border border-dashed border-white/10 col-span-2 lg:col-span-1">
                 <div className="h-12 w-12 rounded-full bg-white/5 flex items-center justify-center flex-shrink-0">
-                  <Wallet className="h-5 w-5 text-zinc-600" />
+                  <Wallet className="h-5 w-5 text-zinc-400" />
                 </div>
                 <div>
                   <span className="text-sm font-medium text-zinc-400 block">{t("landing.mobilePay.comingSoon")}</span>
-                  <span className="text-[10px] text-zinc-600">More integrations</span>
+                  <span className="text-[10px] text-zinc-400">More integrations</span>
                 </div>
               </div>
             </div>
@@ -578,7 +582,7 @@ export default function Landing() {
                   <Smartphone className="h-4 w-4" />
                   {t("landing.ekipa.cta")}
                 </div>
-                <span className="text-xs text-zinc-600">{t("landing.ekipa.ctaNote")}</span>
+                <span className="text-xs text-zinc-400">{t("landing.ekipa.ctaNote")}</span>
               </div>
             </div>
 
@@ -904,7 +908,7 @@ export default function Landing() {
                   <Smartphone className="h-4 w-4" />
                   {t("landing.kaixa.cta")}
                 </div>
-                <span className="text-xs text-zinc-600">{t("landing.kaixa.ctaNote")}</span>
+                <span className="text-xs text-zinc-400">{t("landing.kaixa.ctaNote")}</span>
               </div>
             </div>
           </div>
@@ -1308,7 +1312,7 @@ export default function Landing() {
                 alt="Xefe"
                 className="h-7 w-auto"
               />
-              <span className="text-zinc-600 text-sm">
+              <span className="text-zinc-400 text-sm">
                 {t("landing.footer.location")}
               </span>
             </div>
@@ -1326,7 +1330,7 @@ export default function Landing() {
                 {t("landing.footer.links.contact")}
               </a>
             </div>
-            <div className="text-sm text-zinc-600">
+            <div className="text-sm text-zinc-400">
               {t("landing.footer.copyright")}
             </div>
           </div>
